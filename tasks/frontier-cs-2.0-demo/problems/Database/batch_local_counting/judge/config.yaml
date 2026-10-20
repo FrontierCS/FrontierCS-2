@@ -1,0 +1,47 @@
+tag: systems
+runtime:
+  language: cpp
+  timeout_seconds: 1800
+  environment: "C++17/CMake project; Ubuntu 24.04; single-core CPU evaluation with GLPK and bundled nauty"
+  apt_packages:
+    - build-essential
+    - cmake
+    - git
+    - libglpk-dev
+    - python3
+    - python3-pytest
+  judge_apt_packages:
+    - build-essential
+    - cmake
+    - git
+    - libglpk-dev
+    - python3
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 1
+  memory_mb: 4096
+  storage_mb: 4096
+  build_timeout_seconds: 600
+evaluation:
+  solver_visible_metrics:
+    - median_seconds
+  suite_relation: fixed disjoint development and final suites; identical evaluator and beat-spec rules
+  max_dev_submissions: 100
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - counting/forest.h
+    - counting/forest.cpp
+    - counting/execution.h
+    - counting/execution.cpp
+    - counting/aggregation.h
+    - counting/aggregation.cpp
+    - executable/scope.cpp
+    - executable/command.cpp
+    - plan/tree.h
+    - plan/tree.cpp
+  max_changed_files: 12
+  max_patch_bytes: 524288

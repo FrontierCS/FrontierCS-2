@@ -1,0 +1,1060 @@
+{
+  "schema_version": 1,
+  "status": "checksum_pinned",
+  "identity_source": "original reference_results_training_set.csv: Workload and Run ONLY",
+  "partition": "within category sort SHA256(canonical UTF-8 path), select first ceil(n/5)",
+  "workloads": [
+    {
+      "id": "compress/compress_0_trace",
+      "path": "compress/compress_0_trace.gz",
+      "category": "compress",
+      "development": false,
+      "sha256": "0189902b8026c03c09740ca4e65d3bae4239d361b18ebc40b33ee18944a46b9e",
+      "compressed_bytes": 351176985,
+      "full_instr": 120000052,
+      "measured_instr": 60000052
+    },
+    {
+      "id": "compress/compress_1_trace",
+      "path": "compress/compress_1_trace.gz",
+      "category": "compress",
+      "development": true,
+      "sha256": "9ddbb9056dd72d89eb946a114576c9a61f1b442ca7e0ae01dc2308e37c334638",
+      "compressed_bytes": 113886153,
+      "full_instr": 30778699,
+      "measured_instr": 15778699
+    },
+    {
+      "id": "compress/compress_2_trace",
+      "path": "compress/compress_2_trace.gz",
+      "category": "compress",
+      "development": false,
+      "sha256": "d007fa0206ac911d23602520679316d2e49aa1d215e1c02f659c20da416e163f",
+      "compressed_bytes": 116846981,
+      "full_instr": 32339109,
+      "measured_instr": 16339109
+    },
+    {
+      "id": "compress/compress_3_trace",
+      "path": "compress/compress_3_trace.gz",
+      "category": "compress",
+      "development": false,
+      "sha256": "0971f5a28221c8a0a23d4d444d4324382c7e0bd1473e89a21f4de605168ef194",
+      "compressed_bytes": 350529667,
+      "full_instr": 130000020,
+      "measured_instr": 65000020
+    },
+    {
+      "id": "compress/compress_4_trace",
+      "path": "compress/compress_4_trace.gz",
+      "category": "compress",
+      "development": false,
+      "sha256": "0301886a3c124091764982dfc533e1adad365cae292bb176fce17af6c543174b",
+      "compressed_bytes": 113469499,
+      "full_instr": 31160801,
+      "measured_instr": 16160801
+    },
+    {
+      "id": "compress/compress_5_trace",
+      "path": "compress/compress_5_trace.gz",
+      "category": "compress",
+      "development": false,
+      "sha256": "fa0bb44854e9915f887cda399cac9bea52f5b2e736490e0f6f9412d12218db98",
+      "compressed_bytes": 117253824,
+      "full_instr": 33811883,
+      "measured_instr": 17811883
+    },
+    {
+      "id": "compress/compress_6_trace",
+      "path": "compress/compress_6_trace.gz",
+      "category": "compress",
+      "development": false,
+      "sha256": "a221e1e8b99e9b066ef0722bfa295a88541f22981652a91053f8e68463061e28",
+      "compressed_bytes": 117393541,
+      "full_instr": 33826271,
+      "measured_instr": 17826271
+    },
+    {
+      "id": "compress/compress_7_trace",
+      "path": "compress/compress_7_trace.gz",
+      "category": "compress",
+      "development": true,
+      "sha256": "7c62a0dff67777b7780a372755c6d8ee2077557ae0dcb4292609370297ae476b",
+      "compressed_bytes": 418812221,
+      "full_instr": 130000052,
+      "measured_instr": 65000052
+    },
+    {
+      "id": "fp/fp_0_trace",
+      "path": "fp/fp_0_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "724d944f22b4108bc5e7c34ab13a57108b10eca25ab90e6127ea4d50ebf54e1f",
+      "compressed_bytes": 67879266,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "fp/fp_10_trace",
+      "path": "fp/fp_10_trace.gz",
+      "category": "fp",
+      "development": true,
+      "sha256": "c58a6da2f94a20921c3a699d31ce4b85c7c539ff03bb1bb837d1d1e96737fc7f",
+      "compressed_bytes": 283942003,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_11_trace",
+      "path": "fp/fp_11_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "f50adc5a27ac43c06aca4b1991c66ad25eee3dfb760e624c2550e89388e14112",
+      "compressed_bytes": 312261034,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_12_trace",
+      "path": "fp/fp_12_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "9ad7ce9865454712c59184e5675cc5fc445539271e99c9f504685161b1a3c1b7",
+      "compressed_bytes": 50851463,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_13_trace",
+      "path": "fp/fp_13_trace.gz",
+      "category": "fp",
+      "development": true,
+      "sha256": "9de0ec8113cbfca0d66bf7e8606a5f4d590d7e7d10d221049edfffeb9d349241",
+      "compressed_bytes": 88747874,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_1_trace",
+      "path": "fp/fp_1_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "9ccb35c7372e2110a6277f65fd448dc91438ac9a7a704cf4d4d8d9d3f4402483",
+      "compressed_bytes": 44767710,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "fp/fp_2_trace",
+      "path": "fp/fp_2_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "7d9eaad3b0448cfc34176e16a88801b33969e98b08fe93576d734613512fc7c9",
+      "compressed_bytes": 119518303,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "fp/fp_3_trace",
+      "path": "fp/fp_3_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "dcd16c7f79188e851bb4897cf5828af7df836b05bf9308089c2d746d988006dd",
+      "compressed_bytes": 233859558,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "fp/fp_4_trace",
+      "path": "fp/fp_4_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "254653da2c4576e75c5d7ecb1ecf5ff3adb0584236ac05da0193a9aa112bfabf",
+      "compressed_bytes": 111467049,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "fp/fp_5_trace",
+      "path": "fp/fp_5_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "2510dae3f2a88187277f51d12e6751034f9f3cf87c3ac794edcebcfa9cdb6a47",
+      "compressed_bytes": 349121640,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_6_trace",
+      "path": "fp/fp_6_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "b90207f763993de1b73548fd8e1504d68e9ac088563b80e35a1f0e0a0411ea83",
+      "compressed_bytes": 66677807,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_7_trace",
+      "path": "fp/fp_7_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "51ffa5820c75a5775c783b4f334706066e9007c496b1b4cb8f0b1ecb8dcf497a",
+      "compressed_bytes": 166798970,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_8_trace",
+      "path": "fp/fp_8_trace.gz",
+      "category": "fp",
+      "development": false,
+      "sha256": "6cbfdda25d1a969632fe833bbc0936b7c4735357a78f56e3eeb3979555b882ea",
+      "compressed_bytes": 221357254,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "fp/fp_9_trace",
+      "path": "fp/fp_9_trace.gz",
+      "category": "fp",
+      "development": true,
+      "sha256": "34dd52bbde7489019642475bd0b0e9d35457c8f4b9a74a89ce2934e2530c5bfd",
+      "compressed_bytes": 150503292,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_0_trace",
+      "path": "infra/infra_0_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "207ba89b5b84f37db432954c4b1ee616bb8e23dd5f5cef745cb552f35e2b3fe2",
+      "compressed_bytes": 98662020,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_10_trace",
+      "path": "infra/infra_10_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "e95439e0e686591550ae7948457ac6636d22f8073a9a3e697a47b8f62b51ad18",
+      "compressed_bytes": 123393309,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "infra/infra_11_trace",
+      "path": "infra/infra_11_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "0e08ae02a0a610f888d84cd9995b929951cf91000b928f497cca9d4b45b565af",
+      "compressed_bytes": 219534186,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "infra/infra_12_trace",
+      "path": "infra/infra_12_trace.gz",
+      "category": "infra",
+      "development": true,
+      "sha256": "a5b09bfaf0074565dd1bbc4e855bf08d26fcb07382c8ac28120fe3c8cd9ffef5",
+      "compressed_bytes": 217656754,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "infra/infra_13_trace",
+      "path": "infra/infra_13_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "9454eedfe26b865298ba926b3711c509a9f5a0aed05fa2831b749c7b4f505bcb",
+      "compressed_bytes": 146418507,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "infra/infra_14_trace",
+      "path": "infra/infra_14_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "27736af6d7337bd39c7bbb7f47d73fca4a92d1ce33ca28f7c1febed0b9dfca27",
+      "compressed_bytes": 124209000,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "infra/infra_15_trace",
+      "path": "infra/infra_15_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "ecf448b22e2589ff9200b7fb8ed73f9ce24fd59909df7983245c5978205b63ec",
+      "compressed_bytes": 106137156,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "infra/infra_1_trace",
+      "path": "infra/infra_1_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "e2c233a7d337330daaf68e5af61adcccfc0c568ad0b55d1676b809800d3488c5",
+      "compressed_bytes": 183643571,
+      "full_instr": 37799521,
+      "measured_instr": 19799521
+    },
+    {
+      "id": "infra/infra_2_trace",
+      "path": "infra/infra_2_trace.gz",
+      "category": "infra",
+      "development": true,
+      "sha256": "6059ce3d3a6527a561f282f59480a87d89523e836a13ea4a324e23ab42dd6164",
+      "compressed_bytes": 232376102,
+      "full_instr": 47546686,
+      "measured_instr": 24546686
+    },
+    {
+      "id": "infra/infra_3_trace",
+      "path": "infra/infra_3_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "adc552667cd83c2e69d588b7df43abda99bf20f1104c787baa17d5c36cea5820",
+      "compressed_bytes": 87634068,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_4_trace",
+      "path": "infra/infra_4_trace.gz",
+      "category": "infra",
+      "development": true,
+      "sha256": "72fc777e74cd20589d31f9f430ab3406998369afd274ff5cad0c11812c1fd38d",
+      "compressed_bytes": 88993607,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_5_trace",
+      "path": "infra/infra_5_trace.gz",
+      "category": "infra",
+      "development": true,
+      "sha256": "7d3bc8bb4c84e5d03d73597b76346c80daed74d1a56b07efed1a9cbead1c7f47",
+      "compressed_bytes": 61730826,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_6_trace",
+      "path": "infra/infra_6_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "feada6a08c0e853fb07966320e3963743cc0c37c8b6903bfddd5b988d2cd8599",
+      "compressed_bytes": 176262347,
+      "full_instr": 64718349,
+      "measured_instr": 32718349
+    },
+    {
+      "id": "infra/infra_7_trace",
+      "path": "infra/infra_7_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "83be82c36541e39d1a9bdc0149d66b840eb3b1297f334066a223750d1daa19e4",
+      "compressed_bytes": 68491973,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_8_trace",
+      "path": "infra/infra_8_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "fe1ad2808fca9b3c6438ffbd69e0e0c2332e44dc93766aa46af5512648e81185",
+      "compressed_bytes": 56722126,
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    {
+      "id": "infra/infra_9_trace",
+      "path": "infra/infra_9_trace.gz",
+      "category": "infra",
+      "development": false,
+      "sha256": "bef0b459d31fef54690438ff444d66c108d1c27106af6985a966f3d4d0b46f8e",
+      "compressed_bytes": 148581359,
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    {
+      "id": "int/int_0_trace",
+      "path": "int/int_0_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "f2eaae8382d710223db844b11ede3e5825cffbdc88acfa898a40146b66504beb",
+      "compressed_bytes": 143771771,
+      "full_instr": 40000041,
+      "measured_instr": 20000041
+    },
+    {
+      "id": "int/int_10_trace",
+      "path": "int/int_10_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "394dbcf66da3253303441823442f44cae260c94f9991fd94fd368ba033888b82",
+      "compressed_bytes": 214806994,
+      "full_instr": 60000052,
+      "measured_instr": 30000052
+    },
+    {
+      "id": "int/int_11_trace",
+      "path": "int/int_11_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "7684f770f43b9f06b0915643756d35b289d8856744928c778753c7cf96cdef55",
+      "compressed_bytes": 213061128,
+      "full_instr": 60000052,
+      "measured_instr": 30000052
+    },
+    {
+      "id": "int/int_12_trace",
+      "path": "int/int_12_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "e711d4a3de3cb3b1641e11918915d94eb6b50d2f663d643671b2cdb5485ace28",
+      "compressed_bytes": 214537864,
+      "full_instr": 59999603,
+      "measured_instr": 30999603
+    },
+    {
+      "id": "int/int_13_trace",
+      "path": "int/int_13_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "c33ea25a641d2df80ffc0100c431de3e02713148ef24ac1acda34126a6ee3fa4",
+      "compressed_bytes": 33875008,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_14_trace",
+      "path": "int/int_14_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "ec67493f74a98bc03183dd141fe071efcfbe5fc7b7486d0da6879d64d6fbaa1e",
+      "compressed_bytes": 185902065,
+      "full_instr": 39999640,
+      "measured_instr": 20999640
+    },
+    {
+      "id": "int/int_15_trace",
+      "path": "int/int_15_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "ea472570ae762daf203fa90d292c199669786e315c11627988b871ceb08ede7b",
+      "compressed_bytes": 102924026,
+      "full_instr": 70000157,
+      "measured_instr": 35000157
+    },
+    {
+      "id": "int/int_16_trace",
+      "path": "int/int_16_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "76d0b2a5cdde1acce364e406813c1fac34e61aa78f1d48b7b2b68dd3986414b1",
+      "compressed_bytes": 134497701,
+      "full_instr": 40000031,
+      "measured_instr": 20000031
+    },
+    {
+      "id": "int/int_17_trace",
+      "path": "int/int_17_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "09c3d230dd0c1b977cc512b3c3bb05b7f25e061c7451c990f4dfa0c0259b4a5d",
+      "compressed_bytes": 134854822,
+      "full_instr": 39999987,
+      "measured_instr": 20999987
+    },
+    {
+      "id": "int/int_18_trace",
+      "path": "int/int_18_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "89e48972301ad9ccd0cd7ceecf831e24ca2f967b0c0667fb96c622d7cc6cffa2",
+      "compressed_bytes": 113580500,
+      "full_instr": 39999864,
+      "measured_instr": 20999864
+    },
+    {
+      "id": "int/int_19_trace",
+      "path": "int/int_19_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "c3000509102df91fabe181af7bd047dcf750889d18b67d24652e7f9a5596eb96",
+      "compressed_bytes": 193241608,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_1_trace",
+      "path": "int/int_1_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "94aec70ab5aba142b588813b8920e1c0dc269a1b2fab3147909e6629128b5f79",
+      "compressed_bytes": 97359779,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "int/int_20_trace",
+      "path": "int/int_20_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "968cae2abe3fef91ad97b8e421e17eaf2a4f577888bdef139cbf5de9863cf15a",
+      "compressed_bytes": 196085658,
+      "full_instr": 60000051,
+      "measured_instr": 30000051
+    },
+    {
+      "id": "int/int_21_trace",
+      "path": "int/int_21_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "2dc0ee3e89d37edaf2986d615d61b46479a6d7082a3bf6ab805e36a110677c77",
+      "compressed_bytes": 96083043,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_22_trace",
+      "path": "int/int_22_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "050972a12370b2576a2049d15066547a56cb0e9ef74d307de4cf9d560ee6fe07",
+      "compressed_bytes": 101380963,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_23_trace",
+      "path": "int/int_23_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "47a55ea56798eff157da3181712f40e7ae2e2a5355a46780ab7b077b3b112faa",
+      "compressed_bytes": 191216905,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_24_trace",
+      "path": "int/int_24_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "960277471be8e43a7acec3b8a0ebc1f006bc8de706b215ed65c324684800b3bb",
+      "compressed_bytes": 152295428,
+      "full_instr": 40000051,
+      "measured_instr": 20000051
+    },
+    {
+      "id": "int/int_25_trace",
+      "path": "int/int_25_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "ef0fbf72b5fed120dd41bae36fc8531e8aec4f054884a145d44e210243cc6aa2",
+      "compressed_bytes": 177260686,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_26_trace",
+      "path": "int/int_26_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "783ce7f574ec75dbbd97483f890a2c4aeb226a0f4e90ed600694b2c4b0f046a8",
+      "compressed_bytes": 206750532,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_27_trace",
+      "path": "int/int_27_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "63238f0faaba454b7f7ef9c8f661083a5555798ee0f4505b052fd6ee69da6da5",
+      "compressed_bytes": 230378046,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_28_trace",
+      "path": "int/int_28_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "dba0c3628037bbff53fa03a0a8ea09a1b8b765ef06bdb3b5be6eb7fa4a4b302c",
+      "compressed_bytes": 194953301,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_29_trace",
+      "path": "int/int_29_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "66785dd637aa9a05ef982d3c97c3a7a068d21a9c0540e7d94279d9d231a7e588",
+      "compressed_bytes": 190722831,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_2_trace",
+      "path": "int/int_2_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "013d02c0f19fe0090348feab9a391d592c7af7a82e32e962e9a4a51a52b4491b",
+      "compressed_bytes": 98658665,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "int/int_30_trace",
+      "path": "int/int_30_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "827bcddf47c92f322f4fb9e06d4df83741f33a100faa23a3265e55788cbef628",
+      "compressed_bytes": 191803161,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_31_trace",
+      "path": "int/int_31_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "d9a0dcf203a3c90ef40ebf58d0cee4ea6a4aff0e0fa5b32a7e579e8c8b47594b",
+      "compressed_bytes": 123785771,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_32_trace",
+      "path": "int/int_32_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "746b3b6cb904d156f27a83fd908727559d52eb621f4c48b6de4262fe86bf6c09",
+      "compressed_bytes": 332616320,
+      "full_instr": 110000052,
+      "measured_instr": 55000052
+    },
+    {
+      "id": "int/int_33_trace",
+      "path": "int/int_33_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "9ebd1e4669f9bd4213c2c37eb3c70ab92c105ed58155ce3f5b7b66d6aa4ee3ad",
+      "compressed_bytes": 325497037,
+      "full_instr": 110000052,
+      "measured_instr": 55000052
+    },
+    {
+      "id": "int/int_34_trace",
+      "path": "int/int_34_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "434bba3b282366fb33af6a3fd83e99690a593a23e687cc93d86d042a2886913f",
+      "compressed_bytes": 117836477,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_35_trace",
+      "path": "int/int_35_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "5afbbeac0fd66354985b15e32d6f85f7ab0478b6f0bf8111b8eea7cc01d4a91f",
+      "compressed_bytes": 125711017,
+      "full_instr": 40000048,
+      "measured_instr": 20000048
+    },
+    {
+      "id": "int/int_36_trace",
+      "path": "int/int_36_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "53415af6520da394326f045ee344cd636b8916e051742ec7b5e6937477f7c491",
+      "compressed_bytes": 211604596,
+      "full_instr": 53761949,
+      "measured_instr": 27761949
+    },
+    {
+      "id": "int/int_3_trace",
+      "path": "int/int_3_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "d1877899bf5f27e1af96f2d1e1c21c50ea7306166a43805b2584f12a3b15d057",
+      "compressed_bytes": 101586400,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_4_trace",
+      "path": "int/int_4_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "92ddc9347f9337fb86be1b857a20c0e3d59fd5814a7d063b4c1f6e8d7884c263",
+      "compressed_bytes": 197387117,
+      "full_instr": 59999657,
+      "measured_instr": 30999657
+    },
+    {
+      "id": "int/int_5_trace",
+      "path": "int/int_5_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "15de7c503fa9ffd4af7d5c77c5873310aa8f34bb209e2edb6fb2ddcc3af9de4a",
+      "compressed_bytes": 145198058,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "int/int_6_trace",
+      "path": "int/int_6_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "40c0a7878edbce461a496efd82fe6d7b8dcf49ffdf3d2d2af820f6cab6b52f7d",
+      "compressed_bytes": 136581564,
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    {
+      "id": "int/int_7_trace",
+      "path": "int/int_7_trace.gz",
+      "category": "int",
+      "development": true,
+      "sha256": "9ef4fd01526ba6d3b5a30af7d8575834b2ba4cde3b6d5b7608cdd7a20e69cb42",
+      "compressed_bytes": 134400151,
+      "full_instr": 40000048,
+      "measured_instr": 20000048
+    },
+    {
+      "id": "int/int_8_trace",
+      "path": "int/int_8_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "2b2c5beee61736fffbf0d03b020a0e10b8dedd28ff88b98c50c7a95659356198",
+      "compressed_bytes": 144282247,
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    {
+      "id": "int/int_9_trace",
+      "path": "int/int_9_trace.gz",
+      "category": "int",
+      "development": false,
+      "sha256": "d010b801d627ca2b5bdb37badb49d171e8b3de252ae699e46a6dfa4d9ecc90aa",
+      "compressed_bytes": 159995935,
+      "full_instr": 40000050,
+      "measured_instr": 20000050
+    },
+    {
+      "id": "media/media_0_trace",
+      "path": "media/media_0_trace.gz",
+      "category": "media",
+      "development": false,
+      "sha256": "21b923c2cb39b71596b7ee0bfce77ea82e1e93f8378dcfb590ae150b62ca0e4b",
+      "compressed_bytes": 116933375,
+      "full_instr": 20000044,
+      "measured_instr": 10000044
+    },
+    {
+      "id": "media/media_1_trace",
+      "path": "media/media_1_trace.gz",
+      "category": "media",
+      "development": false,
+      "sha256": "e544e38776add0912fc4fd952575bfb680a4ed2ca45625aeb43f2eddeddd1e5d",
+      "compressed_bytes": 98517988,
+      "full_instr": 20000048,
+      "measured_instr": 10000048
+    },
+    {
+      "id": "media/media_2_trace",
+      "path": "media/media_2_trace.gz",
+      "category": "media",
+      "development": true,
+      "sha256": "323617af35323671bc76f76f0213f32082d989946edc387d61bf175fe2b9c28b",
+      "compressed_bytes": 119684607,
+      "full_instr": 20000038,
+      "measured_instr": 10000038
+    },
+    {
+      "id": "media/media_3_trace",
+      "path": "media/media_3_trace.gz",
+      "category": "media",
+      "development": false,
+      "sha256": "2d9bbf5a31d5e954f2c9edb6474468d279a08cd6617ea07dc8900bb91d5330f6",
+      "compressed_bytes": 119219816,
+      "full_instr": 20000046,
+      "measured_instr": 10000046
+    },
+    {
+      "id": "web/web_0_trace",
+      "path": "web/web_0_trace.gz",
+      "category": "web",
+      "development": true,
+      "sha256": "549e8299e9c01b21327c5249212fa3ebfe82b2dac0cc249ddbca35ecdc2afa40",
+      "compressed_bytes": 109074255,
+      "full_instr": 39999493,
+      "measured_instr": 20999493
+    },
+    {
+      "id": "web/web_10_trace",
+      "path": "web/web_10_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "20e7078d0d157795dc85350f8c94844de1b4aa18060a417a9e113aed1847c397",
+      "compressed_bytes": 70593622,
+      "full_instr": 19999796,
+      "measured_instr": 10999796
+    },
+    {
+      "id": "web/web_11_trace",
+      "path": "web/web_11_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "72546cc970dc6bdf37b6aeea13e343dbef4fb48f1848996026a4a95a5aa595b8",
+      "compressed_bytes": 45576918,
+      "full_instr": 10001443,
+      "measured_instr": 5001443
+    },
+    {
+      "id": "web/web_12_trace",
+      "path": "web/web_12_trace.gz",
+      "category": "web",
+      "development": true,
+      "sha256": "3746f23094c566ed5f420f8431a0b4421611262253b0eabbf052a3df98e84e95",
+      "compressed_bytes": 64471847,
+      "full_instr": 15000009,
+      "measured_instr": 8000009
+    },
+    {
+      "id": "web/web_13_trace",
+      "path": "web/web_13_trace.gz",
+      "category": "web",
+      "development": true,
+      "sha256": "17adb4191692e6c7c91d5b26f50f9f755b36105901d7b52fc23ba6ae1d150aec",
+      "compressed_bytes": 141227692,
+      "full_instr": 39999813,
+      "measured_instr": 20999813
+    },
+    {
+      "id": "web/web_14_trace",
+      "path": "web/web_14_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "4e8a306133c399a7238b31231320a74a5f8fdb7de6c95b3f59b04ec8a31f16f2",
+      "compressed_bytes": 246927070,
+      "full_instr": 70000043,
+      "measured_instr": 35000043
+    },
+    {
+      "id": "web/web_15_trace",
+      "path": "web/web_15_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "1716f4ae6fd5920299cd9c1f20643a180598f25998dcdcb6b52d167719753336",
+      "compressed_bytes": 64957584,
+      "full_instr": 14999858,
+      "measured_instr": 7999858
+    },
+    {
+      "id": "web/web_16_trace",
+      "path": "web/web_16_trace.gz",
+      "category": "web",
+      "development": true,
+      "sha256": "163d87ce1de84d1bac9ddd73ef32757122872dd468ab81880b8b0991d316c9e2",
+      "compressed_bytes": 64718894,
+      "full_instr": 20000052,
+      "measured_instr": 10000052
+    },
+    {
+      "id": "web/web_17_trace",
+      "path": "web/web_17_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "c8ddcf89c0f850be2a4ae6b560f61e5601663986e3d9f128835efea0059e7960",
+      "compressed_bytes": 57368079,
+      "full_instr": 15000021,
+      "measured_instr": 8000021
+    },
+    {
+      "id": "web/web_18_trace",
+      "path": "web/web_18_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "ecbc7d7160eb80548becd311e3a9b53b00741653fa179ced0fd1943f19ca63b3",
+      "compressed_bytes": 42070180,
+      "full_instr": 15000059,
+      "measured_instr": 8000059
+    },
+    {
+      "id": "web/web_19_trace",
+      "path": "web/web_19_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "14af0979f3ec78e385e57babc47566ae2c9c39fa6575fcbffc6473b966a1af54",
+      "compressed_bytes": 49074148,
+      "full_instr": 15000016,
+      "measured_instr": 8000016
+    },
+    {
+      "id": "web/web_1_trace",
+      "path": "web/web_1_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "af206cd6ad34ab5a753f012c336947605e9888d8b994a3a70a6565a0d5b2de77",
+      "compressed_bytes": 166659793,
+      "full_instr": 39999048,
+      "measured_instr": 20999048
+    },
+    {
+      "id": "web/web_20_trace",
+      "path": "web/web_20_trace.gz",
+      "category": "web",
+      "development": true,
+      "sha256": "9adf0eea99cc2b7ba59353c5574ce69588801a76e83071ad493e36ef53dac201",
+      "compressed_bytes": 95656599,
+      "full_instr": 20000004,
+      "measured_instr": 10000004
+    },
+    {
+      "id": "web/web_21_trace",
+      "path": "web/web_21_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "4f7f7de3e5a090247b3a88c1595b0a844b5bd2420b8c7a4857018d213ce73a9c",
+      "compressed_bytes": 38831805,
+      "full_instr": 15000054,
+      "measured_instr": 8000054
+    },
+    {
+      "id": "web/web_22_trace",
+      "path": "web/web_22_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "c5ba5f6dc79dd9abfca84524ba3019d69c38798615d61bc1c7ee4ee90f6b25c0",
+      "compressed_bytes": 54434243,
+      "full_instr": 20000051,
+      "measured_instr": 10000051
+    },
+    {
+      "id": "web/web_23_trace",
+      "path": "web/web_23_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "e7aee6cb98ca361e0263360eb20733b82672f4d89752a9d9f292b94fabc3a5f4",
+      "compressed_bytes": 63095627,
+      "full_instr": 20000047,
+      "measured_instr": 10000047
+    },
+    {
+      "id": "web/web_24_trace",
+      "path": "web/web_24_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "48909860475bb473269f74bc65462e14b247d3323d750d247445b2cf39e7f755",
+      "compressed_bytes": 84480573,
+      "full_instr": 14999923,
+      "measured_instr": 7999923
+    },
+    {
+      "id": "web/web_25_trace",
+      "path": "web/web_25_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "8a8a4e2cfdecec78af8cc1a66d59f5837b506257c08aad38442eb4540a2bab7f",
+      "compressed_bytes": 48319806,
+      "full_instr": 14999989,
+      "measured_instr": 7999989
+    },
+    {
+      "id": "web/web_2_trace",
+      "path": "web/web_2_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "fb508018770ee50ff52f76eef5ec3741fceaaa5c52e7179d9231566565754f6d",
+      "compressed_bytes": 132899096,
+      "full_instr": 39999746,
+      "measured_instr": 20999746
+    },
+    {
+      "id": "web/web_3_trace",
+      "path": "web/web_3_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "64a0de22390374b5a9a34c77fd90c6a60dc7a2686f51ad9546c07b1ae23d3623",
+      "compressed_bytes": 140719171,
+      "full_instr": 39999981,
+      "measured_instr": 20999981
+    },
+    {
+      "id": "web/web_4_trace",
+      "path": "web/web_4_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "22b219605bcd6a567e576fe3041fceb1c95b594c65ef5d533c708a5a050cf597",
+      "compressed_bytes": 112863277,
+      "full_instr": 39999718,
+      "measured_instr": 20999718
+    },
+    {
+      "id": "web/web_5_trace",
+      "path": "web/web_5_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "515e67764764669e86b1f0fe8fe6c26ca4a2183eff2f271209c82d3dc5a3ea9c",
+      "compressed_bytes": 125264190,
+      "full_instr": 39999694,
+      "measured_instr": 20999694
+    },
+    {
+      "id": "web/web_6_trace",
+      "path": "web/web_6_trace.gz",
+      "category": "web",
+      "development": true,
+      "sha256": "787941581b1d00307e89d707cb0f27e0f5cec95649f34a5c88ae803e8440b294",
+      "compressed_bytes": 120957858,
+      "full_instr": 40000022,
+      "measured_instr": 20000022
+    },
+    {
+      "id": "web/web_7_trace",
+      "path": "web/web_7_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "1948ae293ba7d326dbe2fd6212bcf18aca1dc2045a0cbe02b5e0dc1a3995356c",
+      "compressed_bytes": 43609344,
+      "full_instr": 39999850,
+      "measured_instr": 20999850
+    },
+    {
+      "id": "web/web_8_trace",
+      "path": "web/web_8_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "d7381ef729abf9de08e58e31529d8e0dab3ebcaaac914660351b65f860e30950",
+      "compressed_bytes": 116257566,
+      "full_instr": 39999955,
+      "measured_instr": 20999955
+    },
+    {
+      "id": "web/web_9_trace",
+      "path": "web/web_9_trace.gz",
+      "category": "web",
+      "development": false,
+      "sha256": "6a3a955d429a6d841b87f35a9c6ad1bd16816ca4724054b88c9f325feb9d9bcc",
+      "compressed_bytes": 118816955,
+      "full_instr": 39999863,
+      "measured_instr": 20999863
+    }
+  ],
+  "completeness_count_provenance": "Expected completion counters from pinned framework CSV, not current-source performance measurements. Must be checked against actual simulator output.",
+  "performance_measurements": "NOT_RUN"
+}

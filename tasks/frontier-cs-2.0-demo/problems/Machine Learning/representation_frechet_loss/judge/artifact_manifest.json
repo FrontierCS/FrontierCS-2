@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "2604.28190/code",
+  "authentic_execution": {
+    "entrypoint": "main_fd.py",
+    "retained_files": [
+      "main_fd.py",
+      "utils/builders.py",
+      "models/denoiser_pmf.py",
+      "frechet_distance/judges.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "frechet_distance/queue.py",
+      "mode": "stubbed",
+      "symbols": [
+        "FeatureQueue"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "frechet_distance/queue.py"
+    ],
+    "add_under": [
+      "frechet_distance/frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Compiles the retained upstream Python tree in the Agent GPU workspace."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Launches the retained entrypoint with the supported single-node rendezvous address."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Stages the declared solver surface and emits the patch submission."
+    },
+    {
+      "path": "frontier_prepare_assets.py",
+      "reason": "Converts the released public statistics and creates local offline HF cache links for public GPU debugging."
+    },
+    {
+      "path": "frontier_public_assets.json",
+      "reason": "Provenance of the same released public model/statistics files already staged in the Agent GPU image."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "scripts/table_3_pMF.sh",
+    "scripts/table_3_JiT.sh",
+    "scripts/table_3_iMF.sh",
+    "compute_repr_stats.py",
+    "eval_all_fds.py"
+  ],
+  "minimality_note": "The retained tree is the import closure of the one pMF-B training entrypoint. Experiment launchers, statistics generation, standalone evaluation, documentation, and media are omitted.",
+  "private_upstream_files": [
+    {
+      "path": "judge_deps/eval_all_fds.py",
+      "upstream_path": "eval_all_fds.py",
+      "reason": "Exact original six-representation held-out evaluation; not solver-visible."
+    }
+  ],
+  "manual_repair": {
+    "origin": "S2 missing private runner, missing import closure, incorrect/broad offline assets",
+    "entrypoint": "main_fd.train_and_evaluate called by private observation wrapper; source remains unchanged",
+    "restored_imports": [
+      "frechet_distance/evaluator.py",
+      "frechet_distance/datasets.py"
+    ],
+    "admission": "trusted unchanged upstream reference only; candidate admission remains fail-closed because observe.py imports repository code in its report-producing process"
+  }
+}

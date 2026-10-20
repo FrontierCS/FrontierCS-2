@@ -1,0 +1,49 @@
+# Planning (MPC) configuration — aligned with DINO-WM protocol
+# Used with experiment=planning
+
+# Environment (override per-env)
+env_name: point_maze
+
+# Evaluation
+n_evals: 50
+seed: 42
+n_plot_samples: 5
+output_dir: ${hydra:runtime.output_dir}/planning_results
+
+# Goal sampling
+#   random_state: env.sample_random_init_goal_states(seed). DINO-WM uses this
+#     for point_maze and wall. Goal is not constrained to be reachable in goal_H
+#     planner steps, so success rate measures both planning and feasibility.
+#   dset: sample init from val set, replay ground-truth actions for
+#     goal_H * frame_interval env steps to get a guaranteed-reachable goal.
+#     DINO-WM uses this for pusht (and rope/granular).
+goal_source: random_state
+goal_H: 5
+
+# MPC (DINO-WM: horizon=5, replan_every=5 → "open-loop" CEM per chunk)
+horizon: 5
+replan_every: 5
+max_episode_steps: 50
+
+# World model sampling (planning: latent-space cost, fewer DDIM steps OK)
+num_sampling_steps: 20
+eta: 0.0
+
+# CEM optimizer. These are reduced local defaults; use planning=dino_wm_pusht
+# for the DINO-WM PushT budget (300 samples, top-30, 30 iterations).
+cem:
+  num_samples: 100
+  topk: 10
+  opt_steps: 30
+  var_scale: 1.0
+  eval_every: 5
+  sigma_min: 1e-3
+  action_low: null
+  action_high: null
+  rollout_batch_size: null
+
+# Objective (DINO-WM: MSE on last frame)
+objective:
+  mode: "last"
+  alpha: 1.0
+  base: 2.0

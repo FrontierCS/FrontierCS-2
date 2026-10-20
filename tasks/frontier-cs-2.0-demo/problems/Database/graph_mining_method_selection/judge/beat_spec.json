@@ -1,0 +1,59 @@
+{
+  "unit": "One mining operation (triangle or 4clique) over all matching configurations in the selected fixed 112-case suite. There are exactly two workloads in train and two in final. Every original row contributes to its pattern geometric mean; graph families and suite membership remain unchanged.",
+  "metrics": [
+    {
+      "name": "selected_runtime_seconds",
+      "means": "Geometric mean of the selected backend absolute median runtimes, in seconds, over all configurations of one pattern.",
+      "source": "Authentic GS and NS medians, each from three collected backend runs in measured_workloads.json; the submitted selector chooses the applicable median.",
+      "better": "lower",
+      "clears_when": "Candidate pattern geometric mean must be strictly lower than the paired reference pattern geometric mean by more than 1e-12 times the larger of the two means.",
+      "tolerance": "1e-12 relative arithmetic guard only. The table is fixed and arithmetic deterministic; this is not a live-timing confidence interval. Equality fails."
+    },
+    {
+      "name": "accuracy_qualified",
+      "means": "Whether every backend selected for the pattern meets its configuration relative-error target.",
+      "source": "Selected backend stored error compared with the unchanged per-row 0.1 or 0.2 target, qualified against exact unsparsified counts.",
+      "better": "higher",
+      "clears_when": "Every selected result must meet its original error target; the reference and entire stored table must also be valid.",
+      "tolerance": "No error-target slack and no dropped configurations."
+    }
+  ],
+  "beats_reference": "Conjunction of selected_runtime_seconds and accuracy_qualified on both fixed pattern workloads. Runtime must strictly improve separately for triangle and 4clique. The original suite-wide regret-based continuous score is unchanged and does not determine this flag. Invalid submissions, malformed suites and reference failures yield two all-false rows.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "geomean_selected_runtime_seconds",
+      "means": "Geometric mean of candidate-selected absolute backend times across the complete 112-case feedback suite.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    },
+    {
+      "name": "max_selected_relative_error",
+      "means": "Maximum absolute relative error among candidate-selected backend estimates.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    },
+    {
+      "name": "cases",
+      "means": "Number of configurations evaluated for the candidate.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    }
+  ],
+  "withheld": [
+    "reference_score",
+    "reference_regret",
+    "margin",
+    "beats_reference",
+    "beat_spec_workload_passes",
+    "geomean_runtime_regret",
+    "constant_selector_regret",
+    "decision_accuracy",
+    "max_gs_reference_error",
+    "max_ns_reference_error",
+    "graph identifiers",
+    "per-pattern measurements and decisions",
+    "individual measured rows"
+  ],
+  "statement_sentences": "Beating the reference requires strictly lower geometric-mean selected runtime separately on the triangle and 4-clique workloads, with every selected estimate meeting its original error target. All 112 configurations retain their existing pattern group and weight; both patterns must pass both metrics. Only a 1e-12 relative arithmetic guard is used and runtime ties fail. The continuous regret score is unchanged. Train feedback exposes absolute candidate summary measurements and per-metric workload pass/fail counts and percentages, without reference values, private identifiers, regret ratios or per-pattern decisions.",
+  "comments": "2026-09-11 repair of the missing beat-spec checkpoint. Workload grouping follows the two distinct mining operations supported by the paper artifact; it is fixed independently of solver behavior. A strict per-configuration or per-graph-family requirement would be mathematically impossible where the binary reference already chooses the faster stored engine. Both patterns retain measurable headroom in both current suites. No reference, dataset, selector surface, continuous scoring or runtime-budget change. Existing narrative historical reference scores do not match current source/table replay and are retained as historical evidence pending release calibration."
+}

@@ -1,0 +1,17 @@
+{
+  "platform_source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33",
+  "files": {
+    "frontier_gpu.py": {
+      "source": "candidate-overlays/codex/frontier_gpu.py",
+      "sha256": "sha256:b0e659a8c67447a14f405eea1e21b7e54b5c7e5f3ddc3103021e5d5305c9adfc"
+    },
+    "frontier_gpu_connect_proxy.py": {
+      "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
+      "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+    },
+    "SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-gpu/SKILL.md",
+      "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    }
+  }
+}

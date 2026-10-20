@@ -1,0 +1,111 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "shockwave_dynamic_gpu_allocation",
+  "domain": "systems",
+  "promotion": {
+    "round": 3,
+    "band": "hard",
+    "reviewer_verdict": "supervisor_accept_after_release_gates",
+    "basis": {
+      "genuine_solver_submissions": 3,
+      "historical_trial_best_development_score": 85.192277,
+      "canonical_dev_replay_best_development_score": 77.585684,
+      "final_solver_score": 73.091576,
+      "final_reference_score": 74.106465,
+      "solver_beats_reference": false,
+      "known_witness_beats_reference": true
+    }
+  },
+  "scientific_override_20260915": {
+    "basis": "decision M084/M087",
+    "scope": "binary PASS aggregation only (M084/M087; later continuous correction recorded separately)",
+    "current_aggregation": "all-workload/all-metric conjunction",
+    "current_known_witness_beats_reference": false,
+    "historical_promotion_fields_preserved": true
+  },
+  "generated_at": "2026-09-03T12:07:35+00:00",
+  "release_audited_at": "2026-09-06T00:00:00+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "6bcf3d45db00c2dbb0b3443e5daabdb29ea6f022",
+    "run_id": "r_top01_ave-nsdi23",
+    "candidate_id": "cand_000",
+    "config_sha256": "e149e1c76d0a7a4f9b03657a95a67781a565790fee60ea4a5342fcf88dbd66a9"
+  },
+  "paper": {
+    "paper_id": "external-shockwave-nsdi23",
+    "title": "Shockwave: Fair and Efficient Cluster Scheduling for Dynamic Adaptation in Machine Learning",
+    "authors": [
+      "Pengfei Zheng",
+      "Rui Pan",
+      "Tarannum Khan",
+      "Shivaram Venkataraman",
+      "Aditya Akella"
+    ],
+    "year": 2023,
+    "venue": "NSDI",
+    "pdf_url": "https://arxiv.org/pdf/2210.00093",
+    "doi": null
+  },
+  "rank": {
+    "rank": 1,
+    "overall_score": 100.0,
+    "recommendation": "supervisor_pilot",
+    "scores": {
+      "agent_task_fit": 4.8,
+      "artifact_readiness": 3.8,
+      "evaluation_quality": 4.7,
+      "frontier_potential": 4.6
+    },
+    "risks": [
+      "The artifact depends on an old Python stack and Gurobi.",
+      "A simulation task must preserve the authentic scheduler rather than inventing a toy model."
+    ]
+  },
+  "artifact": {
+    "repo_url": "https://github.com/uw-mad-dash/shockwave",
+    "commit": "8a44f4a27a45760520386809b695d51b665b3679",
+    "cloned_at": "2026-09-03T09:33:29.952200+00:00",
+    "census": {
+      ".py": 346,
+      ".sh": 7,
+      ".proto": 5
+    }
+  },
+  "contribution": {
+    "title": "Shockwave future-planning scheduler",
+    "summary": "A multi-round GPU allocation policy that balances efficiency with finish-time fairness under dynamically changing training throughput.",
+    "paper_location": "Sections 4–5, Shockwave design and stochastic future-planning formulation",
+    "code_location": [
+      "scheduler/shockwave.py::ShockwaveScheduler",
+      "scheduler/shockwave_helper.py"
+    ],
+    "metric": "Allocation validity, makespan, average JCT, worst finish-time fairness, and unfair-job fraction on dynamic traces."
+  },
+  "host": {
+    "cpu_count": 8,
+    "ram_gb": 33,
+    "free_disk_gb": 514,
+    "gpus": [],
+    "docker": {
+      "limit_source": "host",
+      "daemon_mem_total_gb": 33
+    },
+    "platform": "Linux-7.0.0-1011-aws-x86_64-with-glibc2.39",
+    "measured_at": "2026-09-03T09:41:05.635547+00:00"
+  },
+  "continuous_score_override_20260915": {
+    "basis": "formula adopted 2026-09-15; canonical criteria commit 794546b966ad8e7216a38515923b2d11de2f9cec",
+    "scope": "continuous score only",
+    "per_trace_formula": "40*12000/(12000+M) + 40*7000/(7000+J) + 15*0.55/(rho+0.05) + 5*(1-U/100)",
+    "aggregation": "raw unrounded binary64 arithmetic mean over the original two traces",
+    "trusted_domain": "M>=0 seconds, J>=0 seconds, rho>=0.5 for original N=8/G=4 simulator, U in {0,12.5,...,100}",
+    "reference_independent": true,
+    "artificial_upper_plateau": false,
+    "workloads_changed": false,
+    "reference_changed": false,
+    "comparators_or_thresholds_changed": false,
+    "validity_checks_changed": false,
+    "historical_promotion_fields_preserved": true
+  }
+}

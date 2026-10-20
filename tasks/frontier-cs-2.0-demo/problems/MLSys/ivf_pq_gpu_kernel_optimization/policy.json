@@ -1,0 +1,137 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 17179869184
+  },
+  "display_name": "GPU IVF-PQ Search Kernel Optimization",
+  "family": "frontier-cs-2.0/systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 10800,
+      "max_instance_seconds": 10800,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 25200
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "conversion": {
+      "continuous_score": "S is geometric mean of per-workload median of seven paired naive/candidate timing ratios; 0 if S <= 1, else 100*log(S)/(log(10)+log(S)).",
+      "pass_fail": "On every selected workload: candidate median search latency < optimized reference latency, candidate worst timed iso-result recall >= reference worst timed recall and candidate worst timed exact nearest-neighbor recall@k >= reference; every timed candidate call must satisfy naive iso-recall >= 0.99.",
+      "source_commit": "1bccbadc6bead714d25c546cf954a37bb0791fd6",
+      "source_path": "2.0/problems/ivf_pq_gpu_kernel_optimization",
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "status": "contract",
+      "resource_status": "Formal answering18000 seconds. Beat spec v3 release refresh (2026-10-11): independent final14400 seconds (was 5400) and Verifier GPU total25200 = train wall10800 + final14400 on one H100, sized against an eight-workload final of about 4140-4380 s (six-workload finals recorded; the two new shapes measured on one Modal H100 on 2026-10-11, not a platform qualification); Agent GPU10800 unchanged. Short trial answering1800 is rendered externally.",
+      "distance_validity": "For each valid ID: abs(returned-oracle) <= 1e-6*abs(float32 residual ADC oracle), atol0; zero oracle requires exact zero. Legal -1/+inf padding is validated separately and excluded."
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 410,
+        "path": "datasets/eval.json",
+        "version": "sha256:6e6a9183dc7130f5b19c8733712f3721eab2fc2335dbf3a290e6c6868b3ff68d"
+      },
+      "train": {
+        "bytes": 338,
+        "path": "datasets/train.json",
+        "version": "sha256:d9464a59daf7d7a5510605fd1cd25876ff0fb9454496251b01fcd4bb74690048"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 25,
+      "beat_spec_sha256": "sha256:51dad6059bf4c24d5a4db13e7ba36c6973edb508562cdcc7275870d177f8e59e",
+      "solver_visible_metrics": [
+        "geomean_speedup",
+        "search_latency_ms",
+        "iso_recall",
+        "nn_recall"
+      ],
+      "suite_relation": "Train uses the first four original SIFT workloads; final independently tests all six, retaining public train seeds and using independent hidden index/query seeds. Beat spec v3 (2026-10-08): final adds two hidden strict-only shapes (sift_q10k_np32, sift_q1k_np128_k1024) to PASS; the continuous score keeps the original six.",
+      "continuous_score": "S is geometric mean of per-workload median of seven paired naive/candidate timing ratios; 0 if S <= 1, else 100*log(S)/(log(10)+log(S))."
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "config_sha256": null,
+      "pipeline": null,
+      "run_id": null
+    },
+    "isolation": "Hidden workload shape parameters, hidden seed domain, optimized reference and comparison evidence are Verifier-only. Agent sees four public train shapes, SIFT data, naive starter/oracle and GPU development tools.",
+    "paper": {
+      "authors": [],
+      "doi": null,
+      "paper_id": null,
+      "pdf_url": null,
+      "title": null,
+      "venue": null,
+      "year": null
+    },
+    "provenance_file": "judge/metadata.json",
+    "runtime": {
+      "allowed_paths": [
+        "ivfpqlib/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    },
+    "data_asset": {
+      "path": "data/sift_manifest.json",
+      "sha256": "sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+      "bytes": 525128288,
+      "source": "original Modal Volume flashlib-ann-datasets/sift.hdf5"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 67108864,
+      "max_ssh_sessions": 1076,
+      "ssh_session_budgets": {
+        "agent": 1024,
+        "verifier_eval": 2,
+        "verifier_train": 50
+      }
+    }
+  },
+  "problem_id": "ivf_pq_gpu_kernel_optimization",
+  "quota": {
+    "eval_timeout_seconds": 14400,
+    "max_train_calls": 25,
+    "max_train_wall_seconds": 10800,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 2097152
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 8589934592
+  },
+  "version": "native-staging.1-beat-spec-v3"
+}

@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "secagent/tool.py",
+    "secagent/solver_utils/"
+  ],
+  "max_bytes": 8388608,
+  "max_files": 50,
+  "member": "solution.patch"
+}

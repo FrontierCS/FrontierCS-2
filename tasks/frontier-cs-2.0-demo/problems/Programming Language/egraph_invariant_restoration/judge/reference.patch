@@ -1,0 +1,318 @@
+diff --git a/src/egraph.rs b/src/egraph.rs
+index fd68701..084fd3f 100644
+--- a/src/egraph.rs
++++ b/src/egraph.rs
+@@ -1256,20 +1256,193 @@ impl<L: Language + Display, N: Analysis<L>> EGraph<L, N> {
+     }
+ }
+ 
++// All the rebuilding stuff
+ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
+     #[inline(never)]
+     fn rebuild_classes(&mut self) -> usize {
+-        todo!("restore e-graph invariants")
++        let mut classes_by_op = core::mem::take(&mut self.classes_by_op);
++        classes_by_op.values_mut().for_each(|ids| ids.clear());
++
++        let mut trimmed = 0;
++        let uf = &mut self.unionfind;
++
++        for class in self.classes.values_mut() {
++            let old_len = class.len();
++            class
++                .nodes
++                .iter_mut()
++                .for_each(|n| n.update_children(|id| uf.find_mut(id)));
++            class.nodes.sort_unstable();
++            class.nodes.dedup();
++
++            trimmed += old_len - class.nodes.len();
++
++            let mut add = |n: &L| {
++                classes_by_op
++                    .entry(n.discriminant())
++                    .or_default()
++                    .insert(class.id)
++            };
++
++            // we can go through the ops in order to dedup them, becaue we
++            // just sorted them
++            let mut nodes = class.nodes.iter();
++            if let Some(mut prev) = nodes.next() {
++                add(prev);
++                for n in nodes {
++                    if !prev.matches(n) {
++                        add(n);
++                        prev = n;
++                    }
++                }
++            }
++        }
++
++        #[cfg(debug_assertions)]
++        for ids in classes_by_op.values_mut() {
++            let unique: HashSet<Id> = ids.iter().copied().collect();
++            assert_eq!(ids.len(), unique.len());
++        }
++
++        self.classes_by_op = classes_by_op;
++        trimmed
++    }
++
++    #[inline(never)]
++    fn check_memo(&self) -> bool {
++        let mut test_memo = HashMap::default();
++
++        for (&id, class) in self.classes.iter() {
++            assert_eq!(class.id, id);
++            for node in &class.nodes {
++                if let Some(old) = test_memo.insert(node, id) {
++                    assert_eq!(
++                        self.find(old),
++                        self.find(id),
++                        "Found unexpected equivalence for {:?}\n{:?}\nvs\n{:?}",
++                        node,
++                        self[self.find(id)].nodes,
++                        self[self.find(old)].nodes,
++                    );
++                }
++            }
++        }
++
++        for (n, e) in test_memo {
++            assert_eq!(e, self.find(e));
++            assert_eq!(
++                Some(e),
++                self.memo.get(n).map(|id| self.find(*id)),
++                "Entry for {:?} at {} in test_memo was incorrect",
++                n,
++                e
++            );
++        }
++
++        true
+     }
+ 
+     #[inline(never)]
+     fn process_unions(&mut self) -> usize {
+-        todo!("restore e-graph invariants")
++        let mut n_unions = 0;
++
++        while !self.pending.is_empty() || !self.analysis_pending.is_empty() {
++            while let Some(class) = self.pending.pop() {
++                let mut node = self.nodes[usize::from(class)].clone();
++                node.update_children(|id| self.find_mut(id));
++                if let Some(memo_class) = self.memo.insert(node, class) {
++                    let did_something =
++                        self.perform_union(memo_class, class, Some(Justification::Congruence));
++                    n_unions += did_something as usize;
++                }
++            }
++
++            while let Some(class_id) = self.analysis_pending.pop() {
++                let node = self.nodes[usize::from(class_id)].clone();
++                let class_id = self.find_mut(class_id);
++                let node_data = N::remake(self, &node, class_id);
++                let class = self.classes.get_mut(&class_id).unwrap();
++
++                let did_merge = self.analysis.merge(&mut class.data, node_data);
++                if did_merge.0 {
++                    self.analysis_pending.extend(class.parents.iter().copied());
++                    N::modify(self, class_id)
++                }
++            }
++        }
++
++        assert!(self.pending.is_empty());
++        assert!(self.analysis_pending.is_empty());
++
++        n_unions
+     }
+ 
+-    /// Restores the required invariants after mutations and returns work performed.
++    /// Restores the egraph invariants of congruence and enode uniqueness.
++    ///
++    /// As mentioned
++    /// [in the tutorial](tutorials/_01_background/index.html#invariants-and-rebuilding),
++    /// `egg` takes a lazy approach to maintaining the egraph invariants.
++    /// The `rebuild` method allows the user to manually restore those
++    /// invariants at a time of their choosing. It's a reasonably
++    /// fast, linear-ish traversal through the egraph.
++    ///
++    /// After modifying an e-graph with [`add`](EGraph::add) or
++    /// [`union`](EGraph::union), you must call `rebuild` to restore
++    /// invariants before any query operations, otherwise the results
++    /// may be stale or incorrect.
++    ///
++    /// This will set [`EGraph::clean`] to `true`.
++    ///
++    /// # Example
++    /// ```
++    /// use egg::{*, SymbolLang as S};
++    /// let mut egraph = EGraph::<S, ()>::default();
++    /// let x = egraph.add(S::leaf("x"));
++    /// let y = egraph.add(S::leaf("y"));
++    /// let ax = egraph.add_expr(&"(+ a x)".parse().unwrap());
++    /// let ay = egraph.add_expr(&"(+ a y)".parse().unwrap());
++    /// // Union x and y
++    /// egraph.union(x, y);
++    /// // Classes: [x y] [ax] [ay] [a]
++    /// assert_eq!(egraph.find(x), egraph.find(y));
++    ///
++    /// // Rebuilding restores the congruence invariant, finding
++    /// // that ax and ay are equivalent.
++    /// egraph.rebuild();
++    /// // Classes: [x y] [ax ay] [a]
++    /// assert_eq!(egraph.number_of_classes(), 3);
++    /// assert_eq!(egraph.find(ax), egraph.find(ay));
++    /// ```
+     pub fn rebuild(&mut self) -> usize {
+-        todo!("restore e-graph invariants")
++        let old_hc_size = self.memo.len();
++        let old_n_eclasses = self.number_of_classes();
++
++        let start = Instant::now();
++
++        let n_unions = self.process_unions();
++        let trimmed_nodes = self.rebuild_classes();
++
++        let elapsed = start.elapsed();
++        info!(
++            concat!(
++                "REBUILT! in {}.{:03}s\n",
++                "  Old: hc size {}, eclasses: {}\n",
++                "  New: hc size {}, eclasses: {}\n",
++                "  unions: {}, trimmed nodes: {}"
++            ),
++            elapsed.as_secs(),
++            elapsed.subsec_millis(),
++            old_hc_size,
++            old_n_eclasses,
++            self.memo.len(),
++            self.number_of_classes(),
++            n_unions,
++            trimmed_nodes,
++        );
++
++        debug_assert!(self.check_memo());
++        self.clean = true;
++        n_unions
+     }
+ 
+     pub(crate) fn check_each_explain(&mut self, rules: &[&Rewrite<L, N>]) -> bool {
+diff --git a/src/tutorials/_01_background.rs b/src/tutorials/_01_background.rs
+index eb0ee29..b5e01e3 100644
+--- a/src/tutorials/_01_background.rs
++++ b/src/tutorials/_01_background.rs
+@@ -197,9 +197,24 @@ These operations maintains two key (related) invariants:
+    This is maintained in part by the hashconsing performed by [`add`],
+    and by deduplication performed by [`union`] and [`rebuild`].
+ 
+-After modifying an e-graph, callers use [`rebuild`] before operations that
+-require the invariants above. [`Runner`] handles the required calls when it
+-executes rewrite iterations.
++`egg` takes a delayed approach to maintaining these invariants.
++Specifically, the effects of calling [`union`] (or applying a rewrite,
++which calls [`union`]) may not be reflected immediately.
++To restore the e-graph invariants and make these effects visible, the
++user *must* call the [`rebuild`] method.
++
++`egg`'s choice here allows for a higher performance implementation.
++Maintaining the congruence relation complicates the core e-graph data
++structure and requires an expensive traversal through the e-graph on
++every [`union`].
++`egg` chooses to relax these invariants for better performance, only
++restoring the invariants on a call to [`rebuild`].
++The [paper] on `egg` goes into greater detail on why this design choice makes
++  things faster.
++See the [`rebuild`] documentation for more information on
++  what it does and when you have to call it.
++Note also that [`Runner`]s take care of this for you, calling
++  [`rebuild`] between rewrite iterations.
+ 
+ ## Equality Saturation
+ 
+@@ -207,8 +222,36 @@ executes rewrite iterations.
+ Equality saturation
+   ([Tate et. al., 2009](https://arxiv.org/abs/1012.1802))
+   is a technique for program optimization.
+-`egg` exposes equality saturation through the [`Runner`] API.
+-<!-- equality_saturation_documentation: contribution details removed -->
++`egg` implements a variant of equality saturation in the [`Runner`] API that
++  looks like the following pseudocode:
++
++```ignore
++fn equality_saturation(expr: Expression, rewrites: Vec<Rewrite>) -> Expression {
++    let mut egraph = make_initial_egraph(expr);
++
++    while !egraph.is_saturated_or_timeout() {
++        let mut matches = vec![];
++
++        // read-only phase, invariants are preserved
++        for rw in rewrites {
++            for (subst, eclass) in egraph.search(rw.lhs) {
++                matches.push((rw, subst, eclass));
++            }
++        }
++
++        // write-only phase, temporarily break invariants
++        for (rw, subst, eclass) in matches {
++            eclass2 = egraph.add(rw.rhs.subst(subst));
++            egraph.union(eclass, eclass2);
++        }
++
++        // restore the invariants once per iteration
++        egraph.rebuild();
++    }
++
++    return egraph.extract_best();
++}
++```
+ 
+ Most of this was covered above, but we need to define two new terms:
+ 
+@@ -235,7 +278,8 @@ It sounds a little too good to be true,
+   and while it definitely has its caveats,
+   `egg` addresses many of the shortcomings from this approach,
+   making it feasible to apply on real-world problems.
+-Later tutorials discuss how [`Analysis`] makes this approach flexible
++We've already discussed how rebuilding makes `egg`'s e-graphs fast,
++  and later tutorials will discuss how [`Analysis`] makes this approach flexible
+   and able to handle more than just syntactic rewriting.
+ 
+ [`Searcher`]: super::super::Searcher
+@@ -256,4 +300,6 @@ Later tutorials discuss how [`Analysis`] makes this approach flexible
+ [dot]: super::super::Dot
+ [extract]: super::super::Extractor
+ [sound]: https://itinerarium.github.io/phoneme-synthesis/?w=/'igraf/
++[paper]: https://arxiv.org/abs/2004.03082
++
+ */
+diff --git a/src/tutorials/mod.rs b/src/tutorials/mod.rs
+index b4f6258..76fdb14 100644
+--- a/src/tutorials/mod.rs
++++ b/src/tutorials/mod.rs
+@@ -14,8 +14,10 @@ For more detail, check out the [API documentation](super),
+ which the tutorials will link to frequently.
+ Most of the code examples here are typechecked and run, so you may copy-paste them to get started.
+ 
++There is also a [paper](https://arxiv.org/abs/2004.03082)
++describing `egg` and if you are keen to read more about its technical novelties.
++
+ The tutorials are a work-in-progress with more to be added soon.
+-<!-- source_paper_link: contribution-specific link removed -->
+ 
+ */
+
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -15,6 +15,7 @@ The [tests](https://github.com/egraphs-good/egg/tree/main/tests)
+ on Github provide some more elaborate examples.
+ 
+-<!-- source_paper_link: source-publication citation withheld -->
++There is also a [paper](https://arxiv.org/abs/2004.03082)
++describing `egg` and some of its technical novelties.
+ 
+ ## Logging
+ 

@@ -1,0 +1,213 @@
+diff --git a/prompts/1-shot-prompt.txt b/prompts/1-shot-prompt.txt
+index 5082222..7d5cbc4 100644
+--- a/prompts/1-shot-prompt.txt
++++ b/prompts/1-shot-prompt.txt
+@@ -1,2 +1,20 @@
+-one_shot_prompt_template
++You are an expert Application Security Analyst specializing in regular expression security. Your mission is to analyze the provided PCRE regular expression for Regular Expression Denial of Service (ReDoS) vulnerabilities caused by catastrophic backtracking.
++If a vulnerability is found, you must rewrite the pattern to eliminate it. The rewritten pattern must be syntactically valid PCRE, and its semantic meaning must be preserved as closely as possible.
++If the given pattern has no ReDoS vulnerability, then the corrected pattern should be the same as the original pattern.
++Your entire output should be only the final, corrected regular expression, enclosed in a code block. For example, if the input is:
++```
++(?:a+)+
++```
++your output must be:
++```
++a+
++```
++
++Here is an example of the repairing process.
++
++The pattern `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d+)*[EO]?e)(.*)(%B)` is vulnerable because of nested quantifiers: `(\d+)*` with `\d+`. So, I repair the pattern to `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of nested quantifiers: `(\d+)*` with `\d+`. So, I repair the pattern to `(%[-_0^#:]*(\d)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of overlapping adjacent quantifiers: `[-_0^#:]*`, `\d*`. So, I repair the pattern to `(%[-_0^#:]*(\d)*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d)*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of overlapping adjacent quantifiers: `[-_0^#:]*`, `(\d)*`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of starting with large quantifier: `.*`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.{0,500})(%B)`. The pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.{0,500})(%B)` is vulnerable because of starting with large quantifier: `.{0,500}`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)([\u0000-\u0009\u000b-\u000c\u000e-\u0024\u0026-\u0084\u0086-\u2027\u202a-\uffff]{0,500})(%B)`. Finally, the repaired pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)([\u0000-\u0009\u000b-\u000c\u000e-\u0024\u0026-\u0084\u0086-\u2027\u202a-\uffff]{0,500})(%B)` is not vulnerable.
++
++Analyze the following pattern:
++```
+ $pattern
++```
+diff --git a/prompts/5-shot-localization-prompt.txt b/prompts/5-shot-localization-prompt.txt
+index 8d9e533..9e31264 100644
+--- a/prompts/5-shot-localization-prompt.txt
++++ b/prompts/5-shot-localization-prompt.txt
+@@ -1,3 +1,30 @@
+-five_shot_localization_prompt_template
++You are an expert Application Security Analyst specializing in regular expression security. Your mission is to analyze the provided PCRE regular expression for Regular Expression Denial of Service (ReDoS) vulnerabilities caused by catastrophic backtracking.
++If a vulnerability is found, you must rewrite the pattern to eliminate it. The rewritten pattern must be syntactically valid PCRE, and its semantic meaning must be preserved as closely as possible.
++If the given pattern has no ReDoS vulnerability, then the corrected pattern should be the same as the original pattern.
++Your entire output should be only the final, corrected regular expression, enclosed in a code block. For example, if the input is:
++```
++(?:a+)+
++```
++your output must be:
++```
++a+
++```
++
++Here are examples of the repairing process.
++
++The pattern `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d+)*[EO]?e)(.*)(%B)` is vulnerable because of nested quantifiers: `(\d+)*` with `\d+`. So, I repair the pattern to `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of nested quantifiers: `(\d+)*` with `\d+`. So, I repair the pattern to `(%[-_0^#:]*(\d)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of overlapping adjacent quantifiers: `[-_0^#:]*`, `\d*`. So, I repair the pattern to `(%[-_0^#:]*(\d)*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d)*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of overlapping adjacent quantifiers: `[-_0^#:]*`, `(\d)*`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of starting with large quantifier: `.*`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.{0,500})(%B)`. The pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.{0,500})(%B)` is vulnerable because of starting with large quantifier: `.{0,500}`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)([\u0000-\u0009\u000b-\u000c\u000e-\u0024\u0026-\u0084\u0086-\u2027\u202a-\uffff]{0,500})(%B)`. Finally, the repaired pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)([\u0000-\u0009\u000b-\u000c\u000e-\u0024\u0026-\u0084\u0086-\u2027\u202a-\uffff]{0,500})(%B)` is not vulnerable.
++
++The pattern `'(.*)' should be removed from the commit index` is vulnerable because of starting with large quantifier: .*. So, I repair the pattern to `'([\u0000-\u0009\u000b-\u000c\u000e-\u0026\u0028-\u0084\u0086-\u2027\u202a-\uffff]*)' should be removed from the commit index`. Finally, the repaired pattern `'([\u0000-\u0009\u000b-\u000c\u000e-\u0026\u0028-\u0084\u0086-\u2027\u202a-\uffff]*)' should be removed from the commit index` is not vulnerable.
++
++The pattern `^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]+\.?)+(\/[^\s]*)?[^\s\.,]$$` is vulnerable because of nested quantifiers: `([^\s\/?\.#-]+\.?)+` with `[^\s\/?\.#-]+`. So, I repair the pattern to `^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]\.?)+(\/[^\s]*)?[^\s\.,]$$`. Finally, the repaired pattern `^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]\.?)+(\/[^\s]*)?[^\s\.,]$$` is not vulnerable.
++
++The pattern `((?:\$$|)[^=]+)=([^=]+)` is vulnerable because of overlapping adjacent quantifiers: \$$|, [^=]+. So, I repair the pattern to `((?:\$$|)[^=]{1,1})=([^=]+)`. Finally, the repaired pattern `((?:\$$|)[^=]{1,1})=([^=]+)` is not vulnerable.
++
++The pattern `^(<(?:\\\\|\\.|[^<>\\]){0,1024}>)` is vulnerable because of overlapping disjunction: `(?:\\\\|\\.|[^<>\\]){0,1024}` with `\\\\|\\.|[^<>\\]`. So, I repair the pattern to `^(<(?:\\.|[^<>\\]|(?!\\.)\\\\){0,1024}>)`. Finally, the repaired pattern `^(<(?:\\.|[^<>\\]|(?!\\.)\\\\){0,1024}>)` is not vulnerable.
++
++You must focus on the following subpatterns: $subpatterns. At least one of these subpattern causes catastrophic backtracking.
++
++Analyze the following pattern; you have to answer the repaired version of the entire pattern, not only a repaired subpattern:
++```
+ $pattern
+-$subpatterns
++```
+diff --git a/prompts/5-shot-prompt.txt b/prompts/5-shot-prompt.txt
+index 487a9ef..b8fd228 100644
+--- a/prompts/5-shot-prompt.txt
++++ b/prompts/5-shot-prompt.txt
+@@ -1,2 +1,28 @@
+-five_shot_prompt_template
++You are an expert Application Security Analyst specializing in regular expression security. Your mission is to analyze the provided PCRE regular expression for Regular Expression Denial of Service (ReDoS) vulnerabilities caused by catastrophic backtracking.
++If a vulnerability is found, you must rewrite the pattern to eliminate it. The rewritten pattern must be syntactically valid PCRE, and its semantic meaning must be preserved as closely as possible.
++If the given pattern has no ReDoS vulnerability, then the corrected pattern should be the same as the original pattern.
++Your entire output should be only the final, corrected regular expression, enclosed in a code block. For example, if the input is:
++```
++(?:a+)+
++```
++your output must be:
++```
++a+
++```
++
++Here are examples of the repairing process.
++
++The pattern `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d+)*[EO]?e)(.*)(%B)` is vulnerable because of nested quantifiers: `(\d+)*` with `\d+`. So, I repair the pattern to `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d+)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of nested quantifiers: `(\d+)*` with `\d+`. So, I repair the pattern to `(%[-_0^#:]*(\d)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d)*[EO]?d|%[-_0^#:]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of overlapping adjacent quantifiers: `[-_0^#:]*`, `\d*`. So, I repair the pattern to `(%[-_0^#:]*(\d)*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*(\d)*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of overlapping adjacent quantifiers: `[-_0^#:]*`, `(\d)*`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)`. The pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.*)(%B)` is vulnerable because of starting with large quantifier: `.*`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.{0,500})(%B)`. The pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)(.{0,500})(%B)` is vulnerable because of starting with large quantifier: `.{0,500}`. So, I repair the pattern to `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)([\u0000-\u0009\u000b-\u000c\u000e-\u0024\u0026-\u0084\u0086-\u2027\u202a-\uffff]{0,500})(%B)`. Finally, the repaired pattern `(%[-_0^#:]*[\u0031-\u0039]*[EO]?d|%[\u0023-\u0023\u002d-\u002d\u003a-\u003a\u005e-\u005f]*(\d*)[EO]?e)([\u0000-\u0009\u000b-\u000c\u000e-\u0024\u0026-\u0084\u0086-\u2027\u202a-\uffff]{0,500})(%B)` is not vulnerable.
++
++The pattern `'(.*)' should be removed from the commit index` is vulnerable because of starting with large quantifier: .*. So, I repair the pattern to `'([\u0000-\u0009\u000b-\u000c\u000e-\u0026\u0028-\u0084\u0086-\u2027\u202a-\uffff]*)' should be removed from the commit index`. Finally, the repaired pattern `'([\u0000-\u0009\u000b-\u000c\u000e-\u0026\u0028-\u0084\u0086-\u2027\u202a-\uffff]*)' should be removed from the commit index` is not vulnerable.
++
++The pattern `^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]+\.?)+(\/[^\s]*)?[^\s\.,]$$` is vulnerable because of nested quantifiers: `([^\s\/?\.#-]+\.?)+` with `[^\s\/?\.#-]+`. So, I repair the pattern to `^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]\.?)+(\/[^\s]*)?[^\s\.,]$$`. Finally, the repaired pattern `^(https?|ftp):\/\/(-\.)?([^\s\/?\.#-]\.?)+(\/[^\s]*)?[^\s\.,]$$` is not vulnerable.
++
++The pattern `((?:\$$|)[^=]+)=([^=]+)` is vulnerable because of overlapping adjacent quantifiers: \$$|, [^=]+. So, I repair the pattern to `((?:\$$|)[^=]{1,1})=([^=]+)`. Finally, the repaired pattern `((?:\$$|)[^=]{1,1})=([^=]+)` is not vulnerable.
++
++The pattern `^(<(?:\\\\|\\.|[^<>\\]){0,1024}>)` is vulnerable because of overlapping disjunction: `(?:\\\\|\\.|[^<>\\]){0,1024}` with `\\\\|\\.|[^<>\\]`. So, I repair the pattern to `^(<(?:\\.|[^<>\\]|(?!\\.)\\\\){0,1024}>)`. Finally, the repaired pattern `^(<(?:\\.|[^<>\\]|(?!\\.)\\\\){0,1024}>)` is not vulnerable.
++
++Analyze the following pattern:
++```
+ $pattern
++```
+diff --git a/prompts/localization.txt b/prompts/localization.txt
+index 54b6400..b532b0c 100644
+--- a/prompts/localization.txt
++++ b/prompts/localization.txt
+@@ -1,3 +1,18 @@
+-localization_prompt_template
++You are an expert Application Security Analyst specializing in regular expression security. Your mission is to analyze the provided PCRE regular expression for Regular Expression Denial of Service (ReDoS) vulnerabilities caused by catastrophic backtracking.
++If a vulnerability is found, you must rewrite the pattern to eliminate it. The rewritten pattern must be syntactically valid PCRE, and its semantic meaning must be preserved as closely as possible.
++If the given pattern has no ReDoS vulnerability, then the corrected pattern should be the same as the original pattern.
++Your entire output should be only the final, corrected regular expression, enclosed in a code block. For example, if the input is:
++```
++(?:a+)+
++```
++your output must be:
++```
++a+
++```
++
++You must focus on the following subpatterns: $subpatterns. At least one of these subpattern causes catastrophic backtracking.
++
++Analyze the following pattern; you have to answer the repaired version of the entire pattern, not only a repaired subpattern:
++```
+ $pattern
+-$subpatterns
++```
+diff --git a/scripts/scalpel_to_thinking_steps.py b/scripts/scalpel_to_thinking_steps.py
+index 9da0b69..7b45f80 100644
+--- a/scripts/scalpel_to_thinking_steps.py
++++ b/scripts/scalpel_to_thinking_steps.py
+@@ -1,13 +1,81 @@
+-"""Public policy hooks used by the upstream prompt constructor."""
++#!/usr/bin/env python
++"""Convert RegexScalpel results to Chain-of-Thought prompts."""
+ 
++import re
++import sys
++
++from parse_regex_scalpel import Output as ScalpelData
+ from parse_regex_scalpel import Result as ScalpelResult
+ 
+ 
++def get_subsubpattern(subpattern: str) -> str | None:
++    a = re.search(r"▶▷(.*)◁◀", subpattern)
++    if a is not None:
++        return a[1]
++    return None
++
++
++def substitute_subpattern(subpattern: str) -> str:
++    # return re.sub(r"▶▷(.*)◁◀", r"\1", subpattern)
++    subpattern = re.sub("▶▷", "", subpattern)
++    subpattern = re.sub("◁◀", "", subpattern)
++    return re.sub(r"▶▷(.*)◁◀", r"\1", subpattern)
++
++
+ def subpattern_to_string(subpattern: str) -> str:
+-    """Render one first-step symbolic localization for the repair prompt."""
+-    raise NotImplementedError("implement the localization policy")
++    # subsubpattern = get_subsubpattern(subpattern)
++    # subpattern = substitute_subpattern(subpattern)
++    # if subsubpattern is None:
++    #     return subpattern
++    # else:
++    #     return f"`{subpattern}` with `{subsubpattern}`"
++    return substitute_subpattern(subpattern)
+ 
+ 
+ def generate_cot_prompt(result: ScalpelResult) -> tuple[str, list[str]]:
+-    """Render one localization trajectory without exposing the upstream policy."""
+-    raise NotImplementedError("implement the localization policy")
++    """Generates a Chain-of-Thought prompt from a RegexScalpel result."""
++    # pylint: disable=line-too-long
++
++    prompt = ""
++    regex = result.regex
++    vuln_types = []
++    for step in result.repairs:
++        if step.nested_quantifier_result:
++            vuln_type = "nested quantifiers"
++        elif step.overlapping_disjunction_result:
++            vuln_type = "overlapping disjunction"
++        elif step.overlapping_adjacent_result:
++            vuln_type = "overlapping adjacent quantifiers"
++        elif step.large_quantifier_start_result:
++            vuln_type = "starting with large quantifier"
++        else:
++            continue
++        vuln_types.append(vuln_type)
++
++        prompt += f"The pattern `{regex}` is vulnerable because of {vuln_type}"
++        # pylint: disable-next=inconsistent-quotes
++        if step.subpatterns:
++            subpatterns_str = ", ".join(
++                [subpattern_to_string(e) for e in step.subpatterns]
++            )
++            prompt += f": {subpatterns_str}"
++        prompt += ". "
++        if step.repaired:
++            prompt += f"So, I repair the pattern to `{step.repaired}`. "
++            regex = step.repaired
++
++    prompt += f"Finally, the repaired pattern `{result.final_regex}` is not vulnerable."
++    return prompt, vuln_types
++
++
++def main() -> None:
++    dataset = map(ScalpelData.loads, sys.stdin)
++    for entry in dataset:
++        if entry.result is None:
++            print(flush=True)
++            continue
++        print(generate_cot_prompt(entry.result)[0], flush=True)
++
++
++if __name__ == "__main__":
++    main()

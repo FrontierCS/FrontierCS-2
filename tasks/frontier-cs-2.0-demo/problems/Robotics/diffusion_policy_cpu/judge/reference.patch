@@ -1,0 +1,42 @@
+diff --git a/diffusion_policy/policy/diffusion_transformer_lowdim_policy.py b/diffusion_policy/policy/diffusion_transformer_lowdim_policy.py
+index 0801caf..7d0eff8 100644
+--- a/diffusion_policy/policy/diffusion_transformer_lowdim_policy.py
++++ b/diffusion_policy/policy/diffusion_transformer_lowdim_policy.py
+@@ -58,7 +58,36 @@ class DiffusionTransformerLowdimPolicy(BaseLowdimPolicy):
+             # keyword arguments to scheduler.step
+             **kwargs
+             ):
+-        raise NotImplementedError("Return a normalized sequence matching condition_data shape, dtype and device; preserve masked values.")
++        model = self.model
++        scheduler = self.noise_scheduler
++
++        trajectory = torch.randn(
++            size=condition_data.shape, 
++            dtype=condition_data.dtype,
++            device=condition_data.device,
++            generator=generator)
++    
++        # set step values
++        scheduler.set_timesteps(self.num_inference_steps)
++
++        for t in scheduler.timesteps:
++            # 1. apply conditioning
++            trajectory[condition_mask] = condition_data[condition_mask]
++
++            # 2. predict model output
++            model_output = model(trajectory, t, cond)
++
++            # 3. compute previous image: x_t -> x_t-1
++            trajectory = scheduler.step(
++                model_output, t, trajectory, 
++                generator=generator,
++                **kwargs
++                ).prev_sample
++        
++        # finally make sure conditioning is enforced
++        trajectory[condition_mask] = condition_data[condition_mask]        
++
++        return trajectory
+ 
+ 
+     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:

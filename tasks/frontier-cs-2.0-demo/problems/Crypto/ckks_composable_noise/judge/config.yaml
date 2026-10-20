@@ -1,0 +1,74 @@
+tag: cryptography
+runtime:
+  language: go
+  timeout_seconds: 600
+  environment: Go1.23.12/Lattigo6.1.1; LogN12 29-configuration calibrated accuracy
+    and strict estimator-time formal release
+  apt_packages:
+  - git
+  - python3
+  - ca-certificates
+  - curl
+  - tar
+  - time
+  judge_apt_packages:
+  - git
+  - python3
+  - ca-certificates
+  - curl
+  - tar
+  - time
+  docker:
+    image: ubuntu:24.04
+  judge_build_commands:
+  - mkdir -p /opt/frontier && curl -fsSL https://go.dev/dl/go1.23.12.linux-amd64.tar.gz
+    -o /opt/frontier/go.tar.gz && echo 'd3847fef834e9db11bf64e3fb34db9c04db14e068eeb064f49af747010454f90  /opt/frontier/go.tar.gz'
+    | sha256sum -c - && tar -C /usr/local -xzf /opt/frontier/go.tar.gz && rm /opt/frontier/go.tar.gz
+    && ln -s /usr/local/go/bin/go /usr/local/bin/go && ln -s /usr/local/go/bin/gofmt
+    /usr/local/bin/gofmt
+  - cd /opt/frontier/task/harbor/app/estimator && GOMAXPROCS=1 GOTOOLCHAIN=local GOMODCACHE=/opt/frontier/go-mod
+    /usr/local/go/bin/go mod download
+  - chmod -R a+rX /opt/frontier/go-mod /usr/local/go
+  judge_env:
+    GOMODCACHE: /opt/frontier/go-mod
+    GOPROXY: 'off'
+  agent_build_commands:
+  - mkdir -p /opt/frontier && curl -fsSL https://go.dev/dl/go1.23.12.linux-amd64.tar.gz
+    -o /opt/frontier/go.tar.gz && echo 'd3847fef834e9db11bf64e3fb34db9c04db14e068eeb064f49af747010454f90  /opt/frontier/go.tar.gz'
+    | sha256sum -c - && tar -C /usr/local -xzf /opt/frontier/go.tar.gz && rm /opt/frontier/go.tar.gz
+    && ln -s /usr/local/go/bin/go /usr/local/bin/go && ln -s /usr/local/go/bin/gofmt
+    /usr/local/bin/gofmt
+  - cd /frontier/task/repo/estimator && GOMAXPROCS=1 GOTOOLCHAIN=local GOMODCACHE=/opt/frontier/go-mod
+    /usr/local/go/bin/go mod download
+  - chmod -R a+rX /opt/frontier/go-mod /usr/local/go
+  agent_env:
+    CKKS_MODULE_CACHE: /opt/frontier/go-mod
+    GOMODCACHE: /opt/frontier/go-mod
+    GOPROXY: 'off'
+  go_memory_limit: 3GiB
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 8192
+  build_timeout_seconds: 600
+  agent:
+    cpus: 2
+    memory_mb: 2048
+    storage_mb: 8192
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+  - estimator/
+  max_changed_files: 32
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: extends
+  solver_visible_metrics:
+  - candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits
+  - candidate_std_log2_prec_l2_abs_discrepancy_mean_bits
+  - candidate_estimator_seconds_mean
+  max_train_wall_seconds: 7200
+  suite_axis: composition depth, initial scale45/55, dense/H192 secret
+  answering_timeout_seconds: 18000

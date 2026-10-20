@@ -1,0 +1,46 @@
+# Runtime output
+work_dirs/
+logs/
+wandb/
+tmp/
+
+# Downloaded data and checkpoints
+checkpoints/**/*.pt
+checkpoints/**/*.pth
+checkpoints/**/*.ckpt
+checkpoints/**/*.safetensors
+data/*.txt
+data/fid_stats/*.npz
+data/fid_stats/*.pkl
+data/fid_stats/*.json
+data/fid_stats/*.csv
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environments and build products
+.env
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Keep release directories visible in a fresh clone.
+!.gitkeep
+!checkpoints/**/.gitkeep
+!data/**/.gitkeep

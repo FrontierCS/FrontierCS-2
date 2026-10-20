@@ -1,0 +1,80 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 5368709120
+  },
+  "display_name": "Exact Sequence Alignment",
+  "family": "frontier-cs-2.0/algorithms",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 430,
+        "path": "datasets/eval.json",
+        "version": "sha256:6a327445ebd20b8e199c52aa2ec18fa8fc7fccd6cf4f1143e00b58cdb147dce7"
+      },
+      "train": {
+        "bytes": 437,
+        "path": "datasets/train.json",
+        "version": "sha256:f3df2a74ba93059c8704122c3aee732b0cce35545fb204c57f230a3f87e8b345"
+      }
+    },
+    "evaluation": {
+      "authored_answering_timeout_seconds": 18000,
+      "authored_max_dev_submissions": 20,
+      "authored_max_train_wall_seconds": 12000,
+      "solver_visible_metrics": [
+        "candidate_diagnostic"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "d8310d0b4367ea0d5158d4db991f9ea82baf8d2a",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_edlib"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "edlib/src/edlib.cpp"
+      ],
+      "language": "cpp",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 2684354560,
+      "max_model_request_bytes": 1048576,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 256,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "edlib_exact_alignment",
+  "quota": {
+    "eval_timeout_seconds": 600,
+    "max_train_calls": 20,
+    "max_train_wall_seconds": 12000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "r007-validated-timing-two-metric-gate"
+}

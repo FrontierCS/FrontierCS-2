@@ -1,0 +1,669 @@
+{
+  "author": "original contributor",
+  "base_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
+  "file_count": 56,
+  "files": [
+    {
+      "bytes": 40,
+      "path": ".dockerignore",
+      "sha256": "sha256:b93089b3dcfb4684b1b270b03d4b03aa94e4a1c06e838675d1a570a5261ff3ce"
+    },
+    {
+      "bytes": 40,
+      "path": ".gitignore",
+      "sha256": "sha256:b93089b3dcfb4684b1b270b03d4b03aa94e4a1c06e838675d1a570a5261ff3ce"
+    },
+    {
+      "bytes": 690,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:118d03487b521312ddd03cb610625802aa521150243ee369375c6d54a476f722"
+    },
+    {
+      "bytes": 3177,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:3c8a781046033a4bb2e11f3350fadbcfa794abc5d2431d907635d1a63923368e"
+    },
+    {
+      "bytes": 2735,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:904de26087b95cb0e59de2eac09113ffeee7911bdad8f57aa66c7057de6afa8f"
+    },
+    {
+      "bytes": 462,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:0ff4c739ba42b7ccbbe38ac67e806aa493a5bebfb642ceef9adfc4e9e5d6f0cd"
+    },
+    {
+      "bytes": 584,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:731fb0a316427e1e611774e8c62a721ed67cbe843218f9c7b735dd2b773af13d"
+    },
+    {
+      "bytes": 1163,
+      "path": "agent-base/frontier/task/repo/COPYING",
+      "sha256": "sha256:0cef2d841b619477579be94b15a1f2a1d333920b02c9f140938f6396cbfec22c"
+    },
+    {
+      "bytes": 21417,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:5ffaec6797948e58d46cad491ad1aeae1236cb8d64aa8a24a0d700a08882b0af"
+    },
+    {
+      "bytes": 6835,
+      "path": "agent-base/frontier/task/repo/RadixSort/IO.h",
+      "sha256": "sha256:e305d9e17f90981aa1a5cd79378716d95bde083a3a1b5d8d7df0492f3e029e08"
+    },
+    {
+      "bytes": 1929,
+      "path": "agent-base/frontier/task/repo/RadixSort/Makefile",
+      "sha256": "sha256:7a91affaedea526977ae867b04796507a69f6adb2897651a926d9af9f31f7dd9"
+    },
+    {
+      "bytes": 849,
+      "path": "agent-base/frontier/task/repo/RadixSort/block.h",
+      "sha256": "sha256:dbb8e32ebf3392e6cac70213d2850f2374fa856e5a1d3fb12b79c4393a2c433a"
+    },
+    {
+      "bytes": 7880,
+      "path": "agent-base/frontier/task/repo/RadixSort/common_sort.h",
+      "sha256": "sha256:ab3df9655cafccff0fffc45c60a81b470146259e3526c48c76ed31c9becf9403"
+    },
+    {
+      "bytes": 1093,
+      "path": "agent-base/frontier/task/repo/RadixSort/edge.h",
+      "sha256": "sha256:215ecc577a4131e92caa9fe03b91d159c5ba53c981f89fda979a43a9114feba0"
+    },
+    {
+      "bytes": 4622,
+      "path": "agent-base/frontier/task/repo/RadixSort/edgelistgraph.h",
+      "sha256": "sha256:7bb400f3b3560faaf05d51c125750047523c6105e2e8f8b74f050784a8eb64d7"
+    },
+    {
+      "bytes": 3111,
+      "path": "agent-base/frontier/task/repo/RadixSort/example.cpp",
+      "sha256": "sha256:a95d02efbd1ac891b1fb63ce98e26799e9c15b9d83b59bfe59ed74f53a830e76"
+    },
+    {
+      "bytes": 1158,
+      "path": "agent-base/frontier/task/repo/RadixSort/misc.h",
+      "sha256": "sha256:4995cd12f8e6ea22ed17e1f3dbb76545695eb6e0de48b42a0faf104e78848634"
+    },
+    {
+      "bytes": 2398,
+      "path": "agent-base/frontier/task/repo/RadixSort/parallel.h",
+      "sha256": "sha256:8abb88cab9f80cf9c62102585b1b413f0683ef812aa69d64589b3d2e18a647d2"
+    },
+    {
+      "bytes": 3484,
+      "path": "agent-base/frontier/task/repo/RadixSort/parseCommandLine.h",
+      "sha256": "sha256:7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46"
+    },
+    {
+      "bytes": 2286,
+      "path": "agent-base/frontier/task/repo/RadixSort/prefixsum.h",
+      "sha256": "sha256:3f8cc66b278cb1cc1fc16257a729e5d7e4e7707496bf9a3aa4de57c427a4b87f"
+    },
+    {
+      "bytes": 4717,
+      "path": "agent-base/frontier/task/repo/RadixSort/radixSort.h",
+      "sha256": "sha256:3a626f0d18565449fa71fd12f0664aaaa4d5a80d7335f27093b87cabb6fb1838"
+    },
+    {
+      "bytes": 961,
+      "path": "agent-base/frontier/task/repo/RadixSort/radix_configs.h",
+      "sha256": "sha256:b5df331de08ea2955e5a103efa4e6cbd18ca660c4a6dc0ce686118ff9be4d929"
+    },
+    {
+      "bytes": 4870,
+      "path": "agent-base/frontier/task/repo/RadixSort/regionsSort.h",
+      "sha256": "sha256:14c0d7507b996701970dc5583d40048b05789ccb1052338191f2a30a275e7508"
+    },
+    {
+      "bytes": 18162,
+      "path": "agent-base/frontier/task/repo/RadixSort/sequence.h",
+      "sha256": "sha256:b1b7b623b4ee7a228a341db42283b30bdbde0347177aa5defee095ff0bd9a4ae"
+    },
+    {
+      "bytes": 5991,
+      "path": "agent-base/frontier/task/repo/RadixSort/sequenceIO.h",
+      "sha256": "sha256:48f9934f747654106d5718d14d427e4648633775894ea816c9d156c02bce92b4"
+    },
+    {
+      "bytes": 28361,
+      "path": "agent-base/frontier/task/repo/RadixSort/ska_sort.hpp",
+      "sha256": "sha256:e219bc9e3f9f311dca91b4a917d886c9e4196537ee3d8cd3e224773b69e343b2"
+    },
+    {
+      "bytes": 2172,
+      "path": "agent-base/frontier/task/repo/RadixSort/triangle.h",
+      "sha256": "sha256:fe94bd0eb3a1e4b0722cf798f99059c726ea57f6ebf1264e89ff80e27410149e"
+    },
+    {
+      "bytes": 2944,
+      "path": "agent-base/frontier/task/repo/RadixSort/types.h",
+      "sha256": "sha256:332cf0422303e57ddf09e28b98b01a69047fe4ed454b24b2dbf865af8fd9fcad"
+    },
+    {
+      "bytes": 8339,
+      "path": "agent-base/frontier/task/repo/RadixSort/utils.h",
+      "sha256": "sha256:4874f117db933d70aaef2d01ba25581fe747815a64923abadec7ea55768e29e5"
+    },
+    {
+      "bytes": 10689,
+      "path": "agent-base/frontier/task/repo/common/blockRadixSort.h",
+      "sha256": "sha256:9ef4b509535c50a4da8d9b034ecd02b56a52eadbd4f4a3fa31c7316674755d05"
+    },
+    {
+      "bytes": 9983,
+      "path": "agent-base/frontier/task/repo/common/blockRadixSort2.h",
+      "sha256": "sha256:423de441bc7a5eded45545bdce30290f37969c32a11fe230ee4eb16ec94422c5"
+    },
+    {
+      "bytes": 2213,
+      "path": "agent-base/frontier/task/repo/common/gettime.h",
+      "sha256": "sha256:ce7a3a4fce686fe476811e3bdf9730d004cc1625602f6290a79d42bd18dab955"
+    },
+    {
+      "bytes": 2211,
+      "path": "agent-base/frontier/task/repo/common/parallel.h",
+      "sha256": "sha256:c64ccc6ae7a0b43a035bd77078e9636f130ba75217d2c857751b2cd7c15b7aee"
+    },
+    {
+      "bytes": 3705,
+      "path": "agent-base/frontier/task/repo/common/transpose.h",
+      "sha256": "sha256:7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa"
+    },
+    {
+      "bytes": 8223,
+      "path": "agent-base/frontier/task/repo/common/utils.h",
+      "sha256": "sha256:9813d1f846ef80f63bfa2985abadba5c1fcdf7d23c3619989e20e81842862676"
+    },
+    {
+      "bytes": 78,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:aa8115139ac848310627c1ed5622e54edbf689949f81316f2b8a3d120a245170"
+    },
+    {
+      "bytes": 157,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:8b190dda710deffe2da17126ce547337e68f8e6c2866c8d2abe9022cff5c8def"
+    },
+    {
+      "bytes": 1591,
+      "path": "agent-base/frontier/task/repo/frontier-cxx",
+      "sha256": "sha256:03201613e26ece1b462049996228b2a6c56311104f851a3564a656269cd15f85"
+    },
+    {
+      "bytes": 34581412,
+      "path": "agent-base/frontier/task/repo/frontier-gcc7.tar.xz",
+      "sha256": "sha256:13f10181b8e4a26f9e452a02ddbbf77620929b69f9d3eac09f3b3a27adae73b3"
+    },
+    {
+      "bytes": 2761,
+      "path": "agent-base/frontier/task/repo/frontier-toolchain.json",
+      "sha256": "sha256:ef30b10e1bf1a919b7f4d342b6ef1b440e3c724472a74119640c94ea796f0e9d"
+    },
+    {
+      "bytes": 206,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:9bb2faf7aa9840d11649a55567346107c49b5b8e00c24063c3dcb647c3673fa2"
+    },
+    {
+      "bytes": 200,
+      "path": "datasets/train.json",
+      "sha256": "sha256:e8bc1948ee55db162c3e3f070a3ac546a82357a912a2dea8f1f830637b4c78fb"
+    },
+    {
+      "bytes": 1289,
+      "path": "judge/LICENSE_FULL.txt",
+      "sha256": "sha256:ed638104d517f5f5505cc407af11303396d40ba7894778641d15627106bfb3bf"
+    },
+    {
+      "bytes": 1316,
+      "path": "judge/allocation_probe.cpp",
+      "sha256": "sha256:060dbe15b9cb1fb29ae406be5605358090ef3c0190c65aa03b31a4ed64928bdf"
+    },
+    {
+      "bytes": 5258,
+      "path": "judge/baseline_overcap.patch",
+      "sha256": "sha256:c602582aebe590d448977b20601dac50b0f2b94d1695439cc744222dccd48413"
+    },
+    {
+      "bytes": 9396,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:7738aaff6e55ac1ce62106494600c7f74d5f6666897df2480b5d9a1a191cfae6"
+    },
+    {
+      "bytes": 8347,
+      "path": "judge/benchmark.cpp",
+      "sha256": "sha256:b78bfdaed8b03a50ec21cb4cda19123b0fb427a5704c80feafe9b5594953e910"
+    },
+    {
+      "bytes": 10823,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:b869e3ffde6c70aedbe4b984307d90032275b25268748ca7d726b97615044b5b"
+    },
+    {
+      "bytes": 2234,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:914cfb19f19e8fde912fe9557cab0801cbbbc8700252bea1f8038572f47aea08"
+    },
+    {
+      "bytes": 5166,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:3139947c0a1bf98c7e3e7d67e05d1d6fb713e2bfa49c3218a41bef9982db6749"
+    },
+    {
+      "bytes": 666,
+      "path": "judge/std_sort_baseline.cpp",
+      "sha256": "sha256:7b338311b66f3bdb861b2aa2c7a8ead49c2755120a178ed93841e0fd4a5949fe"
+    },
+    {
+      "bytes": 8177,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:620da57526d345ea784942b71721b63d581abc4e28cafb17bc5750f8f001edf3"
+    },
+    {
+      "bytes": 3705,
+      "path": "policy.json",
+      "sha256": "sha256:7403fdec06df4060dfaa8146f21757710c123230c4266fd1d3d27a60a21ee77d"
+    },
+    {
+      "bytes": 641,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:f1c7a7d8ad937d58dbf2f3f81ba24d50810d57a53972fe3eb878b59f8efee6fd"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 10966,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:035efce5b0b604c73b09e25d9a628fbd6e988c4c8ff4dae33e890e6b4e550020"
+    }
+  ],
+  "hydrated_assets": [
+    {
+      "bytes": 34581412,
+      "git_blob": "38a925f78412b7578cf738249667d8d855b18f2a",
+      "path": "agent-base/frontier/task/repo/frontier-gcc7.tar.xz",
+      "sha256": "13f10181b8e4a26f9e452a02ddbbf77620929b69f9d3eac09f3b3a27adae73b3"
+    }
+  ],
+  "native_export": {
+    "commit": "cd73c280f494d8db3a452be8a1216b49a073227f",
+    "feedback_helper_sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805",
+    "feedback_helper_source": "2.0/task_lib/beat_spec_feedback.py",
+    "inventory_note": "The task-relative files inventory replaces the stale native_files export inventory; source_files retains original artifact provenance.",
+    "path": "converted_problems/parallel_radix_sort",
+    "repository": "private authoring repository"
+  },
+  "pending_assets": [],
+  "problem_id": "parallel_radix_sort",
+  "pull_request": null,
+  "repository": "private authoring repository",
+  "schema": "parallel-radix-sort-source/v1",
+  "source_commit": "ac19add605ee544aa20c29a51d32e4d0ebf942ba",
+  "source_files": [
+    {
+      "source_bytes": 6148,
+      "source_git_blob": "8b8fc7d1765250167c9258878ab1541d677ee5f4",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/.DS_Store",
+      "source_sha256": "3b239c64701c13ed704b76b5cd056c99918549b6ddb8bf7d9beff107fae5ab90"
+    },
+    {
+      "source_bytes": 1289,
+      "source_git_blob": "0fe3c6ef301c51c62d234ea9a2bdb8baa8a24e04",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/LICENSE_FULL.txt",
+      "source_sha256": "ed638104d517f5f5505cc407af11303396d40ba7894778641d15627106bfb3bf"
+    },
+    {
+      "source_bytes": 2644,
+      "source_git_blob": "b6782165dd3df2ca5f830eddf07a329504f7e1c5",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/NOTES.md",
+      "source_sha256": "17fc8011c1e5f179e24512c53b58ee826f37f2ae1ea724a23580d02a35039030"
+    },
+    {
+      "source_bytes": 1099,
+      "source_git_blob": "8e44d6c5c26051df6179fbf390fc41a02254c97c",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/SUMMARY.md",
+      "source_sha256": "e63448acc158e49e27990785590a74d7252389ee01780b1f55a502301d04321f"
+    },
+    {
+      "source_bytes": 1316,
+      "source_git_blob": "465460ec17fb7c939cfaea9b689a166fdbf64760",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/allocation_probe.cpp",
+      "source_sha256": "060dbe15b9cb1fb29ae406be5605358090ef3c0190c65aa03b31a4ed64928bdf"
+    },
+    {
+      "source_bytes": 2700,
+      "source_git_blob": "822f3cf35922b1f41978a70c67243d9c896b5f97",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/artifact_manifest.json",
+      "source_sha256": "30ec2b60aaf8abd1bb21b17046e30091f4a3e3cf45347463c38ea6444d50bdbd"
+    },
+    {
+      "source_bytes": 5258,
+      "source_git_blob": "8e916cdd152aeaaab7a8106b5e3212d165d17665",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/baseline_overcap.patch",
+      "source_sha256": "c602582aebe590d448977b20601dac50b0f2b94d1695439cc744222dccd48413"
+    },
+    {
+      "source_bytes": 4648,
+      "source_git_blob": "d811cb494ed58e6aaf2ea650da3166f3411ed555",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/beat_spec.json",
+      "source_sha256": "c33cf513bb3ec1e189533583177daff390db5c721f12cdddda41360fbae70da8"
+    },
+    {
+      "source_bytes": 5444,
+      "source_git_blob": "f7d63a11719f8cb1b37805194216937e0e66f03a",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/benchmark.cpp",
+      "source_sha256": "7368f9701b09aff86950ea6c5261a2b9e93e623d54312842eee3db20102c73cb"
+    },
+    {
+      "source_bytes": 832,
+      "source_git_blob": "a216998325b830bbcd86648c1562c1c687628fca",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/config.yaml",
+      "source_sha256": "c2de438b78263a580a92e844979178c6b00a28d15b1941bfd7c4588ef626ddab"
+    },
+    {
+      "source_bytes": 59,
+      "source_git_blob": "5eee827f6c991508c8bba262cf5e1459303dafc7",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/evaluate.sh",
+      "source_sha256": "53361c625e250779fe4f5daac269fb18c5b8dd932b66599abff2419defa5e30d"
+    },
+    {
+      "source_bytes": 5603,
+      "source_git_blob": "37d2434f2edfc9a788fa2b5d6778357518e646d7",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/evaluator.py",
+      "source_sha256": "d5b780df45f0f9434f6c86bd1003b0f863bea20b17213e8c8d9bba9ddeebb5f4"
+    },
+    {
+      "source_bytes": 6148,
+      "source_git_blob": "fadd49af93a07740151b4698fdea46e28fdbf625",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/.DS_Store",
+      "source_sha256": "a3d41881f32cc1e5b466fe97c796d073739435896cdbf09c24fee70acb277b7f"
+    },
+    {
+      "source_bytes": 1163,
+      "source_git_blob": "05f99cfe99d74717f00114e44e809d36372a448f",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/COPYING",
+      "source_sha256": "0cef2d841b619477579be94b15a1f2a1d333920b02c9f140938f6396cbfec22c"
+    },
+    {
+      "source_bytes": 6835,
+      "source_git_blob": "30be6a19bf4956fd7f1034cc0ae4cb00b934244a",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/IO.h",
+      "source_sha256": "e305d9e17f90981aa1a5cd79378716d95bde083a3a1b5d8d7df0492f3e029e08"
+    },
+    {
+      "source_bytes": 1929,
+      "source_git_blob": "4d328d84a6749949cd82cef19fb90a9a74a620fb",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/Makefile",
+      "source_sha256": "7a91affaedea526977ae867b04796507a69f6adb2897651a926d9af9f31f7dd9"
+    },
+    {
+      "source_bytes": 849,
+      "source_git_blob": "59a4419e802f13afc7607b6095eab651b254865c",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/block.h",
+      "source_sha256": "dbb8e32ebf3392e6cac70213d2850f2374fa856e5a1d3fb12b79c4393a2c433a"
+    },
+    {
+      "source_bytes": 7880,
+      "source_git_blob": "f6069e989a95c5ae2f2798fafe15c7d9fc20e71a",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/common_sort.h",
+      "source_sha256": "ab3df9655cafccff0fffc45c60a81b470146259e3526c48c76ed31c9becf9403"
+    },
+    {
+      "source_bytes": 1093,
+      "source_git_blob": "72c3ee2a547571a3b1de0b8d241c8601405e9c4b",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/edge.h",
+      "source_sha256": "215ecc577a4131e92caa9fe03b91d159c5ba53c981f89fda979a43a9114feba0"
+    },
+    {
+      "source_bytes": 4622,
+      "source_git_blob": "7dacee1a63fdf430bf5fda94a805eb2a85ad3704",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/edgelistgraph.h",
+      "source_sha256": "7bb400f3b3560faaf05d51c125750047523c6105e2e8f8b74f050784a8eb64d7"
+    },
+    {
+      "source_bytes": 3111,
+      "source_git_blob": "c573a99b7ec4a2c721a377970e5a7b7952076b91",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/example.cpp",
+      "source_sha256": "a95d02efbd1ac891b1fb63ce98e26799e9c15b9d83b59bfe59ed74f53a830e76"
+    },
+    {
+      "source_bytes": 1158,
+      "source_git_blob": "77fa31a3d0fbbcc8a1303ec79f1ab406bcd66667",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/misc.h",
+      "source_sha256": "4995cd12f8e6ea22ed17e1f3dbb76545695eb6e0de48b42a0faf104e78848634"
+    },
+    {
+      "source_bytes": 2398,
+      "source_git_blob": "34e2af50bc8e47624c8580c156ddbcc9573c5af1",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/parallel.h",
+      "source_sha256": "8abb88cab9f80cf9c62102585b1b413f0683ef812aa69d64589b3d2e18a647d2"
+    },
+    {
+      "source_bytes": 3484,
+      "source_git_blob": "ad562af7eb2fbc8c821435cda0256fb940cd8527",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/parseCommandLine.h",
+      "source_sha256": "7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46"
+    },
+    {
+      "source_bytes": 2286,
+      "source_git_blob": "9e18df3bbeaf54d2e227f9d2dbb527d7732cb278",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/prefixsum.h",
+      "source_sha256": "3f8cc66b278cb1cc1fc16257a729e5d7e4e7707496bf9a3aa4de57c427a4b87f"
+    },
+    {
+      "source_bytes": 4717,
+      "source_git_blob": "97647130367c4e8f7d14b0a6b1cad4554e0e62cf",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/radixSort.h",
+      "source_sha256": "3a626f0d18565449fa71fd12f0664aaaa4d5a80d7335f27093b87cabb6fb1838"
+    },
+    {
+      "source_bytes": 961,
+      "source_git_blob": "eb0bfbd6c90fcb782bfcb40dc946bcddb320bf1e",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/radix_configs.h",
+      "source_sha256": "b5df331de08ea2955e5a103efa4e6cbd18ca660c4a6dc0ce686118ff9be4d929"
+    },
+    {
+      "source_bytes": 4870,
+      "source_git_blob": "253f32b9320cff788923dec260a3924e39200029",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/regionsSort.h",
+      "source_sha256": "14c0d7507b996701970dc5583d40048b05789ccb1052338191f2a30a275e7508"
+    },
+    {
+      "source_bytes": 18162,
+      "source_git_blob": "580a9d6127c9dd5eebaeb8e84f0c089a14c1a7c3",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/sequence.h",
+      "source_sha256": "b1b7b623b4ee7a228a341db42283b30bdbde0347177aa5defee095ff0bd9a4ae"
+    },
+    {
+      "source_bytes": 5991,
+      "source_git_blob": "e8fa7b54e0a3fd1850a87157b582f200d9316e88",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/sequenceIO.h",
+      "source_sha256": "48f9934f747654106d5718d14d427e4648633775894ea816c9d156c02bce92b4"
+    },
+    {
+      "source_bytes": 28361,
+      "source_git_blob": "31e0d44355a7e1ec016fd33c51a1964603e75910",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/ska_sort.hpp",
+      "source_sha256": "e219bc9e3f9f311dca91b4a917d886c9e4196537ee3d8cd3e224773b69e343b2"
+    },
+    {
+      "source_bytes": 2172,
+      "source_git_blob": "1837624fcbd05416ffe9d345a78abb72123858aa",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/triangle.h",
+      "source_sha256": "fe94bd0eb3a1e4b0722cf798f99059c726ea57f6ebf1264e89ff80e27410149e"
+    },
+    {
+      "source_bytes": 2944,
+      "source_git_blob": "55499bf4e897b5fde9129e3730c4e4e3a66ecc8a",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/types.h",
+      "source_sha256": "332cf0422303e57ddf09e28b98b01a69047fe4ed454b24b2dbf865af8fd9fcad"
+    },
+    {
+      "source_bytes": 8339,
+      "source_git_blob": "eb692a1b578dae7833ebf8fd5ca4cff82c246070",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/RadixSort/utils.h",
+      "source_sha256": "4874f117db933d70aaef2d01ba25581fe747815a64923abadec7ea55768e29e5"
+    },
+    {
+      "source_bytes": 10689,
+      "source_git_blob": "91cd110747470e6ed18ee746f73f3938d463ccaf",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/common/blockRadixSort.h",
+      "source_sha256": "9ef4b509535c50a4da8d9b034ecd02b56a52eadbd4f4a3fa31c7316674755d05"
+    },
+    {
+      "source_bytes": 9983,
+      "source_git_blob": "137bc1ece58c306aa88b911d08314993f1a6920e",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/common/blockRadixSort2.h",
+      "source_sha256": "423de441bc7a5eded45545bdce30290f37969c32a11fe230ee4eb16ec94422c5"
+    },
+    {
+      "source_bytes": 2213,
+      "source_git_blob": "9b1455bda659fd2af4f608b46c5930ba8be080f0",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/common/gettime.h",
+      "source_sha256": "ce7a3a4fce686fe476811e3bdf9730d004cc1625602f6290a79d42bd18dab955"
+    },
+    {
+      "source_bytes": 2211,
+      "source_git_blob": "82b79fc76e67b291e520aa29ccc4a84a373091b9",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/common/parallel.h",
+      "source_sha256": "c64ccc6ae7a0b43a035bd77078e9636f130ba75217d2c857751b2cd7c15b7aee"
+    },
+    {
+      "source_bytes": 3705,
+      "source_git_blob": "b18cbe8fb5811401ed9c45146a392efb818b8dbe",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/common/transpose.h",
+      "source_sha256": "7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa"
+    },
+    {
+      "source_bytes": 8223,
+      "source_git_blob": "9390e7930211cf73c81b946d5fc8c7dbb7b8cc6c",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/common/utils.h",
+      "source_sha256": "9813d1f846ef80f63bfa2985abadba5c1fcdf7d23c3619989e20e81842862676"
+    },
+    {
+      "source_bytes": 78,
+      "source_git_blob": "14d0d2b56537ea38e2ef3d725bf70c1a8da2a6c9",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/frontier-bench.sh",
+      "source_sha256": "aa8115139ac848310627c1ed5622e54edbf689949f81316f2b8a3d120a245170"
+    },
+    {
+      "source_bytes": 157,
+      "source_git_blob": "64df3b22081807774b1d6d092a048a4b8a1ce735",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/frontier-build.sh",
+      "source_sha256": "8b190dda710deffe2da17126ce547337e68f8e6c2866c8d2abe9022cff5c8def"
+    },
+    {
+      "source_bytes": 1591,
+      "source_git_blob": "554103726f13f25bd53c4653389097a86dbff992",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/frontier-cxx",
+      "source_sha256": "03201613e26ece1b462049996228b2a6c56311104f851a3564a656269cd15f85"
+    },
+    {
+      "source_bytes": 34581412,
+      "source_git_blob": "38a925f78412b7578cf738249667d8d855b18f2a",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/frontier-gcc7.tar.xz",
+      "source_sha256": "13f10181b8e4a26f9e452a02ddbbf77620929b69f9d3eac09f3b3a27adae73b3"
+    },
+    {
+      "source_bytes": 2761,
+      "source_git_blob": "48e7ee6c6ac6c7fd519e68d5e0f2dd4c1aa5d790",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/frontier-toolchain.json",
+      "source_sha256": "ef30b10e1bf1a919b7f4d342b6ef1b440e3c724472a74119640c94ea796f0e9d"
+    },
+    {
+      "source_bytes": 212,
+      "source_git_blob": "4ab3803c1268d13435b6b0821209bc357bc78ff9",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/harbor/app/make_submission.sh",
+      "source_sha256": "de349b4e204926949935da33c9eedb7e95c55f899a737ffb84beebf38e5aa76e"
+    },
+    {
+      "source_bytes": 15623,
+      "source_git_blob": "765833468b6488b2b80c4e99b78f1270e92576a5",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/readme",
+      "source_sha256": "90574b522eab8e559094311a3a9b782a6adccf7859782a7715a4259d9eec6597"
+    },
+    {
+      "source_bytes": 5166,
+      "source_git_blob": "0a8c374086a751f4079caeebde9808b36fea258d",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/reference.patch",
+      "source_sha256": "3139947c0a1bf98c7e3e7d67e05d1d6fb713e2bfa49c3218a41bef9982db6749"
+    },
+    {
+      "source_bytes": 8551,
+      "source_git_blob": "1d02b625094db1192b1dde42f24684ff3818bc3f",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/submission_patch.py",
+      "source_sha256": "0de9ab9e1561d812bad29d0c1da6a092b3611442ed6e67b822339d0e9aeca54b"
+    },
+    {
+      "source_bytes": 4755,
+      "source_git_blob": "6519d3389a1bff742c9a71fd8a5043d9569d9918",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/test_evaluator.py",
+      "source_sha256": "382b38e7e412a487cf266e38d897cfd6080020d3119bf498398a14c38c92f417"
+    },
+    {
+      "source_bytes": 2829,
+      "source_git_blob": "d98d9e970147cf44294be08f9b5e8d2d22319f80",
+      "source_mode": "100644",
+      "source_path": "original_format_problems/parallel_radix_sort/test_measurement_guards.py",
+      "source_sha256": "f160e31ffc058f2f56a9c11df7cc50c586fd39a1afc2cfc3ca81777281d8b819"
+    }
+  ],
+  "source_path": "original_format_problems/parallel_radix_sort"
+}

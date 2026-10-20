@@ -1,0 +1,23 @@
+diff --git a/scheduler/shockwave.py b/scheduler/shockwave.py
+index a002fce..563a74f 100644
+--- a/scheduler/shockwave.py
++++ b/scheduler/shockwave.py
+@@ -46,7 +46,17 @@ class ShockwaveScheduler(object):
+     # Public interface: ShockwaveScheduler.round_schedule
+     def round_schedule(self):
+         """Return the active job IDs selected for the current round."""
+-        raise NotImplementedError("scheduler policy removed")
++        selected = []
++        used = 0
++        ranked = sorted(
++            self.metadata.items(),
++            key=lambda item: (-item[1].waiting_delay, sum(item[1].epoch_duration[item[1].epoch_progress :])),
++        )
++        for jobid, job in ranked:
++            if used + job.nworkers <= self.ngpus:
++                selected.append(jobid)
++                used += job.nworkers
++        return selected
+ 
+     def increment_round_ptr(self):
+         self.round_ptr += 1

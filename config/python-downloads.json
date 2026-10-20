@@ -1,0 +1,70 @@
+{
+  "cpython-3.13.16-darwin-aarch64-none": {
+    "name": "cpython",
+    "arch": {
+      "family": "aarch64",
+      "variant": null
+    },
+    "os": "darwin",
+    "libc": "none",
+    "major": 3,
+    "minor": 13,
+    "patch": 16,
+    "prerelease": "",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.13.16%2B20261001-aarch64-apple-darwin-install_only_stripped.tar.gz",
+    "sha256": "d00669acb53c1b014f1fcf5eaea740d8e45c3aff4b1e0244dc0f8697fb211a82",
+    "variant": null,
+    "build": "20261001"
+  },
+  "cpython-3.13.16-darwin-x86_64-none": {
+    "name": "cpython",
+    "arch": {
+      "family": "x86_64",
+      "variant": null
+    },
+    "os": "darwin",
+    "libc": "none",
+    "major": 3,
+    "minor": 13,
+    "patch": 16,
+    "prerelease": "",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.13.16%2B20261001-x86_64-apple-darwin-install_only_stripped.tar.gz",
+    "sha256": "a88bef59d9dd61ba4210772cce57a4b4cb963aa745ab956f7cc79ba60f9e2523",
+    "variant": null,
+    "build": "20261001"
+  },
+  "cpython-3.13.16-linux-aarch64-gnu": {
+    "name": "cpython",
+    "arch": {
+      "family": "aarch64",
+      "variant": null
+    },
+    "os": "linux",
+    "libc": "gnu",
+    "major": 3,
+    "minor": 13,
+    "patch": 16,
+    "prerelease": "",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.13.16%2B20261001-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "f94c8f69f3e68b026b916b3aa32b9b3bfff63fd7c95b2affa8272b1601d668fa",
+    "variant": null,
+    "build": "20261001"
+  },
+  "cpython-3.13.16-linux-x86_64-gnu": {
+    "name": "cpython",
+    "arch": {
+      "family": "x86_64",
+      "variant": null
+    },
+    "os": "linux",
+    "libc": "gnu",
+    "major": 3,
+    "minor": 13,
+    "patch": 16,
+    "prerelease": "",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261001/cpython-3.13.16%2B20261001-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "sha256": "ffcb50e716789d1a6e1db5e745d4d194ac8ed9b015ccf5eabcaccb179a25e4a8",
+    "variant": null,
+    "build": "20261001"
+  }
+}

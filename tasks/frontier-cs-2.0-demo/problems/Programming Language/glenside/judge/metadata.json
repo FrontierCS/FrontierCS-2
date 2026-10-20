@@ -1,0 +1,62 @@
+{
+  "authored_evaluator_sha256": "a53fed5218e504ccc0c0b6c3a132d765c29ee2f7d9b6508fd945b43a1ab9af51",
+  "authored_statement_sha256": "3feb117cb6a5b1bc2339e250b44dd2556aabedc0167e02dfd0d13691a37c7b02",
+  "beat_spec_sha256": "8cbdc4b78f666380c410e2bbba596ce757a33b47d4ce4921c1eece409eca3bd4",
+  "date": "2026-09-29",
+  "docker_base": "rust:1.85.1-slim-bookworm@sha256:9f841bbe9e7d8e37ceb96ed907265a3a0df7f44e3737d0b100e7907a679acb36",
+  "generator": {
+    "candidate_id": "cand_000",
+    "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+    "run_id": "r_top01_2105-09377"
+  },
+  "host": {
+    "architecture": "x86_64",
+    "kernel": "7.0.0-1012-aws"
+  },
+  "judge_files_sha256": {
+    "artifact_manifest.json": "fdd47d347058ea2653f008bbb2719478e57d12cad7894de97d19ec8e7638b4d0",
+    "cargo_target.py": "2cb37cabe68c4322258c4c57e378dc8140284a8372118b3d11618acdcb921141",
+    "evaluator.py": "a53fed5218e504ccc0c0b6c3a132d765c29ee2f7d9b6508fd945b43a1ab9af51",
+    "isolate_exec.py": "70328f1486fe264a000cf0760ae4a185a12a2a1ed47e10f132c477516894400b",
+    "probe.rs": "a3ac5796a8705f84d232fc517ef717039b13ee680f50bc1dfd0184c3826f42ad",
+    "reference.patch": "817f2cf4635195c14d0db85f0db0dba8bb1f8462ff236a9d39c75c2ffe384a2b",
+    "sandbox.py": "7ec496c8129487ea3cf90331fb34fc57c8774558871e79b05d704677bf257962",
+    "source-coverage/access_analysis_tests.rs": "7d440cab9af783c4057d214d6f3386427b87820fa994bc78f278a79f3a0b1c63",
+    "source-coverage/provenance.json": "5a485457be60c5ec332216fbac96806e4b54196e82e3554fdb0fe36ea1440f81",
+    "submission_patch.py": "5f62ba277e4e93ba7e6be3ff479aad7c91c379b46c0345bda8375ecad4800f49",
+    "test_access_analysis.py": "cb9df1fb46dd44f89e9ba939d2d4ebeebcb1dfe2d40548f2885bb55c751f5fb9",
+    "test_evaluator.py": "ddb6615f6836042783750f398d0ecee6a06ef4e165514cafb181be3d7308e6cb",
+    "test_fixtures.py": "7248e95a5c76541800e9bdb7bb2d89c4001e9231219313ee458a9f62473ea9cd",
+    "analysis_contract.rs": "e8842147fcb74ad27fbc93c737642181cda68e480807e98a0be2b0f724959110"
+  },
+  "license_status": "unresolved: no license supplied at pinned revision",
+  "paper": {
+    "arxiv": "2105.09377",
+    "sections": [
+      "5.3 / Figure 4",
+      "5.2 / Figure 3"
+    ],
+    "title": "Pure Tensor Program Rewriting via Access Patterns",
+    "venue": "MAPS 2021"
+  },
+  "public_example_sha256": "12db4d0153c00f06c43bc4ceafc72b12c7fa6b66cac68e49e14af3a3b60b4af2",
+  "repair_revision": "public-semantic-contract-20261011",
+  "review_round": 1,
+  "source_revision": "f8e341ed9fedb6be149694e3a7ab7e6cf542fd2e",
+  "statement_revision": "public-semantic-contract-20261011",
+  "statement_sha256": "3feb117cb6a5b1bc2339e250b44dd2556aabedc0167e02dfd0d13691a37c7b02",
+  "successor": {
+    "added_records_per_split": 0,
+    "missing_core": "MyAnalysis make/merge",
+    "parent_task_revision": "r10-outer-concat-not-item-axis",
+    "preserved_records_per_split": 14,
+    "public_agent_readme_sha256": "78ed69e76cb190d8e589d228f7373d1c2779522a3f9656ce8a74c57dfb7533e9",
+    "public_statement_sha256": "3feb117cb6a5b1bc2339e250b44dd2556aabedc0167e02dfd0d13691a37c7b02",
+    "reference_core_sha256": "89a274997c212351988cfd7c5272cceca08c86428f3af45c1cafca82d38c5c52",
+    "reference_patch_sha256": "817f2cf4635195c14d0db85f0db0dba8bb1f8462ff236a9d39c75c2ffe384a2b",
+    "status": "public semantic contract source repair; pinned-image qualification pending; historical acceptance evidence remains separate"
+  },
+  "task_id": "glenside",
+  "task_revision": "r11-public-semantic-contract-20261011",
+  "task_type": "contribution_reconstruction"
+}

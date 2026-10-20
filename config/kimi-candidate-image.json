@@ -1,0 +1,103 @@
+{
+  "repository": "docker.io/joyemang33/fcs2-kimi-overlay",
+  "tag": "sha-341949767be14411465bbb704ce87e8453773965",
+  "digest": "sha256:3aaebcdf7eef7d952fc4665110cc66470c464eeb9e0d8b9f2a9e427527c727ed",
+  "source_commit": "341949767be14411465bbb704ce87e8453773965",
+  "runtime": "kimi-code",
+  "runtime_version": "0.31.0",
+  "model": "kimi-k2.7-code",
+  "source": {
+    "schema_version": "frontier.core-candidate-source/v1",
+    "repository": "https://github.com/FrontierCS/FrontierCS-2",
+    "commit": "341949767be14411465bbb704ce87e8453773965",
+    "dockerfile": "candidate-overlays/kimi-code/Dockerfile",
+    "dockerfile_sha256": "sha256:a26280ad41c44b35cc3fa7e8716bcfcaae9f7ed14bff0030a80af8dc921cad66",
+    "provenance": "candidates/kimi-code/source.json"
+  },
+  "gpu_helper": {
+    "contract": "frontier.gpu-helper/v3",
+    "overlay_digest": "sha256:3aaebcdf7eef7d952fc4665110cc66470c464eeb9e0d8b9f2a9e427527c727ed",
+    "dockerfile": "candidates/kimi-code/Dockerfile",
+    "files": {
+      "candidates/kimi-code/launcher.py": "sha256:26642bc5f8f8952515616e90fbaaa9173aa2c42dfcd590ca9136de4dd7b2cbe8",
+      "candidates/kimi-code/submit/frontier_submit.py": "sha256:75acb40e013f498edd905fce2edfaea35c154b080de79cf676b0e3c19f71492f",
+      "candidates/kimi-code/submit/SKILL.md": "sha256:b5ff0cb4bf470695844561b26b2375ca48df1c6ae5169df3ccff482a45d5751d",
+      "candidates/kimi-code/gpu-helper/frontier_gpu.py": "sha256:a27d7b3ddbd9f85fd149e4f34ec79cbbccda1fbe4d1c0261f80c07f08ba36f49",
+      "candidates/kimi-code/gpu-helper/frontier_gpu_connect_proxy.py": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7",
+      "candidates/kimi-code/gpu-helper/SKILL.md": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e",
+      "candidates/kimi-code/Dockerfile": "sha256:d575159c1fd3754042c3cf1d005a4c58c016f6634c738d082c6e2de11068fdde"
+    }
+  },
+  "submission_tool": {
+    "operations": [
+      "train",
+      "status",
+      "store-final",
+      "final"
+    ],
+    "default_train_async": true,
+    "platform_source_commit": "341949767be14411465bbb704ce87e8453773965",
+    "provenance": "candidates/kimi-code/submit/source.json"
+  },
+  "registry_readback": {
+    "schema_version": "frontier.candidate-file-readback/v1",
+    "image_digest": "sha256:3aaebcdf7eef7d952fc4665110cc66470c464eeb9e0d8b9f2a9e427527c727ed",
+    "files": {
+      "launcher.py": {
+        "path": "/opt/frontier/candidate/launch",
+        "mode": 365,
+        "sha256": "sha256:26642bc5f8f8952515616e90fbaaa9173aa2c42dfcd590ca9136de4dd7b2cbe8"
+      },
+      "submit/frontier_submit.py": {
+        "path": "/opt/frontier/candidate/bin/frontier-submit",
+        "mode": 365,
+        "sha256": "sha256:75acb40e013f498edd905fce2edfaea35c154b080de79cf676b0e3c19f71492f"
+      },
+      "submit/SKILL.md": {
+        "path": "/opt/frontier/candidate/skills/frontier-submit/SKILL.md",
+        "mode": 292,
+        "sha256": "sha256:b5ff0cb4bf470695844561b26b2375ca48df1c6ae5169df3ccff482a45d5751d"
+      },
+      "gpu-helper/frontier_gpu.py": {
+        "path": "/opt/frontier/candidate/bin/frontier-gpu",
+        "mode": 365,
+        "sha256": "sha256:a27d7b3ddbd9f85fd149e4f34ec79cbbccda1fbe4d1c0261f80c07f08ba36f49"
+      },
+      "gpu-helper/frontier_gpu_connect_proxy.py": {
+        "path": "/opt/frontier/candidate/bin/frontier-gpu-connect-proxy",
+        "mode": 365,
+        "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+      },
+      "gpu-helper/SKILL.md": {
+        "path": "/opt/frontier/candidate/skills/frontier-gpu/SKILL.md",
+        "mode": 292,
+        "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+      }
+    },
+    "evidence": "docs/evidence/kimi-high-effort-20261006.json"
+  },
+  "local_readback": {
+    "files_match": true,
+    "anonymous_public_digest": true,
+    "anonymous_public_file_readback": true,
+    "submit_help_operations": [
+      "train",
+      "status",
+      "final",
+      "store-final"
+    ]
+  },
+  "manifest_selection": {
+    "index_digest": "sha256:31c995fd361d149eb81a47d9f8f408e437a8388320f68e3961e9b2179d983c8c",
+    "leaf_digest": "sha256:3aaebcdf7eef7d952fc4665110cc66470c464eeb9e0d8b9f2a9e427527c727ed",
+    "os": "linux",
+    "architecture": "amd64",
+    "media_type": "application/vnd.oci.image.manifest.v1+json",
+    "internal_manifest_sha256": "sha256:3aaebcdf7eef7d952fc4665110cc66470c464eeb9e0d8b9f2a9e427527c727ed",
+    "verified": true,
+    "whole_file_and_source_bytes_match_original_receipt": true,
+    "index_and_attestations_retained": true,
+    "public_manifest_sha256": "sha256:3aaebcdf7eef7d952fc4665110cc66470c464eeb9e0d8b9f2a9e427527c727ed",
+    "public_index_sha256": "sha256:31c995fd361d149eb81a47d9f8f408e437a8388320f68e3961e9b2179d983c8c"
+  }
+}

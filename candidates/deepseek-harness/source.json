@@ -1,0 +1,51 @@
+{
+  "repository": "https://github.com/FrontierCS/FrontierCS-2",
+  "platform_source_commit": "69dc7de7d780076557de84f9a191f3b4a41aa883",
+  "dockerfile": {
+    "source": "candidate-overlays/deepseek-harness/Dockerfile",
+    "sha256": "sha256:7632b36866846372f4d32fd04e5f294696a2648f442ad5564ff255acdb539b46",
+    "local_sha256": "sha256:fa889cd87f6619d0272fcd95aa80d698c6c332d6f79d32636823a083721af5f4"
+  },
+  "files": {
+    "package.json": {
+      "source": "candidate-overlays/deepseek-harness/package.json",
+      "sha256": "sha256:0857fbf48423d9f4ff190ea38373f241b906e76ea04300c629c49c387d7b49c0"
+    },
+    "package-lock.json": {
+      "source": "candidate-overlays/deepseek-harness/package-lock.json",
+      "sha256": "sha256:be1a8f7e14d8c469c0465e026e245e086ac3b5c24169e848d1c01f286715623e"
+    },
+    "patch_transport_error.mjs": {
+      "source": "candidate-overlays/deepseek-harness/patch_transport_error.mjs",
+      "sha256": "sha256:234783aaf726ec3ff089210ece25091474e13601478923833964c8c72a40aef5"
+    },
+    "launcher.py": {
+      "source": "candidate-overlays/deepseek-harness/launcher.py",
+      "sha256": "sha256:b0a5bbf5622e8940cd24b9697d84ac0a299ce8d1a8c7cb2974b5b936206c0b78"
+    },
+    "submit/frontier_submit.py": {
+      "source": "candidate-overlays/codex/frontier_submit.py",
+      "sha256": "sha256:f4cbc551acd10a729e5cade5cc3a70b653d9aee1dee4b1cbfeb20b3208df6f00"
+    },
+    "gpu-helper/frontier_gpu.py": {
+      "source": "candidate-overlays/codex/frontier_gpu.py",
+      "sha256": "sha256:b0e659a8c67447a14f405eea1e21b7e54b5c7e5f3ddc3103021e5d5305c9adfc"
+    },
+    "gpu-helper/frontier_gpu_connect_proxy.py": {
+      "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
+      "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+    },
+    "platform_tool.py": {
+      "source": "candidate-overlays/deepseek-harness/platform_tool.py",
+      "sha256": "sha256:07d5cd7b2eeeddafc411fadfb1fb08f117fd0f8fd4147a20d72c64d4445ce9fc"
+    },
+    "submit/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-submit/SKILL.md",
+      "sha256": "sha256:7b2970a46013672fefaaa92a75552347c129af18fabd4f9bccad74033b9021cb"
+    },
+    "gpu-helper/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-gpu/SKILL.md",
+      "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    }
+  }
+}

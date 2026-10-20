@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "hygra_2020/code",
+  "authentic_execution": {
+    "entrypoint": "ligra/ligra.h",
+    "retained_files": [
+      "ligra/ligra.h",
+      "ligra/hypergraphIO.h",
+      "ligra/hygra.h",
+      "ligra/bucket.h",
+      "ligra/edgeMapReduce.h",
+      "apps/hyper/Makefile"
+    ]
+  },
+  "excision": [
+    {
+      "path": "apps/hyper/HyperKCore-Efficient.C",
+      "mode": "stubbed",
+      "symbols": [
+        "KCore"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "apps/hyper/HyperKCore-Efficient.C"
+    ],
+    "add_under": [
+      "apps/hyper/frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "make_submission.sh",
+      "reason": "Task-owned patch packaging adapter; it stages solver-created helpers and does not implement the contribution."
+    }
+  ],
+  "performance_workloads": {
+    "producer": "materials/hygra_2020/code/utils/randHypergraph.C",
+    "retention": "The four .adj files under workloads/ are byte-for-byte serialized outputs of the untouched upstream utility.",
+    "parameters": [
+      {"path": "workloads/feedback-a.adj", "nv": 220000, "nh": 360000, "cardinality": 10, "sha256": "47b51f021331da95098c8f11faa35c7c2bb617d69c838ed982b79f882e27dcdb"},
+      {"path": "workloads/feedback-b.adj", "nv": 300000, "nh": 480000, "cardinality": 14, "sha256": "5d97c2500eac5d07f5959d8436b61db3cf420e8e8e12bb09205ca7d4f799b740"},
+      {"path": "workloads/graded-a.adj", "nv": 225000, "nh": 355000, "cardinality": 10, "sha256": "5d90f176f2e912be3eb2836d0fd0f92b0b77bc367e2237facaa9b2dc0c82ad81"},
+      {"path": "workloads/graded-b.adj", "nv": 295000, "nh": 485000, "cardinality": 14, "sha256": "5a684b49a471c6d37a6be35a16bdf044453fb01c81b0d9616ea41a3935478c87"}
+    ]
+  },
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "apps/hyper/HyperKCore.C"
+  ],
+  "minimality_note": "The selected translation unit, original hypergraph driver/framework headers, and original hyper-app Makefile form the reproduced path; other applications and the work-inefficient coreness executable are omitted."
+}

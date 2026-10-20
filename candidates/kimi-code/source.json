@@ -1,0 +1,35 @@
+{
+  "repository": "https://github.com/FrontierCS/FrontierCS-2",
+  "platform_source_commit": "341949767be14411465bbb704ce87e8453773965",
+  "dockerfile": {
+    "source": "candidate-overlays/kimi-code/Dockerfile",
+    "sha256": "sha256:a26280ad41c44b35cc3fa7e8716bcfcaae9f7ed14bff0030a80af8dc921cad66",
+    "local_sha256": "sha256:d575159c1fd3754042c3cf1d005a4c58c016f6634c738d082c6e2de11068fdde"
+  },
+  "files": {
+    "launcher.py": {
+      "source": "candidate-overlays/kimi-code/launcher.py",
+      "sha256": "sha256:26642bc5f8f8952515616e90fbaaa9173aa2c42dfcd590ca9136de4dd7b2cbe8"
+    },
+    "submit/frontier_submit.py": {
+      "source": "candidate-overlays/codex/frontier_submit.py",
+      "sha256": "sha256:75acb40e013f498edd905fce2edfaea35c154b080de79cf676b0e3c19f71492f"
+    },
+    "submit/SKILL.md": {
+      "source": "candidate-overlays/kimi-code/skills/frontier-submit/SKILL.md",
+      "sha256": "sha256:b5ff0cb4bf470695844561b26b2375ca48df1c6ae5169df3ccff482a45d5751d"
+    },
+    "gpu-helper/frontier_gpu.py": {
+      "source": "candidate-overlays/codex/frontier_gpu.py",
+      "sha256": "sha256:a27d7b3ddbd9f85fd149e4f34ec79cbbccda1fbe4d1c0261f80c07f08ba36f49"
+    },
+    "gpu-helper/frontier_gpu_connect_proxy.py": {
+      "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
+      "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+    },
+    "gpu-helper/SKILL.md": {
+      "source": "candidate-overlays/kimi-code/skills/frontier-gpu/SKILL.md",
+      "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    }
+  }
+}

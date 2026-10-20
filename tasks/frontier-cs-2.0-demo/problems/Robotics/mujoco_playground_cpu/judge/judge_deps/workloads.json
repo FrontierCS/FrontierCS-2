@@ -1,0 +1,156 @@
+{
+  "status": "reference_vs_reference_development_and_final_suites_measured_on_h100",
+  "comment": "Every tunable number of the scientific protocol lives in this file. After changing it, run task_tests/mujoco_playground_cpu/regenerate_bindings.py.",
+  "train_budget_seconds": 720,
+  "train_startup_seconds": 300,
+  "train_import_seconds": 180,
+  "train_export_seconds": 300,
+  "eval_timeout_seconds": 600,
+  "eval_envs": 2048,
+  "eval_steps": 1000,
+  "observation_size": 48,
+  "action_size": 12,
+  "max_policy_artifact_bytes": 268435456,
+  "score_half_saturation_reward": 30.0,
+  "max_patch_encoded_run_characters": 16384,
+  "patch_encoded_run_minimum_length": 120,
+  "max_patch_numeric_literals": 20000,
+  "episode_metrics": [
+    "episode_reward",
+    "tracking_lin_vel",
+    "tracking_ang_vel"
+  ],
+  "step_metrics": [
+    "energy",
+    "action_rate"
+  ],
+  "guards": {
+    "require_gpu": true,
+    "require_subreaper": true,
+    "require_immutable_runtime": true
+  },
+  "conditions": {
+    "flat": {
+      "env_name": "Go1JoystickFlatTerrain",
+      "overrides": {}
+    },
+    "push": {
+      "env_name": "Go1JoystickFlatTerrain",
+      "overrides": {
+        "pert_config.enable": true
+      }
+    },
+    "rough": {
+      "env_name": "Go1JoystickRoughTerrain",
+      "overrides": {}
+    }
+  },
+  "suites": {
+    "development": [
+      {
+        "id": "dev-0",
+        "train_seed": 19723,
+        "condition": "flat",
+        "eval_seed": 31277
+      },
+      {
+        "id": "dev-1",
+        "train_seed": 19723,
+        "condition": "push",
+        "eval_seed": 53591
+      }
+    ],
+    "final": [
+      {
+        "id": "final-0",
+        "train_seed": 62869,
+        "condition": "flat",
+        "eval_seed": 73553
+      },
+      {
+        "id": "final-1",
+        "train_seed": 62869,
+        "condition": "push",
+        "eval_seed": 94109
+      },
+      {
+        "id": "final-2",
+        "train_seed": 62869,
+        "condition": "rough",
+        "eval_seed": 114691
+      },
+      {
+        "id": "final-3",
+        "train_seed": 83423,
+        "condition": "flat",
+        "eval_seed": 135433
+      },
+      {
+        "id": "final-4",
+        "train_seed": 83423,
+        "condition": "push",
+        "eval_seed": 156217
+      },
+      {
+        "id": "final-5",
+        "train_seed": 83423,
+        "condition": "rough",
+        "eval_seed": 176989
+      },
+      {
+        "id": "final-6",
+        "train_seed": 103997,
+        "condition": "flat",
+        "eval_seed": 197773
+      },
+      {
+        "id": "final-7",
+        "train_seed": 103997,
+        "condition": "push",
+        "eval_seed": 218549
+      },
+      {
+        "id": "final-8",
+        "train_seed": 103997,
+        "condition": "rough",
+        "eval_seed": 239333
+      },
+      {
+        "id": "final-9",
+        "train_seed": 124793,
+        "condition": "flat",
+        "eval_seed": 260111
+      },
+      {
+        "id": "final-10",
+        "train_seed": 124793,
+        "condition": "push",
+        "eval_seed": 280897
+      },
+      {
+        "id": "final-11",
+        "train_seed": 124793,
+        "condition": "rough",
+        "eval_seed": 301703
+      },
+      {
+        "id": "final-12",
+        "train_seed": 145577,
+        "condition": "flat",
+        "eval_seed": 322501
+      },
+      {
+        "id": "final-13",
+        "train_seed": 145577,
+        "condition": "push",
+        "eval_seed": 343303
+      },
+      {
+        "id": "final-14",
+        "train_seed": 145577,
+        "condition": "rough",
+        "eval_seed": 364103
+      }
+    ]
+  }
+}

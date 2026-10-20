@@ -1,0 +1,24 @@
+# CKKS precision propagation: accuracy and estimator time
+
+Maintainer summary; the solver-facing statement is
+agent-base/frontier/task/repo/README.md.
+
+Submit a tar containing payload/solution.patch against the provided repository.
+Files below estimator/ are editable except the fixed set (experiment programs,
+stats.go, utils.go, go.mod, go.sum, and the DFTMatrix type with GenMatrices in
+dft.go). Maximum patch size is 262144 bytes and maximum changed files is 32.
+
+Every configuration is measured as three interleaved pairs of complete
+invocations, candidate and reference, with fresh keys and randomness. A pass
+requires both accuracy statistics within their frozen band of the reference on
+every configuration and a strictly lower trusted estimator clock in every pair
+of every configuration. The continuous score depends on accuracy only.
+
+Development feedback measures the six base development configurations with one
+pair each and gates nothing; final measures 29 with three pairs. Answering
+window 18000 s, train pool 7200 s / 100 calls, independent final 600 s. Each role has 2 CPUs;
+Agent memory 2048 MiB, Verifier 4096 MiB, workspace 8192 MiB.
+
+This release has no frozen accuracy bands. Evaluations report
+calibration_pending and cannot pass until the reference calibration has been
+collected on this source and a metadata successor carries the frozen bands.

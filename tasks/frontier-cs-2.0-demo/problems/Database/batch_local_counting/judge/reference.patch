@@ -1,0 +1,3736 @@
+diff --git a/counting/aggregation.cpp b/counting/aggregation.cpp
+index 6dc7d8c..d8565f1 100644
+--- a/counting/aggregation.cpp
++++ b/counting/aggregation.cpp
+@@ -1 +1,181 @@
++//
++// Created by Qiyan LI on 2022/10/7.
++//
++
+ #include "aggregation.h"
++
++KeyStruct::KeyStruct() {
++    bound = 0;
++    size = 0;
++    groupKey = nullptr;
++    aggreSize = 0;
++    childSize = 0;
++    keyType = false;
++    keyPos = 0;
++    exceedsBound = false;
++}
++
++KeyStruct::KeyStruct(ui bound, int aggreSize, int childSize) :
++        bound(bound), aggreSize(aggreSize), childSize(childSize) {
++    groupKey = new GroupKey[bound + 1];
++    for (int i = 0; i <= bound; ++i) {
++        groupKey[i].aggreKey = new ui[aggreSize];
++        groupKey[i].childKey = new ui[childSize];
++    }
++    size = 0;
++    keyType = false;
++    keyPos = 0;
++    exceedsBound = false;
++}
++
++KeyStruct::~KeyStruct() {
++    for (int i = 0; i < bound; ++i) {
++        delete[] groupKey[i].aggreKey;
++        delete[] groupKey[i].childKey;
++    }
++    delete[] groupKey;
++}
++
++void KeyStruct::sort() {
++    if (keyType) {
++        std::sort(groupKey, groupKey + size, [this](const GroupKey &lhs, const GroupKey &rhs) {
++            return lhs.aggreKey[keyPos] < rhs.aggreKey[keyPos];
++        });
++    }
++    else {
++        std::sort(groupKey, groupKey + size, [this](const GroupKey &lhs, const GroupKey &rhs) {
++            return lhs.childKey[keyPos] < rhs.childKey[keyPos];
++        });
++    }
++}
++
++bool KeyStruct::addKey(ui *aggreKey, ui *childKey) {
++    memcpy(groupKey[size].aggreKey, aggreKey, sizeof(ui) * aggreSize);
++    memcpy(groupKey[size].childKey, childKey, sizeof(ui) * childSize);
++    ++size;
++    return size < bound;
++}
++
++KeyStruct::KeyStruct(const KeyStruct &rhs) {
++    bound = rhs.bound;
++    size = rhs.size;
++    aggreSize = rhs.aggreSize;
++    childSize = rhs.childSize;
++    keyType = rhs.keyType;
++    keyPos = rhs.keyPos;
++    exceedsBound = rhs.exceedsBound;
++    groupKey = new GroupKey[bound + 1];
++    for (int i = 0; i <= bound; ++i) {
++        groupKey[i].aggreKey = new ui[aggreSize];
++        groupKey[i].childKey = new ui[childSize];
++        memcpy(groupKey[i].aggreKey, rhs.groupKey[i].aggreKey, sizeof(ui) * aggreSize);
++        memcpy(groupKey[i].childKey, rhs.groupKey[i].childKey, sizeof(ui) * childSize);
++    }
++}
++
++KeyStruct &KeyStruct::operator=(const KeyStruct &rhs) {
++    if (this == &rhs) return *this;
++    bound = rhs.bound;
++    size = rhs.size;
++    aggreSize = rhs.aggreSize;
++    childSize = rhs.childSize;
++    keyType = rhs.keyType;
++    keyPos = rhs.keyPos;
++    exceedsBound = rhs.exceedsBound;
++    for (int i = 0; i < bound; ++i) {
++        delete[] groupKey[i].aggreKey;
++        delete[] groupKey[i].childKey;
++    }
++    delete[] groupKey;
++    groupKey = new GroupKey[bound + 1];
++    for (int i = 0; i <= bound; ++i) {
++        groupKey[i].aggreKey = new ui[aggreSize];
++        groupKey[i].childKey = new ui[childSize];
++        memcpy(groupKey[i].aggreKey, rhs.groupKey[i].aggreKey, sizeof(ui) * aggreSize);
++        memcpy(groupKey[i].childKey, rhs.groupKey[i].childKey, sizeof(ui) * childSize);
++    }
++
++    return *this;
++}
++
++void aggregation(KeyStruct &keys, const std::vector<int> &shareIDs, bool isRoot, std::vector<HashTable *> &hashTables,
++                 const std::vector<VertexID> &nIDs, const std::vector<std::vector<VertexID>> &children,
++                 const std::vector<std::vector<int>> &aggreWeights, int orbitType) {
++    Count **allCount = new Count *[hashTables.size()];
++    for (int shareID : shareIDs) {
++        allCount[shareID] = new Count[keys.size];
++        for (int i = 0; i < keys.size; ++i)
++            allCount[shareID][i] = 1;
++    }
++
++    // multiply count in children
++    keys.keyType = false;
++    for (int i = 0; i < keys.childSize; ++i) {
++        keys.keyPos = i;
++        keys.sort();
++        for (int shareID: shareIDs) {
++            VertexID cID = children[shareID][i];
++            HashTable h = hashTables[shareID][cID];
++            Count *cnt = allCount[shareID];
++            for (int j = 0; j < keys.size; ++j) {
++                cnt[j] *= h[keys.groupKey[j].childKey[i]];
++            }
++        }
++    }
++    // update hash table
++    keys.keyType = true;
++    if (isRoot) {
++        for (int i = 0; i < keys.aggreSize; ++i) {
++            keys.keyPos = i;
++            keys.sort();
++            if (orbitType == 0) {
++                for (int shareID: shareIDs) {
++                    HashTable h = hashTables[shareID][nIDs[shareID]];
++                    Count *cnt = allCount[shareID];
++                    for (int j = 0; j < keys.size; ++j) {
++                        h[0] += cnt[j];
++                    }
++                }
++            }
++            else {
++                for (int shareID: shareIDs) {
++                    HashTable h = hashTables[shareID][nIDs[shareID]];
++                    Count *cnt = allCount[shareID];
++                    int weight = aggreWeights[shareID][i];
++                    if (weight == 1) {
++                        for (int j = 0; j < keys.size; ++j)
++                            h[keys.groupKey[j].aggreKey[i]] += cnt[j];
++                    }
++                    else if (weight == -1) {
++                        for (int j = 0; j < keys.size; ++j)
++                            h[keys.groupKey[j].aggreKey[i]] -= cnt[j];
++                    }
++                    else {
++                        for (int j = 0; j < keys.size; ++j)
++                            h[keys.groupKey[j].aggreKey[i]] += cnt[j] * weight;
++                    }
++                }
++            }
++        }
++    }
++    else {
++        keys.keyPos = 0;
++        keys.sort();
++        for (int shareID: shareIDs) {
++            HashTable h = hashTables[shareID][nIDs[shareID]];
++            Count *cnt = allCount[shareID];
++            for (int j = 0; j < keys.size; ++j) {
++                h[keys.groupKey[j].aggreKey[0]] += cnt[j];
++            }
++        }
++    }
++    // check whether size exceeds bound and reset size
++    if (keys.size >= keys.bound) {
++        keys.size = 0;
++        keys.exceedsBound = true;
++    }
++    for (int shareID : shareIDs) {
++        delete[] allCount[shareID];
++    }
++    delete[] allCount;
++}
+\ No newline at end of file
+diff --git a/counting/aggregation.h b/counting/aggregation.h
+index a0d72f2..62056e2 100644
+--- a/counting/aggregation.h
++++ b/counting/aggregation.h
+@@ -1,6 +1,44 @@
++//
++// Created by ??¨¬¡Â?? on 2022/10/7.
++//
++// This is to enforce sequential visit of hashtable. So we need to sort the key.
++
+ #ifndef SCOPE_AGGREGATION_H
+ #define SCOPE_AGGREGATION_H
+ 
+-// Reserved batch-aggregation interface.
++#include "equation.h"
++
++struct GroupKey {
++    ui *aggreKey;
++    ui *childKey;
++};
++
++struct KeyStruct {
++    ui bound;
++    ui size;
++    GroupKey *groupKey;
++    int aggreSize;
++    int childSize;
++    bool keyType;   // true: aggreKey, false: childKey
++    int keyPos;
++    bool exceedsBound;
++
++    KeyStruct();
++
++    KeyStruct(ui bound, int aggreSize, int childSize);
++
++    KeyStruct(const KeyStruct &rhs);
++
++    KeyStruct &operator=(const KeyStruct &rhs);
++
++    virtual ~KeyStruct();
++
++    void sort();
++    bool addKey(ui *aggreKey, ui *childKey);
++};
++
++void aggregation(KeyStruct &keys, const std::vector<int> &shareIDs, bool isRoot, std::vector<HashTable *> &hashTables,
++                 const std::vector<VertexID> &nIDs, const std::vector<std::vector<VertexID>> &children,
++                 const std::vector<std::vector<int>> &aggreWeights, int orbitType);
+ 
+-#endif //SCOPE_AGGREGATION_H
++#endif //SCOPE_AGGREGATION_H
+\ No newline at end of file
+diff --git a/counting/execution.cpp b/counting/execution.cpp
+index 22b8ebc..20e9854 100644
+--- a/counting/execution.cpp
++++ b/counting/execution.cpp
+@@ -3084,6 +3084,1094 @@ void multiJoinTree(
+     delete[] keyPos;
+ }
+ 
++void executeSharedNode(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<int> &nonLeafIDs,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++) {
++    EdgeID *inOffset = din.getOffsets();
++    VertexID *inNbors = din.getNbors();
++    EdgeID *outOffset = dout.getOffsets();
++    VertexID *outNbors = dout.getNbors();
++    EdgeID *unOffset = dun.getOffsets();
++    VertexID *unNbors = dun.getNbors();
++    int orbitType = trees[0].getOrbitType();
++    int numSharedNodes = (int)nIDs.size();
++    ui n = din.getNumVertices();
++    if (mappingSize == 0) {
++        candidate[0] = allV;
++        candCount[0] = n;
++        pos[mappingSize] = 0;
++    }
++    else {
++        if (!nodeInterPos[mappingSize]) {
++            if (!nodeOutPos[mappingSize].empty()) {
++                VertexID v = dataV[nodeOutPos[mappingSize][0]];
++                startOffset[mappingSize] = outOffset[v];
++                candidate[mappingSize] = outNbors + outOffset[v];
++                candCount[mappingSize] = outOffset[v + 1] - outOffset[v];
++            }
++            else if (!nodeInPos[mappingSize].empty()){
++                VertexID v = dataV[nodeInPos[mappingSize][0]];
++                startOffset[mappingSize] = inOffset[v];
++                candidate[mappingSize] = inNbors + inOffset[v];
++                candCount[mappingSize] = inOffset[v + 1] - inOffset[v];
++            }
++            else {
++                VertexID v = dataV[nodeUnPos[mappingSize][0]];
++                startOffset[mappingSize] = unOffset[v];
++                candidate[mappingSize] = unNbors + unOffset[v];
++                candCount[mappingSize] = unOffset[v + 1] - unOffset[v];
++            }
++        }
++        else {
++            generateCandidate(din, dout, dun, dataV, mappingSize, nodeInPos[mappingSize],
++                              nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++        }
++        pos[mappingSize] = 0;
++        // apply the symmetry breaking rules
++        if (!greaterPos[mappingSize].empty()) {
++            ui maxTarget = dataV[greaterPos[mappingSize][0]];
++            for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                    maxTarget = dataV[greaterPos[mappingSize][i]];
++            }
++            pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++        }
++        if (!lessPos[mappingSize].empty()) {
++            ui minTarget = dataV[lessPos[mappingSize][0]];
++            for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                if (dataV[lessPos[mappingSize][i]] < minTarget)
++                    minTarget = dataV[lessPos[mappingSize][i]];
++            }
++            candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++        }
++    }
++    int depth = 0;
++    while (depth >= 0) {
++        while (pos[mappingSize] < candCount[mappingSize]) {
++            VertexID v = candidate[mappingSize][pos[mappingSize]];
++            ++pos[mappingSize];
++            if (visited[v]) continue;
++            visited[v] = true;
++            patternV[mappingSize] = rep.nodeOrder[mappingSize];
++            dataV[mappingSize] = v;
++            if (depth == rep.localOrder.size() - 1) {
++#ifdef COLLECT_STATISTICS
++                ++gNumMatch;
++#endif
++                for (int id = 0; id < numSharedNodes; ++id) {
++                    Count cnt = 1;
++                    HashTable *H = hashTables[id];
++                    int ck = id2ChildKey[id];
++                    int ak = id2AggreKey[id];
++                    // multiply count in children
++                    for (int j = 0; j < children[id].size(); ++j) {
++                        VertexID cID = children[id][j];
++                        cnt *= H[cID][dataV[childKeyPoses[ck][j][0]]];
++                    }
++                    // update hash table
++                    HashTable h = H[nIDs[id]];
++                    if (isRoot[id]) {
++                        if (orbitType == 0) h[0] += cnt * aggreWeights[id][0];
++                        else if (orbitType == 1) {
++                            for (int j = 0; j < aggrePoses[ak].size(); ++j) {
++#ifdef COLLECT_STATISTICS
++                                ++gNumUpdate;
++#endif
++                                h[dataV[aggrePoses[ak][j]]] += cnt * aggreWeights[id][j];
++                            }
++                        }
++                    }
++                    else {
++#ifdef COLLECT_STATISTICS
++                        ++gNumUpdate;
++#endif
++                        h[dataV[aggrePoses[ak][0]]] += cnt;
++                        int tableID = tableIDs[id];
++                        if (keyPosSize[tableID] < sizeBound[tableID]) {
++                            keyPos[tableID][keyPosSize[tableID]] = dataV[aggrePoses[ak][0]];
++                            ++keyPosSize[tableID];
++                        }
++                    }
++                }
++                visited[dataV[mappingSize]] = false;
++            }
++            else {
++#ifdef COLLECT_STATISTICS
++                ++gNumIntermediate;
++#endif
++                ++mappingSize;
++                ++depth;
++                pos[mappingSize] = 0;
++                if (!nodeInterPos[mappingSize]) {
++                    if (!nodeOutPos[mappingSize].empty()) {
++                        VertexID w = dataV[nodeOutPos[mappingSize][0]];
++                        startOffset[mappingSize] = outOffset[w];
++                        candidate[mappingSize] = outNbors + outOffset[w];
++                        candCount[mappingSize] = outOffset[w + 1] - outOffset[w];
++                    }
++                    else if (!nodeInPos[mappingSize].empty()){
++                        VertexID w = dataV[nodeInPos[mappingSize][0]];
++                        startOffset[mappingSize] = inOffset[w];
++                        candidate[mappingSize] = inNbors + inOffset[w];
++                        candCount[mappingSize] = inOffset[w + 1] - inOffset[w];
++                    }
++                    else {
++                        VertexID w = dataV[nodeUnPos[mappingSize][0]];
++                        startOffset[mappingSize] = unOffset[w];
++                        candidate[mappingSize] = unNbors + unOffset[w];
++                        candCount[mappingSize] = unOffset[w + 1] - unOffset[w];
++                    }
++                }
++                else {
++                    generateCandidate(din, dout, dun, dataV, mappingSize, nodeInPos[mappingSize],
++                                      nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++                }
++                // apply the symmetry breaking rules
++                if (!greaterPos[mappingSize].empty()) {
++                    ui maxTarget = dataV[greaterPos[mappingSize][0]];
++                    for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                        if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                            maxTarget = dataV[greaterPos[mappingSize][i]];
++                    }
++                    pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++                }
++                if (!lessPos[mappingSize].empty()) {
++                    ui minTarget = dataV[lessPos[mappingSize][0]];
++                    for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                        if (dataV[lessPos[mappingSize][i]] < minTarget)
++                            minTarget = dataV[lessPos[mappingSize][i]];
++                    }
++                    candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++                }
++            }
++        }
++        --depth;
++        if (depth >= 0) {
++            --mappingSize;
++            visited[dataV[mappingSize]] = false;
++        }
++    }
++}
++
++void executeSharedNodeT(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<bool> &nodeCandPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<std::pair<int, int>> &nodeTriPos,
++        const std::vector<int> &triEdgeType,
++        const std::vector<int> &triEndType,
++        const std::vector<int> &nonLeafIDs,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Triangle &tri,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++) {
++    EdgeID *inOffset = din.getOffsets();
++    VertexID *inNbors = din.getNbors();
++    EdgeID *outOffset = dout.getOffsets();
++    VertexID *outNbors = dout.getNbors();
++    EdgeID *unOffset = dun.getOffsets();
++    VertexID *unNbors = dun.getNbors();
++    int orbitType = trees[0].getOrbitType();
++    int numSharedNodes = (int)nIDs.size();
++    ui n = din.getNumVertices();
++    if (mappingSize == 0) {
++        candidate[0] = allV;
++        candCount[0] = n;
++        pos[mappingSize] = 0;
++    }
++    else {
++        if (!nodeInterPos[mappingSize]) {
++            if (!nodeOutPos[mappingSize].empty()) {
++                VertexID v = dataV[nodeOutPos[mappingSize][0]];
++                startOffset[mappingSize] = outOffset[v];
++                candidate[mappingSize] = outNbors + outOffset[v];
++                candCount[mappingSize] = outOffset[v + 1] - outOffset[v];
++            }
++            else if (!nodeInPos[mappingSize].empty()){
++                VertexID v = dataV[nodeInPos[mappingSize][0]];
++                startOffset[mappingSize] = inOffset[v];
++                candidate[mappingSize] = inNbors + inOffset[v];
++                candCount[mappingSize] = inOffset[v + 1] - inOffset[v];
++            }
++            else {
++                VertexID v = dataV[nodeUnPos[mappingSize][0]];
++                startOffset[mappingSize] = unOffset[v];
++                candidate[mappingSize] = unNbors + unOffset[v];
++                candCount[mappingSize] = unOffset[v + 1] - unOffset[v];
++            }
++        }
++        else {
++            EdgeID e = 0;
++            if (triEdgeType[mappingSize] != 0) {
++                int pos1 = nodeTriPos[mappingSize].first, pos2 = nodeTriPos[mappingSize].second;
++                if (triEdgeType[mappingSize] == 1)
++                    e = startOffset[pos2] + pos[pos2] - 1;
++                else if (triEdgeType[mappingSize] == 2)
++                    e = outID[startOffset[pos2] + pos[pos2] - 1];
++                else if (triEdgeType[mappingSize] == 5)
++                    e = unID[startOffset[pos2] + pos[pos2] - 1];
++                else {
++                    VertexID key1 = dataV[pos1], key2 = dataV[pos2];
++#ifdef COLLECT_STATISTICS
++                    ++gNumEdgeID;
++#endif
++                    e = dout.getEdgeID(key1, key2);
++                }
++            }
++            generateCandidateT(din, dout, dun, tri, dataV, mappingSize, !nodeCandPos[mappingSize], e, triEndType[mappingSize],
++                               nodeInPos[mappingSize], nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++        }
++        pos[mappingSize] = 0;
++        // apply the symmetry breaking rules
++        if (!greaterPos[mappingSize].empty()) {
++            ui maxTarget = dataV[greaterPos[mappingSize][0]];
++            for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                    maxTarget = dataV[greaterPos[mappingSize][i]];
++            }
++            pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++        }
++        if (!lessPos[mappingSize].empty()) {
++            ui minTarget = dataV[lessPos[mappingSize][0]];
++            for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                if (dataV[lessPos[mappingSize][i]] < minTarget)
++                    minTarget = dataV[lessPos[mappingSize][i]];
++            }
++            candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++        }
++    }
++    int depth = 0;
++    while (depth >= 0) {
++        while (pos[mappingSize] < candCount[mappingSize]) {
++            VertexID v = candidate[mappingSize][pos[mappingSize]];
++            ++pos[mappingSize];
++            if (visited[v]) continue;
++            visited[v] = true;
++            patternV[mappingSize] = rep.nodeOrder[mappingSize];
++            dataV[mappingSize] = v;
++            if (depth == rep.localOrder.size() - 1) {
++#ifdef COLLECT_STATISTICS
++                ++gNumMatch;
++#endif
++                for (int id = 0; id < numSharedNodes; ++id) {
++                    Count cnt = 1;
++                    HashTable *H = hashTables[id];
++                    int ck = id2ChildKey[id];
++                    int ak = id2AggreKey[id];
++                    // multiply count in children
++                    for (int j = 0; j < children[id].size(); ++j) {
++                        VertexID cID = children[id][j];
++                        cnt *= H[cID][dataV[childKeyPoses[ck][j][0]]];
++                    }
++                    // update hash table
++                    HashTable h = H[nIDs[id]];
++                    if (isRoot[id]) {
++                        if (orbitType == 0) h[0] += cnt * aggreWeights[id][0];
++                        else if (orbitType == 1) {
++                            for (int j = 0; j < aggrePoses[ak].size(); ++j) {
++#ifdef COLLECT_STATISTICS
++                                ++gNumUpdate;
++#endif
++                                h[dataV[aggrePoses[ak][j]]] += cnt * aggreWeights[id][j];
++                            }
++                        }
++                    }
++                    else {
++#ifdef COLLECT_STATISTICS
++                        ++gNumUpdate;
++#endif
++                        h[dataV[aggrePoses[ak][0]]] += cnt;
++                        int tableID = tableIDs[id];
++                        if (keyPosSize[tableID] < sizeBound[tableID]) {
++                            keyPos[tableID][keyPosSize[tableID]] = dataV[aggrePoses[ak][0]];
++                            ++keyPosSize[tableID];
++                        }
++                    }
++                }
++                visited[dataV[mappingSize]] = false;
++            }
++            else {
++#ifdef COLLECT_STATISTICS
++                ++gNumIntermediate;
++#endif
++                ++mappingSize;
++                ++depth;
++                pos[mappingSize] = 0;
++                if (!nodeInterPos[mappingSize]) {
++                    if (!nodeOutPos[mappingSize].empty()) {
++                        VertexID w = dataV[nodeOutPos[mappingSize][0]];
++                        startOffset[mappingSize] = outOffset[w];
++                        candidate[mappingSize] = outNbors + outOffset[w];
++                        candCount[mappingSize] = outOffset[w + 1] - outOffset[w];
++                    }
++                    else if (!nodeInPos[mappingSize].empty()){
++                        VertexID w = dataV[nodeInPos[mappingSize][0]];
++                        startOffset[mappingSize] = inOffset[w];
++                        candidate[mappingSize] = inNbors + inOffset[w];
++                        candCount[mappingSize] = inOffset[w + 1] - inOffset[w];
++                    }
++                    else {
++                        VertexID w = dataV[nodeUnPos[mappingSize][0]];
++                        startOffset[mappingSize] = unOffset[w];
++                        candidate[mappingSize] = unNbors + unOffset[w];
++                        candCount[mappingSize] = unOffset[w + 1] - unOffset[w];
++                    }
++                }
++                else {
++                    EdgeID e = 0;
++                    if (triEdgeType[mappingSize] != 0) {
++                        int pos1 = nodeTriPos[mappingSize].first, pos2 = nodeTriPos[mappingSize].second;
++                        if (triEdgeType[mappingSize] == 1)
++                            e = startOffset[pos2] + pos[pos2] - 1;
++                        else if (triEdgeType[mappingSize] == 2)
++                            e = outID[startOffset[pos2] + pos[pos2] - 1];
++                        else if (triEdgeType[mappingSize] == 5)
++                            e = unID[startOffset[pos2] + pos[pos2] - 1];
++                        else{
++                            VertexID key1 = dataV[pos1], key2 = dataV[pos2];
++#ifdef COLLECT_STATISTICS
++                            ++gNumEdgeID;
++#endif
++                            e = dout.getEdgeID(key1, key2);
++                        }
++                    }
++                    generateCandidateT(din, dout, dun, tri, dataV, mappingSize, !nodeCandPos[mappingSize], e, triEndType[mappingSize],
++                                       nodeInPos[mappingSize], nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++                }
++                // apply the symmetry breaking rules
++                if (!greaterPos[mappingSize].empty()) {
++                    ui maxTarget = dataV[greaterPos[mappingSize][0]];
++                    for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                        if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                            maxTarget = dataV[greaterPos[mappingSize][i]];
++                    }
++                    pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++                }
++                if (!lessPos[mappingSize].empty()) {
++                    ui minTarget = dataV[lessPos[mappingSize][0]];
++                    for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                        if (dataV[lessPos[mappingSize][i]] < minTarget)
++                            minTarget = dataV[lessPos[mappingSize][i]];
++                    }
++                    candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++                }
++            }
++        }
++        --depth;
++        if (depth >= 0) {
++            --mappingSize;
++            visited[dataV[mappingSize]] = false;
++        }
++    }
++}
++
++void executeSharedNodeEdgeKey(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<std::vector<std::pair<int, int>>> &posChildEdge,
++        const std::vector<std::vector<std::pair<int, int>>> &posAggreEdge,
++        const std::vector<std::vector<int>> &childEdgeType,
++        const std::vector<std::vector<int>> &aggreEdgeType,
++        const std::vector<int> &nonLeafIDs,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++) {
++    EdgeID *inOffset = din.getOffsets();
++    VertexID *inNbors = din.getNbors();
++    EdgeID *outOffset = dout.getOffsets();
++    VertexID *outNbors = dout.getNbors();
++    EdgeID *unOffset = dun.getOffsets();
++    VertexID *unNbors = dun.getNbors();
++    int orbitType = trees[0].getOrbitType();
++    ui **childKey = new ui *[childKeyPoses.size()];
++    for (int group = 0; group < childKeyPoses.size(); ++group) {
++        childKey[group] = new ui[childKeyPoses[group].size()];
++    }
++    ui **aggreKey = new ui *[aggrePoses.size()];
++    for (int group = 0; group < aggrePoses.size(); ++group) {
++        if (!isRoot[group]) aggreKey[group] = new ui[1];
++        else if (orbitType == 1) aggreKey[group] = new ui[aggrePoses[group].size()];
++        else aggreKey[group] = new ui[aggrePoses[group].size() / 2];
++    }
++    int numSharedNodes = (int)nIDs.size();
++    ui n = din.getNumVertices();
++    if (mappingSize == 0) {
++        candidate[0] = allV;
++        candCount[0] = n;
++        pos[mappingSize] = 0;
++    }
++    else {
++        if (!nodeInterPos[mappingSize]) {
++            if (!nodeOutPos[mappingSize].empty()) {
++                VertexID v = dataV[nodeOutPos[mappingSize][0]];
++                startOffset[mappingSize] = outOffset[v];
++                candidate[mappingSize] = outNbors + outOffset[v];
++                candCount[mappingSize] = outOffset[v + 1] - outOffset[v];
++            }
++            else if (!nodeInPos[mappingSize].empty()){
++                VertexID v = dataV[nodeInPos[mappingSize][0]];
++                startOffset[mappingSize] = inOffset[v];
++                candidate[mappingSize] = inNbors + inOffset[v];
++                candCount[mappingSize] = inOffset[v + 1] - inOffset[v];
++            }
++            else {
++                VertexID v = dataV[nodeUnPos[mappingSize][0]];
++                startOffset[mappingSize] = unOffset[v];
++                candidate[mappingSize] = unNbors + unOffset[v];
++                candCount[mappingSize] = unOffset[v + 1] - unOffset[v];
++            }
++        }
++        else {
++            generateCandidate(din, dout, dun, dataV, mappingSize, nodeInPos[mappingSize],
++                              nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++        }
++        pos[mappingSize] = 0;
++        // apply the symmetry breaking rules
++        if (!greaterPos[mappingSize].empty()) {
++            ui maxTarget = dataV[greaterPos[mappingSize][0]];
++            for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                    maxTarget = dataV[greaterPos[mappingSize][i]];
++            }
++            pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++        }
++        if (!lessPos[mappingSize].empty()) {
++            ui minTarget = dataV[lessPos[mappingSize][0]];
++            for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                if (dataV[lessPos[mappingSize][i]] < minTarget)
++                    minTarget = dataV[lessPos[mappingSize][i]];
++            }
++            candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++        }
++    }
++    for (int k = 1; k < mappingSize; ++k) {
++        // for child edge keys, compute the key value
++        for (const std::pair<int, int> &pr: posChildEdge[k]) {
++            int i = pr.first, j = pr.second;
++            childKey[i][j] = computeEdgeKey(din, dout, dun, outID, unID, reverseID, startOffset, k, pos,
++                                            childEdgeType[i][j], dataV[childKeyPoses[i][j][0]], dataV[childKeyPoses[i][j][1]]);
++        }
++        // for aggregation edge keys, compute the key value
++        for (const std::pair<int, int> &pr: posAggreEdge[k]) {
++            int i = pr.first, j = pr.second;
++            aggreKey[i][j] = computeEdgeKey(din, dout, dun, outID, unID, reverseID, startOffset, k, pos,
++                                            aggreEdgeType[i][j], dataV[aggrePoses[i][2 * j]], dataV[aggrePoses[i][2 * j + 1]]);
++        }
++    }
++    int depth = 0;
++    while (depth >= 0) {
++        while (pos[mappingSize] < candCount[mappingSize]) {
++            VertexID v = candidate[mappingSize][pos[mappingSize]];
++            ++pos[mappingSize];
++            if (visited[v]) continue;
++            visited[v] = true;
++            patternV[mappingSize] = rep.nodeOrder[mappingSize];
++            dataV[mappingSize] = v;
++            // for child edge keys, compute the key value
++            for (const std::pair<int, int> &pr: posChildEdge[mappingSize]) {
++                int i = pr.first, j = pr.second;
++                childKey[i][j] = computeEdgeKey(din, dout, dun, outID, unID, reverseID, startOffset, mappingSize, pos,
++                                                childEdgeType[i][j], dataV[childKeyPoses[i][j][0]], dataV[childKeyPoses[i][j][1]]);
++            }
++            // for aggregation edge keys, compute the key value
++            for (const std::pair<int, int> &pr: posAggreEdge[mappingSize]) {
++                int i = pr.first, j = pr.second;
++                aggreKey[i][j] = computeEdgeKey(din, dout, dun, outID, unID, reverseID, startOffset, mappingSize, pos,
++                                                aggreEdgeType[i][j], dataV[aggrePoses[i][2 * j]], dataV[aggrePoses[i][2 * j + 1]]);
++            }
++
++            if (depth == rep.localOrder.size() - 1) {
++#ifdef COLLECT_STATISTICS
++                ++gNumMatch;
++#endif
++                // multiply count in children
++                for (int id = 0; id < numSharedNodes; ++id) {
++                    Count cnt = 1;
++                    HashTable *H = hashTables[id];
++                    HashTable h = H[nIDs[id]];
++                    int ck = id2ChildKey[id];
++                    int ak = id2AggreKey[id];
++                    for (int j = 0; j < children[id].size(); ++j) {
++                        VertexID cID = children[id][j];
++                        if (childKeyPoses[ck][j].size() == 1)
++                            cnt *= H[cID][dataV[childKeyPoses[ck][j][0]]];
++                        else
++                            cnt *= H[cID][childKey[ck][j]];
++                    }
++                    if (isRoot[id]) {
++                        if (orbitType == 0) h[0] += cnt * aggreWeights[id][0];
++                        else if (orbitType == 1) {
++                            for (int j = 0; j < aggrePoses[ak].size(); ++j) {
++#ifdef COLLECT_STATISTICS
++                                ++gNumUpdate;
++#endif
++                                h[dataV[aggrePoses[ak][j]]] += cnt * aggreWeights[id][j];
++                            }
++                        }
++                        else {
++                            for (int j = 0; j < aggrePoses[ak].size(); ++j) {
++#ifdef COLLECT_STATISTICS
++                                ++gNumUpdate;
++#endif
++                                h[aggreKey[ak][j]] += cnt * aggreWeights[id][j];
++                            }
++                        }
++                    }
++                    else {
++                        ui key = 0;
++                        if (aggrePoses[ak].size() == 1) key = dataV[aggrePoses[ak][0]];
++                        else key = aggreKey[ak][0];
++#ifdef COLLECT_STATISTICS
++                        ++gNumUpdate;
++#endif
++                        h[key] += cnt;
++                        int tableID = tableIDs[id];
++                        if (keyPosSize[tableID] < sizeBound[tableID]) {
++                            keyPos[tableID][keyPosSize[tableID]] = key;
++                            ++keyPosSize[tableID];
++                        }
++                    }
++                }
++                visited[dataV[mappingSize]] = false;
++            }
++            else {
++#ifdef COLLECT_STATISTICS
++                ++gNumIntermediate;
++#endif
++                ++mappingSize;
++                ++depth;
++                pos[mappingSize] = 0;
++                if (!nodeInterPos[mappingSize]) {
++                    if (!nodeOutPos[mappingSize].empty()) {
++                        VertexID w = dataV[nodeOutPos[mappingSize][0]];
++                        startOffset[mappingSize] = outOffset[w];
++                        candidate[mappingSize] = outNbors + outOffset[w];
++                        candCount[mappingSize] = outOffset[w + 1] - outOffset[w];
++                    }
++                    else if (!nodeInPos[mappingSize].empty()){
++                        VertexID w = dataV[nodeInPos[mappingSize][0]];
++                        startOffset[mappingSize] = inOffset[w];
++                        candidate[mappingSize] = inNbors + inOffset[w];
++                        candCount[mappingSize] = inOffset[w + 1] - inOffset[w];
++                    }
++                    else {
++                        VertexID w = dataV[nodeUnPos[mappingSize][0]];
++                        startOffset[mappingSize] = unOffset[w];
++                        candidate[mappingSize] = unNbors + unOffset[w];
++                        candCount[mappingSize] = unOffset[w + 1] - unOffset[w];
++                    }
++                }
++                else {
++                    generateCandidate(din, dout, dun, dataV, mappingSize, nodeInPos[mappingSize],
++                                      nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++                }
++                // apply the symmetry breaking rules
++                if (!greaterPos[mappingSize].empty()) {
++                    ui maxTarget = dataV[greaterPos[mappingSize][0]];
++                    for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                        if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                            maxTarget = dataV[greaterPos[mappingSize][i]];
++                    }
++                    pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++                }
++                if (!lessPos[mappingSize].empty()) {
++                    ui minTarget = dataV[lessPos[mappingSize][0]];
++                    for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                        if (dataV[lessPos[mappingSize][i]] < minTarget)
++                            minTarget = dataV[lessPos[mappingSize][i]];
++                    }
++                    candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++                }
++            }
++        }
++        --depth;
++        if (depth >= 0) {
++            --mappingSize;
++            visited[dataV[mappingSize]] = false;
++        }
++    }
++    for (int group = 0; group < childKeyPoses.size(); ++group) {
++        delete[] childKey[group];
++    }
++    for (int group = 0; group < aggrePoses.size(); ++group) {
++        delete[] aggreKey[group];
++    }
++    delete[] childKey;
++    delete[] aggreKey;
++}
++
++void executeSharedNodeEdgeKeyT(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<bool> &nodeCandPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<std::vector<std::pair<int, int>>> &posChildEdge,
++        const std::vector<std::vector<std::pair<int, int>>> &posAggreEdge,
++        const std::vector<std::vector<int>> &childEdgeType,
++        const std::vector<std::vector<int>> &aggreEdgeType,
++        const std::vector<std::pair<int, int>> &nodeTriPos,
++        const std::vector<int> &nonLeafIDs,
++        const std::vector<int> &triEdgeType,
++        const std::vector<int> &triEndType,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Triangle &tri,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++) {
++    EdgeID *inOffset = din.getOffsets();
++    VertexID *inNbors = din.getNbors();
++    EdgeID *outOffset = dout.getOffsets();
++    VertexID *outNbors = dout.getNbors();
++    EdgeID *unOffset = dun.getOffsets();
++    VertexID *unNbors = dun.getNbors();
++    int orbitType = trees[0].getOrbitType();
++    ui **childKey = new ui *[childKeyPoses.size()];
++    for (int group = 0; group < childKeyPoses.size(); ++group) {
++        childKey[group] = new ui[childKeyPoses[group].size()];
++    }
++    ui **aggreKey = new ui *[aggrePoses.size()];
++    for (int group = 0; group < aggrePoses.size(); ++group) {
++        if (!isRoot[group]) aggreKey[group] = new ui[1];
++        else if (orbitType == 1) aggreKey[group] = new ui[aggrePoses[group].size()];
++        else aggreKey[group] = new ui[aggrePoses[group].size() / 2];
++    }
++    int numSharedNodes = (int)nIDs.size();
++    ui n = din.getNumVertices();
++    if (mappingSize == 0) {
++        candidate[0] = allV;
++        candCount[0] = n;
++        pos[mappingSize] = 0;
++    }
++    else {
++        if (!nodeInterPos[mappingSize]) {
++            if (!nodeOutPos[mappingSize].empty()) {
++                VertexID v = dataV[nodeOutPos[mappingSize][0]];
++                startOffset[mappingSize] = outOffset[v];
++                candidate[mappingSize] = outNbors + outOffset[v];
++                candCount[mappingSize] = outOffset[v + 1] - outOffset[v];
++            }
++            else if (!nodeInPos[mappingSize].empty()){
++                VertexID v = dataV[nodeInPos[mappingSize][0]];
++                startOffset[mappingSize] = inOffset[v];
++                candidate[mappingSize] = inNbors + inOffset[v];
++                candCount[mappingSize] = inOffset[v + 1] - inOffset[v];
++            }
++            else {
++                VertexID v = dataV[nodeUnPos[mappingSize][0]];
++                startOffset[mappingSize] = unOffset[v];
++                candidate[mappingSize] = unNbors + unOffset[v];
++                candCount[mappingSize] = unOffset[v + 1] - unOffset[v];
++            }
++        }
++        else {
++            EdgeID e = 0;
++            if (triEdgeType[mappingSize] != 0) {
++                int pos1 = nodeTriPos[mappingSize].first, pos2 = nodeTriPos[mappingSize].second;
++                if (triEdgeType[mappingSize] == 1)
++                    e = startOffset[pos2] + pos[pos2] - 1;
++                else if (triEdgeType[mappingSize] == 2)
++                    e = outID[startOffset[pos2] + pos[pos2] - 1];
++                else if (triEdgeType[mappingSize] == 5)
++                    e = unID[startOffset[pos2] + pos[pos2] - 1];
++                else {
++                    VertexID key1 = dataV[pos1], key2 = dataV[pos2];
++#ifdef COLLECT_STATISTICS
++                    ++gNumEdgeID;
++#endif
++                    e = dout.getEdgeID(key1, key2);
++                }
++            }
++            generateCandidateT(din, dout, dun, tri, dataV, mappingSize, !nodeCandPos[mappingSize], e, triEndType[mappingSize],
++                               nodeInPos[mappingSize], nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++        }
++        pos[mappingSize] = 0;
++        // apply the symmetry breaking rules
++        if (!greaterPos[mappingSize].empty()) {
++            ui maxTarget = dataV[greaterPos[mappingSize][0]];
++            for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                    maxTarget = dataV[greaterPos[mappingSize][i]];
++            }
++            pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++        }
++        if (!lessPos[mappingSize].empty()) {
++            ui minTarget = dataV[lessPos[mappingSize][0]];
++            for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                if (dataV[lessPos[mappingSize][i]] < minTarget)
++                    minTarget = dataV[lessPos[mappingSize][i]];
++            }
++            candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++        }
++    }
++    for (int k = 1; k < mappingSize; ++k) {
++        // for child edge keys, compute the key value
++        for (const std::pair<int, int> &pr: posChildEdge[k]) {
++            int i = pr.first, j = pr.second;
++            childKey[i][j] = computeEdgeKey(din, dout, dun, outID, unID, reverseID, startOffset, k, pos,
++                                            childEdgeType[i][j], dataV[childKeyPoses[i][j][0]], dataV[childKeyPoses[i][j][1]]);
++        }
++        // for aggregation edge keys, compute the key value
++        for (const std::pair<int, int> &pr: posAggreEdge[k]) {
++            int i = pr.first, j = pr.second;
++            aggreKey[i][j] = computeEdgeKey(din, dout, dun, outID, unID, reverseID, startOffset, k, pos,
++                                            aggreEdgeType[i][j], dataV[aggrePoses[i][2 * j]], dataV[aggrePoses[i][2 * j + 1]]);
++        }
++    }
++    int depth = 0;
++    while (depth >= 0) {
++        while (pos[mappingSize] < candCount[mappingSize]) {
++            VertexID v = candidate[mappingSize][pos[mappingSize]];
++            ++pos[mappingSize];
++            if (visited[v]) continue;
++            visited[v] = true;
++            patternV[mappingSize] = rep.nodeOrder[mappingSize];
++            dataV[mappingSize] = v;
++            // for child edge keys, compute the key value
++            for (const std::pair<int, int> &pr: posChildEdge[mappingSize]) {
++                int i = pr.first, j = pr.second;
++                switch (childEdgeType[i][j]) {
++                    case 1:
++                        childKey[i][j] = startOffset[mappingSize] + pos[mappingSize] - 1;
++                        break;
++                    case 2:
++                        childKey[i][j] = outID[startOffset[mappingSize] + pos[mappingSize] - 1];
++                        break;
++                    case 3:
++#ifdef COLLECT_STATISTICS
++                        ++gNumEdgeID;
++#endif
++                        childKey[i][j] = dout.getEdgeID(dataV[childKeyPoses[i][j][0]], dataV[childKeyPoses[i][j][1]]);
++                        break;
++                    case 4:
++#ifdef COLLECT_STATISTICS
++                        ++gNumEdgeID;
++#endif
++                        childKey[i][j] = dun.getUndirectedEID(dataV[childKeyPoses[i][j][0]], dataV[childKeyPoses[i][j][1]]);
++                        break;
++                    case 6:
++                        childKey[i][j] = reverseID[startOffset[mappingSize] + pos[mappingSize] - 1];
++                        break;
++                    case 7:
++#ifdef COLLECT_STATISTICS
++                        ++gNumEdgeID;
++#endif
++                        childKey[i][j] = dun.getUndirectedEID(dataV[childKeyPoses[i][j][1]], dataV[childKeyPoses[i][j][0]]);
++                        break;
++                }
++            }
++            // for aggregation edge keys, compute the key value
++            for (const std::pair<int, int> &pr: posAggreEdge[mappingSize]) {
++                int i = pr.first, j = pr.second;
++                switch (aggreEdgeType[i][j]) {
++                    case 1:
++                        aggreKey[i][j] = startOffset[mappingSize] + pos[mappingSize] - 1;
++                        break;
++                    case 2:
++                        aggreKey[i][j] = outID[startOffset[mappingSize] + pos[mappingSize] - 1];
++                        break;
++                    case 3:
++#ifdef COLLECT_STATISTICS
++                        ++gNumEdgeID;
++#endif
++                        aggreKey[i][j] = dout.getEdgeID(dataV[aggrePoses[i][2 * j]], dataV[aggrePoses[i][2 * j + 1]]);
++                        break;
++                    case 4:
++#ifdef COLLECT_STATISTICS
++                        ++gNumEdgeID;
++#endif
++                        aggreKey[i][j] = dun.getUndirectedEID(dataV[aggrePoses[i][2 * j]], dataV[aggrePoses[i][2 * j + 1]]);
++                        break;
++                    case 5:
++                        aggreKey[i][j] = unID[startOffset[mappingSize] + pos[mappingSize] - 1];
++                        break;
++                    case 6:
++                        aggreKey[i][j] = reverseID[startOffset[mappingSize] + pos[mappingSize] - 1];
++                        break;
++                    case 7:
++#ifdef COLLECT_STATISTICS
++                        ++gNumEdgeID;
++#endif
++                        aggreKey[i][j] = dun.getUndirectedEID(dataV[aggrePoses[i][2 * j + 1]], dataV[aggrePoses[i][2 * j]]);
++                        break;
++                }
++            }
++
++            if (depth == rep.localOrder.size() - 1) {
++#ifdef COLLECT_STATISTICS
++                ++gNumMatch;
++#endif
++                // multiply count in children
++                for (int id = 0; id < numSharedNodes; ++id) {
++                    Count cnt = 1;
++                    HashTable *H = hashTables[id];
++                    HashTable h = H[nIDs[id]];
++                    int ck = id2ChildKey[id];
++                    int ak = id2AggreKey[id];
++                    for (int j = 0; j < children[id].size(); ++j) {
++                        VertexID cID = children[id][j];
++                        if (childKeyPoses[ck][j].size() == 1)
++                            cnt *= H[cID][dataV[childKeyPoses[ck][j][0]]];
++                        else
++                            cnt *= H[cID][childKey[ck][j]];
++                    }
++                    if (isRoot[id]) {
++                        if (orbitType == 0) h[0] += cnt * aggreWeights[id][0];
++                        else if (orbitType == 1) {
++                            for (int j = 0; j < aggrePoses[ak].size(); ++j) {
++#ifdef COLLECT_STATISTICS
++                                ++gNumUpdate;
++#endif
++                                h[dataV[aggrePoses[ak][j]]] += cnt * aggreWeights[id][j];
++                            }
++                        }
++                        else {
++                            for (int j = 0; j < aggrePoses[ak].size(); ++j) {
++#ifdef COLLECT_STATISTICS
++                                ++gNumUpdate;
++#endif
++                                h[aggreKey[ak][j]] += cnt * aggreWeights[id][j];
++                            }
++                        }
++                    }
++                    else {
++                        ui key = 0;
++                        if (aggrePoses[ak].size() == 1) key = dataV[aggrePoses[ak][0]];
++                        else key = aggreKey[ak][0];
++#ifdef COLLECT_STATISTICS
++                        ++gNumUpdate;
++#endif
++                        h[key] += cnt;
++                        int tableID = tableIDs[id];
++                        if (keyPosSize[tableID] < sizeBound[tableID]) {
++                            keyPos[tableID][keyPosSize[tableID]] = key;
++                            ++keyPosSize[tableID];
++                        }
++                    }
++                }
++                visited[dataV[mappingSize]] = false;
++            }
++            else {
++#ifdef COLLECT_STATISTICS
++                ++gNumIntermediate;
++#endif
++                ++mappingSize;
++                ++depth;
++                pos[mappingSize] = 0;
++                if (!nodeInterPos[mappingSize]) {
++                    if (!nodeOutPos[mappingSize].empty()) {
++                        VertexID w = dataV[nodeOutPos[mappingSize][0]];
++                        startOffset[mappingSize] = outOffset[w];
++                        candidate[mappingSize] = outNbors + outOffset[w];
++                        candCount[mappingSize] = outOffset[w + 1] - outOffset[w];
++                    }
++                    else if (!nodeInPos[mappingSize].empty()){
++                        VertexID w = dataV[nodeInPos[mappingSize][0]];
++                        startOffset[mappingSize] = inOffset[w];
++                        candidate[mappingSize] = inNbors + inOffset[w];
++                        candCount[mappingSize] = inOffset[w + 1] - inOffset[w];
++                    }
++                    else {
++                        VertexID w = dataV[nodeUnPos[mappingSize][0]];
++                        startOffset[mappingSize] = unOffset[w];
++                        candidate[mappingSize] = unNbors + unOffset[w];
++                        candCount[mappingSize] = unOffset[w + 1] - unOffset[w];
++                    }
++                }
++                else {
++                    EdgeID e = 0;
++                    if (triEdgeType[mappingSize] != 0) {
++                        int pos1 = nodeTriPos[mappingSize].first, pos2 = nodeTriPos[mappingSize].second;
++                        if (triEdgeType[mappingSize] == 1)
++                            e = startOffset[pos2] + pos[pos2] - 1;
++                        else if (triEdgeType[mappingSize] == 2)
++                            e = outID[startOffset[pos2] + pos[pos2] - 1];
++                        else if (triEdgeType[mappingSize] == 5)
++                            e = unID[startOffset[pos2] + pos[pos2] - 1];
++                        else {
++                            VertexID key1 = dataV[pos1], key2 = dataV[pos2];
++#ifdef COLLECT_STATISTICS
++                            ++gNumEdgeID;
++#endif
++                            e = dout.getEdgeID(key1, key2);
++                        }
++                    }
++                    generateCandidateT(din, dout, dun, tri, dataV, mappingSize, !nodeCandPos[mappingSize], e, triEndType[mappingSize],
++                                       nodeInPos[mappingSize], nodeOutPos[mappingSize], nodeUnPos[mappingSize], candidate, candCount, tmp);
++                }
++                // apply the symmetry breaking rules
++                if (!greaterPos[mappingSize].empty()) {
++                    ui maxTarget = dataV[greaterPos[mappingSize][0]];
++                    for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                        if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                            maxTarget = dataV[greaterPos[mappingSize][i]];
++                    }
++                    pos[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], maxTarget);
++                }
++                if (!lessPos[mappingSize].empty()) {
++                    ui minTarget = dataV[lessPos[mappingSize][0]];
++                    for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                        if (dataV[lessPos[mappingSize][i]] < minTarget)
++                            minTarget = dataV[lessPos[mappingSize][i]];
++                    }
++                    candCount[mappingSize] = firstPosGreaterThan(candidate[mappingSize], 0, candCount[mappingSize], minTarget);
++                }
++            }
++        }
++        --depth;
++        if (depth >= 0) {
++            --mappingSize;
++            visited[dataV[mappingSize]] = false;
++        }
++    }
++    for (int group = 0; group < childKeyPoses.size(); ++group) {
++        delete[] childKey[group];
++    }
++    for (int group = 0; group < aggrePoses.size(); ++group) {
++        delete[] aggreKey[group];
++    }
++    delete[] childKey;
++    delete[] aggreKey;
++//    delete[] cnt;
++}
++
+ void executeConNode(
+         const ConNode &cn,
+         const DataGraph &din,
+@@ -3783,3 +4871,839 @@ void executeConNode(
+     delete[] cntCopy;
+ }
+ 
++void executeShared(
++        ExeParam &param,
++        std::vector<ui *> &keyPoses,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        bool useTriangle,
++        const Triangle &tri,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++) {
++    if (!useTriangle) {
++        if (!param.rep.edgeKey) {
++            executeSharedNode(param.rep, param.children, param.nIDs, param.trees, param.hashTables,
++                              param.aggreWeights, param.id2AggreKey, param.id2ChildKey, param.isRoot,
++                              param.childKeyPoses, param.aggrePoses, param.tableIDs, keyPoses, keyPosSize, sizeBound,
++                              param.nodeInterPos, param.nodeInPos, param.nodeOutPos, param.nodeUnPos, param.greaterPos,
++                              param.lessPos, param.nonLeafIDs, param.candidate,param.candCount, din, dout, dun,
++                              param.p, outID, unID, reverseID, startOffset, patternV, dataV, mappingSize, visited, pos, tmp, allV);
++        }
++        else {
++            executeSharedNodeEdgeKey(param.rep, param.children, param.nIDs, param.trees, param.hashTables,
++                                     param.aggreWeights, param.id2AggreKey, param.id2ChildKey, param.isRoot,
++                                     param.childKeyPoses, param.aggrePoses, param.tableIDs, keyPoses, keyPosSize, sizeBound,
++                                     param.nodeInterPos, param.nodeInPos, param.nodeOutPos, param.nodeUnPos, param.greaterPos,
++                                     param.lessPos, param.posChildEdge, param.posAggreEdge, param.childEdgeType, param.aggreEdgeType,
++                                     param.nonLeafIDs, param.candidate, param.candCount, din, dout, dun, param.p,
++                                     outID, unID, reverseID, startOffset, patternV, dataV, mappingSize, visited, pos, tmp, allV);
++
++        }
++    }
++    else {
++        if (!param.rep.edgeKey) {
++            executeSharedNodeT(param.rep, param.children, param.nIDs, param.trees, param.hashTables,
++                               param.aggreWeights, param.id2AggreKey, param.id2ChildKey, param.isRoot,
++                               param.childKeyPoses, param.aggrePoses, param.tableIDs, keyPoses, keyPosSize, sizeBound,
++                               param.nodeInterPos, param.nodeInPos, param.nodeOutPos, param.nodeUnPos, param.nodeCandPos,
++                               param.greaterPos, param.lessPos, param.nodeTriPos, param.triEdgeType, param.triEndType,
++                               param.nonLeafIDs, param.candidate, param.candCount, din, dout, dun, tri, param.p,
++                               outID, unID, reverseID, startOffset, patternV, dataV, mappingSize, visited, pos, tmp, allV);
++        }
++        else {
++            executeSharedNodeEdgeKeyT(param.rep, param.children, param.nIDs, param.trees, param.hashTables,
++                                      param.aggreWeights, param.id2AggreKey, param.id2ChildKey, param.isRoot,
++                                      param.childKeyPoses, param.aggrePoses, param.tableIDs, keyPoses, keyPosSize, sizeBound,
++                                      param.nodeInterPos, param.nodeInPos, param.nodeOutPos, param.nodeUnPos, param.nodeCandPos,
++                                      param.greaterPos, param.lessPos, param.posChildEdge, param.posAggreEdge, param.childEdgeType,
++                                      param.aggreEdgeType, param.nodeTriPos, param.nonLeafIDs, param.triEdgeType,
++                                      param.triEndType, param.candidate, param.candCount, din, dout, dun, tri, param.p,
++                                      outID, unID, reverseID, startOffset, patternV, dataV, mappingSize, visited, pos, tmp, allV);
++        }
++    }
++}
++
++void executeForest(Forest &f, std::vector<HashTable> &result, const DataGraph &din,
++                   const DataGraph &dout, const DataGraph &dun, bool useTriangle, const Triangle &tri,
++                   std::vector<HashTable> &allocatedHashTable, EdgeID *outID, EdgeID *unID, EdgeID *reverseID,
++                   EdgeID *startOffset, VertexID *patternV, VertexID *dataV, bool *visited, ui *candPos,
++                   VertexID *&tmp, VertexID *allV, specialsparse *sg, VertexID *cliqueVertices) {
++    if (f.numQuery == 0) return;
++    EdgeID *inOffset = din.getOffsets();
++    VertexID *inNbors = din.getNbors();
++    EdgeID *outOffset = dout.getOffsets();
++    VertexID *outNbors = dout.getNbors();
++    EdgeID *unOffset = dun.getOffsets();
++    VertexID *unNbors = dun.getNbors();
++    int orbitType = f.orbitType;
++    ui n = dun.getNumVertices(), m = dun.getNumEdges();
++    // allocate memory. 1. for each query, one hash table for the overall result and factor 1, one for each other
++    // factor. 2. for each non-root. root node directly update hash table in queryFactorH
++    int nTable = 0, mTable = 0;
++    HashTable **queryFactorH = new HashTable *[result.size()];
++    for (int i = 0; i < result.size(); ++i) {
++        queryFactorH[i] = new HashTable[f.queryFactor[i].size()];
++    }
++    HashTable **treeNodeH = new HashTable *[f.allTree.size()];
++    for (int tID = 0; tID < f.allTree.size(); ++tID)
++        treeNodeH[tID] = new HashTable[f.allTree[tID].getNumNodes()];
++
++    for (int qID = 0; qID < result.size(); ++qID) {
++        for (int fID = 0; fID < f.queryFactor[qID].size(); ++fID) {
++            int divideFactor = f.queryFactor[qID][fID];
++            int firstTree = f.queryFactorFirstTree[qID][fID];
++            int numTree = f.queryFactorNumTree[qID][fID];
++            if (fID == 0) queryFactorH[qID][fID] = result[qID];
++            else {
++                if (orbitType == 0) {
++                    queryFactorH[qID][fID] = new Count[1];
++                    queryFactorH[qID][fID][0] = 0;
++                }
++                else if (orbitType == 1) {
++                    queryFactorH[qID][fID] = new Count[n];
++                    memset(queryFactorH[qID][fID], 0, sizeof(Count) * n);
++                    ++nTable;
++                }
++                else {
++                    if (f.allPattern[firstTree].u.isEOrbitDir()) {
++                        queryFactorH[qID][fID] = new Count[m / 2];
++                        memset(queryFactorH[qID][fID], 0, sizeof(Count) * m / 2);
++                        ++mTable;
++                    }
++                    else {
++                        queryFactorH[qID][fID] = new Count[m];
++                        memset(queryFactorH[qID][fID], 0, sizeof(Count) * m);
++                        mTable += 2;
++                    }
++                }
++                allocatedHashTable.push_back(queryFactorH[qID][fID]);
++            }
++
++            for (int tID = firstTree; tID < numTree + firstTree; ++tID) {
++                const Tree &t = f.allTree[tID];
++                VertexID nID = t.getRootID();
++                treeNodeH[tID][nID] = queryFactorH[qID][fID];
++#ifdef DEBUG
++                treeNodeH[tID][nID] = new Count[n];
++                memset(treeNodeH[tID][nID], 0, sizeof(Count) * n);
++#endif
++            }
++        }
++    }
++    f.allocateTables(treeNodeH, allocatedHashTable, n, m, nTable, mTable);
++    double tableSize = (double)(nTable * n + mTable * m) * sizeof(Count) / 1e9;
++//    std::cout << "allocated memory for hash tables in executeForest: size = " <<  tableSize << "GB" << std::endl;
++//    std::cout << "number of vertex tables: " << nTable << ", number of edge tables: " << mTable << std::endl;
++    nTable = 0;
++    mTable = 0;
++    // allocate keyPos tables
++    std::vector<ui *> keyPoses(f.childTables.size(), nullptr);
++    std::vector<ui> keyPosSize(f.childTables.size(), 0);
++    std::vector<ui> sizeBound(f.childTables.size(), 0);
++    for (int i = 0; i < f.childTables.size(); ++i) {
++        const Node &rep = f.allTree[f.childTID[i][0]].getNode(f.childNID[i][0]);
++        if (rep.prefixSize != 0 && rep.keySize == 0) {
++            keyPoses[i] = new ui[1];
++            memset(keyPoses[i], 0, sizeof(ui));
++            sizeBound[i] = 1;
++        }
++        else if (rep.prefixSize != 0 && rep.keySize == 1) {
++            keyPoses[i] = new ui[n / 8 + 1];
++            memset(keyPoses[i], 0, sizeof(ui) * (n / 8 + 1));
++            sizeBound[i] = n / 8 + 1;
++            ++nTable;
++        }
++        else if (rep.prefixSize != 0 && rep.keySize == 2){
++            keyPoses[i] = new ui[m / 8 + 1];
++            memset(keyPoses[i], 0, sizeof(ui) * (m / 8 + 1));
++            sizeBound[i] = m / 8 + 1;
++            ++mTable;
++        }
++    }
++    tableSize = (double)(nTable * n + mTable * m) * sizeof(ui) / 8000000000;
++//    std::cout << "allocated memory for key poses: size = " <<  tableSize << "GB" << std::endl;
++    std::vector<std::vector<VertexID **>> treeNodeCand(f.allTree.size());
++    std::vector<std::vector<ui *>> treeNodeCandCount(f.allTree.size());
++    for (int i = 0; i < f.allTree.size(); ++i) {
++        treeNodeCand[i] = std::vector<VertexID **>(f.allTree[i].getNumNodes(), nullptr);
++        treeNodeCandCount[i] = std::vector<ui *>(f.allTree[i].getNumNodes(), nullptr);
++    }
++    // group the partitions that can be executed together. Then execute these
++    // partitions together using exeSharedNode. group ID: 0 for partition size = 0, 1 for size = 1, 3 for size = 2,
++    // out edge, 4 for size = 2, out edge. for types of partition order, generate group ID according to canonValue
++    int maxGroupID = 5;
++    std::map<CanonType, int> partCanon2GroupID;
++    std::vector<std::vector<VertexID>> groupPID(5);
++    std::vector<std::vector<int>> groupTID(5);
++    std::vector<std::vector<int>> groupDepthNodeNum(5);
++    groupDepthNodeNum[1] = std::vector<int>(1, 0);
++    groupDepthNodeNum[2] = std::vector<int>(2, 0);
++    groupDepthNodeNum[3] = std::vector<int>(2, 0);
++    groupDepthNodeNum[4] = std::vector<int>(2, 0);
++    for (int qID = 0; qID < result.size(); ++qID) {
++        for (int fID = 0; fID < f.queryFactor[qID].size(); ++fID) {
++            int firstTree = f.queryFactorFirstTree[qID][fID];
++            int numTree = f.queryFactorNumTree[qID][fID];
++            for (int tID = firstTree; tID < numTree + firstTree; ++tID) {
++                const Tree &t = f.allTree[tID];
++                const std::vector<std::vector<VertexID>> &globalOrder = t.getGlobalOrder();
++                for (VertexID pID = 0; pID < t.getGlobalOrder().size(); ++pID) {
++                    const std::vector<VertexID> &partitionOrder = globalOrder[pID];
++                    const std::vector<std::vector<int>> &partitionInPos = t.getPartitionInPos(pID);
++                    const std::vector<std::vector<int>> &partitionOutPos = t.getPartitionOutPos(pID);
++                    const std::vector<std::vector<int>> &partitionUnPos = t.getPartitionUnPos(pID);
++                    const std::vector<std::vector<std::vector<VertexID>>> &nodesAtStep = t.getNodesAtStep();
++                    const Pattern &p = f.allPattern[tID];
++                    if (partitionOrder.empty()) {
++                        groupPID[0].push_back(pID);
++                        groupTID[0].push_back(tID);
++                    }
++                    else if (partitionOrder.size() == 1) {
++                        groupPID[1].push_back(pID);
++                        groupTID[1].push_back(tID);
++                        for (VertexID nID: nodesAtStep[pID][0]) {
++                            if (f.nodeNeedExecute[tID][nID])
++                                ++groupDepthNodeNum[1][0];
++                        }
++                    }
++                    else if (partitionOrder.size() == 2) {
++                        int groupID;
++                        if (!partitionUnPos[1].empty()) groupID = 2;
++                        else if (!partitionOutPos[1].empty()) groupID = 3;
++                        else groupID = 4;
++                        groupPID[groupID].push_back(pID);
++                        groupTID[groupID].push_back(tID);
++                        for (int i = 0; i < 2; ++i) {
++                            for (VertexID nID: nodesAtStep[pID][i]) {
++                                if (f.nodeNeedExecute[tID][nID])
++                                    ++groupDepthNodeNum[groupID][i];
++                            }
++                        }
++                    }
++                    else {
++                        CanonType canonValue;
++                        if (p.useDAG())
++                            canonValue = subgraphCanonValue(p.out, partitionOrder);
++                        else
++                            canonValue = subgraphCanonValue(p.u, partitionOrder);
++                        if (partCanon2GroupID.find(canonValue) != partCanon2GroupID.end()) {
++                            int gID = partCanon2GroupID[canonValue];
++                            groupPID[gID].push_back(pID);
++                            groupTID[gID].push_back(tID);
++                            for (int i = 0; i < partitionOrder.size(); ++i) {
++                                for (VertexID nID: nodesAtStep[pID][i]) {
++                                    if (f.nodeNeedExecute[tID][nID])
++                                        ++groupDepthNodeNum[gID][i];
++                                }
++                            }
++                        }
++                        else {
++                            partCanon2GroupID[canonValue] = maxGroupID;
++                            groupPID.emplace_back();
++                            groupTID.emplace_back();
++                            groupDepthNodeNum.emplace_back();
++                            groupPID[maxGroupID].push_back(pID);
++                            groupTID[maxGroupID].push_back(tID);
++                            groupDepthNodeNum[maxGroupID] = std::vector<int>(partitionOrder.size(), 0);
++                            for (int i = 0; i < partitionOrder.size(); ++i) {
++                                for (VertexID nID: nodesAtStep[pID][i]) {
++                                    if (f.nodeNeedExecute[tID][nID])
++                                        ++groupDepthNodeNum[maxGroupID][i];
++                                }
++                            }
++                            ++maxGroupID;
++                        }
++                    }
++                }
++            }
++        }
++    }
++    // execute cliques first
++    if (sg != nullptr) {
++        for (int qID = 0; qID < result.size(); ++qID) {
++            int tID = f.queryFactorFirstTree[qID][0];
++            if (f.allPattern[tID].u.isClique() && sg != nullptr) {
++                int k = f.allPattern[tID].u.getNumVertices();
++                if (k < 4) continue;
++                int aggreWeight = f.allTree[tID].getAggreWeight()[0];
++                mkspecial(sg, k);
++                kclique(k, k, sg, cliqueVertices, result[qID], orbitType);
++                freesub(sg, k);
++                f.nodeExecuted[tID][0] = true;
++                if (aggreWeight != 1) {
++                    if (orbitType == 0) result[qID][0] *= aggreWeight;
++                    else if (orbitType == 1) {
++                        for (VertexID v = 0; v < n; ++v)
++                            result[qID][v] *= aggreWeight;
++                    }
++                    else {
++                        for (EdgeID e = 0; e < m; ++e)
++                            result[qID][e] *= aggreWeight;
++                    }
++                }
++            }
++        }
++    }
++
++    // execute some partitions with no prefix.
++    std::vector<ExeParam> noPrefixParams;
++    bool noNewNode = false;
++    while (!noNewNode) {
++        noNewNode = true;
++        for (int i = 0; i < groupTID[0].size(); ++i) {
++            int tID = groupTID[0][i];
++            VertexID pID = groupPID[0][i];
++            const Tree &t = f.allTree[tID];
++            const std::vector<VertexID> &postOrder = t.getPostOrder();
++            const std::vector<int> &partitionPos = t.getPartitionPos();
++            VertexID nID;
++            if (pID == 0) nID = postOrder[0];
++            else nID = postOrder[partitionPos[pID - 1] + 1];
++            if (!f.nodeExecutable[tID][nID]) continue;
++            ExeParam param;
++            int pos = f.posInMergedNode[tID][nID];
++            param.p = f.mergedNodePattern(pos);
++            for (const NodeInfo& inf: f.toTreeNode[pos]) {
++                if (f.executable(inf)) {
++                    f.nodeExecuted[inf.tID][inf.nID] = true;
++                    const Tree &t2 = f.allTree[inf.tID];
++                    // add this node for execution
++                    param.nIDs.push_back(inf.nID);
++                    param.tIDs.push_back(inf.tID);
++                    int tableID = f.posInChildTables[inf.tID][inf.nID];
++                    param.tableIDs.push_back(tableID);
++                    param.trees.push_back(t2);
++                    bool isRt = t2.getRootID() == inf.nID;
++                    param.aggreWeights.push_back(inf.aggreWeight);
++                    const std::vector<std::vector<VertexID>> &child = t2.getChild();
++                    param.children.push_back(child[inf.nID]);
++                    param.assignGroup(inf.aggrePos, inf.childKeyPos, isRt, 0, n, m);
++                    param.hashTables.push_back(treeNodeH[inf.tID]);
++                }
++            }
++            if (param.nIDs.empty()) continue;
++            else noNewNode = false;
++            // allocate candidate and cand count before execution
++            VertexID **candidate;
++            ui *candCount;
++            int exeTID = f.mergedNodeTID[pos];
++            VertexID exeNID = f.mergedNodeNID[pos];
++            const Tree &exeTree = f.allTree[exeTID];
++            param.rep = exeTree.getNode(exeNID);
++            if (treeNodeCand[exeTID][exeNID] == nullptr) {
++                candidate = new VertexID *[param.rep.localOrder.size()];
++                const std::vector<bool> &nodeCandPos = f.allTree[exeTID].getNodeCandPos(exeNID);
++                for (int j = 0; j < nodeCandPos.size(); ++j) {
++                    if (nodeCandPos[j])
++                        candidate[j] = new VertexID[dout.getNumVertices()];
++                }
++                candCount = new ui[param.rep.localOrder.size()];
++                treeNodeCand[exeTID][exeNID] = candidate;
++                treeNodeCandCount[exeTID][exeNID] = candCount;
++            }
++            else {
++                candidate = treeNodeCand[exeTID][exeNID];
++                candCount = treeNodeCandCount[exeTID][exeNID];
++            }
++            param.candidate = candidate;
++            param.candCount = candCount;
++            param.nodeInterPos = exeTree.getNodeInterPos(exeNID);
++            param.nodeInPos = exeTree.getNodeInPos(exeNID);
++            param.nodeOutPos = exeTree.getNodeOutPos(exeNID);
++            param.nodeUnPos = exeTree.getNodeUnPos(exeNID);
++            param.nodeCandPos = exeTree.getNodeCandPos(exeNID);
++            param.greaterPos = exeTree.getNodeGreaterPos(exeNID);
++            param.lessPos = exeTree.getNodeLessPos(exeNID);
++            param.nodeTriPos = exeTree.getNodeTriPos(exeNID);
++            param.triEdgeType = exeTree.getTriEdgeType(exeNID);
++            param.triEndType = exeTree.getTriEndType(exeNID);
++            param.buildPosesAndTypes(f);
++            for (int tableID : param.tableIDs) {
++                // update executable nodes
++                if (tableID != -1) {
++                    ++f.numExecuted[tableID];
++                    if (f.numExecuted[tableID] == f.numTables[tableID])
++                        f.updateNodeExecutable(tableID);
++                }
++            }
++            noPrefixParams.push_back(param);
++        }
++    }
++    for (ExeParam &param : noPrefixParams) {
++        executeShared(param, keyPoses, keyPosSize, sizeBound, din, dout, dun, useTriangle, tri, outID, unID, reverseID,
++                      startOffset, patternV, dataV, 0, visited, candPos, tmp, allV);
++    }
++    bool noNewNodeOuter = false;
++    while (!noNewNodeOuter) {
++        noNewNodeOuter = true;
++        for (int groupID = 1; groupID < maxGroupID; ++groupID) {
++            nTable = 0;
++            mTable = 0;
++            if (groupTID[groupID].empty()) continue;
++            const std::vector<int> &gTID = groupTID[groupID];
++            const std::vector<VertexID> &gPID = groupPID[groupID];
++            const Tree &firstTree = f.allTree[gTID[0]];
++            const std::vector<VertexID> &partitionOrder = firstTree.getPartitionOrder(gPID[0]);
++            const std::vector<std::vector<int>> &partitionInPos = firstTree.getPartitionInPos(gPID[0]);
++            const std::vector<std::vector<int>> &partitionOutPos = firstTree.getPartitionOutPos(gPID[0]);
++            const std::vector<std::vector<int>> &partitionUnPos = firstTree.getPartitionUnPos(gPID[0]);
++            const std::vector<bool> &partitionInterPos = firstTree.getPartitionInterPos(gPID[0]);
++            const std::vector<std::vector<int>> &greaterPos = firstTree.getPartitionGreaterPos(gPID[0]);
++            const std::vector<std::vector<int>> &lessPos = firstTree.getPartitionLessPos(gPID[0]);
++            const std::vector<bool> &partitionCandPos = firstTree.getPartitionCandPos(gPID[0]);
++            const std::vector<std::pair<int, int>> &partitionTriPos = firstTree.getPartitionTriPos(gPID[0]);
++            const std::vector<int> &triEdgeType = firstTree.getPartitionEdgeType(gPID[0]);
++            const std::vector<int> &triEndType = firstTree.getPartitionEndType(gPID[0]);
++            // first traverse the partitions to decide at each step which nodes are executed
++            int length = (int)partitionOrder.size();
++            std::vector<std::vector<ExeParam>> depthParams(length);
++            for (int depth = 0; depth < length; ++depth) {
++                bool noNewNodeInner = false;
++                std::vector<ExeParam> params;
++                while (!noNewNodeInner) {
++                    noNewNodeInner = true;
++                    for (int i = 0; i < gTID.size(); ++i) {
++                        int tID = gTID[i];
++                        VertexID pID = gPID[i];
++                        const Tree &t = f.allTree[tID];
++                        const std::vector<std::vector<std::vector<VertexID>>> &nodesAtStep = t.getNodesAtStep();
++                        // make sure that child partitions are executed
++                        VertexID nID = MAX_PATTERN_SIZE;
++                        for (VertexID j : nodesAtStep[pID][depth]) {
++                            if (f.nodeExecuted[tID][j]) continue;
++                            else {
++                                nID = j;
++                                break;
++                            }
++                        }
++                        if (nID == MAX_PATTERN_SIZE) continue;
++                        // execute the first unexecuted node
++                        int pos = f.posInMergedNode[tID][nID];
++                        ExeParam param;
++                        // collect other nodes to be executed together
++                        for (const NodeInfo& inf: f.toTreeNode[pos]) {
++                            if (f.executable(inf)) {
++                                f.nodeExecuted[inf.tID][inf.nID] = true;
++                                const Tree &t2 = f.allTree[inf.tID];
++                                VertexID partID = f.nodePID[inf.tID][inf.nID];
++                                if (!t2.getPartitionOrder(partID).empty())
++                                    if (param.nIDs.empty()) {
++                                        const Pattern &pt = f.allPattern[inf.tID];
++                                        param.p = pt;
++                                        param.rep = t2.getNode(inf.nID);
++                                        param.nodeInterPos = t2.getNodeInterPos(inf.nID);
++                                        param.nodeInPos = t2.getNodeInPos(inf.nID);
++                                        param.nodeOutPos = t2.getNodeOutPos(inf.nID);
++                                        param.nodeUnPos = t2.getNodeUnPos(inf.nID);
++                                        param.nodeCandPos = t2.getNodeCandPos(inf.nID);
++                                        param.greaterPos = t2.getNodeGreaterPos(inf.nID);
++                                        param.lessPos = t2.getNodeLessPos(inf.nID);
++                                        param.nodeTriPos = t2.getNodeTriPos(inf.nID);
++                                        param.triEdgeType = t2.getTriEdgeType(inf.nID);
++                                        param.triEndType = t2.getTriEndType(inf.nID);
++                                    }
++                                // add this node for execution
++                                param.nIDs.push_back(inf.nID);
++                                param.tIDs.push_back(inf.tID);
++                                int tableID = f.posInChildTables[inf.tID][inf.nID];
++                                param.tableIDs.push_back(tableID);
++                                param.trees.push_back(t2);
++                                bool isRt = t2.getRootID() == inf.nID;
++                                param.aggreWeights.push_back(inf.aggreWeight);
++                                const std::vector<std::vector<VertexID>> &child = t2.getChild();
++                                param.children.push_back(child[inf.nID]);
++                                ui prefixSize = t2.getNode(inf.nID).prefixSize;
++                                ui keySize = t2.getNode(inf.nID).keySize;
++                                if (prefixSize == 0) keySize = 0;
++                                param.assignGroup(inf.aggrePos, inf.childKeyPos, isRt, keySize, n, m);
++                                param.hashTables.push_back(treeNodeH[inf.tID]);
++                            }
++                        }
++                        if (param.nIDs.empty()) continue;
++                        else noNewNodeInner = false;
++                        // allocate candidate and cand count before execution
++                        VertexID **candidate;
++                        ui *candCount;
++                        int exeTID = f.mergedNodeTID[pos];
++                        VertexID exeNID = f.mergedNodeNID[pos];
++                        const Node &tau = f.allTree[exeTID].getNode(exeNID);
++                        if (treeNodeCand[exeTID][exeNID] == nullptr) {
++                            candidate = new VertexID *[tau.nodeOrder.size()];
++                            const std::vector<bool> &nodeCandPos = f.allTree[exeTID].getNodeCandPos(exeNID);
++                            for (int j = 0; j < nodeCandPos.size(); ++j) {
++                                if (nodeCandPos[j])
++                                    candidate[j] = new VertexID[dout.getNumVertices()];
++                            }
++                            candCount = new ui[tau.nodeOrder.size()];
++                            treeNodeCand[exeTID][exeNID] = candidate;
++                            treeNodeCandCount[exeTID][exeNID] = candCount;
++                        }
++                        else {
++                            candidate = treeNodeCand[exeTID][exeNID];
++                            candCount = treeNodeCandCount[exeTID][exeNID];
++                        }
++                        param.candidate = candidate;
++                        param.candCount = candCount;
++                        param.buildPosesAndTypes(f);
++                        for (int tableID : param.tableIDs) {
++                            // update executable nodes
++                            if (tableID != -1 && !f.isPartition[tableID]) {
++                                ++f.numExecuted[tableID];
++                                if (f.numExecuted[tableID] == f.numTables[tableID])
++                                    f.updateNodeExecutable(tableID);
++                            }
++                        }
++                        params.push_back(param);
++                    }
++                }
++                depthParams[depth] = params;
++            }
++            VertexID **partitionCandidate = new VertexID *[partitionOrder.size()];
++            for (int i = 0; i < partitionOrder.size(); ++i) {
++                if (partitionInterPos[i])
++                    partitionCandidate[i] = new VertexID[dout.getNumVertices()];
++            }
++            ui *partitionCandCount = new ui[partitionOrder.size()];
++            partitionCandidate[0] = allV;
++            partitionCandCount[0] = n;
++            candPos[0] = 0;
++            int depth = 0;
++            int mappingSize = 0;
++            while (depth >= 0) {
++                while (candPos[depth] < partitionCandCount[depth]) {
++                    VertexID v = partitionCandidate[depth][candPos[depth]];
++                    ++candPos[depth];
++                    if (visited[v]) continue;
++                    visited[v] = true;
++                    patternV[depth] = partitionOrder[depth];
++                    dataV[depth] = v;
++                    std::vector<ExeParam> &params = depthParams[depth];
++                    // for each shared node, clear count
++                    for (auto & param : params) {
++                        for (int tableID: param.tableIDs) {
++                            if (tableID == -1) continue;
++                            if (sizeBound[tableID] == n / 8 + 1) {
++                                if (keyPosSize[tableID] < n / 8 + 1) {
++                                    for (int j = 0; j < keyPosSize[tableID]; ++j)
++                                        f.childTables[tableID][keyPoses[tableID][j]] = 0;
++                                } else {
++                                    memset(f.childTables[tableID], 0, sizeof(Count) * n);
++                                }
++                            }
++                            else if (sizeBound[tableID] == 1) {
++                                f.childTables[tableID][keyPoses[tableID][0]] = 0;
++                            }
++                            else {
++                                if (keyPosSize[tableID] < m / 8 + 1) {
++                                    for (int j = 0; j < keyPosSize[tableID]; ++j)
++                                        f.childTables[tableID][keyPoses[tableID][j]] = 0;
++                                } else {
++                                    memset(f.childTables[tableID], 0, sizeof(Count) * m);
++                                }
++                            }
++                            keyPosSize[tableID] = 0;
++                        }
++                    }
++
++                    for (ExeParam &param : params) {
++                        executeShared(param, keyPoses, keyPosSize, sizeBound, din, dout, dun, useTriangle, tri, outID, unID, reverseID,
++                                      startOffset, patternV, dataV, mappingSize + 1, visited, candPos, tmp, allV);
++                    }
++                    if (depth == length - 1) {
++                        visited[dataV[mappingSize]] = false;
++                    }
++                    else {
++                        ++mappingSize;
++                        ++depth;
++                        candPos[depth] = 0;
++                        if (!partitionInterPos[depth]) {
++                            if (!partitionOutPos[depth].empty()) {
++                                VertexID w = dataV[partitionOutPos[depth][0]];
++                                startOffset[mappingSize] = outOffset[w];
++                                partitionCandidate[depth] = outNbors + outOffset[w];
++                                partitionCandCount[depth] = outOffset[w + 1] - outOffset[w];
++                            }
++                            else if (!partitionInPos[depth].empty()){
++                                VertexID w = dataV[partitionInPos[depth][0]];
++                                startOffset[mappingSize] = inOffset[w];
++                                partitionCandidate[depth] = inNbors + inOffset[w];
++                                partitionCandCount[depth] = inOffset[w + 1] - inOffset[w];
++                            }
++                            else {
++                                VertexID w = dataV[partitionUnPos[depth][0]];
++                                startOffset[mappingSize] = unOffset[w];
++                                partitionCandidate[depth] = unNbors + unOffset[w];
++                                partitionCandCount[depth] = unOffset[w + 1] - unOffset[w];
++                            }
++                        }
++                        else {
++                            if (useTriangle) {
++                                EdgeID e = 0;
++                                if (triEdgeType[mappingSize] != 0) {
++                                    int pos1 = partitionTriPos[mappingSize].first, pos2 = partitionTriPos[mappingSize].second;
++                                    if (triEdgeType[mappingSize] == 1)
++                                        e = startOffset[pos2] + candPos[pos2] - 1;
++                                    else if (triEdgeType[mappingSize] == 2)
++                                        e = outID[startOffset[pos2] + candPos[pos2] - 1];
++                                    else if (triEdgeType[mappingSize] == 5)
++                                        e = unID[startOffset[pos2] + candPos[pos2] - 1];
++                                    else{
++                                        VertexID key1 = dataV[pos1], key2 = dataV[pos2];
++#ifdef COLLECT_STATISTICS
++                                        ++gNumEdgeID;
++#endif
++                                        e = dout.getEdgeID(key1, key2);
++                                    }
++                                }
++                                generateCandidateT(din, dout, dun, tri, dataV, mappingSize, !partitionCandPos[mappingSize], e, triEndType[mappingSize],
++                                                   partitionInPos[mappingSize], partitionOutPos[mappingSize], partitionUnPos[mappingSize], partitionCandidate, partitionCandCount, tmp);
++
++                            }
++                            else {
++                                generateCandidate(din, dout, dun, dataV, depth, partitionInPos[depth], partitionOutPos[depth],
++                                                  partitionUnPos[depth], partitionCandidate, partitionCandCount, tmp);
++                            }
++                        }
++                        // apply the symmetry breaking rules
++                        if (!greaterPos[mappingSize].empty()) {
++                            ui maxTarget = dataV[greaterPos[mappingSize][0]];
++                            for (int i = 1; i < greaterPos[mappingSize].size(); ++i) {
++                                if (dataV[greaterPos[mappingSize][i]] > maxTarget)
++                                    maxTarget = dataV[greaterPos[mappingSize][i]];
++                            }
++                            candPos[mappingSize] = firstPosGreaterThan(partitionCandidate[mappingSize], 0, partitionCandCount[mappingSize], maxTarget);
++                        }
++                        if (!lessPos[mappingSize].empty()) {
++                            ui minTarget = dataV[lessPos[mappingSize][0]];
++                            for (int i = 1; i < lessPos[mappingSize].size(); ++i) {
++                                if (dataV[lessPos[mappingSize][i]] < minTarget)
++                                    minTarget = dataV[lessPos[mappingSize][i]];
++                            }
++                            partitionCandCount[mappingSize] = firstPosGreaterThan(partitionCandidate[mappingSize], 0, partitionCandCount[mappingSize], minTarget);
++                        }
++                    }
++                }
++                --depth;
++                --mappingSize;
++                if (depth >= 0)
++                    visited[dataV[depth]] = false;
++            }
++            for (int j = 0; j < partitionOrder.size(); ++j) {
++                if (partitionCandPos[j])
++                    delete[] partitionCandidate[j];
++            }
++            delete[] partitionCandidate;
++            delete[] partitionCandCount;
++            // set the parent nodes of these partitions as executable
++            const std::vector<ExeParam> &lastParams = depthParams[length - 1];
++            if (!lastParams.empty()) noNewNodeOuter = false;
++            for (int i = 0; i < lastParams.size(); ++i) {
++                for (int tableID : lastParams[i].tableIDs) {
++                    if (tableID != -1 && f.isPartition[tableID]) {
++                        ++f.numExecuted[tableID];
++                        if (f.numExecuted[tableID] == f.numTables[tableID])
++                            f.updateNodeExecutable(tableID);
++                    }
++                }
++            }
++        }
++    }
++
++//    std::cout << "time for nodes that need prefix: " << exeTime - firstTime << "s" << std::endl;
++    // execute the remaining partitions
++    noNewNode = false;
++    noPrefixParams.clear();
++    while (!noNewNode) {
++        noNewNode = true;
++        for (int i = 0; i < groupTID[0].size(); ++i) {
++            int tID = groupTID[0][i];
++            VertexID pID = groupPID[0][i];
++            const Tree &t = f.allTree[tID];
++            const std::vector<VertexID> &postOrder = t.getPostOrder();
++            const std::vector<int> &partitionPos = t.getPartitionPos();
++            VertexID nID;
++            if (pID == 0) nID = postOrder[0];
++            else nID = postOrder[partitionPos[pID - 1] + 1];
++            if (!f.nodeExecutable[tID][nID]) continue;
++            ExeParam param;
++            int pos = f.posInMergedNode[tID][nID];
++            param.p = f.mergedNodePattern(pos);
++            for (const NodeInfo& inf: f.toTreeNode[pos]) {
++                if (f.executable(inf)) {
++                    f.nodeExecuted[inf.tID][inf.nID] = true;
++                    const Tree &t2 = f.allTree[inf.tID];
++                    // add this node for execution
++                    param.nIDs.push_back(inf.nID);
++                    param.tIDs.push_back(inf.tID);
++                    int tableID = f.posInChildTables[inf.tID][inf.nID];
++                    param.tableIDs.push_back(tableID);
++                    param.trees.push_back(t2);
++                    bool isRt = t2.getRootID() == inf.nID;
++                    param.aggreWeights.push_back(inf.aggreWeight);
++                    const std::vector<std::vector<VertexID>> &child = t2.getChild();
++                    param.children.push_back(child[inf.nID]);
++                    param.assignGroup(inf.aggrePos, inf.childKeyPos, isRt, 0, n, m);
++                    param.hashTables.push_back(treeNodeH[inf.tID]);
++                }
++            }
++            if (param.nIDs.empty()) continue;
++            else noNewNode = false;
++            // allocate candidate and cand count before execution
++            VertexID **candidate;
++            ui *candCount;
++            int exeTID = f.mergedNodeTID[pos];
++            VertexID exeNID = f.mergedNodeNID[pos];
++            const Tree &exeTree = f.allTree[exeTID];
++            param.rep = exeTree.getNode(exeNID);
++            if (treeNodeCand[exeTID][exeNID] == nullptr) {
++                candidate = new VertexID *[param.rep.localOrder.size()];
++                const std::vector<bool> &nodeCandPos = f.allTree[exeTID].getNodeCandPos(exeNID);
++                for (int j = 0; j < nodeCandPos.size(); ++j) {
++                    if (nodeCandPos[j])
++                        candidate[j] = new VertexID[dout.getNumVertices()];
++                }
++                candCount = new ui[param.rep.localOrder.size()];
++                treeNodeCand[exeTID][exeNID] = candidate;
++                treeNodeCandCount[exeTID][exeNID] = candCount;
++            }
++            else {
++                candidate = treeNodeCand[exeTID][exeNID];
++                candCount = treeNodeCandCount[exeTID][exeNID];
++            }
++            param.candidate = candidate;
++            param.candCount = candCount;
++            param.nodeInterPos = exeTree.getNodeInterPos(exeNID);
++            param.nodeInPos = exeTree.getNodeInPos(exeNID);
++            param.nodeOutPos = exeTree.getNodeOutPos(exeNID);
++            param.nodeUnPos = exeTree.getNodeUnPos(exeNID);
++            param.nodeCandPos = exeTree.getNodeCandPos(exeNID);
++            param.greaterPos = exeTree.getNodeGreaterPos(exeNID);
++            param.lessPos = exeTree.getNodeLessPos(exeNID);
++            param.nodeTriPos = exeTree.getNodeTriPos(exeNID);
++            param.triEdgeType = exeTree.getTriEdgeType(exeNID);
++            param.triEndType = exeTree.getTriEndType(exeNID);
++            param.buildPosesAndTypes(f);
++            for (int tableID : param.tableIDs) {
++                // update executable nodes
++                if (tableID != -1) {
++                    ++f.numExecuted[tableID];
++                    if (f.numExecuted[tableID] == f.numTables[tableID])
++                        f.updateNodeExecutable(tableID);
++                }
++            }
++            noPrefixParams.push_back(param);
++        }
++    }
++    for (ExeParam &param : noPrefixParams) {
++        executeShared(param, keyPoses, keyPosSize, sizeBound, din, dout, dun, useTriangle, tri, outID, unID, reverseID,
++                      startOffset, patternV, dataV, 0, visited, candPos, tmp, allV);
++    }
++//    std::cout << "time for other remaining nodes: " << elapsedSeconds.count() << std::endl;
++    // release memory and prepare count for output
++    for (int tID = 0; tID < treeNodeCand.size(); ++tID) {
++        for (VertexID nID = 0; nID < treeNodeCand[tID].size(); ++nID) {
++            const std::vector<bool> &nodeCandPos = f.allTree[tID].getNodeCandPos(nID);
++            for (int i = 0; i < nodeCandPos.size(); ++i) {
++                if (nodeCandPos[i] && treeNodeCand[tID][nID] != nullptr)
++                    delete[] treeNodeCand[tID][nID][i];
++            }
++            delete[] treeNodeCand[tID][nID];
++            delete[] treeNodeCandCount[tID][nID];
++        }
++    }
++#ifdef DEBUG
++    HashTable hPattern = new Count[n];
++    memset(hPattern, 0, sizeof(Count) * n);
++#endif
++    for (int qID = 0; qID < result.size(); ++qID) {
++        for (int fID = 0; fID < f.queryFactor[qID].size(); ++fID) {
++            int divideFactor = f.queryFactor[qID][fID];
++            int firstTree = f.queryFactorFirstTree[qID][fID];
++            int multiFactor = f.allTree[firstTree].getMultiFactor();
++#ifdef DEBUG
++            if (divideFactor != 2) continue;
++            int firstID = f.queryFactorFirstTree[qID][fID];
++            int lastID = firstID + f.queryFactorNumTree[qID][fID];
++            for (int tID = firstID; tID < lastID; ++tID) {
++                if (f.allPattern[tID].u.getCanonValue() == 282161) {
++                    VertexID rootID = f.allTree[tID].getRootID();
++                    for (int i = 0; i < n; ++i)
++                        hPattern[i] += treeNodeH[tID][rootID][i];
++                }
++            }
++#endif
++            if (f.allPattern[firstTree].useDAG()) {
++                if (orbitType == 0) {
++                    if (fID == 0) {
++                        result[qID][0] = result[qID][0]  * multiFactor / divideFactor;
++                    }
++                    else result[qID][0] += queryFactorH[qID][fID][0] * multiFactor / divideFactor;
++                } else if (orbitType == 1) {
++                    if (fID == 0) {
++                        for (int i = 0; i < n; ++i)
++                            result[qID][i] = result[qID][i]  * multiFactor / divideFactor;
++                    }
++                    else {
++                        for (int i = 0; i < n; ++i)
++                            result[qID][i] += queryFactorH[qID][fID][i]  * multiFactor / divideFactor;
++                    }
++                } else {
++                    if (f.allPattern[firstTree].u.isEOrbitDir()) {
++                        if (fID == 0) {
++                            for (int i = 0; i < m / 2; ++i)
++                                result[qID][i] = result[qID][i]  * multiFactor / divideFactor;
++                        }
++                        else {
++                            for (int i = 0; i < m / 2; ++i)
++                                result[qID][i] += queryFactorH[qID][fID][i]  * multiFactor / divideFactor;
++                        }
++                    }
++                    else {
++                        if (fID == 0) {
++                            for (int i = 0; i < m; ++i)
++                                result[qID][i] = result[qID][i]  * multiFactor / divideFactor;
++                        }
++                        else {
++                            for (int i = 0; i < m; ++i)
++                                result[qID][i] += queryFactorH[qID][fID][i]  * multiFactor / divideFactor;
++                        }
++                    }
++                }
++            }
++            else {
++                if (orbitType == 0) {
++                    result[qID][0] = result[qID][0]  * multiFactor;
++                } else if (orbitType == 1) {
++                    for (int i = 0; i < n; ++i)
++                        result[qID][i] = result[qID][i]  * multiFactor;
++                } else {
++                    if (f.allPattern[firstTree].u.isEOrbitDir()) {
++                        for (int i = 0; i < m / 2; ++i)
++                            result[qID][i] = result[qID][i]  * multiFactor;
++                    }
++                    else {
++                        for (int i = 0; i < m; ++i)
++                            result[qID][i] = result[qID][i]  * multiFactor;
++                    }
++                }
++            }
++        }
++    }
++    for (int tableID = 0; tableID < keyPoses.size(); ++tableID) {
++        if (keyPoses[tableID] != nullptr)
++            delete[] keyPoses[tableID];
++    }
++}
+\ No newline at end of file
+diff --git a/counting/execution.h b/counting/execution.h
+index 61d3fb3..46c4f00 100644
+--- a/counting/execution.h
++++ b/counting/execution.h
+@@ -385,6 +385,192 @@ void multiJoinTree(
+         VertexID *allV
+ );
+ 
++void executeSharedNode(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<int> &nonLeafIDs,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++);
++
++void executeSharedNodeT(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<bool> &nodeCandPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<std::pair<int, int>> &nodeTriPos,
++        const std::vector<int> &triEdgeType,
++        const std::vector<int> &triEndType,
++        const std::vector<int> &nonLeafIDs,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Triangle &tri,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++);
++
++void executeSharedNodeEdgeKey(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<std::vector<std::pair<int, int>>> &posChildEdge,
++        const std::vector<std::vector<std::pair<int, int>>> &posAggreEdge,
++        const std::vector<std::vector<int>> &childEdgeType,
++        const std::vector<std::vector<int>> &aggreEdgeType,
++        const std::vector<int> &nonLeafIDs,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++);
++
++void executeSharedNodeEdgeKeyT(
++        const Node &rep,
++        const std::vector<std::vector<VertexID>> &children,
++        const std::vector<VertexID> &nIDs,
++        const std::vector<Tree> &trees,
++        std::vector<HashTable *> &hashTables,
++        const std::vector<std::vector<int>> &aggreWeights,
++        const std::vector<int> &id2AggreKey,
++        const std::vector<int> &id2ChildKey,
++        const std::vector<bool> &isRoot,
++        const std::vector<std::vector<std::vector<int>>> &childKeyPoses,
++        const std::vector<std::vector<int>> &aggrePoses,
++        const std::vector<int> &tableIDs,
++        std::vector<ui *> &keyPos,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const std::vector<bool> &nodeInterPos,
++        const std::vector<std::vector<int>> &nodeInPos,
++        const std::vector<std::vector<int>> &nodeOutPos,
++        const std::vector<std::vector<int>> &nodeUnPos,
++        const std::vector<bool> &nodeCandPos,
++        const std::vector<std::vector<int>> &greaterPos,
++        const std::vector<std::vector<int>> &lessPos,
++        const std::vector<std::vector<std::pair<int, int>>> &posChildEdge,
++        const std::vector<std::vector<std::pair<int, int>>> &posAggreEdge,
++        const std::vector<std::vector<int>> &childEdgeType,
++        const std::vector<std::vector<int>> &aggreEdgeType,
++        const std::vector<std::pair<int, int>> &nodeTriPos,
++        const std::vector<int> &nonLeafIDs,
++        const std::vector<int> &triEdgeType,
++        const std::vector<int> &triEndType,
++        VertexID **candidate,
++        ui *candCount,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        const Triangle &tri,
++        const Pattern &p,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++);
++
+ void executeConNode(
+         const ConNode &cn,
+         const DataGraph &din,
+@@ -404,4 +590,33 @@ void executeConNode(
+         VertexID *allV
+ );
+ 
+-#endif //SCOPE_EXECUTION_H
++void executeShared(
++        ExeParam &param,
++        std::vector<ui *> &keyPoses,
++        std::vector<ui> &keyPosSize,
++        const std::vector<ui> &sizeBound,
++        const DataGraph &din,
++        const DataGraph &dout,
++        const DataGraph &dun,
++        bool useTriangle,
++        const Triangle &tri,
++        EdgeID *outID,
++        EdgeID *unID,
++        EdgeID *reverseID,
++        EdgeID *startOffset,
++        VertexID *patternV,
++        VertexID *dataV,
++        int mappingSize,
++        bool *visited,
++        ui *pos,
++        VertexID *&tmp,
++        VertexID *allV
++);
++
++void executeForest(Forest &f, std::vector<HashTable> &result, const DataGraph &din,
++                   const DataGraph &dout, const DataGraph &dun, bool useTriangle, const Triangle &tri,
++                   std::vector<HashTable> &allocatedHashTable, EdgeID *outID, EdgeID *unID, EdgeID *reverseID,
++                   EdgeID *startOffset, VertexID *patternV, VertexID *dataV, bool *visited, ui *candPos,
++                   VertexID *&tmp, VertexID *allV, specialsparse *sg, VertexID *cliqueVertices);
++
++#endif //SCOPE_EXECUTION_H
+\ No newline at end of file
+diff --git a/counting/forest.cpp b/counting/forest.cpp
+index c34186d..c7def42 100644
+--- a/counting/forest.cpp
++++ b/counting/forest.cpp
+@@ -1,14 +1,673 @@
++//
++// Created by anonymous author on 2022/9/15.
++//
++
+ #include "forest.h"
+ 
+-void BatchState::append(std::map<int, std::vector<Pattern>> &inputPatterns,
+-                        std::map<int, std::vector<std::vector<Tree>>> &inputTrees) {
+-    for (auto it = inputPatterns.begin(); it != inputPatterns.end(); ++it) {
+-        int factor = it->first;
++void
++Forest::loadQuery(std::map<int, std::vector<Pattern>> &patterns, std::map<int, std::vector<std::vector<Tree>>> &trees,
++                  bool share) {
++    if (!share) {
++        for (auto it = patterns.begin(); it != patterns.end(); ++it) {
++            int divideFactor = it->first;
++            const std::vector<Pattern> &pts = it->second;
++            for (int i = 0; i < it->second.size(); ++i) {
++                allPattern.push_back(patterns[divideFactor][i]);
++                allTree.push_back(trees[divideFactor][i][0]);
++                ++numQuery;
++            }
++        }
++        return;
++    }
++    queryFactor.emplace_back();
++    queryFactorFirstTree.emplace_back(patterns.size());
++    queryFactorNumTree.emplace_back(patterns.size());
++    int fID = 0;
++    for (auto it = patterns.begin(); it != patterns.end(); ++it) {
++        int divideFactor = it -> first;
++        const std::vector<Pattern> &pts = it -> second;
++        queryFactor[numQuery].push_back(divideFactor);
++        queryFactorFirstTree[numQuery][fID] = (int)allTree.size();
++        queryFactorNumTree[numQuery][fID] = 0;
++        // sort trees for the same factor.
++        std::vector<TreeAndPattern> tps;
+         for (int i = 0; i < it->second.size(); ++i) {
+-            patterns.push_back(inputPatterns[factor][i]);
+-            trees.push_back(inputTrees[factor][i][0]);
+-            if (trees.size() == 1) orbitType = trees.back().getOrbitType();
+-            ++count;
++            for (int j = 0; j < trees[divideFactor][i].size(); ++j)
++                tps.emplace_back(trees[divideFactor][i][j], i);
++        }
++        std::sort(tps.begin(), tps.end());
++        queryFactorNumTree[numQuery][fID] = (int)tps.size();
++        for (const TreeAndPattern& tp : tps) {
++            int tID = (int)allTree.size();
++            const Tree &t = tp.t;
++            allPattern.push_back(pts[tp.patternPos]);
++            if (allTree.empty()) orbitType = t.getOrbitType();
++            allTree.push_back(t);
++            nodeExecutable.emplace_back(t.getNumNodes(), false);
++            nodeExecuted.emplace_back(t.getNumNodes());
++            nodeNeedExecute.emplace_back(t.getNumNodes());
++            posInChildTables.emplace_back(t.getNumNodes());
++            nodeParent.emplace_back(t.getNumNodes());
++            posInMergedNode.emplace_back(t.getNumNodes());
++            // deal with tree nodes
++            const std::vector<std::vector<VertexID>> &children = t.getChild();
++            for (VertexID nID : t.getPostOrder()) {
++                const Node &tau = t.getNode(nID);
++                std::vector<int> newAggrePos;
++                std::vector<int> aggreWeight;
++                std::vector<int> newAggreWeight;
++                std::vector<std::vector<int>> newChildKeyPos;
++                bool nodeExists = false;
++                int mergedNodePos = (int)mergedNode.size();
++                bool isRoot = false;
++                if (t.getRootID() == nID) {
++                    isRoot = true;
++                    aggreWeight = t.getAggreWeight();
++                }
++                for (int k = 0; k < mergedNode.size(); ++k) {
++                    if (mergeable(mergedNodeNID[k], nID, allTree[mergedNodeTID[k]], t, allPattern[mergedNodeTID[k]],
++                                  pts[tp.patternPos], newAggrePos, newChildKeyPos, aggreWeight, newAggreWeight,
++                                  isRoot, orbitType))  {
++                        toTreeNode[k].emplace_back(numQuery, tID, nID, newAggrePos, newAggreWeight, newChildKeyPos);
++                        if (mergedNode[k].localOrder.size() == tau.localOrder.size()) {
++                            nodeExists = true;
++                            mergedNodePos = k;
++                        }
++                    }
++                }
++                posInMergedNode[tID][nID] = mergedNodePos;
++                if (!nodeExists) {
++                    mergedNode.push_back(tau);
++                    mergedNodeTID.push_back(tID);
++                    mergedNodeNID.push_back(nID);
++                    toTreeNode.emplace_back();
++                    const std::vector<int> &aggrePos = t.getAggrePos(nID);
++                    const std::vector<std::vector<int>> &childKeyPos = t.getChildKeyPos(nID);
++                    toTreeNode.back().emplace_back(numQuery, tID, nID, aggrePos, aggreWeight, childKeyPos);
++                }
++//                if (t.isLeaf(nID)) nodeExecutable[tID][nID] = true;
++//                else nodeExecutable[tID][nID] = false;
++                nodeExecuted[tID][nID] = false;
++                nodeNeedExecute[tID][nID] = false;
++                posInChildTables[tID][nID] = -1;
++                nodeParent[tID][nID] = t.getParent(nID);
++            }
++            // deal with tree partitions
++            const std::vector<int> &partitionPos = t.getPartitionPos();
++            const std::vector<VertexID> &postOrder = t.getPostOrder();
++            nodePID.emplace_back(t.getNumNodes());
++            for (VertexID pID = 0; pID < t.getGlobalOrder().size(); ++pID) {
++                int startPos;
++                if (pID == 0) startPos = 0;
++                else startPos = partitionPos[pID - 1] + 1;
++                int endPos = partitionPos[pID] + 1;
++                for (int k = startPos; k < endPos; ++k) {
++                    VertexID nID = postOrder[k];
++                    nodePID[tID][nID] = pID;
++                }
++            }
++            // leaf nodes of a partition is executable if for all partition nodes their children are still in this partition
++            for (VertexID pID = 0; pID < t.getGlobalOrder().size(); ++pID) {
++                bool partExecutable = true;
++                int startPos;
++                if (pID == 0) startPos = 0;
++                else startPos = partitionPos[pID - 1] + 1;
++                int endPos = partitionPos[pID] + 1;
++                for (int k = startPos; k < endPos; ++k) {
++                    VertexID nID = postOrder[k];
++                    for (VertexID cID : children[nID]) {
++                        if (nodePID[tID][cID] != pID) {
++                            partExecutable = false;
++                            break;
++                        }
++                    }
++                    if (!partExecutable) break;
++                }
++                if (partExecutable) {
++                    for (int k = startPos; k < endPos; ++k) {
++                        VertexID nID = postOrder[k];
++                        if (t.isLeaf(nID)) nodeExecutable[tID][nID] = true;
++                    }
++                }
++            }
+         }
++        ++fID;
+     }
++    ++numQuery;
++    numMergedNodes = (int)mergedNode.size();
++//    for (int i = 0; i < allTree.size(); ++i) {
++//        printf("tree %d:\n", i);
++//        allTree[i].print();
++//    }
++}
++
++bool Forest::executable(const NodeInfo &inf) const {
++    return nodeNeedExecute[inf.tID][inf.nID] && !nodeExecuted[inf.tID][inf.nID] && nodeExecutable[inf.tID][inf.nID];
++}
++
++const Pattern &Forest::mergedNodePattern(int pos) const {
++    int tID = mergedNodeTID[pos];
++    return allPattern[tID];
+ }
++
++void Forest::updateNodeExecutable(int tableID) {
++    for (int i = 0; i < childTID[tableID].size(); ++i) {
++        int tID = childTID[tableID][i];
++        VertexID nID = childNID[tableID][i];
++        nodeExecuted[tID][nID] = true;
++        VertexID parentID = allTree[tID].getParent(nID);
++        bool flag = true;
++        if (nodeNeedExecute[tID][parentID]) {
++            for (VertexID cID: allTree[tID].getChild()[parentID]) {
++                if (allTree[tID].isLeaf(cID)) nodeExecutable[tID][cID] = true;
++                if (!nodeExecuted[tID][cID]) {
++                    nodeExecutable[tID][parentID] = false;
++                    flag = false;
++                    break;
++                }
++            }
++            if (flag) nodeExecutable[tID][parentID] = true;
++        }
++    }
++}
++
++void Forest::allocateTables(HashTable **treeNodeH, std::vector<HashTable> &allocatedHashTable, ui n, ui m, int &nTable,
++                            int &mTable) {
++    for (int qID = 0; qID < numQuery; ++qID) {
++        for (int fID = 0; fID < queryFactor[qID].size(); ++fID) {
++            int firstTree = queryFactorFirstTree[qID][fID];
++            int numTree = queryFactorNumTree[qID][fID];
++            std::map<CanonType, std::vector<std::pair<int, VertexID>>> canon2RootNode;
++            for (int tID = firstTree; tID < numTree + firstTree; ++tID) {
++                const Tree &t = allTree[tID];
++                VertexID rootID = t.getRootID();
++                const Pattern &p = allPattern[tID];
++                CanonType canon = p.u.getCanonValue();
++                canon2RootNode[canon].emplace_back(tID, rootID);
++            }
++            std::queue<std::vector<std::pair<int, VertexID>>> q;
++            std::queue<int> siblingQ;
++            for (auto it = canon2RootNode.begin(); it != canon2RootNode.end(); ++it)
++#ifdef DEBUG
++                if (fID == 1 && it -> first == 282161) {
++                    q.push(it->second);
++                    siblingQ.push(1);
++                    for (int i = 0; i < it->second.size(); ++i) {
++                        int tID = it->second[i].first;
++                        printf("tID = %d\n", tID);
++                        printf("pattern out canon = %lld\n", allPattern[tID].out.getCanonValue());
++                        allPattern[tID].out.printGraph();
++                        allTree[tID].print();
++                    }
++                }
++//                    q.push(it->second);
++#else
++            {
++                q.push(it->second);
++                siblingQ.push(1);
++            }
++#endif
++            while (!q.empty()) {
++                std::vector<std::pair<int, VertexID>> treeNodeID = q.front();
++                int siblingNum = siblingQ.front();
++                int setTRep = treeNodeID[0].first;
++                VertexID setNRep = treeNodeID[0].second;
++                bool isRoot = allTree[setTRep].getRootID() == setNRep;
++                bool isPart = !allTree[setTRep].needPrefix(setNRep);
++                q.pop();
++                siblingQ.pop();
++                std::set<PatternInfo> setPatterns;
++                // group nodes in the same set, collect the child of each group.
++                // assume that if the subtree canonical value is equal, then the node order is isomorphic
++                // nodes are grouped together if the followings are the same:
++                // 1. directed canon value of the node 2. child key pos 3. aggre pos 4. aggre weight 5. node order isomorphic
++                std::vector<CanonType> groupNodeCanon;
++                std::vector<std::vector<std::vector<int>>> groupChildKeyPos;
++                std::vector<std::vector<int>> groupAggrePos;
++                std::vector<std::vector<int>> groupAggreWeight;
++                std::vector<std::vector<int>> groupTIDs;
++                std::vector<std::vector<VertexID>> groupNIDs;
++                for (int i = 0; i < treeNodeID.size(); ++i) {
++                    int tID = treeNodeID[i].first;
++                    const Tree &t = allTree[tID];
++                    const Pattern &p = allPattern[tID];
++                    VertexID nID = treeNodeID[i].second;
++                    int pID = nodePID[tID][nID];
++                    int pIDCopy = pID;
++                    for (int j = 0; j < pIDCopy; ++j) {
++                        if (t.getGlobalOrder()[j].empty()) --pID;
++                    }
++                    const Node &tau = t.getNode(nID);
++                    std::vector<std::vector<int>> childKeyPos = t.getChildKeyPos(nID);
++                    std::vector<int> aggrePos = t.getAggrePos(nID);
++                    std::vector<int> aggreWeight;
++                    if (t.getRootID() == nID) {
++                        aggreWeight = t.getAggreWeight();
++                        // sort aggrePos and aggreWeight
++                        const std::vector<int> aggrePosCopy = aggrePos;
++                        const std::vector<int> aggreWeightCopy = aggreWeight;
++                        sortAggrePosWeight(orbitType, aggrePos, aggreWeight, aggrePosCopy, aggreWeightCopy);
++                    }
++                    int pos = posInMergedNode[tID][nID];
++                    setPatterns.emplace(tau.subPatternCanon, tau.keyOrbit, tau.prefixOrbit, tau.subPatternRules, tau.unEdgeKey, pID, pos);
++                    bool groupExists = false;
++                    for (int j = 0; j < groupNodeCanon.size(); j++) {
++                        const Pattern &pRep = allPattern[groupTIDs[j][0]];
++                        const Node &nRep = allTree[groupTIDs[j][0]].getNode(groupNIDs[j][0]);
++                        if (groupNodeCanon[j] == tau.canonValue && groupChildKeyPos[j] == childKeyPos &&
++                            groupAggrePos[j] == aggrePos && groupAggreWeight[j] == aggreWeight &&
++                            checkMapping(p, pRep, tau.nodeOrder, nRep.nodeOrder)) {
++                            groupTIDs[j].push_back(tID);
++                            groupNIDs[j].push_back(nID);
++                            groupExists = true;
++                            break;
++                        }
++                    }
++                    if (!groupExists) {
++                        // build a new group if it is leaf node or can not assign to existing groups
++                        groupNodeCanon.push_back(tau.canonValue);
++                        groupChildKeyPos.push_back(childKeyPos);
++                        groupAggrePos.push_back(aggrePos);
++                        std::vector<int> tIDs = {tID};
++                        std::vector<VertexID> nIDs = {nID};
++                        groupTIDs.push_back(tIDs);
++                        groupNIDs.push_back(nIDs);
++                        groupAggreWeight.push_back(aggreWeight);
++                    }
++                }
++                // build the node set for each child for each group representative.
++                bool valid = true;
++                std::vector<std::vector<int>> groupChildNum(groupNodeCanon.size());
++                for (int group = 0; group < groupNodeCanon.size(); ++group) {
++                    const std::vector<std::vector<int>> &childKeyPos = groupChildKeyPos[group];
++                    const std::vector<int> &tIDs = groupTIDs[group];
++                    const std::vector<VertexID> &nIDs = groupNIDs[group];
++//                    if (childKeyPos.size() <= 1) continue;
++                    int childNum = 1;
++                    for (int j = 0; j < childKeyPos.size(); ++j) {
++                        std::set<PatternInfo> childPattern;
++                        for (int k = 0; k < tIDs.size(); ++k) {
++                            int tID = tIDs[k];
++                            const Tree &t = allTree[tID];
++                            VertexID cID = t.getChild()[nIDs[k]][j];
++                            const Node &child = t.getNode(cID);
++                            int cPID = nodePID[tID][cID];
++                            for (int l = 0; l < cPID; ++l) {
++                                if (t.getGlobalOrder()[l].empty()) --cPID;
++                            }
++                            int cPos = posInMergedNode[tID][cID];
++                            childPattern.emplace(child.subPatternCanon, child.keyOrbit, child.prefixOrbit,
++                                                 child.subPatternRules, child.unEdgeKey, cPID, cPos);
++                        }
++                        groupChildNum[group].push_back(childPattern.size());
++                        childNum *= (int)childPattern.size();
++                    }
++                    if (childNum != tIDs.size() / siblingNum) {
++                        // this group is invalid. all rooted subtrees must be executed separately.
++                        valid = false;
++                        break;
++                    }
++                }
++                bool vertexKey = allTree[setTRep].getNode(setNRep).keySize < 2;
++                bool tableExists = false;
++                if (!isRoot) {
++                    for (int tableID = 0; tableID < childTables.size(); ++tableID) {
++                        if (childPatterns[tableID] == setPatterns) {
++                            for (auto & id : treeNodeID) {
++                                int tID = id.first;
++                                VertexID nID = id.second;
++                                treeNodeH[tID][nID] = childTables[tableID];
++                                childTID[tableID].push_back(tID);
++                                childNID[tableID].push_back(nID);
++                                posInChildTables[tID][nID] = tableID;
++                            }
++                            tableExists = true;
++                            break;
++                        }
++                    }
++                }
++                if (!tableExists) {
++                    if (!isRoot) {
++                        HashTable h;
++                        if (vertexKey) {
++                            h = new Count[n];
++                            memset(h, 0, sizeof(Count) * n);
++                            allocatedHashTable.push_back(h);
++                            ++nTable;
++                        } else {
++                            h = new Count[m];
++                            memset(h, 0, sizeof(Count) * m);
++                            allocatedHashTable.push_back(h);
++                            mTable += 2;
++                        }
++                        for (auto &id: treeNodeID) {
++                            treeNodeH[id.first][id.second] = h;
++                        }
++                        childTables.push_back(h);
++                        if (valid) numTables.push_back(groupTIDs.size());
++                        else numTables.push_back(treeNodeID.size());
++                        childTID.emplace_back();
++                        childNID.emplace_back();
++                        childPatterns.push_back(setPatterns);
++                        isPartition.push_back(isPart);
++                        for (int i = 0; i < treeNodeID.size(); ++i) {
++                            childTID.back().push_back(treeNodeID[i].first);
++                            childNID.back().push_back(treeNodeID[i].second);
++                            posInChildTables[treeNodeID[i].first][treeNodeID[i].second] = (int)childTables.size() - 1;
++                        }
++                    }
++                    if (valid) {
++                        for (int group = 0; group < groupNodeCanon.size(); ++group) {
++                            const std::vector<std::vector<int>> &childKeyPos = groupChildKeyPos[group];
++                            const std::vector<int> &tIDs = groupTIDs[group];
++                            const std::vector<VertexID> &nIDs = groupNIDs[group];
++                            nodeNeedExecute[tIDs[0]][nIDs[0]] = true;
++                            for (int j = 0; j < childKeyPos.size(); ++j) {
++                                std::vector<std::pair<int, VertexID>> next;
++                                for (int k = 0; k < tIDs.size(); ++k) {
++                                    const Tree &t = allTree[tIDs[k]];
++                                    VertexID cID = t.getChild()[nIDs[k]][j];
++                                    next.emplace_back(tIDs[k], cID);
++                                }
++                                q.push(next);
++                                siblingQ.push(groupTIDs[group].size() / groupChildNum[group][j]);
++                            }
++                        }
++                    }
++                    else {
++                        for (auto &idPair: treeNodeID) {
++                            int tID = idPair.first;
++                            VertexID nID = idPair.second;
++                            nodeNeedExecute[tID][nID] = true;
++                            const Tree &t = allTree[tID];
++                            const std::vector<std::vector<VertexID>> &children = t.getChild();
++                            for (int j = 0; j < children[nID].size(); ++j) {
++                                VertexID cID = children[nID][j];
++                                std::vector<std::pair<int, VertexID>> next;
++                                next.emplace_back(tID, cID);
++                                q.push(next);
++                                siblingQ.push(1);
++                            }
++                        }
++                    }
++                }
++            }
++        }
++    }
++    numExecuted = std::vector<int>(childTables.size(), 0);
++}
++
++void sortAggrePosWeight(int orbitType, std::vector<int> &sortedAggrePos, std::vector<int> &sortedAggreWeight,
++                        const std::vector<int> &oldAggrePos, const std::vector<int> &oldAggreWeight) {
++    if (sortedAggrePos.empty()) {
++        sortedAggreWeight = oldAggreWeight;
++        return;
++    }
++    std::vector<int> pos(sortedAggrePos.size());
++    if (orbitType == 2) {
++        sortEOrbitAggrePos(sortedAggrePos);
++        for (int i = 0; i < sortedAggrePos.size(); i = i + 2) {
++            for (int j = 0; j < oldAggrePos.size(); j = j + 2) {
++                if (sortedAggrePos[i] == oldAggrePos[j] && sortedAggrePos[i + 1] == oldAggrePos[j + 1]) {
++                    pos[i] = j;
++                    break;
++                }
++            }
++        }
++    }
++    else {
++        std::sort(sortedAggrePos.begin(), sortedAggrePos.end());
++        for (int i = 0; i < sortedAggrePos.size(); ++i) {
++            for (int j = 0; j < oldAggrePos.size(); ++j) {
++                if (sortedAggrePos[i] == oldAggrePos[j]) {
++                    pos[i] = j;
++                    break;
++                }
++            }
++        }
++    }
++    for (int i = 0; i < sortedAggreWeight.size(); ++i) {
++        sortedAggreWeight[i] = oldAggreWeight[pos[i]];
++    }
++}
++
++// check whether we can merge tau2 to tau1
++bool mergeable(VertexID nID1, VertexID nID2, const Tree &t1, const Tree &t2, const Pattern &p1, const Pattern &p2,
++               std::vector<int> &sortedAggrePos, std::vector<std::vector<int>> &sortedChildKeyPos,
++               const std::vector<int> &aggreWeight, std::vector<int> &sortedAggreWeight, bool isRoot, int orbitType) {
++    const Node &tau1 = t1.getNode(nID1);
++    const Node &tau2 = t2.getNode(nID2);
++    if (tau1.canonValue != tau2.canonValue) return false;
++    if (tau1.edgeKey != tau2.edgeKey) return false;
++    if (tau1.numRules != tau2.numRules) return false;
++    const std::vector<int> &oldAggrePos = t2.getAggrePos(nID2);
++    const std::vector<std::vector<int>> &oldChildKeyPos = t2.getChildKeyPos(nID2);
++    const std::vector<VertexID> &nodeOrder1 = tau1.nodeOrder;
++    const std::vector<VertexID> &nodeOrder2 = tau2.nodeOrder;
++    int prefixSize1 = tau1.nodeOrder.size() - tau1.localOrder.size();
++    int prefixSize2 = tau2.nodeOrder.size() - tau2.localOrder.size();
++    if (prefixSize1 != prefixSize2) return false;
++    const std::vector<std::vector<int>> &nodeInPos1 = t1.getNodeInPos(nID1);
++    const std::vector<std::vector<int>> &nodeOutPos1 = t1.getNodeOutPos(nID1);
++    const std::vector<std::vector<int>> &nodeUnPos1 = t1.getNodeUnPos(nID1);
++    const std::vector<std::vector<int>> &nodeInPos2 = t2.getNodeInPos(nID2);
++    const std::vector<std::vector<int>> &nodeOutPos2 = t2.getNodeOutPos(nID2);
++    const std::vector<std::vector<int>> &nodeUnPos2 = t2.getNodeUnPos(nID2);
++    const std::vector<std::vector<int>> &nodeGreaterPos1 = t1.getNodeGreaterPos(nID1);
++    const std::vector<std::vector<int>> &nodeGreaterPos2 = t2.getNodeGreaterPos(nID2);
++    if (!(nodeInPos1 == nodeInPos2 && nodeOutPos1 == nodeOutPos2 && nodeUnPos1 == nodeUnPos2 && nodeGreaterPos1 == nodeGreaterPos2)) return false;
++    VertexID *mapping = new VertexID[MAX_PATTERN_SIZE];
++    for (int i = 0; i < tau1.numVertices; ++i) {
++        mapping[nodeOrder2[i]] = nodeOrder1[i];
++    }
++    if(!checkMapping(p1, p2, nodeOrder2, mapping)) {
++        delete[] mapping;
++        return false;
++    }
++
++    sortedAggrePos = oldAggrePos;
++    sortedChildKeyPos = oldChildKeyPos;
++    // build the new aggrePos and childKeyPos
++    for (int i = 0; i < oldAggrePos.size(); ++i) {
++        VertexID oldAggreV = nodeOrder2[oldAggrePos[i]];
++        for (int j = 0; j < nodeOrder1.size(); ++j) {
++            if (mapping[oldAggreV] == nodeOrder1[j]) {
++                sortedAggrePos[i] = j;
++                break;
++            }
++        }
++    }
++    for (int i = 0; i < oldChildKeyPos.size(); ++i) {
++        for (int j = 0; j < oldChildKeyPos[i].size(); j++) {
++            VertexID oldChildKey = nodeOrder2[oldChildKeyPos[i][j]];
++            for (int k = 0; k < nodeOrder1.size(); ++k) {
++                if (mapping[oldChildKey] == nodeOrder1[k]) {
++                    sortedChildKeyPos[i][j] = k;
++                    break;
++                }
++            }
++        }
++    }
++
++    // sort aggregation vertices in ascending order and adjust aggreWeight accordingly
++    if (isRoot) {
++        const std::vector<int> aggrePosCopy = sortedAggrePos;
++        sortedAggreWeight = aggreWeight;
++        sortAggrePosWeight(orbitType, sortedAggrePos, sortedAggreWeight, aggrePosCopy, aggreWeight);
++        std::vector<int> pos(sortedAggrePos.size());
++        if (orbitType == 2) {
++            sortEOrbitAggrePos(sortedAggrePos);
++            for (int i = 0; i < sortedAggrePos.size(); i = i + 2) {
++                for (int j = 0; j < aggrePosCopy.size(); j = j + 2) {
++                    if (sortedAggrePos[i] == aggrePosCopy[j] && sortedAggrePos[i + 1] == aggrePosCopy[j + 1]) {
++                        pos[i] = j;
++                        break;
++                    }
++                }
++            }
++        }
++        else {
++            std::sort(sortedAggrePos.begin(), sortedAggrePos.end());
++            for (int i = 0; i < sortedAggrePos.size(); ++i) {
++                for (int j = 0; j < aggrePosCopy.size(); ++j) {
++                    if (sortedAggrePos[i] == aggrePosCopy[j]) {
++                        pos[i] = j;
++                        break;
++                    }
++                }
++            }
++        }
++        sortedAggreWeight = aggreWeight;
++        if (!pos.empty()) {
++            for (int i = 0; i < sortedAggreWeight.size(); ++i) {
++                sortedAggreWeight[i] = aggreWeight[pos[i]];
++            }
++        }
++    }
++
++    delete[] mapping;
++    return true;
++}
++
++void ExeParam::assignGroup(const std::vector<int> &newAggrePos, const std::vector<std::vector<int>> &newChildKeyPos,
++                           bool isRt, ui keySize, ui n, ui m) {
++    int shareID = (int)hashTables.size();
++    bool aggreExists = false;
++    for (int i = 0; i < aggrePoses.size(); ++i) {
++        if (aggrePoses[i] == newAggrePos && (isRt == isRoot[i])) {
++            aggreShareIDs[i].push_back(shareID);
++            id2AggreKey.push_back(i);
++            aggreExists = true;
++        }
++    }
++    if (!aggreExists) {
++        std::vector<int> id;
++        id.push_back(shareID);
++        id2AggreKey.push_back(aggrePoses.size());
++        aggrePoses.push_back(newAggrePos);
++        aggreShareIDs.push_back(id);
++        isRoot.push_back(isRt);
++    }
++    bool childKeyExists = false;
++    for (int i = 0; i < childKeyPoses.size(); ++i) {
++        if (childKeyPoses[i] == newChildKeyPos) {
++            id2ChildKey.push_back(i);
++            childKeyExists = true;
++        }
++    }
++    if (!childKeyExists) {
++        id2ChildKey.push_back(childKeyPoses.size());
++        childKeyPoses.push_back(newChildKeyPos);
++    }
++}
++
++void ExeParam::buildPosesAndTypes(Forest &f) {
++    for (int i = 0; i < nIDs.size(); ++i) {
++        if (!trees[i].isLeaf(nIDs[i]))
++            nonLeafIDs.push_back(i);
++    }
++    if (!rep.edgeKey) {
++        isRoot = std::vector<bool>(nIDs.size());
++        for (int shareID = 0 ; shareID < nIDs.size(); ++shareID) {
++            if (trees[shareID].getRootID() == nIDs[shareID])
++                isRoot[shareID] = true;
++            else
++                isRoot[shareID] = false;
++        }
++        return;
++    }
++    int orbitType = trees[0].getOrbitType();
++    const std::vector<VertexID> &nodeOrder = rep.nodeOrder;
++    // build posChildEdge and childEdgeType
++    posChildEdge = std::vector<std::vector<std::pair<int, int>>>(nodeOrder.size());
++    childEdgeType = std::vector<std::vector<int>>(childKeyPoses.size());
++    for (int i = 0; i < childKeyPoses.size(); ++i) {
++        childEdgeType[i] = std::vector<int>(childKeyPoses[i].size(), 0);
++        for (int j = 0; j < childKeyPoses[i].size(); ++j) {
++            if (childKeyPoses[i][j].size() == 2) {
++                int pos1 = childKeyPoses[i][j][0], pos2 = childKeyPoses[i][j][1];
++                int pos = pos1 > pos2 ? pos1 : pos2;
++                int smallerPos = pos1 < pos2 ? pos1 : pos2;
++                posChildEdge[pos].emplace_back(i, j);
++                if (!nodeInterPos[pos]) {
++                    if (!nodeInPos[pos].empty()) childEdgeType[i][j] = 2;
++                    else if (!nodeOutPos[pos].empty()) childEdgeType[i][j]= 1;
++                    else {
++                        if (pos == pos2) childEdgeType[i][j] = 1;
++                        else childEdgeType[i][j] = 6;
++                    }
++                }
++                else {
++                    if (p.useDAG()) childEdgeType[i][j] = 3;
++                    else {
++                        if (std::find(nodeInPos[pos].begin(), nodeInPos[pos].end(), smallerPos) != nodeInPos[pos].end() ||
++                            std::find(nodeOutPos[pos].begin(), nodeOutPos[pos].end(), smallerPos) != nodeOutPos[pos].end() ||
++                            std::find(greaterPos[pos].begin(), greaterPos[pos].end(), smallerPos) != greaterPos[pos].end() ||
++                            std::find(lessPos[pos].begin(), lessPos[pos].end(), smallerPos) != lessPos[pos].end())
++                            childEdgeType[i][j] = 3;
++                        else {
++                            if (pos == pos2) childEdgeType[i][j] = 4;
++                            else childEdgeType[i][j] = 7;
++                        }
++                    }
++                }
++            }
++        }
++    }
++    // build posAggreEdge and aggreEdgeType
++    posAggreEdge = std::vector<std::vector<std::pair<int, int>>>(nodeOrder.size());
++    aggreEdgeType = std::vector<std::vector<int>>(aggrePoses.size());
++    for (int i = 0; i < aggrePoses.size(); ++i) {
++        if (!isRoot[i]) {
++            if (aggrePoses[i].size() == 2) {
++                int pos1 = aggrePoses[i][0], pos2 = aggrePoses[i][1];
++                int pos = pos1 > pos2 ? pos1 : pos2;
++                int smallerPos = pos1 < pos2 ? pos1 : pos2;
++                posAggreEdge[pos].emplace_back(i, 0);
++                if (!nodeInterPos[pos]) {
++                    if (!nodeInPos[pos].empty()) aggreEdgeType[i].push_back(2);
++                    else if (!nodeOutPos[pos].empty()) aggreEdgeType[i].push_back(1);
++                    else {
++                        if (pos == pos2) aggreEdgeType[i].push_back(1);
++                        else aggreEdgeType[i].push_back(6);
++                    }
++                }
++                else {
++                    if (p.useDAG()) aggreEdgeType[i].push_back(3);
++                    else {
++                        if (std::find(nodeInPos[pos].begin(), nodeInPos[pos].end(), smallerPos) != nodeInPos[pos].end() ||
++                            std::find(nodeOutPos[pos].begin(), nodeOutPos[pos].end(), smallerPos) != nodeOutPos[pos].end() ||
++                            std::find(greaterPos[pos].begin(), greaterPos[pos].end(), smallerPos) != greaterPos[pos].end() ||
++                            std::find(lessPos[pos].begin(), lessPos[pos].end(), smallerPos) != lessPos[pos].end())
++                            aggreEdgeType[i].push_back(3);
++                        else {
++                            if (pos == pos2) aggreEdgeType[i].push_back(4);
++                            else aggreEdgeType[i].push_back(7);
++                        }
++                    }
++                }
++            }
++        }
++        else if (orbitType == 2) {
++            aggreEdgeType[i] = std::vector<int>(aggrePoses[i].size() / 2);
++            for (int j = 0; j < aggrePoses[j].size(); j = j + 2) {
++                int pos1 = aggrePoses[i][j], pos2 = aggrePoses[i][j + 1];
++                int pos = pos1 > pos2 ? pos1 : pos2;
++                posAggreEdge[pos].emplace_back(i, j / 2);
++                if (!nodeInterPos[pos]) {
++                    if (!nodeOutPos[pos].empty()) aggreEdgeType[i][j / 2] = 1;
++                    else if (!nodeInPos[pos].empty()) aggreEdgeType[i][j / 2] = 2;
++                    else aggreEdgeType[i][j / 2] = 5;
++                }
++                else aggreEdgeType[i][j / 2] = 3;
++            }
++        }
++    }
++    isRoot = std::vector<bool>(nIDs.size());
++    for (int shareID = 0 ; shareID < nIDs.size(); ++shareID) {
++        if (trees[shareID].getRootID() == nIDs[shareID])
++            isRoot[shareID] = true;
++        else
++            isRoot[shareID] = false;
++    }
++}
+\ No newline at end of file
+diff --git a/counting/forest.h b/counting/forest.h
+index 8ac9f31..63fce2c 100644
+--- a/counting/forest.h
++++ b/counting/forest.h
+@@ -1,18 +1,171 @@
++//
++// Created by anonymous author on 2022/9/15.
++//
++
+ #ifndef SCOPE_FOREST_H
+ #define SCOPE_FOREST_H
+ 
+ #include "equation.h"
++#include "aggregation.h"
++#include <stack>
++
++struct TreeAndPattern {
++    Tree t;
++    int patternPos;
++
++    TreeAndPattern(const Tree &t, int patternPos) : t(t), patternPos(patternPos) {}
++
++    bool operator<(const TreeAndPattern &rhs) const {
++        return t < rhs.t;
++    }
++};
++
++struct NodeInfo {
++    int qID;
++    int tID;
++    VertexID nID;
++    std::vector<int> aggrePos;
++    std::vector<int> aggreWeight;
++    std::vector<std::vector<int>> childKeyPos;
++
++    NodeInfo(int qId, int tId, VertexID nId, const std::vector<int> &aggrePos, const std::vector<int> &aggreWeight,
++             const std::vector<std::vector<int>> &childKeyPos) : qID(qId), tID(tId), nID(nId), aggrePos(aggrePos),
++                                                                 aggreWeight(aggreWeight), childKeyPos(childKeyPos) {}
++};
++
++struct PatternInfo {
++    CanonType canon;
++    int keyOrbit;
++    std::vector<int> prefixOrbit;
++    int subPatternRules;
++    bool unEdgeKey;
++    int pID;
++    int pos;
++
++    PatternInfo(CanonType canon, int keyOrbit, const std::vector<int> &prefixOrbit, int subPatternRules, bool unEdgeKey,
++                int pId, int pos) : canon(canon), keyOrbit(keyOrbit), prefixOrbit(prefixOrbit),
++                                    subPatternRules(subPatternRules), unEdgeKey(unEdgeKey), pID(pId), pos(pos) {}
+ 
+-struct BatchState {
+-    int count;
++    bool operator==(const PatternInfo &rhs) const {
++        return std::tie(canon, keyOrbit, prefixOrbit, subPatternRules, unEdgeKey, pID, pos) ==
++               std::tie(rhs.canon, rhs.keyOrbit, rhs.prefixOrbit, rhs.subPatternRules, rhs.unEdgeKey, rhs.pID, rhs.pos);
++    }
++
++    bool operator<(const PatternInfo &rhs) const {
++        return std::tie(canon, keyOrbit, prefixOrbit, subPatternRules, unEdgeKey, pID, pos) <
++               std::tie(rhs.canon, rhs.keyOrbit, rhs.prefixOrbit, rhs.subPatternRules, rhs.unEdgeKey, rhs.pID, rhs.pos);
++    }
++};
++
++// after the equation is generated, we organize trees into a forest to allow the computation of nodes to be shared
++struct Forest {
++    int numQuery;
++    int numMergedNodes;
+     int orbitType;
+-    std::vector<Tree> trees;
+-    std::vector<Pattern> patterns;
++    std::vector<Node> mergedNode;
++    // we merge node i, j if: 1. canonValue is equal 2. prefix is empty or isomorphic
++    std::vector<int> mergedNodeTID;
++    std::vector<VertexID> mergedNodeNID;
++    std::vector<std::vector<NodeInfo>> toTreeNode;
++    std::vector<Tree> allTree;
++    // for the nID-th node in the tID-th tree, store its pID
++    std::vector<std::vector<int>> nodePID;
++    // for the nID-th node in the tID-th tree, store the nID of its parent
++    std::vector<std::vector<VertexID>> nodeParent;
++    std::vector<Pattern> allPattern;
++    // for the nID-th node in the tID-th tree, its position in mergedNode is posInMergedNode[i][nID]
++    std::vector<std::vector<int>> posInMergedNode;
++    // whether a node is finished. node executable means that prefixed hash table is computed.
++    std::vector<std::vector<bool>> nodeExecutable;
++    std::vector<std::vector<bool>> nodeExecuted;
++    // for the nID-th node in the tID-th tree, whether it should be executed
++    std::vector<std::vector<bool>> nodeNeedExecute;
++    std::vector<std::vector<int>> queryFactor;
++    std::vector<std::vector<int>> queryFactorFirstTree;
++    std::vector<std::vector<int>> queryFactorNumTree;
++    /******************* structures used for merging children *******************/
++    std::vector<HashTable> childTables;
++    std::vector<std::set<PatternInfo>> childPatterns;
++    // whether this set of tables represents a complete partition or prefixed nodes
++    std::vector<bool> isPartition;
++    // for each set of tables, the number of tables needs to cover the set
++    std::vector<int> numTables;
++    std::vector<int> numExecuted;   // set to 0 initially
++    // for each set of tables, store nodes to cover the set
++    std::vector<std::vector<int>> childTID;
++    std::vector<std::vector<VertexID>> childNID;
++    // for the nID-th node in the tID-th tree, the position of its corresponding child table
++    std::vector<std::vector<int>> posInChildTables;
+ 
+-    BatchState() : count(0), orbitType(0) {}
++    Forest() {
++        numQuery = 0;
++        numMergedNodes = 0;
++        orbitType = 0;
++    }
+ 
+-    void append(std::map<int, std::vector<Pattern>> &inputPatterns,
+-                std::map<int, std::vector<std::vector<Tree>>> &inputTrees);
++    void loadQuery(std::map<int, std::vector<Pattern>> &patterns, std::map<int, std::vector<std::vector<Tree>>> &trees,
++                   bool share);
++    const Pattern &mergedNodePattern(int pos) const;
++    void updateNodeExecutable(int tableID);
++    bool executable(const NodeInfo &inf) const;
++    void allocateTables(HashTable **treeNodeH, std::vector<HashTable> &allocatedHashTable, ui n, ui m, int &nTable,
++                        int &mTable);
+ };
+ 
+-#endif //SCOPE_FOREST_H
++// parameters needed for calling exeSharedNode
++struct ExeParam {
++    Node rep;
++    /*********************** indexes of these containers are shareID ***********************/
++    std::vector<std::vector<VertexID>> children;
++    std::vector<VertexID> nIDs;
++    std::vector<int> tIDs;
++    std::vector<Tree> trees;
++    std::vector<HashTable *> hashTables;
++    std::vector<std::vector<int>> aggreWeights;
++    std::vector<int> id2AggreKey;
++    std::vector<int> id2ChildKey;
++    std::vector<bool> isRoot;
++    std::vector<int> tableIDs;
++    /***************************************************************************************/
++    /*********************** indexes of these containers are groupID ***********************/
++    // group nodes by: 1. childKeyPose 2. aggrePos and isRoot
++    std::vector<std::vector<std::vector<int>>> childKeyPoses;
++    std::vector<std::vector<int>> aggrePoses;
++    std::vector<std::vector<int>> aggreShareIDs;
++    /***************************************************************************************/
++    /*********************** indexes of these containers are mappingSize *******************/
++    std::vector<bool> nodeInterPos;
++    std::vector<std::vector<int>> nodeInPos;
++    std::vector<std::vector<int>> nodeOutPos;
++    std::vector<std::vector<int>> nodeUnPos;
++    std::vector<bool> nodeCandPos;
++    std::vector<std::vector<int>> greaterPos;
++    std::vector<std::vector<int>> lessPos;
++    // when the mapping size is i, store the position of child edge keys that are matched
++    std::vector<std::vector<std::pair<int, int>>> posChildEdge;
++    // when the mapping size is i, store the position of aggregation edge keys that are matched
++    std::vector<std::vector<std::pair<int, int>>> posAggreEdge;
++    std::vector<std::vector<int>> childEdgeType;
++    std::vector<std::vector<int>> aggreEdgeType;
++    // when the mappingSize is i, the positions of triangle neighbors
++    std::vector<std::pair<int, int>> nodeTriPos;
++    std::vector<int> triEdgeType;   // 1: edge ID at p1 2: outID at p1 3: compute
++    std::vector<int> triEndType;    // 1: in-in 2: out-out 3: in-out
++    /***************************************************************************************/
++    std::vector<int> nonLeafIDs;
++    VertexID **candidate;
++    ui *candCount;
++    Pattern p;
++
++    void assignGroup(const std::vector<int> &newAggrePos, const std::vector<std::vector<int>> &newChildKeyPos,
++                     bool isRt, ui keySize, ui n, ui m);
++    void buildPosesAndTypes(Forest &f);
++};
++
++void sortAggrePosWeight(int orbitType, std::vector<int> &sortedAggrePos, std::vector<int> &sortedAggreWeight,
++                        const std::vector<int> &oldAggrePos, const std::vector<int> &oldAggreWeight);
++bool mergeable(VertexID nID1, VertexID nID2, const Tree &t1, const Tree &t2, const Pattern &p1, const Pattern &p2,
++               std::vector<int> &sortedAggrePos, std::vector<std::vector<int>> &sortedChildKeyPos,
++               const std::vector<int> &aggreWeight, std::vector<int> &sortedAggreWeight, bool isRoot, int orbitType);
++
++#endif //SCOPE_FOREST_H
+\ No newline at end of file
+diff --git a/executable/scope.cpp b/executable/scope.cpp
+index 9bcacd1..0018b76 100644
+--- a/executable/scope.cpp
++++ b/executable/scope.cpp
+@@ -12,11 +12,13 @@ int main(int argc, char **argv) {
+     std::string resultPath = cmd.getResultPath();
+     std::string trianglePath = cmd.getTrianglePath();
+     bool batchQuery = cmd.getBatchQuery();
++    bool shareNode = true;
+     bool useTriangle = !trianglePath.empty();
+     std::cout << "query graph path: " << queryGraphPath << std::endl;
+     std::cout << "data graph path: " << dataGraphPath << std::endl;
+     std::cout << "result path: " << resultPath << std::endl;
+     std::cout << "using batch query: " << batchQuery << std::endl;
++    std::cout << "sharing nodes computation: " << shareNode << std::endl;
+     std::cout << "using triangle: " << useTriangle << std::endl;
+     std::cout << "set intersection type: " << SI << std::endl;
+     DataGraph dun = DataGraph();
+@@ -40,6 +42,7 @@ int main(int argc, char **argv) {
+     std::vector<std::string> files;
+     std::vector<PatternGraph> patternGraphs = loadPatternGraph(queryGraphPath, batchQuery, files);
+     int patternSize = patternGraphs[0].getNumVertices();
++    bool forestShare = patternSize <= 5;
+     HashTable factorSum = new Count[m + 1];
+     HashTable ht[MAX_NUM_NODE];
+     for (auto & h: ht)
+@@ -69,7 +72,7 @@ int main(int argc, char **argv) {
+     ui totalNumPatterns = 0, totalNodes = 0;
+     double averageNodeSize = 0.0;
+     int numVertexTable = 0, numEdgeTable = 0;
+-    if (true) {
++    if (!shareNode) {
+         std::vector<HashTable> mathCalH(patternGraphs.size());
+         std::vector<int> orbitTypes(patternGraphs.size());
+ #ifdef DEBUG
+@@ -252,5 +255,357 @@ int main(int argc, char **argv) {
+         std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect << std::endl;
+     }
+ 
++    if (shareNode) {
++        std::vector<ConNode> conNodes;
++        std::vector<Pattern> conPatterns;
++        std::vector<int> conFactors;
++        std::vector<int> conIDs;
++        Forest fu, fuCover;
++        std::vector<Forest> directedF;
++        std::vector<CanonType> coverCanon;
++        std::vector<int> coverOrbit;
++        std::vector<int> coverRootOrbit;
++        std::vector<HashTable> result(patternGraphs.size());
++        std::vector<HashTable> coverH;
++        std::vector<HashTable> uH;
++        std::vector<std::vector<HashTable>> dH;
++        // for the ith Pattern, jth cover, its position in the coverH and the factor
++        std::vector<std::vector<int>> coverPos(patternGraphs.size());
++        // for the ith pattern, position j, the multiply factor of that cover
++        std::vector<std::vector<int>> coverMultiFactors(patternGraphs.size());
++        std::vector<int> divideFactors(patternGraphs.size());
++        std::vector<bool> isUndirected(patternGraphs.size(), false);
++        std::vector<HashTable> allocatedHashTable;
++        allocatedHashTable.reserve(10000);
++        int nTable = 0, mTable = 0;
++        for (int i = 0; i < patternGraphs.size(); ++i) {
++            const PatternGraph &pg = patternGraphs[i];
++            int orbitType = pg.getOrbitType();
++            if (orbitType == 0) {
++                result[i] = new Count[1];
++                result[i][0] = 0;
++            }
++            else if (orbitType == 1) {
++                result[i] = new Count[n];
++                memset(result[i], 0, sizeof(Count) * n);
++                ++nTable;
++            }
++            else {
++                if (pg.isEOrbitDir()) {
++                    result[i] = new Count[m / 2];
++                    memset(result[i], 0, sizeof(Count) * m / 2);
++                    ++mTable;
++                }
++                else {
++                    result[i] = new Count[m];
++                    memset(result[i], 0, sizeof(Count) * m);
++                    mTable += 2;
++                }
++            }
++        }
++        for (int i = 0; i < patternGraphs.size(); ++i) {
++            const PatternGraph &pg = patternGraphs[i];
++            int orbitType = pg.getOrbitType();
++            start = std::chrono::steady_clock::now();
++            if (patternGraphs[i].isClique()) {
++                start = std::chrono::steady_clock::now();
++                int k = patternGraphs[i].getNumVertices();
++                mkspecial(sg, k);
++                kclique(k, k, sg, cliqueVertices, result[i], orbitType);
++                freesub(sg, k);
++                end = std::chrono::steady_clock::now();
++                elapsedSeconds = end - start;
++                totalExeTime += elapsedSeconds.count();
++            }
++            else {
++                std::map<int, std::vector<Pattern>> patterns;
++                std::map<int, std::vector<std::vector<Tree>>> trees;
++                ConNode cn;
++                bool directed = genEquation(pg, patterns, trees, cn, useTriangle, true, true, true);
++                if (cn.num != 0) {
++                    if (orbitType == 0) cn.hashTables[0] = result[i];
++                    else if (orbitType == 1) {
++                        for (int j = 0; j < cn.aggrePos.size(); ++j)
++                            cn.hashTables[j] = result[i];
++                    }
++                    else {
++                        for (int j = 0; j < cn.aggrePos.size() / 2; ++j)
++                            cn.hashTables[j] = result[i];
++                    }
++                    bool exists = false;
++                    for (int j = 0; j < conNodes.size(); ++j) {
++                        if (conNodes[j].num == cn.num && conNodes[j].canonValue == cn.canonValue && conNodes[j].edgeKey == cn.edgeKey) {
++                            conNodes[j].merge(cn, conPatterns[j].u, patternGraphs[i]);
++                            exists = true;
++                            break;
++                        }
++                    }
++                    if (!exists) {
++                        conNodes.push_back(cn);
++                        conPatterns.emplace_back(pg);
++                    }
++                    conIDs.push_back(i);
++                    conFactors.push_back(cn.divideFactor);
++                }
++                else if (directed) {
++                    std::cout << files[i] << " uses DAG" << std::endl;
++                    if (pg.getNumVertices() >= 6 || directedF.empty()) {
++                        Forest fd;
++                        std::vector<HashTable> h;
++                        h.push_back(result[i]);
++                        dH.push_back(h);
++                        fd.loadQuery(patterns, trees, true);
++                        directedF.push_back(fd);
++                    }
++                    else {
++                        directedF[0].loadQuery(patterns, trees, true);
++                        dH[0].push_back(result[i]);
++                    }
++                }
++                else {
++                    isUndirected[i] = true;
++                    // put the first pattern to fu, the remaining patterns to fcover
++                    int divideFactor = patterns.begin() -> first;
++                    divideFactors[i] = divideFactor;
++                    const std::vector<Pattern> &allPattern = patterns.begin()->second;
++                    std::vector<std::vector<Tree>> &allTree = trees.begin()->second;
++                    std::map<int, std::vector<Pattern>> rootPattern;
++                    std::map<int, std::vector<std::vector<Tree>>> rootTree;
++                    rootPattern[divideFactor].push_back(allPattern[0]);
++                    rootTree[divideFactor].push_back(allTree[0]);
++                    coverPos[i] = std::vector<int>(allPattern.size() - 1);
++                    coverMultiFactors[i] = std::vector<int>(allPattern.size() - 1 + coverCanon.size());
++                    for (int j = 1; j < allPattern.size(); ++j) {
++                        bool exists = false;
++                        int rootOrbit = allTree[j][0].getNode(allTree[j][0].getRootID()).v2o[0];
++                        for (int k = 0; k < coverCanon.size(); ++k) {
++                            if (allPattern[j].u.getCanonValue() == coverCanon[k] && allPattern[j].u.getOrbit(0) == coverOrbit[k]
++                                && rootOrbit == coverRootOrbit[k]) {
++                                coverPos[i][j - 1] = k;
++                                coverMultiFactors[i][k] = allTree[j][0].getMultiFactor();
++                                exists = true;
++                                break;
++                            }
++                        }
++                        if (!exists) {
++                            HashTable h;
++                            if (orbitType == 0) {
++                                h = new Count[1];
++                                h[0] = 0;
++                            }
++                            else if (orbitType == 1) {
++                                h = new Count[n];
++                                memset(h, 0, sizeof(Count) * n);
++                                ++nTable;
++                            }
++                            else {
++                                if (pg.isEOrbitDir()) {
++                                    h = new Count[m / 2];
++                                    memset(h, 0, sizeof(Count) * m / 2);
++                                    ++mTable;
++                                }
++                                else {
++                                    h = new Count[m];
++                                    memset(h, 0, sizeof(Count) * m);
++                                    mTable += 2;
++                                }
++                            }
++                            coverPos[i][j - 1] = coverCanon.size();
++                            coverMultiFactors[i][coverCanon.size()] = allTree[j][0].getMultiFactor();
++                            allTree[j][0].setMultiFactor(1);
++                            coverCanon.push_back(allPattern[j].u.getCanonValue());
++                            coverOrbit.push_back(allPattern[j].u.getOrbit(0));
++                            coverRootOrbit.push_back(rootOrbit);
++                            std::map<int, std::vector<Pattern>> coverPattern;
++                            std::map<int, std::vector<std::vector<Tree>>> coverTree;
++                            coverPattern[1].push_back(allPattern[j]);
++                            coverTree[1].push_back(allTree[j]);
++                            fuCover.loadQuery(coverPattern, coverTree, forestShare);
++                            coverH.push_back(h);
++                        }
++                    }
++                    uH.push_back(result[i]);
++                    fu.loadQuery(rootPattern, rootTree, forestShare);
++                }
++            }
++            end = std::chrono::steady_clock::now();
++            elapsedSeconds = end - start;
++            totalPlanTime += elapsedSeconds.count();
++        }
++        double tableSize = (double)(nTable * n + mTable * m / 2) * sizeof(Count) / 1e9;
++#ifndef ONLY_PLAN
++        // 1. execute ConNodes
++        start = std::chrono::steady_clock::now();
++        for (int i = 0; i < conNodes.size(); ++i) {
++            executeConNode(conNodes[i], din, dout, dun, useTriangle, triangle, conPatterns[i], outID, unID,
++                           startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV);
++        }
++        for (int i = 0; i < conIDs.size(); ++i) {
++            int divideFactor = conFactors[i];
++            int orbitType = patternGraphs[i].getOrbitType();
++            bool eOrbitDir = patternGraphs[i].isEOrbitDir();
++            int id = conIDs[i];
++            if (orbitType == 0) result[id][0] /= divideFactor;
++            else if (orbitType == 1) {
++                for (int k = 0; k < n; ++k)
++                    result[id][k] /= divideFactor;
++            }
++            else {
++                if (eOrbitDir) {
++                    for (int k = 0; k < m / 2; ++k)
++                        result[id][k] /= divideFactor;
++                }
++                else {
++                    for (int k = 0; k < m; ++k)
++                        result[id][k] /= divideFactor;
++                }
++            }
++        }
++        end = std::chrono::steady_clock::now();
++        elapsedSeconds = end - start;
++        totalExeTime += elapsedSeconds.count();
++        std::cout << "finished compressed node. time: " << totalExeTime << "s" << std::endl;
++        // 2. execute undirected coverCanon, undirected root patterns and directed patterns
++        if (patternSize <= 5) {
++            start = std::chrono::steady_clock::now();
++            executeForest(fuCover, coverH, din, dout, dun, useTriangle, triangle, allocatedHashTable,
++                          outID, unID, reverseID, startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV, sg, cliqueVertices);
++            for (HashTable h: allocatedHashTable) delete[] h;
++            allocatedHashTable.clear();
++            end = std::chrono::steady_clock::now();
++            elapsedSeconds = end - start;
++            totalExeTime += elapsedSeconds.count();
++            std::cout << "finished undirected covers. time: " << totalExeTime << std::endl;
++            start = std::chrono::steady_clock::now();
++            executeForest(fu, uH,  din, dout, dun, useTriangle, triangle, allocatedHashTable,
++                          outID, unID, reverseID, startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV, sg, cliqueVertices);
++            for (HashTable h: allocatedHashTable) delete[] h;
++            allocatedHashTable.clear();
++            end = std::chrono::steady_clock::now();
++            elapsedSeconds = end - start;
++            totalExeTime += elapsedSeconds.count();
++            std::cout << "finished undirected patterns. time: " << totalExeTime << std::endl;
++        }
++        else {
++            start = std::chrono::steady_clock::now();
++            for (int i = 0; i < fuCover.numQuery; ++i) {
++                const Tree &t = fuCover.allTree[i];
++                const Pattern &p = fuCover.allPattern[i];
++                for (int l = 0; l < t.getNumNodes(); ++l) memset(ht[l], 0, sizeof(Count) * m);
++                if (t.getExecuteMode()) {
++                    executeTree(t, din, dout, dun, useTriangle, triangle, p, ht, outID, unID, reverseID,
++                                startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV);
++                }
++                else {
++                    multiJoinTree(t, din, dout, dun, useTriangle, triangle, p, ht, outID, unID, reverseID, startOffset,
++                                  patternV, dataV, visited, tmp, allV);
++                }
++                HashTable h = ht[t.getRootID()];
++                int orbitType = patternGraphs[i].getOrbitType();
++                if (orbitType == 0) {
++                    coverH[i][0] = h[0];
++                }
++                else if (orbitType == 1) {
++                    for (int j = 0; j < n; ++j) {
++                        coverH[i][j] = h[j];
++                    }
++                }
++            }
++            end = std::chrono::steady_clock::now();
++            elapsedSeconds = end - start;
++            totalExeTime += elapsedSeconds.count();
++            std::cout << "finished undirected covers. time: " << totalExeTime << std::endl;
++            start = std::chrono::steady_clock::now();
++            for (int i = 0; i < fu.numQuery; ++i) {
++                const Tree &t = fu.allTree[i];
++                const Pattern &p = fu.allPattern[i];
++                for (int l = 0; l < t.getNumNodes(); ++l) memset(ht[l], 0, sizeof(Count) * m);
++                if (t.getExecuteMode()) {
++                    executeTree(t, din, dout, dun, useTriangle, triangle, p, ht, outID, unID, reverseID,
++                                startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV);
++                }
++                else {
++                    multiJoinTree(t, din, dout, dun, useTriangle, triangle, p, ht, outID, unID, reverseID, startOffset,
++                                  patternV, dataV, visited, tmp, allV);
++                }
++                HashTable h = ht[t.getRootID()];
++                int multiFactor = t.getMultiFactor();
++                int orbitType = patternGraphs[i].getOrbitType();
++                if (orbitType == 0) {
++                    uH[i][0] = h[0] * multiFactor;
++                }
++                else if (orbitType == 1) {
++                    for (int j = 0; j < n; ++j) {
++                        uH[i][j] = h[j] * multiFactor;
++                    }
++                }
++            }
++            end = std::chrono::steady_clock::now();
++            elapsedSeconds = end - start;
++            totalExeTime += elapsedSeconds.count();
++            std::cout << "finished undirected patterns. time: " << totalExeTime << std::endl;
++        }
++        start = std::chrono::steady_clock::now();
++        for (int i = 0; i < directedF.size(); ++i) {
++            executeForest(directedF[i], dH[i], din, dout, dun, useTriangle, triangle, allocatedHashTable,
++                          outID, unID, reverseID, startOffset[0], patternV[0], dataV[0], visited[0], candPos, tmp, allV, sg, cliqueVertices);
++            for (HashTable h: allocatedHashTable) delete[] h;
++            allocatedHashTable.clear();
++        }
++        end = std::chrono::steady_clock::now();
++        elapsedSeconds = end - start;
++        totalExeTime += elapsedSeconds.count();
++        std::cout << "finished directed patterns. time : " << totalExeTime << std::endl;
++        // 3. subtract cover count for undirected patterns
++        for (int i = 0; i < patternGraphs.size(); ++i) {
++            if (!isUndirected[i]) continue;
++            const PatternGraph &pg = patternGraphs[i];
++            int orbitType = pg.getOrbitType();
++            int divideFactor = divideFactors[i];
++            for (int j = 0; j < coverPos[i].size(); ++j) {
++                HashTable h = coverH[coverPos[i][j]];
++                if (orbitType == 0)
++                    result[i][0] += h[0] * coverMultiFactors[i][coverPos[i][j]];
++                else if (orbitType == 1) {
++                    for (int k = 0; k < n; ++k)
++                        result[i][k] += h[k] * coverMultiFactors[i][coverPos[i][j]];
++                }
++                else if (orbitType == 2 && pg.isEOrbitDir()) {
++                    for (int k = 0; k < m / 2; ++k)
++                        result[i][k] += h[k] * coverMultiFactors[i][coverPos[i][j]];
++                }
++                else {
++                    for (int k = 0; k < m; ++k)
++                        result[i][k] += h[k] * coverMultiFactors[i][coverPos[i][j]];
++                }
++            }
++            if (orbitType == 0)
++                result[i][0] /= divideFactor;
++            else if (orbitType == 1) {
++                for (int k = 0; k < n; ++k)
++                    result[i][k] /= divideFactor;
++            }
++            else if (orbitType == 2 && pg.isEOrbitDir()) {
++                for (int k = 0; k < m / 2; ++k)
++                    result[i][k] /= divideFactor;
++            }
++            else {
++                for (int k = 0; k < m; ++k)
++                    result[i][k] /= divideFactor;
++            }
++        }
++#endif
++        std::cout << "compute equation time: " << gEquationTime << std::endl;
++        std::cout << "compute tree decomposition: " << gTDTime << std::endl;
++        std::cout << "compute symmetry time: " << gSymmTime << std::endl;
++        std::cout << "compute order time: " << gOrderTime << std::endl;
++        std::cout << "total planning time: " << totalPlanTime << ", total execution time: " << totalExeTime
++                  << ", total time: " << totalPlanTime + totalExeTime << std::endl;
++        std::cout << "number of match: " << gNumMatch << ", number of intersect: " << gNumIntersect  << std::endl;
++        int orbitType = patternGraphs[0].getOrbitType();
++        std::vector<int> orbitTypes(files.size(), orbitType);
++        if (!resultPath.empty()) saveCount(resultPath, result, dun, batchQuery, files, orbitTypes);
++    }
++
+     return 0;
+-}
++}
+\ No newline at end of file
+diff --git a/plan/tree.cpp b/plan/tree.cpp
+index e0c4faa..e426cd8 100644
+--- a/plan/tree.cpp
++++ b/plan/tree.cpp
+@@ -4587,6 +4587,30 @@ void ConNode::initPoses(const std::vector<VertexID> &pOrder, const std::vector<V
+     delete[] aggreV;
+ }
+ 
++void ConNode::merge(const ConNode &rhs, const PatternGraph &p1, const PatternGraph &p2) {
++    if (orbitType == 1) {
++        // map vertex to hash table
++        std::vector<HashTable> v2h(p1.getNumVertices());
++        for (int i = 0; i < aggrePos.size(); ++i)
++            v2h[nodeOrder[aggrePos[i]]] = hashTables[i];
++        int orbit = p2.getOrbit(0);
++        for (int i = 0; i < nodeOrder.size(); ++i) {
++            VertexID u = nodeOrder[i];
++            if (p1.getOrbit(u) == orbit) {
++                hashTables.push_back(nullptr);
++                aggrePos.push_back(i);
++                v2h[u] = rhs.hashTables[0];
++            }
++        }
++        setAggrePoses(p1);
++        for (int i = 0; i < aggrePos.size(); ++i)
++            hashTables[i] = v2h[nodeOrder[aggrePos[i]]];
++    }
++    else {
++
++    }
++}
++
+ void ConNode::print() const {
+     printf("number of nodes compressed: %d\n", num);
+     printf("inner vertex: %d\n", uIn);
+diff --git a/plan/tree.h b/plan/tree.h
+index f6557c5..a6b5eb7 100644
+--- a/plan/tree.h
++++ b/plan/tree.h
+@@ -480,6 +480,9 @@ public:
+ };
+ 
+ // concentrated node
++// In the tree decomposition, if all nodes share the same cut and isomorphic, and each node has one inner vertex,
++// we can make concentrate the tree into a single node and use selection to compute the count
++// only used for root pattern now
+ struct ConNode {
+     // the number of nodes compressed into this node
+     int num;
+@@ -522,6 +525,7 @@ struct ConNode {
+     void initPoses(const std::vector<VertexID> &pOrder, const std::vector<VertexID> &localOrder,
+                    std::vector<std::vector<VertexID>> &greaterRules, std::vector<std::vector<VertexID>> &lessRules,
+                    const PatternGraph &p, bool useTriangle);
++    void merge(const ConNode &rhs, const PatternGraph &p1, const PatternGraph &p2);
+     void print() const;
+     void writeToStream(std::ofstream& outFile);
+     void readFromStream(std::ifstream& inFile);

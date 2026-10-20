@@ -1,0 +1,142 @@
+{
+  "schema_version": "frontier.knn-gpu-kernel-scoring/v1",
+  "workloads": [
+    {
+      "id": "sift_k10",
+      "dataset": "sift",
+      "M": 500000,
+      "Q": 1024,
+      "k": 10
+    },
+    {
+      "id": "sift_k50",
+      "dataset": "sift",
+      "M": 500000,
+      "Q": 1024,
+      "k": 50
+    },
+    {
+      "id": "sift_k100",
+      "dataset": "sift",
+      "M": 500000,
+      "Q": 1024,
+      "k": 100
+    },
+    {
+      "id": "gist_k10",
+      "dataset": "gist",
+      "M": 500000,
+      "Q": 512,
+      "k": 10
+    },
+    {
+      "id": "gist_k50",
+      "dataset": "gist",
+      "M": 500000,
+      "Q": 512,
+      "k": 50
+    },
+    {
+      "id": "gist_k100",
+      "dataset": "gist",
+      "M": 500000,
+      "Q": 512,
+      "k": 100
+    },
+    {
+      "id": "sift_full_k256",
+      "dataset": "sift",
+      "M": 1000000,
+      "Q": 1024,
+      "k": 256,
+      "strict_only": true
+    },
+    {
+      "id": "gist_full_k100",
+      "dataset": "gist",
+      "M": 1000000,
+      "Q": 1000,
+      "k": 100,
+      "strict_only": true
+    }
+  ],
+  "suites": {
+    "train": {
+      "workload_ids": [
+        "sift_k10",
+        "sift_k50",
+        "sift_k100",
+        "gist_k10"
+      ]
+    },
+    "eval": {
+      "workload_ids": [
+        "sift_k10",
+        "sift_k50",
+        "sift_k100",
+        "gist_k10",
+        "gist_k50",
+        "gist_k100",
+        "sift_full_k256",
+        "gist_full_k100"
+      ]
+    }
+  },
+  "seed_domains": {
+    "public": {
+      "base_seed": 20260701,
+      "workload_ids": [
+        "sift_k10",
+        "sift_k50",
+        "sift_k100",
+        "gist_k10"
+      ]
+    },
+    "hidden": {
+      "base_seed": 2026091301,
+      "workload_ids": [
+        "gist_k50",
+        "gist_k100",
+        "sift_full_k256",
+        "gist_full_k100"
+      ]
+    }
+  },
+  "warmup_iterations": 2,
+  "timed_iterations": 7,
+  "recall_threshold": 0.88,
+  "distance_ball_tolerance": 0.0,
+  "distance_ball_absolute_epsilon": 1e-06,
+  "continuous_score": {
+    "per_workload": "median of seven paired naive_latency_ms / candidate_latency_ms ratios",
+    "raw_metric": "geomean of selected per-workload median ratios",
+    "formula": "0 if S <= 1 else 100 * log(S) / (log(10) + log(S))",
+    "absolute_quality_gate": "every timed iteration ball-recall >= 0.88",
+    "reference_independent": true
+  },
+  "comparisons": {
+    "latency_ms": {
+      "better": "lower",
+      "strictly_better": true,
+      "aggregation": "median of seven synchronized calls"
+    },
+    "worst_ball_recall": {
+      "better": "higher",
+      "non_inferiority_band": 0.0,
+      "aggregation": "minimum of seven timed ball-recalls"
+    },
+    "worst_exact_recall": {
+      "better": "higher",
+      "non_inferiority_band": 0.0,
+      "aggregation": "minimum of seven timed exact recalls"
+    }
+  },
+  "calibration_status": "user_approved_after_frozen_reference_calibration_pending_model_validation",
+  "distance_consistency": {
+    "status": "approved",
+    "absolute_tolerance": 0.0,
+    "relative_tolerance": 1e-06,
+    "oracle": "direct squared-L2 differences and sum in float64 on the actual bf16 input values",
+    "rule": "abs(reported - oracle) <= absolute_tolerance + relative_tolerance * abs(oracle) for every valid returned neighbor"
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "E-Graph Invariant Restoration",
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 338,
+        "path": "datasets/eval.json",
+        "version": "sha256:1b95fb1611bd686573d0e4c9451a25cb6e2a52f69c77f44774a9ed47f11a265d"
+      },
+      "train": {
+        "bytes": 335,
+        "path": "datasets/train.json",
+        "version": "sha256:1af6559594736de15a70ba3e654b87069baa7f54bf90ce007ae9a54598910b04"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "candidate_dev_wall_clock_seconds_median",
+        "candidate_dev_congruence_seconds_median"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_001",
+      "commit": "bfff61cc6fe937fe81b3c3b66c62110a28439001",
+      "pipeline": "frontiersmith",
+      "run_id": "r_top01_saturation"
+    },
+    "isolation": "hidden workload identities, evaluator, reference patch, and comparison rows exist only in the Verifier image; the Agent receives the redacted source substrate and scientific statement",
+    "paper": {
+      "authors": [
+        "Max Willsey",
+        "Chandrakana Nandi",
+        "Yisu Remy Wang",
+        "Oliver Flatt",
+        "Zachary Tatlock",
+        "Pavel Panchekha"
+      ],
+      "doi": null,
+      "paper_id": "egg_equality_saturation",
+      "pdf_url": "https://arxiv.org/pdf/2004.03082",
+      "title": "egg: Fast and Extensible Equality Saturation",
+      "venue": "POPL",
+      "year": 2021
+    },
+    "runtime": {
+      "allowed_paths": [
+        "src/egraph.rs",
+        "src/lib.rs",
+        "src/tutorials/_01_background.rs",
+        "src/tutorials/mod.rs",
+        "src/solver_extensions/"
+      ],
+      "language": "rust",
+      "submission_kind": "patch"
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "38a2b36b1de35f39e518d77fad097c2037a3ffa5",
+      "source_path": "original_format_problems/egraph_invariant_restoration",
+      "scope": "original-format to native transfer with T35 public-plus-hidden final and independent continuous scoring correction",
+      "original_metadata_path": "judge/metadata.json",
+      "historical_evidence_path": null,
+      "note": "Source generator and paper metadata retain their source meanings; historical trials do not accept this native conversion."
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 1
+    }
+  },
+  "problem_id": "egraph_invariant_restoration",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 120000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 1048576
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "native-transfer-1-beat-spec-v2"
+}

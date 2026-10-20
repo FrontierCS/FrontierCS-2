@@ -1,0 +1,42 @@
+{
+  "Problem Number": "1350",
+  "Tables": [
+    {
+      "TableName": "Departments",
+      "PKeys": [
+        {
+          "Name": "id",
+          "Type": "int"
+        }
+      ],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "name",
+          "Type": "varchar"
+        }
+      ]
+    },
+    {
+      "TableName": "Students",
+      "PKeys": [
+        {
+          "Name": "id",
+          "Type": "int"
+        }
+      ],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "name",
+          "Type": "varchar"
+        },
+        {
+          "Name": "department_id",
+          "Type": "int"
+        }
+      ]
+    }
+  ],
+  "Tuples": []
+}

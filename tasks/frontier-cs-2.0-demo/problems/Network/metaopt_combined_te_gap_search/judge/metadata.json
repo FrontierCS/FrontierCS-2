@@ -1,0 +1,47 @@
+{
+  "artifact": {
+    "census": {},
+    "cloned_at": null,
+    "commit": null,
+    "repo_url": null
+  },
+  "contribution": {
+    "code_location": [
+      "2.0/problems/metaopt_combined_te_gap_search"
+    ],
+    "metric": "mean_adversarial_throughput_gap",
+    "paper_location": null,
+    "summary": "Bounded CPU C# search for sparse traffic matrices maximizing independently replayed OPT - max(POP,DP).",
+    "title": "MetaOpt Combined-TE Gap Search"
+  },
+  "domain": "systems",
+  "generated_at": null,
+  "generator": {
+    "candidate_id": null,
+    "commit": null,
+    "config_sha256": null,
+    "pipeline": null,
+    "run_id": null
+  },
+  "host": null,
+  "paper": {
+    "authors": [],
+    "doi": null,
+    "paper_id": null,
+    "pdf_url": null,
+    "title": null,
+    "venue": null,
+    "year": null
+  },
+  "promotion": {},
+  "provenance_note": "Manual native transfer from the pinned legacy benchmark. The supplied pruned Microsoft MetaOpt subtree retains its own license; no separate verified research-repository commit was supplied. Unknown Smith generation and ranking history remain null/empty.",
+  "rank": {
+    "overall_score": null,
+    "rank": null,
+    "recommendation": null,
+    "risks": [],
+    "scores": {}
+  },
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "metaopt_combined_te_gap_search"
+}

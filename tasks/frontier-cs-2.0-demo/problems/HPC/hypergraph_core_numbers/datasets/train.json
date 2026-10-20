@@ -1,0 +1,1 @@
+{"mode":"train","note":"Selects the two feedback workloads compiled into the verifier image; no workload bytes are Agent-visible.","problem_id":"hypergraph_core_numbers","schema_version":"frontier.frontiersmith-dataset/v1","selects":{"FRONTIER_SUBMISSION_ROLE":"development"},"suite_location":"judge/workloads/feedback-a.adj and feedback-b.adj"}

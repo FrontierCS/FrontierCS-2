@@ -1,0 +1,41 @@
+tag: machine_learning
+runtime:
+  ubuntu_apt_archive: http://us-east-1.ec2.archive.ubuntu.com/ubuntu/
+  language: python
+  timeout_seconds: 400
+  environment: "Python 3 with CPU PyTorch; one-thread deterministic Gaussian 2D online training through the authors' runner"
+  apt_packages: [bash, git, python3, python3-pip]
+  judge_apt_packages: [bash, git, python3, python3-pip, libseccomp2]
+  pip_packages:
+    - --extra-index-url=https://download.pytorch.org/whl/cpu
+    - numpy==2.2.6
+    - pyyaml==6.0.2
+    - torch==2.7.1+cpu
+  judge_pip_packages:
+    - --extra-index-url=https://download.pytorch.org/whl/cpu
+    - numpy==2.2.6
+    - pyyaml==6.0.2
+    - torch==2.7.1+cpu
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 2
+  memory_mb: 2048
+  storage_mb: 4096
+  build_timeout_seconds: 900
+  agent:
+    cpus: 2
+    memory_mb: 12288
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - experiments/lejepa_id/losses.py
+    - experiments/lejepa_id/frontier_solution/
+  max_changed_files: 20
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 8
+  suite_relation: same_distribution
+  solver_visible_metrics: [r2_zh, r2_hz, orth_err_normalized, epsilon, delta, procrustes_mse, candidate_diagnostic]

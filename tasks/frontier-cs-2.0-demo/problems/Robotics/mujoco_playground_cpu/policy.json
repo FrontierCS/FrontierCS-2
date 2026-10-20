@@ -1,0 +1,121 @@
+{
+  "agent": {
+    "cpu_millis": 3000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 10737418240
+  },
+  "display_name": "Go1 Joystick Policy Training",
+  "family": "frontier-cs-2.0/robotics",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 14400,
+      "max_instance_seconds": 14400,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 30600
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 430,
+        "path": "datasets/eval.json",
+        "version": "sha256:d7daecded2d65ac3ca335f7ec9a357ec24dbe9583d1fb8c230e52ee5521f24cb"
+      },
+      "train": {
+        "bytes": 437,
+        "path": "datasets/train.json",
+        "version": "sha256:293c278ad9150be9475bc8610b1a0c5907393119c8b0d82ba1571b1b997b4a00"
+      }
+    },
+    "delivery": {
+      "current_qualification": "Hand-authored source revision. Immutable images for the five roles (agent, verifier, datasets, agent GPU, verifier GPU) are published under docker.io/joyemang33 with source-bound tags and pinned by digest in the task catalog, which is the authority for the digests. Author H100 calibration ran this evaluator in an image built from verifier-gpu/Dockerfile without its SSH-bootstrap stage (development suite 1128 s, final suite 5728 s, reference procedure against itself). Native Driver qualification with the published images (reference train and final) is pending and will be run by the transfer line."
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 3,
+      "solver_visible_metrics": [
+        "development_mean_episode_reward",
+        "development_mean_tracking_lin_vel",
+        "development_mean_tracking_ang_vel",
+        "development_mean_energy",
+        "development_mean_action_rate"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "manual-authoring",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "arxiv_id": "2502.08844",
+      "title": "MuJoCo Playground",
+      "upstream_commit": "254c38f9c240012518dbe61d1267bc375ff827e4",
+      "upstream_repository": "https://github.com/google-deepmind/mujoco_playground"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "frontier_solution/",
+        "mujoco_playground/_src/locomotion/go1/joystick.py",
+        "mujoco_playground/_src/locomotion/go1/randomize.py",
+        "mujoco_playground/config/locomotion_params.py"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 48,
+      "ssh_session_budgets": {
+        "agent": 32,
+        "verifier_eval": 4,
+        "verifier_train": 12
+      }
+    }
+  },
+  "problem_id": "mujoco_playground_cpu",
+  "quota": {
+    "eval_timeout_seconds": 14400,
+    "max_train_calls": 3,
+    "max_train_wall_seconds": 16200,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "go1-policy-training-gpu-20261011"
+}

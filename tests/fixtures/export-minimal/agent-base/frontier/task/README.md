@@ -1,0 +1,1 @@
+Minimal synthetic import fixture. Submit payload/solution.patch with frontier-submit train and frontier-submit final. Budget: 50 train calls. Train feedback: beat_spec_progress with passed, failed, total, pass_percent, fail_percent. The value must exceed the reference for every workload.

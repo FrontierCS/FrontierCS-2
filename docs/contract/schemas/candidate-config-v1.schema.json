@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontiercs.dev/contracts/candidate-config-v1.schema.json",
+  "title": "FrontierCS2 Candidate config v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "candidate_version_id", "overlay_image", "execution"],
+  "properties": {
+    "schema_version": { "const": "frontier.candidate-config/v1" },
+    "candidate_version_id": {
+      "type": "string",
+      "pattern": "^candver_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "overlay_image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "digest", "format", "platform"],
+      "properties": {
+        "reference": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/sha256" },
+        "format": { "const": "frontier.oci-overlay/v1" },
+        "platform": { "$ref": "#/$defs/platform" }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entrypoint", "working_dir", "user"],
+      "properties": {
+        "entrypoint": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "args": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "working_dir": { "type": "string", "pattern": "^/" },
+        "user": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,9}(?::[1-9][0-9]{0,9})?$"
+        },
+        "env": {
+          "type": "object",
+          "propertyNames": {
+            "allOf": [
+              { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+              { "not": { "const": "FRONTIER_PRODUCTION_ACCEPTANCE_SCENARIO" } }
+            ]
+          },
+          "additionalProperties": { "type": "string" },
+          "default": {}
+        }
+      }
+    },
+    "model_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "model_alias": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z](?:[a-z0-9._-]{0,126}[a-z0-9])?$",
+          "not": { "const": "frontier-production-provider-fault" }
+        },
+        "allowed_domains": {
+          "type": "array",
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/publicDomain" },
+          "default": []
+        },
+        "secret_refs": {
+          "type": "array",
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 63,
+            "pattern": "^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$"
+          },
+          "default": []
+        },
+        "responses_path": {
+          "type": "string",
+          "enum": ["/v1/responses", "/api/v1/responses"],
+          "default": "/v1/responses"
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "allowed_domains": { "maxItems": 0 },
+            "secret_refs": { "maxItems": 0 },
+            "responses_path": { "const": "/v1/responses" }
+          },
+          "not": { "required": ["model_alias"] }
+        },
+        {
+          "required": ["allowed_domains", "secret_refs"],
+          "properties": {
+            "allowed_domains": { "minItems": 1 },
+            "secret_refs": { "minItems": 1 }
+          },
+          "not": { "required": ["model_alias"] }
+        },
+        {
+          "required": ["allowed_domains", "secret_refs"],
+          "properties": {
+            "allowed_domains": { "minItems": 1 },
+            "secret_refs": { "maxItems": 0 },
+            "responses_path": { "const": "/v1/responses" }
+          },
+          "not": { "required": ["model_alias"] }
+        },
+        {
+          "required": ["model_alias"],
+          "properties": {
+            "allowed_domains": { "maxItems": 0 },
+            "secret_refs": { "maxItems": 0 }
+          }
+        }
+      ],
+      "default": {}
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "publicDomain": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 253,
+      "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^[0-9]+(?:\\.[0-9]+)+$"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|\\.)(?:local|localhost|internal|home|lan|test|invalid|example)$"
+          }
+        }
+      ]
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "architecture"],
+      "properties": {
+        "os": { "const": "linux" },
+        "architecture": { "const": "amd64" }
+      }
+    }
+  },
+  "$comment": "v1 model_api is disabled, legacy direct-provider mode, legacy single-model gateway mode, or LiteLLM mode with one immutable model_alias and no provider coordinates. New CandidateVersions use model_alias. Management resolves it only against the trusted LiteLLM plane, issues a per-attempt key restricted to that alias, and mounts that key only into Driver."
+}

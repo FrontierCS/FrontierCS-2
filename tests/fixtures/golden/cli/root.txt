@@ -1,0 +1,21 @@
+usage: frontier_deploy.py [-h]
+                          {validate,render,preflight,plan,deploy,upgrade-runtime,build-images,smoke,verify,seed-tasks,upgrade-local-network,native-publish,native-localize-images,native-local-artifacts,gpu-smoke,apply} ...
+
+Guarded fresh-account installer for the executable FrontierCS2 Preview
+profile. The site file is deliberately non-secret. AWS CLI, Terraform, Docker,
+and kubectl receive credentials through their ordinary local credential
+chains.
+
+positional arguments:
+  {validate,render,preflight,plan,deploy,upgrade-runtime,build-images,smoke,verify,seed-tasks,upgrade-local-network,native-publish,native-localize-images,native-local-artifacts,gpu-smoke,apply}
+    native-publish      Publish a frozen native Task on local-k8s without
+                        catalog import
+    native-localize-images
+                        Mirror frozen native images and derive immutable local
+                        versions
+    native-local-artifacts
+                        Publish immutable native image-localized definitions
+                        and Candidate records
+
+options:
+  -h, --help            show this help message and exit

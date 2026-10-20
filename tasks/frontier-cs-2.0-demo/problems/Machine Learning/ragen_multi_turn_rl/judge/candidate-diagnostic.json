@@ -1,0 +1,5 @@
+{
+  "diagnostic_schema": "ragen.candidate-diagnostic/v2",
+  "helper_sha256": "d06dc67659237abad86efc834eda30152cdbff5a23f017e0a4b3515f0aeb9b03",
+  "schema": "frontier.candidate-diagnostic-validator/v1"
+}

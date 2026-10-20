@@ -1,0 +1,50 @@
+{
+  "unit": "one bounded bipartite graph (uniform-degree or both-sides power-law skewed) in AdjacencyHypergraph format, counted once under the evaluator's fixed 4-thread and batch-memory settings (with repeated timed executions used to obtain that graph's duration)",
+  "metrics": [
+    {
+      "name": "butterfly_count",
+      "means": "the exact integer total number of butterflies returned by CountTotal for the graph",
+      "source": "apps/hyper/butterfly_count_total.h::CountTotal returns the integer count, and apps/hyper/BipartiteButterflies.C prints it as `number of butterflies` in the TOTAL path",
+      "better": "higher",
+      "clears_when": "candidate_butterfly_count == oracle_butterfly_count && reference_butterfly_count == oracle_butterfly_count (and therefore candidate_butterfly_count == reference_butterfly_count; equivalently, under the mandatory exactness guard, candidate_butterfly_count >= reference_butterfly_count)",
+      "tolerance": "none"
+    },
+    {
+      "name": "counting_seconds",
+      "means": "The median trusted-parent monotonic wall-clock seconds across 31 independent paired repetitions. The interval includes worker release/scheduling, library loading and symbol lookup (dlopen/dlsym), constructors, cold worker/OpenMP initialization, CountTotal including any vertex ranking it performs, result delivery, and worker termination. It excludes graph input, single-threaded wedge preprocessing, fork, and isolation setup. Candidate and source-locked reference use the same isolated worker boundary and environment. Absolute timing summaries use actual per-role medians; the win statistic is the median of 31 adjacent reference/candidate time ratios.",
+      "source": "evaluator.py::_run and trusted_count_total.h::fs2_timing::invoke retain the authentic BipartiteButterflies.C CLI but measure the isolated CountTotal worker with the trusted parent clock.",
+      "better": "lower",
+      "clears_when": "median(reference_counting_seconds_i / candidate_counting_seconds_i for i in the 31 adjacent alternating pairs) > 1.05",
+      "tolerance": "Strict median of 31 paired reference/candidate time ratios > 1.05; equality fails. Reject missing, nonfinite or nonpositive observations."
+    }
+  ],
+  "beats_reference": "For every graded graph g: exact candidate and reference oracle counts AND median(reference_time_i/candidate_time_i over the 31 adjacent alternating pairs for g)>1.05. All workload and metric conditions must hold; equality fails.",
+  "solver_feedback": [
+    {
+      "name": "dev_counting_seconds_median",
+      "means": "the median of the candidate's own counting_seconds values over the development graphs",
+      "reveals_reference": "no \u2014 it summarizes only the candidate's absolute measured durations and contains no reference value, ratio, workload identifier, or ordered per-workload row"
+    },
+    {
+      "name": "dev_counting_seconds_p90",
+      "means": "the 90th percentile of the candidate's own counting_seconds values over the development graphs",
+      "reveals_reference": "no \u2014 it is a single distribution summary of candidate-only absolute timings and contains no reference value, ratio, workload identifier, or ordered per-workload row"
+    }
+  ],
+  "withheld": [
+    "butterfly_count",
+    "counting_seconds",
+    "reference_butterfly_count",
+    "reference_counting_seconds",
+    "oracle_butterfly_count",
+    "final_metrics",
+    "beats_reference",
+    "margin",
+    "reference_score",
+    "private_timing_samples",
+    "private_counts_per_workload",
+    "beat_spec_workload_passes"
+  ],
+  "statement_sentences": "Every workload must have exact counts and median(reference_i/candidate_i) strictly greater than 1.05 over 31 adjacent alternating pairs. Approved absolute candidate medians and privacy-safe per-metric beat_spec_progress aggregates are returned for development only; workload identities/rows, reference values, margins, private beats_reference and final measurements are withheld.",
+  "comments": "Paired64 replaces the failed repair59 estimator in a separate version. Reference paired-ratio medians supply win flags; the independent frozen-serial baseline supplies the uncapped logarithmic continuous score. Actual per-role time medians supply absolute summaries. Six workloads, 31 pairs,strict conjunction,exact counts and quota100 are retained. No fresh acceptance or target result is claimed before validation. Beat spec v3 (2026-10-07): 7/7 formal model runs cleared v2. All six v2 graphs are uniform-degree, where vertex ranking is pure overhead: the source-locked reference's own CountTotal with ranking replaced by side order (tw = SIDE) runs in 0.143 s vs 0.256 s for the reference (1.8x) on dev graph (20000, 22000, 96), so skipping the paper's ranking step alone clears the 1.05 bar. v3 keeps all six uniform graphs, both metrics, 31 pairs and the strict 1.05 rule, and adds one Chung-Lu graph with power-law degrees on both sides to each suite (dev (20000, 22000, 1.9M edges, exponents 0.8/0.8); hidden (21000, 23000, 2.0M, 0.75/0.85)), the heavy-tailed regime of the paper's real-world graphs where ranking (Section 3; ranking experiments in Section 6) decides the wedge count. Measured on the published verifier image with 4 CPUs (median of 5): side order is 1.8-2.4x SLOWER than the reference on four such graphs, while the paper's own degree ranking (tw = DEG inside the reference code) is 1.10-1.22x faster, so the bar stays reachable. Serial oracle 0.6-0.7 s, frozen baseline 0.6-0.7 s, reference 0.30-0.40 s; generation takes about 4 s. A reference or baseline that is not exact is an evaluator error, never a comparison. Reference f-metric selection (2026-10-12): workloads, metrics, 31 pairs and the strict 1.05 rule are unchanged; only the source-locked reference changes. It no longer computes the requested ACOCORE ranking unconditionally on the graded BATCHS path. It applies the paper's own runtime rule (Shi and Shun, Section 6.2.2): with ws the side-order wedge count and wr the degree-order wedge count, side ordering is used when (ws - wr)/ws < 0.1 and degree ordering otherwise; the SERIAL oracle path is untouched. Measured natively through trusted_build.py on an AMD EPYC 7R13 host with 4 CPUs (median of 7, not the published image): f is -0.15 to -0.17 on the six uniform graphs (side order; 0.104-0.203 s vs 0.184-0.342 s before, 1.68-1.82x faster) and 0.72-0.78 on the two skewed graphs (degree order; 0.290 and 0.315 s vs 0.328 and 0.377 s, 1.13-1.20x faster). Counts equal the serial oracle on all eight graphs."
+}

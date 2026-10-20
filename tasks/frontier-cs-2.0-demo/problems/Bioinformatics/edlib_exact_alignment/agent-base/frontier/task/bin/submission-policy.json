@@ -1,0 +1,8 @@
+{
+  "allowed_paths": [
+    "edlib/src/edlib.cpp"
+  ],
+  "max_bytes": 262144,
+  "max_files": 1,
+  "member": "solution.patch"
+}

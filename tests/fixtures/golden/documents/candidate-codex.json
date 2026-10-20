@@ -1,0 +1,37 @@
+{
+  "candidate_id": "codex-preview",
+  "definition_digest": "sha256:86607ebda936a3e39fa0d7905496b7c3068e845c58a419340aa30a70522c3378",
+  "definition_ref": "preview://codex/definitions/86607ebda936a3e39fa0d7905496b7c3068e845c58a419340aa30a70522c3378.json",
+  "display_name": "Codex Preview",
+  "driver_config": {
+    "candidate_version_id": "candver_4H056DNDJ9KT89DC222JA5H97S",
+    "execution": {
+      "args": [],
+      "entrypoint": [
+        "/opt/frontier/candidate/launch"
+      ],
+      "env": {},
+      "user": "1000:1000",
+      "working_dir": "/workspace"
+    },
+    "model_api": {
+      "allowed_domains": [],
+      "secret_refs": []
+    },
+    "overlay_image": {
+      "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000064",
+      "format": "frontier.oci-overlay/v1",
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      },
+      "reference": "172.20.0.50:5000/frontier/candidates/codex@sha256:0000000000000000000000000000000000000000000000000000000000000064"
+    },
+    "schema_version": "frontier.candidate-config/v1"
+  },
+  "metadata": {
+    "model_provider": "openrouter",
+    "runtime": "generic-codex-overlay"
+  },
+  "version": "000000000000-cfg-86607ebda936"
+}

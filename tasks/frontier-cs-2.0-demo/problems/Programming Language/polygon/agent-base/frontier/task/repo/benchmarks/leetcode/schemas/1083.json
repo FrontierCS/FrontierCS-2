@@ -1,0 +1,59 @@
+{
+  "Problem Number": "1083",
+  "Tables": [
+    {
+      "TableName": "Product",
+      "PKeys": [
+        {
+          "Name": "product_id",
+          "Type": "int"
+        }
+      ],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "product_name",
+          "Type": "varchar"
+        },
+        {
+          "Name": "unit_price",
+          "Type": "int"
+        }
+      ]
+    },
+    {
+      "TableName": "Sales",
+      "PKeys": [],
+      "FKeys": [
+        {
+          "FName": "product_id",
+          "PName": "product_id",
+          "PTable": "0"
+        }
+      ],
+      "Others": [
+        {
+          "Name": "seller_id",
+          "Type": "int"
+        },
+        {
+          "Name": "buyer_id",
+          "Type": "int"
+        },
+        {
+          "Name": "sale_date",
+          "Type": "date"
+        },
+        {
+          "Name": "quantity",
+          "Type": "int"
+        },
+        {
+          "Name": "price",
+          "Type": "int"
+        }
+      ]
+    }
+  ],
+  "Tuples": []
+}

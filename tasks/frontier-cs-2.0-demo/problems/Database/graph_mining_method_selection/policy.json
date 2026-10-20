@@ -1,0 +1,93 @@
+{
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 17179869184,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Graph Mining Method Selection",
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 438,
+        "path": "datasets/eval.json",
+        "version": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e"
+      },
+      "train": {
+        "bytes": 445,
+        "path": "datasets/train.json",
+        "version": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "beat_spec_sha256": "sha256:1d6415d43978f8e28ae91cb130011fbf02be511fea60795bfc2654bf3254b035",
+      "solver_visible_metrics": [
+        "geomean_selected_runtime_seconds",
+        "max_selected_relative_error",
+        "cases"
+      ],
+      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "0fd7ef1c52133a17c136afe51008bc7de637ae13",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top33_42a7abeeb7"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Anna A Arpaci-Dusseau",
+        "Zixiang Zhou",
+        "Xuhao Chen"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2025-accurate-and-fast-approximate-graph-pattern-mining-at-scale-42a7abeeb7",
+      "pdf_url": "https://www.vldb.org/pvldb/vol18/p93-chen.pdf",
+      "title": "Accurate and Fast Approximate Graph Pattern Mining at Scale",
+      "venue": "PVLDB 18",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "performance_model/src/main.py"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "graph_mining_method_selection",
+  "quota": {
+    "eval_timeout_seconds": 900,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 90000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 65536
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 17179869184
+  },
+  "version": "g1-beat-spec-v1-agent5h-r2"
+}

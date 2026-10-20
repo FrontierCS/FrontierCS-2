@@ -1,0 +1,60 @@
+name: nanowm
+channels:
+  - pytorch
+  - nvidia
+dependencies:
+  - python >= 3.10
+  - pytorch > 2.0.0
+  - torchvision
+  - pytorch-cuda >= 11.7
+  - pip:
+    # Core ML
+    - numpy
+    - scipy
+    - Pillow
+    - tqdm
+    - requests
+
+    # PyTorch ecosystem
+    - timm
+    - einops
+    - lpips
+    - piqa
+    - pytorch-lightning==1.9.5
+    - torchmetrics
+
+    # Diffusion / generative
+    - diffusers[torch]==0.24.0
+    - accelerate
+    - transformers
+
+    # Config & experiment management
+    - omegaconf
+    - hydra-core
+    - tensorboard
+    - wandb
+
+    # Data & datasets
+    - lerobot==0.3.3
+    - decord
+    - h5py
+    - pandas
+
+    # Image & video processing
+    - opencv-python
+    - imageio
+    - imageio-ffmpeg
+    - moviepy==1.0.3
+    - scikit-image
+    - av
+
+    # Evaluation metrics
+    - pytorch-fid
+    - matplotlib
+    - seaborn
+
+    # Misc
+    - sentencepiece
+    - beautifulsoup4
+    - ftfy
+    - protobuf==4.25.3

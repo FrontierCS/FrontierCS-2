@@ -1,0 +1,7 @@
+{
+  "name": "frontier-qwen-official-runtime",
+  "private": true,
+  "dependencies": {
+    "@qwen-code/qwen-code": "0.25.0"
+  }
+}

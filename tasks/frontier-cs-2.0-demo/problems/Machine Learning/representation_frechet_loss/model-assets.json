@@ -1,0 +1,144 @@
+{
+  "models": [
+    {
+      "allow_patterns": [
+        "checkpoints/base/pMF-B_256.pth",
+        "data/fid_stats/paper_ref_stats.pkl"
+      ],
+      "files": [
+        {
+          "bytes": 473012794,
+          "git_blob_id": "6a3f54f376e73dadb10d3f9009d8c9ca68c0cf16",
+          "path": "checkpoints/base/pMF-B_256.pth",
+          "sha256": "aa95e128b3378e25285f9c2470d1e074d73a8d9d7846a7c9ab59e851c2ed64f8"
+        },
+        {
+          "bytes": 147164490,
+          "git_blob_id": "3d8e4710aa0a213b563ef458f0beb194a6aebad2",
+          "path": "data/fid_stats/paper_ref_stats.pkl",
+          "sha256": "fe994d2be02d97b7494c393e0e4b283142746e18be48a5a34fc0a8f415748da3"
+        }
+      ],
+      "repo_id": "jjiaweiyang/FD-Loss",
+      "revision": "88ce2bb4061b0dd58839a1827235ffcffa51eed2",
+      "target": "fd-loss",
+      "total_bytes": 620177284
+    },
+    {
+      "allow_patterns": [
+        "config.json",
+        "model.safetensors"
+      ],
+      "files": [
+        {
+          "bytes": 609,
+          "git_blob_id": "d4444d919200b99125a280c723986e2cceaea0e0",
+          "path": "config.json"
+        },
+        {
+          "bytes": 1213234508,
+          "git_blob_id": "a5152d64b138714fc2fa7e7bee799c6ce2dc3a1c",
+          "path": "model.safetensors",
+          "sha256": "d58a1a547a07c3c41917c23069dcaadab6f469a8cf793a3cba5fe404c344ab68"
+        }
+      ],
+      "repo_id": "timm/vit_large_patch16_224.mae",
+      "revision": "126727e9b8ccd632d08a0d75fff095017c225e54",
+      "target": "mae",
+      "total_bytes": 1213235117
+    },
+    {
+      "allow_patterns": [
+        "config.json",
+        "model.safetensors"
+      ],
+      "files": [
+        {
+          "bytes": 577,
+          "git_blob_id": "0821c874d0eaca12da00c2c6375cbd1f4ae6d674",
+          "path": "config.json"
+        },
+        {
+          "bytes": 1711584976,
+          "git_blob_id": "f2ec3cb9371c227206eb79d9890350de5d9df1fc",
+          "path": "model.safetensors",
+          "sha256": "68c976f5691fd6a20187da6b3c6132601dba52242c349acf8534c64b99ab2b96"
+        }
+      ],
+      "repo_id": "timm/vit_so400m_patch16_siglip_256.v2_webli",
+      "revision": "a8dedb158968170d6fb45a000e0d5755d8021386",
+      "target": "siglip2",
+      "total_bytes": 1711585553
+    },
+    {
+      "allow_patterns": [
+        "config.json",
+        "model.safetensors"
+      ],
+      "files": [
+        {
+          "bytes": 902,
+          "git_blob_id": "51c4f7e6971a6e3b9cbcd520af4a8d536b5a99dc",
+          "path": "config.json"
+        },
+        {
+          "bytes": 354909632,
+          "git_blob_id": "e28808a1ba2455248db8e3169b10ddcaf502d9ad",
+          "path": "model.safetensors",
+          "sha256": "3b04d2fd7f5268b706210542bd6b6833ad75d6a5e4612a1ae34e8414dbd50b81"
+        }
+      ],
+      "repo_id": "timm/convnextv2_base.fcmae_ft_in22k_in1k",
+      "revision": "9e250ed8f88b436472d2b24af26f82a8aa8c719d",
+      "target": "convnextv2",
+      "total_bytes": 354910534
+    },
+    {
+      "allow_patterns": [
+        "config.json",
+        "model.safetensors"
+      ],
+      "files": [
+        {
+          "bytes": 616,
+          "git_blob_id": "5873223cd12446cc5371ecb58a6df8b028df877a",
+          "path": "config.json"
+        },
+        {
+          "bytes": 1217502758,
+          "git_blob_id": "2160941f9c44397ab51a7c5e7ccd88fce825cead",
+          "path": "model.safetensors",
+          "sha256": "0424a5d1b515278cba3c6640ccbeaacc41de59d3a93df0dd5e494285eea2b355"
+        }
+      ],
+      "repo_id": "timm/vit_large_patch14_dinov2.lvd142m",
+      "revision": "4741e1cafbf45415e77074bb0cb42dba76c8684a",
+      "target": "dinov2",
+      "total_bytes": 1217503374
+    },
+    {
+      "allow_patterns": [
+        "config.json",
+        "pytorch_model.bin"
+      ],
+      "files": [
+        {
+          "bytes": 619,
+          "git_blob_id": "b3fe5e4ed648cb0a2be17b4ce0a994b8bbea95c0",
+          "path": "config.json"
+        },
+        {
+          "bytes": 1710633285,
+          "git_blob_id": "71d45c096bebc157d7fb813558b31fc554c41dee",
+          "path": "pytorch_model.bin",
+          "sha256": "eb70c15b117effa76315db43fcbd9f32a655292fc861798343939a02f561c6ae"
+        }
+      ],
+      "repo_id": "timm/vit_large_patch14_clip_224.openai",
+      "revision": "18d0535469bb561bf468d76c1d73aa35156c922b",
+      "target": "clip",
+      "total_bytes": 1710633904
+    }
+  ],
+  "schema_version": "frontier.frontiersmith-model-assets/v1"
+}

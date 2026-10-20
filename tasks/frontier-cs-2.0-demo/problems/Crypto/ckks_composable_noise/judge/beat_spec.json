@@ -1,0 +1,72 @@
+{
+ "unit": "One declared LogN12 circuit/scale/secret configuration, measured as 3 interleaved pairs of complete invocations (one candidate and one reference, back to back, first position alternating), each with fresh keys and randomness. Final: 29 workloads, 3 pairs each. Development feedback (gates nothing): the 6 base development workloads, 1 pair each. 3 comparisons per workload (two accuracy statistics and estimator time).",
+ "metrics": [
+  {
+   "name": "avg_log2_prec_l2_abs_discrepancy_bits",
+   "means": "The mean, over the 3 invocations of this workload on one side, of the absolute difference in bits between the estimator's finalized AVGLog2Prec.L2 and the independently measured Lattigo AVGLog2Prec.L2. Each precision value is the slot statistic -log2(|error|).",
+   "source": "judge/workload_configurations.py::configuration/configured_main/timed_main/measured_main/verify_parameters; judge/harbor/app/estimator/experiments/<circuit>/<circuit>.go::main (ckks.GetPrecisionStats; power_basis hefloat alias); judge/harbor/app/estimator/stats.go::Stats.Add/Finalize; judge/evaluator.py::measure_one/measure_pairs/mean_rows/parse_observations; judge/formal_scoring.py::compare",
+   "better": "lower",
+   "clears_when": "For every workload w, subtract first: candidate_avg_log2_prec_l2_abs_discrepancy_bits[w] - reference_avg_log2_prec_l2_abs_discrepancy_bits[w] <= frozen_tau_avg_log2_prec_l2_abs_discrepancy_bits[w].",
+   "tolerance": "For cell j=(workload,statistic), an independent preregistered pilot freezes a strictly positive resolved scale s_j from single-invocation source-reference suite batches. Collect K independent pairs of complete source-reference suite batches under the exact evaluator randomization, compute X_ij=D_A,ij-D_B,ij and M_i=max over all 58 cells of X_ij/s_j. With alpha=0.05, k=ceil((K+1)*(1-alpha))<=K (K>=19), freeze q=max(0,the kth smallest M_i) and tau_j=q*s_j. The band is calibrated for one invocation per side and applied to the mean over the 3 interleaved invocations per side, which varies less. No band exists for this release until that collection has been run on the measured mains; until then every evaluation reports calibration_pending and cannot pass."
+  },
+  {
+   "name": "std_log2_prec_l2_abs_discrepancy_bits",
+   "means": "The mean, over the 3 invocations of this workload on one side, of the absolute difference in bits between the estimator's finalized STDLog2Prec.L2 and the independently measured Lattigo STDLog2Prec.L2. Each precision value is the slot statistic -log2(|error|).",
+   "source": "judge/workload_configurations.py::configuration/configured_main/timed_main/measured_main/verify_parameters; judge/harbor/app/estimator/experiments/<circuit>/<circuit>.go::main (ckks.GetPrecisionStats; power_basis hefloat alias); judge/harbor/app/estimator/stats.go::Stats.Add/Finalize; judge/evaluator.py::measure_one/measure_pairs/mean_rows/parse_observations; judge/formal_scoring.py::compare",
+   "better": "lower",
+   "clears_when": "For every workload w, subtract first: candidate_std_log2_prec_l2_abs_discrepancy_bits[w] - reference_std_log2_prec_l2_abs_discrepancy_bits[w] <= frozen_tau_std_log2_prec_l2_abs_discrepancy_bits[w].",
+   "tolerance": "For cell j=(workload,statistic), an independent preregistered pilot freezes a strictly positive resolved scale s_j from single-invocation source-reference suite batches. Collect K independent pairs of complete source-reference suite batches under the exact evaluator randomization, compute X_ij=D_A,ij-D_B,ij and M_i=max over all 58 cells of X_ij/s_j. With alpha=0.05, k=ceil((K+1)*(1-alpha))<=K (K>=19), freeze q=max(0,the kth smallest M_i) and tau_j=q*s_j. The band is calibrated for one invocation per side and applied to the mean over the 3 interleaved invocations per side, which varies less. No band exists for this release until that collection has been run on the measured mains; until then every evaluation reports calibration_pending and cannot pass."
+  },
+  {
+   "name": "estimator_seconds",
+   "means": "Wall-clock seconds, read by trusted code inside the derived experiment main, spent in every statement that can reach package estimator in one invocation: estimator construction, test-vector creation, each estimator operation, and Decrypt followed by a garbage collection on the same clock. Key generation, the encrypted circuit, the clear target and the statistics of the encrypted result are excluded. One scheduler thread (GOMAXPROCS=1).",
+   "source": "judge/workload_configurations.py::timed_main (frozen by judge/judge/timed_main_sha256.json); judge/evaluator.py::measure_pairs/parse_observations; judge/formal_scoring.py::faster_in_every_pair",
+   "better": "lower",
+   "clears_when": "For every workload w and each of its 3 interleaved pairs p: candidate_estimator_seconds[w][p] < reference_estimator_seconds[w][p], strictly.",
+   "tolerance": "None. The comparison is strict in every pair. A candidate with the reference's own speed wins a pair with probability about one half, so it wins all 3 pairs of all 29 final workloads with probability about 2^-87."
+  }
+ ],
+ "beats_reference": "beats_reference = 1 exactly when, for every graded workload, both accuracy comparisons clear their frozen tolerance and the candidate estimator time is strictly lower than the reference estimator time in each of the 3 interleaved pairs; otherwise 0. Complete ordered manifest required; no cross-workload, cross-statistic or accuracy-for-time compensation.",
+ "solver_feedback": [
+  {
+   "name": "candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits",
+   "means": "The candidate's own scalar mean of avg_log2_prec_l2_abs_discrepancy_bits over the six development-feedback workloads in this submission, in bits.",
+   "reveals_reference": "no — it contains only the candidate's absolute measurements and no reference value, ratio, workload identity, or row ordering."
+  },
+  {
+   "name": "candidate_std_log2_prec_l2_abs_discrepancy_mean_bits",
+   "means": "The candidate's own scalar mean of std_log2_prec_l2_abs_discrepancy_bits over the six development-feedback workloads in this submission, in bits.",
+   "reveals_reference": "no — it contains only the candidate's absolute measurements and no reference value, ratio, workload identity, or row ordering."
+  },
+  {
+   "name": "candidate_estimator_seconds_mean",
+   "means": "The candidate's own mean estimator_seconds over all invocations of the six development-feedback workloads in this submission.",
+   "reveals_reference": "no — it contains only the candidate's own clock and no reference value, ratio, workload identity, or row ordering."
+  }
+ ],
+ "withheld": [
+  "avg_log2_prec_l2_abs_discrepancy_bits",
+  "std_log2_prec_l2_abs_discrepancy_bits",
+  "estimator_seconds",
+  "reference_avg_log2_prec_l2_abs_discrepancy_bits",
+  "reference_std_log2_prec_l2_abs_discrepancy_bits",
+  "reference_estimator_seconds",
+  "beat_spec_workload_passes",
+  "beats_reference",
+  "reference_score",
+  "margin",
+  "continuous_accuracy_score"
+ ],
+ "statement_sentences": "Predict mean and spread of CKKS precision on every declared LogN12 circuit/scale/secret configuration at least as accurately as the reference estimator, with strictly lower estimator time in every interleaved pair. No missing or failed comparison can be compensated by another.",
+ "comments": "Accuracy and estimator time are both required. Accuracy keeps the two Table 1 statistics on 29 configurations (all 9 predecessor rows plus 20 scale/secret combinations); LogN12 remains distinct from the paper LogN16; VII/VIII scale55 excluded. The estimator-side test vector of the polynomial-evaluation circuit now starts from the truncated plaintext that is actually encrypted. No numeric bands exist for this release: a fresh P8/K19/rank19 calibration over the 58 accuracy cells on the measured mains is required before any genuine result. Earlier source, image and Candidate qualification do not transfer.",
+ "axis_exception": {
+  "approved_at": "2026-10-07T17:28Z",
+  "axis": "noise-estimation numerical accuracy",
+  "statistics": [
+   "AVG",
+   "STD"
+  ],
+  "reason": "The two accuracy statistics are location and spread on one axis; both are kept. Estimator time is a second, separately measured axis added for this release: a trusted in-process clock over the estimator-side statements of the fixed experiment programs.",
+  "validity": "Per workload: declared parameters, complete finite statistics from the trusted derived main, byte-identical fixed surface, source policy and public-interface check; all 58 accuracy cells and all 87 time pairs conjunctive."
+ }
+}

@@ -1,0 +1,64 @@
+{
+  "models": [
+    {
+      "files": [
+        {
+          "bytes": 1519,
+          "git_blob_id": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+          "path": ".gitattributes"
+        },
+        {
+          "bytes": 11343,
+          "git_blob_id": "6634c8cc3133b3848ec74b9f275acaaa1ea618ab",
+          "path": "LICENSE"
+        },
+        {
+          "bytes": 4917,
+          "git_blob_id": "4b8373851d093eb9f3017443f27781c6971eff24",
+          "path": "README.md"
+        },
+        {
+          "bytes": 659,
+          "git_blob_id": "0dbb161213629a23f0fc00ef286e6b1e366d180f",
+          "path": "config.json"
+        },
+        {
+          "bytes": 242,
+          "git_blob_id": "dfc11073787daf1b0f9c0f1499487ab5f4c93738",
+          "path": "generation_config.json"
+        },
+        {
+          "bytes": 1671839,
+          "git_blob_id": "20024bfe7c83998e9aeaf98a0cd6a2ce6306c2f0",
+          "path": "merges.txt"
+        },
+        {
+          "bytes": 988097824,
+          "git_blob_id": "d7db405a3f0d9bf1ba5bdd4e4211db8022ebe4eb",
+          "path": "model.safetensors",
+          "sha256": "fdf756fa7fcbe7404d5c60e26bff1a0c8b8aa1f72ced49e7dd0210fe288fb7fe"
+        },
+        {
+          "bytes": 7031645,
+          "git_blob_id": "443909a61d429dff23010e5bddd28ff530edda00",
+          "path": "tokenizer.json"
+        },
+        {
+          "bytes": 7305,
+          "git_blob_id": "07bfe0640cb5a0037f9322287fbfc682806cf672",
+          "path": "tokenizer_config.json"
+        },
+        {
+          "bytes": 2776833,
+          "git_blob_id": "4783fe10ac3adce15ac8f358ef5462739852c569",
+          "path": "vocab.json"
+        }
+      ],
+      "repo_id": "Qwen/Qwen2.5-0.5B-Instruct",
+      "revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "target": "qwen2.5-0.5b-instruct",
+      "total_bytes": 999604126
+    }
+  ],
+  "schema_version": "frontier.frontiersmith-model-assets/v1"
+}

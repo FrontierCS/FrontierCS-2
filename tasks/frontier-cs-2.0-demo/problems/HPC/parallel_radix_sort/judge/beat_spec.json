@@ -1,0 +1,60 @@
+{
+  "unit": "one fixed seeded input array, including its element type (32-bit integer or 32-bit key/value record), length, key distribution, and initial order; from beat spec v3 the graded set adds, per partition, two 16,000,000-key integer arrays in the paper's input families (zipf_0.75 keys over [1, 1e9] and uniform 32-bit keys)",
+  "metrics": [
+    {
+      "name": "sort_time_ns",
+      "means": "the median wall-clock elapsed nanoseconds across the evaluator's fixed repeated runs of parallelIntegerSort for this workload, timing only the in-place sort call under the same pinned CPU affinity and Cilk worker count as the paired reference runs",
+      "source": "upstream/RadixSort/example.cpp: the high_res_clock interval immediately around parallelIntegerSort for both intType and intPairT inputs (reported there as 'radix sort time')",
+      "better": "lower",
+      "clears_when": "C_w < R_w, where C_w is the candidate median sort_time_ns and R_w is the reference median sort_time_ns from paired runs on the identical workload w",
+      "tolerance": "none"
+    },
+    {
+      "name": "region_graph_ns",
+      "means": "the median, over the 21 sort repetitions, of the nanoseconds spent inside the editable region-graph component during one parallelIntegerSort call (EdgeListGraph construction, createParallelGraph, extractNode2, deleteNode, consumeTriangle and destruction), summed over Cilk workers, measured by a separate build of the same harness that wraps those calls; this is the paper's per-phase breakdown of 2-path planning and graph update (Section 5, Figure 12)",
+      "source": "judge/benchmark.cpp built with -DFRONTIER_COMPONENT_TIMER (TimedEdgeListGraph wrapper around the retained call sites in regionsSort.h::multiBitSwapBasedSort); judge/evaluator.py runs candidate and reference timer builds in the same alternating order as sort_time_ns",
+      "better": "lower",
+      "clears_when": "G_w < Q_w, where G_w is the candidate median region_graph_ns and Q_w the reference median region_graph_ns on the identical workload w",
+      "tolerance": "none — strict; reference-vs-reference timer ratios on this harness ranged 0.94-1.03, while a leaner planning implementation reduces the component time by 29-44% on every workload"
+    },
+    {
+      "name": "auxiliary_bytes",
+      "means": "the greatest concurrently live auxiliary heap allocation during the candidate's parallelIntegerSort calls on workload w (the existing benchmark accounting), as a fraction of the input array's bytes",
+      "source": "judge/benchmark.cpp allocation accounting (begin_accounting/end_accounting around parallelIntegerSort); paper Section 5: the in-place sorts use less than 5% auxiliary memory relative to the input",
+      "better": "lower",
+      "clears_when": "A_w <= 0.05 * input_bytes_w, the paper's stated in-place bound; the reference must satisfy the same bound on every workload (measured 1.3-2.8%) or the evaluation is an evaluator error",
+      "tolerance": "none beyond the paper's 5% bound; the separate 64 MiB validity cap is unchanged"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 if and only if every candidate run first passes sortedness, exact key or record multiset preservation, the fixed auxiliary-memory cap, and all process-resource limits, and for every timed graded workload w (the original workloads and the v3 16M-key workloads), C_w < R_w for sort_time_ns, G_w < Q_w for region_graph_ns, and A_w <= 0.05 * input_bytes_w for auxiliary_bytes; otherwise beats_reference = 0. The conjunction is over every workload and every metric and no workload may be dropped. Small or boundary correctness-only guards are validity gates and are not timed graded workloads.",
+  "solver_feedback": [
+    {
+      "name": "dev_candidate_median_sort_time_ns",
+      "means": "the median of the candidate's own per-workload median sort_time_ns values over the complete public development suite (original and v3 workloads)",
+      "reveals_reference": "no — it aggregates only candidate timings over public development inputs and contains no reference measurement or relative quantity"
+    },
+    {
+      "name": "dev_candidate_max_auxiliary_bytes",
+      "means": "the maximum measured candidate auxiliary bytes over the complete public development suite (original and v3 workloads), using the evaluator's stated exclusions for input parsing, immutable control copies, and checker storage",
+      "reveals_reference": "no — it is an absolute measurement of the candidate alone and is not divided by or compared numerically with reference memory"
+    },
+    {
+      "name": "dev_candidate_median_region_graph_ns",
+      "means": "the median of the candidate's own per-workload median region_graph_ns values over the complete public development suite",
+      "reveals_reference": "no — it aggregates only candidate component timings over public development inputs and contains no reference measurement or relative quantity"
+    }
+  ],
+  "withheld": [
+    "sort_time_ns",
+    "reference_sort_time_ns",
+    "final_candidate_median_sort_time_ns",
+    "final_candidate_max_auxiliary_bytes",
+    "reference_region_graph_ns",
+    "reference_aux_bytes",
+    "final_candidate_median_region_graph_ns",
+    "reference_score",
+    "margin"
+  ],
+  "statement_sentences": "A separate, stricter beats-reference criterion is evaluated in addition to the continuous score. It requires correct sorting, exact key or record preservation, compliance with the auxiliary-memory and process-resource limits, and, on every timed graded input under identical pinned CPU and Cilk-worker settings, a strictly lower median end-to-end sorting time than the reference, a strictly lower median time spent in the region-graph component than the reference, and peak auxiliary memory at most 5% of the input size. The comparison is made independently for each input and metric; results are never averaged across inputs, and every input and metric must pass. Reference measurements, per-input decisions, and all final-suite measurements are private.",
+  "comments": "I checked reproduction.json and the authentic path upstream/RadixSort/example.cpp -> radixSort.h::parallelIntegerSort -> regionsSort.h::multiBitSwapBasedSort -> edgelistgraph.h::EdgeListGraph -> triangle.h. example.cpp directly measures elapsed sort duration for both integer and pair inputs, while its built-in checks do not establish permutation preservation and its integer failure path exits successfully; the evaluator must therefore perform independent sortedness and exact multiset checks outside the timed interval. The supplied evidence contains no timing-noise calibration, so no tolerance is justified: the author must gather paired noise measurements before freezing workloads, but must not silently introduce a tolerance into this specification. Use a monotonic high-resolution evaluator clock and nanoseconds rather than example.cpp's quantized millisecond printout, choose sufficiently large timed cases (predominantly n > 20000 with K > 1), and keep zero-duration, small, and boundary cases as correctness-only guards. Auxiliary memory is a fixed validity cap, not a beats-reference metric: the paper states an auxiliary-space bound, but the artifact does not measure and report per-workload memory as a performance quantity. The cap and accounting method must be frozen before solver trials and must exclude only input parsing, immutable control copies, and checker storage. Development feedback must be scalar and computed over the complete public suite, never an ordered array or a value keyed by private workload identity; criterion pass/fail counts and percentages are supplied separately by the pipeline. Beat spec v3 (2026-10-08): 3/7 formal model runs (2/3 on the latest version) cleared v2, while all seven scored within 51.1-51.6 (PASS and FAIL runs interleave), so the verdict did not track speed. The editable component is the region-graph planner; the paper itself reports 2-path planning plus graph update at under 10% of the first level (Figure 12), and on the v2 inputs it is about 7% of a 28 ms sort. Reference-vs-reference runs of this evaluator vary by 0.5-4% (outliers 15%) per workload, and a planner that avoids the reference's per-node vector copies is not separable in sort time (ratios 0.99-1.05). v3 keeps the original eight workloads, sort_time_ns and its strict rule, the 64 MiB cap and the continuous score (still over the original workloads only), and adds: region_graph_ns, the paper's planning/update phase time, measured by a separate timer build that wraps the retained EdgeListGraph call sites (reference 0.31-3.3 ms on the v2 inputs, reference-vs-reference ratios 0.94-1.03); auxiliary_bytes <= 5% of the input bytes, the paper's in-place bound (reference 1.3-2.8%); and two 16,000,000-key integer workloads per partition from the paper's input families (zipf_0.75 over [1, 1e9] and uniform 32-bit keys), 64 MiB each and beyond a 16 MiB L3, where the reference's component time is 14.7 ms (19% of the sort) and 5.7 ms. Witness: the reference planner with per-thread scratch lists reused across calls is 29-44% faster in region_graph_ns on every workload (12/12 final), 0.6-2% faster in paired sort time on the 3M and 16M uniform and 16M zipf inputs, and uses 1.5-3.4% auxiliary memory. Budgets and resources are unchanged; the timer builds add one process pair per workload."
+}

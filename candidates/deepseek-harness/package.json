@@ -1,0 +1,7 @@
+{
+  "name": "frontier-deepseek-official-runtime",
+  "private": true,
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.0-rc.2"
+  }
+}

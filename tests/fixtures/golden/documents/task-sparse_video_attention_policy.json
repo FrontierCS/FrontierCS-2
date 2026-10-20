@@ -1,0 +1,165 @@
+{
+  "definition_digest": "sha256:3261d3efa50cc34e8313c3f90cddb91aad28d9611bbe8a866a20258f298785f5",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/sparse_video_attention_policy/3261d3efa50cc34e8313c3f90cddb91aad28d9611bbe8a866a20258f298785f5.json",
+  "display_name": "Sparse Video Attention Policy",
+  "driver_config": {
+    "agent": {
+      "cpu_millis": 3000,
+      "memory_bytes": 12884901888,
+      "workspace_bytes": 10737418240
+    },
+    "datasets": {
+      "eval": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/sparse_video_attention_policy/eval/sha256/e0ca3a67c7198208965b8649dc9af3fa0c8e67d01eaf1e13d0409228264fc883.json",
+        "version": "sha256:e0ca3a67c7198208965b8649dc9af3fa0c8e67d01eaf1e13d0409228264fc883"
+      },
+      "train": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/sparse_video_attention_policy/train/sha256/aa1ebf0bc51662d2f0c2d79fe7cccfe2b726ddb180df4006d2f474d8be203517.json",
+        "version": "sha256:aa1ebf0bc51662d2f0c2d79fe7cccfe2b726ddb180df4006d2f474d8be203517"
+      }
+    },
+    "images": {
+      "agent_cpu_base": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000074",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "reference": "172.20.0.50:5000/frontier/tasks/sparse_video_attention_policy/agent_image@sha256:0000000000000000000000000000000000000000000000000000000000000074"
+      },
+      "agent_gpu": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000010",
+        "tag": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-agent-gpu:source-728e5327aa04ca580bfe5b16fdacdcae71acfc3ca88620bb259a68c174333c08"
+      },
+      "verifier": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000075",
+        "gpu_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000013",
+        "gpu_tag": "docker.io/joyemang33/fcs2-task-verifier-sparse_video_attention_policy-gpu:source-728e5327aa04ca580bfe5b16fdacdcae71acfc3ca88620bb259a68c174333c08",
+        "reference": "172.20.0.50:5000/frontier/tasks/sparse_video_attention_policy/verifier_image@sha256:0000000000000000000000000000000000000000000000000000000000000075"
+      }
+    },
+    "network": {
+      "allowed_domains": [
+        "openrouter.ai"
+      ],
+      "audit": {
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 8388608,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 1076,
+        "ssh_session_budgets": {
+          "agent": 1024,
+          "verifier_eval": 2,
+          "verifier_train": 50
+        }
+      }
+    },
+    "quota": {
+      "agent_gpu": {
+        "allowed_types": [
+          "H100"
+        ],
+        "max_gpu_seconds": 54000,
+        "max_instance_seconds": 18000,
+        "max_instances": 1
+      },
+      "verifier": {
+        "eval_timeout_seconds": 12600,
+        "max_gpu_instances": 4,
+        "max_gpu_seconds": 1310400,
+        "max_train_calls": 25,
+        "max_train_wall_seconds": 225000
+      },
+      "wall_time_seconds": 18000
+    },
+    "schema_version": "frontier.task-config/v1",
+    "submission": {
+      "entrypoint": "payload/solution.patch",
+      "max_bytes": 262144,
+      "media_type": "application/x-tar",
+      "required_sha256": true
+    },
+    "task_version_id": "taskver_1SW9NC70240F9GFBK3GP49MTH6",
+    "verifier": {
+      "command": [
+        "/opt/frontier/verifier"
+      ],
+      "cpu_millis": 3000,
+      "evidence_path": "/frontier/output/evidence.tar.zst",
+      "max_evidence_bytes": 4194304,
+      "memory_bytes": 12884901888,
+      "result_path": "/frontier/output/result.json"
+    }
+  },
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "conversion": {
+      "method": "manual runtime standardization; scientific implementation preserved",
+      "source_commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
+      "source_path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy",
+      "source_repo": "private authoring repository"
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 438,
+        "path": "datasets/eval.json",
+        "version": "sha256:e0ca3a67c7198208965b8649dc9af3fa0c8e67d01eaf1e13d0409228264fc883"
+      },
+      "train": {
+        "bytes": 445,
+        "path": "datasets/train.json",
+        "version": "sha256:aa1ebf0bc51662d2f0c2d79fe7cccfe2b726ddb180df4006d2f474d8be203517"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 25,
+      "beat_spec_sha256": "sha256:19bb12002bd89b264f142f9e38a570133d98dee964051c032c2e5050135dff5d",
+      "solver_visible_metrics": [
+        "e2e_latency_seconds",
+        "psnr_db",
+        "ssim",
+        "lpips"
+      ],
+      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+    },
+    "frontier_cs_2_0": {
+      "adapter_version": "gpu-helper-v3-store-final-formal-v2",
+      "identity_algorithm": "preview-source-identity/v1",
+      "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
+      "problem_id": "sparse_video_attention_policy",
+      "source_set_sha256": "sha256:728e5327aa04ca580bfe5b16fdacdcae71acfc3ca88620bb259a68c174333c08"
+    },
+    "generator": {
+      "candidate_id": "cand_000-r7",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_82_svg_ear_v12"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "svg/models/wan/attention.py",
+        "svg/models/hyvideo/attention.py",
+        "svg/kmeans_utils.py",
+        "svg/solver_extensions/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "task_id": "frontier-cs-2.0-sparse-video-attention-policy",
+  "version": "gpu-helper-v3-store-final-formal-v2-cfg-3261d3efa50c"
+}

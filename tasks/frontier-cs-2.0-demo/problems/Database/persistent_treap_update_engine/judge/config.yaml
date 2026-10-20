@@ -1,0 +1,34 @@
+tag: systems
+runtime:
+  language: c++
+  timeout_seconds: 1800
+  environment: "Ubuntu 24.04; C++20; GCC; pthreads; mimalloc; x86-64 AES-NI"
+  apt_packages:
+    - build-essential
+    - git
+    - libmimalloc-dev
+  judge_apt_packages:
+    - build-essential
+    - git
+    - libmimalloc-dev
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 8
+  memory_mb: 16384
+  storage_mb: 8192
+  build_timeout_seconds: 300
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - lib/treap/scheduler.hpp
+    - lib/treap/search_insert.hpp
+    - lib/treap/search_delete.hpp
+  max_changed_files: 3
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics: []

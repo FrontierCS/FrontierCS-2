@@ -1,0 +1,27 @@
+id: "clusterwise_spgemm"
+display_name: "Fixed-Length Clustered Sparse Multiplication"
+category: "Arch"
+summary: "Reconstruct and speed up fixed-length clustered sparse matrix-matrix multiplication (SpGEMM)."
+paper_title: "Improving SpGEMM Performance Through Matrix-Reordering and Cluster-wise Computation"
+paper_venue: "SC 2025"
+paper_url: "https://arxiv.org/pdf/2507.21253v1"
+agent_cpu_cores: 2
+agent_memory_gib: 16
+agent_disk_gib: 32
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 60
+verifier_memory_gib: 64
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 3
+train_wall_seconds: 21600
+eval_timeout_seconds: 7200

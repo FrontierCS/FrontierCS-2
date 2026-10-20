@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "code/src/language/rewrites.rs",
+    "code/src/language/solver_extensions/"
+  ],
+  "max_bytes": 1048576,
+  "max_files": 50,
+  "member": "solution.patch"
+}

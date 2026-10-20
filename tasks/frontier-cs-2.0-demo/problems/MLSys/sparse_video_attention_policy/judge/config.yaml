@@ -1,0 +1,108 @@
+tag: systems
+runtime:
+  language: python
+  timeout_seconds: 12600
+  environment: "Python 3.11, PyTorch 2.6.0/CUDA 12.4; Verifier 4x H100 (four workloads per wave; graded uses three waves), Agent debug runner 1x H100; offline Wan2.1 14B and HunyuanVideo checkpoints and retained Wan/HunyuanVideo 720p CUDA/Triton paths"
+  apt_packages:
+    - bash
+    - cmake
+    - g++-11
+    - gcc-11
+    - git
+    - make
+  judge_apt_packages:
+    - bash
+    - cmake
+    - ffmpeg
+    - g++-11
+    - gcc-11
+    - git
+    - make
+  pip_packages:
+    - accelerate==1.10.1
+    - cmake==4.1.0
+    - cuvs-cu12==26.2.0
+    - diffusers==0.34.0
+    - flashinfer-python==0.2.10
+    - ftfy==6.3.1
+    - imageio==2.37.0
+    - imageio-ffmpeg==0.6.0
+    - loguru==0.7.3
+    - lpips==0.1.4
+    - numpy==2.1.2
+    - pillow==11.0.0
+    - protobuf==6.32.0
+    - setuptools==80.9.0
+    - sympy==1.13.1
+    - termcolor==3.1.0
+    - torch==2.6.0
+    - torchvision==0.21.0
+    - triton==3.2.0
+    - transformers==4.57.6
+  judge_pip_packages:
+    - accelerate==1.10.1
+    - cmake==4.1.0
+    - cuvs-cu12==26.2.0
+    - diffusers==0.34.0
+    - flashinfer-python==0.2.10
+    - ftfy==6.3.1
+    - imageio==2.37.0
+    - imageio-ffmpeg==0.6.0
+    - loguru==0.7.3
+    - lpips==0.1.4
+    - numpy==2.1.2
+    - pillow==11.0.0
+    - protobuf==6.32.0
+    - setuptools==80.9.0
+    - sympy==1.13.1
+    - termcolor==3.1.0
+    - torch==2.6.0
+    - torchvision==0.21.0
+    - triton==3.2.0
+    - transformers==4.57.6
+  accelerator:
+    provider: modal
+    gpu_types: [H100]
+    agent:
+      instances: 1
+      max_instance_seconds: 18000
+      max_gpu_seconds: 54000
+    verifier:
+      instances: 4
+      max_instance_seconds: 12600
+      max_gpu_seconds: 1310400
+  huggingface_models:
+    - repo_id: Wan-AI/Wan2.1-T2V-14B-Diffusers
+      revision: 38ec498cb3208fb688890f8cc7e94ede2cbd7f68
+      target: Wan2.1-T2V-14B-Diffusers
+    - repo_id: tencent/HunyuanVideo
+      revision: 2a15b5574ee77888e51ae6f593b2ceed8ce813e5
+      target: HunyuanVideo
+  torchvision_models: [vgg16-imagenet1k-v1]
+  docker:
+    image: ubuntu:24.04
+    gpu_image: pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel@sha256:0cf3402e946b7c384ba943ee05c90b4c5a4a05227923921f2b0918c011cfaf56
+environment:
+  cpus: 3
+  memory_mb: 12288
+  storage_mb: 10240
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - svg/models/wan/attention.py
+    - svg/models/hyvideo/attention.py
+    - svg/kmeans_utils.py
+    - svg/solver_extensions/
+  max_changed_files: 12
+  max_patch_bytes: 262144
+evaluation:
+  solver_visible_metrics:
+    - e2e_latency_seconds
+    - psnr_db
+    - ssim
+    - lpips
+  suite_relation: fixed disjoint development and final suites; identical evaluator and beat-spec rules
+  max_dev_submissions: 25

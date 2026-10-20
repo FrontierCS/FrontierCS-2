@@ -1,0 +1,16 @@
+usage: frontier_deploy.py native-localize-images [-h] --config CONFIG
+                                                 --document DOCUMENT
+                                                 [--candidate CANDIDATE]
+                                                 --output OUTPUT (--plan |
+                                                 --check | --apply)
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG
+  --document DOCUMENT
+  --candidate CANDIDATE
+  --output OUTPUT
+  --plan                Offline plan only
+  --check               Read-only registry verification
+  --apply               Copy exact image manifests; no registration or
+                        definition upload

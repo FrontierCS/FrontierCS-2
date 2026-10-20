@@ -1,0 +1,14 @@
+*
+!judge/
+!judge/**
+!verifier/
+!verifier/**
+**/__pycache__/
+**/test_*.py
+**/Dockerfile*
+!agent-base/
+!agent-base/frontier/
+!agent-base/frontier/task/
+!agent-base/frontier/task/repo/
+!agent-base/frontier/task/repo/vllm/
+!agent-base/frontier/task/repo/vllm/**

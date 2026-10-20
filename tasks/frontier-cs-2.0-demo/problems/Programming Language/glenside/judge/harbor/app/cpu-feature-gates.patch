@@ -1,0 +1,223 @@
+--- a/src/language/from_relay/mod.rs
++++ b/src/language/from_relay/mod.rs
+@@ -1,5 +1,4 @@
+ // TODO(@gussmith23) Make sure TVM feature flag is getting tested in CI
+-#![cfg(feature = "tvm")]
+ 
+ use crate::language::{
+     Language, Language::*, RelayActivationLayout, RelayKernelLayout, RelayOperator::*,
+@@ -9,11 +8,17 @@
+ use std::collections::{HashMap, HashSet};
+ use std::convert::TryFrom;
+ use std::convert::TryInto;
++#[cfg(feature = "tvm")]
+ use tvm::ir::relay::*;
++#[cfg(feature = "tvm")]
+ use tvm::ir::tir::*;
++#[cfg(feature = "tvm")]
+ use tvm::ir::ty::*;
++#[cfg(feature = "tvm")]
+ use tvm::ir::{module::*, PrimExpr};
++#[cfg(feature = "tvm")]
+ use tvm::runtime::array::Array;
++#[cfg(feature = "tvm")]
+ use tvm::runtime::IsObjectRef;
+ 
+ use super::ComputeType;
+@@ -615,6 +620,7 @@
+     expr.add(Language::AccessPair([a_id, b_id]))
+ }
+ 
++#[cfg(feature = "tvm")]
+ pub fn dtype_from_type(t: tvm::ir::ty::Type) -> crate::language::DataType {
+     let tensor_type = t
+         .clone()
+@@ -638,6 +644,7 @@
+ }
+ 
+ /// Get shape from type
++#[cfg(feature = "tvm")]
+ pub fn shape_from_type(t: tvm::ir::ty::Type) -> Vec<usize> {
+     let tensor_type = t
+         .clone()
+@@ -686,6 +693,7 @@
+ /// into Glenside code. This is a hack; this allows us to mostly ignore
+ /// operators that we don't yet do rewrites over (e.g. batch norms, pooling,
+ /// softmax) and allows us to more easily generate somewhat good code for them.
++#[cfg(feature = "tvm")]
+ pub fn from_relay(
+     module: &IRModule,
+     simplify_batch_norm_for_inference_hack: bool,
+@@ -745,6 +753,7 @@
+ /// To prevent redundant recursion which made large expressions prohibitively slow,
+ /// we keep track of the already visited Expr with "visited", and return if we have already
+ /// traversed an expression.
++#[cfg(feature = "tvm")]
+ fn create_worklist(relay_expr: Expr, worklist: &mut Vec<Expr>, visited: &mut HashSet<Expr>) {
+     if visited.contains(&relay_expr) {
+         return;
+@@ -811,6 +820,7 @@
+ /// into Glenside code. This is a hack; this allows us to mostly ignore
+ /// operators that we don't yet do rewrites over (e.g. batch norms, pooling,
+ /// softmax) and allows us to more easily generate somewhat good code for them.
++#[cfg(feature = "tvm")]
+ fn compile_expression(
+     relay_expr: Expr,
+     glenside_expr: &mut RecExpr<Language>,
+@@ -2840,7 +2850,7 @@
+     }
+ }
+ 
+-#[cfg(test)]
++#[cfg(all(test, feature = "tvm"))]
+ mod tests {
+     use crate::language::interpreter::interpret;
+     use crate::language::{Language, MyAnalysis};
+--- a/src/language/rewrites.rs
++++ b/src/language/rewrites.rs
+@@ -702,6 +702,7 @@
+         => {ApplierImpl("?x".parse().unwrap(), "?w".parse().unwrap())})
+ }
+ 
++#[cfg(feature = "tvm")]
+ pub fn lstm_to_flexasr() -> RW {
+     use std::path::PathBuf;
+     let pattern = {
+@@ -6537,6 +6538,7 @@
+         };
+         ($(#[$meta:meta])* $test_name:ident, $tol:literal, $relay_str:expr, $glenside_str:expr, $optional_arg:literal, $distribution:expr, $rws: expr, $use_opaque_operators_for: expr) => {
+             $(#[$meta])*
++            #[cfg(feature = "tvm")]
+             #[test]
+             fn $test_name() {
+                 test_logger::ensure_env_logger_initialized();
+--- a/src/codegen.rs
++++ b/src/codegen.rs
+@@ -3117,6 +3117,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_add() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -3262,6 +3263,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_biasadd() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -3407,6 +3409,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_batchnorm() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -3599,6 +3602,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_softmax() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -3746,6 +3750,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_relu() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -3892,6 +3897,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_maxpool2d_resnet_3x3() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4037,6 +4043,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_batchflatten() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4182,6 +4189,7 @@
+     }
+ 
+     #[test]
++    #[cfg(feature = "tvm")]
+     fn relay_op_globalavgpool2d() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4328,6 +4336,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_op_leakyrelu() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4476,6 +4485,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_op_sigmoid() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4624,6 +4634,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_op_avgpool2d() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4772,6 +4783,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_op_upsampling() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -4920,6 +4932,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_op_maximum() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -5065,6 +5078,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_op_minimum() {
+         let relay = r#"
+ #[version = "0.0.5"]
+@@ -5210,6 +5224,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_model_yolov3() {
+         // Generate yolov3 with directions from:
+         // https://tvm.apache.org/docs/tutorials/frontend/from_darknet.html
+@@ -5262,6 +5277,7 @@
+ 
+     #[test]
+     #[ignore = "unfinished test"]
++    #[cfg(feature = "tvm")]
+     fn relay_model_efficientnet_lite4_11() {
+         // efficientnet onnx model source: https://github.com/onnx/models/blob/master/vision/classification/efficientnet-lite4/model/efficientnet-lite4-11.onnx
+         // imported into relay

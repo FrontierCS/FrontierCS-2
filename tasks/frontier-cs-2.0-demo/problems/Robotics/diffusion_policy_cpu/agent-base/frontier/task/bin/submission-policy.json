@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
+    "diffusion_policy/sampler_extensions/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 17,
+  "member": "solution.patch"
+}

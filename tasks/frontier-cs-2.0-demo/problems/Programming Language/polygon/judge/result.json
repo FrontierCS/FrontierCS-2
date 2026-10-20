@@ -1,0 +1,132 @@
+{
+  "schema": "frontiersmith/result@1",
+  "task_id": "polygon",
+  "run_id": "polygon-20260923",
+  "candidate_id": "cand_000",
+  "preview_version": "smith89-62791e2f-preview-v3",
+  "final": {
+    "round": 1,
+    "reference": {
+      "ok": true,
+      "samples": 1,
+      "scores": [
+        95.49344120734904
+      ],
+      "dev_scores": [
+        95.44414032501786
+      ],
+      "spread": {
+        "n": 1,
+        "spread": 0.0,
+        "mean": 95.49344120734904,
+        "rel": 0.0
+      },
+      "reasons": [],
+      "round": 1
+    },
+    "trials": [
+      {
+        "round": 1,
+        "idx": 0,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.8627254248994244,
+        "score": 86.27254248994244,
+        "beats_reference": 0,
+        "reference_score": 95.54821463261706,
+        "margin": -9.275672142674622,
+        "submissions": 5,
+        "cost": 4.193585600000001,
+        "wall_s": 1688.608853,
+        "status": "scored"
+      }
+    ],
+    "best_reward": 0.8627254248994244,
+    "n_beating_reference": 0
+  },
+  "reference": {
+    "patch_sha256": "89a1233f7717a86ccbe1cd604b838bfc6ab7f76ed4c6330a43080f12fe3510ca",
+    "development": {
+      "score": 95.49344120734904,
+      "validated_workloads": 19,
+      "total_workloads": 19
+    },
+    "final": {
+      "score": 95.6090680691831,
+      "validated_workloads": 19,
+      "total_workloads": 19
+    }
+  },
+  "calibration": {
+    "naive_baseline": {
+      "patch_sha256": "49d766fe25084053595cf9304deea2a33ee7942d23da62d9af9a7d33d8d53300",
+      "development_score": 10.0028391621,
+      "development_validated": "2/19",
+      "final_score": 5.0025554947,
+      "final_validated": "1/19"
+    },
+    "precise_search_adversary": {
+      "patch_sha256": "0cdaef2f71d80891c146ce48e7cbd11f807c293f5f6820efcf0bcf71cdb37ac1",
+      "development_score": 81.14539974907744,
+      "development_validated": "16/19",
+      "final_score": 81.14539974907744,
+      "final_validated": "16/19",
+      "beats_reference": 0
+    }
+  },
+  "genuine_solver_trials": [
+    {
+      "trial": "frontier-cs-2-0-polygon-preview__CH8Bvgp",
+      "agent": "redacted",
+      "model": "redacted",
+      "candidate_class": "model_agent",
+      "patch_sha256": "363fde62d573130dfe55245b5b3708b61dcd07dc3034f92dd0d2b8c6dc8be7e5",
+      "status": "scored",
+      "score": 86.27254248994244,
+      "reference_score": 95.54821463261706,
+      "margin": -9.275672142674622,
+      "validated_workloads": 17,
+      "total_workloads": 19,
+      "beats_reference": 0,
+      "train_feedback_received": false,
+      "final_verifier_independent": true,
+      "cost_usd": 4.193585600000001
+    }
+  ],
+  "release_validation": {
+    "validated_at": "2026-10-09T16:23:22Z",
+    "environment": "fresh linux/amd64 local Agent and Verifier images; CPU-only, network disabled, read-only image roots",
+    "reference": {
+      "development_score": 95.44414032501786,
+      "development_validated": "19/19",
+      "final_score": 95.54821463261706,
+      "final_validated": "19/19",
+      "final_beats_reference": 1
+    },
+    "precise_search_adversary": {
+      "development_score": 81.14539974907744,
+      "development_validated": "16/19",
+      "final_score": 81.14539974907744,
+      "final_validated": "16/19",
+      "final_beats_reference": 0
+    },
+    "public_smoke": {
+      "pair": "passed",
+      "disambiguation": "passed"
+    },
+    "unit_tests": "4 passed",
+    "layout_validators": "2 passed"
+  },
+  "publication": {
+    "published": false,
+    "task_version_id": null,
+    "management_receipt": null,
+    "immutable_image_receipts": null,
+    "immutable_dataset_receipts": null
+  },
+  "notes": [
+    "The genuine solver's five attempted train submissions received no result because the development judge service did not become healthy.",
+    "Its final score was produced by a separate final verifier and is valid difficulty evidence for this local task revision.",
+    "Private stress-case selection IDs and timing traces are intentionally excluded from the release task tree."
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 17179869184,
+    "workspace_bytes": 8589934592
+  },
+  "display_name": "Search Strategy for Concolic Testing",
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 419,
+        "path": "datasets/eval.json",
+        "version": "sha256:adca3387b7e0ce168c29333c0dfc2adb0789222f88208bdca64e7b14092eb9ed"
+      },
+      "train": {
+        "bytes": 426,
+        "path": "datasets/train.json",
+        "version": "sha256:2a75239a368e4c4758b4255cd61b4881478d397528e2589c2e96821eb0777fb0"
+      }
+    },
+    "evaluation": {
+      "authored_answering_timeout_seconds": 18000,
+      "authored_max_dev_submissions": 100,
+      "authored_max_train_wall_seconds": 18000,
+      "solver_visible_metrics": [
+        "dev_branches_covered_mean",
+        "dev_coverage_curve",
+        "dev_search_overhead_seconds_mean",
+        "dev_solver_attempts_mean",
+        "dev_runs_ended_early",
+        "dev_killed_executions_mean"
+      ],
+      "suite_relation": "different_programs"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "the graded programs, the reference strategy and the gate are built into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Jacob Burnim",
+        "Koushik Sen"
+      ],
+      "doi": "10.1109/ASE.2008.69",
+      "paper_id": "crest_search_heuristics_ase2008",
+      "pdf_url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-123.pdf",
+      "title": "Heuristics for Scalable Dynamic Test Generation",
+      "venue": "ASE",
+      "year": 2008
+    },
+    "runtime": {
+      "allowed_paths": [
+        "src/frontier_solution/"
+      ],
+      "language": "cpp",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 3051356160,
+      "max_model_request_bytes": 1048576,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "cute_crest",
+  "quota": {
+    "eval_timeout_seconds": 10800,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 18000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 34359738368
+  },
+  "version": "search-strategy-r2"
+}

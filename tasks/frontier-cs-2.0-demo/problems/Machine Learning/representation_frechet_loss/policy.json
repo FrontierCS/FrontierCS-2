@@ -1,0 +1,118 @@
+{
+  "agent": {
+    "cpu_millis": 3000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 10737418240
+  },
+  "display_name": "Differentiable Population Statistics",
+  "family": "frontier-cs-2.0/generative-models",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "A100-80GB"
+      ],
+      "max_gpu_seconds": 7200,
+      "max_instance_seconds": 7200,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 32400
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "A100-80GB"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 436,
+        "path": "datasets/eval.json",
+        "version": "sha256:fb48120dc1e6ccca01ccd83a8b314a69e6231aa14fa349e281641f2536a32d3d"
+      },
+      "train": {
+        "bytes": 443,
+        "path": "datasets/train.json",
+        "version": "sha256:a4de246a8b0df90787002bbbd80ac6490a94eebb0465a4a84dd5c18bca4148a8"
+      }
+    },
+    "delivery": {
+      "current_qualification": "UNPUBLISHED; retained reference and solver receipts bind the earlier immutable TaskVersion.",
+      "identity_migration": "Identity normalization plus an unpublished queue-state compatibility repair; see docs/tasks/representation_frechet_loss/source-binding.json.",
+      "measured_task_id": "r_top01_2604-28190-cand_000-preflight-8250ab0a4a09",
+      "measured_task_version_id": "taskver-redacted-bed68ad7"
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 3,
+      "solver_visible_metrics": [
+        "development_mean_inception_fdr",
+        "development_mean_convnext_fdr",
+        "development_mean_dinov2_fdr",
+        "development_mean_mae_fdr",
+        "development_mean_siglip_fdr",
+        "development_mean_clip_fdr"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2604.28190"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "frechet_distance/queue.py",
+        "frechet_distance/frontier_solution/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 48,
+      "ssh_session_budgets": {
+        "agent": 32,
+        "verifier_eval": 4,
+        "verifier_train": 12
+      }
+    }
+  },
+  "problem_id": "representation_frechet_loss",
+  "quota": {
+    "eval_timeout_seconds": 10800,
+    "max_train_calls": 3,
+    "max_train_wall_seconds": 21600,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "observer-suite-deadline-20261011"
+}

@@ -1,0 +1,95 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "SQL Counterexample Search",
+  "family": "frontier-cs-2.0/algorithms",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 416,
+        "path": "datasets/eval.json",
+        "version": "sha256:ba22fe3c8c873468455b9b78ffa024c2540c1d0c79b0e0ebb7a5c6a6b589e47d"
+      },
+      "train": {
+        "bytes": 423,
+        "path": "datasets/train.json",
+        "version": "sha256:6a30793ee174e8cad96bfe9959061dd4d5b40a07205e38a05c288fb8aabe477b"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "refuted_pairs",
+        "wall_time_seconds",
+        "search_iterations",
+        "backtracks"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "polygon-20260923"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Pinhan Zhao",
+        "Yuepeng Wang",
+        "Xinyu Wang"
+      ],
+      "doi": "10.1145/3729303",
+      "pdf_url": "https://arxiv.org/pdf/2504.06542v1",
+      "title": "Polygon: Symbolic Reasoning for SQL using Conflict-Driven Under-Approximation Search",
+      "venue": "PLDI 2025",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "sql_testing/environment.py",
+        "sql_testing/smt/formula.py",
+        "sql_testing/smt/knowledgebase.py",
+        "sql_testing/smt/search_extensions/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "polygon",
+  "quota": {
+    "eval_timeout_seconds": 330,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 12000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 8589934592
+  },
+  "version": "smith89-62791e2f-preview-v4-disambiguation-hard-sql-isolation-refbudget"
+}

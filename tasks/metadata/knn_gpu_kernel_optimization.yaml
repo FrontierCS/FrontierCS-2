@@ -1,0 +1,27 @@
+id: "knn_gpu_kernel_optimization"
+display_name: "GPU Brute-Force k-NN Kernel Optimization"
+category: "MLSys"
+summary: "Optimize exact brute-force k-nearest-neighbour search on one H100."
+paper_title: "FlashLib: Bringing Flash Magic to Classical Machine Learning Operators"
+paper_venue: "Blog"
+paper_url: "https://flashml-org.github.io/"
+agent_cpu_cores: 4
+agent_memory_gib: 8
+agent_disk_gib: 16
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 10800
+verifier_cpu_cores: 3
+verifier_memory_gib: 8
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 16200
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 25
+train_wall_seconds: 10800
+eval_timeout_seconds: 5400

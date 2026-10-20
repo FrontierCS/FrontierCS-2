@@ -1,0 +1,4 @@
+judge/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+# Preserve inherited scientific artifacts and patch context whitespace.
+judge/** -whitespace
+trials/** -whitespace

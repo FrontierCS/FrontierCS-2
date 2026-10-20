@@ -1,0 +1,12 @@
+{
+  "source": "authoring runtime context: trusted_runtime/adapter_process.py",
+  "sha256": "206a47a5af62294af801a4bb5285e7a44bd93d4c0c3f3f03d17810b39ea4b8f7",
+  "function": "discover_gpu_devices",
+  "function_sha256": "2f72142ce6b405a4404bf95ec43c3f815e02da4613541d676a42042a166335b4",
+  "method": "Function copied verbatim; CUDA_VISIBLE_DEVICES=0 and exactly three device binds preserved from accepted profile",
+  "local_cpu_bwrap": {
+    "path": "/usr/bin/bwrap",
+    "sha256": "499886cb0faa11dd765bff7e4241327df290a59c29877271a2847e68cd203fd5",
+    "limitation": "Native-host binary used explicitly for namespace CPU mechanism tests; distinct from pinned Modal CUDA binary"
+  }
+}

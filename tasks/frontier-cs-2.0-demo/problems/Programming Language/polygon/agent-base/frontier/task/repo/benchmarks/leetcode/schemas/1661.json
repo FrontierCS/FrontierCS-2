@@ -1,0 +1,28 @@
+{
+    "Problem Number": "1661",
+    "Tables": [
+      {
+        "TableName": "Activity",
+        "PKeys": [{
+            "Name": "machine_id",
+            "Type": "int"
+          },
+          {
+            "Name": "process_id",
+            "Type": "int"
+          },
+          {
+            "Name": "activity_type",
+            "Type": "enum,start,end"
+          }],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "timestamp",
+            "Type": "numeric"
+          }
+        ]
+      }
+    ],
+    "Tuples": []
+  }

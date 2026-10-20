@@ -1,0 +1,94 @@
+{
+  "benchmark": {
+    "child_address_space_mb": 49152,
+    "cluster_width": 8,
+    "evaluator_reserve_seconds": 60,
+    "max_expanded_input_nnz": 40000000,
+    "max_matrix_rows": 4000000,
+    "max_oracle_product_nnz": 80000000,
+    "max_product_bytes": 7516192768,
+    "max_scalar_operations": 2000000000,
+    "pairs": 7,
+    "process_wall_seconds": 180,
+    "reference_max_median_drift": 0.05,
+    "reference_max_relative_mad": 0.05,
+    "strict_time_ratio": 0.85
+  },
+  "dataset_objects": {
+    "eval": {
+      "bytes": 902113280,
+      "media_type": "application/x-tar",
+      "path": "datasets/eval.tar",
+      "version": "sha256:c93be05b1a9299cb21f346cb6e7afb1c05e30d8f43902d0a8ff1a06a459288b5"
+    },
+    "train": {
+      "bytes": 525844480,
+      "media_type": "application/x-tar",
+      "path": "datasets/train.tar",
+      "version": "sha256:e7d56702e8a5050bd473adf789d99813dfe0e9d3ee3b9b7b5388530e4148940e"
+    }
+  },
+  "environment": {
+    "agent": {
+      "cpus": 2,
+      "memory_mb": 16384
+    },
+    "build_timeout_seconds": 600,
+    "cpus": 60,
+    "memory_mb": 65536,
+    "storage_mb": 32768
+  },
+  "evaluation": {
+    "max_dev_submissions": 3,
+    "solver_visible_metrics": [
+      "candidate_median_execution_time_ms",
+      "candidate_median_throughput_mflops",
+      "candidate_max_output_bytes"
+    ],
+    "suite_relation": "same_distribution"
+  },
+  "runtime": {
+    "apt_packages": [
+      "build-essential",
+      "libtbb-dev",
+      "python3"
+    ],
+    "docker": {
+      "image": "ubuntu:24.04"
+    },
+    "environment": "GCC C++17; OpenMP; oneTBB; 60 logical CPU Verifier",
+    "judge_apt_packages": [
+      "build-essential",
+      "git",
+      "libtbb-dev",
+      "python3",
+      "libseccomp2",
+      "python3-pip"
+    ],
+    "judge_pip_packages": [
+      "numpy==2.3.4",
+      "scipy==1.16.3"
+    ],
+    "language": "c++17",
+    "timeout_seconds": 7200
+  },
+  "submission": {
+    "allow_paths": [
+      "CSR_FlengthCluster.h",
+      "BIN_FlengthCluster.h",
+      "hash_mult_flengthcluster.h",
+      "hash_mult.h",
+      "cluster_utility.h",
+      "CSR_VlengthCluster.h",
+      "BIN.h",
+      "frontier_solution/"
+    ],
+    "kind": "patch",
+    "max_changed_files": 24,
+    "max_patch_bytes": 262144,
+    "max_payload_archive_bytes": 266240,
+    "path": "/app/solution.patch",
+    "repo_root": "/app"
+  },
+  "tag": "systems"
+}

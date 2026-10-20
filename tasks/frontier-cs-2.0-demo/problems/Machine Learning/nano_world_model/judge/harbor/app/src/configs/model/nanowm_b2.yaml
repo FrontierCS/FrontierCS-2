@@ -1,0 +1,15 @@
+arch: NanoWM-B/2
+name: NanoWM-B-2
+num_frames: 4
+n_context_frames: 1
+scheduling_mode: "sequential"
+num_sampling_steps: 250
+use_action: true
+action_injection:
+  type: additive  # one of: additive, adaln_fuse, adaln, film, cross_attention
+causal: true  # temporal self-attn and cross-attn use causal mask (frame t attends only to <= t)
+image_size: 256
+latent_size: 32
+latent_channels: 4
+extras: 1
+num_classes: 1000  # only consulted when extras==2 (class-conditional path); kept explicit for config-as-source-of-truth.

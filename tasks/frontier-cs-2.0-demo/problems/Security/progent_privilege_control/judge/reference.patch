@@ -1,0 +1,12 @@
+diff --git a/secagent/tool.py b/secagent/tool.py
+index 6274a59..34b7ddf 100644
+--- a/secagent/tool.py
++++ b/secagent/tool.py
+@@ -373,6 +373,7 @@ def get_SYS_PROMPT_2() -> str:
+ 
+ 
+ def generate_security_policy(query: str, manual_check=False) -> None:
++    # Reference behaviour (upstream Progent-LLM); acceptance fixture changes only this comment.
+     counter = 0
+     temperature = 0.0
+     global init_user_query

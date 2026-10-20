@@ -1,0 +1,505 @@
+# Sparse Video Attention Policy
+
+## Optimization priority
+
+Your primary objective is **PASS on every required workload and every required
+metric**, with all correctness and validity requirements satisfied. The continuous
+score is a secondary optimization objective; a higher score cannot compensate for
+any failed PASS condition. Do not replace a solution known to satisfy all tested
+PASS conditions with one known to fail them merely to increase its score.
+Exploratory trials may regress; if no solution passes yet, work on the unmet
+conditions and retain a valid submission as a fallback.
+
+Successful verifier execution or a positive score does not mean scientific PASS.
+Use the reported per-metric pass/fail progress to assess the tested workloads.
+Train feedback covers only its evaluated workloads; passing train does not prove
+final PASS. Final independently evaluates the submitted artifact on its specified
+suite. The scoring formula, validity rules, and PASS comparisons below are unchanged.
+
+## Problem
+Text-to-video diffusion generates a video by repeatedly denoising a latent tensor
+conditioned on a written scene description, then decoding the final latent into
+image frames. This task retains two text-to-video paths from Sparse VideoGen, an
+open-source inference system built on Hugging Face Diffusers: the Wan path with a
+pinned Wan2.1 14-billion-parameter checkpoint, and the HunyuanVideo path with a
+pinned HunyuanVideo checkpoint. Both models represent a video as spatiotemporal
+tokens and apply transformer self-attention while denoising; self-attention
+produces each token's next representation from interactions with the other
+tokens in the sequence. Every workload is one fixed (model, prompt, seed) clip.
+The feedback suite has four clips (two Wan, two HunyuanVideo); the graded suite
+has twelve different clips (eight Wan, four HunyuanVideo). At most four isolated
+processes run concurrently, one per H100, and the graded suite uses three waves.
+Each program produces an MP4 (16 fps for Wan, 24 fps for HunyuanVideo), which the
+evaluator decodes into exactly 81 `uint8` RGB frames with 720 rows and 1,280
+columns; a dense-attention generation of the same model, prompt and seed is its
+fidelity target. A valid output must complete inference, have that decoded shape,
+have positive finite measured latency, and yield valid PSNR, SSIM, and LPIPS
+measurements against the dense target. PSNR and SSIM are image-similarity
+measurements for which higher is better; LPIPS is a learned perceptual distance
+for which lower is better. The secondary continuous objective is to maximize the mean 0-100 workload score, rewarding
+video fidelity and lower synchronized generation latency relative to each
+corresponding dense run. The selected EAR class constructors of both models and
+three shared tensor helper bodies are stubbed. You may reconstruct them, inherit
+or reuse retained attention strategies, or implement other policies within the
+editable surface, provided all public callable contracts remain available. A
+submission must make both models run: a HunyuanVideo workload whose processor
+cannot be constructed fails exactly like a failed Wan workload.
+
+## Design space
+The editable surface is the Wan self-attention processor module
+`svg/models/wan/attention.py`, the HunyuanVideo self-attention processor module
+`svg/models/hyvideo/attention.py`, the three public tensor helpers in
+`svg/kmeans_utils.py`, and supporting modules imported from
+`svg/solver_extensions/`. The five public symbols and their callable contracts
+must remain available. The two pipelines, checkpoints, text conditioning,
+schedulers and denoising schedules, transformers and VAEs outside the editable
+surface, MP4 exporters, decode path, timing boundary, and metric definitions are
+fixed. Evaluation observes the generated video and the synchronized pipeline-call
+latency. Query, key, and value tensors at the editable processor boundaries each
+carry one vector per sequence token and attention head; each processor's
+returned tensor(s) continue through the fixed transformer block.
+
+## Workload
+There are four feedback workloads and twelve graded workloads. Each clip is its
+own workload and is scored and gated separately.
+
+```text
+feedback: Wan prompts 1, 2 (one seed each); HunyuanVideo prompts 3, 4 (one seed each)
+graded:   Wan prompts 1, 2, 3, 4 (two different seeds each, 8 clips);
+          HunyuanVideo prompts 1, 2, 3, 4 (one seed each, 4 clips)
+```
+
+No (model, prompt, seed) item is shared between the suites, and every seed
+differs from every other seed. Seeds and graded workload identifiers are
+withheld. Four workloads run concurrently in separate processes with exactly one
+H100 visible to each process. Feedback uses one wave (two Wan and two
+HunyuanVideo clips together). Grading reuses the same four H100s for three waves:
+four Wan clips, four more Wan clips, then the four HunyuanVideo clips. The final
+score is the arithmetic mean of all twelve graded workloads. There is no
+synthetic-case generator.
+
+The physical inputs are `examples/{1,2,3,4}/prompt.txt`: four single-record
+ASCII/UTF-8 files of 680, 678, 1,064, and 581 bytes, respectively. They have no
+header, delimiter, or trailing newline. Both models use the same four records.
+`examples/7/prompt.txt` is present only because the retained HunyuanVideo shell
+entrypoint reads it; it is not a workload input. The first record is shown as a
+concrete format example; the field label is not present in the file:
+
+```text
+# record 1; field: prompt_text
+warm colors dominate the room, with a focus on the tabby cat sitting contently in the center. the scene captures the fluffy orange tabby cat wearing a tiny virtual reality headset. the setting is a cozy living room, adorned with soft, warm lighting and a modern aesthetic. a plush sofa is visible in the background, along with a few lush potted plants, adding a touch of greenery. the cat's tail flicks curiously, as if engaging with an unseen virtual environment. its paws swipe at the air, indicating a playful and inquisitive nature, as it delves into the digital realm. the atmosphere is both whimsical and futuristic, highlighting the blend of analog and digital experiences.
+```
+
+Each retained shell command reads a fixed example and the evaluator replaces its
+`--prompt` value with the workload's selected record. After it also substitutes
+the offline checkpoint path and suite seed, one Wan generation has this layout:
+
+```json
+{
+  "model_id": "<offline-model-root>/Wan2.1-T2V-14B-Diffusers",
+  "prompt": "one complete record from examples/{1,2,3,4}/prompt.txt",
+  "negative_prompt": "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards",
+  "seed": "<fixed-suite-seed: integer>",
+  "height": 720,
+  "width": 1280,
+  "num_frames": 81,
+  "num_inference_steps": 50,
+  "guidance_scale": 5.0
+}
+```
+
+and one HunyuanVideo generation has this layout:
+
+```json
+{
+  "model_id": "<offline-model-root>/HunyuanVideo",
+  "prompt": "one complete record from examples/{1,2,3,4}/prompt.txt",
+  "seed": "<fixed-suite-seed: integer>",
+  "height": 720,
+  "width": 1280,
+  "num_frames": 81,
+  "num_inference_steps": 50,
+  "guidance_scale": 6.0,
+  "flow_shift": 7.0
+}
+```
+
+The Wan checkpoint has 40 transformer layers, 40 self-attention heads, and a
+head dimension of 128. At the scored resolution, the main self-attention query,
+key, and value tensors have CUDA bfloat16 layout
+`(B, H, L, D) = (1, 40, 75600, 128)`. The 81 output frames correspond to 21
+latent frames, each with a `45 x 80` token grid, for `L = 21 x 45 x 80 = 75,600`.
+The Wan pipeline uses classifier-free guidance with `guidance_scale=5.0` for all
+50 denoising steps.
+
+The HunyuanVideo checkpoint has 20 dual-stream and 40 single-stream transformer
+blocks (60 self-attention layers, indexed 0-19 and 20-59), 24 heads, and a head
+dimension of 128. The same 81 frames are 21 latent frames of `45 x 80` tokens,
+so its video part is also 75,600 tokens. Every HunyuanVideo attention layer is
+joint attention over the video tokens followed by a fixed 256-slot text context
+(the prompt's tokens, then padding), so the query, key, and value tensors have
+CUDA bfloat16 layout `(B, H, L, D) = (1, 24, 75856, 128)` with
+`L = 75,600 + 256`. HunyuanVideo uses embedded guidance (`guidance_scale=6.0` is
+a transformer input, not classifier-free guidance), so every denoising step runs
+one transformer pass; its scheduler is flow-matching Euler with shift 7.0. The
+upstream HunyuanVideo setting generates 129 frames; this task fixes HunyuanVideo
+at 81 frames so both models run at the same 21-latent-frame scale.
+
+For each workload, the candidate pipeline is called twice with its suite seed.
+The first call is an unmeasured two-step kernel warm-up and its frames are
+discarded. The evaluator then constructs new attention-processor instances for
+every scored self-attention layer and empties the retained HunyuanVideo
+processors' class-level per-layer k-means caches (`centroids_init`,
+`q_centroids`, and `k_centroids` dictionaries on the processor class hierarchy),
+so processor state from the warm-up is absent from the scored call. The second
+call performs all 50 denoising steps. Its GPU is synchronized immediately before
+and after that call; the intervening wall-clock interval is
+`e2e_latency_seconds`, and the second call's frames are exported. Model loading,
+attention replacement, the one shared CUDA-extension build, MP4 export, MP4
+decoding, and fidelity evaluation are outside the timed interval.
+
+For each workload, the dense target video and dense synchronized call time are
+fixed task inputs. The judge verifies the target video hash, decodes it, and
+computes the candidate's fidelity against it during every evaluation. The
+candidate video and latency are produced afresh on that workload's evaluation
+H100. This is a fixed execution representative of the retained generation
+paths, not a set of strings to recognize. The evaluator does not vary workload
+scale, case count, or measured repetition count.
+
+## Interface
+The retained Wan integration constructs the required class as
+`WanAttn_EARAttn_Processor(layer_idx: int)`. Its attention call boundary is:
+
+```python
+processor(
+    attn: Attention,
+    hidden_states: torch.Tensor,
+    encoder_hidden_states: Optional[torch.Tensor] = None,
+    attention_mask: Optional[torch.Tensor] = None,
+    rotary_emb: Optional[torch.Tensor] = None,
+    timestep: Optional[int] = None,
+) -> torch.Tensor
+```
+
+The processor must accept every argument shown. On the scored self-attention
+path, `hidden_states` is a CUDA bfloat16 tensor with layout
+`(B, L, H*D) = (1, 75600, 5120)`, `encoder_hidden_states` and `attention_mask`
+are `None`, `rotary_emb` is supplied, and `timestep` is a non-`None`, one-element
+CUDA tensor. The return must have the same shape, device, and dtype as
+`hidden_states`. The retained cross-attention processor is fixed and is not
+replaced by the evaluator.
+
+The retained HunyuanVideo integration constructs the required class as
+`Hunyuan_EARAttn_Processor(layer_idx: int)` for all 60 layers (dual-stream
+layers 0-19, single-stream layers 20-59). It sets the integration's class
+attributes (`prompt_length`, `context_length=256`, `num_frame=21`,
+`frame_size=3600`, `first_layers_fp`, `first_times_fp`, the k-means settings,
+and `logging_file`) on that class before construction. Its attention call
+boundary is:
+
+```python
+processor(
+    attn: Attention,
+    hidden_states: torch.Tensor,
+    encoder_hidden_states: Optional[torch.Tensor] = None,
+    attention_mask: Optional[torch.Tensor] = None,
+    image_rotary_emb: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+    timestep: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]
+```
+
+On the scored path, `hidden_states` is the video stream with CUDA bfloat16
+layout `(1, 75600, 3072)` and `encoder_hidden_states` is the text stream with
+layout `(1, 256, 3072)`; dual-stream layers project the text stream through the
+attention module's added projections, while single-stream layers project it with
+the same projections as the video stream (`attn.add_q_proj is None`).
+`attention_mask` is a CUDA boolean tensor of shape `(1, 1, 1, 75856)` that is
+true for the video tokens and the prompt tokens and false for the text padding,
+`image_rotary_emb` is the supplied `(cos, sin)` pair for the video tokens, and
+`timestep` is a non-`None`, one-element CUDA tensor. The processor returns a
+`(video, text)` pair with the same shapes, device, and dtype as the two input
+streams.
+
+The three required tensor helpers have these contracts:
+
+```python
+identify_dynamic_map_estimated(
+    q_perm, k_perm, v_perm, qc_sz, kc_sz,
+    qcentroids, kcentroids, vcentroids,
+    top_p=0.9, gamma=1.0, min_kc_ratio=0.0,
+)
+```
+
+`q_perm`, `k_perm`, and `v_perm` are CUDA tensors shaped `(B, H, L, D)` with
+tokens contiguous by cluster. `qc_sz` and `kc_sz` are integer CUDA tensors shaped
+`(B, H, Cq)` and `(B, H, Ck)`; every batch/head row sums to `L`. The centroid
+tensors are shaped `(B, H, Cq, D)`, `(B, H, Ck, D)`, and
+`(B, H, Ck, D)`, respectively. The function must return a CUDA boolean tensor
+shaped `(B, H, Cq, Ck)`.
+
+```python
+scatter_mean_fused(src, size)
+```
+
+`src` is contiguous with shape `(B, H, L, D)`. `size` has shape `(B, H, K)`,
+every batch/head row sums to `L`, and its entries specify consecutive groups
+along the `L` dimension. The return must have shape `(B, H, K, D)` on the same
+device and with the same dtype as `src`. Each output vector is the arithmetic
+mean of its consecutive group; an empty group produces zeros.
+
+```python
+dynamic_block_sparse_prune_fwd_flashinfer(
+    q, k, v, k_centroids, v_centroids,
+    block_mask_map, block_row_sz, block_col_sz,
+    is_cpu=True,
+)
+```
+
+`q`, `k`, and `v` have shape `(B, H, L, D)`. The centroid tensors have shape
+`(B, H, Ck, D)`, the boolean map has shape `(B, H, Cq, Ck)`, and the row and
+column sizes have shapes `(B, H, Cq)` and `(B, H, Ck)`, with every row summing
+to `L`. When `is_cpu=True`, the map and size metadata are on the CPU; when it is
+false, those tensors may remain on CUDA. The return must have the same shape,
+device, and dtype as `q`.
+
+A concrete grouped-reduction record and its output are:
+
+```python
+>>> src = torch.tensor([[[[1., 0.], [3., 2.], [8., 4.]]]], device="cuda")
+>>> size = torch.tensor([[[2, 1]]], device="cuda")
+>>> scatter_mean_fused(src, size)
+tensor([[[[2., 1.], [8., 4.]]]], device="cuda:0")
+```
+
+Here `(B,H,L,D)=(1,1,3,2)`, and `size=[2,1]` assigns the first two vectors to
+the first consecutive group and the last vector to the second.
+
+For a Wan workload the judge launches:
+
+```bash
+bash scripts/wan/wan_t2v_720p_ear.sh
+```
+
+For the candidate, the complete effective Python argument list is:
+
+```text
+python wan_t2v_inference.py
+  --model_id <offline-model-root>/Wan2.1-T2V-14B-Diffusers
+  --prompt "<the workload's complete bundled prompt record>"
+  --height 720
+  --width 1280
+  --seed <fixed-suite-seed>
+  --num_inference_steps 50
+  --pattern EAR
+  --num_q_centroids 300
+  --num_k_centroids 1000
+  --top_p_kmeans 0.9
+  --min_kc_ratio 0.10
+  --kmeans_iter_init 50
+  --kmeans_iter_step 2
+  --first_times_fp 0.2
+  --first_layers_fp 0.03
+  --output_file <temporary-directory>/video.mp4
+  --logging_file <temporary-directory>/attention.jsonl
+  --num_frames 81
+```
+
+For a HunyuanVideo workload the judge launches:
+
+```bash
+bash scripts/hyvideo/hyvideo_t2v_720p_ear.sh
+```
+
+For the candidate, the complete effective Python argument list is:
+
+```text
+python hyvideo_t2v_inference.py
+  --model_id <offline-model-root>/HunyuanVideo
+  --seed <fixed-suite-seed>
+  --height 720
+  --width 1280
+  --prompt "<the workload's complete bundled prompt record>"
+  --num_inference_steps 50
+  --resolution 720p
+  --output_file <temporary-directory>/video.mp4
+  --logging_file <temporary-directory>/attention.jsonl
+  --pattern EAR
+  --num_q_centroids 400
+  --num_k_centroids 1000
+  --top_p_kmeans 0.9
+  --min_kc_ratio 0.10
+  --kmeans_iter_init 50
+  --kmeans_iter_step 2
+  --zero_step_kmeans_init
+  --first_times_fp 0.1
+  --first_layers_fp 0.03
+  --num_frames 81
+```
+
+The fixed dense target for the same workload uses the same model, prompt,
+negative prompt, seed, dimensions, frame count, and denoising-step count with
+`--pattern dense`; it is decoded through the same MP4 path. The dense target is
+not regenerated from submitted code. The pinned image does not install the
+`flash-attn` package: the task-owned `flash_attn/flash_attn_interface.py`
+provides the single `flash_attn_varlen_func` that the retained HunyuanVideo
+module imports, computing segment-isolated non-causal attention with PyTorch
+`scaled_dot_product_attention`. The retained HunyuanVideo dense processor uses
+it; the selected EAR path does not. It is outside the editable surface.
+
+For Wan, `--negative_prompt` is not passed, so the parser uses the exact default
+in the generation record above, and the Python entrypoint sets
+`guidance_scale=5.0`. For HunyuanVideo, the Python entrypoint sets
+`guidance_scale=6.0` and the pipeline's true classifier-free guidance stays off,
+so its default negative prompt has no effect. The required output is the path
+supplied through `--output_file`; it is exported at 16 fps (Wan) or 24 fps
+(HunyuanVideo) and decoded into this record:
+
+```text
+path:            <temporary-directory>/video.mp4
+decoded dtype:   uint8
+decoded layout:  (frame, row, column, RGB-channel)
+decoded shape:   (81, 720, 1280, 3)
+decoded size:    223,948,800 bytes
+```
+
+The compressed MP4 size is variable. The evaluator removes the temporary output
+directory after evaluation. `--logging_file` supplies an auxiliary path to the
+retained integration; that file is not required, parsed, or scored.
+
+## Validity
+The submission must be a non-empty text Git patch no larger than 262,144 bytes,
+must change at most 12 files, and must touch only the editable paths. Before the
+patch is applied, the evaluator rejects added source containing
+`FRONTIER_SUBMISSION_ROLE`, `FRONTIER_MODEL_ROOT`, any occurrence of the prefix
+`HARBOR_`, the words `inspect`, `subprocess`, `socket`, or `runpy`, the
+filesystem-access names `open`, `listdir`, `scandir`, `walk`, or `glob`, or any
+of `__closure__`, `__dict__`, `__import__`, `_getframe`, `/proc/`,
+`perf_counter`, `WanPipeline`, `HunyuanVideoPipeline`, and `sys.modules`. It
+also rejects binary patch content, patches with no changed file, absolute or
+parent-traversing paths, disallowed paths, more than 12 changed files, and
+patches that do not apply cleanly.
+
+After application, `WanAttn_EARAttn_Processor` must be defined directly in
+`svg/models/wan/attention.py`, `Hunyuan_EARAttn_Processor` must be defined
+directly in `svg/models/hyvideo/attention.py`, and the three helper functions
+must be defined directly in `svg/kmeans_utils.py`; importing those definitions
+from another file does not satisfy the structural check. A missing or incomplete
+offline checkpoint, Python syntax or import failure, CUDA-extension failure,
+generation failure, crash, timeout, non-positive or non-finite latency, missing
+or malformed MP4, wrong decoded frame count or shape, or invalid fidelity value
+scores zero before performance is considered. Positive-infinite PSNR is valid
+for an exact decoded match; `NaN` or negative-infinite PSNR and non-finite SSIM
+or LPIPS are invalid. The extension build limit is 600 seconds, each
+generation-process limit is 3,600 seconds, each workload worker limit is 3,900
+seconds, and the overall evaluator limit is 12,600 seconds.
+
+## Scoring
+As the secondary objective, maximize the returned score on a 0-100 scale. The following rule is applied
+independently to each workload. Let `T` be the candidate's
+synchronized 50-step pipeline-call latency, `Td` the fixed synchronized latency
+of the corresponding dense run, `P` mean framewise PSNR, `S` mean framewise
+SSIM, and `L` mean framewise VGG-LPIPS. Define
+`clip(x, 0, 1) = max(0, min(1, x))`. The exact rule is:
+
+```text
+p = clip((P - 15.0) / 20.0, 0, 1)
+s = clip((S - 0.50) / 0.50, 0, 1)
+l = clip((0.35 - L) / 0.35, 0, 1)
+quality = (p + s + l) / 3.0
+speedup = Td / max(1e-12, T)
+efficiency = clip((speedup - 1.0) / 1.0, 0, 1)
+score = clip(100.0 * quality * (0.25 + 0.75 * efficiency), 0, 100)
+```
+
+The suite score returned to the platform is the arithmetic mean of four
+feedback workload scores during development or twelve graded workload scores
+during final evaluation. A failed workload makes the whole evaluation invalid
+rather than being dropped from the mean.
+
+All numeric constants in that score rule, except the `1e-12` division guard,
+are challenge constants (not from materials).
+
+For candidate frame `X_i` and dense frame `Y_i`, both decoded as `uint8` RGB and
+converted to `[0,1]` floats, the evaluator computes:
+
+```text
+MSE_i = mean((X_i - Y_i)^2)
+P = (1 / 81) * sum_i 10 * log10(1 / MSE_i)
+
+mu_X = avg_pool_11x11(X_i, stride=1, padding=5)
+mu_Y = avg_pool_11x11(Y_i, stride=1, padding=5)
+sigma_X^2 = avg_pool_11x11(X_i^2, stride=1, padding=5) - mu_X^2
+sigma_Y^2 = avg_pool_11x11(Y_i^2, stride=1, padding=5) - mu_Y^2
+sigma_XY = avg_pool_11x11(X_i * Y_i, stride=1, padding=5) - mu_X * mu_Y
+SSIM_i = mean(
+  ((2 * mu_X * mu_Y + 0.01^2) * (2 * sigma_XY + 0.03^2)) /
+  ((mu_X^2 + mu_Y^2 + 0.01^2) * (sigma_X^2 + sigma_Y^2 + 0.03^2))
+)
+S = (1 / 81) * sum_i SSIM_i
+L = (1 / 81) * sum_i VGG_LPIPS(X_i, Y_i)
+```
+
+The means cover all 81 decoded frames; the per-frame MSE and SSIM means cover
+all pixels and RGB channels. VGG-LPIPS receives the `[0,1]` frame tensors
+directly. The score is returned whether or not the separate criterion described
+under Feedback and grading is cleared. The continuous score has no threshold or
+hidden tolerance; the public beat-reference bands below affect only that binary
+criterion.
+
+## Calibration
+The unmodified tree has no runnable score because both selected EAR class
+constructors raise `NotImplementedError`. The retained older sparse-attention
+classes are valid building blocks and may be reused. A decoded video identical
+to its dense target has `quality=1`; at `T=Td`, it has `efficiency=0` and scores
+exactly `25.00`. With `quality=1`, the formula reaches `100.00` when `Td/T`
+reaches `2.0`. These are formula-derived orientation points, not measured
+baselines. Beat-reference uses the explicit material-improvement and
+non-inferiority bands below; there are no additional hidden tolerances.
+
+## Feedback and grading
+The judge returns a score after every submission. The submission budget is in `/frontier/task/README.md`. **The twelve-workload graded suite is not the
+four-workload suite you receive feedback on**, and neither its identifiers nor
+its seeds are disclosed.
+
+The evaluator also applies a separate criterion per workload. For every graded
+workload, the submitted implementation must reduce end-to-end GPU generation
+latency by at least 4% relative to the withheld comparison implementation on
+that workload. Fidelity must be non-inferior on the same workload: PSNR may be
+at most 0.25 dB lower, SSIM at most 0.01 lower, and LPIPS at most 0.005 higher.
+Boundary equality clears a comparison. All four comparisons must hold on every
+one of the twelve graded workloads, Wan and HunyuanVideo alike; fidelity for
+both implementations is measured against the corresponding fixed-seed dense
+video of the same model. This criterion does not replace the score, and a
+submission that does not clear it is still scored by the formula above.
+
+Development feedback contains the candidate's absolute
+`e2e_latency_seconds`, `psnr_db`, `ssim`, and `lpips` for each feedback workload.
+For each metric, `beat_spec_progress` also reports `passed`, `failed`, `total`,
+`pass_percent`, and `fail_percent` across those four workloads. Percentages move
+in 25-point increments. It does not disclose the comparison implementation's
+measurements or attach individual pass/fail bits to workload identifiers. The
+feedback suite covers both models and shares no (model, prompt, seed) item with
+the graded suite; graded Wan clips cover each prompt with two hidden seeds and
+graded HunyuanVideo clips cover each prompt with one hidden seed.
+
+## Resources
+The control pod has 3 vCPUs, 12,288 MiB of memory, and 10,240 MiB of workspace
+storage. Development and authoritative verification each use one Driver-owned
+runner containing four NVIDIA H100s (SM90a), one per concurrent workload, with
+a 12,600-second per-instance limit. Grading reuses those four GPUs for three
+waves; it does not request twelve GPUs. The solver's optional debug runner
+remains a single H100 with an 18,000-second per-instance limit. The Agent GPU
+allowance is 54,000 seconds, and the shared Verifier allowance is 1,310,400
+GPU-seconds. The fixed runtime is Python 3.11, PyTorch 2.6.0, and CUDA 12.4,
+with the pinned offline `Wan-AI/Wan2.1-T2V-14B-Diffusers` checkpoint at revision
+`38ec498cb3208fb688890f8cc7e94ede2cbd7f68`, the pinned offline
+`tencent/HunyuanVideo` Diffusers checkpoint at revision
+`2a15b5574ee77888e51ae6f593b2ceed8ce813e5` (Tencent Hunyuan Community License),
+and fixed VGG weights. The retained GPU stack includes Diffusers 0.34.0,
+FlashInfer 0.2.10, cuVS 26.2.0, Triton 3.2.0, imageio 2.37.0, and LPIPS 0.1.4.
+The overall evaluator timeout is 12,600 seconds, the extension/build timeout is
+600 seconds, and the generation-process timeout is 3,600 seconds.
+
+Absolute train measurements are independently sorted numeric samples for each metric. They carry no workload identifiers or common row order across metrics; only `beat_spec_progress` contains comparison progress.
+
+A PSNR sample of `"positive_infinity"` means an exactly matching video (zero MSE). This JSON-safe spelling does not alter fidelity comparisons or the continuous score.

@@ -1,0 +1,185 @@
+#!/usr/bin/python3
+"""Start the untrusted compaction worker in its own namespaces (no root needed).
+
+  fastkv-worker run GPU TREE          the compaction worker on GPU, method tree TREE
+  fastkv-worker probe GPU TREE        isolation self-check (prints FASTKV_ISOLATION_OK)
+  fastkv-worker hog GPU TREE          allocates host memory until killed (watchdog probe)
+  fastkv-worker gpu-write GPU TREE    GPU residue probe, write side
+  fastkv-worker gpu-read GPU TREE     GPU residue probe, read side
+
+It runs as the harness's own user. Stage 1 enters fresh user (mapped to root),
+mount, network, PID and IPC namespaces through unshare; every process the
+worker starts dies with the namespace (--kill-child) and its private IPC,
+network and tmpfs mounts vanish with it. Stage 2, as namespace root:
+
+  - loopback up (the only interface);
+  - the method tree bound read-only at WORKER_ROOT;
+  - the root mount remounted read-only where the kernel allows it;
+  - fresh tmpfs over every path that holds trusted or persistent state
+    (HIDDEN): the judge, the verifier input/output, the harness scratch and
+    cache store under /tmp, /dev/shm, /var/tmp, HOME;
+  - a NESTED user namespace in which the worker is an ordinary uid with no
+    capabilities, the bounding set emptied and no_new_privs set. It does not
+    own the mount namespace, so it cannot unmount or remount anything, and in
+    any namespace it creates itself the outer mounts are locked.
+
+Then the environment is rebuilt from nothing and the worker is exec'd.
+Exit 64: bad arguments; 70: isolation unavailable.
+"""
+import ctypes
+import os
+import re
+import socket
+import struct
+import subprocess
+import sys
+
+PYTHON = "/opt/frontier/python/bin/python3"
+WORKER = "/opt/frontier/worker"
+WORKER_ROOT = "/opt/frontier/worker-root"
+# Fresh tmpfs over these. REQUIRED ones must succeed (trusted state lives there);
+# the others are covered when present and the probe checks nothing else is writable.
+# Sizes cap what the worker can park in RAM-backed tmpfs; the harness's watchdog
+# also counts their usage against the worker's memory limit.
+REQUIRED_HIDDEN = {"/opt/frontier/task": "64m", "/tmp": "4g", "/dev/shm": "1g", "/workspace": "1g"}
+OPTIONAL_HIDDEN = {"/var/tmp": "256m", "/frontier": "256m", "/home": "256m", "/root": "256m", "/run/lock": "16m"}
+WORKER_UID = 1000
+# Optional extra only (the harness's RSS watchdog is the enforced limit): a
+# cgroup v1 memory group, used when this user may create one.
+CGROUP_MEMORY = "/sys/fs/cgroup/memory"
+CGROUP_LIMIT_BYTES = 52 << 30
+TREE = re.compile(r"^/tmp/fastkv-tree-[A-Za-z0-9_]+/worker/tree$")
+MODES = {"run": "compaction_worker.py", "probe": "isolation_probe.py", "hog": "isolation_probe.py",
+         "hog-tmpfs": "isolation_probe.py",
+         "gpu-write": "gpu_probe.py", "gpu-read": "gpu_probe.py"}
+
+CLONE_NEWUSER = 0x10000000
+MS_RDONLY, MS_NOSUID, MS_NODEV, MS_REMOUNT, MS_BIND, MS_REC, MS_PRIVATE = 1, 2, 4, 32, 4096, 16384, 1 << 18
+PR_SET_NO_NEW_PRIVS, PR_CAPBSET_DROP = 38, 24
+LIBC = ctypes.CDLL(None, use_errno=True)
+
+
+def fail(code: int, message: str):
+    print(f"fastkv-worker: {message}", file=sys.stderr)
+    raise SystemExit(code)
+
+
+def mount(source, target, fstype, flags, data=None):
+    if LIBC.mount(source and source.encode(), target.encode(), fstype and fstype.encode(),
+                  flags, data and data.encode()) != 0:
+        raise OSError(ctypes.get_errno(), f"mount {target}")
+
+
+def loopback_is_up() -> bool:
+    try:
+        output = subprocess.run(["ip", "-o", "link", "show", "lo"], capture_output=True,
+                                text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    flags = output.split("<", 1)[1].split(">", 1)[0].split(",") if "<" in output else []
+    return "UP" in flags
+
+
+def loopback_up():
+    # gVisor creates the namespace loopback already up and rejects SIOCSIFFLAGS
+    # (ENOTTY); only fail when lo is genuinely down.
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            import fcntl
+            request = struct.pack("16sH14s", b"lo", 0x1 | 0x40, b"")  # IFF_UP | IFF_RUNNING
+            fcntl.ioctl(sock.fileno(), 0x8914, request)  # SIOCSIFFLAGS
+    except OSError:
+        if not loopback_is_up():
+            raise
+
+
+def write(path, text):
+    with open(path, "w") as stream:
+        stream.write(text)
+
+
+def optional_memory_cgroup() -> None:
+    group = os.path.join(CGROUP_MEMORY, f"fastkv-worker-{os.getpid()}")
+    try:
+        os.mkdir(group)
+        write(os.path.join(group, "memory.limit_in_bytes"), str(CGROUP_LIMIT_BYTES))
+        write(os.path.join(group, "tasks"), str(os.getpid()))
+    except OSError:
+        pass
+
+
+def stage2(mode: str, gpu: str, tree: str) -> None:
+    """As root of the fresh user namespace: build the view, then drop into the worker."""
+    try:
+        loopback_up()
+        mount(None, "/", None, MS_REC | MS_PRIVATE)
+        mount(tree, WORKER_ROOT, None, MS_BIND | MS_REC)  # WORKER_ROOT exists in the image
+        mount(None, WORKER_ROOT, None, MS_BIND | MS_REMOUNT | MS_RDONLY | MS_NOSUID | MS_NODEV)
+        try:  # best effort: gVisor and some kernels refuse a read-only root here
+            mount(None, "/", None, MS_BIND | MS_REMOUNT | MS_RDONLY)
+        except OSError:
+            pass
+        for path, size in REQUIRED_HIDDEN.items():
+            if path != "/workspace" or os.path.isdir(path):
+                mount("tmpfs", path, "tmpfs", MS_NOSUID | MS_NODEV, f"mode=1777,size={size}")
+        for path, size in OPTIONAL_HIDDEN.items():
+            try:
+                if os.path.isdir(path):
+                    mount("tmpfs", path, "tmpfs", MS_NOSUID | MS_NODEV, f"mode=1777,size={size}")
+            except OSError:
+                pass
+        # POSIX message queues: a fresh instance for this IPC namespace (else an empty tmpfs).
+        if os.path.isdir("/dev/mqueue"):
+            try:
+                mount("mqueue", "/dev/mqueue", "mqueue", MS_NOSUID | MS_NODEV)
+            except OSError:
+                mount("tmpfs", "/dev/mqueue", "tmpfs", MS_NOSUID | MS_NODEV, "mode=1777,size=16m")
+        os.makedirs("/tmp/home", mode=0o700, exist_ok=True)
+    except OSError as error:
+        fail(70, f"isolation unavailable: {error}")
+    # Nested user namespace: the worker is uid WORKER_UID, mapped to this
+    # namespace's root, with no capabilities over the mount namespace above.
+    if LIBC.unshare(CLONE_NEWUSER) != 0:
+        fail(70, "nested user namespace unavailable")
+    try:
+        write("/proc/self/setgroups", "deny")
+        write("/proc/self/uid_map", f"{WORKER_UID} 0 1\n")
+        write("/proc/self/gid_map", f"{WORKER_UID} 0 1\n")
+    except OSError as error:
+        fail(70, f"nested id map failed: {error}")
+    for capability in range(64):
+        LIBC.prctl(PR_CAPBSET_DROP, capability, 0, 0, 0)
+    if LIBC.prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0:
+        fail(70, "no_new_privs failed")
+    os.chdir(WORKER_ROOT)
+    environment = {"PATH": "/opt/frontier/python/bin:/usr/bin:/bin", "HOME": "/tmp/home", "TMPDIR": "/tmp/home",
+                   "CUDA_VISIBLE_DEVICES": gpu, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+                   "VLLM_WORKER_MULTIPROC_METHOD": "spawn", "PYTHONDONTWRITEBYTECODE": "1"}
+    script = os.path.join(WORKER, MODES[mode])
+    arguments = {"run": [WORKER_ROOT], "probe": ["probe"], "hog": ["hog"], "hog-tmpfs": ["hog-tmpfs"],
+                 "gpu-write": ["write"], "gpu-read": ["read"]}[mode]
+    # The exec as a non-root uid clears the permitted and effective capability sets.
+    os.execve(PYTHON, [PYTHON, script, *arguments], environment)
+
+
+def main(argv) -> None:
+    if len(argv) == 4 and argv[0] == "--stage2":
+        stage2(*argv[1:])
+        return
+    if len(argv) != 3 or argv[0] not in MODES or not argv[1].isdigit() or TREE.fullmatch(argv[2]) is None:
+        fail(64, "usage: fastkv-worker run|probe|hog|hog-tmpfs|gpu-write|gpu-read GPU /tmp/fastkv-tree-*/worker/tree")
+    mode, gpu, tree = argv
+    if os.path.realpath(tree) != tree or not os.path.isdir(tree):
+        fail(64, "the method tree must be an existing canonical directory")
+    optional_memory_cgroup()
+    command = ["/usr/bin/unshare", "--user", "--map-root-user", "--mount", "--net", "--pid", "--ipc",
+               "--fork", "--mount-proc", "--kill-child", "--", sys.executable, os.path.abspath(__file__),
+               "--stage2", mode, gpu, tree]
+    os.execv(command[0], command)
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except subprocess.SubprocessError as error:
+        fail(70, str(error))

@@ -1,0 +1,149 @@
+{
+  "definition_digest": "sha256:1a9707a5848f2653447f9b1488be4c28f39853be3ef3cef31b3e59bb10d01c31",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/bounded_evm_path_prediction/1a9707a5848f2653447f9b1488be4c28f39853be3ef3cef31b3e59bb10d01c31.json",
+  "display_name": "Bounded EVM Path Prediction",
+  "driver_config": {
+    "agent": {
+      "cpu_millis": 8000,
+      "memory_bytes": 4294967296,
+      "workspace_bytes": 4294967296
+    },
+    "datasets": {
+      "eval": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/bounded_evm_path_prediction/eval/sha256/dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4.json",
+        "version": "sha256:dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4"
+      },
+      "train": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/bounded_evm_path_prediction/train/sha256/e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce.json",
+        "version": "sha256:e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
+      }
+    },
+    "images": {
+      "agent_cpu_base": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000068",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "reference": "172.20.0.50:5000/frontier/tasks/bounded_evm_path_prediction/agent_image@sha256:0000000000000000000000000000000000000000000000000000000000000068"
+      },
+      "verifier": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000069",
+        "reference": "172.20.0.50:5000/frontier/tasks/bounded_evm_path_prediction/verifier_image@sha256:0000000000000000000000000000000000000000000000000000000000000069"
+      }
+    },
+    "network": {
+      "allowed_domains": [
+        "openrouter.ai"
+      ],
+      "audit": {
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 8388608,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 8388608,
+        "max_ssh_sessions": 32
+      }
+    },
+    "quota": {
+      "agent_gpu": {
+        "allowed_types": [],
+        "max_gpu_seconds": 0,
+        "max_instance_seconds": 0,
+        "max_instances": 0
+      },
+      "verifier": {
+        "eval_timeout_seconds": 1800,
+        "max_gpu_instances": 0,
+        "max_gpu_seconds": 0,
+        "max_train_calls": 50,
+        "max_train_wall_seconds": 90000
+      },
+      "wall_time_seconds": 18000
+    },
+    "schema_version": "frontier.task-config/v1",
+    "submission": {
+      "entrypoint": "payload/solution.patch",
+      "max_bytes": 131072,
+      "media_type": "application/x-tar",
+      "required_sha256": true
+    },
+    "task_version_id": "taskver_74SNN2PYAAB26QXJH2J4Z1BJD2",
+    "verifier": {
+      "command": [
+        "/opt/frontier/verifier"
+      ],
+      "cpu_millis": 8000,
+      "evidence_path": "/frontier/output/evidence.tar.zst",
+      "max_evidence_bytes": 4194304,
+      "memory_bytes": 8589934592,
+      "result_path": "/frontier/output/result.json"
+    }
+  },
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 436,
+        "path": "datasets/eval.json",
+        "version": "sha256:dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4"
+      },
+      "train": {
+        "bytes": 443,
+        "path": "datasets/train.json",
+        "version": "sha256:e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 50,
+      "beat_spec_sha256": "sha256:c2d68ab8563de1517783c588c995fa3fd9b5e27bbe5fff86a228ca2cfa147aee",
+      "solver_visible_metrics": [
+        "raw_quality",
+        "branch_accuracy",
+        "transaction_path_accuracy",
+        "observations"
+      ],
+      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+    },
+    "frontier_cs_2_0": {
+      "adapter_version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3",
+      "identity_algorithm": "preview-source-identity/v1",
+      "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
+      "problem_id": "bounded_evm_path_prediction",
+      "source_set_sha256": "sha256:71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328"
+    },
+    "generator": {
+      "candidate_id": "cand_001",
+      "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top75_6e3582446a"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Shijie Zhang",
+        "Ru Cheng",
+        "Xinpeng Liu",
+        "Jiang Xiao",
+        "Hai Jin",
+        "Bo Li"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2025-seer-accelerating-blockchain-transaction-execution-by-fine-grained-branch-prediction-6e3582446a",
+      "pdf_url": "https://www.vldb.org/pvldb/vol18/p822-xiao.pdf",
+      "title": "Seer: Accelerating Blockchain Transaction Execution by Fine-Grained Branch Prediction",
+      "venue": "PVLDB 18",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "core/vm/predictor.go"
+      ],
+      "language": "go",
+      "submission_kind": "patch"
+    }
+  },
+  "task_id": "frontier-cs-2.0-bounded-evm-path-prediction",
+  "version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3-cfg-1a9707a5848f"
+}

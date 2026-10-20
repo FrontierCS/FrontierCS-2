@@ -1,0 +1,57 @@
+{
+  "unit": "one held-out convolution expression with fixed tensor shapes, layout, kernel, stride, padding, and fixed egg search limits",
+  "metrics": [
+    {
+      "name": "im2col_discovery",
+      "means": "A binary value: 1 iff the original root e-class contains a shape-valid, numerically equivalent im2col form that also matches the fixed systolic-array mapping pattern; otherwise 0.",
+      "source": "judge/probe.rs::verify and execute use the retained judge/harbor/app/code/src/language/interpreter.rs; judge/evaluator.py::_measure aggregates the three witness verdicts, and _aggregate performs the per-workload comparison",
+      "better": "higher",
+      "clears_when": "candidate_im2col_discovery[w] >= reference_im2col_discovery[w], with both values in {0,1}",
+      "tolerance": "none (this is an exact binary discovery and correctness guard)"
+    },
+    {
+      "name": "rewrite_time_seconds",
+      "means": "The median of three identically configured egg Runner report().total_time measurements for this workload, in seconds; process startup, compilation, and post-run extraction are excluded.",
+      "source": "judge/probe.rs::measure reads pinned egg 0.7.1 Runner::report().total_time; judge/probe.rs::summarize_repetitions takes the three-run median; judge/evaluator.py::_measure validates it and _aggregate performs the per-workload comparison",
+      "better": "lower",
+      "clears_when": "candidate_rewrite_time_seconds[w] <= reference_rewrite_time_seconds[w]",
+      "tolerance": "none (the reproduction supplies no calibrated timing-noise estimate; use the fixed three-run median rather than inventing a tolerance)"
+    },
+    {
+      "name": "egraph_node_growth",
+      "means": "The maximum across three executions of the final egg e-graph node count minus the initial node count immediately after adding the input expression and rebuilding it. Maximum aggregation is a challenge-defined conservative convention, not a paper-derived measurement.",
+      "source": "judge/probe.rs::measure subtracts initial EGraph::total_number_of_nodes() from Runner::report().egraph_nodes; judge/probe.rs::summarize_repetitions takes the three-run maximum; judge/evaluator.py::_measure validates it and _aggregate performs the per-workload comparison",
+      "better": "lower",
+      "clears_when": "candidate_egraph_node_growth[w] <= reference_egraph_node_growth[w]",
+      "tolerance": "none (this is an exact integer count)"
+    }
+  ],
+  "beats_reference": "For every held-out workload w in W: (candidate_im2col_discovery[w] >= reference_im2col_discovery[w]) AND (candidate_rewrite_time_seconds[w] <= reference_rewrite_time_seconds[w]) AND (candidate_egraph_node_growth[w] <= reference_egraph_node_growth[w]); the flag is 0 if any workload fails any one of these three comparisons.",
+  "solver_feedback": [
+    {
+      "name": "development_im2col_discovered_count",
+      "means": "The candidate's count of public development workloads with im2col_discovery = 1 after the submission.",
+      "reveals_reference": "no — it is an aggregate of the candidate's own public-development results and contains no private workload identity or reference value."
+    },
+    {
+      "name": "development_rewrite_time_seconds_median",
+      "means": "The median of the candidate's per-workload rewrite_time_seconds values over the public development workloads.",
+      "reveals_reference": "no — it is computed only from the candidate's absolute Runner timings and is not a ratio, difference, or comparison keyed by a private workload."
+    },
+    {
+      "name": "development_egraph_node_growth_median",
+      "means": "The median of the candidate's per-workload egraph_node_growth values over the public development workloads.",
+      "reveals_reference": "no — it is a scalar summary of the candidate's own node counts and exposes neither the private reference nor private workload identities."
+    }
+  ],
+  "withheld": [
+    "raw_per_workload_im2col_discovery",
+    "raw_per_workload_rewrite_time_seconds",
+    "raw_per_workload_egraph_node_growth",
+    "reference_im2col_discovery",
+    "reference_rewrite_time_seconds",
+    "reference_egraph_node_growth"
+  ],
+  "statement_sentences": "Besides the continuous score, a separate stricter criterion called beats_reference is evaluated independently on every held-out convolution workload, and it must pass on every workload. For each workload, the evaluator compares your im2col_discovery result (higher is better), rewrite_time_seconds (lower is better), and egraph_node_growth (lower is better) against a private reference under fixed egg search limits; discovery also requires shape validity and numerical agreement with the original through the retained interpreter. The criterion is conjunctive across all three quantities, so one missed discovery, slower rewrite, or larger e-graph makes the flag 0.",
+  "comments": "The binding reproduction has accelerator_required = null, so this is a CPU-only Rust/egg task; the C systolic-array harness is numerical corroboration, not a graded accelerator measurement. Use the retained access-pattern IR, MyAnalysis shape analysis, interpreter, egg Runner, and fixed downstream systolic-array rule, and keep the four generic im2col constructors and their answer-bearing tests private. Hold search rules, the original convolution workloads plus the two fixed rank-two outer-concat records, iteration/node/time limits, and the three-run timing protocol fixed for candidate and reference; do not include a dedicated convolution lowering or the CLI blocking path if it bypasses generic discovery. The evaluator must check numerical agreement before mapping on varied batch sizes, channels, rectangular kernels, strides, padding, surrounding layout compositions, and both explicit outer-axis concatenations, while keeping numerical correctness separate from optimization measurements. No tolerance is justified by the reproduction record, so compare exact binary/integer values and fixed-repetition median durations per workload; only aggregate pass/fail percentages may be returned automatically, never raw rows or reference values."
+}

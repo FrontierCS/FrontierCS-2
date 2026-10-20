@@ -1,0 +1,520 @@
+{
+  "base_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
+  "file_count": 91,
+  "files": [
+    {
+      "bytes": 463,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:08ed07bf49b002150d847a007ed136a0fb8f0ddd52ca8f3172a5df503c0474e4"
+    },
+    {
+      "bytes": 16906,
+      "path": "agent-base/frontier/task/PROBLEM.md",
+      "sha256": "sha256:7f092b1aefa1d6f962cb88c5eff56ec58047894e2ae29d5e0174f7f976548fdb"
+    },
+    {
+      "bytes": 2849,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:b16c46a410cdbf57cc3fa3eb3dd186eba0b0e4d2b4eac0ed47eafe3c3156ace7"
+    },
+    {
+      "bytes": 3863,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:7542ef11a3c809de74f1f18282d2d3ff49b49dc5bcdc9c1abb0435c2e57b0f57"
+    },
+    {
+      "bytes": 141,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:f2ad2abb078fe977948fa6047ea1863e6ff4854f4c7fbea86315629b27dc99cf"
+    },
+    {
+      "bytes": 1925,
+      "path": "agent-base/frontier/task/bin/package_submission.py",
+      "sha256": "sha256:b3dd76f5e3d9418af45fd79666cfa10e4fd9364b833ff7639bf999f28e301d5f"
+    },
+    {
+      "bytes": 512,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:9e6ea359a15249cb4501f972d2c5b6472e71525cdf9f3b5cc41bfe6edb47cd26"
+    },
+    {
+      "bytes": 1067,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:3b034367830012249775b4a5e1a628460e8ba787bc6bb5859ef201987adc351f"
+    },
+    {
+      "bytes": 21209,
+      "path": "agent-base/frontier/task/repo/code/DBSCAN.C",
+      "sha256": "sha256:8eb8779a1fb17fba3108314d3eba07b1fb7b8e1d06131cda25793a4218a14626"
+    },
+    {
+      "bytes": 4085,
+      "path": "agent-base/frontier/task/repo/code/DBSCAN.h",
+      "sha256": "sha256:6c4dfe8ab4cbdfd611b753210593457e14be7b918cae009c2e4f9a64e4eac4f7"
+    },
+    {
+      "bytes": 6528,
+      "path": "agent-base/frontier/task/repo/code/DBSCANGeometry.h",
+      "sha256": "sha256:a0697a79ea1a2da66747deab31b3eb684dd06ac6842d1a00373a32809fe9a6bb"
+    },
+    {
+      "bytes": 9614,
+      "path": "agent-base/frontier/task/repo/code/DBSCANTime.C",
+      "sha256": "sha256:695bfb868cd406862b75e3d879ed914abf48917ccf54e128ef5f7391808c5422"
+    },
+    {
+      "bytes": 2188,
+      "path": "agent-base/frontier/task/repo/code/GetNeighborKDTree.C",
+      "sha256": "sha256:f8e053ba5d862111ca754828ce59cc5855785df6ff4af95fcf1fd250f949214a"
+    },
+    {
+      "bytes": 418,
+      "path": "agent-base/frontier/task/repo/code/GetNeighborKDTree.h",
+      "sha256": "sha256:0325220844c494a6c1816455599ebeebaab06c5a1a338d84891ea39a0ba02c24"
+    },
+    {
+      "bytes": 344,
+      "path": "agent-base/frontier/task/repo/code/GetNeighborTypeDef.h",
+      "sha256": "sha256:84a6b5090df7d9f7494ee1d3b87f68ddf794ec4b76d101d168ce11db0cafc0e8"
+    },
+    {
+      "bytes": 17691,
+      "path": "agent-base/frontier/task/repo/code/GridKDTree.h",
+      "sha256": "sha256:794a909b26defb650175bd572cbf6371dedd38a2b0a8f4d8bee58160e924b653"
+    },
+    {
+      "bytes": 4948,
+      "path": "agent-base/frontier/task/repo/code/Grids.C",
+      "sha256": "sha256:223c1ae7a07efc0f0db783e89edd961b021531b795af515aa17c971e95f8acfb"
+    },
+    {
+      "bytes": 8928,
+      "path": "agent-base/frontier/task/repo/code/Grids.h",
+      "sha256": "sha256:f61709632e3c75532bd75143cb0b1a2a8a6761fb0ecff5c6fed9b8a161a2f1c4"
+    },
+    {
+      "bytes": 7876,
+      "path": "agent-base/frontier/task/repo/code/IO.h",
+      "sha256": "sha256:8cff08a782b5b6e37a0f2dd56c179bb5713f80dc000d55988b94b4dff17a1670"
+    },
+    {
+      "bytes": 1160,
+      "path": "agent-base/frontier/task/repo/code/Makefile",
+      "sha256": "sha256:cafc898b7c7126e9291fbac0d0372a2f85d2d77682201c058e1783b083a62da1"
+    },
+    {
+      "bytes": 30400,
+      "path": "agent-base/frontier/task/repo/code/QuadTree.h",
+      "sha256": "sha256:0fd80604b37739c260ed608dcbc7857781507b919ab4fb8d58e8f07826dbce9d"
+    },
+    {
+      "bytes": 10619,
+      "path": "agent-base/frontier/task/repo/code/blockRadixSort.h",
+      "sha256": "sha256:dda00251ad416c32743337f319ab1ff1e64c61355d8bbe2c5669649cf32deae6"
+    },
+    {
+      "bytes": 11123,
+      "path": "agent-base/frontier/task/repo/code/deterministicHash.h",
+      "sha256": "sha256:0eb1c3286ce740aa7ccc7666df0929681c527b8a48ea8831bd48e66f215fb1b0"
+    },
+    {
+      "bytes": 16,
+      "path": "agent-base/frontier/task/repo/code/exampleData/clusters.txt",
+      "sha256": "sha256:e4ac173c975c48a55e5899651db1bb7cdebce57d51a78caa99f4d926c90c9de6"
+    },
+    {
+      "bytes": 50,
+      "path": "agent-base/frontier/task/repo/code/exampleData/tiny.txt",
+      "sha256": "sha256:c5ab272c1b2c264c2fd9331727ff9eaa70511f0214415bbf56eb2084ed1a6e2d"
+    },
+    {
+      "bytes": 1073,
+      "path": "agent-base/frontier/task/repo/code/geometry.h",
+      "sha256": "sha256:c3cde0884394500f0531f42b3689f15e3a2e75f3b3de291fbf512f13ac5925ee"
+    },
+    {
+      "bytes": 2695,
+      "path": "agent-base/frontier/task/repo/code/geometryIO.h",
+      "sha256": "sha256:8589d0dba7182b8a050f78ab2944d79b3ad13478a0acfec0e318e2b9c60faf33"
+    },
+    {
+      "bytes": 2213,
+      "path": "agent-base/frontier/task/repo/code/gettime.h",
+      "sha256": "sha256:ce7a3a4fce686fe476811e3bdf9730d004cc1625602f6290a79d42bd18dab955"
+    },
+    {
+      "bytes": 3316,
+      "path": "agent-base/frontier/task/repo/code/je_allocator.h",
+      "sha256": "sha256:d1926270a9229d815fd9c5a6759c16344f516cccfb25ce955446357c60798378"
+    },
+    {
+      "bytes": 12012,
+      "path": "agent-base/frontier/task/repo/code/ndHash.h",
+      "sha256": "sha256:2cc7dfcca245af19d730e7d0e2b9805f93d29919ca9117d4a8877015c35497e4"
+    },
+    {
+      "bytes": 2086,
+      "path": "agent-base/frontier/task/repo/code/parallel.h",
+      "sha256": "sha256:77c1b3fcbd64470762dba7c53568a79faa24fccfef7fb8dfe1285a1556caf311"
+    },
+    {
+      "bytes": 1278,
+      "path": "agent-base/frontier/task/repo/code/parallelDefs",
+      "sha256": "sha256:e1c5c4fccb816afc59116e69e8297026312bad256f44597f698ac2b6f108075d"
+    },
+    {
+      "bytes": 3484,
+      "path": "agent-base/frontier/task/repo/code/parseCommandLine.h",
+      "sha256": "sha256:7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46"
+    },
+    {
+      "bytes": 2903,
+      "path": "agent-base/frontier/task/repo/code/quickSort.h",
+      "sha256": "sha256:55885d319a1ec045f52779bb696babccc7fcc487aebfa65e765cf2da43b82945"
+    },
+    {
+      "bytes": 5057,
+      "path": "agent-base/frontier/task/repo/code/sampleSort.h",
+      "sha256": "sha256:9bad0a8f71bd0e297ed85120f2a326904b6600681367836a06a884fca0a98434"
+    },
+    {
+      "bytes": 22075,
+      "path": "agent-base/frontier/task/repo/code/sequence.h",
+      "sha256": "sha256:50face341876d0867a5046d14504b96d62de9fef7684e7475f1f419cf8871b10"
+    },
+    {
+      "bytes": 7025,
+      "path": "agent-base/frontier/task/repo/code/topology.h",
+      "sha256": "sha256:fb3dbefe817401eb472c4892e490e652b935fdb0152f6b58d9f1edf9ad5852aa"
+    },
+    {
+      "bytes": 3705,
+      "path": "agent-base/frontier/task/repo/code/transpose.h",
+      "sha256": "sha256:7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa"
+    },
+    {
+      "bytes": 3429,
+      "path": "agent-base/frontier/task/repo/code/unionFind.h",
+      "sha256": "sha256:f1436d63e3c1fe0a4a61a0d457ce26d39c67de9065923933218837a619a53841"
+    },
+    {
+      "bytes": 8294,
+      "path": "agent-base/frontier/task/repo/code/utils.h",
+      "sha256": "sha256:e0781621ac3a632c19750f04c67e2c0363116edee2255800b42711eb7f810216"
+    },
+    {
+      "bytes": 84,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:b56421bd248c200c3499d4930b673c659ad234cec58deb6a850026b2c99d2e28"
+    },
+    {
+      "bytes": 205,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:4071e78c3e6aaed3b3ca1a94b1166d3e7f5b300154cb947ef09ed6c1e0b9bca5"
+    },
+    {
+      "bytes": 199,
+      "path": "datasets/train.json",
+      "sha256": "sha256:10f7015599b8e3fa2446e7e3a327e52d4d7eecc3afa8b543475a541e86134757"
+    },
+    {
+      "bytes": 1253,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:8db838acb487904e4baf67a397dfc73db8f2198aa382a65b556e0abd537bb643"
+    },
+    {
+      "bytes": 7315,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:bb103f8f44e404ceef471ff57a33b3aad18712ab833e70c9aa746988ddc117f8"
+    },
+    {
+      "bytes": 27475,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:eb110f7de33ac25bddf411a9a03abaf6d880b1d29c53d1f6c006a138689e1c58"
+    },
+    {
+      "bytes": 1897,
+      "path": "judge/exact_oracle.cpp",
+      "sha256": "sha256:87e5210303f36df22845de301f4a0ec2b11a9c6efde423574f905ef9f90c738f"
+    },
+    {
+      "bytes": 5648,
+      "path": "judge/grid_oracle.cpp",
+      "sha256": "sha256:2b99102c82df57f79706b46cb8cad70a5d613685e7bda4c96078521a26047577"
+    },
+    {
+      "bytes": 3160,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:7e184e2307a7be26479f38ff11432262841fdecd13590ba539c91e468988f47c"
+    },
+    {
+      "bytes": 45596,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:33e1a2f18c0642408189aa43857da7f1f2afa12aced40a035bdb4c164f67dde7"
+    },
+    {
+      "bytes": 1067,
+      "path": "judge/repo/LICENSE",
+      "sha256": "sha256:3b034367830012249775b4a5e1a628460e8ba787bc6bb5859ef201987adc351f"
+    },
+    {
+      "bytes": 21209,
+      "path": "judge/repo/code/DBSCAN.C",
+      "sha256": "sha256:8eb8779a1fb17fba3108314d3eba07b1fb7b8e1d06131cda25793a4218a14626"
+    },
+    {
+      "bytes": 4085,
+      "path": "judge/repo/code/DBSCAN.h",
+      "sha256": "sha256:6c4dfe8ab4cbdfd611b753210593457e14be7b918cae009c2e4f9a64e4eac4f7"
+    },
+    {
+      "bytes": 6528,
+      "path": "judge/repo/code/DBSCANGeometry.h",
+      "sha256": "sha256:a0697a79ea1a2da66747deab31b3eb684dd06ac6842d1a00373a32809fe9a6bb"
+    },
+    {
+      "bytes": 9614,
+      "path": "judge/repo/code/DBSCANTime.C",
+      "sha256": "sha256:695bfb868cd406862b75e3d879ed914abf48917ccf54e128ef5f7391808c5422"
+    },
+    {
+      "bytes": 2188,
+      "path": "judge/repo/code/GetNeighborKDTree.C",
+      "sha256": "sha256:f8e053ba5d862111ca754828ce59cc5855785df6ff4af95fcf1fd250f949214a"
+    },
+    {
+      "bytes": 418,
+      "path": "judge/repo/code/GetNeighborKDTree.h",
+      "sha256": "sha256:0325220844c494a6c1816455599ebeebaab06c5a1a338d84891ea39a0ba02c24"
+    },
+    {
+      "bytes": 344,
+      "path": "judge/repo/code/GetNeighborTypeDef.h",
+      "sha256": "sha256:84a6b5090df7d9f7494ee1d3b87f68ddf794ec4b76d101d168ce11db0cafc0e8"
+    },
+    {
+      "bytes": 17691,
+      "path": "judge/repo/code/GridKDTree.h",
+      "sha256": "sha256:794a909b26defb650175bd572cbf6371dedd38a2b0a8f4d8bee58160e924b653"
+    },
+    {
+      "bytes": 4948,
+      "path": "judge/repo/code/Grids.C",
+      "sha256": "sha256:223c1ae7a07efc0f0db783e89edd961b021531b795af515aa17c971e95f8acfb"
+    },
+    {
+      "bytes": 8928,
+      "path": "judge/repo/code/Grids.h",
+      "sha256": "sha256:f61709632e3c75532bd75143cb0b1a2a8a6761fb0ecff5c6fed9b8a161a2f1c4"
+    },
+    {
+      "bytes": 7876,
+      "path": "judge/repo/code/IO.h",
+      "sha256": "sha256:8cff08a782b5b6e37a0f2dd56c179bb5713f80dc000d55988b94b4dff17a1670"
+    },
+    {
+      "bytes": 1160,
+      "path": "judge/repo/code/Makefile",
+      "sha256": "sha256:cafc898b7c7126e9291fbac0d0372a2f85d2d77682201c058e1783b083a62da1"
+    },
+    {
+      "bytes": 30400,
+      "path": "judge/repo/code/QuadTree.h",
+      "sha256": "sha256:0fd80604b37739c260ed608dcbc7857781507b919ab4fb8d58e8f07826dbce9d"
+    },
+    {
+      "bytes": 10619,
+      "path": "judge/repo/code/blockRadixSort.h",
+      "sha256": "sha256:dda00251ad416c32743337f319ab1ff1e64c61355d8bbe2c5669649cf32deae6"
+    },
+    {
+      "bytes": 11123,
+      "path": "judge/repo/code/deterministicHash.h",
+      "sha256": "sha256:0eb1c3286ce740aa7ccc7666df0929681c527b8a48ea8831bd48e66f215fb1b0"
+    },
+    {
+      "bytes": 16,
+      "path": "judge/repo/code/exampleData/clusters.txt",
+      "sha256": "sha256:e4ac173c975c48a55e5899651db1bb7cdebce57d51a78caa99f4d926c90c9de6"
+    },
+    {
+      "bytes": 50,
+      "path": "judge/repo/code/exampleData/tiny.txt",
+      "sha256": "sha256:c5ab272c1b2c264c2fd9331727ff9eaa70511f0214415bbf56eb2084ed1a6e2d"
+    },
+    {
+      "bytes": 1073,
+      "path": "judge/repo/code/geometry.h",
+      "sha256": "sha256:c3cde0884394500f0531f42b3689f15e3a2e75f3b3de291fbf512f13ac5925ee"
+    },
+    {
+      "bytes": 2695,
+      "path": "judge/repo/code/geometryIO.h",
+      "sha256": "sha256:8589d0dba7182b8a050f78ab2944d79b3ad13478a0acfec0e318e2b9c60faf33"
+    },
+    {
+      "bytes": 2213,
+      "path": "judge/repo/code/gettime.h",
+      "sha256": "sha256:ce7a3a4fce686fe476811e3bdf9730d004cc1625602f6290a79d42bd18dab955"
+    },
+    {
+      "bytes": 3316,
+      "path": "judge/repo/code/je_allocator.h",
+      "sha256": "sha256:d1926270a9229d815fd9c5a6759c16344f516cccfb25ce955446357c60798378"
+    },
+    {
+      "bytes": 12012,
+      "path": "judge/repo/code/ndHash.h",
+      "sha256": "sha256:2cc7dfcca245af19d730e7d0e2b9805f93d29919ca9117d4a8877015c35497e4"
+    },
+    {
+      "bytes": 2086,
+      "path": "judge/repo/code/parallel.h",
+      "sha256": "sha256:77c1b3fcbd64470762dba7c53568a79faa24fccfef7fb8dfe1285a1556caf311"
+    },
+    {
+      "bytes": 1278,
+      "path": "judge/repo/code/parallelDefs",
+      "sha256": "sha256:e1c5c4fccb816afc59116e69e8297026312bad256f44597f698ac2b6f108075d"
+    },
+    {
+      "bytes": 3484,
+      "path": "judge/repo/code/parseCommandLine.h",
+      "sha256": "sha256:7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46"
+    },
+    {
+      "bytes": 2903,
+      "path": "judge/repo/code/quickSort.h",
+      "sha256": "sha256:55885d319a1ec045f52779bb696babccc7fcc487aebfa65e765cf2da43b82945"
+    },
+    {
+      "bytes": 5057,
+      "path": "judge/repo/code/sampleSort.h",
+      "sha256": "sha256:9bad0a8f71bd0e297ed85120f2a326904b6600681367836a06a884fca0a98434"
+    },
+    {
+      "bytes": 22075,
+      "path": "judge/repo/code/sequence.h",
+      "sha256": "sha256:50face341876d0867a5046d14504b96d62de9fef7684e7475f1f419cf8871b10"
+    },
+    {
+      "bytes": 7025,
+      "path": "judge/repo/code/topology.h",
+      "sha256": "sha256:fb3dbefe817401eb472c4892e490e652b935fdb0152f6b58d9f1edf9ad5852aa"
+    },
+    {
+      "bytes": 3705,
+      "path": "judge/repo/code/transpose.h",
+      "sha256": "sha256:7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa"
+    },
+    {
+      "bytes": 3429,
+      "path": "judge/repo/code/unionFind.h",
+      "sha256": "sha256:f1436d63e3c1fe0a4a61a0d457ce26d39c67de9065923933218837a619a53841"
+    },
+    {
+      "bytes": 8294,
+      "path": "judge/repo/code/utils.h",
+      "sha256": "sha256:e0781621ac3a632c19750f04c67e2c0363116edee2255800b42711eb7f810216"
+    },
+    {
+      "bytes": 84,
+      "path": "judge/repo/make_submission.sh",
+      "sha256": "sha256:b56421bd248c200c3499d4930b673c659ad234cec58deb6a850026b2c99d2e28"
+    },
+    {
+      "bytes": 99,
+      "path": "judge/source_lock.json",
+      "sha256": "sha256:1558cfb297bfd1109ed1b5fc871a8c583de47990b14dbdbae2d973e7d06e88e0"
+    },
+    {
+      "bytes": 8170,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:a774dacd84e8434b51d9a56b6f1a19e276df39ba3ca7dfbb6441fe401a4e270a"
+    },
+    {
+      "bytes": 2362,
+      "path": "metadata.json",
+      "sha256": "sha256:a48e76c04f7abba4fd9763f3b82751b00b2f8ee66ac4a37ff156eb3fe2da9582"
+    },
+    {
+      "bytes": 3125,
+      "path": "policy.json",
+      "sha256": "sha256:436b25314090551fe9437c9b7daaef4cea58776d3c6aa2ad1270836d7a02fb04"
+    },
+    {
+      "bytes": 490,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:27243eca264aaf1b1ff0a56e0480e561985d728b50a48073e62c95fb44f34e86"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 8986,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:a096007075e2dac58e7adf3a43726cfb47c030bf1a1affe67dc872cfaf8b77a0"
+    }
+  ],
+  "problem_id": "parallel_dbscan",
+  "repository": "private authoring repository",
+  "schema": "parallel-dbscan-source/v1",
+  "source_author": "original contributor",
+  "source_commit": "6d415b1c92ebb6bcb615c9104ad05bca276bdc26",
+  "source_files": {
+    "DESIGN.md": "ead0034ca84bc7025765badc4862a3ae369e7d8693877b06065a4881aba8ef49",
+    "NOTES.md": "5d43873ce91d57f9d529f0e74201a6ded2d42afa795174e4f60439fdfe6ab3aa",
+    "REVIEW_DOSSIER.md": "d4d8bc97b7cd106821428d61824cb497b3f27b0082821abec2cc2d4567251ddb",
+    "artifact_manifest.json": "8db838acb487904e4baf67a397dfc73db8f2198aa382a65b556e0abd537bb643",
+    "beat_spec.json": "d6296746871d9a061053f8e858d3807728d83c199bd8fc625bdcc196dadb3843",
+    "config.yaml": "d7f63e331d175c692e2ec79ff6e137ab1561187c26ed6c9220ba0c051ea2c8b2",
+    "evaluate.sh": "53361c625e250779fe4f5daac269fb18c5b8dd932b66599abff2419defa5e30d",
+    "evaluator.py": "ddf209ed970ffb4ea8261f957a4a0276794838d4dd042b4b77e5fb0f35ada99e",
+    "exact_oracle.cpp": "87e5210303f36df22845de301f4a0ec2b11a9c6efde423574f905ef9f90c738f",
+    "harbor/app/LICENSE": "3b034367830012249775b4a5e1a628460e8ba787bc6bb5859ef201987adc351f",
+    "harbor/app/code/DBSCAN.C": "8eb8779a1fb17fba3108314d3eba07b1fb7b8e1d06131cda25793a4218a14626",
+    "harbor/app/code/DBSCAN.h": "6c4dfe8ab4cbdfd611b753210593457e14be7b918cae009c2e4f9a64e4eac4f7",
+    "harbor/app/code/DBSCANGeometry.h": "a0697a79ea1a2da66747deab31b3eb684dd06ac6842d1a00373a32809fe9a6bb",
+    "harbor/app/code/DBSCANTime.C": "695bfb868cd406862b75e3d879ed914abf48917ccf54e128ef5f7391808c5422",
+    "harbor/app/code/GetNeighborKDTree.C": "f8e053ba5d862111ca754828ce59cc5855785df6ff4af95fcf1fd250f949214a",
+    "harbor/app/code/GetNeighborKDTree.h": "0325220844c494a6c1816455599ebeebaab06c5a1a338d84891ea39a0ba02c24",
+    "harbor/app/code/GetNeighborTypeDef.h": "84a6b5090df7d9f7494ee1d3b87f68ddf794ec4b76d101d168ce11db0cafc0e8",
+    "harbor/app/code/GridKDTree.h": "794a909b26defb650175bd572cbf6371dedd38a2b0a8f4d8bee58160e924b653",
+    "harbor/app/code/Grids.C": "223c1ae7a07efc0f0db783e89edd961b021531b795af515aa17c971e95f8acfb",
+    "harbor/app/code/Grids.h": "f61709632e3c75532bd75143cb0b1a2a8a6761fb0ecff5c6fed9b8a161a2f1c4",
+    "harbor/app/code/IO.h": "8cff08a782b5b6e37a0f2dd56c179bb5713f80dc000d55988b94b4dff17a1670",
+    "harbor/app/code/Makefile": "cafc898b7c7126e9291fbac0d0372a2f85d2d77682201c058e1783b083a62da1",
+    "harbor/app/code/QuadTree.h": "0fd80604b37739c260ed608dcbc7857781507b919ab4fb8d58e8f07826dbce9d",
+    "harbor/app/code/blockRadixSort.h": "dda00251ad416c32743337f319ab1ff1e64c61355d8bbe2c5669649cf32deae6",
+    "harbor/app/code/deterministicHash.h": "0eb1c3286ce740aa7ccc7666df0929681c527b8a48ea8831bd48e66f215fb1b0",
+    "harbor/app/code/exampleData/clusters.txt": "e4ac173c975c48a55e5899651db1bb7cdebce57d51a78caa99f4d926c90c9de6",
+    "harbor/app/code/exampleData/tiny.txt": "c5ab272c1b2c264c2fd9331727ff9eaa70511f0214415bbf56eb2084ed1a6e2d",
+    "harbor/app/code/geometry.h": "c3cde0884394500f0531f42b3689f15e3a2e75f3b3de291fbf512f13ac5925ee",
+    "harbor/app/code/geometryIO.h": "8589d0dba7182b8a050f78ab2944d79b3ad13478a0acfec0e318e2b9c60faf33",
+    "harbor/app/code/gettime.h": "ce7a3a4fce686fe476811e3bdf9730d004cc1625602f6290a79d42bd18dab955",
+    "harbor/app/code/je_allocator.h": "d1926270a9229d815fd9c5a6759c16344f516cccfb25ce955446357c60798378",
+    "harbor/app/code/ndHash.h": "2cc7dfcca245af19d730e7d0e2b9805f93d29919ca9117d4a8877015c35497e4",
+    "harbor/app/code/parallel.h": "77c1b3fcbd64470762dba7c53568a79faa24fccfef7fb8dfe1285a1556caf311",
+    "harbor/app/code/parallelDefs": "e1c5c4fccb816afc59116e69e8297026312bad256f44597f698ac2b6f108075d",
+    "harbor/app/code/parseCommandLine.h": "7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46",
+    "harbor/app/code/quickSort.h": "55885d319a1ec045f52779bb696babccc7fcc487aebfa65e765cf2da43b82945",
+    "harbor/app/code/sampleSort.h": "9bad0a8f71bd0e297ed85120f2a326904b6600681367836a06a884fca0a98434",
+    "harbor/app/code/sequence.h": "50face341876d0867a5046d14504b96d62de9fef7684e7475f1f419cf8871b10",
+    "harbor/app/code/topology.h": "fb3dbefe817401eb472c4892e490e652b935fdb0152f6b58d9f1edf9ad5852aa",
+    "harbor/app/code/transpose.h": "7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa",
+    "harbor/app/code/unionFind.h": "f1436d63e3c1fe0a4a61a0d457ce26d39c67de9065923933218837a619a53841",
+    "harbor/app/code/utils.h": "e0781621ac3a632c19750f04c67e2c0363116edee2255800b42711eb7f810216",
+    "harbor/app/make_submission.sh": "415916517e1a8f6c7c98984021459d1dfd2faa748ef8db46ef2b2c7697eba70e",
+    "metadata.json": "a48e76c04f7abba4fd9763f3b82751b00b2f8ee66ac4a37ff156eb3fe2da9582",
+    "readme": "3cf8a199625c3a62a55047da68dfddc20f7993c46a34b0ab0a49207eec207b9f",
+    "reference.patch": "33e1a2f18c0642408189aa43857da7f1f2afa12aced40a035bdb4c164f67dde7",
+    "result.json": "6a1487e3538a836ab2965603d0a636a8daa7779675a1f4e1a91e9a72d4c5653c",
+    "source_lock.json": "1558cfb297bfd1109ed1b5fc871a8c583de47990b14dbdbae2d973e7d06e88e0",
+    "submission_patch.py": "0de9ab9e1561d812bad29d0c1da6a092b3611442ed6e67b822339d0e9aeca54b",
+    "test_evaluator.py": "c8ae4bef0ee6b393ae15befa8775ac12035cb4c758065aa7267a369447e00961"
+  },
+  "source_path": "original_format_problems/parallel_dbscan",
+  "source_pr": 28
+}

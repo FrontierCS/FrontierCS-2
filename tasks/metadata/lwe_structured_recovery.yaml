@@ -1,0 +1,27 @@
+id: "lwe_structured_recovery"
+display_name: "Structured-LWE Public Witness Recovery"
+category: "Crypto"
+summary: "Recover valid secret vectors for as many public structured-LWE instances as possible."
+paper_title: "A Systematic Study of Sparse LWE"
+paper_venue: "CRYPTO 2024"
+paper_url: "https://eprint.iacr.org/2024/1589"
+agent_cpu_cores: 8
+agent_memory_gib: 32
+agent_disk_gib: 32
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 8
+verifier_memory_gib: 2
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 12000
+eval_timeout_seconds: 120

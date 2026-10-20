@@ -1,0 +1,39 @@
+name: crest_search_strategy
+title: Search Strategy for Concolic Testing
+tag: systems
+runtime:
+  language: cpp
+  timeout_seconds: 10800
+  environment: "CPU CREST (jburnim/crest@3e5ececd); pinned offline OCaml 4.02.3 and Z3 4.15.3.0; Python 3 judge"
+  apt_packages: [build-essential, binutils, git, make, perl, dpkg, python3, time]
+  judge_apt_packages: [build-essential, binutils, bsdutils, coreutils, git, libncurses-dev, make, patch, perl, dpkg, python3, time]
+  docker:
+    image: ubuntu:24.04
+  judge_build_commands:
+    - python3 /opt/frontier/task/build_benchmarks.py /opt/crest-task
+environment:
+  cpus: 8
+  memory_mb: 32768
+  storage_mb: 16384
+  build_timeout_seconds: 1800
+  agent:
+    cpus: 8
+    memory_mb: 16384
+evaluation:
+  max_dev_submissions: 100
+  answering_timeout_seconds: 18000
+  max_train_wall_seconds: 18000
+  suite_relation: different_programs
+  solver_visible_metrics:
+    - dev_branches_covered_mean
+    - dev_coverage_curve
+    - dev_search_overhead_seconds_mean
+    - dev_solver_attempts_mean
+    - dev_runs_ended_early
+    - dev_killed_executions_mean
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths: [src/frontier_solution/]
+  max_changed_files: 32
+  max_patch_bytes: 262144

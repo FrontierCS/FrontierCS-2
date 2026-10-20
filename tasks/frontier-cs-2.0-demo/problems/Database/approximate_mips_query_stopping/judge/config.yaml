@@ -1,0 +1,30 @@
+tag: systems
+runtime:
+  language: c++
+  timeout_seconds: 900
+  environment: "C++11 FARGO source; CPU-only deterministic Audio approximate-MIPS workload"
+  apt_packages:
+    - build-essential
+    - git
+    - python3
+  judge_apt_packages:
+    - build-essential
+    - git
+    - python3
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 4
+  memory_mb: 4096
+  storage_mb: 4096
+  build_timeout_seconds: 120
+evaluation:
+  max_dev_submissions: 100
+submission:
+  kind: patch
+  path: /workspace/payload/solution.patch
+  repo_root: /workspace/repo
+  allow_paths:
+    - src/alg.cpp
+  max_changed_files: 1
+  max_patch_bytes: 65536

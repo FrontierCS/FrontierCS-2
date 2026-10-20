@@ -1,0 +1,13 @@
+{
+  "allowed_paths": [
+    "scripts/scalpel_to_thinking_steps.py",
+    "prompts/localization.txt",
+    "prompts/5-shot-localization-prompt.txt",
+    "prompts/1-shot-prompt.txt",
+    "prompts/5-shot-prompt.txt",
+    "frontier_solution/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 20,
+  "member": "solution.patch"
+}

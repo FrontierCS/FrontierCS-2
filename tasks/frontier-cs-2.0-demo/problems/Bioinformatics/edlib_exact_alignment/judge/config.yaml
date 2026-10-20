@@ -1,0 +1,27 @@
+tag: algorithms
+runtime:
+  language: cpp
+  timeout_seconds: 600
+  environment: C++14 Edlib; single-threaded Linux CPU; Python3 judge
+  docker:
+    image: ubuntu:24.04
+  apt_packages: [build-essential, cmake, git, python3]
+  judge_apt_packages: [build-essential, cmake, git, python3, python3-yaml]
+  judge_pip_packages: [pytest]
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 5120
+  build_timeout_seconds: 900
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths: [edlib/src/edlib.cpp]
+  max_changed_files: 1
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 20
+  max_train_wall_seconds: 12000
+  answering_timeout_seconds: 18000
+  suite_relation: same_distribution
+  solver_visible_metrics: [candidate_diagnostic]

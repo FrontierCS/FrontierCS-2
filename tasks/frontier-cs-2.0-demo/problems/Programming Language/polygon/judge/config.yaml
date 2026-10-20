@@ -1,0 +1,53 @@
+tag: algorithms
+runtime:
+  language: python
+  timeout_seconds: 330
+  environment: "Python 3.11; CPU-only Polygon worker with Z3 4.13 and an ephemeral MariaDB validator"
+  apt_packages:
+    - git
+    - mariadb-server
+    - z3
+  judge_apt_packages:
+    - git
+    - mariadb-server
+    - z3
+  pip_packages: &python_packages
+    - mo-sql-parsing==11.699.26234
+    - z3-solver==4.13.3.0
+    - lark==1.3.1
+    - pandas==3.0.6
+    - tqdm==4.70.1
+    - prettytable==3.18.0
+    - PyYAML==6.0.3
+    - mysql-connector-python==26.7.0
+    - ujson==6.0.0
+    - multiprocess==0.70.19
+    - bidict==0.24.1
+  judge_pip_packages: *python_packages
+  docker:
+    image: python:3.11@sha256:70e8e937c1da72df1688e883a2108b0feff03381187fa78eca6d9b10df411320
+environment:
+  cpus: 2
+  memory_mb: 8192
+  storage_mb: 4096
+  build_timeout_seconds: 120
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics:
+    - refuted_pairs
+    - wall_time_seconds
+    - search_iterations
+    - backtracks
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_empty: false
+  allow_paths:
+    - sql_testing/environment.py
+    - sql_testing/smt/formula.py
+    - sql_testing/smt/knowledgebase.py
+    - sql_testing/smt/search_extensions/
+  max_changed_files: 20
+  max_patch_bytes: 262144

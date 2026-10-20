@@ -1,0 +1,361 @@
+{
+  "baselines": {
+    "batch_local_counting": {
+      "agreement_rule": {
+        "abs": 0.01,
+        "name": "cross-site-agreement/v1",
+        "rel": 0.05,
+        "replays": 1
+      },
+      "calibration": {
+        "evaluation_id": "eval_01M2805VTYPRHSJT6S7HCWRX70",
+        "kind": "current-release-single-reference-observation",
+        "note": "One observation; a zero sample spread does not estimate timing noise. No cross-site agreement claim is inferred from this calibration.",
+        "prior_observations": "docs/evidence/beat-spec-20260911-prior-reference-baselines.json#batch_local_counting",
+        "run_id": "run_01M2805VTYNYJM7NAPK0AZ5C1F"
+      },
+      "comparability_note": "Measured on the exported beat-spec revision; docs/evidence/beat-spec-20260911-reference-results.json#tasks/batch_local_counting. One reference observation, not an independent parity pass or timing-noise estimate.",
+      "comparable": true,
+      "datasets": {
+        "eval": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7",
+        "train": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+      },
+      "evaluator_sha256": "sha256:7b7312af4df50d960e11b62980eb61bb35da37a7b7287139db262d33a7e4701f",
+      "historical_mean": 12.701599148882451,
+      "historical_scores": [
+        12.701599148882451
+      ],
+      "historical_spread": 0.0,
+      "provenance": "historical-authoring",
+      "reference_patch_sha256": "sha256:1cb3d6c02baec5454052d297fe7b29fed30982bce1fc3c605783676684eb0614",
+      "result_json_source": "docs/evidence/beat-spec-20260911-reference-results.json#tasks/batch_local_counting",
+      "source_set_sha256": "sha256:7a6372a268e3fedd3365d7fb3f21d717d68fffca1fda241b925df09830298af7",
+      "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+    },
+    "bounded_evm_path_prediction": {
+      "agreement_rule": {
+        "abs": 0.01,
+        "name": "cross-site-agreement/v1",
+        "rel": 0.05,
+        "replays": 1
+      },
+      "calibration": {
+        "evaluation_id": "eval_01M281VC3BJS50ZYPATNWC4JY2",
+        "kind": "current-release-single-reference-observation",
+        "note": "One observation; a zero sample spread does not estimate timing noise. No cross-site agreement claim is inferred from this calibration.",
+        "prior_observations": "docs/evidence/beat-spec-20260911-prior-reference-baselines.json#bounded_evm_path_prediction",
+        "run_id": "run_01M281VC3BXCX7M03BN54FEE14"
+      },
+      "comparability_note": "Measured on the exported beat-spec revision; docs/evidence/beat-spec-20260911-reference-results.json#tasks/bounded_evm_path_prediction. One reference observation, not an independent parity pass or timing-noise estimate.",
+      "comparable": true,
+      "datasets": {
+        "eval": "sha256:dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4",
+        "train": "sha256:e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
+      },
+      "evaluator_sha256": "sha256:fd1e313c084608ce6937cea0a548840a26cf9832d3a3e9fedfeea1e1e4ed7ac7",
+      "historical_mean": 80.44069341508703,
+      "historical_scores": [
+        80.44069341508703
+      ],
+      "historical_spread": 0.0,
+      "provenance": "historical-authoring",
+      "reference_patch_sha256": "sha256:1e92a8a973904660a66ce8fb10b47f8693387c317354105dcd725b1fcdcb52f4",
+      "result_json_source": "docs/evidence/beat-spec-20260911-reference-results.json#tasks/bounded_evm_path_prediction",
+      "source_set_sha256": "sha256:0df79fdf01ba9218585816de81a24a1924da5d1a18c3f654be7c4fb0432de647",
+      "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+    },
+    "evm_state_checkpoints": {
+      "agreement_rule": {
+        "abs": 0.01,
+        "name": "cross-site-agreement/v1",
+        "rel": 0.05,
+        "replays": 1
+      },
+      "calibration": {
+        "evaluation_id": "eval_01M2805V6042M26JH5M5STPNCX",
+        "kind": "current-release-single-reference-observation",
+        "note": "One observation; a zero sample spread does not estimate timing noise. No cross-site agreement claim is inferred from this calibration.",
+        "prior_observations": "docs/evidence/beat-spec-20260911-prior-reference-baselines.json#evm_state_checkpoints",
+        "run_id": "run_01M2805V619376VWB5GWMFJ8YN"
+      },
+      "comparability_note": "Measured on the exported beat-spec revision; docs/evidence/beat-spec-20260911-reference-results.json#tasks/evm_state_checkpoints. One reference observation, not an independent parity pass or timing-noise estimate.",
+      "comparable": true,
+      "datasets": {
+        "eval": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
+        "train": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
+      },
+      "evaluator_sha256": "sha256:e2bfcffaa0e394868a2b795191a3d336ffa3408c84959bfd485b3b716ad82fab",
+      "historical_mean": 62.29775127639486,
+      "historical_scores": [
+        62.29775127639486
+      ],
+      "historical_spread": 0.0,
+      "provenance": "historical-authoring",
+      "reference_patch_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
+      "result_json_source": "docs/evidence/beat-spec-20260911-reference-results.json#tasks/evm_state_checkpoints",
+      "source_set_sha256": "sha256:1a787817ceb27a899863da1b329cea2014bb94a2384302a6a6dc043e2114e94f",
+      "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+    },
+    "graph_mining_method_selection": {
+      "agreement_rule": {
+        "abs": 0.01,
+        "name": "cross-site-agreement/v1",
+        "rel": 0.05,
+        "replays": 1
+      },
+      "calibration": {
+        "evaluation_id": "eval_01M2805X3H02445VY597V986H9",
+        "kind": "current-release-single-reference-observation",
+        "note": "One observation; a zero sample spread does not estimate timing noise. No cross-site agreement claim is inferred from this calibration.",
+        "prior_observations": "docs/evidence/beat-spec-20260911-prior-reference-baselines.json#graph_mining_method_selection",
+        "run_id": "run_01M2805X3HP3JGMCRJGMZYJWXV"
+      },
+      "comparability_note": "Measured on the exported beat-spec revision; docs/evidence/beat-spec-20260911-reference-results.json#tasks/graph_mining_method_selection. One reference observation, not an independent parity pass or timing-noise estimate.",
+      "comparable": true,
+      "datasets": {
+        "eval": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e",
+        "train": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+      },
+      "evaluator_sha256": "sha256:4a3d6a6c23ba2443d0523fd1ecbaa97667502c7520f38dc99ec89488a53f6eaa",
+      "historical_mean": 86.92105447579117,
+      "historical_scores": [
+        86.92105447579117
+      ],
+      "historical_spread": 0.0,
+      "provenance": "historical-authoring",
+      "reference_patch_sha256": "sha256:bceb52507a468972db2a0b88a1f626b1a5c005dc3388cd60087c88ba1fe4de20",
+      "result_json_source": "docs/evidence/beat-spec-20260911-reference-results.json#tasks/graph_mining_method_selection",
+      "source_set_sha256": "sha256:2bcbe2dbee5267492553c42f695688a1dfad359259e393254954aa1d567bb4ef",
+      "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+    },
+    "join_tree_rewriting": {
+      "agreement_rule": {
+        "abs": 0.01,
+        "name": "cross-site-agreement/v1",
+        "rel": 0.05,
+        "replays": 1
+      },
+      "calibration": {
+        "evaluation_id": "eval_01M2805XQK2WHJXD2GKNA54FCW",
+        "kind": "current-release-single-reference-observation",
+        "note": "One observation; a zero sample spread does not estimate timing noise. No cross-site agreement claim is inferred from this calibration.",
+        "prior_observations": "docs/evidence/beat-spec-20260911-prior-reference-baselines.json#join_tree_rewriting",
+        "run_id": "run_01M2805XQM6WASQFTNS9GAP953"
+      },
+      "comparability_note": "Measured on the exported beat-spec revision; docs/evidence/beat-spec-20260911-reference-results.json#tasks/join_tree_rewriting. One reference observation, not an independent parity pass or timing-noise estimate.",
+      "comparable": true,
+      "datasets": {
+        "eval": "sha256:ddbc834efb09c21e21056a57c8326de43c4f5101b5548e6e4fe7775e445dedf2",
+        "train": "sha256:1f8399baa7949b712a02ac98de756a5f57cd8a1c5f6c3d7859e376880f11f608"
+      },
+      "evaluator_sha256": "sha256:f0338fc9168784db27ad0e4b513efda31c5ba9b76e3f9fa11c92969bb1f38510",
+      "historical_mean": 16.51896492824181,
+      "historical_scores": [
+        16.51896492824181
+      ],
+      "historical_spread": 0.0,
+      "provenance": "historical-authoring",
+      "reference_patch_sha256": "sha256:a26bbd6620f39e2af5f497515fb2bea55b093d885304080107d52a7d0c2655db",
+      "result_json_source": "docs/evidence/beat-spec-20260911-reference-results.json#tasks/join_tree_rewriting",
+      "source_set_sha256": "sha256:b9b8b1c1f4e53268695762148abe59d4e5e3e6e8ea42c0ab8cf63a11653bd95d",
+      "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+    },
+    "sparse_video_attention_policy": {
+      "comparability_note": "Main publishes no baseline or reference descriptor for this task. The earlier beat-spec reference receipt predates the tracked gpu-helper-v3-beat-spec-v1 source revision; no matching baseline is inferred.",
+      "comparable": false,
+      "provenance": "unverified"
+    }
+  },
+  "catalog": {
+    "candidate": {
+      "name": "codex",
+      "overlay_image": {
+        "digest": "sha256:8771790f1ce86cb9ce5a16ffd04988ca3a7e35994ffa195faf948bd13e2c4ecf",
+        "repository": "docker.io/joyemang33/fcs2-codex-overlay",
+        "tag": "sha-b28a3a32302582b23b5c876d7e760cbb000e7387"
+      }
+    },
+    "schema_version": "frontier.deployment-task-catalog/v1",
+    "tasks": [
+      {
+        "agent_image": {
+          "digest": "sha256:d6389c424ae1d4a8e45517fa83497962104d0d824416f0b8d7e0fc0abdff9415",
+          "repository": "docker.io/joyemang33/fcs2-task-batch_local_counting-agent",
+          "tag": "source-7a6372a268e3fedd3365d7fb3f21d717d68fffca1fda241b925df09830298af7"
+        },
+        "dataset_image": {
+          "digest": "sha256:b171b15d65c8b39e798361cf8ad5b35dcab279e3131623247718abcc6ed80a72",
+          "repository": "docker.io/joyemang33/fcs2-task-batch_local_counting-datasets",
+          "tag": "v1"
+        },
+        "datasets": {
+          "eval_sha256": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7",
+          "train_sha256": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+        },
+        "name": "batch_local_counting",
+        "verifier_image": {
+          "digest": "sha256:7182977604695f5f087f011702a5b834ef88c5a297c57dd7c172023ede17b3b6",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-batch_local_counting",
+          "tag": "source-7a6372a268e3fedd3365d7fb3f21d717d68fffca1fda241b925df09830298af7"
+        }
+      },
+      {
+        "agent_image": {
+          "digest": "sha256:c23099df173ef3fe72f026b28022b80ccc4c0c3c823972cf405605c4f0b4f6e5",
+          "repository": "docker.io/joyemang33/fcs2-task-bounded_evm_path_prediction-agent",
+          "tag": "source-0df79fdf01ba9218585816de81a24a1924da5d1a18c3f654be7c4fb0432de647"
+        },
+        "dataset_image": {
+          "digest": "sha256:6033592f69de1e2e8df66a7482c953922227f3fc752a91ac215853e54c8a6500",
+          "repository": "docker.io/joyemang33/fcs2-task-bounded_evm_path_prediction-datasets",
+          "tag": "v1"
+        },
+        "datasets": {
+          "eval_sha256": "sha256:dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4",
+          "train_sha256": "sha256:e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
+        },
+        "name": "bounded_evm_path_prediction",
+        "verifier_image": {
+          "digest": "sha256:6d39e06fe156d176c29f1f23e6efafeea74dc2fcdfcaad90c62b7d0f14bb87b2",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-bounded_evm_path_prediction",
+          "tag": "source-0df79fdf01ba9218585816de81a24a1924da5d1a18c3f654be7c4fb0432de647"
+        }
+      },
+      {
+        "agent_image": {
+          "digest": "sha256:398da0d2efd6598bb7b15b941e5338b4f1330b6b0a72aee1879c89568e3dcd09",
+          "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-agent",
+          "tag": "source-1a787817ceb27a899863da1b329cea2014bb94a2384302a6a6dc043e2114e94f"
+        },
+        "dataset_image": {
+          "digest": "sha256:b9299829fccc21858e35dc297e9250d2e9451ac23e22a0d1229286e26d19dec7",
+          "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-datasets",
+          "tag": "v1"
+        },
+        "datasets": {
+          "eval_sha256": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
+          "train_sha256": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
+        },
+        "name": "evm_state_checkpoints",
+        "verifier_image": {
+          "digest": "sha256:8377dfa334db4e0c328d754c7b3abbe0aa89444b64c8f681784456cc09094610",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-evm_state_checkpoints",
+          "tag": "source-1a787817ceb27a899863da1b329cea2014bb94a2384302a6a6dc043e2114e94f"
+        }
+      },
+      {
+        "agent_image": {
+          "digest": "sha256:eab7c7c1617078218dfc1bae98c2322e51bfbd7caf28080c147a23e5d3ac918b",
+          "repository": "docker.io/joyemang33/fcs2-task-graph_mining_method_selection-agent",
+          "tag": "source-2bcbe2dbee5267492553c42f695688a1dfad359259e393254954aa1d567bb4ef"
+        },
+        "dataset_image": {
+          "digest": "sha256:a9be4c0f0c52d29e6eb67ef41562a3b80e8e39ce5192185915199648efbbe21a",
+          "repository": "docker.io/joyemang33/fcs2-task-graph_mining_method_selection-datasets",
+          "tag": "v1"
+        },
+        "datasets": {
+          "eval_sha256": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e",
+          "train_sha256": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+        },
+        "name": "graph_mining_method_selection",
+        "verifier_image": {
+          "digest": "sha256:8171ce65cc9cdb7becf063fd5b876d9baff9330518d7647e11e23b31981878a3",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-graph_mining_method_selection",
+          "tag": "source-2bcbe2dbee5267492553c42f695688a1dfad359259e393254954aa1d567bb4ef"
+        }
+      },
+      {
+        "agent_image": {
+          "digest": "sha256:319367a53a03c81ee3a94952ef47d5c88474ba2efbd757e49e8728e27b4f7c58",
+          "repository": "docker.io/joyemang33/fcs2-task-join_tree_rewriting-agent",
+          "tag": "source-b9b8b1c1f4e53268695762148abe59d4e5e3e6e8ea42c0ab8cf63a11653bd95d"
+        },
+        "dataset_image": {
+          "digest": "sha256:9e87a9d84c47d0e393e6b2f7a40001404ee86bc4cfa46f3b12de30a752c92030",
+          "repository": "docker.io/joyemang33/fcs2-task-join_tree_rewriting-datasets",
+          "tag": "v1"
+        },
+        "datasets": {
+          "eval_sha256": "sha256:ddbc834efb09c21e21056a57c8326de43c4f5101b5548e6e4fe7775e445dedf2",
+          "train_sha256": "sha256:1f8399baa7949b712a02ac98de756a5f57cd8a1c5f6c3d7859e376880f11f608"
+        },
+        "name": "join_tree_rewriting",
+        "verifier_image": {
+          "digest": "sha256:aba8692083d5bc0038a2fee249a818427078c3ccea218c96f55821c0fcc3910d",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-join_tree_rewriting",
+          "tag": "source-b9b8b1c1f4e53268695762148abe59d4e5e3e6e8ea42c0ab8cf63a11653bd95d"
+        }
+      },
+      {
+        "agent_gpu_image": {
+          "digest": "sha256:34f952c13ea1611837b3294159c009f7a4809dc9dff0a63e3c1bea130f567b6f",
+          "repository": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-agent-gpu",
+          "tag": "source-4a92ef2694110f37786645e9218cb87877be07f7bd00efd50aa1efd5e0135e19"
+        },
+        "agent_image": {
+          "digest": "sha256:5d1627f4e53aaff468f13a9d2c5484f299ea80efd7fe645bcb7952dea8282c5f",
+          "repository": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-agent",
+          "tag": "source-4a92ef2694110f37786645e9218cb87877be07f7bd00efd50aa1efd5e0135e19"
+        },
+        "dataset_image": {
+          "digest": "sha256:9fc211b7793ff7ac2d428311e48777ddf65100149400145c02a2d09a128819d2",
+          "repository": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-datasets",
+          "tag": "v1"
+        },
+        "datasets": {
+          "eval_sha256": "sha256:e0ca3a67c7198208965b8649dc9af3fa0c8e67d01eaf1e13d0409228264fc883",
+          "train_sha256": "sha256:aa1ebf0bc51662d2f0c2d79fe7cccfe2b726ddb180df4006d2f474d8be203517"
+        },
+        "name": "sparse_video_attention_policy",
+        "verifier_gpu_image": {
+          "digest": "sha256:ebf2d694a144a526faa74af0ea41f51b341083d63ba30cc78bf5769fdc1ec646",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-sparse_video_attention_policy-gpu",
+          "tag": "source-4a92ef2694110f37786645e9218cb87877be07f7bd00efd50aa1efd5e0135e19"
+        },
+        "verifier_image": {
+          "digest": "sha256:35e3119bb58eef272d5f403faa97dce3b793261132a33093a2a8da29754c300d",
+          "repository": "docker.io/joyemang33/fcs2-task-verifier-sparse_video_attention_policy",
+          "tag": "source-4a92ef2694110f37786645e9218cb87877be07f7bd00efd50aa1efd5e0135e19"
+        }
+      }
+    ]
+  },
+  "references": {
+    "batch_local_counting": {
+      "digest": "sha256:c44ce40971f4a7309b0c5fc5d9f4dd05e634cdff130f6c70e85c652f45296caf",
+      "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+      "payload_sha256": "sha256:1cb3d6c02baec5454052d297fe7b29fed30982bce1fc3c605783676684eb0614",
+      "repository": "docker.io/joyemang33/fcs2-task-batch_local_counting-reference",
+      "tag": "source-7a6372a268e3fedd3365d7fb3f21d717d68fffca1fda241b925df09830298af7"
+    },
+    "bounded_evm_path_prediction": {
+      "digest": "sha256:bb234d354738b7d46556e309ccac869f45ad71b2807b0be89b73085cee42eb01",
+      "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+      "payload_sha256": "sha256:1e92a8a973904660a66ce8fb10b47f8693387c317354105dcd725b1fcdcb52f4",
+      "repository": "docker.io/joyemang33/fcs2-task-bounded_evm_path_prediction-reference",
+      "tag": "source-0df79fdf01ba9218585816de81a24a1924da5d1a18c3f654be7c4fb0432de647"
+    },
+    "evm_state_checkpoints": {
+      "digest": "sha256:2688f4ebbecfa40f8306a72ad720e809e2bbff411bca6f3ef865d2c94c5d81fc",
+      "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+      "payload_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
+      "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-reference",
+      "tag": "source-1a787817ceb27a899863da1b329cea2014bb94a2384302a6a6dc043e2114e94f"
+    },
+    "graph_mining_method_selection": {
+      "digest": "sha256:b3acfea7ec32fda3a27b788d7d718bc6666c8569564f59597f6e587373d10487",
+      "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+      "payload_sha256": "sha256:bceb52507a468972db2a0b88a1f626b1a5c005dc3388cd60087c88ba1fe4de20",
+      "repository": "docker.io/joyemang33/fcs2-task-graph_mining_method_selection-reference",
+      "tag": "source-2bcbe2dbee5267492553c42f695688a1dfad359259e393254954aa1d567bb4ef"
+    },
+    "join_tree_rewriting": {
+      "digest": "sha256:879efce1b794bbe46b55cd1796f8ad13f5a3b80c10164eacd5de360eb91c6d32",
+      "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+      "payload_sha256": "sha256:a26bbd6620f39e2af5f497515fb2bea55b093d885304080107d52a7d0c2655db",
+      "repository": "docker.io/joyemang33/fcs2-task-join_tree_rewriting-reference",
+      "tag": "source-b9b8b1c1f4e53268695762148abe59d4e5e3e6e8ea42c0ab8cf63a11653bd95d"
+    }
+  }
+}

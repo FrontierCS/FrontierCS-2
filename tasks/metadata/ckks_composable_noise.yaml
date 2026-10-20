@@ -1,0 +1,27 @@
+id: "ckks_composable_noise"
+display_name: "CKKS Precision Propagation at 2,048 Slots"
+category: "Crypto"
+summary: "Build a fast estimator that predicts the precision of CKKS homomorphic-encryption computations."
+paper_title: "Accurate and Composable Noise Estimates for CKKS with Application to Exact HE Computation"
+paper_venue: "IACR CiC 2025"
+paper_url: "https://eprint.iacr.org/2024/853.pdf"
+agent_cpu_cores: 2
+agent_memory_gib: 2
+agent_disk_gib: 8
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 7200
+eval_timeout_seconds: 600

@@ -1,0 +1,27 @@
+id: "lrr"
+display_name: "Localized Regex Repair"
+category: "Security"
+summary: "Write localization-guided repair prompts that let a fixed local LLM rewrite ReDoS-vulnerable regular expressions so they are safe while preserving their language."
+paper_title: "Repairing Regex Vulnerabilities via Localization-Guided Instructions"
+paper_venue: "EACL 2026"
+paper_url: "https://aclanthology.org/2026.eacl-long.379.pdf"
+agent_cpu_cores: 4
+agent_memory_gib: 12
+agent_disk_gib: 8
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 4
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "L4"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 7200
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 5400
+eval_timeout_seconds: 3600

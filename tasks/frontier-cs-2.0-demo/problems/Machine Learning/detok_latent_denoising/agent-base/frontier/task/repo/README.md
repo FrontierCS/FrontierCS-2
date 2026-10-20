@@ -1,0 +1,39 @@
+# Robust Image Tokenizer
+
+## Problem
+This repository trains an image tokenizer that turns images into latent tokens and reconstructs images from them. It reads fixed, licensed OpenImages V6 RGB photographs through the authors' list-based loader, using 64 training and 64 held-out validation images per workload. It produces ordinary-model and exponential-moving-average reconstructions; implementations must preserve tensor shapes, model parameter compatibility, stochastic sampling, autograd, and finite outputs. The objective rewards reconstruction quality after a fixed short continuation while also rewarding lower complete-process wall time. Several training-time corruption and missing-token behaviors in the tokenizer have been removed and must be supplied.
+
+## Design space
+The editable area covers latent corruption policies, token-selection policies, missing-position representations, sequence restoration, and the balance between training-time and clean evaluation behavior. A solution may use random or structured selection, different corruption distributions or strengths, adaptive policies, learned or contextual representations for absent positions, and private helper functions under `models/frontier_solution/`. These are permissions, not a description of the hidden reference design. Constructors and public tokenizer APIs remain fixed, as do returned tensor ranks, batch ordering, device and dtype compatibility, state-dict parameter naming, stochastic sampling semantics, and differentiability back to the image encoder. The original decoder must still receive a complete latent sequence in its expected spatial order. Added helpers must participate through the two editable upstream modules; standalone programs or replacement training loops are not evaluated.
+
+## Workload
+Each workload is an independently seeded fixed set of 64 training and 64 validation photographs. The judge runs one epoch with batch size 4: exactly 16 AdamW updates at learning rate `1e-6`, 256-pixel RGB center crops, `gamma=3`, `mask_ratio=0.7`, and the upstream inactive-at-epoch-zero discriminator schedule. It then evaluates the ordinary and EMA models. Development and graded suites have disjoint membership and seeds, are stratified to the same distribution, and each contains three workloads. The workload is representative rather than a set of images to recognize; order and repetition may vary in later benchmark revisions.
+
+## Interface
+Preserve the existing call contracts in the two editable modules. `Encoder.mae_random_masking(x, mask_ratio)` accepts `[B,L,C]` tokens and returns visible tokens, a length-`L` binary mask, restoration indices (or `None` when nothing is removed), and aligned positional features. `Encoder.forward` carries that bookkeeping to `DeTok.encode`; `Decoder.forward` must restore a full length-`L` sequence before positional encoding. `DeTok.forward(x)` must return a clean reconstruction compatible with the unchanged reconstruction loss while training-time corruption remains stochastic and evaluation remains clean.
+
+For example, an input `x` of shape `[2, 256, 768]` with a policy retaining 77 tokens yields visible tokens shaped `[2, 77, 768]`, a mask shaped `[2, 256]`, restoration indices shaped `[2, 256]`, and positional features whose second dimension is 77. Passing the resulting encoded sequence through the decoder must restore the decoder's expected 256 token positions and produce the same public image-shaped output contract as the unmodified model.
+
+The authoritative invocation is the retained `main_reconstruction.py` through `frontier-bench.sh`, with `--epochs 1 --batch_size 4 --eval_bsz 4 --model detok_BB --img_size 256 --patch_size 16 --token_channels 16 --gamma 3 --mask_ratio 0.7 --lr 1e-6 --discriminator_start_epoch 100 --num_workers 4 --num_images 64 --save_freq 1 --vis_freq 100 --eval_freq 100`, plus private data, checkpoint, seed, FID-statistics, and output paths.
+
+## Validity
+Patch-policy failure, source-lock failure, import/build failure, missing or duplicate inputs, timeout, crash, nonfinite output, absent noise or masking, incorrect restoration, RNG mismatch, detached gradients, missing optimizer updates, changed public parameter names, or attempts to access or forge private measurements score zero before performance is considered. The submission is limited to 262,144 bytes and 20 changed files. Evaluation requires one NVIDIA L4 and has a 5,400-second process limit.
+
+## Scoring
+Maximize the returned score. For candidate workload means `O` and `E` (ordinary and EMA quantized-PNG PSNR in dB) and paired reference/candidate complete-process times `T_r,T_c`, the provisional continuous score is
+
+```
+score_unbounded = 70 * ((O + E) / 80) + 30 * mean(T_r / T_c)
+score = clamp(score_unbounded, 0, 100)
+```
+
+The weights and 40 dB normalization are challenge constants (not from materials). A separate hidden criterion requires strictly higher ordinary PSNR, strictly higher EMA PSNR, and strictly lower complete method-process wall time than the paired reference on every workload. Only the candidate's allowed aggregate development measurements and anonymous pass/fail progress counts are returned.
+
+## Calibration
+The stripped starter reaches the preserved call sites but raises `NotImplementedError`, so it is an invalid zero-score submission. Variants that bypass latent corruption or bypass token removal are also invalid even if their clean reconstructions are numerically plausible, because the assigned behavior is part of the correctness contract. An accepted upstream feasibility run used 8 training images, 16 validation images, two optimizer updates, and one NVIDIA L4; it completed with finite losses, gradients, ordinary reconstruction, EMA reconstruction, checkpoint save, and checkpoint reload. That smaller run is evidence that the authentic path operates, not calibration for the frozen 64/64 workloads. One untimed warm-up process (the reference on the first workload, result discarded) runs before any timed process, so the first timed measurement is not the evaluation's cold first process. No repeated full-workload measurements are available yet, so no timing noise floor or minimum meaningful score change is claimed. The absence of such a number is explicit uncalibrated authoring evidence and must be resolved by GPU preflight before promotion, rather than filled with an invented threshold.
+
+## Feedback and grading
+The judge returns a score after every training call. At most 6 training calls are available before the final call. The graded suite is not the suite you receive feedback on, and neither its membership nor its seeds are disclosed. The suites share no item and are stratified so they carry the same distribution.
+
+## Resources
+Development and grading run through the FrontierCS2 Driver on a single NVIDIA L4; there is no CPU fallback. `frontier-gpu` may be used for GPU debugging. The GPU runner has no outbound network, so implementations must use the packages and public assets already present. FID and Inception Score still run as unscored diagnostics.

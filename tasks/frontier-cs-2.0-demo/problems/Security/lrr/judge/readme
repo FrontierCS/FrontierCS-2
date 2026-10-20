@@ -1,0 +1,69 @@
+# Localized Regex Repair
+
+## Problem
+This system asks a fixed language model to repair regular expressions that exhibit catastrophic backtracking. It reads genuine Polyglot regular expressions together with available first-step symbolic localization produced by RegexScalpel. Development evaluation contains 20 expressions; independent final evaluation contains all 100. It produces one complete repaired regular expression per input, and a credited repair must compile, have a completed ReDoSHunter result with no successful attack, and have complete bidirectional semantic samples with strictly positive Jaccard similarity. Preserving the accepted language is measured separately on three semantic axes. The primary score is the corpus repair rate, so more well-formed, non-vulnerable repairs are better. The localization-to-instruction policy used by the original prompt constructor has been removed and must be supplied.
+
+## Design space
+The intended design area includes localization encodings, edit-scope requirements, examples, capture and language-preservation requirements, semantic invariants, malformed-output recovery, staged instructions, candidate generation, and validation instructions.
+
+Policies may coordinate the renderer and either localization template, and may place reusable source in the fresh helper namespace. The model and decoding parameters are fixed, so the submitted artifact controls instructions rather than weights or sampling. Outputs must remain complete regexes rather than replacement fragments. Solutions may decide how much syntax, context, validation language, and demonstration material to present, provided they use only the original regex and first symbolic localization made available through the constructor.
+
+## Workload
+The frozen suite contains 100 unique, originally detector-confirmed vulnerable Polyglot regexes shorter than 1,024 characters. It contains 50 cases whose RegexScalpel output has a completed detector result with no successful attack, and 50 whose output remains vulnerable or whose RegexScalpel repair times out. Originals must compile in the native Python 3.12 semantic engine. The line-based tool transport excludes CR, LF, NUL, and invalid UTF-8 strings.
+
+Development contains 10 cases from each stratum, for 20 cases in total. Final evaluation includes those 20 cases and 40 additional held-out cases from each stratum, for 100 cases in total. Each stratum/split is evaluated as a separate workload. Missing localization is retained and uses the ordinary-prompt fallback. Every selected regex stays in the denominator when output parsing, detection, or semantic sampling cannot establish a credited repair.
+
+The current runtime uses greedy non-thinking Qwen3-8B Q4_K_M CUDA inference on a Driver-managed Modal L4 with seed 42 and at most 512 output tokens, ReDoSHunter under OpenJDK 25, and 100 Xeger samples in each semantic direction. Evaluation may vary execution order.
+
+## Interface
+The constructor calls:
+
+```python
+subpattern_to_string(subpattern: str) -> str
+```
+
+It must return the text inserted for one symbolic subpattern. Both editable templates are `string.Template` files and receive `$pattern` and `$subpatterns`; the five-shot localization template is the path scored by the judge. For example, an internal input with original pattern `^(a+)+$` and first-step localized text `(a+)+` must yield a single user message after:
+
+```python
+make_chat = get_line_to_chat_and_pattern("five_shot_localization")
+chat, pattern = make_chat(input_json_line, None)
+```
+
+Here `pattern == "^(a+)+$"`, and `chat` is `[{'role': 'user', 'content': '<your rendered instruction>'}]`. The judge invokes the equivalent of:
+
+```text
+python scripts/inference.py --task five_shot_localization --dataset-path <frozen-jsonl> --output-dir <results> --model-name Qwen/Qwen3-8B --max-answer-tokens 512
+```
+
+through the retained constructor and fixed offline CUDA model adapter. Only the original regex and the first-step localization enter the public policy hook; repaired RegexScalpel output, later steps, and prior model answers do not.
+
+## Validity
+A patch must apply cleanly, remain within the editable paths, contain text source only, change at most 20 files, and be at most 262,144 bytes. The constructor must import and return a prompt for every input. Invalid patches receive zero credit. Unexpected evaluator or fixed-model execution errors are reported as execution failures and are not valid numerical scores. The runtime limit is 4 CPUs, 12,288 MiB RAM, and 8,192 MiB storage.
+
+Every template must remain valid for Python `string.Template.substitute`: localization paths receive exactly `pattern` and `subpatterns`, while ordinary prompt paths receive `pattern`. The renderer must return strings and may not alter the retained constructor or parser. A model response is usable only when it contains exactly one fenced, single-line regex. Empty output, multiple fenced answers, embedded line breaks, invalid syntax, detector errors, Java parser errors, and whole-tool timeouts are retained as failures rather than interpreted as safe repairs.
+
+## Scoring
+Maximize
+
+```text
+score = 100 * credited_repairs / frozen_regexes
+
+credited = compiles AND completed_detector_with_no_successful_attack
+           AND complete_bidirectional_samples AND jaccard > 0
+```
+
+The score is in `[0, 100]`. Unknown detector results, malformed or missing model outputs, parser errors, timeouts, and failed repairs contribute zero and remain in the denominator. Well-formedness, relative length increase (RLI), normalized Levenshtein similarity (NLS), and bidirectional 100-sample Xeger Jaccard, precision, and recall are reported independently; they are not blended into the primary score. RLI is `(len(repair) - len(original)) / len(original)`, and NLS is `1 - edit_distance / max(len(original), len(repair))`. Invalid repairs contribute zero to semantic metrics and NLS; their RLI uses a zero placeholder rather than dropping the record.
+
+## Measurement limits
+One additional credited repair changes the 20-record development score by five points and the 100-record final score by one point. All eight metrics use the full frozen denominator.
+
+Seeds and decoding settings are fixed, but timeout-based detection can still vary with execution conditions. A completed detector result with no successful attack is operational evidence, not a proof that a regex is safe. The semantic estimates use 100 validated samples in each direction and do not prove language equivalence. Missing, incomplete, empty, or timed-out semantic evidence cannot earn repair credit. Source and repaired languages are matched in Python; vulnerability testing uses Java 25.
+
+## Feedback and grading
+Completed development verification returns the candidate score and approved metrics. Repeated submissions within the stated budget are allowed, subject to a cumulative 5,400-second training pool and a 7,200-second answering window. Independent final evaluation has a 3,600-second timeout. The call ceiling does not guarantee that every call can use its full timeout. Final evaluation includes all development cases plus the 80 held-out cases. Workload membership is not disclosed.
+
+Feedback includes suite-wide candidate-only vulnerability elimination rate, repair rate, well-formed rate, mean RLI, mean NLS, and mean Xeger Jaccard, precision, and recall. It also reports aggregated pass/fail counts and percentages for each stricter-criterion metric, without identifying workloads.
+
+A separate, stricter criterion compares your policy with a private reference independently on every frozen multi-regex workload. It requires improvement on vulnerability elimination rate, repair rate, well-formed rate, normalized Levenshtein similarity (NLS), and Xeger-based Jaccard, precision, and recall, and a reduction in relative length increase (RLI), on every workload; equality is accepted only when both values are already at the natural maximum of 1 for a higher-is-better metric. Failure on any quantity or workload fails this criterion, which is reported separately from the continuous score; reference values, per-workload rows, and final-suite measurements are never disclosed.
+
+Vulnerability elimination rate separately measures completed detector results with no successful attack, regardless of semantic correctness. Missing outputs and unknown detector results receive no credit. It has its own per-workload comparison and cannot replace repair rate.

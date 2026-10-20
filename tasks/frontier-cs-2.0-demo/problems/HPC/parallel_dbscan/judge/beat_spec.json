@@ -1,0 +1,38 @@
+{
+  "unit": "one workload is one fixed point-set instance together with its dimension, epsilon, and minPts setting, executed through the preserved DBSCAN CLI under the evaluator's pinned worker count, compiler flags, allocator, affinity, and hardware class; the graded set is the four original 12,000-14,000-point instances per partition plus, from beat spec v3, two 200,000-point seed-spreader instances per partition (5D variable density and 7D similar density, the paper's SS generator family)",
+  "metrics": [
+    {
+      "name": "elapsed_seconds",
+      "means": "the median, in seconds, of the valid repeated `totaltime` measurements for one workload; each timed round covers the complete DBSCAN call, including grid construction, core detection, core connectivity, border assignment, and cleanup",
+      "source": "code/DBSCANTime.C::timeDBSCANNd, where the timer surrounds DBSCAN(...) and PrintParser(\"totaltime\", totalTime) reports the elapsed computation time",
+      "better": "lower",
+      "clears_when": "C_w < R_w, where C_w is the candidate median elapsed_seconds and R_w is the reference median elapsed_seconds from the paired repeated runs for the same workload w",
+      "tolerance": "none — the supplied reproduction and contribution evidence contain no measured timing-noise distribution from the bounded graded workloads, so no numeric tolerance is justified"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 if and only if the candidate first passes the exact-DBSCAN correctness hard gate on the entire graded suite and, for every graded workload w (original and seed-spreader), C_w < R_w for elapsed_seconds; otherwise beats_reference = 0. Correctness requires distance <= epsilon, minPts counting the query point, the exact core-point connected-component partition, correct core/border/noise status, and every component membership of ambiguous border points; arbitrary cluster-label renaming is ignored.",
+  "solver_feedback": [
+    {
+      "name": "candidate_elapsed_seconds_median",
+      "means": "the median across all graded development workloads (original and seed-spreader) of the candidate's per-workload median elapsed_seconds values",
+      "reveals_reference": "no — it is a single scalar computed only from the candidate's own absolute development timings and contains no reference-derived value or workload identifier"
+    },
+    {
+      "name": "candidate_elapsed_seconds_p90",
+      "means": "the 90th percentile across all graded development workloads (original and seed-spreader) of the candidate's per-workload median elapsed_seconds values, using one fixed documented percentile convention",
+      "reveals_reference": "no — it is a single scalar computed only from the candidate's own absolute development timings and contains no reference-derived value or workload identifier"
+    }
+  ],
+  "withheld": [
+    "development_elapsed_seconds_by_workload",
+    "reference_elapsed_seconds_by_workload",
+    "elapsed_seconds_ratio_by_workload",
+    "elapsed_seconds_margin_by_workload",
+    "development_workload_identities",
+    "final_candidate_elapsed_seconds",
+    "final_reference_elapsed_seconds",
+    "final_workload_identities"
+  ],
+  "statement_sentences": "A separate, stricter `beats_reference` criterion is reported alongside the continuous score. It is earned only when your output passes exact DBSCAN correctness and your median elapsed computation time is strictly lower than the reference's median on every graded point-set/epsilon/minPts workload, including the 200,000-point seed-spreader workloads, under paired repeated measurements. The comparison is made independently per workload; reference timings, workload-level rows, ratios, margins, workload identities, and all hidden-final measurements are not disclosed.",
+  "comments": "Checked reproduction.json first: accelerator_required is null, so this is a CPU workload. The sole graded paper/artifact quantity supported here is elapsed computation time from code/DBSCANTime.C; component timers in code/DBSCAN.C are compile-time diagnostics and are not independent paper metrics for this comparison. The author must run the authentic preserved CLI with frozen OUR_EXACT/USE_BUCKETING selection and pinned execution conditions, interleave or otherwise pair candidate/reference repetitions, predeclare warmup/repetition and invalid-run rules, and use the same rule for both implementations. The supplied evidence does not measure noise on the proposed bounded SS-similar-density, SS-varied-density, and UniformFill 3D/7D workloads, so this review does not invent a tolerance; if later authoring requires a nonzero noise margin, this specification must be revised with the measured value and protocol rather than silently weakening the conjunction. Correctness probes are a hard gate, not a second optimization metric. Development and final instances/seeds must be distinct, and per-workload rows must never be returned; the pipeline-provided per-metric pass/fail counts and percentages are the only criterion-progress feedback. The practical higher-dimensional implementation is the quadratic-work BCP path described in Section 6.2, not the paper's separate theoretical subquadratic bound. Native conversion M004: final re-evaluates the union of the four original development instances and four original hidden instances, with no new shapes; both continuous and reference decisions cover all eight. Original development and hidden partition seeds remain disjoint. Strict C_w<R_w is authoritative; the old executable 5% margin is removed. Beat spec v3 (2026-10-07): 4/7 formal model runs (2/3 on the latest version) cleared v2, at geometric means only 0.3-13% below the reference's (scores 74.5-77.0 vs reference 74.4). On the 12,000-14,000-point workloads the editable core-connectivity stage takes 0.15-9 ms of 1.6-55 ms totals, uniform-7d has a single core point, and paired reference-vs-reference ratios stay within about 2%, so the strict per-workload C<R is decided by small constant savings: the authors' own non-bucketing connectivity ties the bucketing reference there (ratios 0.97-1.05) and a serial cell-level union-find is only 1.0-1.8x slower. v3 keeps all eight original workloads, the metric, the strict C<R rule and the M010 continuous score (still over the original eight only), and adds two 200,000-point seed-spreader workloads per partition at the paper's Figure 5 default minPts 10 for 5D-SS-varden (eps 800) and 7D-SS-simden (eps 1600). There the reference's connectivity stage is 33% and 55% of 174 ms and 56 ms totals, the serial variant is 2.6x and 11.3x slower, and every execution is checked against a second, grid-based exact oracle that matches the exhaustive oracle byte for byte on all probes and seeded tests. Reachability on the new workloads: the reference algorithm plus a per-cell core bounding-box prune/accept test is 4-29% faster on all four (dev and hidden), and the authors' non-bucketing variant is 6-18% faster on both dev instances. Train/final evaluator limits rise from 120/300 s to 240/600 s and the train verifier-wall budget from 12000 to 24000 s; measured reference-as-candidate v3 evaluations took 77 s (train) and 146 s (final) on a shared 8-CPU host. A failing reference or oracle on any workload is an evaluator error, never a comparison."
+}

@@ -1,0 +1,80 @@
+{
+  "unit": "one selected workload, summarized over all seven timed knn calls; four workloads for train and all eight for final (six original plus two beat-spec-v3 hidden strict-only shapes: the full 1,000,000-row SIFT base with k = 256, and the full 1,000,000-row GIST base)",
+  "beats_reference": "latency strictly lower, worst ball-recall and worst exact recall no lower than the optimized reference on every selected workload; every candidate timed recall >= 0.88 and every valid returned distance satisfies the approved consistency gate",
+  "statement_sentences": "PASS requires strictly lower median latency, no lower worst timed ball-recall and no lower worst timed exact recall than the optimized reference on every selected workload. Every timed recall must be at least 0.88, and every valid returned distance must agree with direct FP64 squared-L2 recomputation from actual bf16 inputs within rtol=1e-6 and atol=0, with exact zero at zero oracle. All conditions are conjoined across the four train workloads or all eight final workloads; continuous score cannot compensate for a failed condition and covers only the six original workloads.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "metrics": [
+    {
+      "name": "latency_ms",
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "means": "median synchronized milliseconds for seven complete knn calls",
+      "source": "judge/knn_worker.py",
+      "tolerance": "strict candidate < reference; no tolerance band"
+    },
+    {
+      "name": "worst_ball_recall",
+      "better": "higher",
+      "clears_when": "candidate >= reference and candidate >= 0.88",
+      "means": "worst of seven recalls, using the legacy naive-kth fp32 distance ball with 1e-6 absolute epsilon",
+      "source": "judge/knn_worker.py",
+      "tolerance": "candidate >= reference with zero non-inferiority band and every timed recall >= 0.88; the distance-ball oracle uses 1e-6 absolute epsilon and zero relative slack"
+    },
+    {
+      "name": "distance_consistency",
+      "better": "higher",
+      "clears_when": "the Boolean consistency result is true: zero violating valid returned distances in every timed call",
+      "means": "Boolean validity (true is required), using direct fp64 squared-L2 recomputation from actual bf16 inputs and the returned valid neighbor IDs; this is an absolute gate, not a comparison with reference error",
+      "source": "judge/knn_worker.py",
+      "tolerance": "abs(reported - oracle) <= 1e-6 * abs(oracle): rtol=1e-6, atol=0, exact zero at zero oracle; legal padding excluded"
+    },
+    {
+      "name": "worst_exact_recall",
+      "better": "higher",
+      "clears_when": "candidate >= reference",
+      "means": "worst of seven timed exact recalls: the share of returned neighbors whose direct FP64 squared distance from the actual bf16 inputs is at most the FP64 distance of the query's exact k-th nearest database row (FP32 brute-force ranking over the whole sampled database, recomputed in FP64, outside timing)",
+      "source": "judge/knn_worker.py (exact_kth_distances, exact_recall) and judge/evaluator.py; exact k-NN as defined for GPU brute-force search by Johnson, Douze and Jegou, Billion-scale similarity search with GPUs (Section 5, exact k-NN and k-selection)",
+      "tolerance": "candidate >= reference with zero non-inferiority band; the FP32-ranked radius is never below the true k-th distance"
+    }
+  ],
+  "solver_feedback": [
+    {
+      "name": "geomean_speedup",
+      "means": "geomean of median paired naive/candidate speedups",
+      "reveals_reference": "no: timing ratios use the frozen naive baseline, not the private optimized reference"
+    },
+    {
+      "name": "latency_ms",
+      "means": "independently sorted absolute candidate workload latency medians",
+      "reveals_reference": "no: only independently sorted candidate medians are returned, without reference values or workload identities"
+    },
+    {
+      "name": "worst_ball_recall",
+      "means": "independently sorted candidate worst recalls",
+      "reveals_reference": "no: only independently sorted candidate recalls are returned, without reference values or workload identities"
+    },
+    {
+      "name": "worst_exact_recall",
+      "means": "independently sorted candidate worst timed exact recalls",
+      "reveals_reference": "no: only independently sorted candidate recalls are returned, without reference values or workload identities"
+    }
+  ],
+  "progress_feedback": {
+    "name": "beat_spec_progress",
+    "means": "per-metric passed/failed counts",
+    "granularity": "one quarter for train and one eighth for private final",
+    "reveals_reference": "no"
+  },
+  "withheld": [
+    "hidden shapes and seeds",
+    "reference measurements",
+    "per-workload decisions",
+    "beats_reference",
+    "reference_score",
+    "margin"
+  ],
+  "calibration_status": "user_approved_pending_gpu_validation",
+  "comments": "Beat spec v3 (2026-10-08): 3/7 formal model runs (1/3 latest) cleared v2. The ball-recall radius is the FP32 distance to the frozen naive's k-th neighbor as ranked by a bf16 cdist, so it measures agreement with the naive's bf16 ranking (including its rounding error) rather than exact k-NN, and all v2 shapes stop at 500,000 rows and k <= 100. v3 keeps all three metrics, the 0.88 gate, the distance gate, the six workloads and the continuous score (still over those six), and adds worst_exact_recall against the exact k-th nearest distance (FP32 brute force over the whole sampled database, FP64 recomputation) and two hidden final-only strict shapes at the paper's scales: the full 1,000,000-row SIFT base with k = 256 (inside the k <= 1024 GPU k-selection range of Johnson et al.) and the full 1,000,000-row GIST base (D 960, k 100). Release refresh 2026-10-11: the 2026-10-08 draft used k = 1024 for the full-SIFT shape. A GPU-less Triton 3.2.0 compile of the frozen reference's top-k kernel for sm_90 shows its shared memory is BN*TOPK_PAD*8 bytes (131,072 at k = 256; 524,288 at k = 1024, above the H100's 232,448-byte limit, so the dispatcher would recompile through several smaller tiles) and its compile time grows about sixfold per doubling of k (45 s at k = 100, 277 s at k = 256, not finished after 25 minutes at k = 512 or 50 minutes at k = 1024), which does not fit the 3,600 s worker and final limits. The shape therefore uses k = 256, where one compile fits. Measured 2026-10-11 on one Modal H100 80 GB (main's published verifier-gpu image with this source's judge and repo laid over it): only the new hidden shapes, one worker each; this is a precheck, not a platform reference qualification. The frozen reference is valid on both: sift_full_k256 exact recall 1.0, worst ball recall 0.9702, distance error 0, worker 517 s (mostly the one-off kernel compile), peak 7.7 GB; gist_full_k100 exact recall 0.99999, worst ball recall 0.9372, distance error 0, worker 52 s, peak 28.8 GB. On both shapes the reference is slower than the frozen naive (55.4 ms against about 17 ms, speedup 0.31; 42.1 ms against about 28 ms, speedup 0.67), so the latency comparison is weak there and the binding new requirement is exact recall. The eight-workload final is about 1,320 s (recorded six-workload final 182 s plus two workers per new shape), so the final limit is raised from 3,600 s to 5,400 s and the Verifier GPU quota from 14,400 s to 16,200 s. A full eight-workload final with a candidate has not been run. Reference replaced 2026-10-12: every reference figure above (55.4 ms, 42.1 ms, exact recall 0.99999, the 517 s worker, the shared-memory and compile limits behind k = 256, the 1,320 s final) describes the previous reference, a vendored upstream kernel. The reference is now a task-authored exact filter-and-refine kernel in one file (knnlib/knn.py): it ranks rows by a rounded lower bound of each squared distance, recomputes a shortlist as FP64 direct differences, and checks per query that no row outside the shortlist can enter or tie the answer, recomputing that query otherwise. Measured 2026-10-12 on one Modal H100 80 GB, one run, through knn_worker.measure_workload (2 warmups, 7 timed calls; two reference workers per workload; a precheck, not a platform reference qualification). Median latency in ms of the two workers: sift_k10 1.46/1.42, sift_k50 1.46/1.44, sift_k100 1.68/2.77, gist_k10 1.86/1.85, gist_k50 1.93/1.89, gist_k100 1.97/1.95, sift_full_k256 2.71/2.70, gist_full_k100 5.36/5.45; the previous reference in the same run: 2.16, 5.98, 8.10, 5.69, 9.71, 13.79, not run, 42.38. Exact recall 1.0 and zero distance violations on all eight workloads (largest relative distance error 6.0e-8); worst ball recall equal to the previous reference's on the seven workloads where both ran; no query needed recomputation; the implementation holds 0.5-2.0 GB; the first call took 2.8 s on SIFT and 31 s on GIST; reference workers took 4-40 s each. The two sift_k100 workers disagree (1.68 and 2.77 ms): in the second, six of seven samples were slower and its paired naive samples were slower too. Consequences: the exact-recall bar is 1.0 on every workload (it was 0.999961 on gist_k100 and 0.99999 on gist_full_k100), and the latency bars are 1.5 to 20 times lower. Workloads, metrics, comparison rules, score and limits are unchanged. The full-SIFT shape stays at k = 256; the constraint that set it no longer applies, because the new kernels compile in seconds for any k (the block threshold serves k <= 976 at 1,000,000 rows). The 5,400 s final limit and the 16,200 s Verifier GPU quota were sized for the previous reference's compile and are now generous; they are unchanged."
+}

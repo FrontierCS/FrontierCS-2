@@ -1,0 +1,3 @@
+qid,mysql_groundtruth
+1581,"SELECT CUSTOMER_ID, COUNT(*) AS COUNT_NO_TRANS FROM VISITS WHERE VISIT_ID NOT IN (SELECT DISTINCT VISIT_ID FROM TRANSACTIONS) GROUP BY CUSTOMER_ID"
+1581,"SELECT customer_id, COUNT(V.visit_id) as count_no_trans FROM Visits V LEFT JOIN Transactions T ON V.visit_id = T.visit_id WHERE T.transaction_id IS NULL GROUP BY customer_id "

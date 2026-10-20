@@ -1,0 +1,27 @@
+id: "glenside"
+display_name: "Access-Pattern Rewriting"
+category: "Programming Language"
+summary: "Find better access-pattern rewrites that map tensor convolutions onto matrix hardware in Glenside."
+paper_title: "Pure Tensor Program Rewriting via Access Patterns (Representation Pearl)"
+paper_venue: "MAPS 2021"
+paper_url: "https://arxiv.org/abs/2105.09377"
+agent_cpu_cores: 2
+agent_memory_gib: 4
+agent_disk_gib: 8
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 12000
+eval_timeout_seconds: 300

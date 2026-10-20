@@ -1,0 +1,102 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 17179869184,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Residual State Advancement",
+  "family": "frontier-cs-2.0/databases",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 435,
+        "path": "datasets/eval.json",
+        "version": "sha256:26d42d4b8ab8a4644adbb3f714bef2bbef592983a2dec456c133f90049052d76"
+      },
+      "train": {
+        "bytes": 442,
+        "path": "datasets/train.json",
+        "version": "sha256:a0d89f95ceb425b9deb4a4e84456f86a5fd7940ba07db3a25dc6ab7de0997600"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [],
+      "suite_relation": "same_workload_profiles_disjoint_date_ranges"
+    },
+    "generator": {
+      "candidate_id": "cand_001",
+      "commit": "9a3bd5593db9477133c9e1a6f6a86bc119a2875b",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top46_ef4c4c1bef"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Zezhou Huang",
+        "Rathijit Sen",
+        "Jiaxiang Liu",
+        "Eugene Wu"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2023-joinboost-grow-trees-over-normalized-data-using-only-sql-ef4c4c1bef",
+      "pdf_url": "https://www.vldb.org/pvldb/vol16/p3071-huang.pdf",
+      "title": "JoinBoost: Grow Trees Over Normalized Data Using Only SQL",
+      "venue": "PVLDB 16",
+      "year": 2023
+    },
+    "runtime": {
+      "allowed_paths": [
+        "src/joinboost/app.py",
+        "src/joinboost/semiring.py",
+        "src/joinboost/aggregator.py",
+        "src/joinboost/cjt.py",
+        "src/joinboost/joingraph.py"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
+      "source_path": "2.0/fcs2/problems/residual_state_advancement",
+      "scope": "T40 existing-native runtime standardization; algorithm, workloads, baseline, reference, and resources preserved; M087 replaces binary PASS and the 2026-09-15 asymptotic mapping removes the continuous-score upper clip",
+      "original_metadata_path": "judge/metadata.json",
+      "historical_evidence_path": "judge/result.json",
+      "note": "Generator, paper, ranking, promotion, artifact, and historical trial fields retain their source meanings; historical evidence does not accept this conversion."
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "residual_state_advancement",
+  "quota": {
+    "eval_timeout_seconds": 7200,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 720000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 131072
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 17179869184
+  },
+  "version": "r2-paper-setting-20261011"
+}

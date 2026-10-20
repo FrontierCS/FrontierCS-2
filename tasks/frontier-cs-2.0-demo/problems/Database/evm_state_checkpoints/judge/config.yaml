@@ -1,0 +1,41 @@
+tag: systems
+runtime:
+  language: cpp
+  timeout_seconds: 3600
+  environment: "Spectrum C++20 source patch; CPU-only YCSB, SmallBank, and TPCC"
+  apt_packages: [cmake]
+  judge_apt_packages: [cmake]
+  # Spectrum's CMake project fetches pinned dependencies and caches absolute
+  # paths; the Verifier has no egress. Build the cache at image-build time at
+  # the same path the run-scoped writable mount provides, publish it as a
+  # read-only seed, and let the evaluator copy the seed back at run time.
+  judge_build_commands:
+    - "FRONTIER_SPECTRUM_CACHE=/frontier/spectrum-cache PYTHONPATH=/opt/frontier/task python3 -c 'import evaluator; r = evaluator.prepare(); assert r.get(\"ready\"), r'"
+    - "cp -a /frontier/spectrum-cache /opt/frontier/spectrum-cache-seed && rm -rf /frontier/spectrum-cache && chmod -R a+rX /opt/frontier/spectrum-cache-seed"
+  judge_env:
+    FRONTIER_SPECTRUM_CACHE: /frontier/spectrum-cache
+    FRONTIER_SPECTRUM_CACHE_SEED: /opt/frontier/spectrum-cache-seed
+  docker:
+    image: buildpack-deps:noble
+environment:
+  cpus: 4
+  memory_mb: 8192
+  storage_mb: 8192
+  build_timeout_seconds: 1800
+evaluation:
+  solver_visible_metrics:
+    - committed_tps
+    - checkpoint_create_ns
+    - checkpoint_restore_ns
+    - retained_bytes_per_checkpoint
+  suite_relation: fixed disjoint development and final suites; identical evaluator and beat-spec rules
+  max_dev_submissions: 100
+  benchmark_repetitions: 5
+  checkpoint_profile_rounds: 400
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths: [lib/evmcow/execution_state.hpp]
+  max_changed_files: 1
+  max_patch_bytes: 65536

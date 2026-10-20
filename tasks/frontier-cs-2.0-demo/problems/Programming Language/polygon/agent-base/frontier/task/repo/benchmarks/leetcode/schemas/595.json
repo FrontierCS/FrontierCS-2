@@ -1,0 +1,34 @@
+{
+  "Problem Number": "595",
+  "Tables": [
+    {
+      "TableName": "World",
+      "PKeys": [
+        {
+          "Name": "name",
+          "Type": "varchar"
+        }
+      ],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "continent",
+          "Type": "varchar"
+        },
+        {
+          "Name": "area",
+          "Type": "int"
+        },
+        {
+          "Name": "population",
+          "Type": "int"
+        },
+        {
+          "Name": "gdp",
+          "Type": "int"
+        }
+      ]
+    }
+  ],
+  "Tuples": []
+}

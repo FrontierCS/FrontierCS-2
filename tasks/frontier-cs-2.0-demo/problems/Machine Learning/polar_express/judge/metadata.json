@@ -1,0 +1,20 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "polar_express",
+  "domain": "numerical_linear_algebra",
+  "promotion": {},
+  "generated_at": null,
+  "generator": {"pipeline": "frontiersmith2", "commit": null, "run_id": null, "candidate_id": null, "config_sha256": null},
+  "paper": {"paper_id": null, "title": null, "authors": [], "year": null, "venue": null, "pdf_url": null, "doi": null},
+  "rank": {"rank": null, "overall_score": null, "recommendation": null, "scores": {}, "risks": []},
+  "artifact": {"repo_url": null, "commit": null, "cloned_at": null, "census": {}},
+  "contribution": {
+    "title": "Polar-factor approximation",
+    "summary": "Improve the numerical approximation while preserving bounded scalar and relative polar-factor error.",
+    "paper_location": null,
+    "code_location": ["polar_express.py", "frontier_solution/"],
+    "metric": "worst-case scalar error and relative polar-factor error"
+  },
+  "host": null,
+  "provenance_note": "Standardized from an existing native task whose source lock records task hashes but no external repository or commit. Generator identity is preserved from policy metadata; paper, ranking, promotion, artifact, and measured-host history were unavailable and remain null or empty."
+}

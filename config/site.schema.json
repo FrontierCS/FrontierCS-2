@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontier.dev/schemas/deployment-site-v2.json",
+  "title": "FrontierCS2 executable Preview deployment site",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "site", "terraform", "network", "compute", "application", "images", "management", "litellm", "execution", "features", "tags"],
+  "properties": {
+    "schema_version": {"const": "frontier.deployment-site/v2"},
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "expected_account_id", "aws_region", "kubernetes_version"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,22}[a-z0-9]$"},
+        "expected_account_id": {"type": "string", "pattern": "^[0-9]{12}$"},
+        "aws_region": {"type": "string", "pattern": "^[a-z]{2}(?:-[a-z]+)+-[0-9]$"},
+        "kubernetes_version": {"const": "1.34"}
+      }
+    },
+    "terraform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state_bucket", "state_key"],
+      "properties": {
+        "state_bucket": {"type": "string"},
+        "state_key": {"type": "string"},
+        "operator_principals": {
+          "type": "array",
+          "default": [],
+          "uniqueItems": true,
+          "description": "Additional IAM users or roles granted AmazonEKSClusterAdminPolicy at cluster scope. Omitting or leaving empty retains existing access only for sites that have never managed optional operators through this variable. Removing an ARN from a list Terraform already manages, including by omitting or emptying the list, revokes that principal's managed access at the next apply.",
+          "items": {
+            "type": "string",
+            "pattern": "^arn:aws(?:-cn|-us-gov)?:iam::[0-9]{12}:(?:user|role)/[A-Za-z0-9+=,.@_-]+(?:/[A-Za-z0-9+=,.@_-]+)*(?![\\s\\S])"
+          }
+        }
+      }
+    },
+    "network": {"type": "object"},
+    "compute": {"type": "object"},
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "require_source"],
+      "properties": {
+        "repository": {"const": "https://github.com/FrontierCS/FrontierCS-2.git"},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "require_source": {"type": "boolean"},
+        "runtime_source_commits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["management", "driver"],
+          "properties": {
+            "management": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+            "driver": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+          }
+        }
+      }
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry", "management", "driver", "litellm", "postgres"],
+      "properties": {
+        "registry": {"$ref": "#/$defs/image"},
+        "management": {
+          "allOf": [
+            {"$ref": "#/$defs/image"},
+            {"properties": {"tag": {"pattern": "^sha-[0-9a-f]{40}$"}}}
+          ]
+        },
+        "driver": {
+          "allOf": [
+            {"$ref": "#/$defs/image"},
+            {"properties": {"tag": {"pattern": "^sha-[0-9a-f]{40}$"}}}
+          ]
+        },
+        "litellm": {"$ref": "#/$defs/image"},
+        "postgres": {"$ref": "#/$defs/image"}
+      }
+    },
+    "management": {"type": "object"},
+    "litellm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["postgres_storage_gib", "exposure", "ui_access", "store_model_in_db"],
+      "properties": {
+        "postgres_storage_gib": {"type": "integer", "minimum": 4, "maximum": 1024},
+        "exposure": {"const": "port-forward"},
+        "ui_access": {"const": "admin-only"},
+        "store_model_in_db": {"const": true}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_store_gib", "registry_storage_gib", "max_active_drivers", "agent_external_egress", "smoke"],
+      "properties": {
+        "object_store_gib": {"type": "integer", "minimum": 1, "maximum": 1024},
+        "registry_storage_gib": {"type": "integer", "minimum": 1, "maximum": 1024},
+        "max_active_drivers": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "agent_external_egress": {"type": "boolean"},
+        "smoke": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "timeout_seconds"],
+          "properties": {
+            "enabled": {"const": true},
+            "timeout_seconds": {"type": "integer", "minimum": 120, "maximum": 3600}
+          }
+        },
+        "verifier_placement_required_task_ids": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 128,
+            "pattern": "^(?!.*[\\u0000-\\u001f\\u007f-\\u009f])\\S(?:[\\s\\S]*\\S)?(?![\\s\\S])"}
+        },
+        "verifier_node_allowlists": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["task_version_id", "nodes"],
+            "properties": {
+              "task_version_id": {"type": "string", "pattern": "^taskver_[0-7][0-9A-HJKMNP-TV-Z]{25}(?![\\s\\S])"},
+              "nodes": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true,
+                "items": {"type": "string", "maxLength": 253, "pattern": "^[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?)*(?![\\s\\S])"}}
+            }
+          }
+        },
+        "task_verifier_workspace_bytes": {
+          "type": "object",
+          "propertyNames": {"pattern": "^[a-z][a-z0-9_]*(?![\\s\\S])"},
+          "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 1099511627776}
+        },
+        "model_domains": {
+          "type": "array", "minItems": 0, "maxItems": 32,
+          "items": {"type": "string", "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?![\\s\\S])"}
+        }
+      }
+    },
+    "features": {
+      "type": "object", "additionalProperties": false,
+      "required": ["run_execution", "litellm", "modal_gpu"],
+      "properties": {"run_execution": {"const": true}, "litellm": {"const": true}, "modal_gpu": {"type": "boolean"}, "task_model_aliases": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z](?:[a-z0-9._-]{0,126}[a-z0-9])?$"}}}
+    },
+    "modal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["environment", "app_name", "credentials_secret"],
+      "properties": {
+        "environment": {"type": "string", "minLength": 2},
+        "app_name": {"type": "string", "minLength": 2},
+        "credentials_secret": {"type": "string", "minLength": 2},
+        "ecr_pull_secret_ref": {
+          "type": "string",
+          "pattern": "^(?:|[a-z][a-z0-9-]{0,61}[a-z0-9])(?![\\s\\S])",
+          "description": "Optional existing Modal Secret name for private ECR image pulls. Empty or omitted preserves public-image behavior; this reference grants no IAM permissions."
+        }
+      }
+    },
+    "tags": {"type": "object"}
+  },
+  "allOf": [{
+    "if": {"properties": {"features": {"properties": {"modal_gpu": {"const": true}}}}},
+    "then": {"required": ["modal"]}
+  }],
+  "$defs": {
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "tag", "digest"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "tag": {"type": "string", "minLength": 1},
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

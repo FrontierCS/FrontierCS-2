@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+exec python3 "${FRONTIER_RUNTIME_ADAPTER:?}/frontier_runtime.py" --upstream-launch "$@"

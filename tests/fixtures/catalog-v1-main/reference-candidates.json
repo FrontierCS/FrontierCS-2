@@ -1,0 +1,37 @@
+{
+  "batch_local_counting": {
+    "digest": "sha256:c44ce40971f4a7309b0c5fc5d9f4dd05e634cdff130f6c70e85c652f45296caf",
+    "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+    "payload_sha256": "sha256:1cb3d6c02baec5454052d297fe7b29fed30982bce1fc3c605783676684eb0614",
+    "repository": "docker.io/joyemang33/fcs2-task-batch_local_counting-reference",
+    "tag": "source-7a6372a268e3fedd3365d7fb3f21d717d68fffca1fda241b925df09830298af7"
+  },
+  "bounded_evm_path_prediction": {
+    "digest": "sha256:bb234d354738b7d46556e309ccac869f45ad71b2807b0be89b73085cee42eb01",
+    "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+    "payload_sha256": "sha256:1e92a8a973904660a66ce8fb10b47f8693387c317354105dcd725b1fcdcb52f4",
+    "repository": "docker.io/joyemang33/fcs2-task-bounded_evm_path_prediction-reference",
+    "tag": "source-0df79fdf01ba9218585816de81a24a1924da5d1a18c3f654be7c4fb0432de647"
+  },
+  "evm_state_checkpoints": {
+    "digest": "sha256:2688f4ebbecfa40f8306a72ad720e809e2bbff411bca6f3ef865d2c94c5d81fc",
+    "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+    "payload_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
+    "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-reference",
+    "tag": "source-1a787817ceb27a899863da1b329cea2014bb94a2384302a6a6dc043e2114e94f"
+  },
+  "graph_mining_method_selection": {
+    "digest": "sha256:b3acfea7ec32fda3a27b788d7d718bc6666c8569564f59597f6e587373d10487",
+    "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+    "payload_sha256": "sha256:bceb52507a468972db2a0b88a1f626b1a5c005dc3388cd60087c88ba1fe4de20",
+    "repository": "docker.io/joyemang33/fcs2-task-graph_mining_method_selection-reference",
+    "tag": "source-2bcbe2dbee5267492553c42f695688a1dfad359259e393254954aa1d567bb4ef"
+  },
+  "join_tree_rewriting": {
+    "digest": "sha256:879efce1b794bbe46b55cd1796f8ad13f5a3b80c10164eacd5de360eb91c6d32",
+    "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+    "payload_sha256": "sha256:a26bbd6620f39e2af5f497515fb2bea55b093d885304080107d52a7d0c2655db",
+    "repository": "docker.io/joyemang33/fcs2-task-join_tree_rewriting-reference",
+    "tag": "source-b9b8b1c1f4e53268695762148abe59d4e5e3e6e8ea42c0ab8cf63a11653bd95d"
+  }
+}

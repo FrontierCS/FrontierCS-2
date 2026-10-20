@@ -1,0 +1,169 @@
+# Search Strategy for Concolic Testing
+
+## Problem
+
+A concolic tester runs an instrumented program on concrete inputs and records, along the path taken, the conditions that depended on those inputs. Negating one of the recorded conditions and solving the resulting constraints gives new inputs that drive the program down a different path. Each such step costs one execution of the program, and a real program has far more paths than any testing budget. The search strategy decides which condition of which earlier execution to negate next; that choice determines how much of the program is covered before the budget runs out.
+
+This task is about that strategy. The tester is CREST (Burnim and Sen, "Heuristics for Scalable Dynamic Test Generation", ASE 2008). Its search strategies have been removed and replaced by an interface; you implement one strategy behind it. The objective is to cover as many branches as possible within a budget of 4000 executions per run, while spending as little CPU time as possible on the search itself.
+
+## Your workspace
+
+`/app` contains the CREST sources, the bundled CIL instrumentation and an offline compiler closure. The editable path is:
+
+```text
+src/frontier_solution/
+```
+
+`src/frontier_solution/strategy.cc` is a working starter that only restarts the program on random inputs. Replace it. You may add `.cc` and `.h` files to that directory; every `.cc` file there is compiled and linked into the strategy. Everything else in the tree is the fixed harness and is verified.
+
+`./frontier-build.sh` builds the tester and instruments the development program (about a minute, once). `python3 run_local.py --seeds 1-8` then runs your strategy on the development program under the judge's limits and prints, per seed, the branches covered, the search overhead and how the run ended.
+
+## Interface
+
+`src/strategy/strategy_api.h` is the whole interface. You implement:
+
+```cpp
+namespace frontier {
+class Strategy {
+ public:
+  virtual ~Strategy() {}
+  virtual void Run(Host& host) = 0;
+};
+Strategy* MakeStrategy();   // define this in src/frontier_solution/
+}
+```
+
+`Run` drives one run through the `Host`:
+
+```cpp
+const Execution* Host::Restart();
+const Execution* Host::Negate(const Execution* e, size_t k);
+void             Host::Release(const Execution* e);
+const Program&   Host::program() const;
+int  Host::budget() const;           int  Host::iterations_used() const;
+bool Host::covered(int branch) const; int Host::num_covered() const;
+uint32_t Host::Random();             uint32_t Host::Uniform(uint32_t n);
+```
+
+- `Restart()` runs the program on fresh random inputs and returns the execution. It costs one iteration.
+- `Negate(e, k)` asks the harness to keep the first `k` constraints of execution `e`, negate constraint `k`, solve, and run the program on the solution. If the constraints are infeasible it returns `NULL` and no iteration is spent. (The harness answers some requests without a solver attempt: when an earlier constraint of the path is identical to constraint `k`, negating it cannot be satisfied.) Otherwise the program is run, one iteration is spent, and the new execution is returned. The new execution does not always follow the predicted path; compare the two paths to find out.
+- `Release(e)` gives an execution back. At most 64 executions may be held at a time.
+
+An `Execution` is what the strategy sees of a run of the program:
+
+```cpp
+struct Execution {
+  int id;
+  bool completed;                        // false: killed or crashed before reporting a trace
+  std::vector<int> path;                 // branch ids in order, with kCallId (-1) and kReturnId (-2) markers
+  std::vector<uint32_t> constraint_pos;  // positions in `path` of the input-dependent branches
+};
+```
+
+`constraint_pos[k]` is the position in `path` of constraint `k`. Only those branches can be negated; the others did not depend on the inputs. The strategy does not see the constraints themselves, the inputs or the solver.
+
+`Program` is the static description of the program under test: the list of branch ids, `paired[b]` (the other arm of the same conditional), `function_of[b]`, and `successors[b]`, the branch-level control-flow graph (the branches that can be the next one executed after `b`; calls are followed into the callee, returns are not followed back).
+
+Branch and function ids are relabelled with a fresh secret permutation in every run. An id is meaningful only inside the run that produced it; the structure (pairs, successors, paths) is what carries over.
+
+`Host::Random()` and `Host::Uniform(n)` are a deterministic generator that the harness seeds per run. They are the only source of randomness.
+
+When the iteration budget is spent, `Restart()` or `Negate()` does not return and the run ends. If `Run` returns earlier, the run ends with the coverage reached so far.
+
+## What a run is
+
+One run is one process of the search harness on one program with one seed:
+
+- The budget is 4000 iterations. One iteration is one launch of the program under test. Infeasible `Negate` requests cost no iteration.
+- Every launch of the program is limited to 10 seconds and 2 GB of address space. A launch that is killed or crashes still costs its iteration; it contributes whatever coverage the program reported before it stopped, which is none if it was killed outright.
+- Coverage is the number of distinct branches executed over the whole run, counted by the harness.
+- Search overhead is the CPU time of your strategy process plus the CPU time the harness spends solving constraints for your `Negate` requests. Executing the program under test is not part of it.
+
+Four safety caps bound a run. Reaching one ends the run early; the run stays valid and keeps the coverage it has reached:
+
+| Cap | Value |
+| --- | --- |
+| Wall-clock time of the run | 320 seconds on the development program; each final program has its own budget, set the same way |
+| Search overhead (strategy CPU + solving CPU) | the run's wall-clock budget |
+| Constraint-solver attempts, feasible and infeasible | 160,000 |
+| `Negate` requests, including those rejected without a solver attempt | 225,000 |
+
+The caps are safety stops, not targets. A program's wall-clock budget is about 1.2 to 1.4 times the slowest run of the reference strategy measured on it, eight runs at a time; the solver-attempt and request caps are about ten times the reference's mean use. No measured reference run came near them. A strategy that is much slower per iteration than the reference can run out of time before its 4000 iterations; it then keeps the coverage it has.
+
+## Rules for solution code
+
+The strategy runs in its own process, which can compute and talk to the harness and nothing else. It has no file system, clock, network, environment or child processes; a forbidden system call ends the process. The judge also checks the sources and the compiled objects before running anything:
+
+- Only `.cc` and `.h` files, directly in `src/frontier_solution/`, at most 32 files; `strategy.cc` must exist and define `frontier::MakeStrategy()`.
+- Includes are limited to `"strategy/strategy_api.h"`, your own files in that directory, and these standard headers: `<algorithm> <array> <bitset> <cassert> <cfloat> <climits> <cmath> <cstddef> <cstdint> <cstdlib> <cstring> <deque> <functional> <initializer_list> <iterator> <limits> <list> <map> <memory> <new> <numeric> <optional> <queue> <set> <stack> <string> <tuple> <type_traits> <unordered_map> <unordered_set> <utility> <vector>` and the C forms `<assert.h> <float.h> <limits.h> <math.h> <stddef.h> <stdint.h> <stdlib.h> <string.h>`.
+- Preprocessor directives other than `#include`, `#define`, `#undef` and the conditionals are rejected, as are line splices, token pasting, trigraphs, raw string literals, inline assembly, `__attribute__`, compiler builtins and thread-local storage.
+- The compiled objects may reference only the strategy interface, memory allocation, the C string and math helpers, and the support routines of the standard containers and exceptions. Anything that performs input or output, reads time, or touches processes, threads, the environment or `rand` is rejected.
+- No object with a constructor or dynamic initialiser at namespace scope: keep all state inside your `Strategy` object. Nothing of the solution may run before `MakeStrategy()` is called.
+- The strategy process has 1 GiB of address space.
+
+Run `python3 run_local.py` to apply the same checks locally.
+
+## Workload
+
+The programs under test are real C programs with thousands to tens of thousands of branches, instrumented with CREST and run with a small symbolic input. The development program is GNU grep 2.2 (3982 branches), which you also have locally. Final evaluation uses two other programs, one of them an order of magnitude larger than the development program. They are not named and they are not in your workspace. Treat the development program as an example of the workload, not as the target: a strategy tuned to one program's ids or shape will not transfer.
+
+Runs of the development program are reproducible: the same strategy, seed and relabelling give the same coverage. One of the final programs is not, which is one reason every comparison is made over 30 seeds.
+
+## Scoring
+
+The continuous score is, averaged over the graded programs,
+
+```text
+100 * max(0, C - B) / (T - B)
+```
+
+where `C` is your mean coverage at budget over the 30 seeds, `B` is the fixed mean coverage of bounded depth-first search (depth 12) on that program, and `T` is the program's total number of branches. For the development program `B` = 1057 and `T` = 3982. The score uses no reference measurement. It is far below 100 for any realistic strategy, because much of a program is unreachable from one entry point within the budget; it is there to rank strategies, and higher is better. Search overhead is not part of the continuous score.
+
+## Passing
+
+Separately from the score, a submission passes only if it beats the reference strategy on both measurements on every graded program. The reference is the paper's control-flow-directed search. In each evaluation the judge runs your strategy and the reference on the same 30 seeds of each program, with the same relabelling, interleaved on the same machine. For each program, with `cov` and `ovh` the per-seed coverage and search overhead of the candidate (`c`) and the reference (`r`):
+
+```text
+(a) coverage:  mean(cov_c) - mean(cov_r) > 3 * s_cov * sqrt(2 / 30)
+(b) overhead:  mean(ovh_r) - mean(ovh_c) > 3 * s_ovh * sqrt(2 / 30)
+```
+
+`s` is the pooled per-seed standard deviation of that quantity in the same evaluation: `s^2 = (var(candidate) + var(reference)) / 2`, with sample variances over the 30 seeds. `3 * s * sqrt(2 / 30)` is three standard errors of the difference of the two means, which is about `0.77 * s`. Coverage is compared in branches and overhead in whole milliseconds, both in exact integer arithmetic. Equal means fail, and so does a difference inside the margin.
+
+Both rules must hold on every graded program. A gain on one program or one measurement does not offset the other. For scale, in the qualification measurements of the reference the coverage margin was about 2 % of its coverage on the development program and 2 % to 4 % on the final programs, and the overhead margin was about 7 % of its overhead on the development program, and about 5 % and about 30 % on the two final programs. The margins of an evaluation are computed from that evaluation's own runs, so they move with the spread of your strategy as well.
+
+## Feedback
+
+A development submission is evaluated on the development program: 30 seeds of your strategy and 30 of the reference, about 15 minutes. It returns the score and these measurements of your own runs:
+
+| Field | Meaning |
+| --- | --- |
+| `dev_branches_covered_mean` | Mean branches covered when the run ended. |
+| `dev_coverage_curve` | `[iteration, mean branches covered]` at fixed checkpoints up to the budget. A run that ended before a checkpoint counts with its final coverage. |
+| `dev_search_overhead_seconds_mean` | Mean search overhead per run, in CPU seconds. |
+| `dev_solver_attempts_mean` | Mean number of constraint-solver attempts per run. |
+| `dev_runs_ended_early` | How many of the 30 runs ended before the budget was spent (a cap was reached, or `Run` returned). |
+| `dev_killed_executions_mean` | Mean number of program launches per run that crashed or were stopped by the time limit. |
+
+It also returns `beat_spec_progress`, keyed by `branches_covered` and `search_overhead_seconds`. Each entry has `passed`, `failed` and `total`, counting the graded programs on which rule (a) or rule (b) held (`total` is 1 in development), with `pass_percent` and `fail_percent`. No reference measurement, margin or per-seed value is returned. Final evaluation returns nothing.
+
+## Validity
+
+A submission that cannot be scored gets a score of zero and passes nothing; the message names the category. The categories are: `missing_submission`, `invalid_patch` (does not apply, or touches a path outside `src/frontier_solution/`), `solution_layout`, `lexical_form`, `preprocessor_directive`, `forbidden_include`, `forbidden_identifier`, `forbidden_symbol`, `static_initialization`, `object_audit`, `build_failed`, and the run-time faults `strategy_fault_crashed`, `strategy_fault_sandbox_kill` (a forbidden system call; this is also where running out of memory ends), `strategy_fault_api_misuse` (an invalid argument to the `Host`, or more than 64 executions held), `strategy_fault_protocol` and `strategy_fault_exited`. A run-time fault in any one run voids the submission.
+
+Ending a run early is not a fault: reaching a cap, or returning from `Run`, leaves the run valid with the coverage it reached. A failure of the reference or of the judge itself is reported as an evaluation failure, without a score, and is never counted against the submission.
+
+## Submission
+
+Submit a nonempty source patch at `/app/solution.patch`:
+
+```sh
+cd /app
+./make_submission.sh
+```
+
+The helper stages new and changed files under `src/frontier_solution/` and writes the patch. Changes elsewhere are refused. The judge applies the patch to a pristine tree. Limits: 262,144 patch bytes, 32 changed files.
+
+## Resources
+
+Your workspace has 8 CPUs, 16384 MiB of memory and 8192 MiB of disk. The judge has 8 CPUs and 32768 MiB of memory and runs up to 8 runs at a time. An evaluation has a 10800-second timeout, development or final. It is sized so that every run may use its full caps; with a strategy in the reference's cost range a development evaluation takes about 15 minutes and a final evaluation about an hour. At most 100 development submissions are allowed, within the answering window of 18000 seconds. No GPU and no network are needed.

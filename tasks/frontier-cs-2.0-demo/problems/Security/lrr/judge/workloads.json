@@ -1,0 +1,3477 @@
+{
+  "development": [
+    {
+      "id": "development-scalpel_eliminated",
+      "items": [
+        {
+          "id": "07b2370e7d4ee229f40760c536827313f097a8d9b1fed601325ac9dc27a1881d",
+          "input": {
+            "pattern": "\\A[\\w\\.\\[\\]]+(\\s*|\\s*.+)?\\Z",
+            "error": null,
+            "result": {
+              "regex": "\\A[\\w\\.\\[\\]]+(\\s*|\\s*.+)?\\Z",
+              "final_regex": "\\A[\\w\\.\\[\\]]+(\\s*|\\s*.+)?\\Z",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2f595aacf9e6d88449422067d7e80d812f9fd7f86f46b3e419af3ee2393f8142",
+          "input": {
+            "pattern": "<blockquote([^>]*)>",
+            "error": null,
+            "result": {
+              "regex": "<blockquote([^>]*)>",
+              "final_regex": "<blockquote([^>]*)>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "94d7a3ed0952993beb0a001bd4cf2538f67b02edf0a82aacb96201259c8ddb3d",
+          "input": {
+            "pattern": "Sample_(.*?)\\/",
+            "error": null,
+            "result": {
+              "regex": "Sample_(.*?)\\/",
+              "final_regex": "Sample_(.*?)\\/",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "24ec9d70d49439763afe68e1346ca43e79d56c26ad8d3a68ca2fd1ae6e74daa6",
+          "input": {
+            "pattern": "<img[^>]+?src=\"([^\"]+)\"[^>]+?class=\"dev-content-full[^\"]*\">",
+            "error": null,
+            "result": {
+              "regex": "<img[^>]+?src=\"([^\"]+)\"[^>]+?class=\"dev-content-full[^\"]*\">",
+              "final_regex": "<img[^>]+?src=\"([^\"]+)\"[^>]+?class=\"dev-content-full[^\"]*\">",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]+?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4c60f6371d696be3680f000495f0f3c96b09acff229e5c56b6ebba1b5d16f888",
+          "input": {
+            "pattern": "Tests:.*2\\s+passed,\\s+2\\s+total",
+            "error": null,
+            "result": {
+              "regex": "Tests:.*2\\s+passed,\\s+2\\s+total",
+              "final_regex": "Tests:.*2\\s+passed,\\s+2\\s+total",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "8789623681cef3ef4b8ddcdf0c8f8a5b7765cad2e7eba5a7781e141725e1adbc",
+          "input": {
+            "pattern": "([a-z]+)-driver",
+            "error": null,
+            "result": {
+              "regex": "([a-z]+)-driver",
+              "final_regex": "([a-z]+)-driver",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[a-z]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2825bac8dd2f2067b338437d68665d377cd08145d7ff02fbbf2d1c3ca14cb3f9",
+          "input": {
+            "pattern": ".*got: (.*).",
+            "error": null,
+            "result": {
+              "regex": ".*got: (.*).",
+              "final_regex": ".*got: (.*).",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "57006b90e03b5f0063e480ba6dae594bfadecc22b29c5c43c1635d9bd51b5505",
+          "input": {
+            "pattern": "\\d+[\\ ]+(\\w+)+(\\s+)$",
+            "error": null,
+            "result": {
+              "regex": "\\d+[\\ ]+(\\w+)+(\\s+)$",
+              "final_regex": "\\d+[\\ ]+(\\w+)+(\\s+)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "(\u25b6\u25b7\\w+\u25c1\u25c0)+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ad9439154f503ac7c3c0c4f1664bd09fea09353d2338797a9f1d655d669b01a8",
+          "input": {
+            "pattern": "[^ ]+ [^ ]+ HTTP/1\\.[0-9]$",
+            "error": null,
+            "result": {
+              "regex": "[^ ]+ [^ ]+ HTTP/1\\.[0-9]$",
+              "final_regex": "[^ ]+ [^ ]+ HTTP/1\\.[0-9]$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^ ]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "be68bd8077ed682b9f8585dd7f887093ffe8ab82b1416abeb9712b22d2eeba8a",
+          "input": {
+            "pattern": "([-a-zA-Z0-9]+)/[^/]+$",
+            "error": null,
+            "result": {
+              "regex": "([-a-zA-Z0-9]+)/[^/]+$",
+              "final_regex": "([-a-zA-Z0-9]+)/[^/]+$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[-a-zA-Z0-9]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "development-scalpel_unresolved",
+      "items": [
+        {
+          "id": "231673350d4090600b109e83047c315579df7c29b81a6ed4148bdd0d3a772d28",
+          "input": {
+            "pattern": "<span class=\"hours[^>]+>([^<]+)<\\/span>",
+            "error": null,
+            "result": {
+              "regex": "<span class=\"hours[^>]+>([^<]+)<\\/span>",
+              "final_regex": "<span class=\"hours[^>]+>([^<]+)<\\/span>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "6b6c940cb27834b42c4923ab12cdee0709eb85a29ddc4ee1f6b4722371596d80",
+          "input": {
+            "pattern": "^(?!=)(\\S+)\\s*(\\S+)?",
+            "error": null,
+            "result": {
+              "regex": "^(?!=)(\\S+)\\s*(\\S+)?",
+              "final_regex": "^(?!=)(\\S+)\\s*(\\S+)?",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "21a56da21c84354081dea2e575f0ccb3938f36b6eee714bcdf03af8241f65164",
+          "input": {
+            "pattern": ".*HP Comware.*",
+            "error": null,
+            "result": {
+              "regex": ".*HP Comware.*",
+              "final_regex": ".*HP Comware.*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "94ebf935d2c5c8db9e205b50b31a1244d10f1130d1525d38ad3e7112c7d060b8",
+          "input": {
+            "pattern": "generic\\b.*::.*=\\>.*\\Z",
+            "error": null,
+            "result": {
+              "regex": "generic\\b.*::.*=\\>.*\\Z",
+              "final_regex": "generic\\b.*::.*=\\>.*\\Z",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "c11bc2e47c157b28bcab9b47d09b71e6d73fb3ad0e4e1f6ff0f42ab2f5f00639",
+          "input": {
+            "pattern": ".+<\\/\\w[^>]*>$",
+            "error": null,
+            "result": {
+              "regex": ".+<\\/\\w[^>]*>$",
+              "final_regex": ".+<\\/\\w[^>]*>$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "6a6e3215de8f17088b288cb92dd6faa2d6482490669523846f71e8defe14c680",
+          "input": {
+            "pattern": "Status.*[345]{1}\\d{2}",
+            "error": null,
+            "result": {
+              "regex": "Status.*[345]{1}\\d{2}",
+              "final_regex": "Status.*[345]{1}\\d{2}",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*",
+                    "[345]{1}"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "003b6920e95080cac8cbca532d5058be7c82c95ab1f4cda6a36593391993421d",
+          "input": {
+            "pattern": "(_*[^a-zA-Z]+_*|_+)",
+            "error": null,
+            "result": {
+              "regex": "(_*[^a-zA-Z]+_*|_+)",
+              "final_regex": "(_*[^a-zA-Z]+_*|_+)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9019444c565ab307145d9d76ad8c6fce803009638f65b14bc6303a2ac6afadce",
+          "input": {
+            "pattern": "<doc:source(\\s+[^>]*)?>([\\s\\S]*)<\\/doc:source>",
+            "error": null,
+            "result": {
+              "regex": "<doc:source(\\s+[^>]*)?>([\\s\\S]*)<\\/doc:source>",
+              "final_regex": "<doc:source(\\s+[^>]*)?>([\\s\\S]*)<\\/doc:source>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\s\\S]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "29f979011fd5593bb3fbe83f0b2b98aa7de93a36fface7a75b305228815fe012",
+          "input": {
+            "pattern": "^.*Chrome\\/(\\d+).*$",
+            "error": null,
+            "result": {
+              "regex": "^.*Chrome\\/(\\d+).*$",
+              "final_regex": "^.*Chrome\\/(\\d+).*$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "717a5f7878b098908a54e0adec578b25fef2d0305f4c2c62b901f0314352d122",
+          "input": {
+            "pattern": "<div id=\"container\">[\\s\\S]+<\\/div>",
+            "error": null,
+            "result": {
+              "regex": "<div id=\"container\">[\\s\\S]+<\\/div>",
+              "final_regex": "<div id=\"container\">[\\s\\S]+<\\/div>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\s\\S]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "final": [
+    {
+      "id": "development-scalpel_eliminated",
+      "items": [
+        {
+          "id": "07b2370e7d4ee229f40760c536827313f097a8d9b1fed601325ac9dc27a1881d",
+          "input": {
+            "pattern": "\\A[\\w\\.\\[\\]]+(\\s*|\\s*.+)?\\Z",
+            "error": null,
+            "result": {
+              "regex": "\\A[\\w\\.\\[\\]]+(\\s*|\\s*.+)?\\Z",
+              "final_regex": "\\A[\\w\\.\\[\\]]+(\\s*|\\s*.+)?\\Z",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2f595aacf9e6d88449422067d7e80d812f9fd7f86f46b3e419af3ee2393f8142",
+          "input": {
+            "pattern": "<blockquote([^>]*)>",
+            "error": null,
+            "result": {
+              "regex": "<blockquote([^>]*)>",
+              "final_regex": "<blockquote([^>]*)>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "94d7a3ed0952993beb0a001bd4cf2538f67b02edf0a82aacb96201259c8ddb3d",
+          "input": {
+            "pattern": "Sample_(.*?)\\/",
+            "error": null,
+            "result": {
+              "regex": "Sample_(.*?)\\/",
+              "final_regex": "Sample_(.*?)\\/",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "24ec9d70d49439763afe68e1346ca43e79d56c26ad8d3a68ca2fd1ae6e74daa6",
+          "input": {
+            "pattern": "<img[^>]+?src=\"([^\"]+)\"[^>]+?class=\"dev-content-full[^\"]*\">",
+            "error": null,
+            "result": {
+              "regex": "<img[^>]+?src=\"([^\"]+)\"[^>]+?class=\"dev-content-full[^\"]*\">",
+              "final_regex": "<img[^>]+?src=\"([^\"]+)\"[^>]+?class=\"dev-content-full[^\"]*\">",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]+?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4c60f6371d696be3680f000495f0f3c96b09acff229e5c56b6ebba1b5d16f888",
+          "input": {
+            "pattern": "Tests:.*2\\s+passed,\\s+2\\s+total",
+            "error": null,
+            "result": {
+              "regex": "Tests:.*2\\s+passed,\\s+2\\s+total",
+              "final_regex": "Tests:.*2\\s+passed,\\s+2\\s+total",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "8789623681cef3ef4b8ddcdf0c8f8a5b7765cad2e7eba5a7781e141725e1adbc",
+          "input": {
+            "pattern": "([a-z]+)-driver",
+            "error": null,
+            "result": {
+              "regex": "([a-z]+)-driver",
+              "final_regex": "([a-z]+)-driver",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[a-z]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2825bac8dd2f2067b338437d68665d377cd08145d7ff02fbbf2d1c3ca14cb3f9",
+          "input": {
+            "pattern": ".*got: (.*).",
+            "error": null,
+            "result": {
+              "regex": ".*got: (.*).",
+              "final_regex": ".*got: (.*).",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "57006b90e03b5f0063e480ba6dae594bfadecc22b29c5c43c1635d9bd51b5505",
+          "input": {
+            "pattern": "\\d+[\\ ]+(\\w+)+(\\s+)$",
+            "error": null,
+            "result": {
+              "regex": "\\d+[\\ ]+(\\w+)+(\\s+)$",
+              "final_regex": "\\d+[\\ ]+(\\w+)+(\\s+)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "(\u25b6\u25b7\\w+\u25c1\u25c0)+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ad9439154f503ac7c3c0c4f1664bd09fea09353d2338797a9f1d655d669b01a8",
+          "input": {
+            "pattern": "[^ ]+ [^ ]+ HTTP/1\\.[0-9]$",
+            "error": null,
+            "result": {
+              "regex": "[^ ]+ [^ ]+ HTTP/1\\.[0-9]$",
+              "final_regex": "[^ ]+ [^ ]+ HTTP/1\\.[0-9]$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^ ]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "be68bd8077ed682b9f8585dd7f887093ffe8ab82b1416abeb9712b22d2eeba8a",
+          "input": {
+            "pattern": "([-a-zA-Z0-9]+)/[^/]+$",
+            "error": null,
+            "result": {
+              "regex": "([-a-zA-Z0-9]+)/[^/]+$",
+              "final_regex": "([-a-zA-Z0-9]+)/[^/]+$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[-a-zA-Z0-9]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "heldout-scalpel_eliminated",
+      "items": [
+        {
+          "id": "8386d656fe5016b90d5b267c83ae867d4bf106f41b3fe36fba42e4ca188a31fe",
+          "input": {
+            "pattern": "test_.*testbench",
+            "error": null,
+            "result": {
+              "regex": "test_.*testbench",
+              "final_regex": "test_.*testbench",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ad6d3a0feda577ca6c00f3423618920a3f80361d7d82d796c0e657f0020a2726",
+          "input": {
+            "pattern": "\\A\\s*(.*?[^\\s\\\\]):\\s*(.+)",
+            "error": null,
+            "result": {
+              "regex": "\\A\\s*(.*?[^\\s\\\\]):\\s*(.+)",
+              "final_regex": "\\A\\s*(.*?[^\\s\\\\]):\\s*(.+)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    ".*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "320e10aeac61577e4108a6403ffbd1bead39e04b9cdec51c5bfe1d31cb1d5ff3",
+          "input": {
+            "pattern": "Sec-WebSocket-Accept:\\s(.*)$",
+            "error": null,
+            "result": {
+              "regex": "Sec-WebSocket-Accept:\\s(.*)$",
+              "final_regex": "Sec-WebSocket-Accept:\\s(.*)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "1d4f9adf5a7972a1e9948c917d4f770363124bea1d32f45c7b79d3f12ef839e7",
+          "input": {
+            "pattern": "\\d+(px|%)$",
+            "error": null,
+            "result": {
+              "regex": "\\d+(px|%)$",
+              "final_regex": "\\d+(px|%)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "67d43726de3f6e982b6bdcce0714dfd033497476cb13ef50a910e0401e142e61",
+          "input": {
+            "pattern": "[ \\n\\t]*\\n'''? *((Zewn\u0119trzn[ey] )?(Linki?|\u0141\u0105cza|Stron[ay]|Zobacz w (internecie|sieci))( zewn[e\u0119]trzn[aey])?):* *'''?[ \\n\\t]*",
+            "error": null,
+            "result": {
+              "regex": "[ \\n\\t]*\\n'''? *((Zewn\u0119trzn[ey] )?(Linki?|\u0141\u0105cza|Stron[ay]|Zobacz w (internecie|sieci))( zewn[e\u0119]trzn[aey])?):* *'''?[ \\n\\t]*",
+              "final_regex": "[ \\n\\t]*\\n'''? *((Zewn\u0119trzn[ey] )?(Linki?|\u0141\u0105cza|Stron[ay]|Zobacz w (internecie|sieci))( zewn[e\u0119]trzn[aey])?):* *'''?[ \\n\\t]*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[ \\n\\t]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "938eb2640c7e2c02bf8b21051feb522691a71b2fb5ba2509d9dad398c6c0863b",
+          "input": {
+            "pattern": "Vector\\.<(.*?)>",
+            "error": null,
+            "result": {
+              "regex": "Vector\\.<(.*?)>",
+              "final_regex": "Vector\\.<(.*?)>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2af2112fce8275b23e1ea29cffbb9cfdf39eb14f2fe2b23f69e0f507a27d3c38",
+          "input": {
+            "pattern": "^Message:\\s*(.*)$",
+            "error": null,
+            "result": {
+              "regex": "^Message:\\s*(.*)$",
+              "final_regex": "^Message:\\s*(.*)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "3691f6398c6cfaed1f27e31e87d0bead54c8b8d8c5aa086c0351156a5eaf4cc4",
+          "input": {
+            "pattern": "[\\r\\n]+\\s+$",
+            "error": null,
+            "result": {
+              "regex": "[\\r\\n]+\\s+$",
+              "final_regex": "[\\r\\n]+\\s+$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\r\\n]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "6cc084e2b1873721a152163905f15ac95bc9000484313233341fe915555d5389",
+          "input": {
+            "pattern": "%.*$",
+            "error": null,
+            "result": {
+              "regex": "%.*$",
+              "final_regex": "%.*$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "d195f39d8f9e618b6e76b340ef1db1ece227d6b00eacbde71b3b061a24154d89",
+          "input": {
+            "pattern": "(\\d+)(/\\d+)(/\\d+|)",
+            "error": null,
+            "result": {
+              "regex": "(\\d+)(/\\d+)(/\\d+|)",
+              "final_regex": "(\\d+)(/\\d+)(/\\d+|)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "c3a4d862d4e39357bfe752ba99143293df247242573cdb35e5861c5f801c6476",
+          "input": {
+            "pattern": "https?:\\/\\/\\S+:\\S+@",
+            "error": null,
+            "result": {
+              "regex": "https?:\\/\\/\\S+:\\S+@",
+              "final_regex": "https?:\\/\\/\\S+:\\S+@",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\S+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "f0667d5c888731df5c19642911bec3f300219e863a3d82010fadb37397bb5070",
+          "input": {
+            "pattern": ".*\\.info$",
+            "error": null,
+            "result": {
+              "regex": ".*\\.info$",
+              "final_regex": ".*\\.info$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "63604d9e7c6f2c3f8646e36c82e814d7d2899e4a428e22c799b37d6b539a56af",
+          "input": {
+            "pattern": "(<table .*?</table>)",
+            "error": null,
+            "result": {
+              "regex": "(<table .*?</table>)",
+              "final_regex": "(<table .*?</table>)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "008caaafc070d3e9306f7412b398cbbdb9323c0f620c460ea5b48fe4f998202c",
+          "input": {
+            "pattern": "^#define XK_([a-zA-Z_0-9]+)\\s+0x([0-9a-fA-F]+)\\s*(\\/\\*\\s*(.*)\\s*\\*\\/)?\\s*$",
+            "error": null,
+            "result": {
+              "regex": "^#define XK_([a-zA-Z_0-9]+)\\s+0x([0-9a-fA-F]+)\\s*(\\/\\*\\s*(.*)\\s*\\*\\/)?\\s*$",
+              "final_regex": "^#define XK_([a-zA-Z_0-9]+)\\s+0x([0-9a-fA-F]+)\\s*(\\/\\*\\s*(.*)\\s*\\*\\/)?\\s*$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9a0223125a68e71fe6d6c26771d3e3ca5bdea92b95a45a1182125dab9103261c",
+          "input": {
+            "pattern": "(comodo_dragon)\\/((\\d+)?[\\w\\.]+)",
+            "error": null,
+            "result": {
+              "regex": "(comodo_dragon)\\/((\\d+)?[\\w\\.]+)",
+              "final_regex": "(comodo_dragon)\\/((\\d+)?[\\w\\.]+)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "(\\d+)?",
+                    "[\\w\\.]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "946ab7ee38cbf705c13d4ea1ae893d6000d8a1c5e0daca4abb93e8e34809db5f",
+          "input": {
+            "pattern": "CN=(.*)&CT=(.*)&Continent=(.*)&Country=(.*)",
+            "error": null,
+            "result": {
+              "regex": "CN=(.*)&CT=(.*)&Continent=(.*)&Country=(.*)",
+              "final_regex": "CN=(.*)&CT=(.*)&Continent=(.*)&Country=(.*)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "1a1344de4bf1461f44c954edc2442adaab1826849ee283bcce2316c7459f10ba",
+          "input": {
+            "pattern": "say, talk .* Say something",
+            "error": null,
+            "result": {
+              "regex": "say, talk .* Say something",
+              "final_regex": "say, talk .* Say something",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2baf809448b2047df95a9ba2ce7862ff92957a38fd9633422fc746107b478b51",
+          "input": {
+            "pattern": "((\\w+)-(\\w+)-(\\d+))",
+            "error": null,
+            "result": {
+              "regex": "((\\w+)-(\\w+)-(\\d+))",
+              "final_regex": "((\\w+)-(\\w+)-(\\d+))",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\w+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "26271a679fc765dc1f0f6dde541bea81eac2b82daabf615bce17f49ac58f7b7e",
+          "input": {
+            "pattern": "\\b-?(?:0x[\\da-f]+|\\d*\\.?\\d+f?)\\b",
+            "error": null,
+            "result": {
+              "regex": "\\b-?(?:0x[\\da-f]+|\\d*\\.?\\d+f?)\\b",
+              "final_regex": "\\b-?(?:0x[\\da-f]+|\\d*\\.?\\d+f?)\\b",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d*",
+                    "\\d+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "5f26b52d5e170c4351d5ab6963360435032958f3d6a8dc1ea28d703c4b7b8c31",
+          "input": {
+            "pattern": "\\s*\\d{4}-\\d{1,2}-\\d{1,2}\\s*",
+            "error": null,
+            "result": {
+              "regex": "\\s*\\d{4}-\\d{1,2}-\\d{1,2}\\s*",
+              "final_regex": "\\s*\\d{4}-\\d{1,2}-\\d{1,2}\\s*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4817d948ce7e94b6c53820b48e35f9ee9dfb8023fbcf805285b2e2c2f09fc921",
+          "input": {
+            "pattern": "The convert_to lookup_option for key 'mod_a::to_int' raised error.*The string 'bananas' cannot be converted to Integer",
+            "error": null,
+            "result": {
+              "regex": "The convert_to lookup_option for key 'mod_a::to_int' raised error.*The string 'bananas' cannot be converted to Integer",
+              "final_regex": "The convert_to lookup_option for key 'mod_a::to_int' raised error.*The string 'bananas' cannot be converted to Integer",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "0b10384aeb9e365d5689694910cb72b60604abe3f091c25d7aec7457c0bac8de",
+          "input": {
+            "pattern": "([A-Z][a-z]?)(\\d*[?:.\\d+]*)?",
+            "error": null,
+            "result": {
+              "regex": "([A-Z][a-z]?)(\\d*[?:.\\d+]*)?",
+              "final_regex": "([A-Z][a-z]?)(\\d*[?:.\\d+]*)?",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d*",
+                    "[?:.\\d+]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "cefcf1913765573c0de8123133defa237c7da4362ff441b245f5153770a42ae7",
+          "input": {
+            "pattern": ".+\\}(.+)$",
+            "error": null,
+            "result": {
+              "regex": ".+\\}(.+)$",
+              "final_regex": ".+\\}(.+)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "8acfb84133af9b2e0b09dc33f04ed82c55cfda496b0fd9bb8e226a814f28bf01",
+          "input": {
+            "pattern": "\\w+\\(.+\\)",
+            "error": null,
+            "result": {
+              "regex": "\\w+\\(.+\\)",
+              "final_regex": "\\w+\\(.+\\)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\w+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "2572e344e8c07d42745acdf3ca8cb644b71a41f227a1b0875ef0a1ffd7439710",
+          "input": {
+            "pattern": ".*<localRepository>",
+            "error": null,
+            "result": {
+              "regex": ".*<localRepository>",
+              "final_regex": ".*<localRepository>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "5234b91568598bb29e4b84b62218a7a787ac8ffb9750ac48d129b8d6fa81131a",
+          "input": {
+            "pattern": "([\\w$]+)\\s*\\(",
+            "error": null,
+            "result": {
+              "regex": "([\\w$]+)\\s*\\(",
+              "final_regex": "([\\w$]+)\\s*\\(",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\w$]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "e9089ccfbfbe7862db054c729bb03711dcdf9b01e6191495087f173ea760b5e2",
+          "input": {
+            "pattern": "<(\\w+)\\b.*?>",
+            "error": null,
+            "result": {
+              "regex": "<(\\w+)\\b.*?>",
+              "final_regex": "<(\\w+)\\b.*?>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "653b82fdd46dd0f13e0887ace39b8e11150dafe0f493a8c932766e765be9bc42",
+          "input": {
+            "pattern": "(\\d+)\\.shtml\\?cid=(\\d+)",
+            "error": null,
+            "result": {
+              "regex": "(\\d+)\\.shtml\\?cid=(\\d+)",
+              "final_regex": "(\\d+)\\.shtml\\?cid=(\\d+)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "0c2507251fcb2057e97b29f69d80aad4bcc5edef9fa99e40a97c85484da32c77",
+          "input": {
+            "pattern": "(?i).*\\.log$",
+            "error": null,
+            "result": {
+              "regex": "(?i).*\\.log$",
+              "final_regex": "(?i).*\\.log$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "5d89268aeb1bca3a66f96b194d290dd099dc22e07b5f5922d2d8ea5e297201cb",
+          "input": {
+            "pattern": "\\d+[smhd]",
+            "error": null,
+            "result": {
+              "regex": "\\d+[smhd]",
+              "final_regex": "\\d+[smhd]",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4550dad3c1c4ee4bfd00e089f874c298692ffb548fafdf3d3aa71bd69857506c",
+          "input": {
+            "pattern": "^exactly these files should be loaded:\\s*(.*)$",
+            "error": null,
+            "result": {
+              "regex": "^exactly these files should be loaded:\\s*(.*)$",
+              "final_regex": "^exactly these files should be loaded:\\s*(.*)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ae6ccfbbb0972804e19ea8ba7797e8390fe35bd5cff98d4e10a22c875802a3b6",
+          "input": {
+            "pattern": "(\\w+)Payload",
+            "error": null,
+            "result": {
+              "regex": "(\\w+)Payload",
+              "final_regex": "(\\w+)Payload",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\w+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "b2a96aad65e60d57a0a799dfa2a0012ce6e662a321fae4edc9cf9e86c4290e60",
+          "input": {
+            "pattern": "\\d+\\[\\w+\\]",
+            "error": null,
+            "result": {
+              "regex": "\\d+\\[\\w+\\]",
+              "final_regex": "\\d+\\[\\w+\\]",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\d+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "42c75d6f9f5debd8c0c11a6f32b526bc08c160badd2fb48c80d845f80dff65d1",
+          "input": {
+            "pattern": ".*kontena-agent.*",
+            "error": null,
+            "result": {
+              "regex": ".*kontena-agent.*",
+              "final_regex": ".*kontena-agent.*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "643e1eb603c45e2b96b692c6c526681cd1caba2a21be04ba07243cc23646c13f",
+          "input": {
+            "pattern": ".+::BorderStyle::",
+            "error": null,
+            "result": {
+              "regex": ".+::BorderStyle::",
+              "final_regex": ".+::BorderStyle::",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "216b58293e66a8092253c5d0f22a635199972e8aaa1d282d687fc516c41f2e45",
+          "input": {
+            "pattern": "\\b-?(0[box])?(?:[\\da-f]+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?j?\\b",
+            "error": null,
+            "result": {
+              "regex": "\\b-?(0[box])?(?:[\\da-f]+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?j?\\b",
+              "final_regex": "\\b-?(0[box])?(?:[\\da-f]+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?j?\\b",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "(0[box])?",
+                    "[\\da-f]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "de49830fb9ccc8ec3650d80a68982a116a42de1c776b971e5ecc419a88f906cb",
+          "input": {
+            "pattern": "^(?:.*\\/){0,1}(.*).page.txt$",
+            "error": null,
+            "result": {
+              "regex": "^(?:.*\\/){0,1}(.*).page.txt$",
+              "final_regex": "^(?:.*\\/){0,1}(.*).page.txt$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "(?:.*\\/){0,1}",
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "180687d121f02d50fb10dc2729f59cc16e2febc2f17af23e85ea12e8f885fce5",
+          "input": {
+            "pattern": "constructor.*anything",
+            "error": null,
+            "result": {
+              "regex": "constructor.*anything",
+              "final_regex": "constructor.*anything",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "24db4bb7543cdddf09823e926a2ea9164c4153000b097ba5b6607dcadaf16a30",
+          "input": {
+            "pattern": ".+\\.(.+?)$",
+            "error": null,
+            "result": {
+              "regex": ".+\\.(.+?)$",
+              "final_regex": ".+\\.(.+?)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "f80f42a82bc72286952245473adcf2adff1a447df848fd8e8ba1ff765907af68",
+          "input": {
+            "pattern": "<i\\b[^>]*>(.*?)<\\/i[^>]*>",
+            "error": null,
+            "result": {
+              "regex": "<i\\b[^>]*>(.*?)<\\/i[^>]*>",
+              "final_regex": "<i\\b[^>]*>(.*?)<\\/i[^>]*>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "development-scalpel_unresolved",
+      "items": [
+        {
+          "id": "231673350d4090600b109e83047c315579df7c29b81a6ed4148bdd0d3a772d28",
+          "input": {
+            "pattern": "<span class=\"hours[^>]+>([^<]+)<\\/span>",
+            "error": null,
+            "result": {
+              "regex": "<span class=\"hours[^>]+>([^<]+)<\\/span>",
+              "final_regex": "<span class=\"hours[^>]+>([^<]+)<\\/span>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "6b6c940cb27834b42c4923ab12cdee0709eb85a29ddc4ee1f6b4722371596d80",
+          "input": {
+            "pattern": "^(?!=)(\\S+)\\s*(\\S+)?",
+            "error": null,
+            "result": {
+              "regex": "^(?!=)(\\S+)\\s*(\\S+)?",
+              "final_regex": "^(?!=)(\\S+)\\s*(\\S+)?",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "21a56da21c84354081dea2e575f0ccb3938f36b6eee714bcdf03af8241f65164",
+          "input": {
+            "pattern": ".*HP Comware.*",
+            "error": null,
+            "result": {
+              "regex": ".*HP Comware.*",
+              "final_regex": ".*HP Comware.*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "94ebf935d2c5c8db9e205b50b31a1244d10f1130d1525d38ad3e7112c7d060b8",
+          "input": {
+            "pattern": "generic\\b.*::.*=\\>.*\\Z",
+            "error": null,
+            "result": {
+              "regex": "generic\\b.*::.*=\\>.*\\Z",
+              "final_regex": "generic\\b.*::.*=\\>.*\\Z",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "c11bc2e47c157b28bcab9b47d09b71e6d73fb3ad0e4e1f6ff0f42ab2f5f00639",
+          "input": {
+            "pattern": ".+<\\/\\w[^>]*>$",
+            "error": null,
+            "result": {
+              "regex": ".+<\\/\\w[^>]*>$",
+              "final_regex": ".+<\\/\\w[^>]*>$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "6a6e3215de8f17088b288cb92dd6faa2d6482490669523846f71e8defe14c680",
+          "input": {
+            "pattern": "Status.*[345]{1}\\d{2}",
+            "error": null,
+            "result": {
+              "regex": "Status.*[345]{1}\\d{2}",
+              "final_regex": "Status.*[345]{1}\\d{2}",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*",
+                    "[345]{1}"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "003b6920e95080cac8cbca532d5058be7c82c95ab1f4cda6a36593391993421d",
+          "input": {
+            "pattern": "(_*[^a-zA-Z]+_*|_+)",
+            "error": null,
+            "result": {
+              "regex": "(_*[^a-zA-Z]+_*|_+)",
+              "final_regex": "(_*[^a-zA-Z]+_*|_+)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9019444c565ab307145d9d76ad8c6fce803009638f65b14bc6303a2ac6afadce",
+          "input": {
+            "pattern": "<doc:source(\\s+[^>]*)?>([\\s\\S]*)<\\/doc:source>",
+            "error": null,
+            "result": {
+              "regex": "<doc:source(\\s+[^>]*)?>([\\s\\S]*)<\\/doc:source>",
+              "final_regex": "<doc:source(\\s+[^>]*)?>([\\s\\S]*)<\\/doc:source>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\s\\S]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "29f979011fd5593bb3fbe83f0b2b98aa7de93a36fface7a75b305228815fe012",
+          "input": {
+            "pattern": "^.*Chrome\\/(\\d+).*$",
+            "error": null,
+            "result": {
+              "regex": "^.*Chrome\\/(\\d+).*$",
+              "final_regex": "^.*Chrome\\/(\\d+).*$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "717a5f7878b098908a54e0adec578b25fef2d0305f4c2c62b901f0314352d122",
+          "input": {
+            "pattern": "<div id=\"container\">[\\s\\S]+<\\/div>",
+            "error": null,
+            "result": {
+              "regex": "<div id=\"container\">[\\s\\S]+<\\/div>",
+              "final_regex": "<div id=\"container\">[\\s\\S]+<\\/div>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\s\\S]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "heldout-scalpel_unresolved",
+      "items": [
+        {
+          "id": "d5b8653b323b9b8db7260ff061b787ff3667a4084baa70c935318b6aa637abda",
+          "input": {
+            "pattern": "^=([^=]+)=*?\\s*?\\n",
+            "error": null,
+            "result": {
+              "regex": "^=([^=]+)=*?\\s*?\\n",
+              "final_regex": "^=([^=]+)=*?\\s*?\\n",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "00db19a197f602f51e7ff1b186d02035db3bbf89246e9f80037ec3ce73cebbc2",
+          "input": {
+            "pattern": "var chapters = ([^;]+);",
+            "error": null,
+            "result": {
+              "regex": "var chapters = ([^;]+);",
+              "final_regex": "var chapters = ([^;]+);",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^;]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "1cebe465c8bb260d31fde2ecb81676e2276beb1f85089cc2709a6ad4b8113f31",
+          "input": {
+            "pattern": "FLVStreamer v(.*)\\n",
+            "error": null,
+            "result": {
+              "regex": "FLVStreamer v(.*)\\n",
+              "final_regex": "FLVStreamer v(.*)\\n",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "fc55e31acb842dc570a9023e459887aa114601065cd6ae1892ccba43c2b6cbf2",
+          "input": {
+            "pattern": "^\\s*(\\d+)\\.(\\d+)\\.(\\d+).*",
+            "error": null,
+            "result": {
+              "regex": "^\\s*(\\d+)\\.(\\d+)\\.(\\d+).*",
+              "final_regex": "^\\s*(\\d+)\\.(\\d+)\\.(\\d+).*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "80f2b50d97e80b6bd1c3f07e452ef8a1cc8390ae2d1da614510793575ef9d74b",
+          "input": {
+            "pattern": "__VERSION__\\s+=\\s+(.*)",
+            "error": null,
+            "result": {
+              "regex": "__VERSION__\\s+=\\s+(.*)",
+              "final_regex": "__VERSION__\\s+=\\s+(.*)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "c003776562ef31aa3bdbc3a834457796f1662a0f71c7f3b92f8d68dce11e20a0",
+          "input": {
+            "pattern": "(\\#extension.*)\\n",
+            "error": null,
+            "result": {
+              "regex": "(\\#extension.*)\\n",
+              "final_regex": "(\\#extension.*)\\n",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "24759b0dabf2c77b55d527def5c0bd55f3c2aa3b9adda7533f65b3ab53d718af",
+          "input": {
+            "pattern": "- [^(?::=)]+:=+",
+            "error": null,
+            "result": {
+              "regex": "- [^(?::=)]+:=+",
+              "final_regex": "- [^(?::=)]+:=+",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^(?::=)]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "267476559b6da0d5a74c6216042e633bd5bd800ae740702066c986cc9b306e7e",
+          "input": {
+            "pattern": "(\\-?[\\d\\s]+)(?:\\s?\\w+)?",
+            "error": null,
+            "result": {
+              "regex": "(\\-?[\\d\\s]+)(?:\\s?\\w+)?",
+              "final_regex": "(\\-?[\\d\\s]+)(?:\\s?\\w+)?",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "c5bdaf738e7dfa2e4b58f4c9cde0576e0ead5f86a151549be07ccec264b4d484",
+          "input": {
+            "pattern": "[\\r\\n]\\s*(.+?)\\s*[\\r\\n]",
+            "error": null,
+            "result": {
+              "regex": "[\\r\\n]\\s*(.+?)\\s*[\\r\\n]",
+              "final_regex": "[\\r\\n]\\s*(.+?)\\s*[\\r\\n]",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "58336b1232682f319e31769f65132f7c1a613a9cb03ada5eebebb353e35cd41d",
+          "input": {
+            "pattern": ".*\\$Rev:\\s*(\\S+).*",
+            "error": null,
+            "result": {
+              "regex": ".*\\$Rev:\\s*(\\S+).*",
+              "final_regex": ".*\\$Rev:\\s*(\\S+).*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "bd34e193d391b71665a0dcc981363c0ef46d76183bb577370c7b92f823e045db",
+          "input": {
+            "pattern": "\\d(?=(\\d{3})+$)",
+            "error": null,
+            "result": {
+              "regex": "\\d(?=(\\d{3})+$)",
+              "final_regex": "\\d(?=(\\d{3})+$)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ea67e3b7ddbbc00d8bc020f9fc4c59df66d4f20e4cff616d6791078dd2b4c532",
+          "input": {
+            "pattern": ",\\s+\\/\\/ typescript-starter:[\\s\\S]*\"src\\/cli\\/\\*\\*\\/\\*\\.ts\"",
+            "error": null,
+            "result": {
+              "regex": ",\\s+\\/\\/ typescript-starter:[\\s\\S]*\"src\\/cli\\/\\*\\*\\/\\*\\.ts\"",
+              "final_regex": ",\\s+\\/\\/ typescript-starter:[\\s\\S]*\"src\\/cli\\/\\*\\*\\/\\*\\.ts\"",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\s\\S]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "16f731c9f5d95e4b76468279108fd94a0d4b21f3a2f93b6914c0e94ea24db12e",
+          "input": {
+            "pattern": "([\\w\\[\\]\\.\\-> ]+([ \\t]+|->|.))$",
+            "error": null,
+            "result": {
+              "regex": "([\\w\\[\\]\\.\\-> ]+([ \\t]+|->|.))$",
+              "final_regex": "([\\w\\[\\]\\.\\-> ]+([ \\t]+|->|.))$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[\\w\\[\\]\\.\\-> ]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "dd1b36364b3467c2c72c94c2c8bbab7957333618cf1361058d419cb1c9bfb5a5",
+          "input": {
+            "pattern": "\\{@([a-zA-Z0-9]+)\\:\\s*([^\\}]+)\\}",
+            "error": null,
+            "result": {
+              "regex": "\\{@([a-zA-Z0-9]+)\\:\\s*([^\\}]+)\\}",
+              "final_regex": "\\{@([a-zA-Z0-9]+)\\:\\s*([^\\}]+)\\}",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\s*",
+                    "[^\\}]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "f4534d023591b233d3015c9486d3f3cbc8d45f17153c66845164bd3f1288698d",
+          "input": {
+            "pattern": "([-\\w]*\\w)",
+            "error": null,
+            "result": {
+              "regex": "([-\\w]*\\w)",
+              "final_regex": "([-\\w]*\\w)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9d2c6c063bd5597373faab51f842a75c264f9c9dc89127824a44d4156dc17354",
+          "input": {
+            "pattern": ".*,.*",
+            "error": null,
+            "result": {
+              "regex": ".*,.*",
+              "final_regex": ".*,.*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "784a2f7d1e26d6bf631d022cf1ce6a9ac01b958966dfe1d82d0554158d66b199",
+          "input": {
+            "pattern": "(\\wdata|key_title)\\w+\\s*=\\s*y",
+            "error": null,
+            "result": {
+              "regex": "(\\wdata|key_title)\\w+\\s*=\\s*y",
+              "final_regex": "(\\wdata|key_title)\\w+\\s*=\\s*y",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\w+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "0e77e626d656a31aab9507e9f00c68fd364eed3eb74a8db03f5c748f9c2694fa",
+          "input": {
+            "pattern": "^\\s*(\\S+)\\s+(\\S+).+?\\s(\\S+)\\s+(\\S+)\\s+(\\d+)\\s*$",
+            "error": null,
+            "result": {
+              "regex": "^\\s*(\\S+)\\s+(\\S+).+?\\s(\\S+)\\s+(\\S+)\\s+(\\d+)\\s*$",
+              "final_regex": "^\\s*(\\S+)\\s+(\\S+).+?\\s(\\S+)\\s+(\\S+)\\s+(\\d+)\\s*$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "ec6a8766ae952d6e25fb057dd09574c738b2460e61eda143458042f4670b77fe",
+          "input": {
+            "pattern": "([^.]*?)\\[(.*?)\\](.*)",
+            "error": null,
+            "result": {
+              "regex": "([^.]*?)\\[(.*?)\\](.*)",
+              "final_regex": "([^.]*?)\\[(.*?)\\](.*)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^.]*?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "8ddceabc0d55837c089a1dbb714e8c543e2e35f0bf3821e3cf27f527babfe467",
+          "input": {
+            "pattern": "^.*com.douban.frodo\\/([\\d.]+).*$",
+            "error": null,
+            "result": {
+              "regex": "^.*com.douban.frodo\\/([\\d.]+).*$",
+              "final_regex": "^.*com.douban.frodo\\/([\\d.]+).*$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "3e35f4602608013a977bcf3a0477b8af409fa420f742cf2bb9a16a09798d9c8f",
+          "input": {
+            "pattern": "%%([^\\|%]+)([^%]*?)%%",
+            "error": null,
+            "result": {
+              "regex": "%%([^\\|%]+)([^%]*?)%%",
+              "final_regex": "%%([^\\|%]+)([^%]*?)%%",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "512043bda94281b9e1ea64e25d096512eeb10cdcb5fda28f616d57e514ca13f6",
+          "input": {
+            "pattern": "^[^:]+:\\/\\/(.*)\\/z?livereload\\.js(?:\\?(.*))?$",
+            "error": null,
+            "result": {
+              "regex": "^[^:]+:\\/\\/(.*)\\/z?livereload\\.js(?:\\?(.*))?$",
+              "final_regex": "^[^:]+:\\/\\/(.*)\\/z?livereload\\.js(?:\\?(.*))?$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "44156c831f16c22c0b5f5b2cade770756f89dc2cc42bded83d15deb5fa093ccb",
+          "input": {
+            "pattern": "^ +(.+)$",
+            "error": null,
+            "result": {
+              "regex": "^ +(.+)$",
+              "final_regex": "^ +(.+)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    " +"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4b488de99d0ae6e109455c70cf88938dadf96d53091a847b6763f1b31df2d520",
+          "input": {
+            "pattern": "<svg([^>]*) height=\"([^\"]*)\"",
+            "error": null,
+            "result": {
+              "regex": "<svg([^>]*) height=\"([^\"]*)\"",
+              "final_regex": "<svg([^>]*) height=\"([^\"]*)\"",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "a176a6dad7772fb5c483e02e45b19621e16c1d457ed54b53b9c2d07b944a88f7",
+          "input": {
+            "pattern": "[ ]*[, ][ ]*",
+            "error": null,
+            "result": {
+              "regex": "[ ]*[, ][ ]*",
+              "final_regex": "[ ]*[, ][ ]*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9b1b29422852e794ba9d7da0849894ff0123554b2155eed043d94ad4b6d83f26",
+          "input": {
+            "pattern": "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$",
+            "error": null,
+            "result": {
+              "regex": "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$",
+              "final_regex": "^\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "([\\.-]?\u25b6\u25b7\\w+\u25c1\u25c0)*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4e90344800ab1591ba1c8229b6e49e6bdb70b19bf4193472eb7bf9a2ce98b49f",
+          "input": {
+            "pattern": "(.*)(\\<\\!\\-\\-[^\\>]*)$",
+            "error": null,
+            "result": {
+              "regex": "(.*)(\\<\\!\\-\\-[^\\>]*)$",
+              "final_regex": "(.*)(\\<\\!\\-\\-[^\\>]*)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9093affa3bdd7df303340e4072e31ab6af15598db515ee9c2d9b48af5ba7d678",
+          "input": {
+            "pattern": "<td[^>]+>(.+)</td><td>(.+)</td>",
+            "error": null,
+            "result": {
+              "regex": "<td[^>]+>(.+)</td><td>(.+)</td>",
+              "final_regex": "<td[^>]+>(.+)</td><td>(.+)</td>",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "[^>]+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "42ac2f7d4ef38a2365bf6503dccaca2ebfd0d3a2b951e896b0b47e7632f877df",
+          "input": {
+            "pattern": "(\\S+)!\\S+$",
+            "error": null,
+            "result": {
+              "regex": "(\\S+)!\\S+$",
+              "final_regex": "(\\S+)!\\S+$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    "\\S+"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "1b16f3b6e2bb0006d6b752677eed7e54706426ae895c244da868d870b74f7cf0",
+          "input": {
+            "pattern": "^\\s*(.*?)\\s*",
+            "error": null,
+            "result": {
+              "regex": "^\\s*(.*?)\\s*",
+              "final_regex": "^\\s*(.*?)\\s*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "c1ed67472825a46aa422c13dd72e035b74a1ad5ef70fa4e53f07ff39cf11d9d7",
+          "input": {
+            "pattern": "(\\n\\-+END CERTIFICATE\\-+)[\\s\\r\\n]+(.+)",
+            "error": null,
+            "result": {
+              "regex": "(\\n\\-+END CERTIFICATE\\-+)[\\s\\r\\n]+(.+)",
+              "final_regex": "(\\n\\-+END CERTIFICATE\\-+)[\\s\\r\\n]+(.+)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "eb143c5172cea2532c71ac65dcdb41cc8abc4384f68908bd2a0a1fb099c62c94",
+          "input": {
+            "pattern": "^\\s+?php_value\\s+([a-z_]+)\\s+(.+)$",
+            "error": null,
+            "result": {
+              "regex": "^\\s+?php_value\\s+([a-z_]+)\\s+(.+)$",
+              "final_regex": "^\\s+?php_value\\s+([a-z_]+)\\s+(.+)$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "a9c4d2026c204ec7f4ce67abc8132430a5d77a53156bd2b6b175b5af6954fabe",
+          "input": {
+            "pattern": "^(http://.*)\\?(urn:.*)",
+            "error": null,
+            "result": {
+              "regex": "^(http://.*)\\?(urn:.*)",
+              "final_regex": "^(http://.*)\\?(urn:.*)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4b37bbe83cb73544cefed1825aa28c815470d549a11b2a63b324dc48c7ea08ef",
+          "input": {
+            "pattern": ".*\\@.*",
+            "error": null,
+            "result": {
+              "regex": ".*\\@.*",
+              "final_regex": ".*\\@.*",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "4cb942243be3203d5f1d2160f51bd562d01a2b7962ac25f57ac3309fbcfd412e",
+          "input": {
+            "pattern": "^(cciss\\/c\\d+d\\d+)(\\w+)?$",
+            "error": null,
+            "result": {
+              "regex": "^(cciss\\/c\\d+d\\d+)(\\w+)?$",
+              "final_regex": "^(cciss\\/c\\d+d\\d+)(\\w+)?$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "05e599c146158afe5e265955edab0022926a074805c3bf1dda93a11d624eba76",
+          "input": {
+            "pattern": "\\[\\[(.*?)\\s*(\\||->)\\s*(.*?)\\]\\]",
+            "error": null,
+            "result": {
+              "regex": "\\[\\[(.*?)\\s*(\\||->)\\s*(.*?)\\]\\]",
+              "final_regex": "\\[\\[(.*?)\\s*(\\||->)\\s*(.*?)\\]\\]",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".*?",
+                    "\\s*"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "07dfb233363d8263440c41756ccc359e6a583e41e2dcc25320ab6e84ae9031fe",
+          "input": {
+            "pattern": "(.+?):\\s+(.+?)\\n",
+            "error": null,
+            "result": {
+              "regex": "(.+?):\\s+(.+?)\\n",
+              "final_regex": "(.+?):\\s+(.+?)\\n",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "04aff2f2bb77ca3fe8b36da42066a90e82c3f76480de96bf1b733921fc9ec071",
+          "input": {
+            "pattern": "^(.+?)(:+|\\/+|\\.+).+$",
+            "error": null,
+            "result": {
+              "regex": "^(.+?)(:+|\\/+|\\.+).+$",
+              "final_regex": "^(.+?)(:+|\\/+|\\.+).+$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "deb2bd8d267cb7940b77e587bb954d8b49f1ad06f26cc508b243e923b646b3fd",
+          "input": {
+            "pattern": "(^[A-Z]{1})([a-z]+.*)",
+            "error": null,
+            "result": {
+              "regex": "(^[A-Z]{1})([a-z]+.*)",
+              "final_regex": "(^[A-Z]{1})([a-z]+.*)",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": null,
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "9fd2349842907cc187c7c865f29c61fbf5c316fcefb013244ba0352b9f7c63e1",
+          "input": {
+            "pattern": "\\@((.+?)\\.(.+))$",
+            "error": null,
+            "result": {
+              "regex": "\\@((.+?)\\.(.+))$",
+              "final_regex": "\\@((.+?)\\.(.+))$",
+              "repairs": [
+                {
+                  "nested_quantifier_counts": null,
+                  "overlapping_disjunction_counts": null,
+                  "overlapping_adjacent_counts": null,
+                  "large_quantifier_start_counts": null,
+                  "subpatterns": [
+                    ".+?"
+                  ],
+                  "nested_quantifier_result": null,
+                  "overlapping_disjunction_result": null,
+                  "overlapping_adjacent_result": null,
+                  "large_quantifier_start_result": null,
+                  "repaired": null,
+                  "overlapping_adjacent_repair": null,
+                  "large_quantifier_start_repair": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

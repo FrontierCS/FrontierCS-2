@@ -1,0 +1,20 @@
+{
+  "schema": "frontiersmith/result@1",
+  "task_id": "minimal_task",
+  "final": {
+    "reference": {
+      "ok": true,
+      "samples": 2,
+      "scores": [
+        1.0,
+        3.0
+      ],
+      "spread": {
+        "n": 2,
+        "mean": 2.0,
+        "spread": 2.0,
+        "rel": 1.0
+      }
+    }
+  }
+}

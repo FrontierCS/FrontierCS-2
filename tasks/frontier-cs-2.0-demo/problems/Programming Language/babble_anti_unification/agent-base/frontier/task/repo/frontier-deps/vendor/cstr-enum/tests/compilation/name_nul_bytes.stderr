@@ -1,0 +1,5 @@
+error: string cannot contain nul bytes
+ --> $DIR/name_nul_bytes.rs:5:15
+  |
+5 |   #[cstr(name="app\0le")]
+  |               ^^^^^^^^^

@@ -1,0 +1,185 @@
+{
+ "fixtures": {
+  "negative/background_goroutine.patch": {
+   "attack": "Starts a goroutine that keeps computing after the entry point returns, to move work out of the clocks.",
+   "expect": "client"
+  },
+  "negative/bodyless_function.patch": {
+   "attack": "Declares a function without a body (assembly or linkname hook).",
+   "expect": "source_policy"
+  },
+  "negative/build_tag_file.patch": {
+   "attack": "Hides a forbidden import behind a build constraint.",
+   "expect": "source_policy"
+  },
+  "negative/crypto_aes_import.patch": {
+   "attack": "Imports crypto/aes, which is no longer on the allowlist: the trusted typed AES package is the only route to assembly.",
+   "expect": "source_policy"
+  },
+  "negative/deferred_work.patch": {
+   "attack": "Stores the stream during the preprocessing clock and leaves all hint work for after the clock; nothing is exported in time.",
+   "expect": "hint_export"
+  },
+  "negative/discard_deep_backups_after_export.patch": {
+   "attack": "Exports the complete canonical hints, then keeps only the first half of every chunk's backup hints and replacements: far more than 1000 uniformly random queries consume, with the storage of the rest saved. The additional untimed queries consume whole per-chunk allotments.",
+   "expect": "coverage_probe"
+  },
+  "negative/discard_primary_tail_after_export.patch": {
+   "attack": "Exports the complete canonical hints, then keeps only the first 20*ChunkSize primary hints. No query the harness can ask reaches a later hint (the first containing hint of every index lies below that with overwhelming probability), so every measured and additional query is answered. The primary-hint audit after the online phase asks for records of discarded hints.",
+   "expect": "hint_audit"
+  },
+  "negative/extra_rpc.patch": {
+   "attack": "Opens its own connection to the server and issues an extra plaintext RPC.",
+   "expect": "source_policy"
+  },
+  "negative/fake_metric_record_stdout.patch": {
+   "attack": "Writes a forged result record to the harness control channel (stdout).",
+   "expect": "source_policy"
+  },
+  "negative/import_alias.patch": {
+   "attack": "Imports os under an alias.",
+   "expect": "source_policy"
+  },
+  "negative/import_blank_net.patch": {
+   "attack": "Blank-imports net.",
+   "expect": "source_policy"
+  },
+  "negative/import_dot.patch": {
+   "attack": "Dot-imports os.",
+   "expect": "source_policy"
+  },
+  "negative/import_second_file.patch": {
+   "attack": "Adds a second file importing time and unsafe.",
+   "expect": "source_policy"
+  },
+  "negative/init_function.patch": {
+   "attack": "Declares an init function (work before any clock).",
+   "expect": "source_policy"
+  },
+  "negative/keep_db_skip_hints.patch": {
+   "attack": "Keeps the streamed database, never computes a hint parity, answers every query from the stored database and exports the untouched (zero) hint tables.",
+   "expect": "hint_export"
+  },
+  "negative/leak_query_index.patch": {
+   "attack": "Appends the queried index to the request so that the server could answer directly.",
+   "expect": "request_reduction"
+  },
+  "negative/linkname_directive.patch": {
+   "attack": "Uses a //go:linkname directive.",
+   "expect": "source_policy"
+  },
+  "negative/math_rand_global.patch": {
+   "attack": "Uses the shared package-level math/rand source as hidden state.",
+   "expect": "source_policy"
+  },
+  "negative/new_assembly_file.patch": {
+   "attack": "Adds a new assembly file.",
+   "expect": "source_policy"
+  },
+  "negative/occasional_wrong_value.patch": {
+   "attack": "Returns a wrong entry for about one query in a hundred.",
+   "expect": "wrong_value"
+  },
+  "negative/outside_editable_package.patch": {
+   "attack": "Edits the trusted client driver.",
+   "expect": "patch"
+  },
+  "negative/package_variable.patch": {
+   "attack": "Declares package-level state.",
+   "expect": "source_policy"
+  },
+  "negative/process_memory_guard.patch": {
+   "attack": "Retains 5 GiB: over the incidental 4 GiB limit on the client process.",
+   "expect": "process_memory"
+  },
+  "negative/raw_asm_function_value.patch": {
+   "attack": "Takes a raw assembly entry point as a function value to slip past selector checks. The name does not exist in the editable package.",
+   "expect": "build"
+  },
+  "negative/raw_asm_symbol_second_file.patch": {
+   "attack": "A second file calls a raw assembly entry point by its package-local name. The assembly no longer lives in the editable package, so the name does not exist.",
+   "expect": "build"
+  },
+  "negative/reducer_lingering_goroutine.patch": {
+   "attack": "ReduceRequest leaves a goroutine running after it returns. The reducer refuses to answer, so the reduction fails.",
+   "expect": "request_reduction"
+  },
+  "negative/refwire_short_long_key.patch": {
+   "attack": "Passes a one-word slice as an expanded key to refwire.SetOffset, which now takes a pointer to a 44-word array.",
+   "expect": "build"
+  },
+  "negative/safeaes_unexported_symbol.patch": {
+   "attack": "Names the unexported raw assembly entry point of the trusted AES package.",
+   "expect": "source_policy"
+  },
+  "negative/seed_special_casing.patch": {
+   "attack": "Regenerates database entries from a guessed database seed with util.GenDBEntry instead of reading the resident database. The database generator is not on the symbol allowlist, so the editable package cannot even name it.",
+   "expect": "source_policy"
+  },
+  "negative/server_lingering_goroutine.patch": {
+   "attack": "The server handler leaves a goroutine running after it returns. The call fails at the completion boundary, which the experiment records as a failed server call.",
+   "expect": "wrong_value"
+  },
+  "negative/server_memoization.patch": {
+   "attack": "Memoizes responses across the repeated replay passes in package-level state.",
+   "expect": "source_policy"
+  },
+  "negative/server_omits_auxiliary_parities.patch": {
+   "attack": "Server skips the auxiliary parities, which only hint-reuse queries need.",
+   "expect": "wrong_value"
+  },
+  "negative/transcript_replay.patch": {
+   "attack": "Replays a fixed recorded request instead of generating one for the coins of this run and query.",
+   "expect": "request_reduction"
+  },
+  "negative/under_provisioned_hints.patch": {
+   "attack": "Computes parities only for the first 20*ChunkSize primary hints and three quarters of each backup group: enough for 1000 queries with overwhelming probability, with a large share of the work skipped.",
+   "expect": "hint_export"
+  },
+  "negative/util_cipher_import.patch": {
+   "attack": "Uses util.NewCipher and AesPrf.Encrypt, which hand slices to assembly; neither is on the symbol allowlist.",
+   "expect": "source_policy"
+  },
+  "negative/util_long_key_prf_import.patch": {
+   "attack": "Passes a one-word slice as an expanded key to a slice-based util PRF helper; those helpers are not on the symbol allowlist.",
+   "expect": "source_policy"
+  },
+  "positive/allocation_free_aes.patch": {
+   "attack": "Honest implementation work: allocation-free PRF evaluation through the byte-locked AES wrappers in preprocessing, hint search and server. Messages are unchanged, so communication is equal and the gate is not passed.",
+   "expect": "valid_identical_transcript"
+  },
+  "positive/batched_folded_preprocessing.patch": {
+   "attack": "Additionally restructures preprocessing: eight chunks per hint, block parity and programmed point folded into the main loop, parallel key expansion. Messages are unchanged.",
+   "expect": "valid_identical_transcript"
+  },
+  "positive/compact_dropped_superblock_keys.patch": {
+   "attack": "The same protocol change paid for honestly: hints are kept in flat arrays without the fields the scheme does not need (16 bytes per primary hint, 48 per backup hint, 18 per replacement, sparse labels), and the bytes saved hold the parities of the dropped superblocks. Fewer bytes and no more storage than the reference at both sizes.",
+   "expect": "valid_fewer_bytes_within_storage"
+  },
+  "positive/dropped_superblock_keys.patch": {
+   "attack": "A storage-for-communication trade: the client keeps per-hint parities of the trailing superblocks, ReduceRequest drops their keys and the server returns a shorter response. Strictly fewer bytes at both sizes, valid, but the extra parities make client storage exceed the reference, so the storage comparison fails.",
+   "expect": "valid_fewer_bytes_over_storage"
+  },
+  "positive/fake_metric_record_builtin_print.patch": {
+   "attack": "Prints a forged timing record with the println builtin (stderr). Nothing reads submission-writable output, so the run is valid and its metrics are those of the conductor; it must not beat the reference.",
+   "expect": "valid_not_beating"
+  },
+  "positive/reference_unchanged.patch": {
+   "attack": "The reference itself: valid, and by strictness it does not beat itself (communication is equal).",
+   "expect": "valid_not_beating"
+  },
+  "positive/server_joined_parallel_workers.patch": {
+   "attack": "Honest parallelism: the handler splits the superblocks over four goroutines and joins them before it returns. Valid, same messages; the completion boundary costs it nothing.",
+   "expect": "valid_not_beating"
+  },
+  "positive/server_returns_before_workers.patch": {
+   "attack": "The handler returns before its worker has computed the response. The server clock and the round trip wait for the worker, so the response is complete and the work is charged: valid, same messages, no server-time advantage.",
+   "expect": "valid_not_beating"
+  },
+  "positive/storage_for_time.patch": {
+   "attack": "Retains a 1 GiB auxiliary table after preprocessing. Valid, but it fails the client-storage comparison at both sizes.",
+   "expect": "valid_over_storage"
+  }
+ },
+ "schema": "quarter-pir.fixtures/v1"
+}

@@ -1,0 +1,220 @@
+{
+  "observed": {
+    "apply_40_completed_utc": "2026-09-12T01:43:00Z",
+    "apply_40_smoke_evaluation": {
+      "created_at": "2026-09-08T00:44:16Z",
+      "id": "eval_01M1Z7J2D8PPJW648MKRRFRXQ6",
+      "note": "returned by idempotent replay (same Idempotency-Key and body); no new Run was dispatched on the V3 runtime",
+      "run_id": "run_01M1Z7J2DBZYX5NP0E3J0314NQ"
+    },
+    "management_log_error": "production admission reconciliation failed closed: configmaps \"frontier-management-production-command\" not found",
+    "management_log_first_error_utc": "2026-09-12T01:41:52Z",
+    "management_pod_started_utc": "2026-09-12T01:41:45Z",
+    "queued_evaluations_at_snapshot": [
+      "eval_01M29MRE0MGPR95N65EV6VJH5M",
+      "eval_01M29MWMDR37MFYHCVZH30ZMK6"
+    ],
+    "region": "us-west-1",
+    "scheduler_capacity_snapshot": {
+      "available_slots": 0,
+      "blockers_truncated": false,
+      "configured_cap": 1,
+      "counts": {
+        "cleanup_counts": {
+          "APPLYING": 0,
+          "BLOCKED": 3,
+          "PENDING": 0,
+          "RUNNING": 0
+        },
+        "run_counts": {
+          "FINALIZING": 0,
+          "QUEUED": 2,
+          "RUNNING": 0,
+          "STARTING": 0
+        }
+      },
+      "observed_at": "2026-09-12T02:01:13.963Z",
+      "occupied_slots": 3,
+      "released_historical_cleanups": 0,
+      "retained_cleanup_blockers": [
+        {
+          "attempt_id": "attempt_01M0W74DH32TME1R0HDY81DFJB",
+          "cleanup_job_state": "BLOCKED",
+          "diagnostics": {
+            "attempt_identity_matches": true,
+            "attempt_lease_state": "RELEASED",
+            "bootstrap_manifest_present": true,
+            "bootstrap_manifest_sha256": "sha256:528f58eb905f0dab0bbb66fde38b2cbe51bbc63c8b398dab818ca819f4c8f59c",
+            "cleanup_job_apply_started_at": "2026-08-25T10:23:32.416Z",
+            "cleanup_job_attempts": 1,
+            "cleanup_job_last_error": {
+              "known_message": "cleanup Driver Job exhausted its bounded retries or deadline",
+              "sha256": "sha256:9b935f39f57d02977da25e31c0a7ba53379872c293e0fe9ddf19f4fe64a82470"
+            },
+            "cleanup_job_name": "frontier-driver-cleanup-01m0w74dh32tme1r0hdy81dfjb",
+            "cleanup_job_uid": "f5b04250-6ada-4b6c-a962-b7db61dc79a9",
+            "cleanup_last_error": null,
+            "cleanup_reason": null,
+            "cleanup_state": "NONE",
+            "dormant_prerequisites": {
+              "executable": {
+                "coordinates": null,
+                "validation": "INVALID"
+              },
+              "freeze": {
+                "coordinates": null,
+                "validation": "MISSING"
+              },
+              "iam": {
+                "coordinates": null,
+                "validation": "INVALID"
+              },
+              "missing_evidence": [
+                "HISTORICAL_EXECUTABLE_NOT_AUDITED",
+                "STALE_CREATORS_NOT_FENCED",
+                "HISTORICAL_REQUESTS_UNSETTLED",
+                "PAST_EXECUTION_AND_EXTERNAL_WORK_NOT_QUIESCED",
+                "COMPLETE_SESSION_AUTHORITY_PROOF_MISSING",
+                "NEW_ADMIN_JOB_CLASS_UNSUPPORTED"
+              ],
+              "unresolved_operation_intents": 0
+            },
+            "driver_iam": null,
+            "final_handoff_present": false,
+            "job_apply_started_at": "2026-08-25T10:23:24.499Z",
+            "job_name": "frontier-driver-01m0w74dh32tme1r0hdy81dfjb",
+            "job_uid": "fa4463b0-4737-4f0b-b554-65f2a84f09f8",
+            "management_reader_rbac_deleted_at": null,
+            "model_gateway": null,
+            "pod_name": "frontier-driver-01m0w74dh32tme1r0hdy81dfjb-l6bxn",
+            "pod_uid": "23bdd571-c7a6-4ce0-8571-fd19a1969cec",
+            "result_receipt_present": false,
+            "run_state": "FAILED"
+          },
+          "namespace": "frontier-run-01m0w74deab7zvgk2kq80nyej5",
+          "run_id": "run_01M0W74DEAB7ZVGK2KQ80NYEJ5"
+        },
+        {
+          "attempt_id": "attempt_01M0W7V1GQMJE11FJ17B4Y3WS6",
+          "cleanup_job_state": "BLOCKED",
+          "diagnostics": {
+            "attempt_identity_matches": true,
+            "attempt_lease_state": "RELEASED",
+            "bootstrap_manifest_present": true,
+            "bootstrap_manifest_sha256": "sha256:949cfa9b3f4e5bddf0b8c81c3de7bc66bdab535e6bf775117d509718d42d8b02",
+            "cleanup_job_apply_started_at": "2026-08-25T10:35:57.802Z",
+            "cleanup_job_attempts": 1,
+            "cleanup_job_last_error": {
+              "known_message": "cleanup Driver Job exhausted its bounded retries or deadline",
+              "sha256": "sha256:9b935f39f57d02977da25e31c0a7ba53379872c293e0fe9ddf19f4fe64a82470"
+            },
+            "cleanup_job_name": "frontier-driver-cleanup-01m0w7v1gqmje11fj17b4y3ws6",
+            "cleanup_job_uid": "107cc31f-2058-40a5-a2cd-567f2a9a8d5c",
+            "cleanup_last_error": null,
+            "cleanup_reason": null,
+            "cleanup_state": "NONE",
+            "dormant_prerequisites": {
+              "executable": {
+                "coordinates": null,
+                "validation": "INVALID"
+              },
+              "freeze": {
+                "coordinates": null,
+                "validation": "MISSING"
+              },
+              "iam": {
+                "coordinates": null,
+                "validation": "INVALID"
+              },
+              "missing_evidence": [
+                "HISTORICAL_EXECUTABLE_NOT_AUDITED",
+                "STALE_CREATORS_NOT_FENCED",
+                "HISTORICAL_REQUESTS_UNSETTLED",
+                "PAST_EXECUTION_AND_EXTERNAL_WORK_NOT_QUIESCED",
+                "COMPLETE_SESSION_AUTHORITY_PROOF_MISSING",
+                "NEW_ADMIN_JOB_CLASS_UNSUPPORTED"
+              ],
+              "unresolved_operation_intents": 0
+            },
+            "driver_iam": null,
+            "final_handoff_present": false,
+            "job_apply_started_at": "2026-08-25T10:35:45.848Z",
+            "job_name": "frontier-driver-01m0w7v1gqmje11fj17b4y3ws6",
+            "job_uid": "8c533725-4fb5-45ea-8409-454ea45ec0ef",
+            "management_reader_rbac_deleted_at": null,
+            "model_gateway": null,
+            "pod_name": "frontier-driver-01m0w7v1gqmje11fj17b4y3ws6-mzzx2",
+            "pod_uid": "13411a89-6897-4e76-b24a-589c240c6051",
+            "result_receipt_present": false,
+            "run_state": "FAILED"
+          },
+          "namespace": "frontier-run-01m0w7v0pwcsgepcjgdvrje9vs",
+          "run_id": "run_01M0W7V0PWCSGEPCJGDVRJE9VS"
+        },
+        {
+          "attempt_id": "attempt_01M0WY87J66222933YBX2M1NY8",
+          "cleanup_job_state": "BLOCKED",
+          "diagnostics": {
+            "attempt_identity_matches": true,
+            "attempt_lease_state": "RELEASED",
+            "bootstrap_manifest_present": true,
+            "bootstrap_manifest_sha256": "sha256:132e6c7ed6ee6e788bf0d316ee4f7ae67f22ebe30a45aa4ef644c8bff8569258",
+            "cleanup_job_apply_started_at": "2026-08-25T17:07:44.650Z",
+            "cleanup_job_attempts": 1,
+            "cleanup_job_last_error": {
+              "known_message": "cleanup Driver Job exhausted its bounded retries or deadline",
+              "sha256": "sha256:9b935f39f57d02977da25e31c0a7ba53379872c293e0fe9ddf19f4fe64a82470"
+            },
+            "cleanup_job_name": "frontier-driver-cleanup-01m0wy87j66222933ybx2m1ny8",
+            "cleanup_job_uid": "a05d781f-3e70-4d5f-86ee-1aa15d32499f",
+            "cleanup_last_error": null,
+            "cleanup_reason": null,
+            "cleanup_state": "NONE",
+            "dormant_prerequisites": {
+              "executable": {
+                "coordinates": null,
+                "validation": "INVALID"
+              },
+              "freeze": {
+                "coordinates": null,
+                "validation": "MISSING"
+              },
+              "iam": {
+                "coordinates": null,
+                "validation": "INVALID"
+              },
+              "missing_evidence": [
+                "HISTORICAL_EXECUTABLE_NOT_AUDITED",
+                "STALE_CREATORS_NOT_FENCED",
+                "HISTORICAL_REQUESTS_UNSETTLED",
+                "PAST_EXECUTION_AND_EXTERNAL_WORK_NOT_QUIESCED",
+                "COMPLETE_SESSION_AUTHORITY_PROOF_MISSING",
+                "NEW_ADMIN_JOB_CLASS_UNSUPPORTED"
+              ],
+              "unresolved_operation_intents": 0
+            },
+            "driver_iam": null,
+            "final_handoff_present": false,
+            "job_apply_started_at": "2026-08-25T17:07:26.671Z",
+            "job_name": "frontier-driver-01m0wy87j66222933ybx2m1ny8",
+            "job_uid": "d1fd09a8-8be1-457a-9756-a416b3f1d0a5",
+            "management_reader_rbac_deleted_at": null,
+            "model_gateway": null,
+            "pod_name": "frontier-driver-01m0wy87j66222933ybx2m1ny8-97vxs",
+            "pod_uid": "4143c3e6-8eae-4e8f-8005-e98b6532660d",
+            "result_receipt_present": false,
+            "run_state": "FAILED"
+          },
+          "namespace": "frontier-run-01m0wy8739nnxstjv1yhmae69v",
+          "run_id": "run_01M0WY8739NNXSTJV1YHMAE69V"
+        }
+      ]
+    },
+    "site": "frontiercs2-preview"
+  },
+  "remediation": "Operator patched frontier-management-config MANAGEMENT_MAX_ACTIVE_DRIVERS from 1 to 4 and restarted the Management deployment; config/site.json execution.max_active_drivers set to 4 to match. The first queued Run dispatched at 02:09 UTC.",
+  "remediation_utc": "2026-09-12T02:09:00Z",
+  "root_cause": "V3 counts PENDING/APPLYING/RUNNING/BLOCKED cleanup bindings (without a valid historical-GC completion) as occupied Driver slots; three BLOCKED cleanups from 2026-08-25 plus execution.max_active_drivers=1 left available_slots=0. The admission gate itself was OPEN (opened at epoch 1 by the simulator bootstrap); the missing production-command ConfigMap only caused the log error.",
+  "schema_version": "frontier.preview-incident-record/v1",
+  "title": "V3 runtime (platform 0cc869e9) did not dispatch Runs after apply #40"
+}

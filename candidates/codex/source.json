@@ -1,0 +1,36 @@
+{
+  "repository": "https://github.com/FrontierCS/FrontierCS-2",
+  "platform_source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12",
+  "dockerfile": {
+    "source": "candidate-overlays/codex/Dockerfile",
+    "sha256": "sha256:9f301a3d2ac4d696a80175cf17893f00f43fa0d4296db05c964b7c5202cc9fad",
+    "local_sha256": "sha256:9f301a3d2ac4d696a80175cf17893f00f43fa0d4296db05c964b7c5202cc9fad"
+  },
+  "files": {
+    "launcher.py": {
+      "source": "candidate-overlays/codex/launcher.py",
+      "sha256": "sha256:50f4862706c42b3f2eff5e443c8a37b187b28aebc9d8ec3ef4a511a9b2dc0720",
+      "local_sha256": "sha256:a405f7d95cd63914678442588f313ba2328678f9fb9ff50fb62e637c3b32ceee"
+    },
+    "frontier_submit.py": {
+      "source": "candidate-overlays/codex/frontier_submit.py",
+      "sha256": "sha256:f4cbc551acd10a729e5cade5cc3a70b653d9aee1dee4b1cbfeb20b3208df6f00"
+    },
+    "frontier_gpu.py": {
+      "source": "candidate-overlays/codex/frontier_gpu.py",
+      "sha256": "sha256:b0e659a8c67447a14f405eea1e21b7e54b5c7e5f3ddc3103021e5d5305c9adfc"
+    },
+    "frontier_gpu_connect_proxy.py": {
+      "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
+      "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+    },
+    "skills/frontier-gpu/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-gpu/SKILL.md",
+      "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    },
+    "skills/frontier-submit/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-submit/SKILL.md",
+      "sha256": "sha256:7b2970a46013672fefaaa92a75552347c129af18fabd4f9bccad74033b9021cb"
+    }
+  }
+}

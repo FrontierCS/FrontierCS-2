@@ -1,0 +1,5 @@
+{
+  "diagnostic_schema": "lejepa.candidate-diagnostic/v1",
+  "helper_sha256": "0d165cefe44abe17697bfaee7712930a642a936438874de52479839e614c6cbb",
+  "schema": "frontier.candidate-diagnostic-validator/v1"
+}

@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "gh-simchowitzlabpublic-nano-world-model/code",
+  "authentic_execution": {
+    "entrypoint": "src/main.py",
+    "retained_files": [
+      "src/main.py",
+      "src/experiments/__init__.py",
+      "src/experiments/base.py",
+      "src/experiments/train_experiment.py",
+      "src/callbacks.py",
+      "src/configs/config.yaml",
+      "src/configs/experiment/default.yaml",
+      "src/configs/experiment/evaluate_only.yaml",
+      "src/configs/dataset/dino_wm/base.yaml",
+      "src/configs/dataset/dino_wm/point_maze.yaml",
+      "src/configs/model/nanowm_b2.yaml",
+      "src/configs/latent_codec/sd_vae.yaml",
+      "src/wm_datasets/world_model_dataset.py",
+      "src/wm_datasets/data_source/factory.py",
+      "src/wm_datasets/data_source/dino_wm/dino_world_model.py",
+      "src/latent_codecs/factory.py",
+      "src/latent_codecs/sd_vae.py",
+      "src/models/__init__.py",
+      "src/models/nanowm.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "src/diffusion/df_sample.py",
+      "mode": "stubbed",
+      "symbols": [
+        "generate_full_sequence_schedule",
+        "generate_pyramid_schedule",
+        "generate_sequential_schedule",
+        "ddim_idx_to_timestep",
+        "generate_scheduling_matrix",
+        "dfot_sample"
+      ]
+    },
+    {
+      "path": "src/diffusion/gaussian_diffusion.py",
+      "mode": "stubbed",
+      "symbols": [
+        "GaussianDiffusion.ddim_sample",
+        "GaussianDiffusion.dfot_sample_loop",
+        "GaussianDiffusion.dfot_ddim_sample"
+      ]
+    },
+    {
+      "path": "src/diffusion/flow_matching.py",
+      "mode": "stubbed",
+      "symbols": [
+        "FlowMatching.dfot_sample_loop",
+        "FlowMatching.dfot_ddim_sample"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "src/diffusion/df_sample.py",
+      "src/diffusion/gaussian_diffusion.py",
+      "src/diffusion/flow_matching.py"
+    ],
+    "add_under": [
+      "src/diffusion/frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Task-owned deterministic GPU build adapter that compiles and imports the retained upstream source."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Task-owned GPU benchmark adapter that invokes the retained upstream entrypoint with externally supplied assets."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Task-owned patch packager that stages untracked solver extensions and enforces the editable surface."
+    },
+    {
+      "path": "frontier_runtime/pruned_imports.py",
+      "reason": "Evaluator-side import compatibility for omitted, unselected backends; selected Point Maze code remains upstream."
+    },
+    {
+      "path": "frontier_runtime/sitecustomize.py",
+      "reason": "Public build/benchmark adapter that installs import compatibility without editing upstream factories."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "sample/rollout.py",
+    "src/configs/dataset/game/csgo.yaml",
+    "src/configs/dataset/rt1/rt1.yaml",
+    "src/configs/experiment/csgo.yaml",
+    "src/configs/experiment/planning.yaml",
+    "src/experiments/planning_experiment.py",
+    "src/latent_codecs/semantic.py",
+    "src/planning",
+    "src/sample",
+    "src/scripts",
+    "src/wm_datasets/data_source/dino_wm/deformable.py",
+    "src/wm_datasets/data_source/dino_wm/pusht.py",
+    "src/wm_datasets/data_source/game",
+    "src/wm_datasets/data_source/lerobot"
+  ],
+  "minimality_note": "Retains the upstream main.py -> TrainExperiment -> Point Maze loader -> NanoWM/SD-VAE -> MetricsLogger sampling path byte-for-byte outside the declared excision. Unselected planning, semantic codecs, game, LeRobot, PushT and deformable data sources are omitted. The upstream default config still requires configs/planning/base.yaml. Evaluator-side pruned_imports.py satisfies eager imports of omitted backends with constructors that fail if selected; it never replaces the selected execution path.",
+  "evaluator_adapters": [
+    {
+      "path": "judge_runtime/sitecustomize.py",
+      "reason": "Installs evaluator-only import, unscored FID and execution-audit adapters before main.py."
+    },
+    {
+      "path": "judge_runtime/execution_audit.py",
+      "reason": "Requires observed native entrypoint/data/codec/sampler integration before predictions can be scored."
+    },
+    {
+      "path": "judge_runtime/sampler_bridge.py",
+      "reason": "Passes compact context/actions to isolated candidate sampling; retains targets in the native caller."
+    },
+    {
+      "path": "judge_runtime/sampler_worker.py",
+      "reason": "Loads the fixed public model and executes candidate sampling in isolation."
+    },
+    {
+      "path": "judge_runtime/memory_modules.py",
+      "reason": "Imports candidate source from memory after isolation."
+    },
+    {
+      "path": "judge_runtime/process_transport.py",
+      "reason": "Bounded isolated-worker protocol."
+    },
+    {
+      "path": "judge_runtime/rng_state.py",
+      "reason": "Preserves caller RNG state across isolated sampling."
+    },
+    {
+      "path": "judge_runtime/seal_process.py",
+      "reason": "Applies process isolation before importing candidate source."
+    },
+    {
+      "path": "judge_runtime/wire.py",
+      "reason": "Validates tensor/source protocol without pickle."
+    }
+  ]
+}

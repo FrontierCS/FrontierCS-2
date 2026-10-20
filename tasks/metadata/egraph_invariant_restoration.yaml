@@ -1,0 +1,27 @@
+id: "egraph_invariant_restoration"
+display_name: "E-Graph Invariant Restoration"
+category: "Programming Language"
+summary: "Speed up invariant restoration (rebuilding) in the egg e-graph library."
+paper_title: "egg: Fast and Extensible Equality Saturation"
+paper_venue: "POPL 2021"
+paper_url: "https://arxiv.org/pdf/2004.03082"
+agent_cpu_cores: 8
+agent_memory_gib: 4
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 8
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 120000
+eval_timeout_seconds: 1800

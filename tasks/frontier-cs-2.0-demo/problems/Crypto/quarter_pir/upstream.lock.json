@@ -1,0 +1,483 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 10240,
+      "media_type": "application/x-tar",
+      "path": "datasets/eval.tar",
+      "source": "task",
+      "version": "sha256:4b228fa1f53de6737d43c7143da0fa51cd50f27b2a07ed9aaaf2aad59f53da47"
+    },
+    "train": {
+      "bytes": 10240,
+      "media_type": "application/x-tar",
+      "path": "datasets/train.tar",
+      "source": "task",
+      "version": "sha256:db136595dbe8308c69d7c00d43bf40666288dfb94ef8a24f4b1de0627d6fcc2e"
+    }
+  },
+  "file_count": 91,
+  "files": [
+    {
+      "bytes": 1331,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:3316c57920d945827b139a1584b2eb0a5da75a3e96c5a7057eceaeb8eae1e632"
+    },
+    {
+      "bytes": 4304,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:2c17bb1fb990caf2eba2bbafa98ff99cb188837a6b314b02d7a260cf875b70e9"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 129,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:ac0ef02938c69f0d88eebc0a328933ea6d19421dedb787ce2a1fa46c9fc70f0e"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 25921,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:e15799a459bdfa93c35ec65e672035497be150795f4e602f135994956d6212a1"
+    },
+    {
+      "bytes": 808,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:35de88ac249bf3882381cec64128f3e9df0c4ec7fe1d37d8a1c97fd600269204"
+    },
+    {
+      "bytes": 1905,
+      "path": "agent-base/frontier/task/repo/frontier-run.sh",
+      "sha256": "sha256:7e5077a00f5c4004eecea0430b47d8108e91b901ebc963804838c88a751d775f"
+    },
+    {
+      "bytes": 503,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:b37d2349bfde6b7e3ba01afb056ecc434892ab53d56dbb8dc59f9e9e139acd57"
+    },
+    {
+      "bytes": 1069,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/LICENSE",
+      "sha256": "sha256:da84ca109834a9fe37b96a6a1c8eec47a0a54b55c7c18a90609c14fabdc12293"
+    },
+    {
+      "bytes": 16139,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/conductor/conductor.go",
+      "sha256": "sha256:9193caebd1fe253c666b21975dbfae057db69fbe8ba8f40b3969dacd9b09561e"
+    },
+    {
+      "bytes": 9315,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/conductor/probe.go",
+      "sha256": "sha256:ab7ac5732e581ba5e1042ff7bfff5c1aeda8330fcb1ff1c3fb1ce556dd0e47d7"
+    },
+    {
+      "bytes": 144,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/config.txt",
+      "sha256": "sha256:6d4370c3ef0f0fa3fd7fd24877346c786bba5d6a004668f25591ef9851923e8b"
+    },
+    {
+      "bytes": 6758,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/ec24/ec24_client.go",
+      "sha256": "sha256:05cbc73e14550beeacc94b6a6eac9e0780f5b4284e3078940ceb8e907e05cf9f"
+    },
+    {
+      "bytes": 1165,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/frame/frame.go",
+      "sha256": "sha256:f1fc1a8cb8f4712814a0ec5026ccf0b757e499b08c31a2e11bc2f3d5af540607"
+    },
+    {
+      "bytes": 712,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/go.mod",
+      "sha256": "sha256:f56edb898aad24353a3609f79f1cfe072f29f4179ab86ef94d4a2dd0052864d0"
+    },
+    {
+      "bytes": 3282,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/go.sum",
+      "sha256": "sha256:52bcc648fa3a0345e4b993aad5d378fb349010d75a00a61b3246437b8b17d066"
+    },
+    {
+      "bytes": 12074,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/pir/client.go",
+      "sha256": "sha256:4a7e62274ace1ea6642e68dc8b5a47d08fceda33df15b53e8d06b5cec9d10a54"
+    },
+    {
+      "bytes": 487,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/pir/reduce.go",
+      "sha256": "sha256:ebd99cd8349f8eb0a18f54c3484af5a92c55414c9dd9241be612b5b066fcd7af"
+    },
+    {
+      "bytes": 883,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/pir/server.go",
+      "sha256": "sha256:bad6aca1a38cdcffa8c54529109e07b3aaaa4ee235149fcc7d75031924792825"
+    },
+    {
+      "bytes": 5867,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/policy/policy.go",
+      "sha256": "sha256:7682b5d596cc61967a101a7a4a69dc714001edd767524a73f950e2496666586d"
+    },
+    {
+      "bytes": 21,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/query/go.mod",
+      "sha256": "sha256:ff9a623ebd46fab7f505413ceda51c34c1d98aa2f8a33fb83e9a0fa7280c6267"
+    },
+    {
+      "bytes": 39137,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/query/query.pb.go",
+      "sha256": "sha256:bbeb1d4ad19b5773251d49c9893e0084538546cdd6fdee0c0fff00045d871c23"
+    },
+    {
+      "bytes": 2482,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/query/query.proto",
+      "sha256": "sha256:aa7d9c9b4e31aa2ec5eb51250d562df166e91a605aa506765ab2b71051ffcfe6"
+    },
+    {
+      "bytes": 14547,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/query/query_grpc.pb.go",
+      "sha256": "sha256:76b08f15488d83f962a811e112120eec248a6f49ebc01fee2e7f30b622c0e69d"
+    },
+    {
+      "bytes": 1697,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/rawrpc/rawrpc.go",
+      "sha256": "sha256:f243cb2069a0077885bfe1ac939e8c390753c6bd2b23c8d9985c923db5d9e3a7"
+    },
+    {
+      "bytes": 1564,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/reducer/reducer.go",
+      "sha256": "sha256:f011bd60450459b09ad2bbca443053169dfaf0286ea5bd0f7714dd541f0ee689"
+    },
+    {
+      "bytes": 12620,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/refwire/refwire.go",
+      "sha256": "sha256:b518261d2d3100268b5177ea571b110289e71d8e9ae84b305a7f66790e5e0342"
+    },
+    {
+      "bytes": 2594,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/safeaes/aes_amd64.s",
+      "sha256": "sha256:41f5531be6d7386c5b671d27bd9fcb2e5aeb93837bc38721df37c84cef3c7869"
+    },
+    {
+      "bytes": 3269,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/safeaes/aes_arm64.s",
+      "sha256": "sha256:cac88900fe8992b9420cf2b264631f327b418953633976ae064155139a085f4c"
+    },
+    {
+      "bytes": 1373,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/safeaes/safeaes.go",
+      "sha256": "sha256:174e27e0b157c9cbe1e1780e4110e2e1857a61a90285bf0096cd4b1e4e48bf9f"
+    },
+    {
+      "bytes": 6770,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/server/replay.go",
+      "sha256": "sha256:2d74cdc49a39def7a6e379d3b1abb8152f192e2accec6cc91ec3ffe400ed7bfb"
+    },
+    {
+      "bytes": 4335,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/server/server.go",
+      "sha256": "sha256:76055b680bf3f7488d1349eeced001ef8463034386f603f6b9466adc603b2d74"
+    },
+    {
+      "bytes": 989,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/settle/settle.go",
+      "sha256": "sha256:efccf539de66cf7d3865aba3cf503989d1ea3ccc5596a6d94b19c11598155193"
+    },
+    {
+      "bytes": 2594,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/util/aes_amd64.s",
+      "sha256": "sha256:41f5531be6d7386c5b671d27bd9fcb2e5aeb93837bc38721df37c84cef3c7869"
+    },
+    {
+      "bytes": 3269,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/util/aes_arm64.s",
+      "sha256": "sha256:cac88900fe8992b9420cf2b264631f327b418953633976ae064155139a085f4c"
+    },
+    {
+      "bytes": 210,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/util/go.mod",
+      "sha256": "sha256:5967b26cc9d0a75df9eb3d412c8e6b421744f7208a63044147fd7bc90e2b610c"
+    },
+    {
+      "bytes": 1690,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/util/go.sum",
+      "sha256": "sha256:6b8345abdc3b4c671c2af615f10a04288f33370f7653ff842fcc4da93ab32749"
+    },
+    {
+      "bytes": 9844,
+      "path": "agent-base/frontier/task/repo/quarter_pir/code/util/util.go",
+      "sha256": "sha256:a49388a346e012b82c7f34b225af5e8349f45040a9a37f24247d1a6397384a8d"
+    },
+    {
+      "bytes": 10240,
+      "path": "datasets/eval.tar",
+      "sha256": "sha256:4b228fa1f53de6737d43c7143da0fa51cd50f27b2a07ed9aaaf2aad59f53da47"
+    },
+    {
+      "bytes": 10240,
+      "path": "datasets/train.tar",
+      "sha256": "sha256:db136595dbe8308c69d7c00d43bf40666288dfb94ef8a24f4b1de0627d6fcc2e"
+    },
+    {
+      "bytes": 1809,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:070b606c209b0ce4b275a1cde1f8e444af43db7e3f38b59b54edeb86b026063c"
+    },
+    {
+      "bytes": 14390,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:2102a2e9027ac98263e81b0028cc7bf81f2827a0341cbe7093d1d088c806aa68"
+    },
+    {
+      "bytes": 1750,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:163d098a2dbbe3a39af1517784a1fe1459380adfc64302985b3bd8a5c1362979"
+    },
+    {
+      "bytes": 417,
+      "path": "judge/docker/Dockerfile.runtime",
+      "sha256": "sha256:8c41855b54ce0e66ee808916759c3ed84cc8d3bf6c6e27ca78069c4bee67deff"
+    },
+    {
+      "bytes": 67,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:d4afdc83b37da4c0cb4c1be57d79405cb045bb100558eab2310dca244c9271bd"
+    },
+    {
+      "bytes": 29084,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:bf584fc1c443321711d2b764a70aeeca6c7110c84532f3dca8bbe16c420347d3"
+    },
+    {
+      "bytes": 808,
+      "path": "judge/harbor/app/frontier-build.sh",
+      "sha256": "sha256:35de88ac249bf3882381cec64128f3e9df0c4ec7fe1d37d8a1c97fd600269204"
+    },
+    {
+      "bytes": 1905,
+      "path": "judge/harbor/app/frontier-run.sh",
+      "sha256": "sha256:7e5077a00f5c4004eecea0430b47d8108e91b901ebc963804838c88a751d775f"
+    },
+    {
+      "bytes": 503,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:b37d2349bfde6b7e3ba01afb056ecc434892ab53d56dbb8dc59f9e9e139acd57"
+    },
+    {
+      "bytes": 1069,
+      "path": "judge/harbor/app/quarter_pir/code/LICENSE",
+      "sha256": "sha256:da84ca109834a9fe37b96a6a1c8eec47a0a54b55c7c18a90609c14fabdc12293"
+    },
+    {
+      "bytes": 16139,
+      "path": "judge/harbor/app/quarter_pir/code/conductor/conductor.go",
+      "sha256": "sha256:9193caebd1fe253c666b21975dbfae057db69fbe8ba8f40b3969dacd9b09561e"
+    },
+    {
+      "bytes": 9315,
+      "path": "judge/harbor/app/quarter_pir/code/conductor/probe.go",
+      "sha256": "sha256:ab7ac5732e581ba5e1042ff7bfff5c1aeda8330fcb1ff1c3fb1ce556dd0e47d7"
+    },
+    {
+      "bytes": 144,
+      "path": "judge/harbor/app/quarter_pir/code/config.txt",
+      "sha256": "sha256:6d4370c3ef0f0fa3fd7fd24877346c786bba5d6a004668f25591ef9851923e8b"
+    },
+    {
+      "bytes": 6758,
+      "path": "judge/harbor/app/quarter_pir/code/ec24/ec24_client.go",
+      "sha256": "sha256:05cbc73e14550beeacc94b6a6eac9e0780f5b4284e3078940ceb8e907e05cf9f"
+    },
+    {
+      "bytes": 1165,
+      "path": "judge/harbor/app/quarter_pir/code/frame/frame.go",
+      "sha256": "sha256:f1fc1a8cb8f4712814a0ec5026ccf0b757e499b08c31a2e11bc2f3d5af540607"
+    },
+    {
+      "bytes": 712,
+      "path": "judge/harbor/app/quarter_pir/code/go.mod",
+      "sha256": "sha256:f56edb898aad24353a3609f79f1cfe072f29f4179ab86ef94d4a2dd0052864d0"
+    },
+    {
+      "bytes": 3282,
+      "path": "judge/harbor/app/quarter_pir/code/go.sum",
+      "sha256": "sha256:52bcc648fa3a0345e4b993aad5d378fb349010d75a00a61b3246437b8b17d066"
+    },
+    {
+      "bytes": 12074,
+      "path": "judge/harbor/app/quarter_pir/code/pir/client.go",
+      "sha256": "sha256:4a7e62274ace1ea6642e68dc8b5a47d08fceda33df15b53e8d06b5cec9d10a54"
+    },
+    {
+      "bytes": 487,
+      "path": "judge/harbor/app/quarter_pir/code/pir/reduce.go",
+      "sha256": "sha256:ebd99cd8349f8eb0a18f54c3484af5a92c55414c9dd9241be612b5b066fcd7af"
+    },
+    {
+      "bytes": 883,
+      "path": "judge/harbor/app/quarter_pir/code/pir/server.go",
+      "sha256": "sha256:bad6aca1a38cdcffa8c54529109e07b3aaaa4ee235149fcc7d75031924792825"
+    },
+    {
+      "bytes": 5867,
+      "path": "judge/harbor/app/quarter_pir/code/policy/policy.go",
+      "sha256": "sha256:7682b5d596cc61967a101a7a4a69dc714001edd767524a73f950e2496666586d"
+    },
+    {
+      "bytes": 21,
+      "path": "judge/harbor/app/quarter_pir/code/query/go.mod",
+      "sha256": "sha256:ff9a623ebd46fab7f505413ceda51c34c1d98aa2f8a33fb83e9a0fa7280c6267"
+    },
+    {
+      "bytes": 39137,
+      "path": "judge/harbor/app/quarter_pir/code/query/query.pb.go",
+      "sha256": "sha256:bbeb1d4ad19b5773251d49c9893e0084538546cdd6fdee0c0fff00045d871c23"
+    },
+    {
+      "bytes": 2482,
+      "path": "judge/harbor/app/quarter_pir/code/query/query.proto",
+      "sha256": "sha256:aa7d9c9b4e31aa2ec5eb51250d562df166e91a605aa506765ab2b71051ffcfe6"
+    },
+    {
+      "bytes": 14547,
+      "path": "judge/harbor/app/quarter_pir/code/query/query_grpc.pb.go",
+      "sha256": "sha256:76b08f15488d83f962a811e112120eec248a6f49ebc01fee2e7f30b622c0e69d"
+    },
+    {
+      "bytes": 1697,
+      "path": "judge/harbor/app/quarter_pir/code/rawrpc/rawrpc.go",
+      "sha256": "sha256:f243cb2069a0077885bfe1ac939e8c390753c6bd2b23c8d9985c923db5d9e3a7"
+    },
+    {
+      "bytes": 1564,
+      "path": "judge/harbor/app/quarter_pir/code/reducer/reducer.go",
+      "sha256": "sha256:f011bd60450459b09ad2bbca443053169dfaf0286ea5bd0f7714dd541f0ee689"
+    },
+    {
+      "bytes": 12620,
+      "path": "judge/harbor/app/quarter_pir/code/refwire/refwire.go",
+      "sha256": "sha256:b518261d2d3100268b5177ea571b110289e71d8e9ae84b305a7f66790e5e0342"
+    },
+    {
+      "bytes": 2594,
+      "path": "judge/harbor/app/quarter_pir/code/safeaes/aes_amd64.s",
+      "sha256": "sha256:41f5531be6d7386c5b671d27bd9fcb2e5aeb93837bc38721df37c84cef3c7869"
+    },
+    {
+      "bytes": 3269,
+      "path": "judge/harbor/app/quarter_pir/code/safeaes/aes_arm64.s",
+      "sha256": "sha256:cac88900fe8992b9420cf2b264631f327b418953633976ae064155139a085f4c"
+    },
+    {
+      "bytes": 1373,
+      "path": "judge/harbor/app/quarter_pir/code/safeaes/safeaes.go",
+      "sha256": "sha256:174e27e0b157c9cbe1e1780e4110e2e1857a61a90285bf0096cd4b1e4e48bf9f"
+    },
+    {
+      "bytes": 6770,
+      "path": "judge/harbor/app/quarter_pir/code/server/replay.go",
+      "sha256": "sha256:2d74cdc49a39def7a6e379d3b1abb8152f192e2accec6cc91ec3ffe400ed7bfb"
+    },
+    {
+      "bytes": 4335,
+      "path": "judge/harbor/app/quarter_pir/code/server/server.go",
+      "sha256": "sha256:76055b680bf3f7488d1349eeced001ef8463034386f603f6b9466adc603b2d74"
+    },
+    {
+      "bytes": 989,
+      "path": "judge/harbor/app/quarter_pir/code/settle/settle.go",
+      "sha256": "sha256:efccf539de66cf7d3865aba3cf503989d1ea3ccc5596a6d94b19c11598155193"
+    },
+    {
+      "bytes": 2594,
+      "path": "judge/harbor/app/quarter_pir/code/util/aes_amd64.s",
+      "sha256": "sha256:41f5531be6d7386c5b671d27bd9fcb2e5aeb93837bc38721df37c84cef3c7869"
+    },
+    {
+      "bytes": 3269,
+      "path": "judge/harbor/app/quarter_pir/code/util/aes_arm64.s",
+      "sha256": "sha256:cac88900fe8992b9420cf2b264631f327b418953633976ae064155139a085f4c"
+    },
+    {
+      "bytes": 210,
+      "path": "judge/harbor/app/quarter_pir/code/util/go.mod",
+      "sha256": "sha256:5967b26cc9d0a75df9eb3d412c8e6b421744f7208a63044147fd7bc90e2b610c"
+    },
+    {
+      "bytes": 1690,
+      "path": "judge/harbor/app/quarter_pir/code/util/go.sum",
+      "sha256": "sha256:6b8345abdc3b4c671c2af615f10a04288f33370f7653ff842fcc4da93ab32749"
+    },
+    {
+      "bytes": 9844,
+      "path": "judge/harbor/app/quarter_pir/code/util/util.go",
+      "sha256": "sha256:a49388a346e012b82c7f34b225af5e8349f45040a9a37f24247d1a6397384a8d"
+    },
+    {
+      "bytes": 26604,
+      "path": "judge/readme",
+      "sha256": "sha256:8b60297cd974e8b5d2d98fc9013b52df6cb15c22bda9b3352e21e4f4839a2736"
+    },
+    {
+      "bytes": 2430,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:aaf613f1150c4366a95a0b3a60ef601e1d9fcef3eb544d11f196c2d5fc481e15"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 11644,
+      "path": "judge/table2_metrics.py",
+      "sha256": "sha256:9bd2b04207925aed76f1a3dab7e3cbd72fa3339939d2b96439225a25cbbf93b4"
+    },
+    {
+      "bytes": 2759,
+      "path": "policy.json",
+      "sha256": "sha256:6178eae4cd2fdf0ee2612ab5f3ab5934618ee03802a4dbd7d040e40ab97f6327"
+    },
+    {
+      "bytes": 1033,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:b056bf4daa61426d5293de273387ab07d093a984b5c6d3e52d3b1ff6caa99fa0"
+    },
+    {
+      "bytes": 15594,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:c515826409237677d54047cb0550a9434f15c9aeee727c896febaea216125d52"
+    },
+    {
+      "bytes": 34403,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:4abb90168677099aac9b29facb063d6e54fb9fd583666fcfb867dc7249ff1904"
+    },
+    {
+      "bytes": 375,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:feec28405aa9d163609c5621e3c935b31014e15d65e08110ed6a7651f1cfe4fa"
+    }
+  ],
+  "problem_id": "quarter_pir",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:bf584fc1c443321711d2b764a70aeeca6c7110c84532f3dca8bbe16c420347d3",
+    "statement_sha256": "sha256:8b60297cd974e8b5d2d98fc9013b52df6cb15c22bda9b3352e21e4f4839a2736",
+    "task_dir": "task"
+  }
+}

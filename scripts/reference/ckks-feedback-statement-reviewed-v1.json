@@ -1,0 +1,16 @@
+{
+  "schema": "preview.reviewed-feedback-statement/v1",
+  "problem_id": "ckks_composable_noise",
+  "bindings": {
+    "upstream.lock.json": "sha256:fcba29d95e1c9b96f982a0ad65d773a7cecd20239d241ea941f69f3c61881e2f",
+    "policy.json": "sha256:30cb362436ef6fc212be2254933e5f4348db616a172e8e2d0dca5a0fe64c5bf2",
+    "judge/beat_spec.json": "sha256:2501ae5cdf6a13b5ade65b6e53dd31979bd394d78caa22398f60a55185c4426d",
+    "agent-base/frontier/task/README.md": "sha256:8b64ade1e5967be2858ddd108c3edba9764552d3389de22589438997d90cfece",
+    "agent-base/frontier/task/repo/README.md": "sha256:02806def9664e54771e81326738caeeb8a2a1dfb49890c81424caadcec1a8f67"
+  },
+  "sentence": "Development feedback reports candidate mean absolute discrepancies for the two metrics and aggregate comparison counts, without private reference values or workload-level decisions.",
+  "fields": {
+    "candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits": "candidate mean absolute discrepancies for the two metrics",
+    "candidate_std_log2_prec_l2_abs_discrepancy_mean_bits": "candidate mean absolute discrepancies for the two metrics"
+  }
+}

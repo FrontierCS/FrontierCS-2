@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "parbutterfly/code",
+  "authentic_execution": {
+    "entrypoint": "apps/hyper/BipartiteButterflies.C",
+    "retained_files": [
+      "apps/hyper/BipartiteButterflies.C",
+      "apps/hyper/Makefile",
+      "ligra/parallel.h",
+      "ligra/parseCommandLine.h"
+    ]
+  },
+  "excision": [
+    {
+      "path": "apps/hyper/butterfly_count_total.h",
+      "mode": "stubbed",
+      "symbols": [
+        "CountTotal"
+      ]
+    },
+    {
+      "path": "apps/hyper/butterfly_count.h",
+      "mode": "stubbed",
+      "symbols": [
+        "Count"
+      ]
+    },
+    {
+      "path": "apps/hyper/butterfly_ecount.h",
+      "mode": "stubbed",
+      "symbols": [
+        "CountE"
+      ]
+    },
+    {
+      "path": "apps/hyper/butterfly_peel.h",
+      "mode": "stubbed",
+      "symbols": [
+        "Peel"
+      ]
+    },
+    {
+      "path": "apps/hyper/butterfly_epeel.h",
+      "mode": "stubbed",
+      "symbols": [
+        "PeelE"
+      ]
+    },
+    {
+      "path": "apps/hyper/butterfly_putils.h",
+      "mode": "stubbed",
+      "symbols": []
+    },
+    {
+      "path": "apps/hyper/butterfly_utils.h",
+      "mode": "stubbed",
+      "symbols": [
+        "CountSpace",
+        "_getWedges_seq",
+        "_getWedges",
+        "_getWedgesHash",
+        "getNextWedgeIdx_seq",
+        "getNextWedgeIdx",
+        "getWedges",
+        "getWedgesHash"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "apps/hyper/butterfly_count_total.h",
+      "apps/hyper/butterfly_count.h",
+      "apps/hyper/butterfly_ecount.h",
+      "apps/hyper/butterfly_peel.h",
+      "apps/hyper/butterfly_epeel.h",
+      "apps/hyper/butterfly_putils.h",
+      "apps/hyper/butterfly_utils.h"
+    ],
+    "add_under": [
+      "apps/hyper/solver_extensions/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Build adapter supplying the documented modern-GCC compatibility include."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Benchmark adapter invoking the retained CLI with fixed resource flags."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "apps/hyper/HyperKCore-Efficient.C",
+    "apps/hyper/parse_bb.py",
+    "utils/randHypergraph.C"
+  ],
+  "minimality_note": "Counting, peeling and contribution-specific helper implementations are excised. In butterfly_utils.h only CountSpace and the bipartite/ranked wedge-generation, hash insertion, batch-boundary and retrieval block is replaced with nonfunctional API stubs for the preserved private baseline; all surrounding graph/loading/ranking code is unchanged. The private reference restores six of the seven affected headers exactly to upstream; in butterfly_count_total.h it restores upstream and changes only CountTotal's ranking dispatch for BATCHS, which applies the paper's Section 6.2.2 f-metric rule (side ordering when degree ordering would not reduce the processed wedges by at least 10%, degree ordering otherwise) instead of always computing the requested ranking."
+}

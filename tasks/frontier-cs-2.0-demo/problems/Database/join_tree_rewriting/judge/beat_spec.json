@@ -1,0 +1,50 @@
+{
+  "unit": "one benchmark query of the join-tree rewriting suite, replayed fresh on the candidate plan and the paired reference plan. Development is the 20 public (dev) queries; the graded suite is all 39 (20 dev + 19 final) queries.",
+  "metrics": [
+    {
+      "name": "exact_result",
+      "means": "1 when the candidate plan returns the exact original query result for this query",
+      "source": "judge/query_measurements.py compare_query exact equality; validated per query in verifier/fcs2_verifier.py private_verdict",
+      "better": "higher",
+      "clears_when": "candidate exact_result is true for this query",
+      "tolerance": "none. Exact result equality per query."
+    },
+    {
+      "name": "median_latency",
+      "means": "the candidate plan's fresh median execution latency for this query (DataFusion collect duration)",
+      "source": "judge/query_measurements.py measured per-query medians, compared to the paired reference median; validated in verifier/fcs2_verifier.py private_verdict",
+      "better": "lower",
+      "clears_when": "candidate median latency < reference median latency for this query; a byte-identical reproduction of the reference plan automatically fails this comparison",
+      "tolerance": "none. Strict below the fresh reference median; equality fails."
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff every expected query clears both exact_result (true) and median_latency (candidate median strictly below reference median); otherwise 0. Missing measurements fail the verdict. The continuous average score is separate and returned regardless.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "all_metrics_progress",
+      "means": "how many of the evaluated train queries the candidate clears on both exact_result and median_latency, as passed, failed and total counts with pass_percent and fail_percent",
+      "reveals_reference": "no — it is one count over the 20 train queries of comparison outcomes the per-metric counts already summarize; it carries no query identity or ordering and no reference latency, ratio or margin. A count against a withheld reference tells how many queries the candidate currently wins, not which ones or by how much."
+    },
+    {
+      "name": "candidate_median_latency_us",
+      "means": "the median, over the 20 train queries, of the candidate's own per-query median execution latency in microseconds; null unless every train query was measured",
+      "reveals_reference": "no — a single scalar computed only from the candidate's own measured latencies, with no reference or binary-baseline measurement, ratio, query identity or per-query value"
+    }
+  ],
+  "withheld": [
+    "beat_spec_workload_passes",
+    "query identities and ordering attached to any decision or measurement",
+    "per-query exact_result and median_latency decisions",
+    "per-query and reference latencies",
+    "binary_speedup",
+    "reference_score",
+    "margin",
+    "beats_reference",
+    "every final-suite decision and measurement"
+  ],
+  "statement_sentences": "A separate all-query beats-reference verdict is evaluated beside the continuous average score. Every expected query must return the exact original result (exact_result) and run with a fresh median latency strictly below the paired reference median (median_latency); a byte-identical copy of the reference plan fails the latency comparison, and one failing query fails the verdict while the continuous score is still returned. Development (train) feedback returns the continuous score, aggregate beat_spec_progress with passed, failed, total, pass_percent and fail_percent for each of the two comparisons over the 20 train queries, all_metrics_progress with the same fields for queries clearing both comparisons, and candidate_median_latency_us, the median of the candidate's own per-query median latencies. Query identities, per-query decisions and latencies, reference values, ratios and margins are not returned, and final evaluation returns no solver-visible metrics.",
+  "comments": "The spec transcribes the verdict that judge/query_measurements.py computes per query and verifier/fcs2_verifier.py private_verdict projects for final evaluation: per-query exact_result AND fresh median latency strictly below the paired reference (byte-identical reference fails), conjoined over the complete 20/39 expected query set. Train feedback is aggregate: verifier/fcs2_verifier.py train_feedback converts the evaluator's native per-query 'queries' records into generic {workload, metrics} decision rows inside the verifier, and the shared helper returns only per-metric counts (beat_spec_progress) and the two allowlisted solver_feedback values. The evaluator, comparisons, workloads, score and final projection are unchanged by that; final returns no solver-visible metrics. Leakage review: a rewrite policy sees each query's join tree and can treat queries differently, so a solver can attribute a pass count to one train query by making the others fail, at about one train call per attribution. That reveals whether a submitted plan beat the reference plan on that train query in that evaluation, not the reference's latency or plan; the 19 hidden final queries are never evaluated in train. candidate_median_latency_us is a median over all 20 queries and is null when any query is unmeasured, so isolating one query does not turn it into that query's latency. The full version of the paper (Appendix D, Table 2 / Fig. 13) additionally reports join-only runtime; the task measures total plan execution latency only, so join-only time is out of scope and would require operator-level timing in a separate release. The native query protocol contract (scripts/join_tree_contract.py) hash-pins this file, the adapter and the feedback helper; scripts/native_beat_spec.py validates the schema against the pinned verifier."
+}

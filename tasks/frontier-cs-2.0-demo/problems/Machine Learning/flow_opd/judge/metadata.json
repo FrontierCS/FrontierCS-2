@@ -1,0 +1,31 @@
+{
+  "task_id": "flow_opd_ocr_trajectory_sampling",
+  "title": "OCR Distillation Trajectory Sampling",
+  "paper": {
+    "title": "Flow-OPD: On-Policy Distillation for Flow Matching Models",
+    "arxiv": "2605.08063v5",
+    "url": "https://arxiv.org/pdf/2605.08063v5"
+  },
+  "source": {
+    "repository": "https://github.com/CostaliyA/Flow-OPD",
+    "commit": "434ab16911fc580f51e22107151915846222eb6a",
+    "license": "MIT",
+    "material_root": "code"
+  },
+  "selected_contribution": "On-policy stochastic flow trajectory sampling for OCR distillation",
+  "status": "runtime_qualified_s6_revision_pending_acceptance",
+  "reference_scores": {
+    "development": 40.88341858482523,
+    "final": 61.77413273001508,
+    "train_grading": 70.625
+  },
+  "naive_scores": {
+    "development": 63.72815430520035,
+    "final": 77.54524886877829,
+    "train_grading": 71.25
+  },
+  "release_ready": false,
+  "evidence": "../evidence/stage5-followup.md",
+  "formal_reference_task_version_id": "taskver-redacted-d48e1450",
+  "formal_reference_repetitions": 1
+}

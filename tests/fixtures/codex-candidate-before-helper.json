@@ -1,0 +1,39 @@
+{
+  "candidate_id": "codex-preview",
+  "definition_digest": "sha256:31d62a7abfd100bf964bf2ed7e54c44fc292084e442f22fa1be869a52cc1816a",
+  "definition_ref": "preview://codex/definitions/31d62a7abfd100bf964bf2ed7e54c44fc292084e442f22fa1be869a52cc1816a.json",
+  "display_name": "Codex Preview",
+  "driver_config": {
+    "candidate_version_id": "candver_072B40BZFTNYZHAQAQR4SZM6QK",
+    "execution": {
+      "args": [],
+      "entrypoint": [
+        "/opt/frontier/candidate/launch"
+      ],
+      "env": {
+        "FRONTIER_TRAIN_POLL_TIMEOUT_SECONDS": "378000"
+      },
+      "user": "1000:1000",
+      "working_dir": "/workspace"
+    },
+    "model_api": {
+      "allowed_domains": [],
+      "secret_refs": []
+    },
+    "overlay_image": {
+      "digest": "sha256:2c5306dac0f289fd1df76dcf524f9fbfd674046c079669ca36f2667f49900027",
+      "format": "frontier.oci-overlay/v1",
+      "platform": {
+        "architecture": "amd64",
+        "os": "linux"
+      },
+      "reference": "docker.io/joyemang33/fcs2-codex-overlay@sha256:2c5306dac0f289fd1df76dcf524f9fbfd674046c079669ca36f2667f49900027"
+    },
+    "schema_version": "frontier.candidate-config/v1"
+  },
+  "metadata": {
+    "model_provider": "openrouter",
+    "runtime": "generic-codex-overlay"
+  },
+  "version": "sha-6de06322eaadeb43e834d7f5249294aa84a2ca2b-cfg-31d62a7abfd1"
+}

@@ -1,0 +1,103 @@
+{
+ "bootstrapping": {
+  "authored": "67466b3b367561f62a9616f76c10258257f2213bee0d3a5775b6032780b9686e"
+ },
+ "bootstrapping__logn12_scale45_h192": {
+  "authored": "4e45e09482e213bd391bd421db6e11ec4c98cdffaf5dd3394aebef3e8c3c0038"
+ },
+ "coeffs_to_slots": {
+  "authored": "5c1b28cfab14023a6c684738f9ce5e9784d5fb006cdf4cdbb3bb8c9812db40de"
+ },
+ "coeffs_to_slots__logn12_scale45_dense": {
+  "authored": "e5f3815449e336faead2d6ae428b02a87f46f7247d3b4d51163bc82aea043fbc"
+ },
+ "coeffs_to_slots__logn12_scale45_h192": {
+  "authored": "ac1efde74338d7fcd23bffd308080002001766d113d426f82d2eae0a9a4aa741"
+ },
+ "coeffs_to_slots__logn12_scale55_h192": {
+  "authored": "e58756413faa7b1e5347318aed6525700f23711acd5f0e23d2165a179ad53997"
+ },
+ "goldschmidt": {
+  "authored": "7dc927b87714da23eb590db18eac0547c75461fbd4e86d79d32278ed827981a1"
+ },
+ "goldschmidt__logn12_scale45_dense": {
+  "authored": "a00fbefa445d38f6b02fff769944f155e3e8b639378435c6eaee2fb3fb6e40b1"
+ },
+ "goldschmidt__logn12_scale45_h192": {
+  "authored": "1b0c928d2bbbedcc6a916bbddad4f10f73c20f353fcf192d6a3b00b637ad4589"
+ },
+ "goldschmidt__logn12_scale55_dense": {
+  "authored": "eff3060daaf723f7aee4c2510149f54a7b6675c1511e53506c052c34149070d2"
+ },
+ "iterative_step": {
+  "authored": "02bfa6e645203649560089c9d62bed8d7d8569469637c0758db196f72e1d2f29",
+  "canonical_restored": "91442c08bac2bbd89ac403c53dd998c9ed429af646f504d73f0b543c6d34658a"
+ },
+ "iterative_step__logn12_scale45_dense": {
+  "authored": "1151ce17284af0ede64152bf8347923955c8e73647edc46abb9b36a7c7e495f3",
+  "canonical_restored": "167eeb6939223d01f635e045bad96dedce484b3d2112fa20ef5d31bd5a2613b6"
+ },
+ "iterative_step__logn12_scale45_h192": {
+  "authored": "c211d2f5870248028afe88afa6a40e7383546569634ddb8f839fdbd6f7827783",
+  "canonical_restored": "670c6512bf0661dd73352c9a29d98d2d9d0ea1a6a598b03cc2f9204b23f38d0d"
+ },
+ "iterative_step__logn12_scale55_dense": {
+  "authored": "5b3cd9bfcf8df63e09758405c919e8f15c49c53a892cbe215fa21a47d9a291d1",
+  "canonical_restored": "2188d0ff01310cf1a0cbbf7935073d6f5f4b4b63066f912c0e5ea488788080dd"
+ },
+ "mod1": {
+  "authored": "917d1b986d01ce18d32e59641eb476d0e63eca2c39b6d641720faacf92133036",
+  "canonical_restored": "f56b716833f90f28fa40fc7343a77e58498e8eab7892b146b7a6ec4336645147"
+ },
+ "mod1__logn12_scale45_dense": {
+  "authored": "bf22eb1d35e981813d5b5b08b2288c64263f033cf2607cff80ddc1fbc76ac76a",
+  "canonical_restored": "e980c41faf563434dba4fd6f7b162f95715e159b5f922ebb955b2b4d6bdecb10"
+ },
+ "mul_relin_rescale": {
+  "authored": "ac56cb2275271eceef76cad7f0d1f20aeeec712ca921dc0254907df352e34d6d"
+ },
+ "poly_eval": {
+  "authored": "1d3eecfbeaa3cbcd4a9ddb52e47bacc48939d4d41552e43ffc3bc400bb559f52",
+  "canonical_restored": "ad7b97f2260640fcfdd7f3a38167c913a9a372a89b4f1ca83a49ed0fff9f743f"
+ },
+ "poly_eval__logn12_scale45_dense": {
+  "authored": "2e81eaa958f350fa3ce7907941354e742647649fd5479612e2b6ad645694fe7d",
+  "canonical_restored": "fd39f6c5e1b26de177b225b3aaf785cbca9ab4f822e804ed52c7904012b68e4d"
+ },
+ "poly_eval__logn12_scale45_h192": {
+  "authored": "d309bcb4f13ac591181f7cb5808f86796b98d9685671e5878be6ccf790ab8aac",
+  "canonical_restored": "f0e671bd2b4d249d36c869284c91eb268b853f688c132267b9cb96ae9fc7b85f"
+ },
+ "poly_eval__logn12_scale55_h192": {
+  "authored": "c81bc1f943796fb3a0728023c1ab1388360b1b93e6e65fd94f1c39fb2c72aef3",
+  "canonical_restored": "904410b3cb4fa61c86c7d5e1c2d19688288b4e23fb56fa91b7589c5bdcb59871"
+ },
+ "power_basis": {
+  "authored": "5ab89e7730e1482d1d16cb86381b0f101d5eb4284653df3ea45df99b73e6fa63",
+  "canonical_restored": "e77344cb37f5711a0463f269819282c68d47c074b35753c2d5cb57a6edd7e3c1"
+ },
+ "power_basis__logn12_scale45_dense": {
+  "authored": "b0014701c11f30bdc54ebe2b18da31814bc630d4f512c002556c5d3927fa3bca",
+  "canonical_restored": "f2aca665c49b46789724ee7047d2283ac843cc27657ddc129f3297c377cfa1e7"
+ },
+ "power_basis__logn12_scale45_h192": {
+  "authored": "b2a8c7413490a2108a478d4a10febeb9395ccb57813b08dc9776d42664072418",
+  "canonical_restored": "763b25cb13ea5a488771cb170114d6a337f36b55a7bc27adf17b7e43abb0155c"
+ },
+ "power_basis__logn12_scale55_h192": {
+  "authored": "c649dd3c6b202a2ef355fc4f762b28baa7d51e637674ad071b5ba4df11ad68bc",
+  "canonical_restored": "4484e11555d56fa3ad45481842d27809ce667eeceda8cedf2977375645e360fd"
+ },
+ "slots_to_coeffs": {
+  "authored": "52ae43e190f8514cd88ccd3c3ea5c10bd9754027554bee9106f9a134b41c61f6"
+ },
+ "slots_to_coeffs__logn12_scale45_h192": {
+  "authored": "58a37dd6b27c3ded7e9d25cb836a9396e2d87ef8c11a691a0632293dba14f095"
+ },
+ "slots_to_coeffs__logn12_scale55_dense": {
+  "authored": "0bff544d1a9856ad5b9ae13d1eb9a6f3fe845eef85d080bdff6d5e2210313239"
+ },
+ "slots_to_coeffs__logn12_scale55_h192": {
+  "authored": "03c63f2407ab27ea995a1033dd1164ee36af708440be5a2aace456d9d92c77f7"
+ }
+}

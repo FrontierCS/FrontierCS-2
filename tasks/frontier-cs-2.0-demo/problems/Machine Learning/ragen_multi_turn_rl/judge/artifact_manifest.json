@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "2504.20073/code",
+  "authentic_execution": {
+    "entrypoint": "train.py",
+    "retained_files": [
+      "train.py",
+      "config/_2_sokoban.yaml",
+      "config/base.yaml",
+      "config/envs.yaml",
+      "config/ppo_trainer.yaml",
+      "ragen/trainer/agent_trainer.py",
+      "ragen/llm_agent/agent_proxy.py",
+      "ragen/llm_agent/es_manager.py",
+      "ragen/env/__init__.py",
+      "ragen/env/base.py",
+      "ragen/env/sokoban/config.py",
+      "ragen/env/sokoban/env.py",
+      "ragen/env/sokoban/utils.py",
+      "ragen/workers/fsdp_workers.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "ragen/llm_agent/ctx_manager.py",
+      "mode": "stubbed",
+      "symbols": ["get_masks_and_scores", "_parse_response", "_normalize_score_tensor", "get_lm_inputs", "get_env_inputs", "formulate_rollouts"]
+    }
+  ],
+  "solution_surface": {
+    "modify": ["ragen/llm_agent/ctx_manager.py"],
+    "add_under": ["ragen/llm_agent/solver_extensions/"],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {"path": "frontier-build.sh", "reason": "GPU workspace build adapter for the retained upstream packages."},
+    {"path": "frontier-bench.sh", "reason": "Bounded GPU adapter invoking the retained training entrypoint with challenge-scale overrides."},
+    {"path": "make_submission.sh", "reason": "Patch packaging helper that includes new solver utility files."}
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "run_jobs.py",
+    "train_all.sh",
+    "scripts",
+    "cases",
+    "public",
+    "config/_1_bandit.yaml",
+    "config/_3_frozen_lake.yaml",
+    "config/_4_countdown.yaml",
+    "config/_5_metamathqa.yaml",
+    "config/_6_webshop.yaml",
+    "config/base-lora.yaml",
+    "config/evaluate_api_llm.yaml",
+    "ragen/eval.py",
+    "ragen/eval_api.py",
+    "verl/examples",
+    "verl/tests"
+  ],
+  "minimality_note": "The substrate keeps the selected train.py-to-SimpleSokoban PPO path and its veRL runtime; unrelated experiment frontends, public result artifacts, cases, and scripts are omitted."
+}

@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "my_cond_branch_predictor.cc",
+    "solver_extensions/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 50,
+  "member": "solution.patch"
+}

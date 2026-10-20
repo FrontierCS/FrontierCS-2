@@ -1,0 +1,12 @@
+/build
+/build-dbg
+/cmake-build-*
+/.idea
+/scripts/exp_results
+/Testing
+perf*
+**.swp
+**/__pycache__
+.cache
+*.ans
+.vscode

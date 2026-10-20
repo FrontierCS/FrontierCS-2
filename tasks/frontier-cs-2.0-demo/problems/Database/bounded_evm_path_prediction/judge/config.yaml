@@ -1,0 +1,30 @@
+tag: systems
+runtime:
+  language: go
+  timeout_seconds: 1800
+  environment: "Go 1.22; patch the authors' SeerEVM tree; bundled 200/400-block Ethereum replay judge"
+  apt_packages: [git, golang-go, python3]
+  # The judge builds SeerEVM with `go build`; the Verifier image installs only judge packages.
+  judge_apt_packages: [git, golang-go, python3]
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 8
+  memory_mb: 4096
+  storage_mb: 4096
+  build_timeout_seconds: 300
+evaluation:
+  solver_visible_metrics:
+    - raw_quality
+    - branch_accuracy
+    - transaction_path_accuracy
+    - observations
+  suite_relation: fixed disjoint development and final suites; identical evaluator and beat-spec rules
+  max_dev_submissions: 50
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths: [core/vm/predictor.go]
+  max_changed_files: 1
+  max_patch_bytes: 131072

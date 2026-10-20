@@ -1,0 +1,424 @@
+{
+  "task_id": "edlib_exact_alignment",
+  "stage": "Stage2",
+  "status": "whitespace_surface_and_categorical_train_feedback_native_reference_qualified",
+  "source_commit": "0ddc23ea06abd95ab6227442acb4c27bd7607b68",
+  "source_doi": "10.1093/bioinformatics/btw753",
+  "reference_score_note": "Native reference independent Final score under the exact differential-time/storage revision; evaluator continues measuring its reference afresh.",
+  "reference_score": 65.75443992928449,
+  "naive_score": null,
+  "scientific_runs_performed": true,
+  "pending": [],
+  "conflicts": [
+    "Body-only excision and byte-exact preservation retain surrounding upstream method comments; broader documentation stripping would violate frozen surface.",
+    "Final includes public plus held-out, overriding generic disjoint-final template.",
+    "wait4 RSS includes inherited Python parent high-water; removed from the comparison in this revision and reported only."
+  ],
+  "release_ready": false,
+  "reference_qualification_complete": true,
+  "source_repair_authority": "continuation-20261006T133226Z.json",
+  "workload_revision": "r006-current-strengthening-round-20261008",
+  "revision_authority": "continuation-20261007T055020Z.json",
+  "execution_admitted": true,
+  "successor_authority": "2026-10-08 05:03 item2",
+  "rss_coverage_qualified": false,
+  "historical_local_evidence_r004": {
+    "train.json": "0da788b871d5c1938ba3653ada9048cb71b23424bf1177317691b0567ec0d09e",
+    "final.json": "4544dc92e59189b5e31d28cd54a9902380f107981a6c25dfd969ba2bedbc8183",
+    "coverage.json": "ab5ac091a69d49581e68462b2e13a8371141e0a40e25b8d3c58ac06d1165cbcb",
+    "toolchain.json": "0cc07fe4b0289ffa26e6fff62d8e9a60d1d9789e8d43715f667592d18b14d228",
+    "observer-result.json": "a546363c68bde23a5e64147f105cd79d2eb2b40a045dadfb030d38b694d2a6de"
+  },
+  "local_evidence": {
+    "train.json": "2ad5bd08f7c47a7f514a0395c404719eb246296c422f0e28f5e66563244b2321",
+    "final.json": "16ca9456980c12074ddbe185284055fbeeca7911f64fca5b7058bff41d31ff5e",
+    "new-core-coverage.json": "1e729c994d5ca66256da97323c0a8ec052d84fa12d9dbc5be3cb12c62d1938e5",
+    "measurement-result.json": "46b41e179f051f07da3fc1a772825cc1e983b7944fabb80e601842a574493596",
+    "rss-diagnostic.json": "197e55151b0fe39132158ec2e99cedb51a8279d5dd331fe6d8d013e6ff23389a"
+  },
+  "strengthening_round": 1,
+  "core_allocation_qualification_complete": true,
+  "allocation_authority": "option A adopted; current one strengthening round",
+  "core_allocation_local_calibration_complete": false,
+  "local_core_evidence": {
+    "allocation-rows.json": "174cdbe76e5b06b584c995ea565824bf8cded18039f6feae88c19a0cc752259a",
+    "measurement-result.json": "26317fa86a9ef6dfce263a18a531a05b75b150cfd9be25172270615035123727",
+    "calibration-summary.json": "23dcdf6b277836fcc7d115243f158103dac6056ebebbc2a01681d95fc3d5c0b0",
+    "collector-unit-receipt.json": "94fb8c29b66baa80adb6966ad44f415d8e851ea18b4f3a9c72452b661b5ea0fb"
+  },
+  "rss_retained_limitation": "Original wait4 inherited-parent floor retained as requested; separate deterministic core heap metric supplies informative memory axis, not corrected RSS claim",
+  "compiler_version": "UNKNOWN",
+  "supplement_inventory_complete": false,
+  "genuine_trial_complete": false,
+  "historical_prequalification_pending": [
+    "Current-source native reference calibration with third metric and complete affected runtime",
+    "Normal S4 native reference preflight on exact current version",
+    "Normal S5-6 independent review and any required affected qualification",
+    "Memory ownership / timing-noise and naive-baseline qualification",
+    "Genuine solver trial through S8",
+    "S9-10 audit and native acceptance"
+  ],
+  "gate_and_timing_revision": {
+    "date": "2026-10-12",
+    "gate_metrics": [
+      "cpu_time_seconds",
+      "core_peak_live_bytes"
+    ],
+    "peak_rss_bytes_gated": false,
+    "timed_invocation": "-m MODE -p -f CIG_EXT -r 1 -k -1 (every timed sample validated)",
+    "native_guard": "seccomp allow-list before exec; preloaded stage-2 filter (no stat, no exec); RLIMIT_FSIZE 0; piped output; fixed environment; read-only working directory; per-evaluation self-test",
+    "platform_reference_qualification_run": true,
+    "platform_runtime_support_verified": true,
+    "local_reference_measurement": {
+      "scope": "Operator-only measure_reference (exact reference in both lanes), locally built verifier image from verifier/Dockerfile on ubuntu:24.04, docker --network none --cpus 2 --memory 4g with a two-CPU cpuset on a shared development host. Not a platform qualification.",
+      "final": {
+        "rows": 60,
+        "cpu_time_seconds_raw_C_lt_R": 23,
+        "cpu_time_seconds_equal": 0,
+        "core_peak_live_bytes_raw_C_le_R": 60,
+        "core_peak_live_bytes_equal": 60,
+        "peak_rss_bytes_raw_C_le_R_reported_only": 58,
+        "valid": true,
+        "evaluation_seconds": 118.7,
+        "score_C": 54.8612493900966,
+        "sum_of_reference_row_medians_seconds": 2.722,
+        "abs_C_over_R_minus_1_percent": {
+          "median": 0.127,
+          "p90": 0.617,
+          "max": 4.516
+        },
+        "same_run_self_reported_abs_C_over_R_minus_1_percent": {
+          "median": 0.097,
+          "p90": 0.341,
+          "max": 1.082
+        },
+        "verifier_minus_self_reported_ms_600_samples": {
+          "median": 1.973,
+          "min": 1.763,
+          "p95": 2.3,
+          "max": 3.114
+        },
+        "smallest_row": {
+          "id": "heldout-10000-99-SHW",
+          "verifier_median_ms": 5.034,
+          "self_reported_median_ms": 3.205,
+          "overhead_ms_range": [
+            1.783,
+            1.874
+          ]
+        },
+        "largest_row": {
+          "id": "heldout-30000-60-HW",
+          "verifier_median_ms": 317.783,
+          "self_reported_median_ms": 315.694,
+          "overhead_ms_range": [
+            2.05,
+            2.25
+          ]
+        }
+      },
+      "train": {
+        "rows": 30,
+        "cpu_time_seconds_raw_C_lt_R": 20,
+        "cpu_time_seconds_equal": 0,
+        "core_peak_live_bytes_raw_C_le_R": 30,
+        "core_peak_live_bytes_equal": 30,
+        "peak_rss_bytes_raw_C_le_R_reported_only": 28,
+        "valid": true,
+        "evaluation_seconds": 66.1,
+        "score_C": 55.04166389340449
+      },
+      "raw_inequalities_are_not_qualified_verdicts": true
+    },
+    "adversarial_fixtures": "tests/maintenance/edlib_exact_alignment/adversarial/*.patch, run through the unchanged evaluator by tests/maintenance/edlib_exact_alignment/test_adversarial.py",
+    "compared_time": "Verifier-measured elapsed time of the whole process (CLOCK_MONOTONIC immediately before exec in the forked child, and at reap); the CLI's self-reported line is a bounded diagnostic and is never compared or scored",
+    "metadata_successor_step": "After the platform reference qualification of exactly these execution bytes: change only judge/qualification.json (reference_qualification_complete to true, status, pending, and a record of the qualifying run) and the judge/qualification.json entry of upstream.lock.json. No file that is executed, scored or shown to the solver changes.",
+    "platform_qualification_evidence": "native_reference_qualification",
+    "platform_support_evidence_scope": "Authenticated actual published source and complete native Train30/Final60 success imply fail-closed ELF admission, native self-test and guarded aligner/probe/core execution paths succeeded. Individual process guard traces are not retained and are not claimed."
+  },
+  "superseded_qualified_reference": {
+    "superseded_reason": "Measured the previous evaluator on the platform: silent unvalidated timed mode, three-metric gate including peak_rss_bytes, task-creation-only guard. Execution bytes changed in the 2026-10-12 revision, so these measurements are not inherited.",
+    "scope": "Exact current reference procedure and core requested-live-heap collector on the approved 60 workloads; not full task readiness",
+    "run_id": "run-redacted-60f2b119",
+    "task_version_id": "taskver-redacted-d4f21841",
+    "candidate_version_id": "candver-redacted-f989f83f",
+    "source_merge": "cc667f0ef9ece6aaf96fc97380ec5fea282b3e0a",
+    "reviewed_source_head": "8341713e62ff7b66edcd7e22c63bd61d34437496",
+    "source_native_digest": "sha256:fd1f740f1457e3b8eede39fda7227cd1d5b460266e7ed49e9e56895f61b68d6f",
+    "reference_patch_sha256": "sha256:59520b61c5b2a7785da18a04374f83e9fd349ade0ad2d5c2494f9b682403cdff",
+    "source_verifier_image_digest": "sha256:bca817dfe416a35aedea437850dcd0c3c87e78edf047567fd314cf49c1e6a7d8",
+    "dataset_sha256": "sha256:6a327445ebd20b8e199c52aa2ec18fa8fc7fccd6cf4f1143e00b58cdb147dce7",
+    "selected_final_payload_sha256": "sha256:38e47061a2daaef4b00884f2fedf3e2f7b0447120ee666804a791eee91b6cfda",
+    "formal_terminal_receipt": {
+      "path": "redacted internal authoring record",
+      "sha256": "b6f26cb19b72b2e4a1590e372c9a31f918366dc887ce52e1279229ae447b685c",
+      "bytes": 264194
+    },
+    "raw_audit": {
+      "path": "redacted internal authoring record",
+      "sha256": "3187b59a1fa3d214f5ba6097968c8a4ee9a63da9c22d6d04a37d899baba480f6",
+      "bytes": 8941
+    },
+    "independent_review": {
+      "path": "redacted internal authoring record",
+      "sha256": "66065e2449fa29fb5d60595fdbc881f26bc7adf74af317314f914f3568f0f056",
+      "bytes": 13123
+    },
+    "final_archive_sha256_formal_receipt": "0eefc1ad64e6de2a66e121216908f3271b29ee84f2cd52bef1f6f77be35f2815",
+    "final_archive_bytes_formal_receipt": 16895,
+    "reference_evidence_inheritance": "The Run executed the prior immutable TaskVersion/image. This successor inherits its measurements by exact byte equivalence of all execution/scoring/workload/resource files; only this qualification metadata and its lock entry change. No new reference was run and no old result is rewritten.",
+    "score_provenance": "reference_score is the contemporaneous R-lane continuous score, not a fixed future comparison bar; evaluator still measures its exact reference in every evaluation",
+    "observed_scores": {
+      "C": 53.243919732168635,
+      "R": 54.353034631612516,
+      "margin": -1.109114899443881
+    },
+    "historical_raw_inequalities_not_qualified_verdicts": {
+      "cpu_time_seconds": {
+        "passed_raw_inequality": 21,
+        "failed_raw_inequality": 39,
+        "equal": 0,
+        "total": 60,
+        "formal_qualified_pass": false
+      },
+      "peak_rss_bytes": {
+        "passed_raw_inequality": 46,
+        "failed_raw_inequality": 14,
+        "equal": 27,
+        "total": 60,
+        "formal_qualified_pass": false
+      },
+      "core_peak_live_bytes": {
+        "passed_raw_inequality": 60,
+        "failed_raw_inequality": 0,
+        "equal": 60,
+        "total": 60,
+        "formal_qualified_pass": false
+      }
+    },
+    "observed_timing_noise": {
+      "range_percent_of_median": {
+        "n": 120,
+        "min": 1.2836266203520077,
+        "median": 52.44328214604316,
+        "p95_nearest_rank": 276.8885952514364,
+        "max": 821.5031495354473
+      },
+      "mad_percent_of_median": {
+        "n": 120,
+        "min": 0.027969569937408924,
+        "median": 2.7698217482704695,
+        "p95_nearest_rank": 35.49946793857739,
+        "max": 48.89714865682514
+      },
+      "population_cv_percent": {
+        "n": 120,
+        "min": 0.4701981979656494,
+        "median": 19.569046526428156,
+        "p95_nearest_rank": 64.23027444604882,
+        "max": 124.38850702067329
+      },
+      "C_over_R_medians": {
+        "n": 60,
+        "min": 0.4332623162443367,
+        "median": 1.008801041025472,
+        "p95_nearest_rank": 1.9117902557177502,
+        "max": 1.9800139669349979
+      },
+      "absolute_lane_difference_percent_of_R": {
+        "n": 60,
+        "min": 0.11081362815951704,
+        "median": 8.684764332675599,
+        "p95_nearest_rank": 91.17902557177501,
+        "max": 98.0013966934998
+      },
+      "preregistered_numeric_noise_threshold_found": false,
+      "no_posthoc_pass_fail_threshold_applied": true
+    },
+    "noise_review_disposition": "Independent review supports the declared elapsed-time procedure with scheduling noise retained. No new numerical threshold, statistical-significance claim, deterministic self-ordering or retry is introduced.",
+    "measurement_complete": true,
+    "formal_runtime_seccomp_supported": true,
+    "core_allocation_signal_qualified": true,
+    "reference_evaluation_seconds": 200.006,
+    "retained_limits": [
+      "RSS inherited-parent high-water contamination; not independent core coverage",
+      "Core requested live heap excludes stack/static/preexisting allocations and allocator overhead",
+      "No separate compiler-version stdout or kernel-state dump claimed",
+      "Naive score null; complete supplement inventory pending; genuine trial and release acceptance pending"
+    ]
+  },
+  "peak_rss_bytes_gated": false,
+  "native_reference_qualification": {
+    "run_id": "run-redacted-b122a5f3",
+    "task_version_id": "taskver-redacted-220a8e6e",
+    "source_commit": "edc0d299be3abdb822bfd4cd56ee9623e2b8b57d",
+    "source_sha256": "sha256:a0f0e55f5eff08bc36ac1e2f1593ca06ac68cd6c5dcb67106b1dd40f16bbbccd",
+    "train_score": 66.2571752276275,
+    "final_score": 65.63495157285747,
+    "train_elapsed_seconds": 114.447,
+    "final_elapsed_seconds": 243.26,
+    "reference_patch_sha256": "sha256:dd22af43f703b2c17c9b494e8c029e8256fd84df925ae15c873c63b01358e3f0",
+    "root_acceptance_sha256": "sha256:a877ee5b94e4fb74964f6c774cbf538caf1e9d9aa8c4a74c5f958251f9d894ac",
+    "metadata_only_successor": true,
+    "scientific_source_bytes_unchanged": true
+  },
+  "stronger_reference_revision": {
+    "date": "2026-10-12",
+    "qualification_steps": [
+      "Step 1: run the platform reference qualification on this exact source (Train30 and Final60 with the reference in both lanes) and review it: validity of every execution, determinism and lane equality of core_peak_live_bytes, the distribution of the reconstruction-time difference, evaluation durations against the 600-second limits.",
+      "Step 2: publish a qualification-metadata successor that sets reference_qualification_complete to true and records that run. Until then no evaluation of this source can report beats_reference = 1."
+    ],
+    "reference": {
+      "origin": "model submission adopted verbatim as the trusted reference",
+      "model": "redacted",
+      "run_id": "run-redacted-472092c0",
+      "patch_sha256": "sha256:dd22af43f703b2c17c9b494e8c029e8256fd84df925ae15c873c63b01358e3f0",
+      "restored_source_sha256": "sha256:b7491bc8bb3feafc23ce6e477d35e3b24ad99d02bd0fd3c77117ef494d76aece",
+      "changes_to_the_submitted_patch": [],
+      "audit": {
+        "reading": "three tiers (small-distance diagonal method with checkpointed waves; block band around the straight line with radius doubling, certified by the banded score equalling the known distance, sqrt-spaced checkpoints and per-tile recomputation, self-counted path cost; divide-and-conquer fallback whose split is accepted only when forward plus backward score equals the known distance and whose last attempt uses the retained exact routine)",
+        "fuzz": "ASan+UBSan, about 575,000 replay-validated paths over all three modes, wildcard equalities, alphabets of 2 to about 90 symbols and shifted, repetitive, rotated, unrelated and extreme-aspect inputs; six constant-only build variants forcing each tier and repeated band failures; 0 failures, 0 sanitizer reports; only defensive failure exits never executed",
+        "flagged_not_changed": [
+          "malloc result is not checked (as upstream)",
+          "right shift of a negative int (as upstream calculateBlock)",
+          "__builtin_ctzll (GCC/Clang only; the pinned toolchain is GCC)",
+          "two byte caps (131072, 65536) are size heuristics chosen by the submission"
+        ]
+      }
+    },
+    "time_metric": {
+      "name": "cpu_time_seconds",
+      "definition": "min of 15 verifier-measured path-run times minus min of 15 verifier-measured location-only times of the same executable; pass iff 0 < candidate < reference",
+      "why": "with this reference the editable function is 0.5% to 15% of whole-process time (median 5%), and code placement of the unmodified search differs by about 5% between builds",
+      "statistic_choice": "on 15 recorded interleaved samples per mode per row, n=9 resamples: min-then-subtract error vs the pooled estimate median 2.4% (p90 12%); median of paired differences 4.1% (18%); min of paired differences 27% (81%) with 6.5% non-positive"
+    },
+    "storage_metric": {
+      "name": "core_peak_live_bytes",
+      "definition": "peak requested live heap and mapped bytes + stack high-water below the core frame + writable/thread-local static bytes of the derivative edlib.cpp object; max of five; candidate <= reference"
+    },
+    "location_only_closure": [
+      "evaluator.py::body_stays_in_function (source)",
+      "elf_surface.py::require_same_launch_surface (timed and instrumented executables)"
+    ],
+    "local_measurements": {
+      "scope": "Locally built verifier image from verifier/Dockerfile on ubuntu:24.04, docker --network none, two-CPU cpuset, 4 GiB, shared development host. Not a platform qualification. Rows cleared are raw inequalities with qualification assumed, not verdicts.",
+      "reference_vs_itself_final_9_rounds": [
+        {
+          "time": 33,
+          "storage": 60
+        },
+        {
+          "time": 35,
+          "storage": 60
+        },
+        {
+          "time": 25,
+          "storage": 60
+        }
+      ],
+      "reference_vs_itself_final_15_rounds": {
+        "time": 27,
+        "storage": 60,
+        "evaluation_seconds": 229.1
+      },
+      "reference_vs_itself_train_15_rounds": {
+        "time": 10,
+        "storage": 30,
+        "evaluation_seconds": 118.4
+      },
+      "storage_identical_across_lanes_and_five_processes": true,
+      "previous_reference_as_candidate_final_15_rounds": {
+        "time": 0,
+        "storage": 0,
+        "evaluation_seconds": 242.9
+      },
+      "candidates_final_9_rounds_rows_time_storage_both": {
+        "model_1": [
+          8,
+          6,
+          3
+        ],
+        "model_2": [
+          0,
+          0,
+          0
+        ],
+        "model_3": [
+          0,
+          0,
+          0
+        ],
+        "model_4": [
+          0,
+          4,
+          0
+        ],
+        "older_model_patch": [
+          12,
+          60,
+          12
+        ],
+        "previous_reference": [
+          0,
+          0,
+          0
+        ]
+      },
+      "layout_check": "reference plus one never-executed call (same reconstruction, different code placement): location-only time -4.4% median on HW rows, up to 14 ms; difference C-R median -0.01 to -0.03 ms, at most 0.32 ms; 40 and 36 of 60 rows below the reference against 33, 35, 25 for the reference itself, a residual of about 2% of the reconstruction time",
+      "evaluation_seconds_9_rounds": {
+        "final": [
+          167.0,
+          179.5
+        ],
+        "train": [
+          90.9,
+          95.1
+        ]
+      }
+    },
+    "known_limits": [
+      "A body that writes the remaining program output itself and exits removes the retained path conversion and printing (3% to 17% of the reference difference on measured rows) from its own difference; forbidden by the statement, fatal in instrumented runs unless the derivative is also detected.",
+      "The storage derivative is detectable by a submission (path, symbol addresses).",
+      "Storage obtained by a raw system-call instruction or through computed library addresses is not attributed.",
+      "Code placement can still change the reconstruction code itself by a few percent of its time."
+    ]
+  },
+  "native_reference_qualification_superseded": "Measured the previous reference and evaluator (restored upstream body, whole-process median of five, heap-only metric). Not inherited by this revision.",
+  "whitespace_mapping_revision": {
+    "reviewed_pr": null,
+    "date": "2026-10-13",
+    "native_reference_qualification_pending": false,
+    "scientific_time_storage_reference_and_workloads_unchanged": true,
+    "model_rerun_scope": "one model only, old run run-redacted-a6802c8f; all other formal results retained",
+    "native_reference_qualification_complete": true,
+    "qualified_run_id": "run-redacted-8ddd45eb"
+  },
+  "native_whitespace_qualification": {
+    "run_id": "run-redacted-8ddd45eb",
+    "task_version_id": "taskver-redacted-d4c9f6e1",
+    "source_identity": "sha256:1664aa7864823d0904ad16e8ed5a781f3e3c9f9225067ad14b8d4ca3a30c850b",
+    "accepted_evidence_sha256": "sha256:e61b6989292ef509a6ea273f8f9dc6d36d328f3d859150385d77d2cefc8f0a02",
+    "auditor_sha256": "sha256:bd7305de92ae2e299f44e7c757740b0f37cd6f6c15f21a639ae99f400d427aba",
+    "train": {
+      "workloads": 30,
+      "score": 66.54093351181297,
+      "reference_score": 66.53853155039255,
+      "elapsed_seconds": 113.961,
+      "complete_15_path_and_location_replicates": true,
+      "complete_5_allocation_replicates": true,
+      "positive_reconstruction_deltas_all_rows": true,
+      "pending_qualification_fail_closed": true
+    },
+    "final": {
+      "workloads": 60,
+      "score": 65.75443992928449,
+      "reference_score": 65.76641186280018,
+      "elapsed_seconds": 231.562,
+      "complete_15_path_and_location_replicates": true,
+      "complete_5_allocation_replicates": true,
+      "positive_reconstruction_deltas_all_rows": true,
+      "pending_qualification_fail_closed": true
+    },
+    "science_workload_solver_visible_bytes_unchanged": true
+  }
+}

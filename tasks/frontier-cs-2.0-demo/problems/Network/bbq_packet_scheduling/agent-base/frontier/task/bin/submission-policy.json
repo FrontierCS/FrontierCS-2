@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "hardware/bbq/generator/bbq_level_lx.py",
+    "hardware/bbq/generator/solver_extensions/"
+  ],
+  "max_bytes": 8388608,
+  "max_files": 50,
+  "member": "solution.patch"
+}

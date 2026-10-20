@@ -1,0 +1,104 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "ParButterfly Exact Counting",
+  "family": "frontier-cs-2.0/algorithms",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 326,
+        "path": "datasets/eval.json",
+        "version": "sha256:6c673f2cf789cc74c36a08ed39761a52d461d8d3a58e3915faeaface364a5f12"
+      },
+      "train": {
+        "bytes": 337,
+        "path": "datasets/train.json",
+        "version": "sha256:0c45c882bb0de7580063e7131d70b04461073e69be7450aca42272fb5850ddb4"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "dev_counting_seconds_median",
+        "dev_counting_seconds_p90"
+      ],
+      "suite_relation": "final_replays_public_plus_hidden_same_distribution"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "manual-transfer",
+      "run_id": null
+    },
+    "isolation": "generated graph seeds, evaluator, serial oracle, frozen naive baseline and source-locked parallel reference exist only in the verifier image; the Agent receives the retained ParButterfly source substrate and scientific statement",
+    "paper": {
+      "authors": [],
+      "doi": null,
+      "paper_id": null,
+      "pdf_url": null,
+      "title": null,
+      "venue": null,
+      "year": null
+    },
+    "runtime": {
+      "allowed_paths": [
+        "apps/hyper/butterfly_count_total.h",
+        "apps/hyper/butterfly_count.h",
+        "apps/hyper/butterfly_ecount.h",
+        "apps/hyper/butterfly_peel.h",
+        "apps/hyper/butterfly_epeel.h",
+        "apps/hyper/butterfly_putils.h",
+        "apps/hyper/butterfly_utils.h",
+        "apps/hyper/solver_extensions/"
+      ],
+      "language": "c++14/openmp",
+      "submission_kind": "patch"
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "b55ddd03f6b726235f03603b15b4f4c489d478bc",
+      "source_path": "original_format_problems/parbutterfly2",
+      "source_pull_request": null,
+      "scope": "Original-format to native transfer with T41 calibration of author BATCHS parallel branch, same-generator scale, four CPU workers, independent naive scoring and public-plus-hidden final replay",
+      "original_metadata_path": null,
+      "historical_evidence_path": null,
+      "note": "No Smith generator, promotion, paper, or model-trial metadata exists in the source PR; unknown fields remain null."
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 1
+    }
+  },
+  "problem_id": "parbutterfly",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 40000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 1048576
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 4000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 8589934592
+  },
+  "version": "native-transfer-1-four-cpu-independent-naive-beat-spec-v3-fmetric-reference-refscore"
+}

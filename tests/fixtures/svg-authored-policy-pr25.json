@@ -1,0 +1,124 @@
+{
+  "repository": "https://github.com/joyemang33/FrontierSmith2",
+  "pull_request": 25,
+  "commit": "89dce3bc39109eea534d2beccb57a5fb8ec2b1bf",
+  "path": "converted_problems/sparse_video_attention_policy/policy.json",
+  "policy": {
+    "agent": {
+      "cpu_millis": 3000,
+      "memory_bytes": 12884901888,
+      "workspace_bytes": 10737418240
+    },
+    "display_name": "Sparse Video Attention Policy",
+    "family": "frontier-cs-2.0/systems",
+    "gpu": {
+      "agent": {
+        "allowed_types": [
+          "H100"
+        ],
+        "max_gpu_seconds": 54000,
+        "max_instance_seconds": 18000,
+        "max_instances": 1
+      },
+      "verifier": {
+        "max_gpu_instances": 4,
+        "max_gpu_seconds": 936000
+      }
+    },
+    "metadata": {
+      "accelerator": {
+        "agent_gpu_interface": "frontier.gpu-helper/v3",
+        "agent_sandbox": true,
+        "allowed_types": [
+          "H100"
+        ],
+        "credential_reaches_agent": false,
+        "provider": "driver-managed",
+        "verifier_gpu": true
+      },
+      "datasets": {
+        "eval": {
+          "bytes": 438,
+          "path": "datasets/eval.json",
+          "version": "sha256:e0ca3a67c7198208965b8649dc9af3fa0c8e67d01eaf1e13d0409228264fc883"
+        },
+        "train": {
+          "bytes": 445,
+          "path": "datasets/train.json",
+          "version": "sha256:aa1ebf0bc51662d2f0c2d79fe7cccfe2b726ddb180df4006d2f474d8be203517"
+        }
+      },
+      "evaluation": {
+        "authored_max_dev_submissions": 25,
+        "beat_spec_sha256": "sha256:74e867e74b49e390e0d561f35a5fdf7664b023b60526c4f4ce7a73623a90f24d",
+        "solver_visible_metrics": [
+          "e2e_latency_seconds",
+          "psnr_db",
+          "ssim",
+          "lpips"
+        ],
+        "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+      },
+      "generator": {
+        "candidate_id": "cand_000-r7",
+        "commit": null,
+        "pipeline": "frontiersmith2",
+        "run_id": "r_top01_82_svg_ear_v12"
+      },
+      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+      "paper": {},
+      "runtime": {
+        "allowed_paths": [
+          "svg/models/wan/attention.py",
+          "svg/kmeans_utils.py",
+          "svg/solver_extensions/"
+        ],
+        "language": "python",
+        "submission_kind": "patch"
+      },
+      "conversion": {
+        "source_repo": "https://github.com/FrontierCS/FrontierCS-2.0-Preview",
+        "source_commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
+        "source_path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy",
+        "method": "manual runtime standardization; scientific implementation preserved"
+      }
+    },
+    "network": {
+      "allowed_domains": [],
+      "audit": {
+        "max_bundle_bytes": 8589934592,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 8388608,
+        "max_model_sessions": 256,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 1076,
+        "ssh_session_budgets": {
+          "agent": 1024,
+          "verifier_train": 50,
+          "verifier_eval": 2
+        }
+      }
+    },
+    "problem_id": "sparse_video_attention_policy",
+    "quota": {
+      "eval_timeout_seconds": 9000,
+      "max_train_calls": 25,
+      "max_train_wall_seconds": 225000,
+      "wall_time_seconds": 18000
+    },
+    "schema_version": "frontier.frontiersmith-task-policy/v1",
+    "submission": {
+      "entrypoint": "payload/solution.patch",
+      "max_bytes": 262144
+    },
+    "verifier": {
+      "command": [
+        "/opt/frontier/verifier"
+      ],
+      "cpu_millis": 3000,
+      "max_evidence_bytes": 4194304,
+      "memory_bytes": 12884901888
+    },
+    "version": "gpu-helper-v3-store-final-formal-v2"
+  }
+}

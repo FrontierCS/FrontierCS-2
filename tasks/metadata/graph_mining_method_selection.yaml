@@ -1,0 +1,27 @@
+id: "graph_mining_method_selection"
+display_name: "Graph Mining Method Selection"
+category: "Database"
+summary: "Choose and tune ScaleGPM's approximate graph-pattern mining engine per query to cut runtime within the error bound."
+paper_title: "Accurate and Fast Approximate Graph Pattern Mining at Scale"
+paper_venue: "PVLDB 2024"
+paper_url: "https://www.vldb.org/pvldb/vol18/p93-chen.pdf"
+agent_cpu_cores: 8
+agent_memory_gib: 16
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 8
+verifier_memory_gib: 16
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 90000
+eval_timeout_seconds: 900

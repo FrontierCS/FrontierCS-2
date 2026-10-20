@@ -1,0 +1,33 @@
+{
+  "schema_version": "frontier.knn-data-manifest/v1",
+  "status": "verified_original_volume_bytes",
+  "source": "Read-only export of original flashlib-ann-datasets Modal volume; frozen local bytes, no runtime provider access",
+  "datasets": {
+    "sift": {
+      "filename": "sift.hdf5",
+      "bytes": 525128288,
+      "sha256": "sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+      "train_shape": [
+        1000000,
+        128
+      ],
+      "test_shape": [
+        10000,
+        128
+      ]
+    },
+    "gist": {
+      "filename": "gist.hdf5",
+      "bytes": 3844648288,
+      "sha256": "sha256:8e95831936bfdbfa0a56086942e2cf98cd703517c67f985914183eb4cdbf026a",
+      "train_shape": [
+        1000000,
+        960
+      ],
+      "test_shape": [
+        1000,
+        960
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+id: "sparse_video_attention_policy"
+display_name: "Sparse Video Attention Policy"
+category: "MLSys"
+summary: "Design a sparse-attention policy for Sparse VideoGen text-to-video diffusion that preserves quality while reducing GPU time."
+paper_title: "SVG-EAR: Parameter-Free Linear Compensation for Sparse Video Generation via Error-aware Routing"
+paper_venue: "ECCV 2026"
+paper_url: "https://arxiv.org/abs/2603.08982"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 54000
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 4
+verifier_gpu_seconds: 1310400
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 25
+train_wall_seconds: 225000
+eval_timeout_seconds: 12600

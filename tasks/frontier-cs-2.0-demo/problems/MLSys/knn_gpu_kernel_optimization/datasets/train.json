@@ -1,0 +1,10 @@
+{
+  "schema_version": "frontier.knn-gpu-kernel-dataset/v1",
+  "problem_id": "knn_gpu_kernel_optimization",
+  "mode": "train",
+  "suite_revision": "public4-hidden2-final6-v1",
+  "selects": {
+    "FRONTIER_SUBMISSION_ROLE": "development"
+  },
+  "suite": "four public training workloads"
+}

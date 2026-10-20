@@ -1,0 +1,266 @@
+{
+  "authentic_execution": {
+    "entrypoint": "code/src/lib.rs",
+    "evidence": "Pinned complete Analysis impl is privately restored in its original lexical scope. Existing offline CPU build helper and native evaluator _build/_measure executed in the qualified image. The original full upstream library independently compiles but hits the same incorrect diagnostic accelerator-flag assertion. No solver trial or full fact-matrix pass is claimed.",
+    "retained_files": [
+      "code/Cargo.toml",
+      "code/src/lib.rs",
+      "code/src/language/mod.rs",
+      "code/src/language/language.rs",
+      "code/src/language/interpreter.rs"
+    ],
+    "status": "compiled; 28-record numerical path passed; matrix incomplete"
+  },
+  "dependency_lock_sha256": "d5c2780d7b2ce9984388ec99152f9723adb36b4605a2147ae1ebb4012f3d7b35",
+  "excision": [
+    {
+      "interface_path": "code/src/language/solver_extensions/access_analysis.rs",
+      "mode": "extracted-to-interface-include",
+      "path": "code/src/language/language.rs",
+      "restoration": "exact complete upstream impl block, including all Relay and accelerator branches; no semantics changes",
+      "symbols": [
+        "<MyAnalysis as egg::Analysis<Language>>::make",
+        "<MyAnalysis as egg::Analysis<Language>>::merge"
+      ]
+    },
+    {
+      "mode": "moved-to-judge-only-source-coverage",
+      "module": "#[cfg(test)] mod tests",
+      "path": "code/src/language/language.rs",
+      "private_path": "judge/source-coverage/access_analysis_tests.rs",
+      "provenance": "judge/source-coverage/provenance.json",
+      "separator": "one preceding blank separator also removed",
+      "test_bytes_sha256": "7d440cab9af783c4057d214d6f3386427b87820fa994bc78f278a79f3a0b1c63",
+      "test_count": 132
+    }
+  ],
+  "license": "No license file or Cargo license declaration at the pinned revision; redistribution permission unresolved.",
+  "material_execution": {
+    "entrypoint": "glenside-2105-09377/code/src/lib.rs",
+    "evidence": "The reproduced CPU path runs cargo test --locked --no-default-features --lib language:: -- --test-threads=1. The original rewrite tests construct RecExpr<Language>, EGraph<Language,MyAnalysis>, and egg::Runner, apply the generic flatten/reshape and systolic-array rules, and search for im2col expressions. Preserve the complete pinned dependency and module closure, the documented feature-gating repair, and the retained entrypoint wiring. Keep answer-bearing rewrite tests private and exclude rewrites.rs from retained starter files.",
+    "retained_files": [
+      "glenside-2105-09377/code/Cargo.toml",
+      "glenside-2105-09377/code/src/lib.rs",
+      "glenside-2105-09377/code/src/language/mod.rs",
+      "glenside-2105-09377/code/src/language/language.rs",
+      "glenside-2105-09377/code/src/language/interpreter.rs"
+    ],
+    "status": "ran"
+  },
+  "material_execution_is_historical": true,
+  "minimality_note": "Complete analysis impl remains the only missing production core. Exactly the 132-test upstream analysis-result module and one preceding separator are removed from BOTH public source templates and preserved judge-only. Types, helpers, other tests, production branches, four generic constructors and BOTH fixed mapper methods are unchanged. Authentic reference patch and core bytes are unchanged.",
+  "path_base_note": "All source paths are relative to upstream_root and harbor/app. material_execution retains the immutable plan paths, relative to materials; prefixing authentic_execution paths with upstream_root reproduces those exact source identities.",
+  "pruned_alternatives": [
+    "code/examples/glenside-cli.rs",
+    "code/tests/interpret-conv2d.rs",
+    "code/tests/regular-multilayer-perceptron.rs",
+    "code/README.md"
+  ],
+  "reference_core_sha256": "89a274997c212351988cfd7c5272cceca08c86428f3af45c1cafca82d38c5c52",
+  "reference_restored_sha256": "d59fb0baa7ad0b3941da503228eed5f4afba8c6fb30a162b682fdb753a1baf23",
+  "repair": {
+    "agent_image": "not built or qualified; recipe refreshes and diffs BOTH public source copies; future image audit required",
+    "authentic_core_unchanged": true,
+    "evidence": "private access-analysis-repair-20260929; ACCESS_ANALYSIS_REPAIR_REPORT.md",
+    "gate": "unchanged; supervisor independent review required",
+    "licensing": "unresolved",
+    "patch_envelope_change": null,
+    "reference_patch_unchanged": true,
+    "review_findings": {
+      "B1": "132 exact tests moved judge-only",
+      "B2": "restored 38-row matrix passes; untouched-upstream command failed before compile; pair incomplete",
+      "B3": {
+        "development": {
+          "beats_reference": [
+            0
+          ],
+          "build_elapsed_seconds_range": [
+            53.874418400999275,
+            53.874418400999275
+          ],
+          "complete_runs": 1,
+          "evaluate_elapsed_seconds_range": [
+            75.17775406500004,
+            75.17775406500004
+          ],
+          "interpretation": "Observed finite ranges only, not statistical stability, practical headroom or a required beating witness. Compilation is excluded from Runner rewrite time.",
+          "reference_score_range": [
+            82.90651357737362,
+            82.90651357737362
+          ],
+          "score_absolute_span": 0.0,
+          "score_range": [
+            82.91069294482811,
+            82.91069294482811
+          ],
+          "score_relative_span_percent_of_mean": 0.0
+        },
+        "final": {
+          "beats_reference": [
+            0
+          ],
+          "build_elapsed_seconds_range": [
+            48.283598461999645,
+            48.283598461999645
+          ],
+          "complete_runs": 1,
+          "evaluate_elapsed_seconds_range": [
+            69.57930548400054,
+            69.57930548400054
+          ],
+          "interpretation": "Observed finite ranges only, not statistical stability, practical headroom or a required beating witness. Compilation is excluded from Runner rewrite time.",
+          "reference_score_range": [
+            82.90768627964628,
+            82.90768627964628
+          ],
+          "score_absolute_span": 0.0,
+          "score_range": [
+            82.9120564374896,
+            82.9120564374896
+          ],
+          "score_relative_span_percent_of_mean": 0.0
+        }
+      },
+      "B4": "hard-failure starter feedback and bounded actual input contract corrected"
+    },
+    "revision": "access-analysis-finite-repair-20260929"
+  },
+  "restored_language_hash_scope": "Original full upstream language.rs, reconstructed from include expansion plus one newline and exact judge-only test module; not the stripped runtime compilation unit.",
+  "restored_language_sha256": "8fbc89a4aee4d2f0d8a5d3e2a807eb454597e4e784f3dd2ba1950cc4f70f1ed5",
+  "retained_alternatives": [
+    {
+      "path": "code/src/codegen.rs",
+      "reason": "Eagerly declared by the byte-identical lib.rs; no codegen or CLI evaluation."
+    },
+    {
+      "path": "code/src/extraction/mod.rs",
+      "reason": "Eager module closure of lib.rs; not an alternate lowering in the registered rule set."
+    },
+    {
+      "path": "code/src/extraction/ilp.rs",
+      "reason": "Eager submodule declaration; CPLEX disabled."
+    },
+    {
+      "path": "code/src/language/from_relay/mod.rs",
+      "reason": "Original rewrite imports require its pure expression builders; TVM bodies disabled by the recorded repair."
+    },
+    {
+      "path": "code/src/hw_design_language.rs",
+      "reason": "Eagerly declared by the immutable src/lib.rs module closure; no independent backend."
+    }
+  ],
+  "retained_sha256": {
+    "code/Cargo.toml": "1c5964d21886fbc86b7dfda445e9f9ef609eff0db4eed7056f7fc3af9e5fd7d5",
+    "code/src/language/interpreter.rs": "4a28c8aa1aebdcdb271d82caef400a9acc8857a5c78b1e8b6650d27751c7f211",
+    "code/src/language/language.rs": "2d6af4cebaebfb5227d899938e202ff86910f9a2a0a8850d390f3ea73ea4a212",
+    "code/src/language/mod.rs": "91ff577ef39f58a0ed38cf3487b0584ba4c00c6d7b06e71b00086b73a99ff17a",
+    "code/src/lib.rs": "338c470ba8b36f180d0f51bca9e8c6715e729c0a475adbb0f1d8544bc4b7a9a6"
+  },
+  "schema_version": 1,
+  "solution_surface": {
+    "add_under": [
+      "code/src/language/solver_extensions/"
+    ],
+    "behavior": "Implement make/merge in the existing solver_extensions namespace; generic rewrite hooks remain editable and initially contain authentic selected constructors; both fixed mapping functions are immutable.",
+    "modify": [
+      "code/src/language/rewrites.rs"
+    ],
+    "no_new_files_reason": ""
+  },
+  "source_mapping": {
+    "code/Cargo.toml": "code/Cargo.toml",
+    "code/src/codegen.rs": "code/src/codegen.rs",
+    "code/src/extraction/ilp.rs": "code/src/extraction/ilp.rs",
+    "code/src/extraction/mod.rs": "code/src/extraction/mod.rs",
+    "code/src/hw_design_language.rs": "code/src/hw_design_language.rs",
+    "code/src/language/from_relay/mod.rs": "code/src/language/from_relay/mod.rs",
+    "code/src/language/interpreter.rs": "code/src/language/interpreter.rs",
+    "code/src/language/language.rs": "code/src/language/language.rs",
+    "code/src/language/mod.rs": "code/src/language/mod.rs",
+    "code/src/language/rewrites.rs": "code/src/language/rewrites.rs",
+    "code/src/language/solver_extensions/access_analysis.rs": "code/src/language/language.rs:1391 complete Analysis impl, stub publicly and authentic privately",
+    "code/src/lib.rs": "code/src/lib.rs"
+  },
+  "successor": {
+    "added_records_per_split": 0,
+    "evidence": "private access-analysis-20260929; source-bound ACCESS_ANALYSIS_REPORT.md",
+    "hypothesis": "Reconstruct authentic compositional make/merge facts consumed by the existing access-pattern rewriting spine.",
+    "parent_revision": "r10-outer-concat-not-item-axis",
+    "parent_stage10_native_sha256": "sha256:9572736edf7eeebd278c00bf32e352fc4daaf793e730094041b6c7a139790eff",
+    "preserved_records_per_split": 14,
+    "record_invariants": {
+      "agent-base/Dockerfile": "2116e04b73d37cbfed87efbc519bf03c975ce89dabf6bd0b51c12058396850da",
+      "agent-base/frontier/task/bin/submission-policy.json": "a882648e44004178ecfe821990afbdcf5737c91b2448cb2c2b54ba62d5e7f83b",
+      "datasets/eval.json": "fedd71bba0f9005cdc251f0d58be6aa5edc0bacdc4a4aad49d4c8ab600742733",
+      "datasets/train.json": "cf428d96ae29243ca1470243b6f02b07baaf91f06acf32b3f4b996f29024c82f",
+      "judge/beat_spec.json": "77045582e10eca6fc7521a5944420470fcb45b029cf54674514a00da04d70316",
+      "judge/config.yaml": "52274d2f725e40a6a7b61a0f36176ba80b98ee66df6adac214e15da58166351b",
+      "judge/result.json": "908e5ed25f394b1c88658f7a3ddd4ed0c65d3b747e3546d5b17cd20b2348b848",
+      "judge/submission_patch.py": "7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee",
+      "policy.json": "fac78fe67caecc90b0cf00bb88cd4f629903885140476598ce75b6c4c9031ae5",
+      "verifier/Dockerfile": "ac53fe5e67149594cf205e0ec3d242f4e2eee89410cbd7aa770a220d4a90f45e"
+    },
+    "reference_identity": {
+      "analysis_impl_sha256": "89a274997c212351988cfd7c5272cceca08c86428f3af45c1cafca82d38c5c52",
+      "reference_patch_sha256": "sha256:817f2cf4635195c14d0db85f0db0dba8bb1f8462ff236a9d39c75c2ffe384a2b",
+      "restored_language_sha256": "2d6af4cebaebfb5227d899938e202ff86910f9a2a0a8850d390f3ea73ea4a212",
+      "restored_rewrites_sha256": "d59fb0baa7ad0b3941da503228eed5f4afba8c6fb30a162b682fdb753a1baf23"
+    },
+    "revision": "public-semantic-contract-20261011",
+    "selected_generic_rule_order": [
+      "flatten_unflatten_any_access",
+      "bubble_reshape_through_cartesian_product",
+      "bubble_reshape_through_compute_dot_product",
+      "bubble_access_concatenate_through_compute_dot_product_not_item_axis"
+    ],
+    "status": "public semantic contract source repair; pinned-image qualification pending; historical acceptance evidence remains separate",
+    "unchanged_evaluator_assignments": [
+      "OUTER_CONCAT_GENERATION_SEEDS",
+      "OUTER_CONCAT_NUMERICAL_SEEDS",
+      "DEV_WORKLOADS",
+      "FINAL_WORKLOADS"
+    ],
+    "unchanged_evaluator_functions": [
+      "generate_suite",
+      "_outer_tensor",
+      "generate_outer_concat_suite",
+      "_suite",
+      "_score",
+      "_aggregate",
+      "_measure"
+    ]
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-example.rs",
+      "reason": "Public local-evaluation adapter for the statement's original pre-rewrite expression, shape analysis, interpreter, and existing rewrite hooks; contains no transformed expression or contribution implementation."
+    },
+    {
+      "path": "code/Cargo.lock",
+      "reason": "Exact dependency lock from the successful CPU reproduction."
+    },
+    {
+      "path": "cpu-feature-gates.patch",
+      "reason": "Recorded conditional-compilation-only CPU repair; applied in a disposable build tree."
+    },
+    {
+      "path": "frontier-build.py",
+      "reason": "Offline build adapter, preserves source bytes and invokes the original src/lib.rs Cargo target."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Stages tracked and untracked source changes into the declared patch."
+    },
+    {
+      "path": "frontier-build.sh",
+      "reason": "Deterministic shell entrypoint for the task-owned Rust build adapter."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Deterministic shell entrypoint for the retained upstream CPU language test path."
+    }
+  ],
+  "task_type": "contribution_reconstruction",
+  "upstream_revision": "f8e341ed9fedb6be149694e3a7ab7e6cf542fd2e",
+  "upstream_root": "glenside-2105-09377"
+}

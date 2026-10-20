@@ -1,0 +1,104 @@
+{
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "problem_id": "parallel_radix_sort",
+  "display_name": "In-place Integer Redistribution",
+  "family": "frontier-cs-2.0/systems",
+  "version": "native-std-sort-v1-beat-spec-v3-refscore",
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 2147483648,
+    "workspace_bytes": 2147483648
+  },
+  "verifier": {
+    "command": [
+      "python3",
+      "/opt/frontier/verifier/verify.py"
+    ],
+    "cpu_millis": 4000,
+    "memory_bytes": 2147483648,
+    "max_evidence_bytes": 1048576
+  },
+  "quota": {
+    "wall_time_seconds": 18000,
+    "eval_timeout_seconds": 900,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 18000
+  },
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 276480
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_sessions": 1024,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_ssh_sessions": 1,
+      "max_ssh_bytes_per_direction": 67108864
+    }
+  },
+  "metadata": {
+    "runtime": {
+      "architecture": "linux/amd64",
+      "language": "cpp14",
+      "submission_kind": "patch",
+      "allowed_paths": [
+        "RadixSort/edgelistgraph.h",
+        "RadixSort/frontier_solution/"
+      ],
+      "cpu_model": null,
+      "compiler": "pinned GCC7.5/Cilk Plus",
+      "cpu_affinity": "0-3",
+      "cilk_workers": 4,
+      "source_build_timeout_seconds": 120,
+      "compile_timeout_seconds": 90,
+      "benchmark_timeout_seconds": 35,
+      "authentic_smoke_timeout_seconds": 30,
+      "ssh": "CPU-only: schema-required audit slot is not SSH/GPU permission",
+      "execution_boundary": "standard sandbox-driver-verifier; no task provider credentials"
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "suite_relation": "Train original DEV4; final fresh DEV4 + HIDDEN4, no new shapes. Beat spec v3 (2026-10-08): the strict verdict adds two 16M-key paper-input workloads per partition (train 6, final 12); continuous score unchanged over DEV4 / DEV4 + HIDDEN4",
+      "solver_visible_metrics": [
+        "dev_candidate_median_sort_time_ns",
+        "dev_candidate_max_auxiliary_bytes",
+        "dev_candidate_median_region_graph_ns"
+      ],
+      "scoring_alignment": "Independent std::sort baseline; S=geomean(B/C), score0 if S<=1 else100*log(S)/(log(10)+log(S)); reference solely strict PASS",
+      "continuous": {
+        "baseline": "independent std::sort key comparator, unchanged benchmark harness",
+        "objective": "equal-workload geometric mean baseline/candidate sort-call speedup",
+        "timing_unit": "nanoseconds",
+        "repetitions": 21,
+        "floor": "S<=1 maps to0",
+        "formula": "100*log(S)/(log(10)+log(S)) for S>1",
+        "anchor": "S=10 maps to50",
+        "upper_clipping": false,
+        "reference_used_for_continuous": false
+      }
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "ac19add605ee544aa20c29a51d32e4d0ebf942ba",
+      "source_path": "original_format_problems/parallel_radix_sort",
+      "source_pr": 29,
+      "status": "approved_science_calibration_and_immutable_image_review"
+    },
+    "provenance_file": "judge/metadata.json",
+    "datasets": {
+      "train": {
+        "path": "datasets/train.json",
+        "bytes": 200,
+        "version": "sha256:e8bc1948ee55db162c3e3f070a3ac546a82357a912a2dea8f1f830637b4c78fb"
+      },
+      "eval": {
+        "path": "datasets/eval.json",
+        "bytes": 206,
+        "version": "sha256:9bb2faf7aa9840d11649a55567346107c49b5b8e00c24063c3dcb647c3673fa2"
+      }
+    }
+  }
+}

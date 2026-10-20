@@ -1,0 +1,34 @@
+{
+  "unit": "one KAMI trusted batched FP64 block-GEMM workload: a public (M,N,K,active-ranks,allocated-ranks,batch-count) policy plus a private counter-generator seed/profile",
+  "metrics": [
+    {
+      "name": "tflops",
+      "means": "validated throughput of a real independent CTA-major batch, computed as 2*M*N*K*batch_count divided by the CUDA-event time of exactly one fixed-entry kernel launch; NUM_ITER is one",
+      "source": "task-owned public frontier_harness/trusted_host.cpp times only cuLaunchKernel(frontier_batched_block_gemm_entry); retained upstream KAMI reference device code is source-locked and mechanically adapted into the fixed entry",
+      "better": "higher",
+      "clears_when": "candidate crossover-adjusted TFLOPS divided by paired source-locked reference crossover-adjusted TFLOPS is strictly greater than the frozen exact-H100 self-noise ratio 1.024; equality fails",
+      "tolerance": "six paired repetitions provide exactly three candidate-first and three reference-first measurements. Candidate and reference each receive equal weight in both order arms: take the median within each arm, then their geometric mean. The per-workload decision ratio divides those two crossover-adjusted TFLOPS values. This cancels a multiplicative first/second-position effect that direct six-sample medians failed to remove. Fresh exact-H100 self-pair calibration observed maximum symmetric decision-ratio deviation 0.0239487900411491674326771475170212420122678846079; strict upward rounding at quantum 0.001 froze 1.024. Preprocessing and the exact CPU oracle have separate reported durations and are outside the CUDA event"
+    }
+  ],
+  "beats_reference": "true only when every workload selected for verification is numerically valid and its crossover-adjusted candidate/reference ratio is strictly greater than 1.024; final selects the four public workloads plus the four existing hidden workloads. Unchanged reference, equality, partial wins, and non-inferiority fail. A source-locked reference that cannot be restored, does not compile, or fails the trusted host's full-output validation, and a Verifier GPU runner that is not exactly one NVIDIA H100 80GB HBM3 (checked by nvidia-smi and by the trusted host's own device check), are failed verifications raised to the verifier adapter, never a bar and never a candidate score.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "tflops",
+      "means": "an anonymous ordered numeric array of the candidate's own validated batched throughput values",
+      "reveals_reference": "no — no workload identifier, reference value, ratio, threshold, seed, margin, or beat flag is solver-visible"
+    }
+  ],
+  "withheld": [
+    "input_seed",
+    "input_profile pairing",
+    "reference_tflops",
+    "candidate_reference_ratio",
+    "paired samples",
+    "preprocessing and CPU-oracle audit rows"
+  ],
+  "statement_sentences": "Each scored CTA receives disjoint pseudorandom dyadic A, B, and C slices. The trusted fixed wrapper passes those slices to the submitted original-signature KAMI kernel helper with alpha=1 and beta=0.5. NUM_ITER is one, every warm-up and timed output element is checked, and counted work is exactly 2*M*N*K*batch_count. Candidate/reference order alternates three-to-three and the two order-arm medians are combined symmetrically. Every selected workload must strictly exceed the private frozen exact-H100 self-noise boundary; final covers four public plus four hidden workloads, and equality or any partial win fails.",
+  "comments": "This is explicitly the KAMI kernel trusted batched harness adaptation, not a byte-identical execution of the upstream 16,384-block/1,000-repeat host benchmark. It preserves the source-locked upstream device method, four public development shapes plus four hidden shapes, with final evaluating all eight, rank policies, and original solver-facing CUDA function signature. Candidate and reference are compiled only to cubin; their original global function is deterministically converted to a device helper, and a task-owned fixed entry performs CTA-major pointer offsets. A separately linked trusted host loads that entry through the CUDA Driver API in isolated candidate/reference contexts. Candidate host initializers and timing-symbol definitions are never linked or run. The public debug path and private judge import the same generic adapter/protocol; final reruns the public set and adds verifier-only hidden shapes and seeds. SplitMix64 counter streams domain-separate phase/tensor/CTA/element coordinates. Warm-up and every timed repetition use different phases. Host and device resident data budgets are each at most 1 GiB and batch_count is at least 4,096. The CPU oracle and preprocessing are not inside the CUDA event, and full elementwise comparison—not a candidate checksum—decides validity. Exactly six paired measurements balance execution order three-to-three. The statistic takes candidate and reference medians separately in both order arms and geometric-means the arms, preventing a stable first/second-position effect from masquerading as a kernel improvement. Historical ratios 1.006 and 1.467 are invalid; provisional 1.016 was derived from one odd three-pair run and is not reused. BEAT SPEC V2 COVERAGE REVIEW (2026-10-07): tflops remains the only beating metric because it is the only result metric the KAMI paper (SC'25) reports for the selected FP64 contribution: Fig. 8(a) block-level FP64 TFLOPS on GH200 and Fig. 12 batched FP64 TFLOPS on GH200 (batch sizes 1000 and 10000); the reported speedups over cuBLASDx, CUTLASS, MAGMA and cuBLAS are ratios of the same TFLOPS and are implied by beating the KAMI reference. Correctness is a hard per-workload gate (every warm-up and timed output element is checked). Not added: register usage per thread (Fig. 14) and theoretical-versus-measured cycle breakdown (Fig. 15) are FP16 validations of the analytical model with no optimization direction for this task, and per-phase cycles would need instrumentation inside the editable kernel; nop-instruction counts need a profiler; FP16/TF32/FP8, AMD/Intel, low-rank and sparse results (Figs. 8(b)-(g), 9-11, 13) are other precisions, hardware or kernels. Reference validity: an unrestorable, unbuildable or invalid reference now raises a failed verification instead of returning a zero candidate score; a trusted-host failure is attributed to the reference only when the host labels the failing module as the reference. Platform validity (follow-up): a missing, hung or wrong GPU assignment (nvidia-smi absent or failing, a name other than exactly one NVIDIA H100 80GB HBM3, or the trusted host's own device-identity failure before any module is loaded) is also a failed verification instead of a zero candidate score. Workloads, repetitions, the 1.024 ratio, score and budgets are unchanged."
+}

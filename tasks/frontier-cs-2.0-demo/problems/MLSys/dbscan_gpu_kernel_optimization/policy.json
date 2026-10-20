@@ -1,0 +1,129 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 17179869184
+  },
+  "display_name": "GPU DBSCAN Kernel Optimization",
+  "family": "frontier-cs-2.0/systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 10800,
+      "max_instance_seconds": 10800,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 13200
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "conversion": {
+      "continuous_score": "0 if any timed candidate ARI < 0.99 or speedup <= 1; otherwise 100*log(speedup)/(log(10)+log(speedup))",
+      "pass_fail": "every workload: median latency < optimized reference; worst timed ARI >= reference and every timed ARI >= 0.99; worst timed noise mismatch <= reference; zero new tolerance",
+      "source_commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
+      "source_path": "2.0/problems/dbscan_gpu_kernel_optimization",
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "status": "user_reviewed_reference_and_model_pair_complete"
+    },
+    "datasets": {
+      "eval": {
+        "path": "datasets/eval.json",
+        "bytes": 325,
+        "version": "sha256:19a9d80171caa97ca903351b14e6a2f5f47fca9d41950d13b1504a1138f8070e"
+      },
+      "train": {
+        "path": "datasets/train.json",
+        "bytes": 283,
+        "version": "sha256:7c6b18bf67ae6d9aca3f86f2eaaa63ebc6a6b94862fcb356aa1d38a285eb519d"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 25,
+      "beat_spec_sha256": "sha256:4de51219a0b5ddbee1e59610cb431d28a8af74dda2c018fce02766591bcbcac6",
+      "solver_visible_metrics": [
+        "geomean_speedup",
+        "dbscan_latency_ms",
+        "adjusted_rand_index",
+        "noise_mismatch_fraction"
+      ],
+      "suite_relation": "train original w0-w1; final freshly measures original w0-w3; public seeds are reused in final, hidden w2-w3 seeds are independent. Beat spec v3 (2026-10-08): final also measures hidden strict-only w4-w5 (PASS only; continuous score over w0-w3).",
+      "continuous_score": "0 if any timed candidate ARI < 0.99 or speedup <= 1; otherwise 100*log(speedup)/(log(10)+log(speedup))"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "config_sha256": null,
+      "pipeline": null,
+      "run_id": null
+    },
+    "isolation": "Hidden final shapes, workload generator, seeds, reference patch, comparisons and evidence exist only in the Verifier GPU image. Agent images contain the public train shapes, naive starter and runtime content.",
+    "paper": {
+      "authors": [],
+      "doi": null,
+      "paper_id": null,
+      "pdf_url": null,
+      "title": null,
+      "venue": null,
+      "year": null
+    },
+    "provenance_file": "judge/metadata.json",
+    "runtime": {
+      "allowed_paths": [
+        "dbscanlib/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 67108864,
+      "max_ssh_sessions": 1076,
+      "ssh_session_budgets": {
+        "agent": 1024,
+        "verifier_eval": 2,
+        "verifier_train": 50
+      }
+    }
+  },
+  "problem_id": "dbscan_gpu_kernel_optimization",
+  "quota": {
+    "eval_timeout_seconds": 2400,
+    "max_train_calls": 25,
+    "max_train_wall_seconds": 10800,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 2097152
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 4000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 8589934592
+  },
+  "version": "native-staging.4-beat-spec-v3"
+}

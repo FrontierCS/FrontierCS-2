@@ -1,0 +1,34 @@
+tag: systems
+runtime:
+  language: python
+  timeout_seconds: 900
+  environment: "Python 3.11 policy in the authors' ScaleGPM performance-model tree; C++/OpenMP GS and NS sources included"
+  apt_packages:
+    - build-essential
+    - git
+    - python3
+  judge_apt_packages:
+    - git
+    - python3
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 8
+  memory_mb: 16384
+  storage_mb: 4096
+  build_timeout_seconds: 300
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - performance_model/src/main.py
+  max_changed_files: 1
+  max_patch_bytes: 65536
+evaluation:
+  solver_visible_metrics:
+    - geomean_selected_runtime_seconds
+    - max_selected_relative_error
+    - cases
+  suite_relation: fixed disjoint development and final suites; identical evaluator and beat-spec rules
+  max_dev_submissions: 100

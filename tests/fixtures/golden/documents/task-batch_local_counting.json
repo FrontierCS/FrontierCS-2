@@ -1,0 +1,162 @@
+{
+  "definition_digest": "sha256:b9acdf381ced99c3c99670f17fea2baf52fd58cda399d95053bf565475559747",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/batch_local_counting/b9acdf381ced99c3c99670f17fea2baf52fd58cda399d95053bf565475559747.json",
+  "display_name": "Batch Local Counting",
+  "driver_config": {
+    "agent": {
+      "cpu_millis": 1000,
+      "memory_bytes": 4294967296,
+      "workspace_bytes": 4294967296
+    },
+    "datasets": {
+      "eval": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/batch_local_counting/eval/sha256/b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7.json",
+        "version": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7"
+      },
+      "train": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/batch_local_counting/train/sha256/192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868.json",
+        "version": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+      }
+    },
+    "images": {
+      "agent_cpu_base": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000065",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "reference": "172.20.0.50:5000/frontier/tasks/batch_local_counting/agent_image@sha256:0000000000000000000000000000000000000000000000000000000000000065"
+      },
+      "verifier": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000066",
+        "reference": "172.20.0.50:5000/frontier/tasks/batch_local_counting/verifier_image@sha256:0000000000000000000000000000000000000000000000000000000000000066"
+      }
+    },
+    "network": {
+      "allowed_domains": [
+        "openrouter.ai"
+      ],
+      "audit": {
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 8388608,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 8388608,
+        "max_ssh_sessions": 32
+      }
+    },
+    "quota": {
+      "agent_gpu": {
+        "allowed_types": [],
+        "max_gpu_seconds": 0,
+        "max_instance_seconds": 0,
+        "max_instances": 0
+      },
+      "verifier": {
+        "eval_timeout_seconds": 1800,
+        "max_gpu_instances": 0,
+        "max_gpu_seconds": 0,
+        "max_train_calls": 100,
+        "max_train_wall_seconds": 180000
+      },
+      "wall_time_seconds": 18000
+    },
+    "schema_version": "frontier.task-config/v1",
+    "submission": {
+      "entrypoint": "payload/solution.patch",
+      "max_bytes": 524288,
+      "media_type": "application/x-tar",
+      "required_sha256": true
+    },
+    "task_version_id": "taskver_58GBTCNDF3R06DSYAQR1TE4TRA",
+    "verifier": {
+      "command": [
+        "/opt/frontier/verifier"
+      ],
+      "cpu_millis": 1000,
+      "evidence_path": "/frontier/output/evidence.tar.zst",
+      "max_evidence_bytes": 4194304,
+      "memory_bytes": 4294967296,
+      "result_path": "/frontier/output/result.json"
+    }
+  },
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 429,
+        "path": "datasets/eval.json",
+        "version": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7"
+      },
+      "train": {
+        "bytes": 436,
+        "path": "datasets/train.json",
+        "version": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "beat_spec_sha256": "sha256:84755aa5099acd470d60f50f8a73c7acc6e477236048f72d0c69f9cfd74ff325",
+      "solver_visible_metrics": [
+        "median_seconds"
+      ],
+      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+    },
+    "frontier_cs_2_0": {
+      "adapter_version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3",
+      "identity_algorithm": "preview-source-identity/v1",
+      "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
+      "problem_id": "batch_local_counting",
+      "source_set_sha256": "sha256:4297a26b0db2d387a2e49f3d0dba62bcd87c9702c91399c5d8ec7604503d2461"
+    },
+    "generator": {
+      "candidate_id": "cand_002",
+      "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top78_f094b386ab"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Qiyan Li",
+        "Jeffrey Xu Yu"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2024-fast-local-subgraph-counting-f094b386ab",
+      "pdf_url": "https://www.vldb.org/pvldb/vol17/p1967-li.pdf",
+      "title": "Fast Local Subgraph Counting",
+      "venue": "PVLDB 17",
+      "year": 2024
+    },
+    "runtime": {
+      "allowed_paths": [
+        "counting/forest.h",
+        "counting/forest.cpp",
+        "counting/execution.h",
+        "counting/execution.cpp",
+        "counting/aggregation.h",
+        "counting/aggregation.cpp",
+        "executable/scope.cpp",
+        "executable/command.cpp",
+        "plan/tree.h",
+        "plan/tree.cpp"
+      ],
+      "language": "cpp",
+      "submission_kind": "patch"
+    },
+    "scoring": {
+      "anchors": {
+        "four_times_speedup": 50,
+        "no_speedup": 0
+      },
+      "mapping": "L = max(0, median_log_ratio); score = 100 * L / (2 + L)",
+      "objective": "Median of five paired full-suite log2(naive_seconds / candidate_seconds).",
+      "raw_timing_metrics_preserved": true,
+      "reference_independent": true,
+      "version": "paired-log-ratio-rational-v2"
+    }
+  },
+  "task_id": "frontier-cs-2.0-batch-local-counting",
+  "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3-cfg-b9acdf381ced"
+}

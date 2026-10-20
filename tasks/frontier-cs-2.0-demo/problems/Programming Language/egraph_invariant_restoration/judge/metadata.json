@@ -1,0 +1,69 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "egraph_invariant_restoration",
+  "domain": "databases",
+  "promotion": {},
+  "generated_at": "2026-09-16T14:18:29.462183+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "bfff61cc6fe937fe81b3c3b66c62110a28439001",
+    "run_id": "r_top01_saturation",
+    "candidate_id": "cand_001",
+    "config_sha256": "e0431a73ff61bd97a194afad1192235064d50696d256642c0ea65ef0971edeb7"
+  },
+  "paper": {
+    "paper_id": "egg_equality_saturation",
+    "title": "egg: Fast and Extensible Equality Saturation",
+    "authors": [
+      "Max Willsey",
+      "Chandrakana Nandi",
+      "Yisu Remy Wang",
+      "Oliver Flatt",
+      "Zachary Tatlock",
+      "Pavel Panchekha"
+    ],
+    "year": 2021,
+    "venue": "POPL",
+    "pdf_url": "https://arxiv.org/pdf/2004.03082",
+    "doi": null
+  },
+  "rank": {
+    "rank": 1,
+    "overall_score": 0.0,
+    "recommendation": "human-selected; no ranking score measured",
+    "scores": {},
+    "risks": []
+  },
+  "artifact": {
+    "repo_url": "https://github.com/egraphs-good/egg",
+    "commit": "2f31b28e3f9d78e02273b6c6d4201b5b0720b343",
+    "cloned_at": "2026-09-15T19:03:59.370380+00:00",
+    "census": {
+      ".rs": 28
+    }
+  },
+  "contribution": {
+    "title": "Deferred e-graph rebuilding",
+    "summary": "Defer congruence-invariant restoration until batches of unions and rewrites accumulate, then canonicalize and repair affected e-classes together. This amortizes redundant invariant-maintenance work during equality saturation.",
+    "paper_location": "Section 3, “Rebuilding E-Graphs,” including the rebuilding algorithm and amortized-analysis discussion",
+    "code_location": [
+      "src/egraph.rs::EGraph::process_unions",
+      "src/egraph.rs::EGraph::rebuild_classes",
+      "src/egraph.rs::EGraph::rebuild",
+      "src/run.rs::Runner::run_one"
+    ],
+    "metric": "Repeated paired release-mode equality-saturation wall-clock time, excluding compilation and using warmups, while requiring congruence and canonicalization correctness and identical expected extraction results. `EGG_BENCH_CSV` supplies per-test timings, and Runner statistics expose rebuilding work. Bundled simple and selected math workloads require no external data and run within minutes on CPU."
+  },
+  "host": {
+    "cpu_count": 8,
+    "ram_gb": 33,
+    "free_disk_gb": 514,
+    "gpus": [],
+    "docker": {
+      "limit_source": "host",
+      "daemon_mem_total_gb": 33
+    },
+    "platform": "Linux-7.0.0-1012-aws-x86_64-with-glibc2.39",
+    "measured_at": "2026-09-15T19:08:42.780889+00:00"
+  }
+}

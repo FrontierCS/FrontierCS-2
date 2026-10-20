@@ -1,0 +1,1 @@
+strash; &get -n; &fraig -x; &put; scorr; dc2; strash; &get -n; &synch2; &if -K 6 -g; &st; &synch2; &if -K 6 -g; &st; &dch -f; &if -K 6; &put; mfs2

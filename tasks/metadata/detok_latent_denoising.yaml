@@ -1,0 +1,27 @@
+id: "detok_latent_denoising"
+display_name: "Robust Image Tokenizer"
+category: "Machine Learning"
+summary: "Train a more robust image tokenizer by denoising latent tokens."
+paper_title: "Latent Denoising Makes Good Tokenizers"
+paper_venue: "ICLR 2026"
+paper_url: "https://arxiv.org/abs/2507.15856"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "L4"
+agent_gpu_count: 1
+agent_gpu_seconds: 5400
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "L4"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 5400
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 6
+train_wall_seconds: 32400
+eval_timeout_seconds: 5400

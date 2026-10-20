@@ -1,0 +1,13 @@
+{
+  "schema": "binary-fuse-calibration-manifest/v2",
+  "reference_statistics_status": "CALIBRATED_REFERENCE_ONLY",
+  "statistical_profile_sha256": "sha256:053dc7a2e1a59fc971c2a7f12135429ad0e557952397f7484aaaf6bdb2481fa7",
+  "measurement_sha256": "sha256:eb848eae352d9eaae2fdb70bcd8930ff5576cb49a9c2d4da8d21280943eaf971",
+  "complete_reference_rounds": 5,
+  "reference_scope": "900 authentic host constructions, rederived without native replay",
+  "production_runtime": {
+    "status": "QUALIFIED_EXACT_RUNTIME",
+    "receipt_sha256": "sha256:efe951b13bbbd8f0397559a2fbbc7554cd6670b46262831219f69737c98be1e1"
+  },
+  "note": "Five retained rounds and exact r5 full-entrypoint train/final are qualified; private runtime receipt binds their unchanged measurement closure. Receipt-bearing successor packaging and native platform acceptance remain separately required."
+}

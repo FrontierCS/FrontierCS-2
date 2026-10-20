@@ -1,0 +1,388 @@
+# Go1 Joystick Policy Training
+
+## Problem
+
+This repository is MuJoCo Playground (Zakka et al., arXiv:2502.08844) at commit
+`254c38f9c240012518dbe61d1267bc375ff827e4`. The paper trains a joystick
+locomotion policy for the Unitree Go1 quadruped in minutes on a single GPU: a
+policy that reads proprioceptive observations and a commanded planar velocity
+and yaw rate, and outputs joint position targets so that the robot tracks the
+command without falling.
+
+Your task is to deliver a training procedure that, within a fixed wall-clock
+budget on one NVIDIA H100, produces a better Go1 joystick policy than the
+repository's own procedure does in the same budget. Nothing has been removed
+from the repository. Its Go1 environment and reward
+(`mujoco_playground/_src/locomotion/go1/joystick.py`), domain randomisation
+(`.../go1/randomize.py`), PPO configuration
+(`mujoco_playground/config/locomotion_params.py`) and training script
+(`learning/train_jax_ppo.py`) are all present, and together they are the
+reference you are measured against. The policy is trained from scratch inside
+each verification; it is never trained ahead of time.
+
+## Your workspace
+
+The project tree is published read-only at `/frontier/task/repo` and the judge
+applies your patch to its own copy of the same tree. You may change only:
+
+```
+frontier_solution/**
+mujoco_playground/_src/locomotion/go1/joystick.py
+mujoco_playground/_src/locomotion/go1/randomize.py
+mujoco_playground/config/locomotion_params.py
+```
+
+Everything else is fixed context. A patch that touches any other path is
+rejected. Edits to the three `mujoco_playground` files change what *your
+training* sees; they never change the environment your trained policy is
+measured in, which is always the judge's unmodified copy.
+
+## Required behavior
+
+`frontier_solution/train.py` must expose `train(seed, deadline_seconds)` and
+return a policy function as specified under Interface. The shipped
+`frontier_solution/train.py` already does this: it is the reference procedure
+(Brax PPO on `Go1JoystickFlatTerrain` with the repository's PPO configuration
+exactly as shipped: 200 million environment steps), so the starting tree runs
+unchanged. The reference is the artifact's own configuration, not a shortened
+one, so raising the step count back to the repository's is not an available
+improvement.
+
+The design space is open inside the editable paths: reward terms and their
+structure, the command distribution or a command curriculum, training-time
+domain randomisation and perturbations, terrain used for training, the network
+architecture, PPO hyperparameters, or a different learning algorithm.
+
+Fixed, and outside the editable paths: the robot model and physics XML, the
+actor observation and action interface, the wall-clock budget, and the whole
+evaluation (environments, command sampling, reward terms and scales, random
+streams, metrics).
+
+## Workload
+
+A workload is one training seed, one evaluation condition and one evaluation
+seed. For each training seed the judge calls your `train` once, and separately
+calls the unmodified reference `train` once, each on the same H100 and each
+under the same wall-clock budget. Each resulting policy is then evaluated in
+every condition that the suite pairs with that training seed.
+
+Evaluation conditions use only what the repository provides:
+
+| condition | environment | configuration |
+| --- | --- | --- |
+| `flat` | `Go1JoystickFlatTerrain` | default |
+| `push` | `Go1JoystickFlatTerrain` | default with `pert_config.enable = True` |
+| `rough` | `Go1JoystickRoughTerrain` | default |
+
+One evaluation runs 2,048 parallel environments for 1,000 control steps (20 s
+of simulated time each) with the policy's deterministic output, the
+environment's own command sampling and resampling, the environment's own
+observation noise, and no domain randomisation and no automatic reset.
+
+The development suite has 2 workloads: one training seed evaluated in `flat`
+and `push`. The final suite has 15 workloads: five further training seeds, each
+evaluated in `flat`, `push` and `rough`. The seeds are private, and the final
+seeds are disjoint from the development seeds. Rough terrain is never part of
+development feedback.
+
+## Interface
+
+```python
+# frontier_solution/train.py
+def train(seed: int, deadline_seconds: float) -> policy: ...
+
+# the returned object
+def policy(obs_state: jax.Array, rng: jax.Array) -> jax.Array: ...
+```
+
+- `seed` is the training seed of the workload.
+- `deadline_seconds` is the training budget: the wall-clock time, counted from
+  the moment `train` is called, by which `train` must have returned. It is the
+  same clock the judge enforces, and its value is 720.0.
+- `obs_state` is the actor observation `obs["state"]` of one environment:
+  `float32`, shape `(48,)`. The privileged observation is not available to the
+  policy.
+- `rng` is a JAX PRNG key as produced by `jax.random.PRNGKey` (`uint32`, shape
+  `(2,)`). A fresh key is supplied at every control step; a deterministic policy
+  may ignore it.
+- The return value is the action for that environment: `float32`, shape
+  `(12,)`, finite. It is passed to the environment unchanged.
+- `policy` must be traceable by `jax.jit` and `jax.vmap` with exactly those
+  shapes and must depend on nothing but its two arguments and values captured
+  at trace time. Trained parameters are captured by closure.
+
+After `train` returns, the judge traces `jax.vmap(policy)` for a batch of 2,048
+environments and serialises it with `jax.export`. Only that serialised tensor
+program leaves the training process; the evaluation never imports your Python.
+A policy that cannot be exported this way (Python side effects, host callbacks,
+data-dependent Python control flow) is invalid. The policy is stateless across
+control steps: it receives the current observation only.
+
+For example, the shipped reference ends with:
+
+```python
+brax_policy = make_inference_fn(params, deterministic=True)
+privileged_placeholder = jp.zeros_like(params[0].mean["privileged_state"])
+
+def policy(obs_state, rng):
+  observation = {"state": obs_state, "privileged_state": privileged_placeholder}
+  action, _ = brax_policy(observation, rng)
+  return action
+```
+
+## Validity contract
+
+A submission is invalid, and scores zero, if any of the following holds.
+
+- The patch touches a path outside the editable surface, is empty, contains
+  binary content, or exceeds 262,144 bytes.
+- A training run does not finish inside the wall-clock budget. The budget is
+  **720 seconds per training run**: wall-clock time on the verifier's H100 from
+  the moment the judge calls your `train` until `train` returns. Everything
+  inside `train` is charged, identically for your procedure and for the
+  reference: building environments, JIT compilation, training, and any
+  evaluation you run. Starting the process, importing JAX, Brax and MuJoCo, and
+  importing `frontier_solution` and `mujoco_playground` happen before the clock
+  starts and are not charged. A run that overruns is killed. Leave margin for
+  machine variance rather than planning to return in the last seconds; the
+  reference procedure needs roughly 445 to 465 seconds.
+- Work is moved outside that clock. Importing your modules must finish within
+  180 seconds and exporting the returned policy within 300 seconds; both are
+  generous limits for defining code and tracing a network, and neither may be
+  used to train or to tune the policy.
+- Training raises, returns something that is not a policy with the interface
+  above, or returns a policy that cannot be exported.
+- The exported policy produces a non-finite action or non-finite episode
+  measurements in any evaluation, or one evaluation does not finish within 600
+  seconds (the reference policy's evaluation takes one to two minutes including JIT).
+- The policy is not learned inside the verifier run. Shipping pretrained
+  parameters, or any encoding of a previously trained policy or value function,
+  in the patch is not allowed. Hyperparameters, reward weights, architecture
+  definitions and curricula are of course allowed. As a backstop, a patch is
+  rejected with "submission embeds parameter-like data; the policy must be
+  learned inside the verifier run" if, over its added lines, runs of 120 or
+  more consecutive characters from `A-Z a-z 0-9 + / = _ -` total more than
+  16,384 characters, or there are more than 20,000 numeric literals. These
+  thresholds are far above what source code needs; staying under them does not
+  make shipped parameters allowed.
+
+The evaluation environment is never built from submitted code. Training runs in
+its own process from your patched tree; the evaluation runs in a separate
+process that imports the environment only from the judge's unmodified copy of
+this repository and receives your policy as serialised data. The network is
+unavailable during verification. A failure of the reference side, or of the
+judge's own machinery, is reported as a verifier error and is never turned into
+a score for your submission.
+
+## Scoring
+
+Every measurement below is taken in the unmodified environment with the
+unmodified reward scales, from quantities the environment itself reports. In
+one evaluation, an environment is *alive* at a control step if it has not
+terminated at or before that step (termination is the environment's own fall
+detection). Steps after an environment's first termination contribute nothing.
+
+Episode metrics, each the mean over the 2,048 environments of a per-environment
+sum over that environment's alive steps:
+
+- `episode_reward`: sum of the environment's total step reward `state.reward`.
+- `tracking_lin_vel`: sum of `state.metrics["reward/tracking_lin_vel"]`.
+- `tracking_ang_vel`: sum of `state.metrics["reward/tracking_ang_vel"]`.
+
+Per-step metrics, each the sum over all environments and all alive steps
+divided by the total number of alive steps:
+
+- `energy`: mean of `state.metrics["reward/energy"]` per alive step.
+- `action_rate`: mean of `state.metrics["reward/action_rate"]` per alive step.
+
+The two per-step quantities are already negatively scaled by the environment
+(they are penalties), so for all five metrics **higher is better**. Falling
+early lowers the three episode metrics. The two penalties are normalised per
+alive step so that a policy is neither rewarded for falling early nor penalised
+for surviving longer.
+
+The score to maximise is
+
+```text
+r = max(0, mean_workloads(episode_reward))
+score = 100 * r / (r + 30)
+```
+
+Workloads have equal weight. The score is strictly increasing in `r`: a mean
+episode reward of zero or less scores `0`, a mean episode reward of 30 scores
+`50`, and every finite reward scores below `100`, with no finite upper
+clipping, so better policies remain strictly ordered as the score approaches
+`100`. The half-saturation reward `30` is a fixed challenge constant, not a
+measurement of any implementation, and the score does not depend on the
+reference's measurements. For orientation only, not as a target: the shipped
+reference procedure's mean episode reward is close to 30, so it scores near 50.
+The `score_unbounded` output carries the same naturally bounded value; there is
+no separate clipped score. Invalid submissions receive zero.
+
+## Calibration status
+
+All numbers below are the task author's runs of 2026-10-10 on one Modal H100
+per run (`debian_slim`, Python 3.12, `jax[cuda12]==0.4.35`, `brax==0.12.1`,
+`mujoco==3.2.7`, `mujoco-mjx==3.2.7`, upstream commit `254c38f9`), evaluated
+with 1,024 environments x 1,000 steps and with every term as a per-episode sum
+until first termination, mean over environments. They were **not** produced by
+this task's verifier image or evaluator, which evaluates 2,048 environments and
+grades `energy` and `action_rate` per alive step. The runs through this task's
+evaluator are listed separately below.
+
+The reference is the repository's configuration as shipped (200M steps). The
+strongest faithful reference is the artifact itself, and using it removes the
+trivial lever of raising a shortened step count back to upstream's.
+
+Reference procedure (200M steps), 4 training seeds, training wall time 445 to
+464 s:
+
+| condition | `episode_reward` | `tracking_lin_vel` | `tracking_ang_vel` |
+| --- | --- | --- | --- |
+| flat | 30.86 (sd 0.23) | 940.9 (sd 2.5) | 481.9 (sd 0.9) |
+| push | 29.44 (sd 0.29) | | |
+
+Not measured at 200M in those runs: rough terrain, and `energy` /
+`action_rate` under the graded per-alive-step definition.
+
+One run through this task's evaluator (task author, 2026-10-10, Modal H100
+80GB, image built from `verifier-gpu/Dockerfile` with only the SSH-bootstrap
+stage removed, evaluator run as uid 10001 `frontier`, development suite,
+candidate = a comment-only patch, i.e. the reference procedure against itself):
+
+- The locked stack builds and imports. `suite_started` reported
+  `subreaper=True` and `immutable_runtime=True`, so all three guards held.
+- Stage seconds: startup 3.8 to 4.1, import 0.2, train 462.2 (reference) and
+  480.1 (candidate), export 2.1. Exported artifact 775 KB. Each policy
+  evaluation (2,048 environments x 1,000 steps, including JIT) took 39 to 48 s.
+  The whole development suite took 1,128 s of wall time.
+- Graded metrics, final definitions:
+
+| workload | side | `episode_reward` | `tracking_lin_vel` | `tracking_ang_vel` | `energy` | `action_rate` |
+| --- | --- | --- | --- | --- | --- | --- |
+| flat | reference | 31.02 | 944.4 | 482.1 | -0.0908 | -0.00495 |
+| flat | candidate | 30.77 | 937.8 | 479.6 | -0.0912 | -0.00509 |
+| push | reference | 29.66 | 902.4 | 476.2 | -0.0943 | -0.00509 |
+| push | candidate | 29.40 | 895.8 | 473.5 | -0.0947 | -0.00522 |
+
+  The identical procedure lost all 10 comparisons to itself: one run was
+  simply better everywhere. This is a single pair, not a noise study. Mean
+  `episode_reward` was 30.085 (candidate) and 30.341 (reference); under the
+  current score formula those means give 50.07 and 50.28 (recomputed, not
+  re-run); the run itself reported 75.21 and 75.85 under the earlier formula
+  `100 * r / 40`.
+
+Final suite through this task's evaluator (same setup, 2026-10-10/11, candidate
+= comment-only patch, i.e. reference against itself):
+
+- A first attempt on tree `dc867cfe` failed after 3,477 s with "trusted
+  reference policy was rejected": a verifier error, no score. Cause, inferred
+  from the code (the rejection detail was not retained then): the finite-action
+  check also covered environments that had already terminated, which keep
+  stepping without a reset and go non-finite on rough terrain. The check is now
+  masked by `alive`, and a rejection report carries `invalid_detail`.
+- After the fix: return code 0, 5,728 s of wall time for 15 workloads (10
+  trainings of 446 to 453 s, 30 evaluations of 36 to 47 s), against the
+  14,400 s envelope. Mean `episode_reward` 29.512 (candidate) and 29.536
+  (reference), `beats_reference` 0. Under the current score formula those
+  means give 49.59 and 49.61 (recomputed, not re-run); the run itself reported
+  73.78 and 73.84 under the earlier formula `100 * r / 40`.
+
+| train seed | condition | candidate `episode_reward` / survived | reference `episode_reward` / survived | candidate wins of 5 |
+| --- | --- | --- | --- | --- |
+| 62869 | flat | 30.93 / 0.998 | 30.75 / 0.989 | 5 |
+| 62869 | push | 29.39 / 0.967 | 29.30 / 0.964 | 5 |
+| 62869 | rough | 28.39 / 0.804 | 28.04 / 0.788 | 5 |
+| 83423 | flat | 30.98 / 0.991 | 31.09 / 0.997 | 2 |
+| 83423 | push | 29.33 / 0.967 | 29.79 / 0.994 | 2 |
+| 83423 | rough | 28.40 / 0.807 | 28.68 / 0.820 | 2 |
+| 103997 | flat | 31.00 / 0.996 | 30.75 / 0.999 | 2 |
+| 103997 | push | 29.78 / 0.987 | 29.51 / 0.987 | 2 |
+| 103997 | rough | 28.08 / 0.792 | 28.17 / 0.798 | 1 |
+| 124793 | flat | 30.51 / 0.996 | 30.60 / 0.996 | 2 |
+| 124793 | push | 29.26 / 0.987 | 29.13 / 0.969 | 5 |
+| 124793 | rough | 28.22 / 0.813 | 28.08 / 0.807 | 4 |
+| 145577 | flat | 30.74 / 0.996 | 31.03 / 0.996 | 1 |
+| 145577 | push | 29.34 / 0.973 | 29.63 / 0.977 | 1 |
+| 145577 | rough | 28.35 / 0.800 | 28.50 / 0.808 | 2 |
+
+  With identical procedures, one of five training pairs had the candidate
+  ahead on all 15 comparisons and none had it behind on all 15; the other four
+  were mixed. Within-pair correlation is strong but not total. The reference
+  procedure at 200M steps survives about 80% of rough-terrain episodes (0.79 to
+  0.82), about 97 to 99% under pushes and above 99% on flat ground.
+
+Context only, from a 100M-step variant of the same procedure (not the
+reference): flat `episode_reward` 29.80 (sd 0.51, 8 seeds); a flat-trained 100M
+policy falls in about 20% of rough-terrain episodes; the same training seed run
+twice gave flat `episode_reward` 29.18 and 29.92, so GPU runs are not
+bit-reproducible and a seed is sampled noise, not a pairing.
+
+Attainability, stated honestly:
+
+- No witness exists: no procedure is known that clears all five metrics on
+  every workload within the budget. Attainability is argued, not demonstrated.
+- The argument is that the reference policy is not converged or optimal:
+  reward still rises from 100M to 200M steps.
+- No tolerance is used. The final verdict is a conjunction of 75 comparisons
+  (15 workloads x 5 metrics) from 5 independent training pairs. Within a
+  training pair the comparisons are strongly but not totally correlated. The
+  per-seed chance that a noise-level candidate sweeps a seed was observed at 1
+  in 5 in the final-suite run and 0 in 1 (the pair went entirely the other
+  way) in the development run, so the false-pass probability of a noise-level
+  candidate is between roughly (1/5)^5 and (1/2)^5 for the final suite on this
+  small sample. A development verification is feedback only.
+- Not measured: a seed-to-seed noise study of the per-step metrics beyond the
+  six reference-against-reference pairs above.
+
+## Feedback and grading
+
+The configured limit is 3 development submissions. A development verification
+trains one seed per side and returns, for your policy only,
+`development_mean_episode_reward`, `development_mean_tracking_lin_vel`,
+`development_mean_tracking_ang_vel`, `development_mean_energy` and
+`development_mean_action_rate`: the arithmetic mean of each metric over the two
+development workloads, in the units defined under Scoring. It also returns
+`beat_spec_progress`: for each of the five metrics, the number of development
+workloads on which your value was strictly better than the reference's, as
+`passed`, `failed`, `total`, `pass_percent` and `fail_percent`. It does not
+identify workloads and does not return any reference value or margin.
+
+Because training is noisy, a development result is one sample. Two development
+submissions of the same patch will not return the same numbers.
+
+In addition to the continuous score, a separate stricter beats-reference
+criterion compares your policy with the reference policy trained in the same
+verification, under the same budget, on the same hardware, on every graded
+workload. It is met only if all validity checks pass and, on every workload,
+your `episode_reward`, `tracking_lin_vel`, `tracking_ang_vel`, `energy` and
+`action_rate` are each strictly higher than the reference's, with no tolerance.
+Reference values, comparison margins, private workload identities,
+per-workload rows and all final measurements are not disclosed. The continuous
+score remains the optimisation objective whether or not this stricter
+criterion is met.
+
+## Submission
+
+In the Agent container, `/frontier/task/prepare_workspace.sh` copies the tree to
+`/workspace/repo` and `/frontier/task/make_submission.sh` writes
+`/workspace/payload/solution.patch` from the changes inside the editable
+surface, including new files under `frontier_solution/`. Changes outside that
+surface are reported and left out; the judge rejects a patch that contains
+them. An empty patch is invalid. The patch is packaged as `payload/solution.patch`
+in an uncompressed tar and submitted with `frontier-submit`.
+
+## Resources
+
+The control pod has 3 vCPUs, 12,288 MiB RAM and 10,240 MiB workspace storage.
+Verification uses one Driver-provisioned NVIDIA H100. A development
+verification has a 5,400-second GPU limit and the independent final
+verification a 14,400-second limit (a typical final is ten trainings of
+470 to 720 seconds and 30 evaluations of under a minute); both include provisioning the runner,
+pulling its image and uploading inputs. The verifier GPU pool is 30,600
+seconds (three development verifications and one final). Your own GPU
+debugging budget is one H100 runner at a time and 14,400 seconds in total.
+That budget is spent from the moment a runner is allocated: a fresh runner
+first pulls a multi-gigabyte image, and the first JAX/CUDA initialisation and
+each JIT compilation take tens of seconds to minutes, so it is not all
+training time.

@@ -1,0 +1,2 @@
+cryptography==41.0.7
+swebench==4.1.0

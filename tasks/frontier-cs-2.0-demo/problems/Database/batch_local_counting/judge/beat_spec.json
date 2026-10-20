@@ -1,0 +1,41 @@
+{
+  "unit": "One fixed graph x pattern-size batch (three graphs x two sizes = six workloads in each suite); each executes its unchanged disjoint development or final query half in five existing interleaved rounds.",
+  "metrics": [
+    {
+      "name": "exact_counts",
+      "means": "Exact equality of every output filename and byte for the complete batch.",
+      "source": "SCOPE scope.out local counting results and evaluator._digest_outputs; naive/reference agreement validates the correctness target.",
+      "better": "higher",
+      "clears_when": "All candidate batch output names and bytes equal the validated reference in every repeated execution.",
+      "tolerance": "none; exact hashes with repeated-output stability checks"
+    },
+    {
+      "name": "batch_latency_seconds",
+      "means": "Single-core wall seconds of one invocation of the authentic SCOPE batch entrypoint, excluding output hashing and including process execution/cleanup.",
+      "source": "SCOPE executable/scope.cpp, existing five rotating interleaved rounds in evaluator._paired_protocol.",
+      "better": "lower",
+      "clears_when": "Correct counts AND candidate_seconds(w,r) < reference_seconds(w,r) for all five paired rounds r.",
+      "tolerance": "No numerical equality allowance. Require five consistent strict timing wins; under independent exchangeable signs the one-sided sign probability is 1/32. No independence or cross-host noise guarantee is asserted."
+    }
+  ],
+  "beats_reference": "1 iff exact_counts AND batch_latency_seconds clear on all six fixed workloads; otherwise 0. All failure paths retain six rows. The original continuous aggregate timing score is separate.",
+  "solver_feedback": [
+    {
+      "name": "median_seconds",
+      "means": "Candidate-only median full-suite elapsed seconds across the five rounds.",
+      "reveals_reference": "no — an absolute candidate measurement without reference values, ratios, differences, or private workload labels."
+    }
+  ],
+  "withheld": [
+    "beat_spec_workload_passes",
+    "beats_reference",
+    "reference_score",
+    "margin",
+    "naive_median_seconds",
+    "paired_speedup",
+    "reference per-workload timings",
+    "private workload identities"
+  ],
+  "statement_sentences": "The separate `beats_reference` criterion requires both metrics to clear on every workload. A workload is one graph and pattern-size batch: all six fixed combinations are retained in each suite. `exact_counts` requires every output filename and byte to match the validated upstream result. `batch_latency_seconds` requires strictly lower execution time than the paired reference in each of the five existing interleaved rounds on that workload; equality is not a timing win. Correctness is a prerequisite for a timing pass. The continuous score above keeps its original aggregate formula and is independent of this conjunction.\n\nTrain feedback includes only your own absolute `median_seconds` for the full suite and `beat_spec_progress` for each metric, with `passed`, `failed`, `total`, `pass_percent`, and `fail_percent`. The denominator is always six workloads. Private workload identities, individual comparison decisions, reference values, speedup ratios, and margins are withheld. Final feedback exposes no metric dictionary.",
+  "comments": "Supervisor repair of the missing S2 beat-spec contract in the existing collected task. Workloads, source subtraction, reference.patch, timing repetitions, runtime budgets, and continuous scoring remain unchanged. The five-observation consistency rule uses measurements already collected; unlike a fixed percent band it is not extrapolated from unrelated aggregate historical noise. Exact reference patches are already deduplicated by the existing timing protocol and therefore cannot produce a false timing win. Real reference train+final and calibration evidence are recorded separately; no solver result determined this threshold."
+}

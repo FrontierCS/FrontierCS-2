@@ -1,0 +1,72 @@
+# Learned Transformer Layer Mapping
+
+## Optimization priority
+
+Your primary objective is **PASS on every required workload and every required
+metric**, with all correctness and validity requirements satisfied. The continuous
+score is a secondary optimization objective; a higher score cannot compensate for
+any failed PASS condition. Do not replace a solution known to satisfy all tested
+PASS conditions with one known to fail them merely to increase its score.
+Exploratory trials may regress; if no solution passes yet, work on the unmet
+conditions and retain a valid submission as a fallback.
+
+Successful verifier execution or a positive score does not mean scientific PASS.
+Use the reported per-metric pass/fail progress to assess the tested workloads.
+Train feedback covers only its evaluated workloads; passing train does not prove
+final PASS. Final independently evaluates the submitted artifact on its specified
+suite. The scoring formula, validity rules, and PASS comparisons below are unchanged.
+
+## Problem
+This repository is the authors' image-classification training system for ViT models. It reads small, class-balanced ImageFolder shards of natural flower photographs and trains a five-class classifier from scratch. It produces trained model checkpoints and validation predictions whose class labels must remain consistent with the trusted implementation. Every normalization site in each tested model must be converted, each site must own independent learned state, and model outputs, gradients, optimizer updates, and finite training behavior must satisfy the judge's numerical checks. The optimization target is synchronized end-to-end GPU forward, cross-entropy, and backward latency while retaining post-training top-1 accuracy. The model-wide layer-replacement implementation in `dynamic_tanh.py` has been removed and must be supplied.
+
+## Design space
+The editable area includes module traversal, learned-state parameterization and initialization, tensor-layout support, numerical formulation, execution strategy, compilation, custom autograd, fusion, and helper modules under `solver_extensions/`. Compilation is permitted, including compilation limited to the replacement sites; the evaluator does not require eager execution or a particular Python class structure beyond the documented interface and observable state contract. Solutions may specialize behavior by supported tensor layout or model configuration, provided every tested site is converted and every workload remains correct. Added helpers may contain ordinary Python, PyTorch modules, autograd functions, or compilation wrappers and may be imported normally by the public hook. Any approach must retain checkpoint-compatible independent state, output shape and dtype, forward behavior, input and parameter gradients, optimizer updates, finite losses, and post-training quality through the unchanged full-model path. The full model may not be bypassed, replaced with a smaller network, or routed around the retained entrypoint.
+
+## Workload
+Each evaluation uses three reduced flower-classification workloads, trained from scratch rather than reproducing ImageNet or paper-scale accuracy. Every workload has 20 training and 10 validation photographs across the five real categories `daisy`, `dandelion`, `roses`, `sunflowers`, and `tulips`; no original photograph or identical bytes occur in more than one train/validation partition or workload. The suite is stratified across `vit_base_patch16_224` and `vit_base_patch32_224` and batch sizes 4, 5, and 8. These are authentic timm ViT-Base configurations selected by the unchanged upstream entrypoint. The photographs come from TensorFlow's `flower_photos.tgz`; all retained images are CC BY 2.0, with the archive's individual photographer/Flickr attribution retained by the judge. This is a bounded representative workload, not a set of image identities to recognize, and the graded run may vary execution order and repetition.
+
+The source archive is `https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz`, SHA-256 `4c54ace7911aaffe13a365c34f650e71dd5bf1be0a58b464e5a7183e3e595d9c`, 228,813,984 bytes. License: `https://creativecommons.org/licenses/by/2.0/`.
+
+## Interface
+`DynamicTanh(normalized_shape, channels_last, alpha_init_value=0.5)` must construct one learned replacement module with checkpoint-compatible per-site state. `forward(x)` must accept the same tensor layouts as the replaced site and preserve shape and dtype. `convert_ln_to_dyt(module)` must return the recursively converted module tree without leaving a `torch.nn.LayerNorm` site behind.
+
+For example, after a valid implementation:
+
+```python
+>>> model = nn.Sequential(nn.Linear(8, 8), nn.LayerNorm(8))
+>>> converted = convert_ln_to_dyt(model)
+>>> sum(isinstance(m, nn.LayerNorm) for m in converted.modules())
+0
+>>> tuple(converted[1].weight.shape), tuple(converted[1].bias.shape)
+((8,), (8,))
+```
+
+The judge runs the following command for each workload, substituting its fixed paths, model, batch size, seed, and output directory:
+
+```bash
+./frontier-bench.sh --model MODEL --drop_path 0 --batch_size BATCH --epochs 2 --lr 0.004 --min_lr 0.000001 --warmup_epochs 0 --weight_decay 0.05 --data_set image_folder --data_path TRAIN --eval_data_path VAL --nb_classes 5 --dynamic_tanh true --device cuda --num_workers 2 --pin_mem true --dist_eval false --use_amp true --mixup 0 --cutmix 0 --smoothing 0 --aa '' --reprob 0 --model_ema false --save_ckpt true --save_ckpt_num 1 --seed SEED --output_dir OUTPUT
+```
+
+Run `python3 public_test.py` for the small public contract check. Package all changes, including new helper files, with `bash make_submission.sh`.
+
+## Validity
+Patch application and source-integrity checks run first. Out-of-scope paths, more than 32 changed files, patches over 262,144 bytes, candidate import/build failures, candidate timeouts or crashes, missing conversion coverage, shared learned state, incompatible candidate checkpoint state, or nonfinite candidate values score zero. Failures in trusted sources, data, the verifier environment, or reference execution abort verification. The judge then checks full-model forward outputs, input and learned-parameter gradients, optimizer updates, learned affine/state changes during training, finite losses, and successful execution through upstream `main.py`. Forward outputs use relative/absolute tolerances of 3e-4/3e-5, input gradients use 2e-3/2e-5, and learned-parameter gradients and updates use 3e-3/3e-5. Results under the timed conditions are validated as well. Every warmup and every timed repeat of the two latency protocols uses new input values: a batch of the workload's batch size derived from its validation photographs, with random targets, identical for candidate and reference within a repeat and never shown to any later call. Every such call of the candidate is compared with the trusted implementation holding the same trained state and run through the same block on the same inputs (training mode with gradients for the training block, evaluation mode without gradients for the inference block, both under fp16 autocast on the GPU). The comparison covers the model outputs and loss and, for the training block, the gradient of every parameter, all in L2 norms. Each output and loss tensor may differ from the trusted implementation's by a relative 1e-2 plus 1e-4 per element. Gradients are judged against what half precision can resolve for that state and input rather than against one particular rounding: for every repeat the judge computes four trusted gradients (the trusted implementation under the same autocast, the same implementation with every replacement site evaluated entirely in half precision in two forms, with separate operations and with one fused multiply-add, and a single-precision gradient), and the candidate's gradient must lie within a small fixed floor plus three times their spread of the nearest of them, where the spread is the largest distance between two trusted gradients and distances are relative to the norm of the single-precision gradient. This holds for all parameters together and separately for the replacement sites' `alpha`, `weight` and `bias` gradients and for all remaining parameters. Any precision arrangement of the replacement mapping between half and single precision is therefore acceptable, including sites computed in fp32, sites computed entirely in fp16, and fused or reordered forms of either; a missing, zeroed, rescaled or sign-flipped gradient, a gradient of other parameters, or a gradient computed for other inputs is not. A rejected development submission scores zero, and its train feedback carries `metrics.candidate_diagnostic` in place of measurements: a fixed category naming the stage of the rejection (`patch_policy`, `semantic_validation` for the conversion checks and single-precision guards, `model_workload`, or `timed_path`) and, for the timed-path validation, the block (`training` or `inference`) and the first quantity that failed (the model output, the loss, the gradient of all parameters jointly, of the replacement sites' `alpha`, `weight` or `bias`, or of the remaining parameters, a missing or wrong-shape result, or nonfinite values that do not match), with a fixed sentence saying the same. It contains no value, threshold, workload or repeat, and a final submission returns none. A fast path that is taken only under those conditions must therefore compute correct results for the inputs of each call, and results kept from an earlier call cannot be reused; the model state does not change between repeats, so work that depends on the parameters alone may be prepared once. A constant or no-op conversion fails. Evaluation requires one NVIDIA L4 and has a 900-second verifier limit.
+
+## Scoring
+As the secondary objective, maximize the returned score from 0 to 100. For workload `w`, let `A_w` and `A*_w` be candidate and trusted-reference top-1 percentages and let `T_w` and `T*_w` be their median synchronized training-block latencies. Define:
+
+```text
+quality_w = clamp(50 + 2 * (A_w - A*_w), 0, 100)
+latency_w = clamp(50 + 200 * log2(T*_w / T_w), 0, 100)
+score = mean_w(0.60 * quality_w + 0.40 * latency_w)
+```
+
+The coefficients and clamp bounds are challenge constants (not from materials). A separate strict criterion requires `A_w >= A*_w` with zero tolerance, `T_w < T*_w`, and `I_w < I*_w` on every graded workload, with all correctness checks passing. Each latency value is the median of 11 CUDA-synchronized blocks after three untimed warmups, paired and interleaved between candidate and reference. `T_w` times one training forward, cross-entropy and backward pass; `I_w` (beat spec v3) times one forward-only inference pass of the trained model in evaluation mode without gradients, under fp16 autocast, on a batch of the same shape. `I_w` does not enter the score.
+
+## Calibration
+The obvious no-op or constant mapping fails the model-level correctness gates and scores 0. The exact upstream implementation defines the neutral point of each continuous component at 50; higher scores require measured quality or latency headroom. Compilation is permitted. Its initialization must fit the evaluation timeouts; measured latency uses paired, alternating repetitions after warmup.
+
+## Feedback and grading
+Each train call returns a score and the development metrics once its verification completes; saving or submitting the final answer returns no score to you. The submission budget is in `/frontier/task/README.md`. **The graded suite is not the suite you receive feedback on**, and neither its membership nor its seeds are disclosed. The two suites share no photograph and are class-, model-, batch-shape-, and size-stratified so they carry the same distribution.
+
+Development feedback contains only the scalar mean of the candidate's absolute top-1 accuracy, the scalar means of its absolute training and inference latencies, and aggregate workload pass/fail percentages, or, for a rejected submission, the categorical `candidate_diagnostic` described under Validity. Reference measurements, reference-relative quantities, private workload rows, and all final metrics are withheld.

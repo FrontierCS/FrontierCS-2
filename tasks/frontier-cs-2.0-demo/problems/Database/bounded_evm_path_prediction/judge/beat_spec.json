@@ -1,0 +1,66 @@
+{
+  "unit": "One upstream transaction category (complex or normal) in one 200-block reporting epoch of the fixed mainnet replay. Development grades its single epoch (blocks 14,650,001-14,650,200; two workloads). Final replays 600 blocks and grades every epoch separately: the freshly replayed public prefix (epoch 200), the held-out epoch 400 and the second held-out epoch 600 (six workloads). All printed records in each category and epoch contribute.",
+  "metrics": [
+    {
+      "name": "branch_accuracy",
+      "means": "Mean printed branch-direction accuracy over all records in one transaction category of one 200-block epoch (the paper's hit ratio, Section 5.2, Figure 10).",
+      "source": "SeerEVM TestPredictionSuccess: second column of each two-decimal report record.",
+      "better": "higher",
+      "clears_when": "Candidate and reference must have identical positive observation counts; the candidate sum of printed branch-accuracy hundredths must exceed the reference sum by at least one.",
+      "tolerance": "Exact integer hundredths: one tick means a mean increase of 0.01 / category observation count. Unchanged fixed replays were deterministic; ties fail."
+    },
+    {
+      "name": "transaction_path_accuracy",
+      "means": "Mean printed upstream transaction-path satisfaction ratio over every record in the same category and epoch (the paper's perfect-prediction ratio, Section 5.2, Figure 10). The normal-category ratio is not a probability and can exceed one because the authors' denominator subtracts high-gas non-call transactions from the contract-call count.",
+      "source": "SeerEVM TestPredictionSuccess: first column of each two-decimal report record, retaining historical finite normal 0.xx/1.xx values without clamping. Complex-category ratios and both branch-accuracy columns remain in [0,1].",
+      "better": "higher",
+      "clears_when": "Candidate and reference must have identical positive observation counts; the candidate sum of printed transaction-path hundredths must be at least the reference sum.",
+      "tolerance": "Exact integer hundredths, including normal ratios above one; no regression allowance. This is a guard alongside strict branch-accuracy improvement."
+    },
+    {
+      "name": "report_coverage",
+      "means": "Number of valid report records retained for the category in the epoch.",
+      "source": "Unchanged upstream complex/normal report sections in the required scored epoch.",
+      "better": "higher",
+      "clears_when": "Candidate observation count equals the paired reference count and is positive; missing categories, duplicate epochs and invalid records fail.",
+      "tolerance": "Exact count equality, no dropped observations."
+    }
+  ],
+  "beats_reference": "Conjunction of every declared metric on every graded category-epoch workload: two in development, six in final (epochs 200, 400 and 600 of the 600-block final replay, complex and normal each). Branch accuracy must strictly improve in each workload while path accuracy and record coverage are preserved. The continuous weighted, baseline-normalized score is unchanged (development epoch 200; final epoch 400) and is not the beating decision. Invalid submissions or report failures produce all-false rows; a failed reference or calibration replay is an evaluator error, never a comparison.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "raw_quality",
+      "means": "Candidate Q = 100*(0.8*mean branch accuracy + 0.2*mean upstream transaction-path satisfaction ratio), preserving normal ratios above one without clamping.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    },
+    {
+      "name": "branch_accuracy",
+      "means": "Candidate mean branch-direction accuracy over all scored records.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    },
+    {
+      "name": "transaction_path_accuracy",
+      "means": "Candidate mean upstream transaction-path satisfaction ratio over all scored records; this reported quantity is not a probability.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    },
+    {
+      "name": "observations",
+      "means": "Candidate total number of scored report records.",
+      "reveals_reference": "no — absolute candidate measurement, aggregated without workload identities, paired reference values or ratios"
+    }
+  ],
+  "withheld": [
+    "category_measurements",
+    "reference_score",
+    "margin",
+    "beats_reference",
+    "beat_spec_workload_passes",
+    "reference report values",
+    "individual category decisions"
+  ],
+  "statement_sentences": "Beating the reference is checked separately for every graded combination of transaction category (complex, normal) and 200-block reporting epoch: development grades blocks 14,650,001-14,650,200, and final replays 600 blocks and grades the public prefix and both held-out epochs (blocks 14,650,201-14,650,400 and 14,650,401-14,650,600). In each category and epoch, improve the sum of printed branch-accuracy hundredths by at least one, preserve the sum of printed transaction-path satisfaction-ratio hundredths without clamping normal values above one, and retain exactly the paired reference observation count. All three checks must pass in every graded category and epoch. The continuous score keeps its existing definition. Train feedback reports only approved absolute candidate summaries and per-metric workload pass/fail counts and percentages; reference measurements and category decisions remain private.",
+  "comments": "2026-09-11 repair of a missing exported beat-spec checkpoint. The two workload units are the distinct categories already emitted by the authentic experiment, not groupings selected from solver outcomes. The printer defines the exact 0.01 resolution; integer comparisons avoid inventing a performance tolerance. No source, reference method, dataset, replay length, continuous scoring formula or runtime budget changes. A real reference report exposed an accidental parser regression that rejected valid normal transaction ratios above one. The parser now preserves the historical two-decimal 0.xx/1.xx domain for that column, while keeping branch accuracy and complex transaction ratios within [0,1]. The upstream category denominator is unchanged; no printed values are clamped or dropped. Beat spec v3 (2026-10-07): formal runs showed 8/8 runs clearing v2, whose final graded only one held-out 200-block interval (two category workloads) with a minimal one-tick strict improvement. The paper evaluates prediction accuracy per 200-block interval over 1,000 consecutive blocks (Section 5.2, Figure 10) and stresses stability across intervals. v3 keeps all three metrics, their rules and the continuous score, and grades every interval of a 600-block final replay per category: the public prefix (T35) and two held-out intervals, so a predictor tuned to one interval must hold its gain across the replay. Measured on the published verifier image (8 CPUs): 400-block replay 101 s, 600-block replay 195 s, 21 s build; replays are deterministic, and epochs 200 and 400 of a 600-block replay equal those of the 400-block replay. Peak resident memory of the reference replay: 3,168 MiB at 400 blocks, 4,723 MiB at 600 blocks (OOM-killed under the previous 4 GiB verifier limit), so the verifier memory is raised to 8 GiB (flagged for sign-off); a 1,000-block replay thrashed at the 4 GiB limit and the full paper-scale interval count stays out of scope."
+}

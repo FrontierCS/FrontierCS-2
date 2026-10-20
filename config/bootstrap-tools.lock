@@ -1,0 +1,5 @@
+# platform version archive-url sha256 archive-member
+darwin-arm64 0.12.22 https://github.com/astral-sh/uv/releases/download/0.12.22/uv-aarch64-apple-darwin.tar.gz 5d714de09501a59393ceca78f4bc232a50478729640d251907160299b2a93ddd uv-aarch64-apple-darwin/uv
+darwin-amd64 0.12.22 https://github.com/astral-sh/uv/releases/download/0.12.22/uv-x86_64-apple-darwin.tar.gz 1b8a5b316883df2daf20fb9a446e5b230e01d947d57aba2694977c5ac5a7e98c uv-x86_64-apple-darwin/uv
+linux-arm64 0.12.22 https://github.com/astral-sh/uv/releases/download/0.12.22/uv-aarch64-unknown-linux-gnu.tar.gz 6f66a14e8239871fb477f9746c941fedfa77e8fe28a8bc7c07e1dc7f53a66712 uv-aarch64-unknown-linux-gnu/uv
+linux-amd64 0.12.22 https://github.com/astral-sh/uv/releases/download/0.12.22/uv-x86_64-unknown-linux-gnu.tar.gz b9980552309f09c15172b8be828555e375097f16deb459795ce7bfd200380f0b uv-x86_64-unknown-linux-gnu/uv

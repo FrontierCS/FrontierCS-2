@@ -1,0 +1,125 @@
+{
+  "schema": "frontiersmith/result@1",
+  "task_id": "batch_local_counting",
+  "run_id": "r_top78_f094b386ab",
+  "candidate_id": "cand_002",
+  "final": {
+    "round": 2,
+    "reference": {
+      "ok": true,
+      "samples": 5,
+      "scores": [
+        12.500607571875047,
+        13.016857446054395,
+        13.011021729803632,
+        12.71547318684792,
+        12.782632195526816
+      ],
+      "dev_scores": [
+        23.185601037734514,
+        23.218282505194736,
+        23.02431690831144,
+        23.113001096014305,
+        23.191668985307455
+      ],
+      "spread": {
+        "n": 5,
+        "spread": 0.5162498741793478,
+        "mean": 12.805318426021563,
+        "rel": 0.04031527034347552
+      },
+      "reasons": [],
+      "round": 2
+    },
+    "trials": [
+      {
+        "round": 2,
+        "idx": 0,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.07691010421785323,
+        "score": 7.691010421785323,
+        "beats_reference": 0,
+        "reference_score": 12.680326969853981,
+        "margin": -4.9893165480686585,
+        "submissions": 4,
+        "cost": 19.255422750000005,
+        "wall_s": 3084.145488,
+        "status": "scored"
+      },
+      {
+        "round": 2,
+        "idx": 1,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.08972021362160242,
+        "score": 8.972021362160241,
+        "beats_reference": 0,
+        "reference_score": 12.93338954459888,
+        "margin": -3.9613681824386386,
+        "submissions": 2,
+        "cost": 13.189392749999996,
+        "wall_s": 2337.46469,
+        "status": "scored"
+      },
+      {
+        "round": 2,
+        "idx": 2,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.05962757295639451,
+        "score": 5.962757295639451,
+        "beats_reference": 0,
+        "reference_score": 12.819662638583212,
+        "margin": -6.856905342943762,
+        "submissions": 4,
+        "cost": 22.262045250000003,
+        "wall_s": 3013.645125,
+        "status": "scored"
+      }
+    ],
+    "best_reward": 0.08972021362160242,
+    "n_beating_reference": 0
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "revise",
+      "scores": {
+        "paper_alignment": 15,
+        "difficulty": 12,
+        "stability": 98,
+        "statement_quality": 84
+      },
+      "trials": 1,
+      "best_reward": 0.7610454489838969
+    },
+    {
+      "round": 2,
+      "verdict": "accept",
+      "scores": {
+        "paper_alignment": 88,
+        "difficulty": 90,
+        "stability": 99,
+        "statement_quality": 94
+      },
+      "trials": 3,
+      "best_reward": 0.08972021362160242
+    }
+  ],
+  "judge_pre_execution": {},
+  "cost_usd": {
+    "total": 115.98,
+    "by_stage": {
+      "reproduce": 0.48,
+      "contribs": 0.28,
+      "generate": 13.34,
+      "judge": 0.68,
+      "refine": 9.93,
+      "trials": 77.08,
+      "review": 0.36,
+      "re-refine": 13.8,
+      "finalise": 0.03
+    }
+  }
+}

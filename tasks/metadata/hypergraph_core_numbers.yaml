@@ -1,0 +1,27 @@
+id: "hypergraph_core_numbers"
+display_name: "Hypergraph Core Numbers"
+category: "HPC"
+summary: "Speed up hypergraph k-core decomposition in the Hygra/Ligra framework."
+paper_title: "Practical Parallel Hypergraph Algorithms"
+paper_venue: "PPoPP 2020"
+paper_url: "https://people.csail.mit.edu/jshun/hygra.pdf"
+agent_cpu_cores: 8
+agent_memory_gib: 4
+agent_disk_gib: 2
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 8
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 30000
+eval_timeout_seconds: 1800

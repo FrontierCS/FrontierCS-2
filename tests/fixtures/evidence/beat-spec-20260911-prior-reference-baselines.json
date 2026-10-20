@@ -1,0 +1,132 @@
+{
+  "batch_local_counting": {
+    "agreement_rule": {
+      "abs": 0.01,
+      "name": "cross-site-agreement/v1",
+      "rel": 0.05,
+      "replays": 1
+    },
+    "datasets": {
+      "eval": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7",
+      "train": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+    },
+    "evaluator_sha256": "sha256:8a8cadf2c49317c21c83b16811812a9d3d3e844209c97dace9a25f3aae842c31",
+    "historical_mean": 12.805318426021563,
+    "historical_scores": [
+      12.500607571875047,
+      13.016857446054395,
+      13.011021729803632,
+      12.71547318684792,
+      12.782632195526816
+    ],
+    "historical_spread": 0.5162498741793478,
+    "reference_patch_sha256": "sha256:1cb3d6c02baec5454052d297fe7b29fed30982bce1fc3c605783676684eb0614",
+    "result_json_source": "2.0/aws_pipeline_problems/very_hard/batch_local_counting/result.json",
+    "source_set_sha256": "sha256:4674ceae0645584c0e4fa8f84d08b49e363328d604948df23886f8338f30334c",
+    "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+  },
+  "bounded_evm_path_prediction": {
+    "agreement_rule": {
+      "abs": 0.01,
+      "name": "cross-site-agreement/v1",
+      "rel": 0.05,
+      "replays": 1
+    },
+    "datasets": {
+      "eval": "sha256:dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4",
+      "train": "sha256:e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
+    },
+    "evaluator_sha256": "sha256:d988c0d678e9f95c1fb770a94880cb4f622e80c64b1698baa8b27733b377760b",
+    "historical_mean": 80.44069341508703,
+    "historical_scores": [
+      80.44069341508703,
+      80.44069341508703,
+      80.44069341508703,
+      80.44069341508703,
+      80.44069341508703
+    ],
+    "historical_spread": 0.0,
+    "reference_patch_sha256": "sha256:1e92a8a973904660a66ce8fb10b47f8693387c317354105dcd725b1fcdcb52f4",
+    "result_json_source": "2.0/aws_pipeline_problems/hard/bounded_evm_path_prediction/result.json",
+    "source_set_sha256": "sha256:5be63b3d4d9952bde93b9cab3ea33742a186e0c594a4e64e36d58681f412225f",
+    "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+  },
+  "evm_state_checkpoints": {
+    "agreement_rule": {
+      "abs": 0.01,
+      "name": "cross-site-agreement/v1",
+      "rel": 0.05,
+      "replays": 1
+    },
+    "datasets": {
+      "eval": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
+      "train": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
+    },
+    "evaluator_sha256": "sha256:fa328ff6e973930b277ac5cd81b0b4e20802ea69695fe025f70fe1cf47c7e921",
+    "historical_mean": 50.0,
+    "historical_scores": [
+      50.0,
+      50.0,
+      50.0,
+      50.0,
+      50.0
+    ],
+    "historical_spread": 0.0,
+    "reference_patch_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
+    "result_json_source": "2.0/aws_pipeline_problems/very_hard/evm_state_checkpoints/result.json",
+    "source_set_sha256": "sha256:cafe81c2c8053032e049d485d09611c8d0f6c0afd2441a930614780a7215f81e",
+    "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+  },
+  "graph_mining_method_selection": {
+    "agreement_rule": {
+      "abs": 0.01,
+      "name": "cross-site-agreement/v1",
+      "rel": 0.05,
+      "replays": 1
+    },
+    "datasets": {
+      "eval": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e",
+      "train": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+    },
+    "evaluator_sha256": "sha256:6ebc7f74cf8c4e2a4d60ff21bddc2bbef098a69771320fb036a591abab2a26ec",
+    "historical_mean": 95.38468624450594,
+    "historical_scores": [
+      95.38468624450594,
+      95.38468624450594,
+      95.38468624450594,
+      95.38468624450594,
+      95.38468624450594
+    ],
+    "historical_spread": 0.0,
+    "reference_patch_sha256": "sha256:bceb52507a468972db2a0b88a1f626b1a5c005dc3388cd60087c88ba1fe4de20",
+    "result_json_source": "2.0/aws_pipeline_problems/very_hard/graph_mining_method_selection/result.json",
+    "source_set_sha256": "sha256:2c749d662959d964df02e66f91a3a2c2e1ca2731cae5e95a01983123c1888d96",
+    "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+  },
+  "join_tree_rewriting": {
+    "agreement_rule": {
+      "abs": 0.01,
+      "name": "cross-site-agreement/v1",
+      "rel": 0.05,
+      "replays": 1
+    },
+    "datasets": {
+      "eval": "sha256:ddbc834efb09c21e21056a57c8326de43c4f5101b5548e6e4fe7775e445dedf2",
+      "train": "sha256:1f8399baa7949b712a02ac98de756a5f57cd8a1c5f6c3d7859e376880f11f608"
+    },
+    "evaluator_sha256": "sha256:74326577f186004e4f805002484c523995c1f9ff910703554812801eca6e1ae7",
+    "historical_mean": 62.0,
+    "historical_scores": [
+      62.0,
+      62.0,
+      62.0,
+      62.0,
+      62.0
+    ],
+    "historical_spread": 0.0,
+    "reference_patch_sha256": "sha256:a26bbd6620f39e2af5f497515fb2bea55b093d885304080107d52a7d0c2655db",
+    "result_json_source": "2.0/aws_pipeline_problems/very_hard/join_tree_rewriting/result.json",
+    "source_set_sha256": "sha256:cebc51e16e8259a237d7d01ca98129b02230ad0f44de8c19fe1647d06ce76223",
+    "verifier_adapter_sha256": "sha256:111df27cd39d0408e600d1a901ea3368f456f668f1d4178f89f58eef08a36f13"
+  }
+}

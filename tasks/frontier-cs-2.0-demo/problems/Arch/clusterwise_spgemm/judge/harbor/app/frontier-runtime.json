@@ -1,0 +1,6 @@
+{
+  "build_seconds": 600,
+  "cluster_width": 8,
+  "debug_logical_cpus": 2,
+  "scientific_logical_cpus": 60
+}

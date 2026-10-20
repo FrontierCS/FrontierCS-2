@@ -1,0 +1,52 @@
+{
+  "unit": "one authentic Polygon workload: either a bundled LeetCode query pair or a D-50/D-100 query-disambiguation set, run through the submitted discovery pipeline and independently validated by MariaDB under its disclosed case budget; plus two retained paper-scale hard pair records per suite",
+  "metrics": [
+    {
+      "name": "refuted_pair",
+      "means": "Whether the submitted search produced a database that MariaDB confirmed either distinguishes the query pair or splits the disambiguation query set into two equal result clusters.",
+      "source": "The retained LeetCode worker and MySQLTester.test_pair validate pair workloads; the artifact's Environment.disambiguate path is followed by fixed MariaDB execution and equal-cluster counting equivalent to MySQLTester.test_cluster for D-50/D-100 workloads. The paper reports solved workload count as the primary outcome.",
+      "better": "higher",
+      "clears_when": "candidate_refuted_pair(w) >= reference_refuted_pair(w)",
+      "tolerance": "none; the value is boolean"
+    },
+    {
+      "name": "wall_time_seconds",
+      "means": "The retained worker's per-pair Time measurement around Environment.check, with an unsolved timeout charged the full two-second case budget.",
+      "source": "evaluation/leetcode/online.py writes total_time as Time for each query pair, and the artifact RQ1 table reports aggregate time after solved count.",
+      "better": "lower",
+      "clears_when": "original records: candidate_wall_time_seconds(w) <= reference_wall_time_seconds(w) + max(0.03, 0.20 * reference_wall_time_seconds(w)) (unchanged); paper-scale hard records: candidate_wall_time_seconds(w) < 0.5 * reference_wall_time_seconds(w) (strict superiority, no allowance)",
+      "tolerance": "original records: paired 0.03 second absolute plus 20% relative allowance; challenge constant (not from materials) for process and SMT timing noise. Hard records: no allowance; the 0.5 ratio is a challenge constant derived from measured noise, because a bare candidate < reference comparison is a coin flip between equal implementations: 24 repeated reference-vs-reference pairs on the hard records gave paired time ratios 0.86-1.22 and passed a bare strict comparison 15 times, 24 pairs of a same-work variant gave 0.79-1.21; with the 0.5 ratio none of these 48 pairs passed, nor any of 24 further hard-record pairs of the reference (as published and transplanted into the editable regions) in full verifier train/eval runs, while a faster search witness passed on 24 of 24 hard pairs with ratios 0.06-0.27."
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff both refuted_pair and wall_time_seconds clear their comparison on every workload of the evaluated suite (sixteen original pair, three disambiguation and two hard records); otherwise it is 0. Original records keep non-inferiority with the 0.03-second-plus-20% timing allowance; hard records require the candidate's validated search time to be strictly below half the paired reference time, so the reference does not clear its own hard records. This is the conjunction over every metric and workload. A reference that does not validate a refutation within budget on a graded pair is an evaluator error, never a comparison.",
+  "solver_feedback": [
+    {
+      "name": "refuted_pairs",
+      "means": "The candidate's own 0/1 refutation outcome for each feedback workload.",
+      "reveals_reference": "no \u2014 it reports only the candidate's independently validated outcome."
+    },
+    {
+      "name": "wall_time_seconds",
+      "means": "The candidate's own wall-clock search time for each feedback workload, with timeouts charged two seconds.",
+      "reveals_reference": "no \u2014 it is an absolute candidate measurement."
+    },
+    {
+      "name": "search_iterations",
+      "means": "The candidate's own reported number of SMT search iterations for each feedback workload.",
+      "reveals_reference": "no \u2014 it contains no reference value or relative quantity."
+    },
+    {
+      "name": "backtracks",
+      "means": "The candidate's own reported number of search backtracks for each feedback workload.",
+      "reveals_reference": "no \u2014 it contains no reference value or relative quantity."
+    }
+  ],
+  "withheld": [
+    "reference_refuted_pair",
+    "reference_wall_time_seconds",
+    "reference_score",
+    "per_workload_comparison_decisions"
+  ],
+  "statement_sentences": "Alongside the continuous score, evaluation applies a separate withheld criterion on every workload, original and hard. A refutation outcome must be non-inferior. On original records, wall time must be no higher than the paired measurement beyond the disclosed 0.03-second-plus-20% timing allowance; on hard records, wall time must be strictly below half of the paired measurement, with no allowance. The continuous score remains the optimization objective, and submissions that do not clear the separate criterion are still scored normally.",
+  "comments": "The upstream artifact makes solved/refuted count primary, aggregate wall time the tie-breaker, and iterations/backtracks diagnostic. Development and final each contain four disjoint LeetCode query pairs stratified at upstream reference-search iteration counts 2, 3, 8, and 20. The timing tolerance and two-second reduced case budget are challenge constants, not paper constants. No calibrated aggregation override is declared, so the normal conjunction applies. The preceding beat-design process failed before producing a frozen specification; this file reconstructs only the quantities fixed by the contribution assignment and artifact RQ1 output. Beat spec v3 (2026-10-07): every formal model run reached the same quantized score 92.13 and cleared v2: all four suite pairs need only 2-20 upstream search iterations and are refuted in well under 0.5 s in total, far below paper scale (PLDI 2025 Table 1: ER iterations up to 139, 1-minute timeout). v3 keeps both metrics, their rules, the four original pairs per suite and the continuous score, and adds two paper-scale hard pairs per suite from the artifact's own LeetCode corpus and per-pair results (evaluation/results/LC/tool.csv): development 1435/78 (40 upstream iterations) and 1083/2 (62), graded 1435/13 (40) and 1083/479 (68), each with a 20-second budget. Measured with the published verifier image (2 CPUs): reference refutes them in 1.8, 7.1, 1.8 and 5.6 s with identical iteration counts on repeated runs (run-to-run time spread about 2%); the supplied exhaustive fallback refutes none within 20 s. Pairs whose upstream iteration count varied between runs (1083/40, 1083/94) were excluded. Follow-up (2026-10-08): hard records require strict wall-time superiority, candidate < 0.5 x reference with no allowance; the ratio replaces a bare candidate < reference because the latter passed 15 of 24 reference self-pairs under measured run-to-run noise (paired ratios 0.86-1.22; one final-6 self-run also took 79 instead of 68 upstream iterations). No self or same-work pair passed the 0.5 ratio (0 of 72, including full verifier runs), and a faster conflict-resolution witness (finer cover granularity first, adaptive initial frontier; a valid submission inside the editable regions) passed it on 24 of 24 hard pairs and cleared the full conjunction in 3 of 3 eval smokes. Original records keep their non-inferiority rule unchanged. Version 4 retains the v3 hard pairs and strict ratio and expands original records to sixteen pair plus three disambiguation workloads per role. Continuous score uses the nineteen non-hard records. Prior four- or nineteen-case calibration is historical, not acceptance evidence for this combined release."
+}

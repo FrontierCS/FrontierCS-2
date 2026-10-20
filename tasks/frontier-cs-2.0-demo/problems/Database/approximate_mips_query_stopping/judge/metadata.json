@@ -1,0 +1,86 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "approximate_mips_query_stopping",
+  "domain": "databases",
+  "promotion": {
+    "round": 3,
+    "band": "easy",
+    "scores": {
+      "paper_alignment": 92,
+      "difficulty": 38,
+      "stability": 96,
+      "statement_quality": 94
+    },
+    "gate": {
+      "difficulty": 20,
+      "paper_alignment": 70,
+      "stability": 70,
+      "statement_quality": 70
+    },
+    "reviewer_verdict": "revise"
+  },
+  "generated_at": "2026-08-18T09:23:23.866334+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "3676f0c07e03214559968f631baf9752726dd29e",
+    "run_id": "r_top68_8ba4aaffff",
+    "candidate_id": "cand_001",
+    "config_sha256": "d6ca4aeaeb51ea300eb114b61cce6612aaea07f297e0b7967179d34c1ae0d91b"
+  },
+  "paper": {
+    "paper_id": "vldb-2023-fargo-fast-maximum-inner-product-search-via-global-multi-probing-8ba4aaffff",
+    "title": "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing",
+    "authors": [
+      "Xi Zhao",
+      "Bolong Zheng",
+      "Xiaomeng Yi",
+      "Xiaofan Luan",
+      "Charles Xie",
+      "Xiaofang Zhou",
+      "Christian S. Jensen"
+    ],
+    "year": 2023,
+    "venue": "PVLDB 16",
+    "pdf_url": "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf",
+    "doi": null
+  },
+  "rank": {
+    "rank": 68,
+    "overall_score": 74.0,
+    "recommendation": "candidate",
+    "scores": {
+      "agent_task_fit": 4.2,
+      "artifact_readiness": 3.0,
+      "evaluation_quality": 4.2,
+      "frontier_potential": 3.4
+    },
+    "risks": [
+      "The artifact is a small research repository with no detected package/environment manifest; dependency installation, licensing, and end-to-end dataset setup are not demonstrated.",
+      "The inspect-only probe identified source and a candidate command but did not execute the build or benchmarks, so practical portability remains uncertain.",
+      "Large-scale sweeps over recall-efficiency tradeoffs could exceed evaluation budgets unless dataset size, index construction, and query counts are tightly bounded.",
+      "Zero reported citations, influential citations, and GitHub stars provide little evidence of adoption or sustained community impact.",
+      "Optimization may overfit individual vector distributions unless the benchmark uses multiple hidden datasets, dimensions, and norm distributions."
+    ]
+  },
+  "artifact": {
+    "repo_url": "https://github.com/Jacyhust/FARGO_VLDB23",
+    "commit": null,
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": null,
+    "summary": null,
+    "paper_location": null,
+    "code_location": [],
+    "metric": null
+  },
+  "host": null,
+  "host_note": "stage0/host.json was not synced off the instance; the machine these numbers were measured on is not recoverable, and measuring this one would name hardware that never ran them",
+  "recovered": {
+    "from": "stage9/cand_001/round_3/workspace",
+    "why": "the canonical task directory under stage2/ is not synced off the instance; this was rebuilt from the trace reviewer's copy",
+    "run_state": "COMPLETED",
+    "loop_state": "ACCEPTED"
+  }
+}

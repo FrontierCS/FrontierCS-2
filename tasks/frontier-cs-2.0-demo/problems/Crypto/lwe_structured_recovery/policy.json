@@ -1,0 +1,131 @@
+{
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "problem_id": "lwe_structured_recovery",
+  "display_name": "Structured-LWE Public Witness Recovery",
+  "family": "frontier-cs-2.0/security",
+  "version": "native-dual-score.7-patch-submission",
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 34359738368,
+    "workspace_bytes": 34359738368
+  },
+  "quota": {
+    "wall_time_seconds": 18000,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 12000,
+    "eval_timeout_seconds": 120
+  },
+  "submission": {
+    "max_bytes": 4194304,
+    "entrypoint": "payload/solution.patch"
+  },
+  "verifier": {
+    "cpu_millis": 8000,
+    "memory_bytes": 2147483648,
+    "max_evidence_bytes": 1048576,
+    "command": [
+      "/opt/frontier/lwe-verifier"
+    ]
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_model_sessions": 1024,
+      "max_ssh_sessions": 32,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_bundle_bytes": 34359738368
+    }
+  },
+  "metadata": {
+    "catalog_sha256": "sha256:318f32b68e8a30c6bcd5867c89eb10d87a5472614401f4e6df0f55356cdc98a6",
+    "instance_count": 200,
+    "submission_json_max_bytes": 2000000,
+    "solver_visible_metrics": [
+      "instance_count",
+      "solved_count",
+      "submitted_count",
+      "invalid_count",
+      "duplicate_count",
+      "conflict_count",
+      "unknown_count",
+      "rejection_code_counts"
+    ],
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "instance_count",
+        "solved_count",
+        "submitted_count",
+        "invalid_count",
+        "duplicate_count",
+        "conflict_count",
+        "unknown_count",
+        "rejection_code_counts"
+      ],
+      "beat_spec_sha256": "sha256:0d88f33985f07b971e9f86e1ab1130c084f9fddf68e977808f33d4c1e1d81ecb",
+      "suite_relation": "same fully public corpus in train and eval; distinct mode selectors, no hidden split"
+    },
+    "upstream": {
+      "repository": "https://github.com/FrontierCS/Frontier-CS",
+      "commit": "15ce5cc28f69a79bc3555bc4c8de65424360b77f",
+      "commit_date": "2026-08-13T15:34:26-07:00",
+      "tree": "fb32796dd56df81a3a31634851a6a9fe5274d7f9",
+      "path": "2.0/problems/lwe_structured_recovery"
+    },
+    "compatibility": {
+      "harbor_max_pending_submissions": 3,
+      "frontiercs2_submission_mode": "asynchronous bounded train calls",
+      "historical_best_selection": false
+    },
+    "conversion": {
+      "status": "local_validation_in_progress",
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "source_commit": "ad37be5d8d8ba59c8d4e62ed35c3a13489cf17d4",
+      "adapter_repository": "private authoring repository",
+      "adapter_commit": "a48a08703c02e2765040584ddca1df1c780e25c2",
+      "adapter_path": "2.0/fcs2/problems/lwe_structured_recovery",
+      "pass_fail": "all 200 public instances solved; exact per-instance comparison to empty reference",
+      "continuous_score": "100 * solved_count / instance_count; independent of reference"
+    },
+    "datasets": {
+      "train": {
+        "path": "datasets/train.json",
+        "version": "sha256:ae554d21e1fd3684e09b93a0983b9aef1494d03e37f67acd34ff23d817fbca65",
+        "bytes": 210
+      },
+      "eval": {
+        "path": "datasets/eval.json",
+        "version": "sha256:f0b74e925bdd4493e50063e4f275a20f4cc91cda9729f4ac95bd7c67e0aa9b64",
+        "bytes": 209
+      }
+    },
+    "generator": {
+      "pipeline": null,
+      "commit": null,
+      "run_id": null,
+      "candidate_id": null,
+      "config_sha256": null
+    },
+    "paper": {
+      "paper_id": null,
+      "title": null,
+      "authors": [],
+      "year": null,
+      "venue": null,
+      "pdf_url": null,
+      "doi": null
+    },
+    "runtime": {
+      "language": "python",
+      "submission_kind": "patch",
+      "allowed_paths": [
+        "payload/solution.json"
+      ]
+    },
+    "accelerator": null,
+    "isolation": "The same fixed public catalog and checker are available to Agent and Verifier; reference comparisons and evidence are Verifier-only. Train and eval select independent verification runs over that public corpus.",
+    "provenance_file": "judge/metadata.json"
+  }
+}

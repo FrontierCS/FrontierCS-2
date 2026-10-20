@@ -1,0 +1,5 @@
+00622864889f5fd6eb3ae5bc67fd9cd93c89f9590a672fa769abbfca3e87908c  opt/frontier/dependencies/torch_fidelity-0.4.0b0-py3-none-any.whl
+f49b3aa26ff5f041e3e04c0b9d50025075631938ab279939d7b925240876a9d8  opt/frontier/dependencies/runtime-layer.lock
+0c510722adfd92966a2bd72b92f785ca05966bbac03cafe2f7a90b1f54bfab9a  opt/frontier/models/torch/hub/checkpoints/convnext_small-0c510722.pth
+6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2  opt/frontier/models/torch/hub/checkpoints/weights-inception-2015-12-05-6726825d.pth
+a78928a0af1e5f0fcb1f3b9e8f8c3a2a5a3de244d830ad5c1feddc79b8432868  opt/frontier/models/lpips/vgg.pth

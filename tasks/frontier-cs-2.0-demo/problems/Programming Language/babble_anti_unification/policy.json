@@ -1,0 +1,90 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Reusable Library Candidates",
+  "family": "frontier-cs-2.0/algorithms",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 432,
+        "path": "datasets/eval.json",
+        "version": "sha256:52ca3d00d5cd775efb9f5e045fadafdc86e605aff9b58099677b32eca868dfeb"
+      },
+      "train": {
+        "bytes": 439,
+        "path": "datasets/train.json",
+        "version": "sha256:29b48cb9950134a8858b32c301ffa4f8dd2d5512076d4f7acebe8a073ddc8c22"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "compression_ratio",
+        "runtime_seconds"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "ef47b82d98fb26e99f06f996d47a0c35297b524e",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_ble-popl23"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": "arXiv:2212.04596",
+    "runtime": {
+      "allowed_paths": [
+        "src/learn.rs",
+        "src/dfta.rs",
+        "src/learn_extensions/"
+      ],
+      "language": "rust",
+      "submission_kind": "patch"
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
+      "source_path": "2.0/fcs2/problems/babble_anti_unification",
+      "scope": "T40 native standardization plus per-workload/per-metric PASS conjunction",
+      "original_metadata_path": "judge/metadata.json",
+      "historical_evidence_path": "authoring source history (not distributed)",
+      "note": "Existing generator, paper, artifact and local-release history retain their source meanings. PASS now requires every workload to clear compression and strict runtime comparisons; continuous compression scoring remains independent. Historical staging evidence is bound to its exact immutable source."
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "babble_anti_unification",
+  "quota": {
+    "eval_timeout_seconds": 600,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 1800,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 2147483648
+  },
+  "version": "native-standardization-1-agent5h-r2"
+}

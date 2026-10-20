@@ -1,0 +1,13 @@
+# Platform usage
+
+The Candidate supplies `frontier-submit`; this task supplies no Driver client or credentials. Public immutable task files are in `/frontier/task`; work belongs under `/workspace`. This task uses four CPU workers, 2,048 MiB RAM and 2,048 MiB workspace, with no GPU or SSH work.
+
+`prepare_workspace.sh [destination]` initializes one editable Git baseline under `/workspace`. It refuses an existing destination. `make_submission.sh [workspace] [patch-path]` stages only the allowed surface, includes new headers, and returns a patch file. It does not make a tar or submit. Unrelated changes are not staged; a previously staged disallowed path is rejected by the Verifier.
+
+All three submission commands accept the same uncompressed POSIX tar: exactly one regular file `payload/solution.patch`, at most 262,144 patch bytes and 276,480 total tar bytes. An optional `payload/` directory is allowed. No executable bit is needed. Links, duplicate members, traversal, special files and extra members are invalid. The research statement defines the 20-file/text-only patch boundary and full validity conditions.
+
+- `frontier-submit train /absolute/archive.tar` accepts public-suite verification and returns immediately with its verification ID and authoritative remaining train calls. Use `frontier-submit status <verification_id>` for one status read and, when verification completes, the score, approved aggregate candidate timing/memory and aggregate comparison progress. At most 100 calls are allowed within the answering window. Train does not select a final.
+- `frontier-submit store-final /absolute/archive.tar` saves a copy and returns a receipt. A later successful save replaces it; a failed save preserves the previous selection. Saving does not end answering. Local edits do not update the saved bytes.
+- `frontier-submit final /absolute/archive.tar` accepts and locks an explicit final; call it once, then exit. An accepted explicit final takes priority over a saved selection.
+
+On eligible normal exit or answering timeout, the Driver may collect the successfully saved final. Cancellation or platform failure does not collect it. No final is selected automatically from the last or highest-scoring train call. Final is a fresh independent evaluation of the selected archive and has its own 900-second budget after the platform cleanup barrier. A formal task has 18,000 answering seconds; a short debugging version has 1,800 and must disclose that actual limit through its instructions/platform configuration. Bootstrap and train waits consume answering time. Final reference data, per-workload verdicts and final measurements are operator-only; the platform may expose final raw score under its current contract.

@@ -1,0 +1,140 @@
+{
+  "agent": {
+    "cpu_millis": 3000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "KAMI FP64 Block GEMM — trusted batched harness adaptation",
+  "family": "frontier-cs-2.0/systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 900,
+      "max_instance_seconds": 900,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 1800
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_gpu_operations": "candidate-owned-generic-cli",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 429,
+        "path": "datasets/eval.json",
+        "version": "sha256:55967cdec28cfea1a62ea58c6db261293acb2118aee5fde131a0faeebc18e252"
+      },
+      "train": {
+        "bytes": 436,
+        "path": "datasets/train.json",
+        "version": "sha256:f9e63362fc2497f32ab520513f06013995eb6437d35b88d120a58bb42e5d0442"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 12,
+      "solver_visible_metrics": [
+        "tflops"
+      ],
+      "suite_relation": "final_public_plus_hidden_same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_002",
+      "commit": "a5a0cc7af85d94d54fd25b5d1c4baf44ac7315f0",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_-kami-sc25"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Hemeng Wang",
+        "Yang Du",
+        "Sidu Li",
+        "Xiaowen Tian",
+        "Qingxiao Sun",
+        "Weifeng Liu"
+      ],
+      "doi": null,
+      "paper_id": "external-kami-sc25",
+      "pdf_url": "https://www.ssslab.cn/assets/papers/2025-wang-KAMI.pdf",
+      "title": "KAMI: Communication-Avoiding General Matrix Multiplication within a Single GPU",
+      "venue": "SC",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu",
+        "src/block_gemm/KAMI/1d/fp64/solver_extensions/"
+      ],
+      "language": "cuda",
+      "submission_kind": "patch"
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
+      "source_last_task_commit": "91a8772b9309622910a29a32f9f9241701c367b4",
+      "source_path": "2.0/fcs2/problems/kami_fp64_block_gemm",
+      "scope": "T40 standardization plus T35 public-plus-hidden final; eight workloads, reference, threshold, and score curve preserved",
+      "original_task_resources": {
+        "agent_cpu_millis": 3000,
+        "agent_memory_bytes": 4294967296,
+        "agent_workspace_bytes": 4294967296,
+        "agent_gpu": "one NVIDIA H100 80GB HBM3 for at most 900 seconds",
+        "verifier_gpu": "one NVIDIA H100 80GB HBM3 for at most 1800 seconds",
+        "train_calls": 12,
+        "independent_final_seconds": 1800
+      },
+      "research_artifact_hardware_note": "Upstream plots and scripts include GH200 and RTX 5090 targets; the frozen task validates and runs on exact NVIDIA H100 80GB HBM3."
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 536870912,
+      "max_ssh_sessions": 1050,
+      "ssh_session_budgets": {
+        "agent": 1024,
+        "verifier_train": 24,
+        "verifier_eval": 2
+      }
+    }
+  },
+  "problem_id": "kami_fp64_block_gemm",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 12,
+    "max_train_wall_seconds": 21600,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "native-standard-v1"
+}

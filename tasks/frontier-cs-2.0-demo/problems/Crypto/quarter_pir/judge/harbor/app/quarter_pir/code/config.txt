@@ -1,0 +1,3 @@
+67108864 133191 // 1GB if entrysize = 16 bytes
+4294967296 1211 // 64GB if entrysize = 16 bytes
+1677721600 1337 // 100GB if entrysize = 64 bytes

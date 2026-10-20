@@ -1,0 +1,13 @@
+diff --git a/my_cond_branch_predictor.cc b/my_cond_branch_predictor.cc
+index 9782f1c..bed5689 100644
+--- a/my_cond_branch_predictor.cc
++++ b/my_cond_branch_predictor.cc
+@@ -18,6 +18,8 @@
+ 
+ namespace nRUNLTS {
+ 
++// No additional register contribution.
++
+ static constexpr int LogMaxNewlyCounters = 16;
+ 
+ static constexpr int NHIST = 23;

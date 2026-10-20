@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "2503.10622/code",
+  "authentic_execution": {
+    "entrypoint": "main.py",
+    "retained_files": ["main.py", "engine.py", "datasets.py", "optim_factory.py", "utils.py"]
+  },
+  "excision": [
+    {"path": "dynamic_tanh.py", "mode": "stubbed", "symbols": ["DynamicTanh", "convert_ln_to_dyt"]}
+  ],
+  "solution_surface": {
+    "modify": ["dynamic_tanh.py"],
+    "add_under": ["solver_extensions/"],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {"path": "frontier-build.sh", "reason": "GPU-workspace import and syntax build adapter for the retained upstream program."},
+    {"path": "frontier-bench.sh", "reason": "GPU runner adapter that invokes the retained upstream main.py unchanged."},
+    {"path": "make_submission.sh", "reason": "Patch packager that includes solver-authored helper files."},
+    {"path": "public_test.py", "reason": "Small public contract check that does not encode the removed implementation."}
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "other_tasks/Efficiency/benchmark.py",
+    "other_tasks/LLaMA/main_training_llama.py",
+    "other_tasks/DINO/dynamic_tanh.py",
+    "other_tasks/DNA/dynamic_tanh.py",
+    "other_tasks/MAE/dynamic_tanh.py",
+    "other_tasks/DiT/dynamic_tanh.py"
+  ],
+  "minimality_note": "The retained files are the reproduced image-classification main.py to engine.py path. All alternate task families and launchers are omitted."
+}

@@ -1,0 +1,45 @@
+tag: systems
+runtime:
+  language: cuda
+  timeout_seconds: 1800
+  environment: "CUDA 12.8 C++ on one NVIDIA H100; device-only sm_90a cubin plus separately linked trusted Driver-API host; Python 3 judge"
+  apt_packages:
+    - bash
+    - git
+    - python3
+  judge_apt_packages:
+    - bash
+    - git
+    - python3
+  docker:
+    image: ubuntu:24.04
+    gpu_image: nvidia/cuda:12.8.0-devel-ubuntu24.04@sha256:813c3b834aaafe2df2891f9a840c412a4df3c073dd9e0ac75aab810ed82a5b48
+  accelerator:
+    provider: modal
+    gpu_types: [H100]
+    agent:
+      instances: 1
+      max_instance_seconds: 900
+      max_gpu_seconds: 900
+    verifier:
+      instances: 1
+      max_instance_seconds: 1800
+      max_gpu_seconds: 1800
+environment:
+  cpus: 3
+  memory_mb: 4096
+  storage_mb: 4096
+  build_timeout_seconds: 300
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu
+    - src/block_gemm/KAMI/1d/fp64/solver_extensions/
+  max_changed_files: 12
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 12
+  suite_relation: final_public_plus_hidden_same_distribution
+  solver_visible_metrics: [tflops]

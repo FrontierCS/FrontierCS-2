@@ -1,0 +1,124 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 8589934592
+  },
+  "display_name": "Localized Regex Repair",
+  "family": "frontier-cs-2.0/security",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "L4"
+      ],
+      "max_gpu_seconds": 0,
+      "max_instance_seconds": 0,
+      "max_instances": 0
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 7200
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_sandbox": false,
+      "allowed_types": [
+        "L4"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 525,
+        "path": "datasets/eval.json",
+        "version": "sha256:00335e9af0f6e3062629abfc17b2b43bc75b8f14b1e74f6e78e0f704acfac543"
+      },
+      "train": {
+        "bytes": 531,
+        "path": "datasets/train.json",
+        "version": "sha256:7198d5def5f245c612a54ccf9a1eba829051f955dfda54cb5a41ac12331383e7"
+      }
+    },
+    "evaluation": {
+      "authored_answering_timeout_seconds": 18000,
+      "authored_max_dev_submissions": 100,
+      "authored_max_train_wall_seconds": 5400,
+      "solver_visible_metrics": [
+        "train_vulnerability_elimination_rate",
+        "train_repair_rate",
+        "train_well_formed_rate",
+        "train_mean_rli",
+        "train_mean_nls",
+        "train_mean_jaccard",
+        "train_mean_precision",
+        "train_mean_recall"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "lrr_modal_100_v1"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "arxiv_id": "2510.09037",
+      "repository": "https://github.com/cdltlehf/LRR",
+      "repository_commit": "99fde1327e389b9564615ecc7a51b89e6188494f",
+      "title": "Repairing Regex Vulnerabilities via Localization-Guided Instructions"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "scripts/scalpel_to_thinking_steps.py",
+        "prompts/localization.txt",
+        "prompts/5-shot-localization-prompt.txt",
+        "prompts/1-shot-prompt.txt",
+        "prompts/5-shot-prompt.txt",
+        "frontier_solution/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 6450839552,
+      "max_model_request_bytes": 1048576,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 256,
+      "max_ssh_bytes_per_direction": 4194304,
+      "max_ssh_sessions": 404,
+      "ssh_session_budgets": {
+        "agent": 0,
+        "verifier_eval": 4,
+        "verifier_train": 400
+      }
+    }
+  },
+  "problem_id": "lrr",
+  "quota": {
+    "eval_timeout_seconds": 3600,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 5400,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 4000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "lrr-preview-v1"
+}

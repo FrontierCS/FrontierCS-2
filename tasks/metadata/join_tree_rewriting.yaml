@@ -1,0 +1,27 @@
+id: "join_tree_rewriting"
+display_name: "Join-Tree Rewriting"
+category: "Database"
+summary: "Rewrite optimizer join trees into faster nested-semijoin plans for instance-optimal acyclic join processing in a column store."
+paper_title: "Instance-Optimal Acyclic Join Processing Without Regret: Engineering the Yannakakis Algorithm in Column Stores"
+paper_venue: "PVLDB 2025"
+paper_url: "https://www.vldb.org/pvldb/vol18/p2413-vansummeren.pdf"
+agent_cpu_cores: 2
+agent_memory_gib: 8
+agent_disk_gib: 1
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 8
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 24000
+eval_timeout_seconds: 900

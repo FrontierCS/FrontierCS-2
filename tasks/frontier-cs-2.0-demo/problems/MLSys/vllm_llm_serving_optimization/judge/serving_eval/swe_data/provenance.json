@@ -1,0 +1,40 @@
+{
+  "schema": "frontier.vllm-swe-data-provenance/v1",
+  "dataset": "princeton-nlp/SWE-bench_Lite",
+  "split": "test",
+  "revision": "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+  "parquet_sha256": "7a21f37b8bc179c7db5beeb14e88ac538ba283455c776e6b2535bbfb6e3551b4",
+  "immutable_dataset_url": "https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite/tree/6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2",
+  "original_task_historical_dataset_identity_proven": false,
+  "selection": "sort instance_id, random.Random(20260624).shuffle, public first5, final first50; remove original slots 018 (sympy__sympy-13177) and 039 (pytest-dev__pytest-7168) without replacement, retaining all other IDs/order",
+  "projection": [
+    "instance_id",
+    "repo",
+    "base_commit",
+    "version",
+    "environment_setup_commit",
+    "problem_statement",
+    "test_patch",
+    "FAIL_TO_PASS",
+    "PASS_TO_PASS"
+  ],
+  "json_list_fields": [
+    "FAIL_TO_PASS",
+    "PASS_TO_PASS"
+  ],
+  "native_instances_sha256": "97f551b7340630436b8a0f573172fa745e0e01ace174f45bae7ac6ef880dcd9f",
+  "instances": 48,
+  "scope": "Frozen projection of inspected immutable revision; not proof of historical original Run data or testbed content.",
+  "removed_instances": [
+    {
+      "original_sidecar_index": 18,
+      "instance_id": "sympy__sympy-13177",
+      "reason": "unstable original scoring-target outcomes"
+    },
+    {
+      "original_sidecar_index": 39,
+      "instance_id": "pytest-dev__pytest-7168",
+      "reason": "unfixed-base reporter failure prevents ordinary prediction scoring"
+    }
+  ]
+}

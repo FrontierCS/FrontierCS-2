@@ -1,0 +1,27 @@
+id: "fast_kv_compaction"
+display_name: "KV Cache Compaction"
+category: "Machine Learning"
+summary: "Compress a long document's KV cache for Qwen3-4B so QuALITY questions are answered from the compacted cache as well as by attention matching, but faster or smaller."
+paper_title: "Fast KV Compaction via Attention Matching"
+paper_venue: "ICML 2026"
+paper_url: "https://arxiv.org/pdf/2602.16284"
+agent_cpu_cores: 4
+agent_memory_gib: 16
+agent_disk_gib: 10
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 18000
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 8
+verifier_gpu_seconds: 86400
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 8
+train_wall_seconds: 28800
+eval_timeout_seconds: 5400

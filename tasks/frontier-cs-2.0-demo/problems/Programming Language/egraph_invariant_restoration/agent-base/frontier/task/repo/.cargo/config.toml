@@ -1,0 +1,13 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/mwillsey/symbol_table?rev=a716c39a4aa4757c910c93fc10c5c7fa8f467133"]
+git = "https://github.com/mwillsey/symbol_table"
+rev = "a716c39a4aa4757c910c93fc10c5c7fa8f467133"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
+
+[net]
+offline = true

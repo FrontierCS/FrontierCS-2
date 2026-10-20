@@ -1,0 +1,64 @@
+diff --git a/src/alg.cpp b/src/alg.cpp
+index 893c42d..3361e51 100644
+--- a/src/alg.cpp
++++ b/src/alg.cpp
+@@ -1,4 +1,6 @@
+ #include "alg.h"
++#include <algorithm>
++#include <vector>
+ 
+ #if defined(unix) || defined(__unix__)
+ //std::string data_fold = "/home/xizhao/dataset/", index_fold = " ";
+@@ -30,7 +32,51 @@ struct llt
+ 
+ bool should_stop(const SearchState& search_state)
+ {
+-	return search_state.candidates_verified >= search_state.candidate_budget;
++	if (search_state.kth_score <= 0 || search_state.policy_resource == NULL) {
++		return false;
++	}
++
++	struct FunctionTable {
++		float tmin, tstep, smin, sstep;
++		int rows, cols;
++		std::vector<float> values;
++		std::string source;
++	};
++	static FunctionTable table = {};
++	if (table.source != search_state.policy_resource) {
++		std::ifstream is(search_state.policy_resource, std::ios::binary);
++		float header1[4] = { 0 };
++		int header2[3] = { 0 };
++		is.read((char*)header1, sizeof(header1));
++		is.read((char*)header2, sizeof(header2));
++		if (!is || header2[1] <= 0 || header2[2] <= 0) return false;
++		table.rows = header2[1];
++		table.cols = header2[2];
++		table.tmin = header1[0];
++		table.tstep = (header1[1] - header1[0]) / table.rows;
++		table.smin = header1[2];
++		table.sstep = (header1[3] - header1[2]) / table.cols;
++		std::vector<float> stored((size_t)table.rows * table.cols);
++		is.read((char*)&stored[0], sizeof(float) * stored.size());
++		if (!is) return false;
++		table.values.resize(stored.size());
++		for (int i = 0; i < table.rows; ++i) {
++			for (int j = 0; j < table.cols; ++j) {
++				table.values[(size_t)i * table.cols + j] = stored[(size_t)j * table.rows + i];
++			}
++		}
++		table.source = search_state.policy_resource;
++	}
++
++	float theta = acos(std::min(0.9999f,
++		search_state.kth_score /
++		(search_state.approximation_ratio * search_state.maximum_inner_product)));
++	int c0 = (int)floor((search_state.frontier_score - table.smin) / table.sstep);
++	int r0 = (int)floor((theta - table.tmin) / table.tstep);
++	c0 = std::max(0, std::min(c0, table.cols - 1));
++	r0 = std::max(0, std::min(r0, table.rows - 1));
++	float pr = table.values[(size_t)r0 * table.cols + c0];
++	return pow(1 - pr, search_state.hash_tables) < 0.1;
+ }
+ 
+ void saveAndShow(float c, int k, std::string& dataset, std::vector<resOutput>& res)

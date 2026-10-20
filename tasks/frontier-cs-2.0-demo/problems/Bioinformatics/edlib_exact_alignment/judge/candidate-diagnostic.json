@@ -1,0 +1,5 @@
+{
+  "diagnostic_schema": "edlib.candidate-diagnostic/v1",
+  "helper_sha256": "e3bd4389e2a4282b0edcc2a24f4d87162fa47f49195d1568800d995811efd35f",
+  "schema": "frontier.candidate-diagnostic-validator/v1"
+}

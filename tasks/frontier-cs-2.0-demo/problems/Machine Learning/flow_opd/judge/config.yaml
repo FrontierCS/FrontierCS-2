@@ -1,0 +1,132 @@
+{
+  "tag": "machine_learning",
+  "runtime": {
+    "language": "python",
+    "timeout_seconds": 3000,
+    "environment": "Qualified offline SD3.5/OCR deterministic H100 runtime; full-suite and transition/checkpoint qualification remain pending.",
+    "docker": {
+      "image": "ubuntu:24.04",
+      "gpu_recipe": {
+        "path": "fcs2-build/Dockerfile.runtime",
+        "sha256": "sha256:062b5097e1631f109857e0a6bf98c3de9ad060483fe2a65ed8ff42f212981bc6",
+        "stage": "flow_opd_runtime"
+      }
+    },
+    "accelerator": {
+      "provider": "modal",
+      "gpu_types": [
+        "H100"
+      ],
+      "agent": {
+        "instances": 1,
+        "max_instance_seconds": 3000,
+        "max_gpu_seconds": 3000
+      },
+      "verifier": {
+        "instances": 1,
+        "max_instance_seconds": 3000,
+        "max_gpu_seconds": 15000
+      }
+    },
+    "apt_packages": [
+      "bash",
+      "git",
+      "python3",
+      "python3-pip",
+      "python3-venv",
+      "libgl1",
+      "libglib2.0-0",
+      "libgomp1"
+    ],
+    "judge_apt_packages": [
+      "bash",
+      "git",
+      "python3",
+      "python3-pip",
+      "python3-venv",
+      "libgl1",
+      "libglib2.0-0",
+      "libgomp1"
+    ],
+    "pip_packages": [
+      "torch==2.6.0",
+      "torchvision==0.21.0",
+      "transformers==4.40.0",
+      "accelerate==1.4.0",
+      "diffusers==0.33.1",
+      "peft==0.10.0",
+      "numpy==1.26.4",
+      "pillow==10.4.0",
+      "huggingface-hub==0.29.1",
+      "tokenizers==0.19.1",
+      "sentencepiece==0.2.0",
+      "protobuf==4.25.6",
+      "ml_collections==1.0.0",
+      "absl-py==2.1.0",
+      "wandb==0.18.7",
+      "paddlepaddle==2.6.2",
+      "paddleocr==2.9.1",
+      "python-Levenshtein==0.27.1",
+      "PyYAML==6.0.2"
+    ],
+    "judge_pip_packages": [
+      "torch==2.6.0",
+      "torchvision==0.21.0",
+      "transformers==4.40.0",
+      "accelerate==1.4.0",
+      "diffusers==0.33.1",
+      "peft==0.10.0",
+      "numpy==1.26.4",
+      "pillow==10.4.0",
+      "huggingface-hub==0.29.1",
+      "tokenizers==0.19.1",
+      "sentencepiece==0.2.0",
+      "protobuf==4.25.6",
+      "ml_collections==1.0.0",
+      "absl-py==2.1.0",
+      "wandb==0.18.7",
+      "paddlepaddle==2.6.2",
+      "paddleocr==2.9.1",
+      "python-Levenshtein==0.27.1",
+      "PyYAML==6.0.2",
+      "pytest==8.3.5"
+    ],
+    "huggingface_models": [
+      {
+        "repo_id": "stabilityai/stable-diffusion-3.5-medium",
+        "revision": "b940f670f0eda2d07fbb75229e779da1ad11eb80",
+        "target": "stable-diffusion-3.5-medium"
+      },
+      {
+        "repo_id": "jieliu/SD3.5M-FlowGRPO-Text",
+        "revision": "1a0e6426ac8b8f53347ac66d0d544a1fc2253791",
+        "target": "SD3.5M-FlowGRPO-Text"
+      }
+    ]
+  },
+  "environment": {
+    "cpus": 3,
+    "memory_mb": 12288,
+    "storage_mb": 10240,
+    "build_timeout_seconds": 300
+  },
+  "submission": {
+    "kind": "patch",
+    "path": "/app/solution.patch",
+    "allow_paths": [
+      "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py",
+      "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py",
+      "flow_grpo/frontier_solution/"
+    ],
+    "max_changed_files": 32,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "max_dev_submissions": 4,
+    "suite_relation": "same_distribution",
+    "solver_visible_metrics": [
+      "dev_eval_reward_ocr",
+      "dev_verified_optimizer_updates"
+    ]
+  }
+}

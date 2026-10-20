@@ -1,0 +1,100 @@
+{
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 17179869184,
+    "workspace_bytes": 8589934592
+  },
+  "display_name": "Persistent Treap Update Engine",
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 439,
+        "path": "datasets/eval.json",
+        "version": "sha256:53fd78ddcd1151214c08c09a6e72c0c5c78821bcb5c9a2720f2ffb86fe428fcc"
+      },
+      "train": {
+        "bytes": 446,
+        "path": "datasets/train.json",
+        "version": "sha256:4c44f6afc3b6f0192cb29168301c13141d5454e282774f96f8a5c3f52cc5b69e"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "3676f0c07e03214559968f631baf9752726dd29e",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top49_54c892bcba"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Guanhao Hou",
+        "Jinchao Huang",
+        "Fangyuan Zhang",
+        "Sibo Wang"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2025-efficient-concurrent-updates-to-persistent-randomized-binary-search-trees-54c892bcba",
+      "pdf_url": "https://www.vldb.org/pvldb/vol18/p1481-wang.pdf",
+      "title": "Efficient Concurrent Updates to Persistent Randomized Binary Search Trees",
+      "venue": "PVLDB 18",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "lib/treap/scheduler.hpp",
+        "lib/treap/search_insert.hpp",
+        "lib/treap/search_delete.hpp"
+      ],
+      "language": "c++",
+      "submission_kind": "patch"
+    },
+    "conversion": {
+      "source_repository": "private authoring repository",
+      "source_commit": "e68a0d65eafec10f66d31e1dd2506f448cab8741",
+      "source_path": "2.0/fcs2/problems/persistent_treap_update_engine",
+      "scope": "T40 existing-native runtime standardization; science preserved",
+      "original_metadata_path": "judge/metadata.json",
+      "historical_evidence_path": null,
+      "note": "Generator, paper, artifact, and local-release history retain their source meanings; historical evidence does not accept this conversion."
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "persistent_treap_update_engine",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 180000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 17179869184
+  },
+  "version": "native-standardization-1-beat-spec-v2"
+}

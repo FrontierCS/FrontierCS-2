@@ -1,0 +1,1 @@
+{"mode":"eval","note":"Selects the three public math workloads plus three hidden math workloads compiled only into the verifier image.","problem_id":"egraph_invariant_restoration","schema_version":"frontier.frontiersmith-dataset/v1","selects":{"FRONTIER_SUBMISSION_ROLE":"final"},"suite_location":"judge/evaluator.py DEV + FINAL suites"}

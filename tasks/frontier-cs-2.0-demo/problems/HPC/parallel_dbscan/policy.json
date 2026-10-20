@@ -1,0 +1,86 @@
+{
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "problem_id": "parallel_dbscan",
+  "display_name": "Exact DBSCAN Connectivity",
+  "family": "frontier-cs-2.0/databases",
+  "version": "g1-final600-8cpu-r004-beat-spec-v3",
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 2147483648
+  },
+  "quota": {
+    "wall_time_seconds": 18000,
+    "eval_timeout_seconds": 600,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 24000
+  },
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 286720
+  },
+  "verifier": {
+    "command": [
+      "python3",
+      "/opt/frontier/verifier/verify.py"
+    ],
+    "cpu_millis": 8000,
+    "memory_bytes": 4294967296,
+    "max_evidence_bytes": 1048576
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_sessions": 32,
+      "max_ssh_bytes_per_direction": 8388608
+    }
+  },
+  "metadata": {
+    "accelerator": null,
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "suite_relation": "public_plus_hidden",
+      "solver_visible_metrics": [
+        "candidate_elapsed_seconds_median",
+        "candidate_elapsed_seconds_p90"
+      ],
+      "authored_suite_relation": "same_distribution"
+    },
+    "runtime": {
+      "language": "cpp",
+      "submission_kind": "patch",
+      "allowed_paths": [
+        "code/DBSCAN.C",
+        "code/frontier_solution/"
+      ]
+    },
+    "scientific_alignment": "M004: fresh original public4+hidden4 final, unchanged shapes/seeds, strict per-workload C<R without 5% margin. M010: fixed20ms independent continuous; invalid0. 2026-09-16: Agent/Verifier 8 vCPU and eight OpenMP workers; workloads/timing/scoring/reference/PASS unchanged. Beat spec v3 (2026-10-07): adds two paper-regime 200000-point seed-spreader workloads per partition (5D varden, 7D simden, minPts 10) to the strict C<R verdict; continuous score unchanged over the original workloads; train/final evaluator limits 120/300 -> 240/600 s and train wall 12000 -> 24000 s.",
+    "datasets": {
+      "train": {
+        "path": "datasets/train.json",
+        "bytes": 199,
+        "version": "sha256:10f7015599b8e3fa2446e7e3a327e52d4d7eecc3afa8b543475a541e86134757"
+      },
+      "eval": {
+        "path": "datasets/eval.json",
+        "bytes": 205,
+        "version": "sha256:4071e78c3e6aaed3b3ca1a94b1166d3e7f5b300154cb947ef09ed6c1e0b9bca5"
+      }
+    },
+    "scoring": {
+      "formula": "100 * 0.020 / (0.020 + C)",
+      "fixed_anchor_seconds": 0.02,
+      "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 execution medians, each of 5 timings",
+      "timing_unit": "seconds",
+      "reference_independent": true,
+      "invalid_score": 0,
+      "reference_score": "same fixed formula applied to reference geometric mean R",
+      "margin": "score - reference_score",
+      "approval": "decision M010; supersedes source reference-relative capped curve"
+    }
+  }
+}

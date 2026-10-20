@@ -1,0 +1,118 @@
+{
+  "schema_version": "frontier.dbscan-gpu-kernel-scoring/v1",
+  "calibration_status": "user_reviewed_pending_h100_validation",
+  "warmup_iterations": 2,
+  "timed_iterations": 3,
+  "worker_timeout_seconds": 2400,
+  "correctness": {
+    "minimum_adjusted_rand_index": 0.99
+  },
+  "continuous_score": {
+    "raw_metric": "geomean over workloads of median_i(naive_latency_i/candidate_latency_i)",
+    "formula": "0 if any timed candidate ARI < 0.99 or speedup <= 1; otherwise 100*log(speedup)/(log(10)+log(speedup))",
+    "reference_independent": true,
+    "upper_clipping": false
+  },
+  "comparisons": {
+    "dbscan_latency_ms": {
+      "better": "lower",
+      "strictly_better": true
+    },
+    "adjusted_rand_index": {
+      "better": "higher",
+      "absolute_non_inferiority_band": 0.0
+    },
+    "noise_mismatch_fraction": {
+      "better": "lower",
+      "absolute_non_inferiority_band": 0.0
+    }
+  },
+  "workloads": [
+    {
+      "id": "w0",
+      "N": 20000,
+      "D": 8,
+      "eps": 0.9,
+      "min_samples": 5,
+      "n_centers": 4
+    },
+    {
+      "id": "w1",
+      "N": 20000,
+      "D": 32,
+      "eps": 1.15,
+      "min_samples": 5,
+      "n_centers": 6
+    },
+    {
+      "id": "w2",
+      "N": 20000,
+      "D": 64,
+      "eps": 1.4,
+      "min_samples": 5,
+      "n_centers": 10
+    },
+    {
+      "id": "w3",
+      "N": 50000,
+      "D": 16,
+      "eps": 1.0,
+      "min_samples": 5,
+      "n_centers": 8
+    },
+    {
+      "id": "w4",
+      "N": 200000,
+      "D": 16,
+      "eps": 0.5,
+      "min_samples": 20,
+      "n_centers": 8,
+      "strict_only": true
+    },
+    {
+      "id": "w5",
+      "N": 20000,
+      "D": 16,
+      "eps": 0.6,
+      "min_samples": 20,
+      "n_centers": 8,
+      "strict_only": true
+    }
+  ],
+  "suites": {
+    "train": {
+      "workload_ids": [
+        "w0",
+        "w1"
+      ]
+    },
+    "eval": {
+      "workload_ids": [
+        "w0",
+        "w1",
+        "w2",
+        "w3",
+        "w4",
+        "w5"
+      ]
+    }
+  },
+  "seed_domains": {
+    "public": {
+      "base_seed": 20260701,
+      "workload_ids": [
+        "w0",
+        "w1"
+      ]
+    },
+    "hidden": {
+      "base_seed": 2026091303,
+      "workload_ids": [
+        "w2",
+        "w3",
+        "w4",
+        "w5"
+      ]
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "problem_id": "minimal_task",
+  "files": [
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 76,
+      "sha256": "sha256:0392188d380e6078a982d468949baf311585a419e5211af4123e7c4fdce1fdb8"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 289,
+      "sha256": "sha256:03306d4b3670595fbcded21fea1279f2b278182147445ba2e94d77e7f238dc78"
+    },
+    {
+      "path": "agent-base/frontier/task/starter/payload/solution.patch",
+      "bytes": 28,
+      "sha256": "sha256:de4a223e0c2638db6ac626adaa02782fe3845ddc6ff242e78c2ca486ad2b298f"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 79,
+      "sha256": "sha256:2b2e458f8e86ea7a424851eae4c7afdbac148132e227db77157648b18c206af8"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 81,
+      "sha256": "sha256:ef16e681eb443ab8eb886f2590d0dd47094715825c8d075b86bc0c02fac4a6c5"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 476,
+      "sha256": "sha256:ed49751b5fb1a5a6ecd97eaf5e5bd4346dfc443374f64d5039eca9aa8fc5494f"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 195,
+      "sha256": "sha256:868d7124bbe931458aa2313ec047f8b43932be6ca8a3d5741f69a857f7be374b"
+    },
+    {
+      "path": "judge/reference.patch",
+      "bytes": 28,
+      "sha256": "sha256:de4a223e0c2638db6ac626adaa02782fe3845ddc6ff242e78c2ca486ad2b298f"
+    },
+    {
+      "path": "judge/result.json",
+      "bytes": 308,
+      "sha256": "sha256:2dde7890eb6ac96bee6af25e4d755a1238f39812a039e59f8263ec577d4c6351"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 1373,
+      "sha256": "sha256:5962a0c1dba67e46fbc4e0e937bb14a39f4f5c62d5ec21dcb1a7d6fe3e0e70b8"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 78,
+      "sha256": "sha256:d1dc9fbec015372e810b6440a2e6a8be3d93da64e2d2c9d0968fc053d0190ab6"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 11943,
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 50,
+      "sha256": "sha256:052f0b85d6df42e1e4e24042096e5dca91b8ad44bbcfa29773611585c71d7348"
+    }
+  ],
+  "file_count": 13
+}

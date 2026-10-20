@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Offline-model adapter for the byte-identical upstream shell entrypoints."""
+
+import os
+from pathlib import Path
+import runpy
+import sys
+
+
+# Retained Python program -> offline checkpoint directory and task-fixed
+# argument overrides. HunyuanVideo runs at the task's 81-frame workload scale
+# (upstream's default is 129 frames); Wan's upstream default is already 81.
+PROGRAMS = {
+    "wan_t2v_inference.py": ("Wan2.1-T2V-14B-Diffusers", {}),
+    "hyvideo_t2v_inference.py": ("HunyuanVideo", {"--num_frames": "81"}),
+}
+
+args = list(sys.argv[1:])
+if not args:
+    raise SystemExit("missing Python program")
+program = args[0]
+if Path(program).name in PROGRAMS:
+    target, overrides = PROGRAMS[Path(program).name]
+    model_root = os.environ.get("FRONTIER_MODEL_ROOT")
+    if model_root and "--model_id" in args:
+        index = args.index("--model_id") + 1
+        args[index] = str(Path(model_root) / target)
+    for flag, value in overrides.items():
+        if flag in args:
+            args[args.index(flag) + 1] = value
+        else:
+            args.extend([flag, value])
+    sys.argv = [program] + args[1:]
+    runpy.run_path(program, run_name="__main__")
+else:
+    os.execv(sys.executable, [sys.executable, *args])

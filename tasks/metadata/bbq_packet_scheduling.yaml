@@ -1,0 +1,27 @@
+id: "bbq_packet_scheduling"
+display_name: "BBQ bitmap traversal"
+category: "Network"
+summary: "Improve the BBQ hardware integer priority queue generator's bitmap traversal for packet scheduling."
+paper_title: "BBQ: A Fast and Scalable Integer Priority Queue for Hardware Packet Scheduling"
+paper_venue: "NSDI 2024"
+paper_url: "https://www.usenix.org/system/files/nsdi24-atre.pdf"
+agent_cpu_cores: 2
+agent_memory_gib: 4
+agent_disk_gib: 16
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 60000
+eval_timeout_seconds: 1800

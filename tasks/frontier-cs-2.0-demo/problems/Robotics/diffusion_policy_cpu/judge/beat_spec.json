@@ -1,0 +1,85 @@
+{
+  "unit": "One frozen initial-condition group: a manifest of independently seeded, complete closed-loop Push-T episodes, each with a separate diffusion RNG seed. Run each episode through the unchanged PushTKeypointsRunner.run with n_envs=1, n_train=0, n_test=1, visualization disabled, max_steps=300 and checkpoint horizons prediction=10, observation=2, action=8. An episode ends only at original environment success or the original 300-step truncation. Candidate and freshly restored reference receive identical episode manifests, RNG seeds and resource limits. Development provisionally contains two public groups; final freshly reruns both public groups and two additional private groups. Group sizes, memberships and repetition counts must be frozen after authorized actual CPU-worker measurements, not inferred from the single feasibility episode.",
+  "metrics": [
+    {
+      "name": "mean_episode_max_reward",
+      "means": "Q_X(w) = (1/N_w) * sum_e max_t reward_X(w,e,t), over every complete episode in workload w, for X in {candidate, reference}. Reward is the original clipped target-coverage reward, not raw coverage and not a surrogate. Each registered episode has equal weight; include unsuccessful episodes without filtering. This within-workload mean is the artifact's metric, not an aggregation of comparisons between workloads.",
+      "source": "upstream/diffusion_policy/env_runner/pusht_keypoints_runner.py::PushTKeypointsRunner.run, all_rewards, sim_max_reward_<seed> and <prefix>mean_score; upstream/diffusion_policy/env/pusht/pusht_env.py::PushTEnv.step, reward = np.clip(coverage / self.success_threshold, 0, 1). These correspond to materials/diffusion_policy_cpu/code/diffusion_policy paths in ARTIFACT_PLAN.json.",
+      "better": "higher",
+      "clears_when": "Q_candidate(w) >= Q_reference(w)",
+      "tolerance": "none"
+    },
+    {
+      "name": "episode_success_rate",
+      "means": "S_X(w) = (1/N_w) * sum_e 1[the original PushTEnv emitted done=True due to coverage > success_threshold during episode e]. Record this independently of the continuous reward. Wrapper timeout is not success, and reward == 1 is not a substitute for the original strict success predicate.",
+      "source": "upstream/diffusion_policy/env/pusht/pusht_env.py::PushTEnv.step, done = coverage > self.success_threshold; upstream/diffusion_policy/gym_util/multistep_wrapper.py::MultiStepWrapper.step distinguishes underlying termination from its added max_episode_steps termination. External read-only instrumentation must capture the underlying termination before the wrapper overwrites done.",
+      "better": "higher",
+      "clears_when": "S_candidate(w) >= S_reference(w)",
+      "tolerance": "none"
+    },
+    {
+      "name": "mean_predict_action_seconds",
+      "means": "L_X(w) = sum_j elapsed_seconds_X(w,j) / K_X(w), where j enumerates all K_X(w) actual predict_action calls in the complete episodes of w. Measure monotonic wall time immediately before and after the synchronous CPU call, including normalization, conditioning, sampling and output action construction; include the first call. No replay-only timing, selective call removal, per-denoising-step normalization or synthetic input microbenchmark. If timing repetitions are authorized, concatenate all calls from all prespecified complete repetitions for this ratio, applying the same procedure to both implementations.",
+      "source": "upstream/diffusion_policy/env_runner/pusht_keypoints_runner.py::PushTKeypointsRunner.run, action_dict = policy.predict_action(obs_dict), and upstream/diffusion_policy/policy/diffusion_transformer_lowdim_policy.py::DiffusionTransformerLowdimPolicy.predict_action. This is the genuine inference boundary; the stock runner does not emit a numeric latency metric. reproduction.json reports external timing at this boundary. Required external timing instrumentation is an explicit authoring extension, not an existing paper-result log key; see comments for the resulting constraint conflict.",
+      "better": "lower",
+      "clears_when": "L_candidate(w) < L_reference(w)",
+      "tolerance": "none"
+    },
+    {
+      "name": "complete_workload_wall_seconds",
+      "means": "T_X(w) is elapsed monotonic wall time from parent launch of a fresh workload process to successful process exit after every manifest episode and result serialization. Include imports, strict CPU EMA loading, candidate helper initialization, runner and worker setup, resets, all inference, original physics, instrumentation, serialization and child cleanup. Exclude only outer evaluator orchestration and waiting for resource allocation. For a prespecified number R of complete timing repetitions, T_X(w) = median_r T_X(w,r); use identical R and manifests for candidate and reference. Q and S include all R repetitions with equal episode weight. Do not time candidate and reference concurrently.",
+      "source": "upstream/diffusion_policy/env_runner/pusht_keypoints_runner.py::PushTKeypointsRunner.run is the complete-rollout boundary. reproduction.json::smoke.notes distinguishes rollout, loader-through-rollout and whole-process elapsed seconds. Whole-process timing requires the external narrow CPU loader and parent instrumentation; it is not a metric currently emitted by the upstream runner or established here as a paper-reported quantity. This required cost guard is retained explicitly subject to the conflict recorded in comments.",
+      "better": "lower",
+      "clears_when": "T_candidate(w) < T_reference(w)",
+      "tolerance": "none"
+    }
+  ],
+  "beats_reference": "For the suite W selected exclusively by the private verifier, beats_reference = 1 iff valid_candidate AND valid_reference_measurement AND (for every w in W: complete_candidate(w) AND complete_reference(w) AND finite(Q_candidate(w),Q_reference(w),S_candidate(w),S_reference(w),L_candidate(w),L_reference(w),T_candidate(w),T_reference(w)) AND Q_candidate(w) >= Q_reference(w) AND S_candidate(w) >= S_reference(w) AND L_candidate(w) < L_reference(w) AND T_candidate(w) < T_reference(w)); otherwise 0. W is all public groups in development and all freshly rerun public plus held-out groups in final. Quality and binary success may tie exactly, with no permitted degradation; both cost metrics must improve strictly on every workload. No cross-workload score or ratio enters this conjunction. A candidate timeout, crash, malformed output, missing episode or correctness violation cannot clear a workload. Reference/infrastructure failure makes the comparison unavailable and requires a fresh valid evaluation, never an automatic candidate win. A valid candidate or reference is not required to earn the flag.",
+  "solver_feedback": [
+    {
+      "name": "dev_mean_episode_max_reward",
+      "means": "One scalar: the candidate's mean episode-maximum reward over all complete episodes and prespecified repetitions of all public development groups, with equal episode weights. Return null on an incomplete development evaluation rather than a selected partial mean; never include final episodes.",
+      "reveals_reference": "no \u2014 this is an absolute candidate-only public-development measurement without reference values, ratios, workload labels or ordered rows."
+    },
+    {
+      "name": "dev_episode_success_rate",
+      "means": "One scalar: the fraction of all candidate public-development episodes achieving original environment success, counting every prespecified repetition; null on an incomplete development evaluation and never computed from final episodes for feedback.",
+      "reveals_reference": "no \u2014 it summarizes only the candidate's public-development outcomes and contains neither reference-dependent arithmetic nor private identities."
+    },
+    {
+      "name": "dev_mean_predict_action_seconds",
+      "means": "One scalar: total candidate predict_action elapsed seconds divided by total actual candidate calls across all public-development episodes and prespecified repetitions; null on an incomplete development evaluation and never include final measurements.",
+      "reveals_reference": "no \u2014 both the numerator and denominator are candidate-only public-development measurements, not reference measurements."
+    },
+    {
+      "name": "dev_total_workload_wall_seconds",
+      "means": "One scalar: sum over public development groups of the candidate's complete_workload_wall_seconds values; null on an incomplete development evaluation. This feedback summary is not used in the per-workload conjunction and contains no final measurements.",
+      "reveals_reference": "no \u2014 the sum contains only absolute candidate public-development durations and cannot algebraically disclose a reference duration."
+    },
+    {
+      "name": "candidate_diagnostic",
+      "means": "A fixed rejection category and statement when a typed InvalidSubmission prevents candidate evaluation; contains no exception text, measured numbers, private paths or reference data.",
+      "reveals_reference": "no - only a fixed candidate rejection category; no reference measurements, private identities or exception text"
+    }
+  ],
+  "withheld": [
+    "per_workload_mean_episode_max_reward",
+    "per_workload_episode_success_rate",
+    "per_workload_mean_predict_action_seconds",
+    "per_workload_complete_workload_wall_seconds",
+    "reference_mean_episode_max_reward",
+    "reference_episode_success_rate",
+    "reference_mean_predict_action_seconds",
+    "reference_complete_workload_wall_seconds",
+    "reference_continuous_score",
+    "candidate_reference_differences_and_ratios",
+    "per_workload_criterion_results",
+    "episode_seed_reward_success_rows",
+    "per_call_timings",
+    "private_initial_condition_and_diffusion_seed_manifests",
+    "trajectory_observation_action_reward_traces",
+    "all_final_measurements_and_final_criterion_progress"
+  ],
+  "statement_sentences": "A separate, stricter beats_reference criterion compares your implementation with a freshly measured restored reference independently on every workload: mean episode-maximum original Push-T reward and original binary success rate must each be at least as high, while mean CPU predict_action latency and complete-workload wall time must each be strictly lower, with no tolerance allowance. Every metric must clear its bar on every graded workload; improvement elsewhere cannot compensate for a loss, and this flag is separate from validity and from the continuous quality/cost score calibrated against an independent naive sampler. Development feedback contains only scalar summaries of your own absolute measurements on the public development groups and aggregate criterion pass/fail counts and percentages, not per-workload rows, reference values, ratios or gaps. Final evaluation freshly reruns the public groups and additional private initial conditions with independently controlled diffusion RNG seeds, and its measurements are not returned to you.",
+  "comments": "Read reproduction.json before selecting the workload: accelerator_required is null, and the CPU-only spine is supported; no GPU runner is appropriate or authorized. Inspected the selected runner, conditional_sample/predict_action, original environment reward/termination, multistep truncation, ARTIFACT_PLAN.json, SOURCE.md, CONTRIBUTION.md and the supplied evidence. The runner averages maxima over all n_inits; retain that live implementation, not its commented historical first-n_envs paper-reproduction bug. IMPORTANT unresolved source/steering conflict: the instructions require paper/artifact-native metrics only but also explicitly require CPU inference latency and whole-workload cost. The inspected runner emits reward metrics, not either numeric duration or a separate success-rate log. Success has an exact underlying predicate; durations have exact execution boundaries and external reproduction measurements, but this is not evidence that whole-process cost is a paper metric. The timing rows above concretely preserve the required cost comparisons as external instrumentation extensions rather than silently dropping them or falsely attributing them to a paper. Author must resolve acceptance of these extensions before task release; under a literal existing-paper-metric-only interpretation no fully compliant specification satisfying both demands is established by the supplied artifact. Do not substitute a composite speed/quality score. No repeated noise study exists: neither the earlier 45.46-second inspection nor reproduction.json's fresh 26.5342-second rollout/28.95-second process measurement establishes a tolerance, baseline, final budget or cloud performance. Thus all comparisons currently have zero slack; seed variation is part of the workload, not grounds for forgiving quality loss. Actual worker repeatability calibration remains a release prerequisite; any later nonzero noise threshold requires explicit measured justification and a revised specification, never a quality sacrifice to make the conjunction attainable. Freeze nonempty manifests, episode counts, R, scheduling order, limits and timeouts before submissions only after authorized complete candidate/reference-cost measurements; no runtime calibration or solver trial is authorized in this invocation. Provisionally declare a CPU-only four-core worker with Torch intra/inter-op and BLAS/OpenMP threads each fixed to one, sequential one-environment episodes, no concurrent candidate/reference jobs, disabled visualization and offline/disabled wandb; validate and freeze actual worker CPU quota, affinity and memory ceiling during later authorized calibration instead of claiming the reproduction host had those enforced quotas. Alternate candidate/reference order by a prespecified balanced schedule. Seed Python, NumPy and Torch in the evaluator immediately before each episode, separately from environment seeding; use identical independently selected diffusion seeds on each side, never let submitted code select seeds or suite mode. Final public initial conditions are rerun, not cached from development; freeze independent final diffusion-seed manifests and keep them private. Small groups only establish performance on their manifest, not distribution-wide superiority. Keep raw runner seed-keyed logs and trajectories judge-side; redact crashes and child stdout/stderr so they cannot reveal private identities or reference measurements. Aggregate criterion progress is pipeline-provided, not an additional solver_feedback field; acknowledge that its intentional pass/fail signal is comparison information, but return no arithmetic reconstruction channel. Invalid submissions receive the same numeric feedback keys with null unavailable values and sanitized validity status, never invented zero measurements. Validity requires finite correctly shaped/dtyped/deviced normalized sequences, exact conditioning, genuine frozen-transformer use and scheduler-compatible reverse sampling, unchanged normalization/action slicing/horizons, full original physics/reward episodes, no training, surrogate, seed-specific action lookup, RNG reseeding, environment inspection, background cost hiding or retained-code mutation. These guards must allow the advertised timestep allocation and stochastic/deterministic scheduler-compatible updates rather than require tensor equality or exactly 100 candidate denoising steps. Only conditional_sample and a bounded fresh helper namespace are editable; preserve constructor, predict_action and the retained dependency closure, prune equivalent alternate samplers, and restore the exact upstream method for the reference. Reference uses its original 100-step schedule, source revision 5ba07ac6661db573af695b419a7947ecb704690f and strictly loaded official CPU EMA checkpoint SHA256 fa302d345467ef5927d60f3fd7cdd222e1ee8fda52216ca64323a08e2ce700a8. ARTIFACT_PLAN currently records the spine but does not finalize excision, helper bounds or source-lock fields; author must add these, not assume this review performs that work. Use the brief's Python 3.10 pinned dependencies and the narrow strict CPU loader; do not claim stock eval.py ran. Keep continuous scoring independent of optimized-reference values and the flag, using a separately measured natural/naive sampler; no such calibration is supplied and none is invented here. Derive all development quotas solely from evaluation.max_dev_submissions=100. Preserve MIT notices, exclude author provenance from solver images, and do not distribute official weights until their separate license is verified. This review creates neither evaluator nor task and authorizes no trials, publication, FCS2 Evaluation or GPU allocation; without coordinator CPU reference/pretrial allocation, stop before stage4. Later native acceptance still requires current store-final Candidate/TaskConfig, fresh reference train+final, genuine CPU Harbor calibration and independent read-only review."
+}

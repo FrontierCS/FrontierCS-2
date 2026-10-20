@@ -1,0 +1,197 @@
+{
+  "platform_pin": "0cc869e9",
+  "sources": [
+    "management-plane/deploy/kubernetes/production-control.yaml",
+    "management-plane/deploy/kubernetes/rbac.yaml"
+  ],
+  "objects": [
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "frontier-management-production-command",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-management",
+          "app.kubernetes.io/component": "production-admission-command",
+          "app.kubernetes.io/part-of": "frontiercs2",
+          "frontier.dev/owner": "production-operator"
+        }
+      },
+      "data": {
+        "command.json": "{\"attempt_ids\":[],\"command_nonce\":\"bootstrap-fenced\",\"expected_epoch\":0,\"issued_at_unix_millis\":1,\"operation\":\"FENCE\",\"schema_version\":\"frontier.management-production-command/v3\"}"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "name": "frontier-management-production-receipt",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-management",
+          "app.kubernetes.io/component": "production-admission-receipt",
+          "app.kubernetes.io/part-of": "frontiercs2",
+          "frontier.dev/owner": "management"
+        }
+      },
+      "data": {
+        "receipt.json": "{\"command_nonce\":\"bootstrap-fenced\",\"command_sha256\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"error_code\":\"controller_not_observed\",\"observed_at_unix_millis\":1,\"operation\":\"FENCE\",\"receipt_revision\":\"bootstrap:0\",\"schema_version\":\"frontier.management-production-command-receipt/v1\",\"status\":\"PENDING\"}"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ServiceAccount",
+      "metadata": {
+        "name": "frontier-production-operator",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-production-operator",
+          "app.kubernetes.io/part-of": "frontiercs2"
+        }
+      },
+      "automountServiceAccountToken": false
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "frontier-production-operator",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-production-operator",
+          "app.kubernetes.io/part-of": "frontiercs2"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "frontier-management-production-command"
+          ],
+          "verbs": [
+            "get",
+            "patch"
+          ]
+        },
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "resourceNames": [
+            "frontier-management-production-receipt"
+          ],
+          "verbs": [
+            "get"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "frontier-production-operator",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-production-operator",
+          "app.kubernetes.io/part-of": "frontiercs2"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "frontier-production-operator"
+      },
+      "subjects": [
+        {
+          "apiGroup": "",
+          "kind": "ServiceAccount",
+          "name": "frontier-production-operator",
+          "namespace": "frontier-system"
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "Role",
+      "metadata": {
+        "name": "frontier-management-iam-inventory-reader",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-management",
+          "app.kubernetes.io/part-of": "frontiercs2"
+        }
+      },
+      "rules": [
+        {
+          "apiGroups": [
+            ""
+          ],
+          "resources": [
+            "configmaps"
+          ],
+          "verbs": [
+            "list"
+          ]
+        },
+        {
+          "apiGroups": [
+            "batch"
+          ],
+          "resources": [
+            "jobs"
+          ],
+          "verbs": [
+            "list"
+          ]
+        },
+        {
+          "apiGroups": [
+            "rbac.authorization.k8s.io"
+          ],
+          "resources": [
+            "roles",
+            "rolebindings"
+          ],
+          "verbs": [
+            "list"
+          ]
+        }
+      ]
+    },
+    {
+      "apiVersion": "rbac.authorization.k8s.io/v1",
+      "kind": "RoleBinding",
+      "metadata": {
+        "name": "frontier-management-iam-inventory-reader",
+        "namespace": "frontier-system",
+        "labels": {
+          "app.kubernetes.io/name": "frontier-management",
+          "app.kubernetes.io/part-of": "frontiercs2"
+        }
+      },
+      "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "frontier-management-iam-inventory-reader"
+      },
+      "subjects": [
+        {
+          "apiGroup": "",
+          "kind": "ServiceAccount",
+          "name": "frontier-management",
+          "namespace": "frontier-system"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "bbq_packet_scheduling_s2r4/corrected_code",
+  "authentic_execution": {
+    "entrypoint": "hardware/bbq/generator/bbq.py",
+    "retained_files": [
+      "hardware/bbq/generator/bbq.py",
+      "hardware/bbq/generator/codegen.py",
+      "hardware/bbq/generator/bbq_level.py",
+      "hardware/bbq/generator/bbq_level_ingress.py",
+      "hardware/bbq/generator/bbq_level_pb.py",
+      "hardware/bbq/generator/bbq_level_steering.py",
+      "hardware/bbq/src/heap_ops.sv",
+      "hardware/bbq/src/ffs.sv",
+      "hardware/bbq/tb/bbq/tb_bbq.sv"
+    ]
+  },
+  "excision": [
+    {
+      "path": "hardware/bbq/generator/bbq_level_lx.py",
+      "mode": "stubbed",
+      "symbols": [
+        "BBQLevelLX",
+        "emit_stage_defs",
+        "emit_state_dependent_combinational_logic",
+        "emit_combinational_default_assigns",
+        "emit_state_agnostic_combinational_logic",
+        "emit_sequential_pipeline_logic"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "hardware/bbq/generator/bbq_level_lx.py"
+    ],
+    "add_under": [
+      "hardware/bbq/generator/solver_extensions/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier_cpu/simulation_memory.sv",
+      "reason": "Supplied independent simulation-only RAM/FIFO boundary adapter; not upstream vendor IP."
+    },
+    {
+      "path": "frontier_cpu/trace_tb.sv",
+      "reason": "External port-only event capture for CPU-simulated generated RTL."
+    },
+    {
+      "path": "frontier_cpu/runner.py",
+      "reason": "Invokes the authentic generator with declared author corrections and Verilator; checks semantic traces and original regressions."
+    },
+    {
+      "path": "frontier_cpu/public_cases.json",
+      "reason": "Deterministic development trace parameters, challenge constants rather than upstream tuning."
+    },
+    {
+      "path": "frontier_cpu/timing.py",
+      "reason": "Task-owned clock-period estimate: sv2v conversion, fixed Yosys/ABC 6-input lookup-table mapping, design-rule check and unit-delay longest-path timing."
+    },
+    {
+      "path": "frontier_cpu/timing_memory.v",
+      "reason": "Timing black-box boundaries of the supplied RAM/FIFO adapters."
+    },
+    {
+      "path": "frontier_cpu/timing_lut6.abc",
+      "reason": "Fixed ABC mapping script used by the clock-period estimate."
+    },
+    {
+      "path": "frontier_cpu/PROVENANCE.md",
+      "reason": "Identity and limits of the independent simulation adapter."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Stages permitted edits, including fresh helpers, and emits the submission diff."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "hardware/bbq/src/top.sv",
+    "hardware/pifo/src/pifo.sv",
+    "hardware/bbq/scripts/synthesize.sh"
+  ],
+  "minimality_note": "Authentic BBQ execution spine retained with explicitly author-corrected PB and selected LX source. Original upstream code is separately preserved. Reference restores the accepted author-modified LX exactly, not upstream-exact LX. Solver starts from the unchanged LX interface stub; task-owned adapters implement no bitmap traversal.",
+  "source_provenance": {
+    "grant": "2fb1e4497c6e400c8be253c30783c6e5",
+    "original_run": "r_top01_scheduling_s2r3",
+    "new_run": "r_top01_scheduling_s2r4",
+    "source_material_key": "bbq_packet_scheduling_s2r4",
+    "logical_final_task": "bbq_packet_scheduling",
+    "original_commit": "64e92440f71286d399ea284bfd1e8db47286af56",
+    "original_root": "code",
+    "corrected_root": "corrected_code",
+    "status": "ACCEPTED_AUTHOR_MODIFIED_SOURCE_AND_REFERENCE_NOT_UPSTREAM_EXACT",
+    "accepted_candidate_seal_sha256": "b2e1b76e1f431d8c2adec8387f91f8b6bb311adee614e46758bbda37cc8dbbff",
+    "corrections": [
+      {
+        "path": "author_corrections/pb.patch",
+        "sha256": "e79d69603ad02b7656b2571508210e28f9bc9c0922a7fc1ec2a24d72aa9327fd",
+        "source": "hardware/bbq/generator/bbq_level_pb.py",
+        "source_sha256": "7ebab590383c5c49e3a24e63b30f3506e309f541d9d0f9bca84b05e4934ff626"
+      },
+      {
+        "path": "author_corrections/lx-r4.patch",
+        "sha256": "f04905536d965c55c560303d886dfa7615dd6e3beca3b9452975f1bac3a4077f",
+        "source": "hardware/bbq/generator/bbq_level_lx.py",
+        "source_sha256": "5c1d7f1a20af0151356614fbc9ef4adf87c2963bc357d084d96e1bdc1843b10d"
+      }
+    ],
+    "stage0_stage1": "Historical original-source records; no S0/S1 replay on this successor.",
+    "reference_readiness": "NOT_VALIDATED_ON_BUDGETED_REVISION_FRESH_DECISION_REQUIRED",
+    "formal_dispatch_authorized": false,
+    "preparation_disposition": "4665076583ea4c1a8c74d527262d10da"
+  }
+}

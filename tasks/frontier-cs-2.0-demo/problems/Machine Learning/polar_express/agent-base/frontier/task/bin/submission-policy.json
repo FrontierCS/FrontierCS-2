@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "polar_express.py",
+    "frontier_solution/"
+  ],
+  "max_bytes": 1048576,
+  "max_files": 20,
+  "member": "solution.patch"
+}

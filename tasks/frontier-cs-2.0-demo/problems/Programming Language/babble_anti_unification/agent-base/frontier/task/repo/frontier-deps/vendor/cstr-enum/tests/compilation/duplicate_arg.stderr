@@ -1,0 +1,11 @@
+error: duplicate named argument
+ --> $DIR/duplicate_arg.rs:6:10
+  |
+6 |   #[cstr(name="egg")]
+  |          ^^^^
+
+error: duplicate named argument
+  --> $DIR/duplicate_arg.rs:14:22
+   |
+14 |   #[cstr(name="egg", name="foo")]
+   |                      ^^^^

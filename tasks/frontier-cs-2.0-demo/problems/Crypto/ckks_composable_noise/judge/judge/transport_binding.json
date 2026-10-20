@@ -1,0 +1,7 @@
+{
+  "schema": "ckks-transport-source-binding/v1",
+  "file": "calibration.py",
+  "preregistered_sha256": "1fa8a51238b0abdb51468b0b7e8432f90dbf92cb246edccc45800dd1da0d435c",
+  "transport_sha256": "b520403014000dbef1f1182c3686648d491ddc784fa65954b275a7d9117106b6",
+  "purpose": "Transport-only successor; original preregistration unchanged; calibration incomplete; not Ready"
+}

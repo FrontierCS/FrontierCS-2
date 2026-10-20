@@ -1,0 +1,119 @@
+diff --git a/lib/evmcow/execution_state.hpp b/lib/evmcow/execution_state.hpp
+index b185c93..f9e485d 100644
+--- a/lib/evmcow/execution_state.hpp
++++ b/lib/evmcow/execution_state.hpp
+@@ -8,7 +8,7 @@
+ #include <string>
+ #include <vector>
+ #include <optional>
+-#include <array>
++#include <glog/logging.h>
+ 
+ namespace evmcow
+ {
+@@ -40,23 +40,73 @@ public:
+     alignas(sizeof(uint256)) uint256 m_stack_space[limit];
+ };
+ 
+-/// Checkpoint-capable stack. This correctness-first fallback stores every frame eagerly.
++const static size_t SLICE = size_t(2);
++
++/// COW Stack implementation
+ class StackTop
+ {
+ public:
+-    static constexpr size_t capacity = 1024;
+-    size_t height{0};
+-    std::array<uint256, capacity> values{};
+-    StackTop() = default;
+-    StackTop(uint256*, uint256*) {}
++    /// stack height
++    size_t height;
++    /// space bottom
++    uint256* base;
++    /// space limit
++    uint256* limit;
++    /// pointers to slices
++    std::array<uint256*, 1024/SLICE> slices;
++    /// ownership
++    std::array<bool, 1024/SLICE> ownership;
++    /// initialize a stack top for nothing
++    StackTop():
++        height{0},
++        base{nullptr},
++        limit{nullptr},
++        slices{{nullptr}},
++        ownership{{false}}
++    {}
++    /// initialize a stack top with given space
++    StackTop(uint256* base, uint256* limit): 
++        height{0},
++        base{base},
++        limit{limit},
++        slices{{nullptr}},
++        ownership{{false}}
++    {}
++    /// copy a stack top
++    StackTop(const StackTop& stack_top):
++        height{stack_top.height},
++        base{stack_top.base},
++        limit{stack_top.limit},
++        slices{stack_top.slices},
++        ownership{stack_top.ownership}
++    {}
++    /// declare ownership of a slice
++    inline void ensure(size_t slice_index) {
++        if (ownership[slice_index] && slices[slice_index]) {
++            return;
++        }
++        uint256* old_slice  = slices[slice_index];
++        slices[slice_index] = base;
++        uint256* new_slice  = base;
++        ownership[slice_index] = true;
++        base += SLICE;
++        if (base > limit) {
++            LOG(FATAL) << "exceed stack height limit";
++        }
++        if (old_slice != nullptr) {
++            memcpy(new_slice, old_slice, SLICE * sizeof(uint256));
++        }
++    }
+     /// push an item onto current stack top
+     inline void push(const uint256& item) {
+-        values[height++] = item;
++        ensure(height / SLICE);
++        slices[height / SLICE][height % SLICE] = item;
++        height += 1;
+     }
+     /// pop an item and return it
+     inline const uint256 &pop() {
+         height -= 1;
+-        return values[height];
++        return slices[height / SLICE][height % SLICE];
+     }
+     /// equivalent to get(0)
+     inline const uint256& top() {
+@@ -69,12 +119,13 @@ public:
+     /// read item on stack, counting from stack top to stack bottom
+     inline const uint256& get(size_t index) const {
+         index = height - 1 - index;
+-        return values[index];
++        return slices[index / SLICE][index % SLICE];
+     }
+     /// write item to stack
+     inline uint256& get_mut(size_t index) {
+         index = height - 1 - index;
+-        return values[index];
++        ensure(index / SLICE);
++        return slices[index / SLICE][index % SLICE];
+     }
+ };
+ 
+@@ -229,6 +280,7 @@ public:
+             .code_it = this->position.value().code_it,
+             .stack   = this->stack_top,
+         };
++        this->stack_top.ownership = std::array<bool, 1024/SLICE>{{false}};
+         return checkpoint;
+     }
+ 

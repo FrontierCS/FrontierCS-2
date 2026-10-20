@@ -1,0 +1,67 @@
+{
+  "models": [
+    {
+      "files": [
+        {
+          "bytes": 726,
+          "git_blob_id": "e49eccdc32f36da9c09cfa0e737084f9e0105e5e",
+          "path": "config.json"
+        },
+        {
+          "bytes": 239,
+          "git_blob_id": "20a8a9156fc8c3f25295ca067f61fdf120d517c5",
+          "path": "generation_config.json"
+        },
+        {
+          "bytes": 1671853,
+          "git_blob_id": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7",
+          "path": "merges.txt"
+        },
+        {
+          "bytes": 3957900840,
+          "git_blob_id": "546625baab99f4de2b975842100c119fec83919f",
+          "path": "model-00001-of-00003.safetensors",
+          "sha256": "328a91d3122359d5547f9d79521205bc0a46e1f79a792dfe650e99fc2d651223"
+        },
+        {
+          "bytes": 3987450520,
+          "git_blob_id": "3e4d29aad0be87c083e078b50765cd056e793c51",
+          "path": "model-00002-of-00003.safetensors",
+          "sha256": "6cd087b316306a68c562436b5492edbcf6e16c6dba3a1308279caa5a58e21ca5"
+        },
+        {
+          "bytes": 99630640,
+          "git_blob_id": "79fb0e18fca00d3a2ab04e5b732a2a740539b913",
+          "path": "model-00003-of-00003.safetensors",
+          "sha256": "e4bf436957184f4eeb86a80e9db394503f1f56446b2e6b7edeac5b81470f4ca1"
+        },
+        {
+          "bytes": 32819,
+          "git_blob_id": "95c0a0059df040d75dc6c396b174382cf61d2f91",
+          "path": "model.safetensors.index.json"
+        },
+        {
+          "bytes": 11422654,
+          "git_blob_id": "cd71f61a15a522601badb3dc960d800d9cb3766c",
+          "path": "tokenizer.json",
+          "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+        },
+        {
+          "bytes": 9732,
+          "git_blob_id": "417d038a63fa3de29cfde265caedae14d1a58d92",
+          "path": "tokenizer_config.json"
+        },
+        {
+          "bytes": 2776833,
+          "git_blob_id": "4783fe10ac3adce15ac8f358ef5462739852c569",
+          "path": "vocab.json"
+        }
+      ],
+      "repo_id": "Qwen/Qwen3-4B",
+      "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "target": "Qwen3-4B",
+      "total_bytes": 8060896856
+    }
+  ],
+  "schema_version": "frontier.frontiersmith-model-assets/v1"
+}

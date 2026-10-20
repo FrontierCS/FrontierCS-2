@@ -1,0 +1,11 @@
+{
+  "allowed_paths": [
+    "src/diffusion/df_sample.py",
+    "src/diffusion/gaussian_diffusion.py",
+    "src/diffusion/flow_matching.py",
+    "src/diffusion/frontier_solution/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 20,
+  "member": "solution.patch"
+}

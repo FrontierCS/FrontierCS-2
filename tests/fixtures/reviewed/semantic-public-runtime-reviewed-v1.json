@@ -1,0 +1,675 @@
+{
+  "schema": "preview.reviewed-public-copies/v1",
+  "problem_id": "semantic_robot_world_model",
+  "role": "agent-gpu",
+  "bindings": {
+    "upstream.lock.json": "sha256:de8f662e557b753545ed284527977227c8f83e0271894a188d8eb0256ab6255f",
+    "policy.json": "sha256:e4db3eef4464c0e7089431f31809803fa70b27822eecad93cd407f5e7168b212",
+    "agent-gpu/Dockerfile": "sha256:a9cbedb3c0e55b913b77ccd4e0839e0b0c58db7a344f7f0e6f58dec1d35b0953"
+  },
+  "copies": {
+    "runtime-context/debug/episode_0/bridge/test/000000000.mp4": "file",
+    "runtime-context/debug/episode_0/bridge/test/000000000.npz": "file",
+    "runtime-context/debug/episode_1/bridge/test/000000000.mp4": "file",
+    "runtime-context/debug/episode_1/bridge/test/000000000.npz": "file",
+    "runtime-context/metric-assets/alexnet-owt-7be5be79.pth": "file",
+    "runtime-context/model-assets/semantic-wm/README.md": "file",
+    "runtime-context/model-assets/semantic-wm/webssl/DiT-S_D96.pt": "file",
+    "runtime-context/model-assets/semantic-wm/webssl/adapter_webssl_96.pt": "file",
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/README.md": "file",
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/config.json": "file",
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/model.safetensors": "file",
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/preprocessor_config.json": "file",
+    "runtime-context/os-packages/bubblewrap_0.6.1-1ubuntu0.1_amd64.deb": "file",
+    "runtime-context/os-packages/bwrap-netlink-readback": "file",
+    "runtime-context/runtime": "directory",
+    "runtime-context/runtime/requirements.cuda.lock.txt": "file",
+    "runtime-context/wheelhouse": "directory"
+  },
+  "directories": [
+    "runtime-context/runtime",
+    "runtime-context/wheelhouse"
+  ],
+  "files": {
+    "runtime-context/debug/episode_0/bridge/test/000000000.mp4": {
+      "bytes": 121775,
+      "sha256": "sha256:5238ec824c8e28380be372a70a17db567b1d05e99e0d4a8cbad2acc47c8023e1",
+      "executable": false
+    },
+    "runtime-context/debug/episode_0/bridge/test/000000000.npz": {
+      "bytes": 1388,
+      "sha256": "sha256:2a3eff75f3aa8fdcfd99cd223301189763084f779002ecdf559b498e1a07ab28",
+      "executable": false
+    },
+    "runtime-context/debug/episode_1/bridge/test/000000000.mp4": {
+      "bytes": 170273,
+      "sha256": "sha256:ec4876d3fea202e1332fecb7b5a86ad57a009b1bb3b3e4d222d1950840f508ba",
+      "executable": false
+    },
+    "runtime-context/debug/episode_1/bridge/test/000000000.npz": {
+      "bytes": 1548,
+      "sha256": "sha256:b6ac4a86a3b8b9d5c166ea8ea99120b2e9264f455d4382188f9442329b981397",
+      "executable": false
+    },
+    "runtime-context/metric-assets/alexnet-owt-7be5be79.pth": {
+      "bytes": 244408911,
+      "sha256": "sha256:7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02",
+      "executable": false
+    },
+    "runtime-context/model-assets/semantic-wm/README.md": {
+      "bytes": 268,
+      "sha256": "sha256:e9564396ffc1abd028f9ea7d74f05430d254ec12549bd0feb6e0a2fe7ddb1138",
+      "executable": false
+    },
+    "runtime-context/model-assets/semantic-wm/webssl/DiT-S_D96.pt": {
+      "bytes": 1176238945,
+      "sha256": "sha256:4f4c7048ce109dadb6f428369dfe14c9056273f82a3e7df9910489b525e1c0eb",
+      "executable": false
+    },
+    "runtime-context/model-assets/semantic-wm/webssl/adapter_webssl_96.pt": {
+      "bytes": 2582133291,
+      "sha256": "sha256:3cebb4b3bf761998cde02041997301f08f429a3cb4dda4d59b48733687f6bc54",
+      "executable": false
+    },
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/README.md": {
+      "bytes": 2047,
+      "sha256": "sha256:bfa1f6953bce036ec511905b2890121bab1eb05c6420056a11f8784e5445c55a",
+      "executable": false
+    },
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/config.json": {
+      "bytes": 1109,
+      "sha256": "sha256:86758d2e7ac696b7a8d07bcd34f7fe213944a978c2c77d6a02c6f076cbefc482",
+      "executable": false
+    },
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/model.safetensors": {
+      "bytes": 1214669720,
+      "sha256": "sha256:7a1b6302dcb0fcde8b3585e047197bf8b5a0c0270b91659e0aec3722fb6c8e53",
+      "executable": false
+    },
+    "runtime-context/model-assets/webssl-dino300m-full2b-224/preprocessor_config.json": {
+      "bytes": 436,
+      "sha256": "sha256:0681a8007199b1520f2f45150cf28287b7cef7a2341c555c6f8fc27adb4ae593",
+      "executable": false
+    },
+    "runtime-context/os-packages/bubblewrap_0.6.1-1ubuntu0.1_amd64.deb": {
+      "bytes": 46300,
+      "sha256": "sha256:f75c835d6871d1b36370e12ee82940334b2a9f94efc7b959b5b236447e89743d",
+      "executable": false
+    },
+    "runtime-context/os-packages/bwrap-netlink-readback": {
+      "bytes": 83328,
+      "sha256": "sha256:4348d585ce8264f4ed27a4eebab95a865fb374975eb9a56376cfa8442b0b6bb6",
+      "executable": true
+    },
+    "runtime-context/runtime/requirements.cuda.lock.txt": {
+      "bytes": 10796,
+      "sha256": "sha256:f96a3066574a1dce36eeabf642ddfdf4ff846c007bb83624abf7584f1e89a6c3",
+      "executable": false
+    },
+    "runtime-context/runtime/runtime_check.py": {
+      "bytes": 2235,
+      "sha256": "sha256:58e997246e1a461feb27e3f65b3ee0f2b9b5cf6e30d5b8e5232cac06988abdff",
+      "executable": false
+    },
+    "runtime-context/runtime/task-runtime": {
+      "bytes": 738,
+      "sha256": "sha256:195abb0ed7f4d8f9d0c7f819031b6c9151d087c0bb6ee203999be71989446667",
+      "executable": false
+    },
+    "runtime-context/runtime/verify_bubblewrap.py": {
+      "bytes": 6048,
+      "sha256": "sha256:2dbe6d7877f03e030f4a1df6d1747b9d6bc4c0f5338982bed75575daa9400445",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/annotated_types-0.8.0-py3-none-any.whl": {
+      "bytes": 13427,
+      "sha256": "sha256:f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/anyio-4.15.1-py3-none-any.whl": {
+      "bytes": 132079,
+      "sha256": "sha256:6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/asttokens-3.0.2-py3-none-any.whl": {
+      "bytes": 28702,
+      "sha256": "sha256:9da13157f5b28becde0bd374fc677dcd3c290614264eff096f167c469cd9f933",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/av-16.1.0-cp311-cp311-manylinux_2_28_x86_64.whl": {
+      "bytes": 40846822,
+      "sha256": "sha256:c7f2bc703d0df260a1fdf4de4253c7f5500ca9fc57772ea241b0cb241bcf972e",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/certifi-2026.7.22-py3-none-any.whl": {
+      "bytes": 136983,
+      "sha256": "sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/charset_normalizer-3.5.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 262325,
+      "sha256": "sha256:c7b742bf31c88566b4bb6335a7f393bb322e580b6bb98df7bd0c25e6e3519ce8",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/click-8.5.0-py3-none-any.whl": {
+      "bytes": 125251,
+      "sha256": "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/contourpy-1.3.3-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 355238,
+      "sha256": "sha256:51e79c1f7470158e838808d4a996fa9bac72c498e93d8ebe5119bc1e6becb0db",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/cycler-0.12.1-py3-none-any.whl": {
+      "bytes": 8321,
+      "sha256": "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/diffusers-0.34.0-py3-none-any.whl": {
+      "bytes": 3774402,
+      "sha256": "sha256:b0f642cd57756357bad5d23fe95b61f2e6e30321c93f1302cca6d832a01e6d33",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/distro-1.9.0-py3-none-any.whl": {
+      "bytes": 20277,
+      "sha256": "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/docstring_parser-0.18.0-py3-none-any.whl": {
+      "bytes": 22484,
+      "sha256": "sha256:b3fcbed555c47d8479be0796ef7e19c2670d428d72e96da63f3a40122860374b",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/einops-0.8.1-py3-none-any.whl": {
+      "bytes": 64359,
+      "sha256": "sha256:919387eb55330f5757c6bea9165c5ff5cfe63a642682ea788a6d472576d81737",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/executing-2.2.1-py2.py3-none-any.whl": {
+      "bytes": 28317,
+      "sha256": "sha256:760643d3452b4d777d295bb167ccc74c64a81df23fb5e08eff250c425a4b2017",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/filelock-3.32.6-py3-none-any.whl": {
+      "bytes": 100189,
+      "sha256": "sha256:3f16ecd0117feae0dfc147e8c62eb5daeccd8bd800378c3ddf416de9b4feb6b1",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/fire-0.7.1-py3-none-any.whl": {
+      "bytes": 115945,
+      "sha256": "sha256:e43fd8a5033a9001e7e2973bab96070694b9f12f2e0ecf96d4683971b5ab1882",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/fonttools-4.64.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 5455609,
+      "sha256": "sha256:ff7aff4637fbf71394df139c63ccfe08a47aa4252d2f91224ddb3335c716c925",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/fsspec-2026.7.0-py3-none-any.whl": {
+      "bytes": 206583,
+      "sha256": "sha256:b57ddbafedfaef7018c1ecab32aa200a9d7ca26b77965f64e48b70061249d279",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/fvcore-0.1.5.post20221221-py3-none-any.whl": {
+      "bytes": 61443,
+      "sha256": "sha256:3d5c9546aa9f3a6ef73b7348ecdc433004d7fa1f81bd730f9977d8eae3451297",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/gitdb-4.0.12-py3-none-any.whl": {
+      "bytes": 62794,
+      "sha256": "sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/gitpython-3.1.62-py3-none-any.whl": {
+      "bytes": 222753,
+      "sha256": "sha256:7002251225e10e29d2e1f49e6532613fe5d5d9f0b6f1f02997a52b38fe56899e",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/h11-0.16.0-py3-none-any.whl": {
+      "bytes": 37515,
+      "sha256": "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/hf_xet-1.6.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 4464663,
+      "sha256": "sha256:d62671bb130879cef0ee4c9ebe47a14af6c66ec53e6d84dc15936e5ffdfac82f",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/httpcore-1.0.9-py3-none-any.whl": {
+      "bytes": 78784,
+      "sha256": "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/httpx-0.28.1-py3-none-any.whl": {
+      "bytes": 73517,
+      "sha256": "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/huggingface_hub-0.36.0-py3-none-any.whl": {
+      "bytes": 566094,
+      "sha256": "sha256:7bcc9ad17d5b3f07b57c78e79d527102d08313caa278a641993acddcb894548d",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/idna-3.19-py3-none-any.whl": {
+      "bytes": 68550,
+      "sha256": "sha256:815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/imageio-2.37.4-py3-none-any.whl": {
+      "bytes": 318000,
+      "sha256": "sha256:1ab2e22c8debf700f24c3ac43e8f95f3b3a8110c83b93411e97b4b0b2cd1c7e6",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/importlib_metadata-9.0.1-py3-none-any.whl": {
+      "bytes": 27920,
+      "sha256": "sha256:bba5600596a7e21f3eef53281cf28d6a5195634d2f2b78ff9501a3272c6eaab0",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/iopath-0.1.10-py3-none-any.whl": {
+      "bytes": 31598,
+      "sha256": "sha256:cf439c9888fde00537fb435e93d068d0d1aa6051980bc3abe6febbaa27f3055d",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/ipython-9.17.1-py3-none-any.whl": {
+      "bytes": 639038,
+      "sha256": "sha256:6d1645743cfd1a07eb695d85aa2b5fa66721f8cbae9431d4049f7084bbf06509",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/ipython_pygments_lexers-1.1.1-py3-none-any.whl": {
+      "bytes": 8074,
+      "sha256": "sha256:a9462224a505ade19a605f71f8fa63c2048833ce50abc86768a0d81d876dc81c",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/jedi-0.20.0-py2.py3-none-any.whl": {
+      "bytes": 4884812,
+      "sha256": "sha256:7bdd9c2634f56713299976f4cbd59cb3fa92165cc5e05ea811fb253480728b67",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/jinja2-3.1.6-py3-none-any.whl": {
+      "bytes": 134899,
+      "sha256": "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/jiter-0.16.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 347053,
+      "sha256": "sha256:8597d23c87f59294f83bcb6229b9ed1fccee13dbba967b46930d2f1759466fee",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/kiwisolver-1.5.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 1438206,
+      "sha256": "sha256:95a02752aa032eef4aed01cda6d9b687c669bd0396bf4519eef8bba22a286720",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/lazy_loader-0.5-py3-none-any.whl": {
+      "bytes": 8044,
+      "sha256": "sha256:ab0ea149e9c554d4ffeeb21105ac60bed7f3b4fd69b1d2360a4add51b170b005",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/lpips-0.1.4-py3-none-any.whl": {
+      "bytes": 53763,
+      "sha256": "sha256:fd537af5828b69d2e6ffc0a397bd506dbc28ca183543617690844c08e102ec5e",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/markupsafe-3.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 22940,
+      "sha256": "sha256:0bf2a864d67e76e5c9a34dc26ec616a66b9888e25e7b9460e1c76d3293bd9dbf",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/matplotlib-3.10.7-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 8692668,
+      "sha256": "sha256:2222c7ba2cbde7fe63032769f6eb7e83ab3227f47d997a8453377709b7fe3a5a",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/matplotlib_inline-0.2.2-py3-none-any.whl": {
+      "bytes": 9534,
+      "sha256": "sha256:3c821cf1c209f59fb2d2d64abbf5b23b67bcb2210d663f9918dd851c6da1fcf6",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/mediapy-1.2.4-py3-none-any.whl": {
+      "bytes": 26118,
+      "sha256": "sha256:dd2b2364543077a1d292cab9eca5d08c8550521523aa1cbb721fd7617ccde872",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/mpmath-1.3.0-py3-none-any.whl": {
+      "bytes": 536198,
+      "sha256": "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/networkx-3.6.1-py3-none-any.whl": {
+      "bytes": 2068504,
+      "sha256": "sha256:d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 18252005,
+      "sha256": "sha256:666dbfb6ec68962c033a450943ded891bed2d54e6755e35e5835d63f4f6931d5",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cublas_cu12-12.8.3.14-py3-none-manylinux_2_27_x86_64.whl": {
+      "bytes": 609620630,
+      "sha256": "sha256:3f0e05e7293598cf61933258b73e66a160c27d59c4422670bf0b79348c04be44",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cuda_cupti_cu12-12.8.57-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 10237547,
+      "sha256": "sha256:8e0b2eb847de260739bee4a3f66fac31378f4ff49538ff527a38a01a9a39f950",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cuda_nvrtc_cu12-12.8.61-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl": {
+      "bytes": 88024585,
+      "sha256": "sha256:a0fa9c2a21583105550ebd871bd76e2037205d56f33f128e69f6d2a55e0af9ed",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cuda_runtime_cu12-12.8.57-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 954762,
+      "sha256": "sha256:75342e28567340b7428ce79a5d6bb6ca5ff9d07b69e7ce00d2c7b4dc23eff0be",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cudnn_cu12-9.7.1.26-py3-none-manylinux_2_27_x86_64.whl": {
+      "bytes": 726851421,
+      "sha256": "sha256:6d011159a158f3cfc47bf851aea79e31bcff60d530b70ef70474c84cac484d07",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cufft_cu12-11.3.3.41-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 193118795,
+      "sha256": "sha256:da650080ab79fcdf7a4b06aa1b460e99860646b176a43f6208099bdc17836b6a",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cufile_cu12-1.13.0.11-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 1197801,
+      "sha256": "sha256:483f434c541806936b98366f6d33caef5440572de8ddf38d453213729da3e7d4",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_curand_cu12-10.3.9.55-py3-none-manylinux_2_27_x86_64.whl": {
+      "bytes": 63618038,
+      "sha256": "sha256:8387d974240c91f6a60b761b83d4b2f9b938b7e0b9617bae0f0dafe4f5c36b86",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cusolver_cu12-11.7.2.55-py3-none-manylinux_2_27_x86_64.whl": {
+      "bytes": 260373342,
+      "sha256": "sha256:4d1354102f1e922cee9db51920dba9e2559877cf6ff5ad03a00d853adafb191b",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cusparse_cu12-12.5.7.53-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 292064180,
+      "sha256": "sha256:3c1b61eb8c85257ea07e9354606b26397612627fdcd327bfd91ccf6155e7c86d",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_cusparselt_cu12-0.6.3-py3-none-manylinux2014_x86_64.whl": {
+      "bytes": 156785796,
+      "sha256": "sha256:e5c8a26c36445dd2e6812f1177978a24e2d37cacce7e090f297a688d1ec44f46",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_nccl_cu12-2.26.2-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 201319755,
+      "sha256": "sha256:694cf3879a206553cc9d7dbda76b13efaf610fdb70a50cba303de1b0d1530ac6",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_nvjitlink_cu12-12.8.61-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl": {
+      "bytes": 39243473,
+      "sha256": "sha256:45fd79f2ae20bd67e8bc411055939049873bfd8fac70ff13bd4865e0b9bdab17",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/nvidia_nvtx_cu12-12.8.55-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl": {
+      "bytes": 89896,
+      "sha256": "sha256:2dd0780f1a55c21d8e06a743de5bd95653de630decfff40621dbde78cc307102",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/openai-2.8.0-py3-none-any.whl": {
+      "bytes": 1022692,
+      "sha256": "sha256:ba975e347f6add2fe13529ccb94d54a578280e960765e5224c34b08d7e029ddf",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 49969856,
+      "sha256": "sha256:0e0a27c19dd1f40ddff94976cfe43066fbbe9dfbb2ec1907d66c19caef42a57b",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/packaging-26.3-py3-none-any.whl": {
+      "bytes": 129956,
+      "sha256": "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/parameterized-0.9.0-py2.py3-none-any.whl": {
+      "bytes": 20475,
+      "sha256": "sha256:4e0758e3d41bea3bbd05ec14fc2c24736723f243b28d702081aef438c9372b1b",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/parso-0.8.7-py2.py3-none-any.whl": {
+      "bytes": 107025,
+      "sha256": "sha256:a8926eb2a1b915486941fdbd31e86a4baf88fe8c210f25f2f35ecec5b574ca1c",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pexpect-4.9.0-py2.py3-none-any.whl": {
+      "bytes": 63772,
+      "sha256": "sha256:7236d1e080e4936be2dc3e326cec0af72acf9212a7e1d060210e70a47e253523",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pillow-12.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 6934408,
+      "sha256": "sha256:23d27a3e0307ec2244cc51e7287b919aa68d097504ebe19df4e76a98a3eea5bd",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/platformdirs-4.11.8-py3-none-any.whl": {
+      "bytes": 24027,
+      "sha256": "sha256:52f2f181bbfde907966932cc8312d967d02976422d66d537ea16092b8e291081",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/portalocker-4.3.0-py3-none-any.whl": {
+      "bytes": 129554,
+      "sha256": "sha256:aa91709ccfc322b8225171392d64a2f9fc833f15f5ab741cfba6d3fba285ce31",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/prompt_toolkit-3.0.53-py3-none-any.whl": {
+      "bytes": 392288,
+      "sha256": "sha256:01c0891d7f9237d5e339f7d3e42cdae80b7534abb1c7c0e3352efba6231492f2",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/protobuf-6.33.6-cp39-abi3-manylinux2014_x86_64.whl": {
+      "bytes": 323436,
+      "sha256": "sha256:e9db7e292e0ab79dd108d7f1a94fe31601ce1ee3f7b79e0692043423020b0593",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 155560,
+      "sha256": "sha256:076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/ptyprocess-0.7.0-py2.py3-none-any.whl": {
+      "bytes": 13993,
+      "sha256": "sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pure_eval-0.2.3-py3-none-any.whl": {
+      "bytes": 11842,
+      "sha256": "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pydantic-2.13.5-py3-none-any.whl": {
+      "bytes": 472589,
+      "sha256": "sha256:346a034f080da3755d8e9cb5e00e8b07de1d39e4f6e2c87d8ab7cafa0b269a73",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pydantic_core-2.46.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 2062091,
+      "sha256": "sha256:49776eab08766a08dfff7012f8b422dcd7e25e43b316eedf0477c24fcfa84b7c",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pygments-2.21.0-py3-none-any.whl": {
+      "bytes": 1250147,
+      "sha256": "sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pyparsing-3.3.2-py3-none-any.whl": {
+      "bytes": 122781,
+      "sha256": "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/python_dateutil-2.9.0.post0-py2.py3-none-any.whl": {
+      "bytes": 229892,
+      "sha256": "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pytorchvideo-0.1.5-py3-none-any.whl": {
+      "bytes": 188757,
+      "sha256": "sha256:609e3aa6a5c236e8714ec5ae7075533509af9f697eb2378392b119bdcccf24fc",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 806638,
+      "sha256": "sha256:b8bb0864c5a28024fac8a632c443c87c5aa6f215c0b126c449ae1a150412f31d",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/regex-2026.9.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 801135,
+      "sha256": "sha256:99034ec353c973e2c89555866083491b9a2dbe81f2fbe15fb0f2b68506232f01",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/requests-2.34.2-py3-none-any.whl": {
+      "bytes": 73075,
+      "sha256": "sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/safetensors-0.6.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 485835,
+      "sha256": "sha256:8045db2c872db8f4cbe3faa0495932d89c38c899c603f21e9b6486951a5ecb8f",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/scikit_image-0.26.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 13711217,
+      "sha256": "sha256:74aa5518ccea28121f57a95374581d3b979839adc25bb03f289b1bc9b99c58af",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/scipy-1.15.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 37652622,
+      "sha256": "sha256:39cb9c62e471b1bb3750066ecc3a3f3052b37751c7c3dfd0fd7e48900ed52982",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/sentry_sdk-2.69.1-py3-none-any.whl": {
+      "bytes": 528587,
+      "sha256": "sha256:2d2556d9a14db548982b914cbed2a2dc07b6e55d941a620752f89a2afccfd78d",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/setuptools-84.0.0-py3-none-any.whl": {
+      "bytes": 818216,
+      "sha256": "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/simple_parsing-0.1.8-py3-none-any.whl": {
+      "bytes": 113438,
+      "sha256": "sha256:4d1ef136a28674b3ebb9760cacda4d6f01de32de0b280a869df977d182f12947",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/six-1.17.0-py2.py3-none-any.whl": {
+      "bytes": 11050,
+      "sha256": "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/smmap-5.0.3-py3-none-any.whl": {
+      "bytes": 24390,
+      "sha256": "sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/sniffio-1.3.1-py3-none-any.whl": {
+      "bytes": 10235,
+      "sha256": "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/stack_data-0.6.3-py3-none-any.whl": {
+      "bytes": 24521,
+      "sha256": "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/sympy-1.14.0-py3-none-any.whl": {
+      "bytes": 6299353,
+      "sha256": "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/tabulate-0.10.0-py3-none-any.whl": {
+      "bytes": 39814,
+      "sha256": "sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/termcolor-3.3.0-py3-none-any.whl": {
+      "bytes": 7734,
+      "sha256": "sha256:cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/tifffile-2026.3.3-py3-none-any.whl": {
+      "bytes": 243960,
+      "sha256": "sha256:e8be15c94273113d31ecb7aa3a39822189dd11c4967e3cc88c178f1ad2fd1170",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/tokenizers-0.21.4-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 3115426,
+      "sha256": "sha256:51b7eabb104f46c1c50b486520555715457ae833d5aee9ff6ae853d1130506ff",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/torch-2.7.1+cu128-cp311-cp311-manylinux_2_28_x86_64.whl": {
+      "bytes": 1039389795,
+      "sha256": "sha256:c301dc280458afd95450af794924c98fe07522dd148ff384739b810e3e3179f2",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/torchvision-0.22.1+cu128-cp311-cp311-manylinux_2_28_x86_64.whl": {
+      "bytes": 8732234,
+      "sha256": "sha256:92568ac46b13a8c88b61589800b1b9c4629be091ea7ce080fc6fc622e11e0915",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/tqdm-4.67.1-py3-none-any.whl": {
+      "bytes": 78540,
+      "sha256": "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/traitlets-5.16.1-py3-none-any.whl": {
+      "bytes": 86211,
+      "sha256": "sha256:f775618166caa0396c8e337099240f2bd3e5e917d203b2e6fbe21a58d3cb1f6b",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/transformers-4.55.0-py3-none-any.whl": {
+      "bytes": 11267905,
+      "sha256": "sha256:29d9b8800e32a4a831bb16efb5f762f6a9742fef9fce5d693ed018d19b106490",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/triton-3.3.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl": {
+      "bytes": 155689937,
+      "sha256": "sha256:b31e3aa26f8cb3cc5bf4e187bf737cbacf17311e1112b781d4a059353dfd731b",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl": {
+      "bytes": 45571,
+      "sha256": "sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/typing_inspection-0.4.4-py3-none-any.whl": {
+      "bytes": 14750,
+      "sha256": "sha256:65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/urllib3-2.7.0-py3-none-any.whl": {
+      "bytes": 131087,
+      "sha256": "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/wandb-0.23.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl": {
+      "bytes": 20231493,
+      "sha256": "sha256:6e5847f98cbb3175caf5291932374410141f5bb3b7c25f9c5e562c1988ce0bf5",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/wcwidth-0.8.3-py3-none-any.whl": {
+      "bytes": 331669,
+      "sha256": "sha256:d5b73dba6158a595ec9370350e7f2637bcac8d6c5e4fde34f30fcffb6103a5e4",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/yacs-0.1.8-py3-none-any.whl": {
+      "bytes": 14747,
+      "sha256": "sha256:99f893e30497a4b66842821bac316386f7bd5c4f47ad35c9073ef089aa33af32",
+      "executable": false
+    },
+    "runtime-context/wheelhouse/zipp-4.1.0-py3-none-any.whl": {
+      "bytes": 10238,
+      "sha256": "sha256:25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f",
+      "executable": false
+    }
+  }
+}

@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "tools": {
+    "git-lfs": {
+      "version": "3.8.0",
+      "platforms": {
+        "darwin-arm64": {
+          "url": "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-darwin-arm64-v3.8.0.zip",
+          "sha256": "caff76a7d070d8160c89bc39b6e85d98f24135b6fed038a3b4de2590d25102d8",
+          "format": "zip",
+          "executable": "git-lfs-3.8.0/git-lfs"
+        },
+        "darwin-amd64": {
+          "url": "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-darwin-amd64-v3.8.0.zip",
+          "sha256": "f1c17aeca0b4eaab9ea606226477dbed3b84b56fe0811a9f967d2ea2b2393c53",
+          "format": "zip",
+          "executable": "git-lfs-3.8.0/git-lfs"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-arm64-v3.8.0.tar.gz",
+          "sha256": "ac9c8efac980bb0505ead384d087e2acb6486fd8498691a2165fa174ec6118c2",
+          "format": "tar.gz",
+          "executable": "git-lfs-3.8.0/git-lfs"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/git-lfs/git-lfs/releases/download/v3.8.0/git-lfs-linux-amd64-v3.8.0.tar.gz",
+          "sha256": "e455e00f15d9b95661b8d53498ffb0c3367962cf1ec73c31ab7369516cd6ab8d",
+          "format": "tar.gz",
+          "executable": "git-lfs-3.8.0/git-lfs"
+        }
+      }
+    },
+    "shellcheck": {
+      "version": "0.11.0",
+      "platforms": {
+        "darwin-arm64": {
+          "url": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.aarch64.tar.xz",
+          "sha256": "56affdd8de5527894dca6dc3d7e0a99a873b0f004d7aabc30ae407d3f48b0a79",
+          "format": "tar.xz",
+          "executable": "shellcheck-v0.11.0/shellcheck"
+        },
+        "darwin-amd64": {
+          "url": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.x86_64.tar.xz",
+          "sha256": "3c89db4edcab7cf1c27bff178882e0f6f27f7afdf54e859fa041fca10febe4c6",
+          "format": "tar.xz",
+          "executable": "shellcheck-v0.11.0/shellcheck"
+        },
+        "linux-arm64": {
+          "url": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.aarch64.tar.xz",
+          "sha256": "12b331c1d2db6b9eb13cfca64306b1b157a86eb69db83023e261eaa7e7c14588",
+          "format": "tar.xz",
+          "executable": "shellcheck-v0.11.0/shellcheck"
+        },
+        "linux-amd64": {
+          "url": "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz",
+          "sha256": "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198",
+          "format": "tar.xz",
+          "executable": "shellcheck-v0.11.0/shellcheck"
+        }
+      }
+    },
+    "tar": {
+      "version": "1.35",
+      "platforms": {
+        "darwin-arm64": {
+          "url": "https://ghcr.io/v2/homebrew/core/gnu-tar/blobs/sha256:98ce20547135be57ef9ee9b6e85df5081ba8b907f113c6d19b3e4a296b3930fc",
+          "sha256": "98ce20547135be57ef9ee9b6e85df5081ba8b907f113c6d19b3e4a296b3930fc",
+          "format": "tar.gz",
+          "executable": "bin/tar",
+          "source_executable": "gnu-tar/1.35/bin/gtar"
+        },
+        "darwin-amd64": {
+          "url": "https://ghcr.io/v2/homebrew/core/gnu-tar/blobs/sha256:d7947a84f5bd5458a1faf9854a90d788c7661a6aba37b7ff7f8fba1e9d04ac24",
+          "sha256": "d7947a84f5bd5458a1faf9854a90d788c7661a6aba37b7ff7f8fba1e9d04ac24",
+          "format": "tar.gz",
+          "executable": "bin/tar",
+          "source_executable": "gnu-tar/1.35/bin/gtar"
+        },
+        "linux-arm64": {
+          "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/tar-1.35-h90929bb_0.conda",
+          "sha256": "48ff9ff6cde5bcb1d74f77036fb66606c7e94a52c75978c65330bbd86741f8a4",
+          "format": "conda",
+          "executable": "bin/tar",
+          "files": [
+            {
+              "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/libiconv-1.18-h1ea5142_3.conda",
+              "sha256": "d22c666eb887afd2119aac2110e23a0e817e9391bda99293421f7c46dab1564c",
+              "format": "conda",
+              "member": "lib/libiconv.so.2.7.0",
+              "destination": "lib/libiconv.so.2"
+            }
+          ]
+        },
+        "linux-amd64": {
+          "url": "https://conda.anaconda.org/conda-forge/linux-64/tar-1.35-h3b78370_0.conda",
+          "sha256": "eab162cadb948c91c14f18b6f30a7c270d682e820c4f2fdb0030c9fc99b3fa49",
+          "format": "conda",
+          "executable": "bin/tar",
+          "files": [
+            {
+              "url": "https://conda.anaconda.org/conda-forge/linux-64/libiconv-1.18-h0cb94f2_3.conda",
+              "sha256": "f943117edb9cd4d9c61cc972eee5a34291dc55ea7a6e9e38da104995841cbcb6",
+              "format": "conda",
+              "member": "lib/libiconv.so.2.7.0",
+              "destination": "lib/libiconv.so.2"
+            }
+          ]
+        }
+      }
+    },
+    "make": {
+      "version": "4.4.1",
+      "platforms": {
+        "darwin-arm64": {
+          "url": "https://ghcr.io/v2/homebrew/core/make/blobs/sha256:49fa5e3e19d0793bdc32cc453a3c209697553ec1fd92964cfbdaf67c6a72a03f",
+          "sha256": "49fa5e3e19d0793bdc32cc453a3c209697553ec1fd92964cfbdaf67c6a72a03f",
+          "format": "tar.gz",
+          "executable": "bin/make",
+          "source_executable": "make/4.4.1/bin/gmake"
+        },
+        "darwin-amd64": {
+          "url": "https://ghcr.io/v2/homebrew/core/make/blobs/sha256:d6d6e4b66e31ed8499dd7d1fecdc4d33b11af9073d0d884aedf9248bcbe6ac3e",
+          "sha256": "d6d6e4b66e31ed8499dd7d1fecdc4d33b11af9073d0d884aedf9248bcbe6ac3e",
+          "format": "tar.gz",
+          "executable": "bin/make",
+          "source_executable": "make/4.4.1/bin/gmake"
+        },
+        "linux-arm64": {
+          "url": "https://conda.anaconda.org/conda-forge/linux-aarch64/make-4.4.1-he30d5cf_3.conda",
+          "sha256": "b008fb8ba5c93478dacf36d60eed1b2de341d69773c3f73621d2a9e56f834d9d",
+          "format": "conda",
+          "executable": "bin/make"
+        },
+        "linux-amd64": {
+          "url": "https://conda.anaconda.org/conda-forge/linux-64/make-4.4.1-hb03c661_3.conda",
+          "sha256": "4c65d2769847778a6d84db6984ac81bcec6f8958d349f1fe57ae040ccc56a801",
+          "format": "conda",
+          "executable": "bin/make"
+        }
+      }
+    }
+  }
+}

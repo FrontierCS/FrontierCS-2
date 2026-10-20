@@ -1,0 +1,2 @@
+include src/joinboost/d3graph.html
+recursive-include src/joinboost/static_files *

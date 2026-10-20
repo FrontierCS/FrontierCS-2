@@ -1,0 +1,10 @@
+# Judge Python closure (CPython 3.12, linux x86_64). Versions are the author's
+# judge_pip_packages in judge/config.yaml; hashes are the PyPI artifacts.
+PyYAML==6.0.2 --hash=sha256:80bab7bfc629882493af4aa31a4cfa43a4c57c83813253626916b8c7ada83476
+editdistance==0.8.1 --hash=sha256:c59248eabfad603f0fba47b0c263d5dc728fb01c2b6b50fb6ca187cec547fdb3
+exrex==0.12.0 --hash=sha256:1228f2e3afb008cacf6adc3ec20b098f1303886f4382b57cdf3b7259fb7c0ad3
+regex==2024.11.6 --hash=sha256:70b7fa6606c2881c1db9479b0eaa11ed5dfa11c8d60a474ff0e095099f39d98e
+timeout-decorator==0.5.0 --hash=sha256:6a2f2f58db1c5b24a2cc79de6345760377ad8bdc13813f5265f6c3e63d16b3d7
+tqdm==4.67.1 --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2
+xeger==0.4.0 --hash=sha256:a0f544faf45ac56a29af4e628bd1e6996334f090458d78a61581490df1aad252
+zstandard==0.23.0 --hash=sha256:72c68dda124a1a138340fb62fa21b9bf4848437d9ca60bd35db36f2d3345f373

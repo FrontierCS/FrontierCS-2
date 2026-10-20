@@ -1,0 +1,634 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 439,
+      "path": "datasets/eval.json",
+      "version": "sha256:53fd78ddcd1151214c08c09a6e72c0c5c78821bcb5c9a2720f2ffb86fe428fcc"
+    },
+    "train": {
+      "bytes": 446,
+      "path": "datasets/train.json",
+      "version": "sha256:4c44f6afc3b6f0192cb29168301c13141d5454e282774f96f8a5c3f52cc5b69e"
+    }
+  },
+  "file_count": 122,
+  "files": [
+    {
+      "bytes": 2301,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:0892925870315eff75435300e5e7e280a4c68352dcd847b238bf69fb9211d091"
+    },
+    {
+      "bytes": 3513,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:323bb63863b5875ce16f4254577d4be8967da622d7b8849236d7a88da80a82ba"
+    },
+    {
+      "bytes": 2923,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:4c42a0bcf48cf29dc2562eb76d6d2638810da99b2e9ebea4e72892c1e6a38ec1"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:9fc959f77195898353af6476c6262688c5deedae49ee07b9d87af6e9893ae4b4"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 413,
+      "path": "agent-base/frontier/task/repo/.gitignore",
+      "sha256": "sha256:dec06732962c4dab9a1fd0669cbc76c09b5121c2632919f69f20f39a6eaf1ec9"
+    },
+    {
+      "bytes": 18613,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:ab11f581d2fe6439ab6d81dda28ad4ed6cbb12734f88bf24ebc4bcb7096553ec"
+    },
+    {
+      "bytes": 4150,
+      "path": "agent-base/frontier/task/repo/db/batch.hpp",
+      "sha256": "sha256:6b129b2931be54674f2e6a80512a7dbcee6fc0354a40335036cca279d752838e"
+    },
+    {
+      "bytes": 1937,
+      "path": "agent-base/frontier/task/repo/db/contreap.hpp",
+      "sha256": "sha256:12374ab42310ace80abaab83d2426158c9a79f1a5875a19f247cf25e40aa7937"
+    },
+    {
+      "bytes": 346,
+      "path": "agent-base/frontier/task/repo/db/include/interface.hpp",
+      "sha256": "sha256:6bd9bd29bc3fbfcc6321f8a4fe0bdf1a122a740a22aaeabe604b8af5659825df"
+    },
+    {
+      "bytes": 2394,
+      "path": "agent-base/frontier/task/repo/db/include/query_processor.hpp",
+      "sha256": "sha256:fce46e70758a2e10a9ad274b356ae7841a9f58ad3c70aeaf2a2d1b10901ef685"
+    },
+    {
+      "bytes": 2221,
+      "path": "agent-base/frontier/task/repo/db/sequential.hpp",
+      "sha256": "sha256:9116b2ea1701b19bebeeb516f68181301bdfc6c8cc99352390c9e8ddaf398eb9"
+    },
+    {
+      "bytes": 1803,
+      "path": "agent-base/frontier/task/repo/lib/aes_hash.hpp",
+      "sha256": "sha256:565dbbfc5f4a206190496003bd7a7ad6c3b4236b4ef3c463505da870ecb03c63"
+    },
+    {
+      "bytes": 3266,
+      "path": "agent-base/frontier/task/repo/lib/moodycamel/LICENSE",
+      "sha256": "sha256:22331571e5e3dbe4c79ad715e23127bdf3beabd75052c953ddabf191ef799e14"
+    },
+    {
+      "bytes": 21535,
+      "path": "agent-base/frontier/task/repo/lib/moodycamel/blockingconcurrentqueue.h",
+      "sha256": "sha256:4061c3837490339a9ef2664e202d3668582f18b93747988aa4527b7122310033"
+    },
+    {
+      "bytes": 152878,
+      "path": "agent-base/frontier/task/repo/lib/moodycamel/concurrentqueue.h",
+      "sha256": "sha256:fff6b0d789a5a533fe35bb3dd62bd50d3b0e22d853d57f986e71b82d8430a8f2"
+    },
+    {
+      "bytes": 11850,
+      "path": "agent-base/frontier/task/repo/lib/moodycamel/lightweightsemaphore.h",
+      "sha256": "sha256:99a836516d4c8682524243bb8ad3bdd3340f1222615e9dffb3ced57dd0fabe34"
+    },
+    {
+      "bytes": 634,
+      "path": "agent-base/frontier/task/repo/lib/pam/augment.hpp",
+      "sha256": "sha256:ad90579627800ba51a36f4b1c0e6f4028ad4ed54a1d60ef2785e4149822fe900"
+    },
+    {
+      "bytes": 1795,
+      "path": "agent-base/frontier/task/repo/lib/pam/build.hpp",
+      "sha256": "sha256:88f5cbc121dffdd4c1b6b4f86cd92d5131ebbeb3c0750faa77f4f4164ad92538"
+    },
+    {
+      "bytes": 2078,
+      "path": "agent-base/frontier/task/repo/lib/pam/build_versioned.hpp",
+      "sha256": "sha256:78ce1600c1bd6c4dd8f732acdfb271c7d54dc12822e9de4ca3448cb40fed86b7"
+    },
+    {
+      "bytes": 2203,
+      "path": "agent-base/frontier/task/repo/lib/pam/copy_merge.hpp",
+      "sha256": "sha256:926eb6ea4c77064e44828ea6178f63ee15b56466a5cd4e0326e299e3bd5d27d3"
+    },
+    {
+      "bytes": 2183,
+      "path": "agent-base/frontier/task/repo/lib/pam/copy_subtract.hpp",
+      "sha256": "sha256:ec256c532e538ffc4657d18d1625752e55832c1556bf16808ca50b500d5364b5"
+    },
+    {
+      "bytes": 1590,
+      "path": "agent-base/frontier/task/repo/lib/pam/interface.hpp",
+      "sha256": "sha256:70b96bd102d987cce95e2deff8e1bb1bde07cf44f475d54519e22d61384db3a7"
+    },
+    {
+      "bytes": 1881,
+      "path": "agent-base/frontier/task/repo/lib/pam/node.hpp",
+      "sha256": "sha256:163deffa741f55e6c818f31385e93ed7b18ba5f6f72ede1e305f378741665743"
+    },
+    {
+      "bytes": 2011,
+      "path": "agent-base/frontier/task/repo/lib/pam/query.hpp",
+      "sha256": "sha256:c9c7b87582696ef0b0beabd210e9e5907b61f53206bdee6d2da30a8f5dbd9991"
+    },
+    {
+      "bytes": 1100,
+      "path": "agent-base/frontier/task/repo/lib/parlay/LICENSE",
+      "sha256": "sha256:4ae228b835015b9cadd76f3ba31bc05918b97448972d33582b1275ddc84bcb08"
+    },
+    {
+      "bytes": 11198,
+      "path": "agent-base/frontier/task/repo/lib/parlay/alloc.h",
+      "sha256": "sha256:9f174456689aff1abdd2c94182868254ac032ae78fbb9709bb3b920613b6d3ee"
+    },
+    {
+      "bytes": 3578,
+      "path": "agent-base/frontier/task/repo/lib/parlay/delayed.h",
+      "sha256": "sha256:811f414f668a4548c1a5b0bfeee533b32d77020dacd69a4db20682a9739c3b30"
+    },
+    {
+      "bytes": 9624,
+      "path": "agent-base/frontier/task/repo/lib/parlay/delayed_sequence.h",
+      "sha256": "sha256:d365e712f8d9759fec5a9f024c0dfba6ca737a98b825ed85221d6e2474d0de0a"
+    },
+    {
+      "bytes": 9692,
+      "path": "agent-base/frontier/task/repo/lib/parlay/hash_table.h",
+      "sha256": "sha256:5ed84778fb5c1e5e71e0f5a854659bd3e8913a760098dafefaf3ef774f882c22"
+    },
+    {
+      "bytes": 14582,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/atomic_wait.h",
+      "sha256": "sha256:da3ba43ed230d68981e51d46148650d5cb0761fc1c09df90f9c19f7cea03b7a3"
+    },
+    {
+      "bytes": 1612,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/binary_search.h",
+      "sha256": "sha256:9e05c311c9fdd47b8fef20ee9883e129721756817e80f660dda415dcdec1f12b"
+    },
+    {
+      "bytes": 7681,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/block_allocator.h",
+      "sha256": "sha256:66a670ddd75f77be2c917d4e57545753ac5c954cce368312bf896503363bb653"
+    },
+    {
+      "bytes": 11808,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/block_delayed.h",
+      "sha256": "sha256:927809754c30dbb8dd8d41548daf32646af09607a65ff0f20f5ad0ee2c93787e"
+    },
+    {
+      "bytes": 5698,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/bucket_sort.h",
+      "sha256": "sha256:849a1f0fa9cde4502d20988bb4eda8026c9da0db0d92db58e3263ed391dcc56b"
+    },
+    {
+      "bytes": 12893,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/collect_reduce.h",
+      "sha256": "sha256:d7872dd3f8ea06a4eefb5385d350359b368e6622940c6dc934a0efd71c9e7768"
+    },
+    {
+      "bytes": 5146,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/concurrency/acquire_retire.h",
+      "sha256": "sha256:e5e338be0f8126ca58efc213b651da4b1ab6d2d05578325b90d14bf40a0f1716"
+    },
+    {
+      "bytes": 3768,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/concurrency/hazptr_stack.h",
+      "sha256": "sha256:9f8e50e009df12d9448adca52438c96aa6e63fad16509cf1bf11fd4f860db449"
+    },
+    {
+      "bytes": 13102,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/counting_sort.h",
+      "sha256": "sha256:06fc735b27f2f914626cb5c8b19e9e8e60cf4c811500493220293498482891d6"
+    },
+    {
+      "bytes": 5955,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/debug_uninitialized.h",
+      "sha256": "sha256:39705edf8942205f68723ef77d38f1bcddf657e526a08cc2f2650c9095ff1292"
+    },
+    {
+      "bytes": 9344,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/common.h",
+      "sha256": "sha256:fa0427c59a8ebcf3b7a4085c773e10d5747c20f1eec0591d0d3920d7cf5ff9a6"
+    },
+    {
+      "bytes": 4450,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/filter.h",
+      "sha256": "sha256:a3ac7d5ebfd4d435363103d1464ca47e70bf43bc4886efdb9b36d35fab43dc71"
+    },
+    {
+      "bytes": 4422,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/filter_op.h",
+      "sha256": "sha256:78100bd04cabce444743a80418f28ecc6af538a90241224e131f9bdc02cfe41e"
+    },
+    {
+      "bytes": 12414,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/flatten.h",
+      "sha256": "sha256:92b26cd4edc882a51be68ebf03a0d9cd4a9283317f01283f42b90ad20d0716ad"
+    },
+    {
+      "bytes": 4268,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/map.h",
+      "sha256": "sha256:076a1f5a7fade527c88cd70071773bece3841a7222bf9b8a4a562a50abbfd886"
+    },
+    {
+      "bytes": 6442,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/scan.h",
+      "sha256": "sha256:3cedbb387ca5eb7efef84a4cb1f5c8e92fe1d37de7f225e5c622d4fc61d9f0de"
+    },
+    {
+      "bytes": 6468,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/terminal.h",
+      "sha256": "sha256:3624812031536ccabb7b598489f7f68ad36e04cd24eb3ce6385e9b12200e7d14"
+    },
+    {
+      "bytes": 5512,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/delayed/zip.h",
+      "sha256": "sha256:f85ba267bdd769c3fb0a43b81ecebbe3c8b9c2017bfc06a4960a45d43b94801b"
+    },
+    {
+      "bytes": 2841,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/file_map.h",
+      "sha256": "sha256:c6dbe83991fb4dd86846b26ff048a5a02f5e24cd06e337f194018bbdc8e7b413"
+    },
+    {
+      "bytes": 1626,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/get_time.h",
+      "sha256": "sha256:6fcd89092afdba041028fa259e5de144ba33b08451714afbf655d8d43a7e0027"
+    },
+    {
+      "bytes": 15101,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/group_by.h",
+      "sha256": "sha256:7e42ec8098dff26e633a541780347b4d8554d845186cab0371124fbe585d2496"
+    },
+    {
+      "bytes": 1637,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/heap_tree.h",
+      "sha256": "sha256:30412db9e1103600d1c77975022b5237df7d525cb85b5f105d5323b74a27db93"
+    },
+    {
+      "bytes": 16319,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/integer_sort.h",
+      "sha256": "sha256:a4c699d7a37665048c68fd1d041ca44a00575c09612acacfe6750ca955718ef6"
+    },
+    {
+      "bytes": 3252,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/memory_size.h",
+      "sha256": "sha256:e65363a0b2869db00d554954c60c449106abe314bb1744236b5ab053f50cf0da"
+    },
+    {
+      "bytes": 3585,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/merge.h",
+      "sha256": "sha256:a149c4a5c92ae9be8dce34528aba2064522479471910599172bbc53cd93ea2ff"
+    },
+    {
+      "bytes": 2237,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/merge_sort.h",
+      "sha256": "sha256:497ef35174836c0ad1d0ca31cbcca93343b55dc044c428cb1f2a0140c88e00b9"
+    },
+    {
+      "bytes": 6050,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/pool_allocator.h",
+      "sha256": "sha256:c79c636df61dada320d868e9caa7a3b2042a9bc4025bc53a64fe71b63a8e6ba4"
+    },
+    {
+      "bytes": 2312,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/posix/file_map_impl_posix.h",
+      "sha256": "sha256:25995e94feb2df510b67be3266b98350c2329873765c9167e4df8fe9756b55c3"
+    },
+    {
+      "bytes": 8521,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/quicksort.h",
+      "sha256": "sha256:a35f40e452e359fb10271de62b71e81d6843404528eaf77b45631e758ae58dea"
+    },
+    {
+      "bytes": 11560,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/sample_sort.h",
+      "sha256": "sha256:faf5be2ae6c6c6fb694891dd81b91068842cffbb8eefe90c45db47493ff472f0"
+    },
+    {
+      "bytes": 1539,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/scheduler_plugins/cilkplus.h",
+      "sha256": "sha256:6a84cb1a38c5234a040bf1362620267e2824860e164e14dd34b626a275eb1bdc"
+    },
+    {
+      "bytes": 3025,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/scheduler_plugins/omp.h",
+      "sha256": "sha256:39584899e263112611712a8c6d72d6839b417d33098beead0cc003bc6d1ec083"
+    },
+    {
+      "bytes": 1662,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/scheduler_plugins/opencilk.h",
+      "sha256": "sha256:e4682d9ec3ac0b3c64cb77c400c167badcdf49293963d2223bb03a1f13bc5ec7"
+    },
+    {
+      "bytes": 1031,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/scheduler_plugins/sequential.h",
+      "sha256": "sha256:8cf34c0d4945453346de41183e5cb467956388f25f4fd7c6e6348c04e742caee"
+    },
+    {
+      "bytes": 1941,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/scheduler_plugins/tbb.h",
+      "sha256": "sha256:edf81579941f915f30feffc6bd28bb0a20ea80c5185f16f67190e7e8c65bce49"
+    },
+    {
+      "bytes": 21581,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/sequence_base.h",
+      "sha256": "sha256:82c1258e04dd566668663631fbd162c88a904e677ced3566c1fd85d9fd123c40"
+    },
+    {
+      "bytes": 18280,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/sequence_ops.h",
+      "sha256": "sha256:d5983c904625b1a8ef85faff58f7d8ff050c3bba4838f5bd9fd3005a9aaed81c"
+    },
+    {
+      "bytes": 6393,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/stream_delayed.h",
+      "sha256": "sha256:0f983b5d16ac5923e1ef37675a4e27e105156460794f7878a0d320fd592a3176"
+    },
+    {
+      "bytes": 6071,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/thread_id_pool.h",
+      "sha256": "sha256:08c25283d3fc0fab59090215cfbeb766a54d48289a9e0ec8116af1771a1bbfe5"
+    },
+    {
+      "bytes": 8348,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/transpose.h",
+      "sha256": "sha256:2dcbcef81dce52007c994833baed001dd879fd0da70e56e12dcc03ccb9179609"
+    },
+    {
+      "bytes": 5185,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/uninitialized_iterator.h",
+      "sha256": "sha256:ed37df51f593b6adaba35522e401a823225b5bd3f2cb6e2915b84c59f23f07a6"
+    },
+    {
+      "bytes": 7015,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/uninitialized_sequence.h",
+      "sha256": "sha256:21f994d7299e120d57ad1384b4e2ddcf82a51a98535e8d5fdb36a6d955c3d1cc"
+    },
+    {
+      "bytes": 1700,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/uninitialized_storage.h",
+      "sha256": "sha256:e6bbd0dd22385a6a5ed6adf78981133df91e2559ee36258302476914dbdda251"
+    },
+    {
+      "bytes": 3475,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/windows/file_map_impl_windows.h",
+      "sha256": "sha256:813ddf159d6b5038bf11b14c68361b20949dae57bd47b8663c01845fbc62d198"
+    },
+    {
+      "bytes": 3918,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/work_stealing_deque.h",
+      "sha256": "sha256:030cca94de601c7b7d37c77bdf1440bea48b427dc0d46491e2406711fdb6fa27"
+    },
+    {
+      "bytes": 1250,
+      "path": "agent-base/frontier/task/repo/lib/parlay/internal/work_stealing_job.h",
+      "sha256": "sha256:8afda17231339b927d6883666e9afee818fa541105d6bbe57cb1b7356237da09"
+    },
+    {
+      "bytes": 12032,
+      "path": "agent-base/frontier/task/repo/lib/parlay/io.h",
+      "sha256": "sha256:d6f5d474eeaeed002ed40caddec62fa1812db7e6f593f44212c8061bb2acf5f1"
+    },
+    {
+      "bytes": 11278,
+      "path": "agent-base/frontier/task/repo/lib/parlay/monoid.h",
+      "sha256": "sha256:bafe2e1b4318858a2f93f17ab8e8b823ebf51993433455becfe8bd1a9746a2df"
+    },
+    {
+      "bytes": 7453,
+      "path": "agent-base/frontier/task/repo/lib/parlay/parallel.h",
+      "sha256": "sha256:b44a5152a2099f38f1732933d506038275d6d40b31fda1bd8b525bb0116ac644"
+    },
+    {
+      "bytes": 3149,
+      "path": "agent-base/frontier/task/repo/lib/parlay/portability.h",
+      "sha256": "sha256:5c9c06e76750375a2267dbbb51d3ef16f8638ac86827e6ae54677893ead33837"
+    },
+    {
+      "bytes": 55311,
+      "path": "agent-base/frontier/task/repo/lib/parlay/primitives.h",
+      "sha256": "sha256:2b1e17b1d4475eec81a21d05db140a1909a64b658dc0f122d36aaac1b7f734fc"
+    },
+    {
+      "bytes": 5170,
+      "path": "agent-base/frontier/task/repo/lib/parlay/random.h",
+      "sha256": "sha256:a658a2255ee326ca66bbcfcae92b997d4465f37852b9190e56d07edd41796d51"
+    },
+    {
+      "bytes": 26334,
+      "path": "agent-base/frontier/task/repo/lib/parlay/range.h",
+      "sha256": "sha256:1d82689f0c65f1a601ce8f5054375324160a3e33c66eed84b06f24abff4411b6"
+    },
+    {
+      "bytes": 5849,
+      "path": "agent-base/frontier/task/repo/lib/parlay/relocation.h",
+      "sha256": "sha256:4e683af837ff084634343d58e17e2b9cecfb00c6b7af9b3b28ae79f21450cbe6"
+    },
+    {
+      "bytes": 12533,
+      "path": "agent-base/frontier/task/repo/lib/parlay/scheduler.h",
+      "sha256": "sha256:0cc2f05fd4eb40b27fdf11a07dffe575cba8235504df62c9f441605f9b8132e0"
+    },
+    {
+      "bytes": 28226,
+      "path": "agent-base/frontier/task/repo/lib/parlay/sequence.h",
+      "sha256": "sha256:820ee46c7ec7ae3752e110bec1f15061ff2ee680c400acc7a43cd706d3c3baa7"
+    },
+    {
+      "bytes": 3433,
+      "path": "agent-base/frontier/task/repo/lib/parlay/slice.h",
+      "sha256": "sha256:0ce9699707bc48b0889f33df65ede5c2fc2f65677cdc98f63b6daef3eeea2ea6"
+    },
+    {
+      "bytes": 15649,
+      "path": "agent-base/frontier/task/repo/lib/parlay/thread_specific.h",
+      "sha256": "sha256:524cfb5fcfd64b59f3ba182e665dcd8dc361b71aa11c831e9be7b6b3c1e8776f"
+    },
+    {
+      "bytes": 15911,
+      "path": "agent-base/frontier/task/repo/lib/parlay/type_traits.h",
+      "sha256": "sha256:2cbd9184fda7bb43eeebcd0005334533568716482f22a3a7adff4db8d3a1440d"
+    },
+    {
+      "bytes": 17875,
+      "path": "agent-base/frontier/task/repo/lib/parlay/utilities.h",
+      "sha256": "sha256:afb253d903b36ddc3328fdad01332b4d864425f437d0ccdb6d149fce45dbd558"
+    },
+    {
+      "bytes": 5973,
+      "path": "agent-base/frontier/task/repo/lib/parlay/worker_specific.h",
+      "sha256": "sha256:f0a13dfa19deccce4191fe553165c9ad5631ee3665d47fca12887071058e1e35"
+    },
+    {
+      "bytes": 715,
+      "path": "agent-base/frontier/task/repo/lib/treap/augment.hpp",
+      "sha256": "sha256:fe276600592cce90b642c8a9c08daa5f542fbe7bb5aedcafb26674b949c1ff7a"
+    },
+    {
+      "bytes": 2076,
+      "path": "agent-base/frontier/task/repo/lib/treap/build.hpp",
+      "sha256": "sha256:e875dc3dfe32f6cc83bd93c704ddc6221c7bfe90b4fdff43a7a6f213844d034a"
+    },
+    {
+      "bytes": 1654,
+      "path": "agent-base/frontier/task/repo/lib/treap/node.hpp",
+      "sha256": "sha256:32e767802304ec0db3a1807f9def94f424ece12b7adfdddd7ad1c7713d455c1b"
+    },
+    {
+      "bytes": 1576,
+      "path": "agent-base/frontier/task/repo/lib/treap/query.hpp",
+      "sha256": "sha256:b840b0e35d5b4e095e2c3c70de2bee70c4ba35fc329213af221424c7f4565dcf"
+    },
+    {
+      "bytes": 1299,
+      "path": "agent-base/frontier/task/repo/lib/treap/scheduler.hpp",
+      "sha256": "sha256:f23fe1b83a1a7921d59d919402fb93b2334752b7f234af092d0627d289087ce9"
+    },
+    {
+      "bytes": 1385,
+      "path": "agent-base/frontier/task/repo/lib/treap/search_delete.hpp",
+      "sha256": "sha256:0cf72da3bb32f921c26d3924bebbe47b86f6ae4d9d8fa902b432759c473e9589"
+    },
+    {
+      "bytes": 1132,
+      "path": "agent-base/frontier/task/repo/lib/treap/search_insert.hpp",
+      "sha256": "sha256:f3236458a4857fe2e3b2243f204ea89821d9a682b8502b5e0bd481e8f902c734"
+    },
+    {
+      "bytes": 3754,
+      "path": "agent-base/frontier/task/repo/main.cpp",
+      "sha256": "sha256:128d0d599d9a22992448ccc5fda406858d24b6f6718092da94b2f1a1e3e9b3d3"
+    },
+    {
+      "bytes": 499,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:9b26488388952ac7c7ccefd7f572cb569c9aee87f4e1f75cdefde5d37ecbc78b"
+    },
+    {
+      "bytes": 1522,
+      "path": "agent-base/frontier/task/repo/utils/log.h",
+      "sha256": "sha256:9dd8e2fd2a6de397f6c6c6ff377ded56a684f074a78eba9f6cf1623e5d3a3eed"
+    },
+    {
+      "bytes": 80,
+      "path": "agent-base/frontier/task/repo/utils/timer.h",
+      "sha256": "sha256:dc5cde3f380257e4647c04849c3fc9c9547da6ccb294956beb58c4dd0eed3c47"
+    },
+    {
+      "bytes": 650,
+      "path": "agent-base/frontier/task/repo/ycsbc/core/timer.h",
+      "sha256": "sha256:e2e8ab7d4ee50d59e552645ff666eb0a78c8ae3470a99cbd1ff70a5c69c5d048"
+    },
+    {
+      "bytes": 439,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:53fd78ddcd1151214c08c09a6e72c0c5c78821bcb5c9a2720f2ffb86fe428fcc"
+    },
+    {
+      "bytes": 446,
+      "path": "datasets/train.json",
+      "sha256": "sha256:4c44f6afc3b6f0192cb29168301c13141d5454e282774f96f8a5c3f52cc5b69e"
+    },
+    {
+      "bytes": 5146,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:72404500248d4fa8fd70361f4e44f344bceb97f426efc8a52a1784b6b75e9e38"
+    },
+    {
+      "bytes": 747,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:52d87d4efee82b727c0f59786883cbf7ef2db42af50d67b044c53d3ee16d9b8b"
+    },
+    {
+      "bytes": 207,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:57cfcc8464ab9e2251eaa9c6bd57fd47c6aef8322582727a229d565ffa9ab209"
+    },
+    {
+      "bytes": 27543,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:29e264a5da4ac94601e62e1644528a6e18dd0df827cbcc252f20a1c0bc864edd"
+    },
+    {
+      "bytes": 6216,
+      "path": "judge/judge/correctness.cpp",
+      "sha256": "sha256:239727b6a8ae529af33c317329903f0ea29bcea973d00659aef700b04b8f8eb5"
+    },
+    {
+      "bytes": 4117,
+      "path": "judge/judge/history_bench.cpp",
+      "sha256": "sha256:1a2e6bf0437f7b64500b3250cb442bb2e1ee48811890d6e7bddfc30b2a96da00"
+    },
+    {
+      "bytes": 3005,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:9b979b68403bcda7f7ef315962dca3956d447ff305b36753e4cfb60946ed45cd"
+    },
+    {
+      "bytes": 15678,
+      "path": "judge/readme",
+      "sha256": "sha256:03cc567a32b9e73a1bb40e4e5106d60b09faf9b3098554435af61a87b817affb"
+    },
+    {
+      "bytes": 21259,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:bab17e11fa4733824f60b525109e9849e8265ef5e17d1a6f317f577d53b48a06"
+    },
+    {
+      "bytes": 2171,
+      "path": "judge/result.json",
+      "sha256": "sha256:94fca8ca96f55dee697ba1e5fc0dd09110c2f58b31c846b2125d569e3910b64c"
+    },
+    {
+      "bytes": 6752,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:529a22684d822db4359dcc1dfaa2b1d0c66a8b1cbd4376fbb26d55257ee20478"
+    },
+    {
+      "bytes": 3271,
+      "path": "policy.json",
+      "sha256": "sha256:fb68cf03bdc81538c5acc3525e2e2520a286026ae02c3fdb05c279dcf6ad9c7b"
+    },
+    {
+      "bytes": 1786,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:d46794c7472908b2034edeff8d015a67198c6c94ba14986566d0a8ad15f1d181"
+    },
+    {
+      "bytes": 11943,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "bytes": 21123,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:03aa3e190841dcad88088eb577b853df7f8634d7268989a0a489c2f451c648ca"
+    },
+    {
+      "bytes": 1471,
+      "path": "verifier/private_metrics.py",
+      "sha256": "sha256:b28fecc0588487e3b2423bc0f7790a17fc55c79683e3723c378d64626b9aa09a"
+    },
+    {
+      "bytes": 367,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:da36ec4d4dc5ab25a52fa265c134f4552feab962f40bac02290b7a8ffcd081d7"
+    }
+  ],
+  "problem_id": "persistent_treap_update_engine",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:f6ea8c2986487407e4cff4fd1b5fc4b90d7d8a33d20ddf28e8225f70072a9b61",
+    "statement_sha256": "sha256:03cc567a32b9e73a1bb40e4e5106d60b09faf9b3098554435af61a87b817affb",
+    "task_dir": "persistent_treap_update_engine"
+  }
+}

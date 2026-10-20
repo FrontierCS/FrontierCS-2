@@ -1,0 +1,67 @@
+# Local paired submission measurements support these CPU/runtime limits.
+# Image/setup build is unmeasured; build_timeout_seconds remains unset.
+tag: systems
+runtime:
+  language: python
+  timeout_seconds: 1800
+  environment: CPU-only generated SystemVerilog; Python >=3.10, toolz 1.0.0, Verilator
+    5.032; clock period from sv2v 0.0.13 and Yosys 0.69 (YoWASP 0.69.0.0.post1233)
+  apt_packages:
+  - build-essential
+  - python-is-python3
+  - git
+  - bubblewrap
+  judge_apt_packages:
+  - build-essential
+  - python-is-python3
+  - git
+  - bubblewrap
+  pip_packages:
+  - toolz==1.0.0
+  - verilator==5.32.0
+  - PyYAML==6.0.3
+  - yowasp-yosys==0.69.0.0.post1233
+  - yowasp-runtime==1.96
+  - wasmtime==47.0.1
+  - platformdirs==4.13.0
+  - click==8.5.0
+  judge_pip_packages:
+  - toolz==1.0.0
+  - verilator==5.32.0
+  - PyYAML==6.0.3
+  - yowasp-yosys==0.69.0.0.post1233
+  - yowasp-runtime==1.96
+  - wasmtime==47.0.1
+  - platformdirs==4.13.0
+  - click==8.5.0
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 16384
+  build_timeout_seconds: null
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+  - hardware/bbq/generator/bbq_level_lx.py
+  - hardware/bbq/generator/solver_extensions/
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: extends
+  suite_axis: bitmap-width scale with independent seeds
+  solver_visible_metrics:
+  - dev_min_throughput_ops_per_second
+  - dev_max_latency_picoseconds
+  - dev_max_clock_period_picoseconds
+  - dev_min_throughput_ops_per_cycle
+  - dev_max_latency_cycles
+  - dev_valid_fraction
+  dataset_files:
+    train:
+      path: train.json
+      media_type: application/json
+    eval:
+      path: eval.json
+      media_type: application/json

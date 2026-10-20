@@ -1,0 +1,51 @@
+#!/bin/sh
+set -eu
+
+echo "[frontier-local-e2e] model_execution=scripted (no live Codex/model call)"
+
+probe_server=""
+finish_probe_window() {
+    if [ -n "${probe_server}" ]; then
+        kill "${probe_server}" 2>/dev/null || true
+        wait "${probe_server}" 2>/dev/null || true
+        probe_server=""
+    fi
+}
+trap finish_probe_window EXIT INT TERM
+
+if [ "${FRONTIER_LOCAL_E2E_NETWORK_PROBE:-false}" = "true" ]; then
+    python3 -m http.server 18080 \
+        --bind 0.0.0.0 \
+        --directory /frontier/task \
+        >/workspace/network-probe-http.log 2>&1 &
+    probe_server="$!"
+    touch /workspace/.frontier-network-probe-ready
+    remaining="${FRONTIER_LOCAL_E2E_NETWORK_PROBE_TIMEOUT_SECONDS:-180}"
+    case "${remaining}" in
+        ''|*[!0-9]*)
+            echo "invalid network probe timeout" >&2
+            exit 2
+            ;;
+    esac
+    while [ ! -f /workspace/.frontier-network-probe-complete ] && [ "${remaining}" -gt 0 ]; do
+        sleep 1
+        remaining=$((remaining - 1))
+    done
+    if [ ! -f /workspace/.frontier-network-probe-complete ]; then
+        echo "[frontier-local-e2e] network probe window expired; continuing main lifecycle"
+    fi
+    finish_probe_window
+fi
+
+rm -rf /workspace/payload
+mkdir -p /workspace/payload
+cp /opt/frontier/candidate/optimized/run.sh /workspace/payload/run.sh
+cp /opt/frontier/candidate/optimized/solution.py /workspace/payload/solution.py
+chmod 0555 /workspace/payload/run.sh
+chmod 0444 /workspace/payload/solution.py
+
+# Exercise both real Driver-facing paths.  check.sh uploads the train payload,
+# starts verifier-train, and polls it to completion.  submit.sh independently
+# uploads the final payload and starts verifier-eval.
+/frontier/task/check.sh /workspace/payload
+/frontier/task/submit.sh /workspace/payload

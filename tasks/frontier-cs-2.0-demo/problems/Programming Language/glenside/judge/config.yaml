@@ -1,0 +1,59 @@
+tag: compilers
+runtime:
+  language: rust
+  timeout_seconds: 300
+  environment: "CPU-only Rust 1.85.1 with the pinned egg 0.7.1 Cargo closure"
+  apt_packages:
+    - bash
+    - build-essential
+    - ca-certificates
+    - cargo
+    - git
+    - patch
+    - python3
+    - rustc
+    - libseccomp2
+    - tar
+    - util-linux
+    - xz-utils
+  judge_apt_packages:
+    - bash
+    - build-essential
+    - ca-certificates
+    - cargo
+    - git
+    - patch
+    - python3
+    - rustc
+    - libseccomp2
+    - tar
+    - util-linux
+    - xz-utils
+  pip_packages: [pyyaml==6.0.2, pytest==9.1.1]
+  judge_pip_packages: [pyyaml==6.0.2, pytest==9.1.1]
+  judge_env:
+    GLENSIDE_WORK_ROOT: /frontier/glenside-work
+  docker:
+    image: frontiercs/glenside-cpu:rust1.85.1-r1
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 8192
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+    - code/src/language/rewrites.rs
+    - code/src/language/solver_extensions/
+  max_patch_bytes: 1048576
+  allow_empty: false
+evaluation:
+  max_dev_submissions: 100
+  answering_timeout_seconds: 18000
+  max_train_wall_seconds: 12000
+  suite_relation: same_distribution
+  solver_visible_metrics:
+    - development_im2col_discovered_count
+    - development_rewrite_time_seconds_median
+    - development_egraph_node_growth_median

@@ -1,0 +1,55 @@
+{
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Minimal task",
+  "family": "minimal-task",
+  "metadata": {
+    "datasets": {
+      "train": {
+        "version": "sha256:ef16e681eb443ab8eb886f2590d0dd47094715825c8d075b86bc0c02fac4a6c5"
+      },
+      "eval": {
+        "version": "sha256:2b2e458f8e86ea7a424851eae4c7afdbac148132e227db77157648b18c206af8"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 50,
+      "solver_visible_metrics": []
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 209715200,
+      "max_model_request_bytes": 1048576,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 256,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "minimal_task",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 50,
+    "max_train_wall_seconds": 90000,
+    "wall_time_seconds": 106200
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 131072
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "g1"
+}

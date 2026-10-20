@@ -1,0 +1,27 @@
+id: "evm_state_checkpoints"
+display_name: "EVM State Checkpoints"
+category: "Database"
+summary: "Implement fast EVM execution-state checkpoint and restore in the Spectrum deterministic concurrent transaction engine."
+paper_title: "Spectrum: Speedy and Strictly-Deterministic Smart Contract Transactions for Blockchain Ledgers"
+paper_venue: "PVLDB 2024"
+paper_url: "https://www.vldb.org/pvldb/vol17/p2541-zhang.pdf"
+agent_cpu_cores: 4
+agent_memory_gib: 8
+agent_disk_gib: 8
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 4
+verifier_memory_gib: 8
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 360000
+eval_timeout_seconds: 3600

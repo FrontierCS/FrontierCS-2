@@ -1,0 +1,80 @@
+diff --git a/quarter_pir/code/pir/client.go b/quarter_pir/code/pir/client.go
+index d5ff6c9..9c54080 100644
+--- a/quarter_pir/code/pir/client.go
++++ b/quarter_pir/code/pir/client.go
+@@ -165,12 +165,15 @@ func (c *Client) Preprocess(next func() []uint64) {
+ 
+ 			go func(start, end, start1, end1 uint64) {
+ 				defer wg.Done()
+-				for j := uint64(start); j < uint64(end); j++ {
++				for j := uint64(start); j < uint64(end) && j < 20*ChunkSize; j++ {
+ 					offset := refwire.Eval(tempLongKey[j], i&(SBSize-1)) & (ChunkSize - 1)
+ 					hitMap[offset] = true
+ 					util.DBEntryXorFromRaw(&localSets[j].SetParity, chunk[offset*util.DBEntryLength:(offset+1)*util.DBEntryLength])
+ 				}
+ 				for j := uint64(start1); j < uint64(end1); j++ {
++					if j%backupSetNumPerGroup >= 3*backupSetNumPerGroup/4 {
++						continue
++					}
+ 					offset := refwire.Eval(tempLongKeyBackup[j], i&(SBSize-1)) & (ChunkSize - 1)
+ 					util.DBEntryXorFromRaw(&localBackupSets[j].SetParity, chunk[offset*util.DBEntryLength:(offset+1)*util.DBEntryLength])
+ 				}
+diff --git a/quarter_pir/code/pir/server.go b/quarter_pir/code/pir/server.go
+index e3ce71a..98863d7 100644
+--- a/quarter_pir/code/pir/server.go
++++ b/quarter_pir/code/pir/server.go
+@@ -27,5 +27,53 @@ func dbAccess(db []uint64, id uint64) util.DBEntry {
+ // timer wraps this whole call, including request decoding and response
+ // encoding.
+ func HandleQuery(db []uint64, p refwire.Params, request []byte) []byte {
+-	panic("list decoding is not implemented")
++	keys, offsets, ok := refwire.DecodeRequest(p, request)
++	if !ok {
++		panic("malformed request")
++	}
++	SBNum, SBSize, ChunkSize := p.SBNum, p.SBSize, p.ChunkSize
++
++	//First, compute the common set's parity
++	commonParity := util.ZeroEntry()
++	superblockParities := make([]util.DBEntry, SBNum)
++	paritiesFromListDecoding := make([]util.DBEntry, SBNum)
++
++	for i := uint64(0); i < SBNum; i++ {
++		superblockParities[i] = util.ZeroEntry()
++		paritiesFromListDecoding[i] = util.ZeroEntry()
++		longKey := refwire.NewLongKey((*[16]byte)(&keys[i]))
++		chunkBase := i * SBSize * ChunkSize
++		for j := uint64(0); j < SBSize; j++ {
++			// offset from the i-th key, evaluating at the j-th chunk in the superblock
++			tmpOffset := refwire.Eval(longKey, j) & (ChunkSize - 1)
++			index := tmpOffset + chunkBase
++			val1 := dbAccess(db, index)
++			util.DBEntryXor(&superblockParities[i], &val1)
++
++			// offset from the client's given offset array
++			val2 := dbAccess(db, chunkBase+uint64(offsets[j]))
++			util.DBEntryXor(&paritiesFromListDecoding[i], &val2)
++
++			chunkBase += ChunkSize
++		}
++		util.DBEntryXor(&commonParity, &superblockParities[i])
++	}
++
++	//Second, compute the parities for the list decoding sets
++	//Also compute the parities based on the offsets
++
++	for i := uint64(0); i < SBNum; i++ {
++		util.DBEntryXor(&paritiesFromListDecoding[i], &superblockParities[i])
++		util.DBEntryXor(&paritiesFromListDecoding[i], &commonParity)
++	}
++
++	paritiesFromListDecodingUint64 := make([]uint64, SBNum*util.DBEntryLength)
++	paritiesFromKeysUint64 := make([]uint64, SBNum*util.DBEntryLength)
++	// convert to uint64
++	for i := uint64(0); i < SBNum; i++ {
++		copy(paritiesFromListDecodingUint64[i*util.DBEntryLength:(i+1)*util.DBEntryLength], paritiesFromListDecoding[i][:])
++		copy(paritiesFromKeysUint64[i*util.DBEntryLength:(i+1)*util.DBEntryLength], superblockParities[i][:])
++	}
++
++	return refwire.EncodeResponse(p, paritiesFromListDecodingUint64, paritiesFromKeysUint64)
+ }

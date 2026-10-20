@@ -1,0 +1,57 @@
+[package]
+name = "glenside"
+version = "0.1.0"
+authors = ["Gus Smith <guscomps@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# See src/lib.rs for documentation of Glenside's features.
+[features]
+default = ['tvm', 'cplex']
+
+cplex = ['rplex']
+run-on-github-actions = []
+
+[dev-dependencies]
+clap = "2.33.1"
+env_logger = "0.7.1"
+ndarray-rand = "0.11.0"
+test-logger = "0.1.0"
+ndarray-npy = "0.6.0"
+
+[dependencies]
+approx = "0.3.2"
+egg = "0.7"
+either = "1.5.3"
+itertools = "0.9.0"
+log = "0.4.8"
+num-traits = "0.2.11"
+serde_json = "1.0"
+ordered-float = "2.0.0"
+
+[dependencies.rand]
+version = "0.7.3"
+# Limited features so we can compile to WASM. Probably slows things down when
+# not compiling to WASM, but whatever!
+default-features = false
+features = ['getrandom', 'wasm-bindgen']
+
+[dependencies.rplex]
+optional = true
+# TODO(@gussmith23) See if we can get these changes merged in
+git = "https://github.com/gussmith23/rplex"
+
+
+[dependencies.tvm]
+rev = "7688db7ac5c4e1a043bf0dddeed75780ec49e70a"
+git = "https://github.com/apache/tvm"
+optional = true
+
+[dependencies.ndarray]
+version = "0.13.0"
+features = ["approx"]
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]

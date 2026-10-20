@@ -1,0 +1,113 @@
+{
+  "agent": {
+    "cpu_millis": 3000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 10737418240
+  },
+  "display_name": "OCR Distillation Trajectory Sampling",
+  "family": "frontier-cs-2.0/machine_learning",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 3000,
+      "max_instance_seconds": 3000,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 15000
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 417,
+        "path": "datasets/eval.json",
+        "version": "sha256:6f169da29e2e2e0f7ba9fd6b83f0724d97052b554fc3b68fdddef84bcbfff2e0"
+      },
+      "train": {
+        "bytes": 424,
+        "path": "datasets/train.json",
+        "version": "sha256:d75d42cecd6807ccc50042b29b3e80e06de7594137938cb6ddb5f4c75ed35517"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 4,
+      "solver_visible_metrics": [
+        "dev_eval_reward_ocr",
+        "dev_verified_optimizer_updates"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "arxiv": "2605.08063v5",
+      "title": "Flow-OPD: On-Policy Distillation for Flow Matching Models",
+      "url": "https://arxiv.org/pdf/2605.08063v5"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py",
+        "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py",
+        "flow_grpo/frontier_solution/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 52,
+      "ssh_session_budgets": {
+        "agent": 32,
+        "verifier_eval": 4,
+        "verifier_train": 16
+      }
+    }
+  },
+  "problem_id": "flow_opd",
+  "quota": {
+    "eval_timeout_seconds": 3000,
+    "max_train_calls": 4,
+    "max_train_wall_seconds": 12000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "ceiling-aware-gate-source-closure-20261011"
+}

@@ -1,0 +1,5 @@
+#!/bin/sh
+exec /opt/frontier/candidate/muse-code/lib/ld-linux-x86-64.so.2 \
+  --library-path /opt/frontier/candidate/muse-code/lib \
+  /opt/frontier/candidate/muse-code/node \
+  /opt/frontier/candidate/muse-code/launcher.mjs

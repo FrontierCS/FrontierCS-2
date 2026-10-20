@@ -1,0 +1,10 @@
+[
+  "/opt/frontier/demo-verifier",
+  "frontier-cs-2.0-demo-task-policy",
+  "config/reference-baselines.json",
+  "config/reference-candidates.json",
+  "validate_catalog_features",
+  "incremental_task_images",
+  "beat_spec_preflight",
+  "build_demo_images"
+]

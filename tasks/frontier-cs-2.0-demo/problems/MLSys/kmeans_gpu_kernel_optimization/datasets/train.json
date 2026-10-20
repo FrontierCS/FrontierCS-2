@@ -1,0 +1,10 @@
+{
+  "mode": "train",
+  "problem_id": "kmeans_gpu_kernel_optimization",
+  "schema_version": "frontier.kmeans-gpu-kernel-dataset/v1",
+  "selects": {
+    "FRONTIER_SUBMISSION_ROLE": "development"
+  },
+  "suite": "four public training shapes; Verifier-only deterministic seeds and generator",
+  "suite_revision": "public4-hidden2-final6-v1"
+}

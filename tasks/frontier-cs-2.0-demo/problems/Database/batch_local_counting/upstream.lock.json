@@ -1,0 +1,1352 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 429,
+      "path": "datasets/eval.json",
+      "version": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7"
+    },
+    "train": {
+      "bytes": 436,
+      "path": "datasets/train.json",
+      "version": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+    }
+  },
+  "file_count": 264,
+  "files": [
+    {
+      "bytes": 2180,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:57ef8708a74c06ea918a62f6f25075a24ee7a7e022729bed0e7cb4132868e20c"
+    },
+    {
+      "bytes": 4064,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:171d71eadc4f3ffe0f9f68f6e26eca0e24483286ceb2ebf4a9e56555963ba151"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:1784ebe42ce619cdd3f27e0d720582af66af0eec36cf774628e0388aae819b8a"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 1132,
+      "path": "agent-base/frontier/task/repo/CMakeLists.txt",
+      "sha256": "sha256:4a202990c64f41140d46d0b850e4f880b3c9365ee3a8c0b3cbf27349f7739e74"
+    },
+    {
+      "bytes": 12451,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:6a865eb50f97c72dceb9caa4f10ef091e36ca69ef9b7e5bd8f262e0b57dd48eb"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/config/CMakeLists.txt",
+      "sha256": "sha256:ac66b55cc7abee745fb387cfe813005ec4a64df6f2db55474920238a9b728df1"
+    },
+    {
+      "bytes": 844,
+      "path": "agent-base/frontier/task/repo/config/config.h",
+      "sha256": "sha256:b493734be9627dad2afa11bf7b947096ce4e7085124e9b9f21cfbcbb6bf6fd8e"
+    },
+    {
+      "bytes": 321,
+      "path": "agent-base/frontier/task/repo/counting/CMakeLists.txt",
+      "sha256": "sha256:4bd7d3166c5dc0e5d48b7471dbe6511e739ec87ca4146c03905c6b0f65b4f97b"
+    },
+    {
+      "bytes": 25,
+      "path": "agent-base/frontier/task/repo/counting/aggregation.cpp",
+      "sha256": "sha256:d422f8df9083ad36fb7e2a63f054b4fd36b986c7967b377871b4c090b62d80f0"
+    },
+    {
+      "bytes": 128,
+      "path": "agent-base/frontier/task/repo/counting/aggregation.h",
+      "sha256": "sha256:e7f5d1a27ecc2d2f3140343deb50409377314c2f8674af505e9e7b4cf584320b"
+    },
+    {
+      "bytes": 31227,
+      "path": "agent-base/frontier/task/repo/counting/equation.cpp",
+      "sha256": "sha256:bb7891bca7e1cf45f62b3b2f366f8834a2308893afe1f24161af1f86589330ad"
+    },
+    {
+      "bytes": 1789,
+      "path": "agent-base/frontier/task/repo/counting/equation.h",
+      "sha256": "sha256:82a904d656d3a37522c54bac24a18d17b5ecb3b2f03fe9ceca06dfa0f498bcf5"
+    },
+    {
+      "bytes": 176422,
+      "path": "agent-base/frontier/task/repo/counting/execution.cpp",
+      "sha256": "sha256:161f8c2e526b8da8eded78016cf41684948be69d8466d7db7b5a0e39240b1289"
+    },
+    {
+      "bytes": 9814,
+      "path": "agent-base/frontier/task/repo/counting/execution.h",
+      "sha256": "sha256:962801d813063dbe3aacc4c5c447ab206e77b69b14f7d61a9e976da69c9c99c2"
+    },
+    {
+      "bytes": 573,
+      "path": "agent-base/frontier/task/repo/counting/forest.cpp",
+      "sha256": "sha256:e2fe8c520a0be019579ffb528417384f39ef1f092e80c410ea8bbac9562d35c7"
+    },
+    {
+      "bytes": 407,
+      "path": "agent-base/frontier/task/repo/counting/forest.h",
+      "sha256": "sha256:46f96595ba16a6b5c30ab85c2c140d379ebdddd2c7d731d97f88d154fb619a2a"
+    },
+    {
+      "bytes": 5252,
+      "path": "agent-base/frontier/task/repo/counting/triangle.cpp",
+      "sha256": "sha256:ada6b355ffc25fb59a00615a9f5fdc3435d0427b43c880ffc202b0ca4ad0258f"
+    },
+    {
+      "bytes": 1047,
+      "path": "agent-base/frontier/task/repo/counting/triangle.h",
+      "sha256": "sha256:0f20257a233af24f35fbc1023156c986a8f2a75383a73bf125dcaa51a9061ca2"
+    },
+    {
+      "bytes": 372,
+      "path": "agent-base/frontier/task/repo/executable/CMakeLists.txt",
+      "sha256": "sha256:06c351e04b1ebafdd2957a9391cedfacdc149928dbaec712c87d19a7c2de8023"
+    },
+    {
+      "bytes": 1292,
+      "path": "agent-base/frontier/task/repo/executable/command.cpp",
+      "sha256": "sha256:2aaed42dcc0fa42d167dd4da00f3d31227f3313ba16cedc0a3aca841bc36549e"
+    },
+    {
+      "bytes": 1392,
+      "path": "agent-base/frontier/task/repo/executable/command.h",
+      "sha256": "sha256:e921e55e205ba12a8cedfa14bd9b407f03f9a27195651306d326ae1b2e265477"
+    },
+    {
+      "bytes": 5229,
+      "path": "agent-base/frontier/task/repo/executable/prepare.cpp",
+      "sha256": "sha256:e68bb324cc4b64a81405f7925ab19ee9d9aa1f313077862283ebcb61989cece7"
+    },
+    {
+      "bytes": 12706,
+      "path": "agent-base/frontier/task/repo/executable/scope.cpp",
+      "sha256": "sha256:2f59dd64084907729e31541999914c291b8c75a99d54edd777733d4ca7702b87"
+    },
+    {
+      "bytes": 1566608,
+      "path": "agent-base/frontier/task/repo/exp/data_graph/bio-grid-yeast.txt",
+      "sha256": "sha256:4baaddea34aaf44db7c8b7b5ba370f66679f9045a56d20de8b42a505a3f8ce8c"
+    },
+    {
+      "bytes": 3360666,
+      "path": "agent-base/frontier/task/repo/exp/data_graph/bio-grid-yeastt.bin.gz",
+      "sha256": "sha256:d23b8eb0c04541e4209a314ad39eb39e494cf46404f5b5a364054a5eff0a81ba"
+    },
+    {
+      "bytes": 552741,
+      "path": "agent-base/frontier/task/repo/exp/data_graph/rec-movielens.txt",
+      "sha256": "sha256:599d95373314f5ceaa507029463305698e93bb406d01858e6dedc3d225e57e43"
+    },
+    {
+      "bytes": 458311,
+      "path": "agent-base/frontier/task/repo/exp/data_graph/rec-movielenst.bin.gz",
+      "sha256": "sha256:54e35d25adfccbe1b0b56c3ff323ed495d57f63e8813ba523cf1a686a08a5851"
+    },
+    {
+      "bytes": 372622,
+      "path": "agent-base/frontier/task/repo/exp/data_graph/web-spam.txt",
+      "sha256": "sha256:5b40c4332bc23ae1ec99d44856e7fcd1cc76912ece71f11745a0366ded7a4ecd"
+    },
+    {
+      "bytes": 1996724,
+      "path": "agent-base/frontier/task/repo/exp/data_graph/web-spamt.bin",
+      "sha256": "sha256:e1301a3e1292b489c8a631930845e93dab3dfcd269d3c60256b077af0f2944c5"
+    },
+    {
+      "bytes": 11,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/0.txt",
+      "sha256": "sha256:e7a68d8490652bcd6a5c2e6bd870c13d0536f21aa03403374e848157fa298d7a"
+    },
+    {
+      "bytes": 15,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/1.txt",
+      "sha256": "sha256:9e1d26a9ab5cae8c3dfc3b81ee6fcdd2db0e801013c22d17bd9b4f027a743401"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/10.txt",
+      "sha256": "sha256:3bf9f5cdc96fbcaf56d3ca5d63804246e1cf3c446b548460294050b851366228"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/11.txt",
+      "sha256": "sha256:dea31829c296af3e42e55addab2ecc677861b8942900d83b301dd67830fd75f9"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/12.txt",
+      "sha256": "sha256:0d3f725486a6b49178183ecf51e9b7019afee481d1158ce6ecd9c9c12c55375b"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/13.txt",
+      "sha256": "sha256:1a488618d740fe45b4fca773bb27f11ccf1d42334cde0320a449d1f1ed8c23f6"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/14.txt",
+      "sha256": "sha256:bb6de6f6c5d767152eb981648e206a639f925cc98b03321122779109b515c8dd"
+    },
+    {
+      "bytes": 15,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/2.txt",
+      "sha256": "sha256:a061e8a30bb9396eea5e0160a1115e8c516175b2430a4ddf0227de960188cee1"
+    },
+    {
+      "bytes": 19,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/3.txt",
+      "sha256": "sha256:81a18b140a6747e32998776d54d4719a17f0d0b8dc2c0ed032fb0d990702752e"
+    },
+    {
+      "bytes": 19,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/4.txt",
+      "sha256": "sha256:f8304e6e8fcf6d775ff31d21f302088617083a517ce777652666cc29329b57cc"
+    },
+    {
+      "bytes": 19,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/5.txt",
+      "sha256": "sha256:778a0cc95645051ceb2a4cb6dc3e19870b459ce057d58d05f99b88b78fcf8746"
+    },
+    {
+      "bytes": 19,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/6.txt",
+      "sha256": "sha256:9bf4175245b986d5c5ff9d268cd8ad67accd30f088767add56fe1349656f0446"
+    },
+    {
+      "bytes": 19,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/7.txt",
+      "sha256": "sha256:b9dc6c77991c822fd25d2ea6d9bde50bdb5524b91c717c4da4ab29225efe9233"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/8.txt",
+      "sha256": "sha256:7ec7d77fe9c151a43cdc89aeb46744e011129712f5b2577db8ecddba2d25c9de"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/4voc/9.txt",
+      "sha256": "sha256:0a7aaa96bb4f742a6ae26d9e9837c4c00b24f0ccad5221e09f8151882210ef33"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/15.txt",
+      "sha256": "sha256:9ccdc062e35394aa2f0b9ee6360b99285d61ddd337d27d9f315d881b9352ec82"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/16.txt",
+      "sha256": "sha256:af6490a2e1f2eb4a819256961705cfe465f317c28b7c4e3dc4c6e512dfdbebde"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/17.txt",
+      "sha256": "sha256:2352ae3332c9f428889937489284bdf8dfb6966c4b6f5a2193625d0e50f1a00b"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/18.txt",
+      "sha256": "sha256:962d28b96a81a6d60a2d88b8e9467125eb07013102d8b29932c6ecd287b7c75f"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/19.txt",
+      "sha256": "sha256:c13ae0bfb132d50a0c32bc66bb72f702e4730dfc0a1b1b5116cdeb769bf5610d"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/20.txt",
+      "sha256": "sha256:4c6aaf21ae86c6174a92108400d49c562fb531ceb2efa2e60c95ece5d58e6fc1"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/21.txt",
+      "sha256": "sha256:86dd052c9b0a0e56b022dc0acad323d0c901562c7d3c9b3ef340b6052217e142"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/22.txt",
+      "sha256": "sha256:da82e4dcd0ef29eb23a7df365e96c805f567b619422a7a81b4cf6dd16f0e51ca"
+    },
+    {
+      "bytes": 23,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/23.txt",
+      "sha256": "sha256:6a0824c07423c710c521831f6319755a1f7b3c21a84e272bc8e17f699e998124"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/24.txt",
+      "sha256": "sha256:f819cfd270da382ee11f62c128367f7362e184f40e89ce623bec8e2557fbc7a1"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/25.txt",
+      "sha256": "sha256:0fbde6283d57d03f804d5bba85760775748481b70178fb875951f0af2a136a41"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/26.txt",
+      "sha256": "sha256:498da76b566e6c63aef1ad2bee2d01ec04e241043b3a3bf451cb26db9033052a"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/27.txt",
+      "sha256": "sha256:4e0823652492d04396fb6d0c698909bea60f4391c54b7fd587cec8adf75103ba"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/28.txt",
+      "sha256": "sha256:ee165c0c419b5f032e141d3e766e799c5aaed59b12e6601326500c2fe7e885b7"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/29.txt",
+      "sha256": "sha256:5428437087d209b2cc05491511ee1263cf51f1f818743963ecb2a884194d28b7"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/30.txt",
+      "sha256": "sha256:6a73af71ab56625bd24cbbc62ebb610044e268d8a79f5f6263315060c0b71aac"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/31.txt",
+      "sha256": "sha256:eb0fcd0d93aea97a336195b0cb64910ebcebeda81070c0d3b55ed00f2b3e5958"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/32.txt",
+      "sha256": "sha256:f6e27992244c313a92308701cc654ed5fe6c9bee77b98ddc03575407468999cf"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/33.txt",
+      "sha256": "sha256:09c86b1ada83f18de139e0f6b385875ef53aba06fe65b6ace9d5c0eca9ee71a8"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/34.txt",
+      "sha256": "sha256:a09b2bc1a99a642b02cae3dbb789fec87037d6340950754af0c756dca45acd29"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/35.txt",
+      "sha256": "sha256:fe782e6afd8128963daee1feaac968e0cabc5f9cc6bc2ca8168d4a89da68d391"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/36.txt",
+      "sha256": "sha256:0c0e95d2d6580a290b3031663e930c078bfc63896842667facbf14d634417ed5"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/37.txt",
+      "sha256": "sha256:9ea76bb880db339c829265f0b283b1c55ac3f49ab5160e86a093ad762d2f1fa9"
+    },
+    {
+      "bytes": 27,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/38.txt",
+      "sha256": "sha256:847a4e6376c1fe6127915cb56f1b3a3b3d72c29cb6b9bc1766aca0b899cc3b6c"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/39.txt",
+      "sha256": "sha256:021dc32a319633e053c301c4079e59438de6410a96c9a394c57df2b491b52111"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/40.txt",
+      "sha256": "sha256:4ff9612f4af29550a459f498a349cc4c5e4e6c515b6152bc53dc9f7b1856f89b"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/41.txt",
+      "sha256": "sha256:d387f2512ad86f023baa32a39e37d277c8c9fa0d4cba327465a979a082958db9"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/42.txt",
+      "sha256": "sha256:c2df86327f01e4581ed22e21c2969e2912f9f83d986336bed29473c5f11b820f"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/43.txt",
+      "sha256": "sha256:a1e2460475c5b94efc8dea79ef617f86dec95b3808df9bbe4ce32ec8fb240639"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/44.txt",
+      "sha256": "sha256:82b16a858f2e80ae0c2a3e83172f09b13fdb08e9d4f7e639533b5ea6f5f460dc"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/45.txt",
+      "sha256": "sha256:200d68eca37d80450ebde9fb3f641dcea1ec455c4075b32bf48c822c3a70d296"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/46.txt",
+      "sha256": "sha256:52c0be5033dc32eac69b7866f5ebe82a6cf27a2c853fe0c388e80d00adde03f3"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/47.txt",
+      "sha256": "sha256:4364898928562404d210107cbcf0efe800403adcf6644895c98ba5799afda753"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/48.txt",
+      "sha256": "sha256:8c6c4a9d1f009a3fd9c9603c5811379206b63582ec2ec52e88f4ff75120f1f5b"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/49.txt",
+      "sha256": "sha256:ce836f49f2f80e5b6c9fe8b7b2301621c85ef3e1f0a7022dc7979a8c7f8d2302"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/50.txt",
+      "sha256": "sha256:48dbb0fc451fb61dcf061ecf9fbb3229b49626a55f3ffea3cb03cb446da28219"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/51.txt",
+      "sha256": "sha256:47b45eb8091180156cb7940a4bc03aaf77553b85278bac1a02b28731aae111ad"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/52.txt",
+      "sha256": "sha256:4b165e87cd327e7371d6cb1e01e045d4fcf19cc3c57bf7ef743bcc6ec1704d88"
+    },
+    {
+      "bytes": 31,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/53.txt",
+      "sha256": "sha256:ca4b5b18bdfe08fb3836ef84c1e320644eb25526366e11c508684171552d8553"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/54.txt",
+      "sha256": "sha256:cae28735a43a748cad523076dec5812b3b7ca7bb657310fccff7f89f0f03c46e"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/55.txt",
+      "sha256": "sha256:00333bc19947f9abcd0c0be8b05930fa70fc7759d2cb11d5f02fdc423b74559c"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/56.txt",
+      "sha256": "sha256:244d0e80e09f3f24a564a96e9a78402b4bc6f900f023d120c6788aaf779968e9"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/57.txt",
+      "sha256": "sha256:438918dad713d9c142709e19f16f9f28bd78e0c0088fb8273a728c11b456bc08"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/58.txt",
+      "sha256": "sha256:30ad26f4a2284a4c8f2103847d2b61ec9a68eb7036e286502a07dcdbf304000e"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/59.txt",
+      "sha256": "sha256:25b6d12614ac8739386c6cc9b1d070cda110dec08f9508f4614fe8cead948a9e"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/60.txt",
+      "sha256": "sha256:3333bdbcc2acd46a165c9dae6dfbc959778ca4c489ab230782355fcedb7410be"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/61.txt",
+      "sha256": "sha256:ec9ebff04e4a55876cb476e9549b2df2b72276556541c8d48945d492dbcb0510"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/62.txt",
+      "sha256": "sha256:642605f4fafc49068f87742674db90655b2bccdb7a049fe0800523ccf52630e8"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/63.txt",
+      "sha256": "sha256:fcfc9abf25551cbff35a754ad02620f4b6f8dd779da847f118b51f4d3f8575e2"
+    },
+    {
+      "bytes": 35,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/64.txt",
+      "sha256": "sha256:9a81f3227fab7e422e2acb62caa8e010874062cc553cbefd6fc1d16f97f9ef96"
+    },
+    {
+      "bytes": 39,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/65.txt",
+      "sha256": "sha256:80c9514aae40b56258bbd372439f49eac3d2a3e9d60e2b70d20e3eb08b36589a"
+    },
+    {
+      "bytes": 39,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/66.txt",
+      "sha256": "sha256:7a8e514ed88c005b16f702b5f48d2f6a52269013818179c7aa718948db812065"
+    },
+    {
+      "bytes": 39,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/67.txt",
+      "sha256": "sha256:62e5182709b5e34e4f6022e77fc340346fbaa6f7fe4d622e7c4afb8faa8b676b"
+    },
+    {
+      "bytes": 39,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/68.txt",
+      "sha256": "sha256:bbb8eeb7ca0172255e110ef6fc510adec6288e2efc2ea83cc3c939fc3887299b"
+    },
+    {
+      "bytes": 39,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/69.txt",
+      "sha256": "sha256:9bf957ae51216cad04c564d113724322f4731fcee3d583be6bec954c8110a7a5"
+    },
+    {
+      "bytes": 43,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/70.txt",
+      "sha256": "sha256:3d3929bb6ce8cc83b43726fffc755d86c770ea263d538ff5ed18081d6f9c420c"
+    },
+    {
+      "bytes": 43,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/71.txt",
+      "sha256": "sha256:2e76aa7989124ba7cef4a0e8f1328d93d57bdd9115bcf6e8b9e7ad06fae79556"
+    },
+    {
+      "bytes": 48,
+      "path": "agent-base/frontier/task/repo/exp/pattern_graph/5voc/72.txt",
+      "sha256": "sha256:64f2170961d562098a1d46bbc7a86f8b9602fb11025b9bffcac36400c3e920b0"
+    },
+    {
+      "bytes": 523,
+      "path": "agent-base/frontier/task/repo/graph/CMakeLists.txt",
+      "sha256": "sha256:f70bca0b972176982596f3b3fa29dadd4bf2159311a3203cb5721148e73a0112"
+    },
+    {
+      "bytes": 60868,
+      "path": "agent-base/frontier/task/repo/graph/graph.cpp",
+      "sha256": "sha256:b694b4c57828b2d4678863ca90a36da99e3b594bf131e91b7018743634908086"
+    },
+    {
+      "bytes": 10686,
+      "path": "agent-base/frontier/task/repo/graph/graph.h",
+      "sha256": "sha256:59f498f5a03bdb0d3a83df15a51be91442b10e842e767de39441ccabb096ae8a"
+    },
+    {
+      "bytes": 248,
+      "path": "agent-base/frontier/task/repo/plan/CMakeLists.txt",
+      "sha256": "sha256:9195ab6ec693537ea1326395742b9bca27b07a255eaaf10ccf045fce95006365"
+    },
+    {
+      "bytes": 35451,
+      "path": "agent-base/frontier/task/repo/plan/cost_estimator.cpp",
+      "sha256": "sha256:e80591c98a971c142ec92d2e1fca3340fc170d7ef895572459d45551ec93f15a"
+    },
+    {
+      "bytes": 1722,
+      "path": "agent-base/frontier/task/repo/plan/cost_estimator.h",
+      "sha256": "sha256:2b3a336984b201a8e0c6a5ec3159b7565301337363b423b6e6a3c0c5baedf473"
+    },
+    {
+      "bytes": 105864,
+      "path": "agent-base/frontier/task/repo/plan/decompose.cpp",
+      "sha256": "sha256:5b3cfb67f758bcfa90ae84b7b8fc7ff9957bfdc5a881e77f0fcbd838b3caaa83"
+    },
+    {
+      "bytes": 2279,
+      "path": "agent-base/frontier/task/repo/plan/decompose.h",
+      "sha256": "sha256:e9df13eae35a6d1461537a83e64bbb85726e45d2e3e10b828607e3461edf713d"
+    },
+    {
+      "bytes": 206955,
+      "path": "agent-base/frontier/task/repo/plan/tree.cpp",
+      "sha256": "sha256:5416a8715e0eadb38f57a5c10388bb0270ed08eace7a9fb47fac082a8b87351e"
+    },
+    {
+      "bytes": 20073,
+      "path": "agent-base/frontier/task/repo/plan/tree.h",
+      "sha256": "sha256:6bc13812bdf97ae5c85953ab1d35d7e7ba9f7e3c8550667da9d6b728b5e7e0b0"
+    },
+    {
+      "bytes": 153,
+      "path": "agent-base/frontier/task/repo/utility/CMakeLists.txt",
+      "sha256": "sha256:1df43949a8560e1804cca57e8279a449685beac7f2e054c0038aafa1fbf05860"
+    },
+    {
+      "bytes": 2057,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/COPYRIGHT",
+      "sha256": "sha256:fe741ca54cebba073462dc9eaf668da9879435091c051b452e1a636ecc5269bc"
+    },
+    {
+      "bytes": 4330,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/NRswitchg.c",
+      "sha256": "sha256:24d7c73dab1cd03c1429ac37e2fef52aa7002bb89089e7f47f0a514544eb8654"
+    },
+    {
+      "bytes": 3687,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/README",
+      "sha256": "sha256:41fa6e0d66f4a1eb3799463ad74e61b8024793a17fbdb52eb83c1c5aa4d2eb56"
+    },
+    {
+      "bytes": 11712,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/README_24",
+      "sha256": "sha256:4318e068a91fa9a2aab2fad88a4cff0b6be7b0ecd0fc4978c6010d36abb2cbde"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/This_is_nauty28b4.txt",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 7083,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/addedgeg.c",
+      "sha256": "sha256:27a4f031ec0edc33731a053273f147171f9b6ee01a97155379d74ad54c96c4e2"
+    },
+    {
+      "bytes": 7629,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/addptg.c",
+      "sha256": "sha256:35fc06e36fb1aa68fd2dda5d0c12413a1fc71d5cd7745f586d7d7756cac910a0"
+    },
+    {
+      "bytes": 8643,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/amtog.c",
+      "sha256": "sha256:bf318784d13bc59d22c494fe0541f6cc54be56bfa6dc63cee70768b86c0a3b9e"
+    },
+    {
+      "bytes": 10169,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/assembleg.c",
+      "sha256": "sha256:dc50b81248a4c0faf5ec623b7056291e15ddea945fed2e5b703cc10112a749fd"
+    },
+    {
+      "bytes": 3838,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/biplabg.c",
+      "sha256": "sha256:7c7ca7b61cb98c5369e4722a1c82c826840f3751da9ef49a182b35fc466a675d"
+    },
+    {
+      "bytes": 3188,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/bliss2dre.c",
+      "sha256": "sha256:35b83cd61c0acb1ede602d5cf5f784bbab506b64df911b0092f04bff3111c36c"
+    },
+    {
+      "bytes": 4634,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/blisstog.c",
+      "sha256": "sha256:fee1e7a0f99e3d926822cf7ef800132a1117e09cecdf9084bb2d85306d1ddab2"
+    },
+    {
+      "bytes": 1526,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/callgeng.c",
+      "sha256": "sha256:0931268192212949709d92a7b948224922a9e5154e4cc8dbbefb3c8a4d46da4e"
+    },
+    {
+      "bytes": 4044,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/catg.c",
+      "sha256": "sha256:010ac9bdab1bb2086909cc527fa0595e0509cdfc58656e595e316906cad72048"
+    },
+    {
+      "bytes": 19202,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/changes24-27.txt",
+      "sha256": "sha256:43d2380f05d3953d9768f412cf3450e29e445f60387c9735458ba0e24078e1af"
+    },
+    {
+      "bytes": 4665,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/checks6.c",
+      "sha256": "sha256:0bae634dd3d2c1c51ee3c1562a165b4887e86e2a00284476afcba90286be26b9"
+    },
+    {
+      "bytes": 7844,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/complg.c",
+      "sha256": "sha256:f98c6d899e76c8de378767df5a3a5b3e40339ce02b7bedd521ea8531e69b8ae2"
+    },
+    {
+      "bytes": 49799,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/config.guess",
+      "sha256": "sha256:cf7dff538a1ee769ba59dfaa49e4ac54da07dbadfd3a123fec037ad691a25783"
+    },
+    {
+      "bytes": 35406,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/config.sub",
+      "sha256": "sha256:deb02c26f43b2ea64276c9ede77ec0f53d08e6256710f3c0a12275712085c348"
+    },
+    {
+      "bytes": 1091,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/config.txt",
+      "sha256": "sha256:fe8e84a8f665922fde1f4c119bc870cd4530f7a67d232d19248c8e02f77bd302"
+    },
+    {
+      "bytes": 193911,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/configure",
+      "sha256": "sha256:5064422e57bb65f1cdc377584aceb65ae88b2ced947349ec597c026c3535bcbf"
+    },
+    {
+      "bytes": 16856,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/configure.ac",
+      "sha256": "sha256:7cc3fa567511e3182c2fae26288720a3b4d1f6f4e2787fb9002b9d11aaf42795"
+    },
+    {
+      "bytes": 6281,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/converseg.c",
+      "sha256": "sha256:ab8ff94bc90276dc7343005b5bb705c54177581b185d8ba50e1dc2d55ce8d7ad"
+    },
+    {
+      "bytes": 9702,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/copyg.c",
+      "sha256": "sha256:ca69eb0f19f85c743fbefffacfdc30c5debf9d955e9cb9817b61e35acbde33c1"
+    },
+    {
+      "bytes": 63983,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/cubhamg.c",
+      "sha256": "sha256:c9918f456de415e902f791f8617ab8680978303bc93eafe771daf07ce1d184cd"
+    },
+    {
+      "bytes": 5995,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/deledgeg.c",
+      "sha256": "sha256:0a578ce8246789acd763dc7adb627f5b12d13fef0230865ce4375fd060b3df52"
+    },
+    {
+      "bytes": 12771,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/delptg.c",
+      "sha256": "sha256:299355dec88a0e47bcbec1e951f80109d924971e0738e73b6e855221774c9e44"
+    },
+    {
+      "bytes": 24639,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/directg.c",
+      "sha256": "sha256:581fcc3ea5ba4328658f1ada5b4a225d0c85d39a8aa295094f2caf9a64275ee1"
+    },
+    {
+      "bytes": 82488,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/dreadnaut.c",
+      "sha256": "sha256:b8111fe2f6016f3e82e97dc63e25b3873449a2368049d4539259442d35b9da01"
+    },
+    {
+      "bytes": 23670,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/dretodot.c",
+      "sha256": "sha256:4fa91ed25ac7df035e361ba81b9209f28740864610612f3da796fb5c58e95bd1"
+    },
+    {
+      "bytes": 6119,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/dretog.c",
+      "sha256": "sha256:cd5812a71ea8db75a7814ebbcdcdfb7e2d66d05988c1d6760be8c46b150e2852"
+    },
+    {
+      "bytes": 7005,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/edgetransg.c",
+      "sha256": "sha256:78b7db51bb8a98460b74ae0e35300c6aacd577bd642e5cd38e542acf53340585"
+    },
+    {
+      "bytes": 6842,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/formats.txt",
+      "sha256": "sha256:04e1dbac9fb92c16ea6d6695bc5b20b57120bfe3bfae51ed7697d8141c3e3e41"
+    },
+    {
+      "bytes": 48420,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/genbg.c",
+      "sha256": "sha256:a32b2dea480603805f9fa86d1ccc25342f848f29924fbdb50420edbb64869685"
+    },
+    {
+      "bytes": 73893,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/geng.c",
+      "sha256": "sha256:2eeb49ffccd75d31cb32a5ad6926efc3fbb61b83fa630c69875303e9622a2a13"
+    },
+    {
+      "bytes": 53463,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/genquarticg.c",
+      "sha256": "sha256:339f754a4cde75841d0002f0d40108a82c2b10121f049cfa03f787188667ad39"
+    },
+    {
+      "bytes": 31481,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/genrang.c",
+      "sha256": "sha256:aac33966b4f9a2dabde7b9f7fdcb66a1544c168bc553a96967058ba1c4823347"
+    },
+    {
+      "bytes": 25661,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/genspecialg.c",
+      "sha256": "sha256:5fb62c742051b79914b769892234a0600357ee166da68ce0201bb403e07af045"
+    },
+    {
+      "bytes": 42001,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gentourng.c",
+      "sha256": "sha256:dd371ee034e09c56d1e0c0273b8a5f6329a7d46bb1cd6091d356fc63b7f195a7"
+    },
+    {
+      "bytes": 18193,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gentreeg.c",
+      "sha256": "sha256:cfa2e9fab4baf6e3c370eda9aacd0d51fd01cfdd5be5d7352a18764754e2075d"
+    },
+    {
+      "bytes": 22173,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gtnauty.c",
+      "sha256": "sha256:8ff1228b64254cd20559122699c16d5bea78b0085b68730a53f4e8b9361b4037"
+    },
+    {
+      "bytes": 11440,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gtools-h.in",
+      "sha256": "sha256:68b8c6cae2d07c24a74e4470758da09c44bdaf49193b7fb4c3955b8525ad8207"
+    },
+    {
+      "bytes": 70278,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gtools.c",
+      "sha256": "sha256:1b154ee1b72f60ff8c945772d5ec13dd37b6625bc0fbccfb716b6678b8b387c7"
+    },
+    {
+      "bytes": 11391,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gtools.h",
+      "sha256": "sha256:dc29340bf81357f505b4f2964bbac47e50e57dea91e84a1a64a07128443db50e"
+    },
+    {
+      "bytes": 25975,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gutil1.c",
+      "sha256": "sha256:cee58ee016732d6ffcb64818a2bdec67734585fa253a12607fa2a7bf25328907"
+    },
+    {
+      "bytes": 13278,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gutil2.c",
+      "sha256": "sha256:9c950fa4f8d6bfa527b3c222dcc386cbc5c932781de02479ec8985d89e2d8146"
+    },
+    {
+      "bytes": 2191,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/gutils.h",
+      "sha256": "sha256:9c230367a593f037261e0fd570a09492e643d2b17fff859298479b19ec63a353"
+    },
+    {
+      "bytes": 10038,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/hamheuristic.c",
+      "sha256": "sha256:59c75b24a5162a08dbf2464af67ab527a6c8bf5bcb6574cfda8ed244bd0f011d"
+    },
+    {
+      "bytes": 15368,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/install-sh",
+      "sha256": "sha256:618b9afe95659e12966f090232b2e713946f1c162915c8385dfff71f34eacd58"
+    },
+    {
+      "bytes": 13936,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/labelg.c",
+      "sha256": "sha256:536d298a18c66af12836b1e8c6bf08da6f6aef8c503605d68685aee8f6b40fd7"
+    },
+    {
+      "bytes": 8363,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/linegraphg.c",
+      "sha256": "sha256:cb2aa82eea5e99ac514befbe2c10d1d88519ac47eb70ffabc8512dc8bbc19480"
+    },
+    {
+      "bytes": 21469,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/listg.c",
+      "sha256": "sha256:60a3a28e75bf2306eeb13e12a81d20963172ac0a9bba0d31bdef4abf082e789d"
+    },
+    {
+      "bytes": 26034,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/makefile.basic",
+      "sha256": "sha256:943db8f5c824dd8d665dc61060b0d8d63366953aaecc003bbeafd90cb61ab610"
+    },
+    {
+      "bytes": 25797,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/makefile.in",
+      "sha256": "sha256:88d95c1a5fbbcc4ac1cfe571aaf20e506b0ac04d7944581c3dbaa9722dbd4196"
+    },
+    {
+      "bytes": 31339,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/multig.c",
+      "sha256": "sha256:edaa02e1eb8197d7e5fe8b3eb20eca60e53eebcd604a19787a8c8fcded61c022"
+    },
+    {
+      "bytes": 7522,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naucompare.c",
+      "sha256": "sha256:df9ae9d8501d8d5ef735c76935f676845ae4ef4ca0e5256bb030ee49c9aa628d"
+    },
+    {
+      "bytes": 26072,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naugraph.c",
+      "sha256": "sha256:d81bc56dbb2c127f1fdc7f50ce6c18ea7dc212c0ee3635cd50c91e465e643257"
+    },
+    {
+      "bytes": 11424,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naugroup.c",
+      "sha256": "sha256:cceced56b8f904364b900ea1af5ff7dfaedd7c1b7ba72670f0e9123b8c8c94a5"
+    },
+    {
+      "bytes": 1553,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naugroup.h",
+      "sha256": "sha256:2526a69207b86566cf4aff5b3edd0ff7df64c3e3cf78c0d649210527b2b9f7ac"
+    },
+    {
+      "bytes": 13164,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naugstrings.c",
+      "sha256": "sha256:4fa479ce4034bc1ccbf3aec25ebb4d6db82e371d3363b23facd694bb920d18bb"
+    },
+    {
+      "bytes": 527,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naugstrings.h",
+      "sha256": "sha256:ac21ea89c4de53772fc46981f6e6c571e9d80391b9940d98314fb0a34b8eb02d"
+    },
+    {
+      "bytes": 4681,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naurng.c",
+      "sha256": "sha256:b8f8c014bbe0aaae7e6a5582a65956b4e10e4f5003cad37a619401efc75b3dff"
+    },
+    {
+      "bytes": 1157,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naurng.h",
+      "sha256": "sha256:8e27caf7fd1be4c0e938ab5f573c3346e9b804277f5df1cbff8254fcfe051534"
+    },
+    {
+      "bytes": 55422,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nausparse.c",
+      "sha256": "sha256:fc5b9ab409ca7b0bc8ea562d51f0b6974e92c0625779a1a3669536632e909052"
+    },
+    {
+      "bytes": 5721,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nausparse.h",
+      "sha256": "sha256:a95f96586ea5511bcab742ba323766d5f959bf17d6536b01cbf8671d66c6688c"
+    },
+    {
+      "bytes": 8881,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautaux.c",
+      "sha256": "sha256:701439e3cc317188c252dc66785bd585970b20b745496d9c4b6a2896dc5ae793"
+    },
+    {
+      "bytes": 1862,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautaux.h",
+      "sha256": "sha256:901f47077243af714abeeb7d792d11d04446aa7702f83c4d5669f653b8a5d660"
+    },
+    {
+      "bytes": 4864,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautest.c",
+      "sha256": "sha256:91e7a3b2e80359e5e57b621c429601be7194a4137a47ff2a1df7f47ae26e8a57"
+    },
+    {
+      "bytes": 1407,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautest1.dre",
+      "sha256": "sha256:dc53b00f48071bb6725fd1064f9daac765e92a0dd838f3e33060f12842159c02"
+    },
+    {
+      "bytes": 5054,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautest1a.dre",
+      "sha256": "sha256:8ed0b6d98241364c0e1565d2ea2f40c83ee1c7df35a643a71b7178080dd21ac5"
+    },
+    {
+      "bytes": 5069,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautest1b.dre",
+      "sha256": "sha256:14b7032d31a524bbd58b3489317f2fbbc197508a81d069a161ec61a01921b068"
+    },
+    {
+      "bytes": 4737,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautest1c.dre",
+      "sha256": "sha256:9fcf7a7bfe1777d570278eb38fcc2cfaadbd03a5b030b71a23541ca0247f50d8"
+    },
+    {
+      "bytes": 59,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautest2.dre",
+      "sha256": "sha256:4e4d9f4c2c34ffd5c52739de281d2ff5d3b12cb52dd3165bbd054928f92ecc42"
+    },
+    {
+      "bytes": 3980,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauthread1.c",
+      "sha256": "sha256:1f139cf00ac99f5fb9eb7a611867ddc0164129e9a4525e092782323a1fd9f228"
+    },
+    {
+      "bytes": 4106,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauthread2.c",
+      "sha256": "sha256:ba18b7faf481afb466b103642fd51df9d58ac2303140c6626e93dcf7fda0d61d"
+    },
+    {
+      "bytes": 28813,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautil.c",
+      "sha256": "sha256:d1deb84170ba31bd43061291af48443b9933270b0698f178e5d0ee1c449cc545"
+    },
+    {
+      "bytes": 65937,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautinv.c",
+      "sha256": "sha256:be33c0fde4e92969c86ecad4c13ff16c114c2c002ce702765f3f7429ae0bc41a"
+    },
+    {
+      "bytes": 2470,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautinv.h",
+      "sha256": "sha256:623143671e15465bb08968a3f9588109d99369a04c0d161b07e22290455afb6c"
+    },
+    {
+      "bytes": 15320,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naututil-h.in",
+      "sha256": "sha256:3b5d29ebdc08080fb5bbd3677ba7b62b157349bd4c0bb4bf9f3f67ab1aff87c4"
+    },
+    {
+      "bytes": 104902,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naututil.c",
+      "sha256": "sha256:fe045fb75c8ff6b133b9902b2783e0624b25115120bd853a0b95f2d0c2df1cf2"
+    },
+    {
+      "bytes": 15420,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/naututil.h",
+      "sha256": "sha256:e2c0e77b54786fca56fe85670108a153602dfa615abf581ef33f7a6726956231"
+    },
+    {
+      "bytes": 60267,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauty-h.in",
+      "sha256": "sha256:5c4bcc5f38a874577f753cddd250bd288fbe9946287d990d53b1ab287e2d5a79"
+    },
+    {
+      "bytes": 48317,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauty.c",
+      "sha256": "sha256:f1b198700e6ba62f52b0b2f86a02efd98870159aba448f19d68161fce12d633a"
+    },
+    {
+      "bytes": 59931,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauty.h",
+      "sha256": "sha256:0a57766ef50dd40520941f7836326a8c97d202cc79af48c22e9b4b49aced6ac5"
+    },
+    {
+      "bytes": 245,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauty.pc",
+      "sha256": "sha256:a674a083b8deed76d1db8e4124ed869ace2409e15c8baa80155ad72f7e01623e"
+    },
+    {
+      "bytes": 232,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nauty.pc.in",
+      "sha256": "sha256:91cd832335434cf09d9edf88453d5c89c943e5516dc646e2eb1d3b4d65c14a3e"
+    },
+    {
+      "bytes": 64278,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautycliquer.c",
+      "sha256": "sha256:b9820fe81877c2e19f298490c702cac6952fef08213c3da251df3f1658af4506"
+    },
+    {
+      "bytes": 17567,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautycliquer.h",
+      "sha256": "sha256:1d2654216923e47590814ef4f73277f3f8aab930dc7c9a30bb6f68f667ba161a"
+    },
+    {
+      "bytes": 2288,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex1.c",
+      "sha256": "sha256:71b45fd7dc587f09c4c878d50e79d47459ed65db1d9492949b79f7a39b887100"
+    },
+    {
+      "bytes": 5130,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex10.c",
+      "sha256": "sha256:0778183337e94a09252b18d6202658ce56cc1ee6c5b5d2a8675cab733f58024e"
+    },
+    {
+      "bytes": 2316,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex2.c",
+      "sha256": "sha256:e34f09a538fcdd179de41f9ccd61860d379f3332cc5788c5596899637d7e18bd"
+    },
+    {
+      "bytes": 2499,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex3.c",
+      "sha256": "sha256:1a01f6f068872d6e1148106f085203046598e2bb4161b05048ea29429f53cf97"
+    },
+    {
+      "bytes": 1926,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex4.c",
+      "sha256": "sha256:8cb104bd656ff13a6b6d3f7cf32611c32218f254faa25fce381f0999c5b7c0e8"
+    },
+    {
+      "bytes": 4108,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex5.c",
+      "sha256": "sha256:36ec8134f2a86487fa84f92aea8b36232c2be72edef9f5fb9b8de3dcab8c0b13"
+    },
+    {
+      "bytes": 3237,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex6.c",
+      "sha256": "sha256:0c06e5c9a7d7c87eb4f2758faa01de0b2de8d342ef7820e5ca6d67aa0a474f5b"
+    },
+    {
+      "bytes": 4027,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex7.c",
+      "sha256": "sha256:4fe35a1411b215cb55b106877000110046d7d8dfaa0467e467a4edd42b4057cb"
+    },
+    {
+      "bytes": 3120,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex8.c",
+      "sha256": "sha256:8d65bc39b8753240522db1defab14e356bd01ded1df736d744c3204ee22d80e5"
+    },
+    {
+      "bytes": 3594,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nautyex9.c",
+      "sha256": "sha256:a0e60d360335eb1a0de01c2ba2dca7d79380247a77dad9728d92550c1eca48da"
+    },
+    {
+      "bytes": 6877,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/nbrhoodg.c",
+      "sha256": "sha256:ad855ed65d0752c2e62cb496834e86980f582a17b8cc36462fde076894d3c078"
+    },
+    {
+      "bytes": 5386,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/newedgeg.c",
+      "sha256": "sha256:4606c4ae7365da3ecc4fd84606e9840f58edc87cbcea0829a4b1e16d738bdeb5"
+    },
+    {
+      "bytes": 1048,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/numleaves.c",
+      "sha256": "sha256:29afa570196534f1caa74e5ebc3d4c7c54f92ae4cf8abd73df841d0e7f379ed7"
+    },
+    {
+      "bytes": 11418,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/planarg.c",
+      "sha256": "sha256:ed07160965b0eeb1fe37fc8c2f8e977a11c7939e9323f83a0618541da23228e3"
+    },
+    {
+      "bytes": 295594,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/planarity.c",
+      "sha256": "sha256:657d25e2c686ae3259382c5c247dcf035d2dc3c0873761577835069ce0c5d6ae"
+    },
+    {
+      "bytes": 21379,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/planarity.h",
+      "sha256": "sha256:b5dbabc67bcaef824cd0d401919e3e84b0c9b4a2afafdd0de0337e449dec7f9a"
+    },
+    {
+      "bytes": 4532,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/poptest.c",
+      "sha256": "sha256:647fe9d9aada7a1a4f6e46605db0c036d5bce810a2e268a79531d9654252ff58"
+    },
+    {
+      "bytes": 18148,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/quarticirred28.h",
+      "sha256": "sha256:d20130bf9d3cefef9080b33a18f86207cb159e6e67f502edea33c6c53a2ebbbd"
+    },
+    {
+      "bytes": 4978,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/ranlabg.c",
+      "sha256": "sha256:e4f3b3d0a79bf337044f1a146e8e8ac9ba2b0e92b751da06c3474559f5277b84"
+    },
+    {
+      "bytes": 4826,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/rng.c",
+      "sha256": "sha256:c55be07495c2ff5f2f1f686cf959bebd4290238063ee25cea66e5121c1a98152"
+    },
+    {
+      "bytes": 1172,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/rng.h",
+      "sha256": "sha256:38b88add5ac47fc548f280b1041867f01a0e5a39ad1fe2a0d3e7fac3a25403ad"
+    },
+    {
+      "bytes": 27002,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/schreier.c",
+      "sha256": "sha256:600f25fbd977c902e7764c6fc0cef083d10ee03659296d5b38d117d24a0ba1ea"
+    },
+    {
+      "bytes": 2808,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/schreier.h",
+      "sha256": "sha256:aea22b39891a4afd14fe2541dcf8384e2c0cea3e1a6e64c44fd2f2fdeb711df4"
+    },
+    {
+      "bytes": 5808,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/schreier.txt",
+      "sha256": "sha256:d6e5f34ddfa8f8fad6a0201b06df595be51511560d97266e976ee2b8b6b5cde9"
+    },
+    {
+      "bytes": 24488,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/shortg.c",
+      "sha256": "sha256:0ab39a55eb7c26ee4027ffd895002e4a3ad6752d5a6ded6caf0b0ed1d98252d9"
+    },
+    {
+      "bytes": 34461,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/showg.c",
+      "sha256": "sha256:6d37623f423616cec6e6a2ca2ff9134dddcd8d98be9e7d46f4292bf951ee6f54"
+    },
+    {
+      "bytes": 14166,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/sorttemplates.c",
+      "sha256": "sha256:b7b26a347e35ec53002614bb9a6d48c1a3a190042699ab25e324929d02d7a218"
+    },
+    {
+      "bytes": 9947,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/splay.c",
+      "sha256": "sha256:b023a97cb9d6c17011a80bcd8b8697f24192c570a4a66c526f0bf4e0281ebfcc"
+    },
+    {
+      "bytes": 5464,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/subdivideg.c",
+      "sha256": "sha256:c47a16586ddb3bb0dde37ce730a9bffd320f7accb3b6ff2f9d6d029e964e1fbe"
+    },
+    {
+      "bytes": 50007,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/sumlines.c",
+      "sha256": "sha256:acc4ea29469d17d7e44129d118646762d74b144745e1f566ffccb243fa548919"
+    },
+    {
+      "bytes": 43268,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/testg.c",
+      "sha256": "sha256:3ff13d1bc9cf66d967d37be78170e99506f03c73f04f479ebba74d228ac8eb8d"
+    },
+    {
+      "bytes": 436732,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/traces.c",
+      "sha256": "sha256:70c9da80d554e3d9c15ff856eef7c58b4f5d55eaa659ef837b015b98cfe9f1c3"
+    },
+    {
+      "bytes": 3041,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/traces.h",
+      "sha256": "sha256:59aa71f236a76b40c5cd36866aea146bd5abb1965fa6b69c832711a40e1d18e2"
+    },
+    {
+      "bytes": 30723,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/twohamg.c",
+      "sha256": "sha256:0b79a7927b0829f08b25974c9fb9970bdd05f9f2fa914be19db33eb5c9a5283a"
+    },
+    {
+      "bytes": 3773,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/underlyingg.c",
+      "sha256": "sha256:117febf243c9714f05ba6e13070400e6176be2c5a5e1ef670f82846551c3666b"
+    },
+    {
+      "bytes": 21111,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/vcolg.c",
+      "sha256": "sha256:6ebacac109a62b2e284d9af57cabe31118f3a41516e275b4020baec4435e4765"
+    },
+    {
+      "bytes": 137675,
+      "path": "agent-base/frontier/task/repo/utility/automorphism/watercluster2.c",
+      "sha256": "sha256:8c05731d2315768e657f8422d9051a8a8e3269f8a22c5624f8310d4e0f9ba4e8"
+    },
+    {
+      "bytes": 16668,
+      "path": "agent-base/frontier/task/repo/utility/clique.cpp",
+      "sha256": "sha256:0d44cf3734a34cee35c142559fd13eb3553437e2e82edbc93c47d65c0d4eb0b4"
+    },
+    {
+      "bytes": 2415,
+      "path": "agent-base/frontier/task/repo/utility/clique.h",
+      "sha256": "sha256:1b85fdf3236d350dc971b8c4190ac1f6972bf34fcaf60bf6fd8b49dda483fdf3"
+    },
+    {
+      "bytes": 957,
+      "path": "agent-base/frontier/task/repo/utility/command_parser.cpp",
+      "sha256": "sha256:3e2919f4bd693ec99366b7d20b686ddfaa8826d939b83e9b8700cd10d5a3b705"
+    },
+    {
+      "bytes": 520,
+      "path": "agent-base/frontier/task/repo/utility/command_parser.h",
+      "sha256": "sha256:fb9c57a5e69d71637da92f162a72e632caf5a1ff7d30954a8e015780c1d0d22e"
+    },
+    {
+      "bytes": 37122,
+      "path": "agent-base/frontier/task/repo/utility/compute_set_intersection.cpp",
+      "sha256": "sha256:fbdaa913bb6a4ce98d7d9640d4085cc029f63bba7f90b259f29c28f04320dae5"
+    },
+    {
+      "bytes": 3747,
+      "path": "agent-base/frontier/task/repo/utility/compute_set_intersection.h",
+      "sha256": "sha256:8af978c687558a19885f40f33bf0537c33564f4453d765e333a2db67d658f9a5"
+    },
+    {
+      "bytes": 8037,
+      "path": "agent-base/frontier/task/repo/utility/utils.cpp",
+      "sha256": "sha256:acae134c6f8a58f71806fb31e7726c2aaaf570dd34f4c53106d19e99aa340685"
+    },
+    {
+      "bytes": 6568,
+      "path": "agent-base/frontier/task/repo/utility/utils.h",
+      "sha256": "sha256:a71efef73038dfa215984e53c0fc0183dd300f0c65a7188cbad8564fe9f2a104"
+    },
+    {
+      "bytes": 429,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7"
+    },
+    {
+      "bytes": 436,
+      "path": "datasets/train.json",
+      "sha256": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+    },
+    {
+      "bytes": 495,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:aaa2557e8383f63efef5e924364a11660e6577df8d90d0dd51391359bd2ccb1c"
+    },
+    {
+      "bytes": 3935,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:84755aa5099acd470d60f50f8a73c7acc6e477236048f72d0c69f9cfd74ff325"
+    },
+    {
+      "bytes": 1089,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:2120e88dbbbd5f8b5ea2229c2fe8d80a753a0cb8df587f650c59ce1bf87d0b4b"
+    },
+    {
+      "bytes": 192,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:94200f82ece67603e42fb5ac28e209447e7da764f962330bef57dbba9fe57960"
+    },
+    {
+      "bytes": 14910,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:02827eb0516bbe4fe3dd3ffc6bd587036bfb921b34f2daa3fff46477d1373cad"
+    },
+    {
+      "bytes": 3097,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:e7b54354ff523d584a3e69746bd03910ae4bf0f2dc9e7f1273a9162ad1c9d598"
+    },
+    {
+      "bytes": 13495,
+      "path": "judge/readme",
+      "sha256": "sha256:e04f5dbe5a6d5c581882e975ba7bc2e53bee55f2d208d738ab0d7f997b3e463a"
+    },
+    {
+      "bytes": 178579,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:1cb3d6c02baec5454052d297fe7b29fed30982bce1fc3c605783676684eb0614"
+    },
+    {
+      "bytes": 2963,
+      "path": "judge/result.json",
+      "sha256": "sha256:724001a24470472072f55a6474af56a813cfa521b25a7e64b9cd20b045af6745"
+    },
+    {
+      "bytes": 6752,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:529a22684d822db4359dcc1dfaa2b1d0c66a8b1cbd4376fbb26d55257ee20478"
+    },
+    {
+      "bytes": 3369,
+      "path": "policy.json",
+      "sha256": "sha256:56383581350caa02326b5f041b2783582ad871ccddfaf93d24bc8feee153f979"
+    },
+    {
+      "bytes": 2389,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:83d8dc237f11abbac12656cb5a6f681134aae7091048f08e8ed85da860d8eab7"
+    },
+    {
+      "bytes": 13460,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:3a9c8e8fc7e3968f47b8f3da76e079bc23f5fbc2c45efb39fda3e1c8937be222"
+    },
+    {
+      "bytes": 22764,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:e278eb9db3817ddc011c88b1af885c433b6c34f5d7a29d2eb93bd316013581a3"
+    },
+    {
+      "bytes": 357,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:e85bceb2f5c51d835d6e6f6ba0c8c3901b7cc023868db6673278d5c5def9f081"
+    }
+  ],
+  "problem_id": "batch_local_counting",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "beat_spec_migration": "2026-09-11: formal per-workload contract and private-feedback audit",
+    "beat_spec_sha256": "sha256:84755aa5099acd470d60f50f8a73c7acc6e477236048f72d0c69f9cfd74ff325",
+    "evaluator_sha256": "sha256:02827eb0516bbe4fe3dd3ffc6bd587036bfb921b34f2daa3fff46477d1373cad",
+    "statement_sha256": "sha256:e04f5dbe5a6d5c581882e975ba7bc2e53bee55f2d208d738ab0d7f997b3e463a",
+    "task_dir": "batch_local_counting",
+    "continuous_score_revision": {
+      "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3",
+      "preview_base_commit": "af780422332267a57c438a3d29137e3b3cfff397",
+      "mapping": "100 * max(0, median_log2_speedup) / (2 + max(0, median_log2_speedup))",
+      "scope": "Score mapping only; reference verdict, original timing measurements, workload/data, resource budgets and historical authoring results are preserved."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+row_dep: unique(Product.product_id)
+col_dep: Sales.product_id <- Product.product_id
+col_val: Product.unit_price > 0;
+         Product.product_name -> {'S8', 'iPhone'};
+         Sales.quantity > 0;
+         Sales.price > 0

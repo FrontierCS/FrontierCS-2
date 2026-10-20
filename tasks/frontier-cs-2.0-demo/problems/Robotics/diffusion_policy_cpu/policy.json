@@ -1,0 +1,91 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Closed-loop action sampling",
+  "family": "frontier-cs-2.0/robotics",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "train": {
+        "bytes": 41170,
+        "media_type": "application/json",
+        "path": "datasets/train.json",
+        "source": "task",
+        "version": "sha256:42297b269ae7cae996b493b69fe6c1cb8624205fe416c04a6b8e73b62e6240bc"
+      },
+      "eval": {
+        "bytes": 41169,
+        "media_type": "application/json",
+        "path": "datasets/eval.json",
+        "source": "task",
+        "version": "sha256:bdcb2536b8a06fa872d57f678eaa97c578dffb7600a1f03b7c10d246ef65b25a"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "dev_mean_episode_max_reward",
+        "dev_episode_success_rate",
+        "dev_mean_predict_action_seconds",
+        "dev_total_workload_wall_seconds",
+        "candidate_diagnostic"
+      ],
+      "suite_relation": "extends"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": "f40af5601fbc37e69f9ebe23610afe2c90f5ef6c",
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
+        "diffusion_policy/sampler_extensions/"
+      ],
+      "language": "patch",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "diffusion_policy_cpu",
+  "quota": {
+    "eval_timeout_seconds": 3720,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 372000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/runtime-python",
+      "-I",
+      "-B",
+      "-c",
+      "\"\"\"Select a measured hardware-specific private dataset, then use the stock verifier.\n\nThis command changes transport only. All scientific source, scoring and hardware\nequality checks remain in the existing immutable Verifier image.\n\"\"\"\nimport base64\nimport hashlib\nimport io\nimport json\nimport os\nfrom pathlib import Path\nimport platform\nimport sys\nimport tarfile\nimport tempfile\n\nMAX_BYTES = 4 * 1024**2\n\n\ndef require(ok, message):\n    if not ok:\n        raise ValueError(message)\n\n\ndef strict_json(body):\n    def pairs(items):\n        result = {}\n        for key, value in items:\n            require(key not in result, \"Duplicate JSON key\")\n            result[key] = value\n        return result\n    def constant(value):\n        raise ValueError(\"Nonfinite JSON\")\n    return json.loads(body, object_pairs_hook=pairs, parse_constant=constant)\n\n\ndef digest(body):\n    return hashlib.sha256(body).hexdigest()\n\n\ndef hardware_key(identity):\n    return digest(json.dumps(identity, sort_keys=True, separators=(\",\", \":\"),\n                             allow_nan=False).encode())\n\n\ndef actual_identity():\n    os.sched_setaffinity(0, sorted(os.sched_getaffinity(0))[:2])\n    return {\"architecture\": platform.machine(), \"kernel\": platform.release(),\n            \"cpu_models\": sorted({line.split(\":\", 1)[1].strip()\n                for line in Path(\"/proc/cpuinfo\").read_text().splitlines()\n                if line.startswith(\"model name\")}),\n            \"affinity\": sorted(os.sched_getaffinity(0))}\n\n\ndef select_dataset(path, mode, identity, scratch, read_dataset):\n    \"\"\"Use exact identity only; inspect both mode-specific archives before selection.\"\"\"\n    require(mode in {\"train\", \"eval\"}, \"Unknown native verification mode\")\n    path = Path(path)\n    require(path.is_file() and not path.is_symlink()\n            and 0 < path.stat().st_size <= MAX_BYTES, \"Invalid composite dataset\")\n    selector = strict_json(path.read_bytes())\n    require(isinstance(selector, dict)\n            and set(selector) == {\"schema\", \"problem_id\", \"mode\", \"archive_sha256\", \"archive_base64\"}\n            and selector[\"schema\"] == \"frontier.diffusion-json-archive/v1\"\n            and selector[\"problem_id\"] == \"diffusion_policy_cpu\"\n            and selector[\"mode\"] == mode\n            and isinstance(selector[\"archive_base64\"], str)\n            and isinstance(selector[\"archive_sha256\"], str),\n            \"Invalid JSON archive selector\")\n    archive_body = base64.b64decode(selector[\"archive_base64\"], validate=True)\n    require(0 < len(archive_body) <= MAX_BYTES\n            and \"sha256:\" + digest(archive_body) == selector[\"archive_sha256\"],\n            \"Composite archive binding changed\")\n    bodies = {}\n    with tarfile.open(fileobj=io.BytesIO(archive_body), mode=\"r:\") as archive:\n        total = 0\n        for member in archive:\n            require(member.isfile() and not member.pax_headers and member.sparse is None\n                    and member.name not in bodies and len(bodies) < 4,\n                    \"Unexpected composite member\")\n            require(member.name == \"manifest.json\" or (\n                len(member.name) == 68 and member.name.endswith(\".tar\")\n                and all(c in \"0123456789abcdef\" for c in member.name[:-4])),\n                \"Invalid composite member name\")\n            total += member.size\n            require(0 < member.size <= 2 * 1024**2 and total <= MAX_BYTES,\n                    \"Composite member exceeds bound\")\n            body = archive.extractfile(member).read(2 * 1024**2 + 1)\n            require(len(body) == member.size, \"Truncated composite member\")\n            bodies[member.name] = body\n    require(\"manifest.json\" in bodies, \"Missing composite manifest\")\n    manifest = strict_json(bodies[\"manifest.json\"])\n    require(set(manifest) == {\"schema\", \"mode\", \"source_sha256\", \"datasets\"}\n            and manifest[\"schema\"] == \"frontier.diffusion-hardware-datasets/v1\"\n            and manifest[\"mode\"] == mode and isinstance(manifest[\"datasets\"], dict)\n            and 1 <= len(manifest[\"datasets\"]) <= 3, \"Invalid composite manifest\")\n    require(set(bodies) == {\"manifest.json\"} | {key + \".tar\" for key in manifest[\"datasets\"]},\n            \"Composite membership differs\")\n    selected = None\n    for key, entry in manifest[\"datasets\"].items():\n        require(set(entry) == {\"identity\", \"sha256\", \"size_bytes\", \"seal_sha256\"}\n                and hardware_key(entry[\"identity\"]) == key, \"Invalid hardware binding\")\n        body = bodies[key + \".tar\"]\n        require(digest(body) == entry[\"sha256\"] and len(body) == entry[\"size_bytes\"],\n                \"Hardware dataset bytes changed\")\n        target = scratch / (key + \".tar\")\n        with target.open(\"xb\") as stream:\n            stream.write(body)\n        target.chmod(0o400)\n        # Existing parser enforces private membership, descriptor hashes and mode.\n        inner = read_dataset(target, \"dev\" if mode == \"train\" else \"final\")\n        seal = strict_json(inner[\"seal.json\"])\n        require(digest(inner[\"seal.json\"]) == entry[\"seal_sha256\"]\n                and seal[\"source_sha256\"] == manifest[\"source_sha256\"]\n                and seal[\"hardware_policy\"][\"identity\"] == entry[\"identity\"],\n                \"Hardware seal differs\")\n        if entry[\"identity\"] == identity:\n            require(selected is None, \"Ambiguous matching hardware\")\n            selected = target\n    require(selected is not None, \"Actual hardware has no accepted dataset\")\n    return selected\n\n\ndef main():\n    os.umask(0o077)\n    sys.dont_write_bytecode = True\n    sys.path.insert(0, \"/opt/frontier/task\")\n    from native_data import read_dataset\n    sys.path.insert(0, \"/opt/frontier\")\n    from fcs2_verifier import write_evidence\n    result = Path(os.environ[\"FRONTIER_RESULT_PATH\"])\n    evidence = Path(os.environ[\"FRONTIER_EVIDENCE_PATH\"])\n    require(result == Path(\"/frontier/output/result.json\")\n            and evidence == Path(\"/frontier/output/evidence.tar.zst\"), \"Unexpected output paths\")\n    identity = actual_identity()\n    try:\n        # The exec-owned temporary directory is removed with the native Pod.\n        scratch = Path(tempfile.mkdtemp(prefix=\"hardware-dataset-\", dir=\"/frontier\"))\n        selected = select_dataset(os.environ[\"FRONTIER_DATASET_PATH\"],\n            os.environ[\"FRONTIER_VERIFICATION_MODE\"], identity, scratch, read_dataset)\n    except Exception as error:\n        write_evidence(evidence, {\"hardware-selection.json\": json.dumps({\n            \"actual_identity\": identity, \"failure_type\": type(error).__name__,\n            \"message\": str(error)[:1024], \"submission_executed\": False}).encode()})\n        result.write_text(json.dumps({\"status\": \"failed\",\n            \"summary\": \"Hardware-matched private dataset selection failed\",\n            \"metrics\": {}, \"failure\": {\"code\": \"hardware_dataset_unavailable\",\n                \"message\": \"See private selection evidence\", \"retryable\": False}}))\n        return 1\n    os.environ[\"FRONTIER_DATASET_PATH\"] = str(selected)\n    os.execv(\"/opt/frontier/verifier\", [\"/opt/frontier/verifier\"])\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "20260918-hardware-matched-r1"
+}

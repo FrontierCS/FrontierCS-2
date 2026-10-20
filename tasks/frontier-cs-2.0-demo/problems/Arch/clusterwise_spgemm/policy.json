@@ -1,0 +1,106 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 17179869184,
+    "workspace_bytes": 34359738368
+  },
+  "display_name": "Fixed-Length Clustered Sparse Multiplication",
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 902113280,
+        "media_type": "application/x-tar",
+        "path": "datasets/eval.tar",
+        "source": "task",
+        "version": "sha256:c93be05b1a9299cb21f346cb6e7afb1c05e30d8f43902d0a8ff1a06a459288b5"
+      },
+      "train": {
+        "bytes": 525844480,
+        "media_type": "application/x-tar",
+        "path": "datasets/train.tar",
+        "source": "task",
+        "version": "sha256:e7d56702e8a5050bd473adf789d99813dfe0e9d3ee3b9b7b5388530e4148940e"
+      }
+    },
+    "evaluation": {
+      "authored_answering_timeout_seconds": 32400,
+      "authored_max_dev_submissions": 3,
+      "authored_max_train_wall_seconds": 21600,
+      "solver_visible_metrics": [
+        "candidate_median_execution_time_ms",
+        "candidate_median_throughput_mflops",
+        "candidate_max_output_bytes"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "64c28b11bc4b4a9cfb00d6e507e22dce8af8559b",
+      "pipeline": "frontiersmith2",
+      "run_id": "cw60-implementation001"
+    },
+    "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
+    "paper": {
+      "authors": [
+        "Abdullah Al Raqibul Islam",
+        "Helen Xu",
+        "Dong Dai",
+        "Aydin Buluc"
+      ],
+      "doi": null,
+      "paper_id": "clusterwise_spgemm_cw_260909a",
+      "pdf_url": "https://arxiv.org/pdf/2507.21253v1",
+      "title": "Improving SpGEMM Performance Through Matrix Reordering and Cluster-wise Computation",
+      "venue": "arXiv",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "CSR_FlengthCluster.h",
+        "BIN_FlengthCluster.h",
+        "hash_mult_flengthcluster.h",
+        "hash_mult.h",
+        "cluster_utility.h",
+        "CSR_VlengthCluster.h",
+        "BIN.h",
+        "frontier_solution/"
+      ],
+      "language": "c++17",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "clusterwise_spgemm",
+  "quota": {
+    "eval_timeout_seconds": 7200,
+    "max_train_calls": 3,
+    "max_train_wall_seconds": 21600,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 266240
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 60000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 68719476736
+  },
+  "version": "g2-separate-kernel-build"
+}

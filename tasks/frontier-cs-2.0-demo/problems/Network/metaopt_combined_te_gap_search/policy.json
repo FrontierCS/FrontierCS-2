@@ -1,0 +1,90 @@
+{
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "problem_id": "metaopt_combined_te_gap_search",
+  "display_name": "MetaOpt Combined-TE Gap Search",
+  "family": "frontier-cs-2.0/systems",
+  "version": "native-draft.1-patch-submission",
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 8589934592
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "max_evidence_bytes": 4194304
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_sessions": 1024,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_ssh_sessions": 1,
+      "max_ssh_bytes_per_direction": 67108864
+    }
+  },
+  "quota": {
+    "wall_time_seconds": 18000,
+    "eval_timeout_seconds": 3600,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 18000
+  },
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 4194304
+  },
+  "metadata": {
+    "runtime": {
+      "architecture": "linux/amd64 (source x64)",
+      "cpu_model": null,
+      "language": "csharp/.NET8",
+      "submission_kind": "patch",
+      "source_file_limit": 96,
+      "source_byte_limit": 2000000,
+      "execution_boundary": "Standard sandbox-driver-verifier containers; verifier and C# child share UID/GID65532; no additional inner OS isolation.",
+      "verifier_scratch_root": "/frontier",
+      "ssh_session_reserve": "One schema-required audit slot for CPU-only TaskConfig; no GPU image, quota, or permission is enabled.",
+      "allowed_paths": [
+        "project/MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs",
+        "project/MetaOptimize/TrafficEngineering/Candidate/"
+      ]
+    },
+    "conversion": {
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "source_commit": "f15ce24eedd0f17e8f9214fa90dffe6287ad40d0",
+      "source_path": "2.0/problems/metaopt_combined_te_gap_search",
+      "status": "draft_pending_platform_composition_and_model_validation"
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "approved_max_train_calls": 100,
+      "formal_answering_seconds": 18000,
+      "independent_final_seconds": 3600,
+      "suite_relation": "train original dev15; final fresh union original dev15 and hidden15 with exact original cases and seeds",
+      "beat_spec_sha256": "sha256:0d907e0c09ba0f49b4e478c46f5a75765d5a38eb98c8405c80d620f5416dca56",
+      "legacy_max_dev_submissions": 30,
+      "solver_visible_metrics": [
+        "mean_gap",
+        "instance_count"
+      ]
+    },
+    "datasets": {
+      "train": {
+        "path": "datasets/train.json",
+        "bytes": 251,
+        "version": "sha256:533031bfd42060dab6f44ba2b12ae536eef3292e520e11875d7f7379393e7b8e"
+      },
+      "eval": {
+        "path": "datasets/eval.json",
+        "bytes": 244,
+        "version": "sha256:53a960d138f4c14e214aba859d09bde3c3608b89350d7604fd5fa9e9078539a1"
+      }
+    },
+    "provenance_file": "judge/metadata.json"
+  }
+}

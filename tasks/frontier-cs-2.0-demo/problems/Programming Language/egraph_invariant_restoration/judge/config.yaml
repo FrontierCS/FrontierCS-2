@@ -1,0 +1,27 @@
+tag: systems
+runtime:
+  language: rust
+  timeout_seconds: 1800
+  environment: "Rust 1.94.1; vendored, locked Cargo closure; CPU-only paired release benchmark"
+  apt_packages: [bash, build-essential, ca-certificates, cargo, git, python3, rustc]
+  judge_apt_packages: [bash, build-essential, ca-certificates, cargo, git, python3, rustc]
+  docker:
+    image: rust:1.94.1-bookworm
+environment:
+  cpus: 8
+  memory_mb: 4096
+  storage_mb: 4096
+  build_timeout_seconds: 240
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics: [candidate_dev_wall_clock_seconds_median, candidate_dev_congruence_seconds_median]
+  repetitions: 9
+  warmups: 1
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths: [src/egraph.rs, src/lib.rs, src/tutorials/_01_background.rs, src/tutorials/mod.rs, src/solver_extensions/]
+  max_changed_files: 20
+  max_patch_bytes: 262144

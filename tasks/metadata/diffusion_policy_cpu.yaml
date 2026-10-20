@@ -1,0 +1,27 @@
+id: "diffusion_policy_cpu"
+display_name: "Closed-loop action sampling"
+category: "Robotics"
+summary: "Implement the conditional action sampler of a frozen diffusion-policy controller for a T-pushing robot task, evaluated closed-loop on CPU."
+paper_title: "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion"
+paper_venue: "RSS 2023"
+paper_url: "https://arxiv.org/abs/2303.04137"
+agent_cpu_cores: 2
+agent_memory_gib: 4
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 372000
+eval_timeout_seconds: 3720

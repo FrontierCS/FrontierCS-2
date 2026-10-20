@@ -1,0 +1,121 @@
+# Register-aware Branch Prediction
+
+## Problem
+A branch predictor supplies the direction of a conditional branch before the processor has completed that instruction. This cycle-aware simulator reads compressed instruction traces containing instruction addresses, classes, operands, and execution results. Its processor model determines when each instruction is fetched, decoded, and executed. The predictor returns one Boolean direction for each conditional branch and maintains its state through the supplied callbacks. Valid predictions may depend only on information available through those callbacks at that point in execution. The simulator counts conditional-branch mistakes and the simulated cycles spent on the wrong path. The objective is to minimize both quantities per 1,000 instructions while respecting the predictor's hardware storage limit. The register-value contribution to the statistical corrector has been removed; supply that component within the retained predictor.
+
+## Exact editable regions
+The file-level allowlist does not make the entire predictor editable. The nine regions below are the complete edit surface inside `my_cond_branch_predictor.cc`; all intervening bytes are protected, including whitespace. An empty interval is an insertion point. Byte intervals are zero-based UTF-8 offsets in the pristine starter (end excluded), whose SHA256 is `ce35248019bedb52575c390232f9615b776bd149143589935570296cdeac9bfd`. After an earlier edit shifts offsets, locate later regions by their retained anchors. Keep all anchor text and enclosing braces intact.
+
+| Region | Pristine byte interval | Stable location | Contract |
+| --- | --- | --- | --- |
+| `state` | `[437, 437)` | Immediately after `namespace nRUNLTS {` and its two newlines; before `static constexpr int LogMaxNewlyCounters = 16;`. | Namespace-level component types, constants and fixed state. Do not change retained predictor definitions. |
+| `snapshot_fields` | `[19653, 19653)` | Inside `struct cbp_hist_t`, after `int perceptron_sum_at_prediction;` and before the blank line preceding `// Begin Conventional Histories`. | Additional component checkpoint fields. One active copy counts toward storage; genuine in-flight copies use the existing exemption. |
+| `storage` | `[22895, 22895)` | After `inter += 2 * CONFWIDTH; // the 2 counters in the choser` and its following blank line; before `printf("(TotalSC %d) ", inter);`. | Optional declarations only under the same access rules. Leave empty if unused: the independent audit determines storage and no change to the printed total is required. Retained `inter` is not a writable output. |
+| `helpers` | `[27449, 27449)` | Inside `RUNLTS`, after `} // end init_histories` and its following blank line; before `// the index functions for the tagged tables uses path history as in the OGEHL predictor`. | Component member state and helper methods. New helpers belong here or in an included utility file, not between the protected callbacks. |
+| `prediction` | `[34223, 34275)` | After the assignment to `pv.pred_inter` and its following blank line; before `// Compute the SC prediction`. | Replace the inactive `int extra_weight = 0; pv.LSUM = 0;` initializer. Produce `pv.LSUM` and a local `int extra_weight` for the retained corrector. Read only currently available callback/history inputs and your component state. |
+| `training` | `[45566, 45566)` | After `IMLI_components.update(pv.LSUM, resolveDir, PC, hist_to_use.BrIMLI, hist_to_use.TaIMLI);` and its following blank line; before the closing braces preceding `void TAGE_allocation`. | Component training inside the existing corrector-update condition. `resolveDir` is available here; preserve the surrounding training condition and order. |
+| `snapshot_capture` | `[49565, 49565)` | Immediately inside `bool predict(uint64_t seq_no, uint8_t piece, UINT64 PC)`, before `pred_time_histories.emplace(...)`. | Populate your additional fields of `active_hist` before the retained checkpoint copy. Preserve prediction/checkpoint ordering. |
+| `decode` | `[50881, 50881)` | Only the body of `void decode_notify(uint64_t seq_no, uint8_t piece, uint64_t dst_reg)`. | Observe this destination overwrite using the given identity. No executed value is supplied here. |
+| `execute` | `[50983, 50983)` | Only the body of `void execute_notify(uint64_t seq_no, uint8_t piece, uint64_t dst_reg, uint64_t value)`. | Observe the executed scalar value and producer identity; update only component state. Preserve protection against superseded producers. |
+
+Names available from retained code, only where already in lexical scope, are `PC`, `seq_no`, `piece`, `dst_reg`, `value`, `resolveDir`, `hist_to_use`, `active_hist`, `pv`, `LSUM`, `extra_weight`, `pred_time_predict`, `MYRANDOM` and `ctrupdate`. This list does not grant access to every member of a retained object: existing fields stay protected except the prescribed `LSUM` output. New fields and component helpers may be used. Retained inputs are read-only; write only new component state, `pv.LSUM` and your local `extra_weight`. A resolution label must not influence an earlier prediction.
+
+Calls to your own new helpers are allowed. The external call set is closed to `min`, `max`, `abs`, `labs`, `llabs`, `fill`, `at`, `size`, `begin`, `end`, `std::array` construction/assignment/index operators and ordinary assertions, plus the retained `MYRANDOM`/`ctrupdate` helpers. Other existing predictor helpers are not part of this surface. Use checked `std::array::at` access: raw arrays, raw-array indexing and pointer arithmetic are rejected. Only quoted `solver_extensions/...` includes may be added; their contents obey the same rules. Types and functions must be declared before use. This is an interface contract, not a prescribed register representation or learning rule.
+
+## Design space
+Register-value representations, register selection, availability tracking, expiration, prediction-table organization, training, and contribution scaling are in scope. The surrounding predictor and processor model are fixed. The source contract permits fixed integer and floating-point state, explicit bit-fields, structs, and fixed `std::array` storage; it conservatively charges declared logical widths. Use local utility includes, value parameters or const references, and checked array operations. New dynamic allocation, raw pointers, mutable reference aliases, templates, lambdas, raw string literals, compiler intrinsics, system calls, arbitrary preprocessor directives, and external I/O are outside this component's contract.
+
+## Workload
+The scientific workload consists of 105 original training traces across six application categories. Each run processes a complete trace, including its warmup prefix, in a fresh predictor process. The measured suffix follows the simulator's original rule: sum trailing whole epochs until their instruction count exceeds half of the full count. No reset occurs at the midpoint. The feedback suite is a fixed category-stratified subset; final evaluation executes the complete corpus afresh, including that subset. Treat these as application workloads, not inputs to recognize. Execution order and validation repetitions may vary; trace contents and default simulator settings do not.
+
+## Interface
+From `/workspace/repo`, the evaluator builds with `make -j1 'OPT=-O3 -D_GLIBCXX_ASSERTIONS'` and invokes exactly `./cbp <original_trace.gz>`, with no simulator flags. The entrypoint is `lib/cbp.cc`; the evaluator directly invokes that built simulator on each original trace.
+
+The public header defines `u64 = uint64_t` and `u8 = uint8_t`. The typed predictor callbacks are:
+
+```cpp
+void setup();
+bool predict(u64 seq_no, u8 piece, u64 PC);
+void update(u64 seq_no, u8 piece, u64 PC, bool resolveDir, bool predDir, u64 nextPC);
+void history_update(u64 seq_no, u8 piece, u64 PC, int brtype, bool pred_dir, bool resolve_dir, u64 nextPC);
+void TrackOtherInst(u64 PC, int brtype, bool pred_dir, bool resolve_dir, u64 nextPC);
+void decode_notify(u64 seq_no, u8 piece, u64 dst_reg);
+void execute_notify(u64 seq_no, u8 piece, u64 dst_reg, u64 value);
+void terminate();
+```
+
+`predict` returns `true` for taken and `false` for not taken. `seq_no` is the simulator's monotonically increasing micro-operation number (`num_uop`), not a PC or a trace-record index. `piece` starts at zero for each trace instruction and increments for its cracked pieces. A multi-piece instruction therefore has successive sequence numbers as well as distinct piece numbers. Preserve the pair supplied by the simulator to identify prediction-time state and producer notifications.
+
+`setup` precedes execution and `terminate` follows it. A conditional prediction is immediately followed by the retained speculative history update. A destination decode notification precedes execution of that producer, but different instructions can execute out of program order. At execution, the interface first forwards an eligible destination value, then calls `update` for a conditional branch. Branches without destination registers do not receive `decode_notify`/`execute_notify`. The simulator processes due decode, address-generation, execution and retirement events in that order within each advanced cycle. Keep the original prediction snapshots and resolution-time training order; do not assume every older producer has executed when a later branch is predicted. An older producer's execution must not re-enable a value superseded by a newer overwrite.
+
+The binary gzip reader consumes an 8-byte PC and 1-byte instruction class. Loads/stores add an 8-byte effective address, 1-byte access size and 1-byte base-update flag; stores add a 1-byte register-offset flag. Branches add a 1-byte taken flag and, only when taken, an 8-byte target. Next come a 1-byte input count and that many 1-byte register names, a 1-byte output count and output names, then the output values. Integer outputs occupy 8 bytes; SIMD outputs occupy 16 bytes. The pinned amd64 reader reads scalar fields directly in little-endian host representation. Names 0–30 denote general registers, 31 the stack pointer, 32–63 SIMD registers, 64 flags and 65 the zero register. The unchanged interface forwards destinations only for names 0–64.
+
+Each destination callback carries one `uint64_t` value. A 16-byte SIMD output becomes two 64-bit pieces (low then high), each retaining its logical register name and its own instruction/piece identity. The 16-byte record field is not a 128-bit callback argument. Use the retained reader and interface; candidate code must not read traces.
+
+For a complete illustrative record, take an ALU instruction at PC `0x1000`, class `0`, no inputs, one output register `3`, value `42`. Its uncompressed 20 bytes are:
+
+```text
+00 10 00 00 00 00 00 00 | 00 | 00 | 01 | 03 | 2a 00 00 00 00 00 00 00
+PC                       class inputs outputs reg  value
+```
+
+If this is the first micro-operation, its register callbacks are `decode_notify(0, 0, 3)` and subsequently `execute_notify(0, 0, 3, 42)`. It has no conditional prediction callback. Now append a taken conditional branch at PC `0x1004`, class `3`, target `0x2000`, one input register `3`, and no outputs. Its 21 bytes are:
+
+```text
+04 10 00 00 00 00 00 00 | 03 | 01 | 00 20 00 00 00 00 00 00 | 01 | 03 | 00
+PC                       class taken target                    inputs reg outputs
+```
+
+The second instruction uses `(seq_no, piece) = (1, 0)`. Its `predict(1, 0, 0x1004)` returns a Boolean `p`; the retained wrapper immediately calls `history_update(1, 0, 0x1004, 1, p, true, 0x2000)`. At execution it calls `update(1, 0, 0x1004, true, p, 0x2000)`. No destination callbacks occur for this branch. The processor model determines how its prediction interleaves with the ALU's decode/execute events; these records do not grant early access to the ALU value or the future branch outcome. This example illustrates the wire format and callback contract, not a scientific test or a prescribed prediction.
+
+## Validity
+Malformed or out-of-scope patches, failed builds, timeouts, crashes, invalid accounting, or policy violations score zero. In development feedback such a rejection names its category; the list is under Feedback and grading. Persistent logical predictor state must fit 192 KiB, or 1,572,864 bits, including RNG, thresholds, register state, tables, and selectors. Genuine in-flight history copies retain the original checkpoint exemption; the active state does not become free by being copied into history. Storage is audited independently of candidate-printed totals. Newly introduced state uses declared widths, with explicit bit-fields for narrower representations. Do not change the retained predictor state or use future values, branch-label oracles, trace-specific answers, or private evaluator information.
+
+Missing scientific assets are evaluator failures and do not produce a valid score. The complete corpus has been acquired and checksum-pinned privately, and the private reference has completed native qualification; its per-trace counts are fixed.
+
+## Scoring
+Maximize
+
+```text
+score = 100 / sqrt((1 + B) * (1 + W / 100))
+```
+
+Here `B` is the equal-weight arithmetic mean of the simulator's four-decimal printed BrMisPKI, and `W` is the corresponding mean CycWpPKI, over the selected suite. The scale factors 1 BrMisPKI and 100 CycWpPKI are challenge constants (not from materials). The score lies in [0, 100], decreases continuously with either error measure, and uses no private reference normalization. Per-trace comparisons below use exact integer counters rather than rounded rates.
+
+## Calibration
+The inactive register component is a runnable naive baseline. Reanalysis of the 24 development members from one completed source-preparation calibration gives a continuous score of 31.345365484341812, mean BrMisPKI 2.8636041666666667, and mean CycWpPKI 163.42725. These are retained-log measurements of the incomplete component, not a fresh native development evaluation or a repeatability result. Counts are simulated events, with no wall-clock tolerance. One fewer counted mistake or wrong-path cycle is measurable by the stricter comparison even when four-decimal display rounding hides the change.
+
+## Feedback and grading
+The judge returns a score for a successful development evaluation. The submission budget is in `/frontier/task/README.md`. The graded suite is not the suite you receive feedback on. The suites are drawn from the same fixed corpus and application-category distribution, with approximately proportional category coverage in feedback; final includes feedback and additional held-out traces. Category stratification alone does not establish statistical representativeness or independence.
+
+A separate, stricter criterion compares BrMisPKI and simulated CycWpPKI with a private reference on each trace. To clear it, a valid predictor must achieve a strictly lower value for both quantities on every one of the 105 final traces, using the original latter-half accounting and no tolerance. A tie or regression anywhere fails that criterion. Measured on official final evaluations, a change unrelated to component quality (shifting by one call the shared random stream that the retained predictor uses) moves a single trace's mispredictions by about 1% (standard deviation; up to 6.6%) and its wrong-path cycles by about 0.7%, so winning every trace requires an improvement clearly larger than that on each trace. A valid submission still receives its continuous score when this criterion fails. Development feedback gives only your own arithmetic-mean measurements (`train_br_mis_pki_mean`, `train_cyc_wp_pki_mean`), aggregate pass/fail counts and percentages for each criterion, the same counts for traces clearing both prediction comparisons together (`all_metrics_progress`), and your own means per application category (`category_means`: for each of `compress`, `fp`, `infra`, `int`, `media` and `web`, the number of development `traces` and your `br_mis_pki_mean` and `cyc_wp_pki_mean` over them, from exact counters), without per-trace decisions or reference measurements. Final evaluation reruns all traces, including the feedback subset, and its measurements remain private.
+
+A development submission rejected as invalid scores zero and returns no measurements. Its `metrics` instead holds `candidate_diagnostic`, an object with a `category` from the fixed list below and a `message`, the fixed sentence `Rejected: <meaning>.` of that category. Nothing else is returned about a rejection: no compiler, audit or simulator output, source location, symbol name, measured value or trace identity. When several problems are present, the first one the evaluator reaches is reported; it checks the patch, then the source audit, then the build, then each trace.
+
+| Category | Meaning |
+| --- | --- |
+| `patch_policy` | The submission patch was not accepted: it is unreadable, empty, malformed, over the size or file-count limit, touches a path other than my_cond_branch_predictor.cc and solver_extensions/, or does not apply to the pristine tree. |
+| `outside_editable_regions` | The patch changes bytes of my_cond_branch_predictor.cc outside the nine editable regions, or changes another retained file; every byte between the regions is protected, and a change to whitespace, a blank line or a line ending there counts. |
+| `lexical_form` | An editable region or a solver_extensions file contains a backslash, two consecutive question marks, a %: token or a raw string literal (comments included), or a comment, string or character literal that is not closed inside that region or file. |
+| `preprocessor_directive` | Added code contains a preprocessor directive other than a quoted include of an existing file under solver_extensions/. |
+| `forbidden_identifier` | Added code contains a forbidden word outside comments: an identifier beginning with two underscores, template, or the name of an allocation, input/output, process, cast or dynamic-container facility (for example new, delete, free, read, write, open, exit, signal, raise, function, vector); the whole word is matched, so your own names must not use these words. |
+| `forbidden_construct` | Added code uses a construct outside the permitted C++ subset: a template or lambda, a raw pointer or raw array, raw-array indexing, address-of or dereference, a C-style, const, reinterpret or pointer/reference cast, dynamic allocation, a mutable reference alias, a function returning a pointer or reference, a compiler builtin, or a call that is unresolved, indirect or outside the closed external call set. |
+| `protected_state_access` | Added code refers to a retained predictor name outside the listed available names, or writes to retained state other than pv.LSUM and extra_weight. |
+| `state_declaration` | Persistent state is declared with a type whose logical width cannot be audited; use fixed-width scalars, bit-fields, structs of those and std::array with a constant extent, without unions, inheritance or empty types. |
+| `semantic_audit` | The patched source has C++ errors in the audit's C++17 parse. |
+| `storage_cap` | Declared logical predictor storage exceeds the cap of 1,572,864 bits (192 KiB). |
+| `source_audit_incomplete` | The source audit of the patched predictor exceeded its time or memory limit. |
+| `build_failed` | The patched predictor did not compile and link with the evaluator's build command, or the build exceeded its time limit. |
+| `simulator_run_failed` | A simulator run of the patched predictor exited with an error, was stopped by a resource limit or exceeded its time limit. |
+| `output_format` | The simulator output of a run did not contain exactly one well-formed copy of each original measurement section with consistent counters and rates. |
+| `instruction_count_mismatch` | The instruction counts reported by a run of the patched predictor differ from the expected counts of that trace, which are those of the reference run. |
+
+A failure of the private reference or of the evaluation infrastructure is not a rejection: that verification fails without a score and without a diagnostic. Final evaluation returns no diagnostic.
+
+## Resources
+Your workspace keeps one CPU, 4,096 MiB memory, and 40,960 MiB disk. The judge that evaluates a submission has eight CPUs and 32,768 MiB memory. Build timeout is 180 seconds; each trace has a 2,400-second watchdog; a complete evaluation has a 7,200-second outer deadline. These are provisional challenge constants (not from materials), pending full native runtime and memory qualification. Builds use one job. Each workload is simulated by its own single-threaded process, limited to 4,096 MiB of address space as before, and the judge runs up to eight of these processes at a time. The measurements are integer event counts from a deterministic simulator and are read in a fixed workload order, so running simulations side by side changes how long an evaluation takes and nothing in its result. The private reference is not simulated again for each evaluation: its per-trace counts are fixed values recorded from its own complete execution of the same traces with the same build and command, and the judge checks them against the reference source before use. An evaluation therefore runs only your predictor, once per trace: 24 simulations for development feedback and 105 for final. Estimated from the reference's recorded per-trace times (50 to 660 seconds each), and not yet measured in this configuration, a development evaluation takes roughly 15 to 30 minutes and a final evaluation roughly one to two hours. No GPU is needed. The development-call budget is enforced by the judge; this preparation does not authorize consuming that budget before native admission.
+
+The native allocation permits 100 development calls with a cumulative train-time ceiling of 18000 seconds, within an inclusive answering window of 18000 seconds (five hours). Agent work and train share that window. Independent final evaluation has its own 7200-second timeout after Agent exit; it does not consume or extend the answering window. These resource limits do not shorten any trace or change a metric.
+
+
+The logical hardware budget is also an explicit per-workload criterion: `logical_storage_bits <= 1572864`, with zero tolerance. Equality at 192 KiB passes. The original reference allocation (1,570,890 bits) is not the cap. Both prediction-rate comparisons remain strict on every trace.

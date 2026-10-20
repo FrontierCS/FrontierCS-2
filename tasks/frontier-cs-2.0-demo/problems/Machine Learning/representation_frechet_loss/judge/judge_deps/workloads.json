@@ -1,0 +1,52 @@
+{
+  "status": "proposed_uncalibrated",
+  "warm_start_images": 50000,
+  "held_out_images": 4096,
+  "batch_size": 8,
+  "suites": {
+    "development": [
+      {
+        "id": "dev-0",
+        "seed": 19723,
+        "eval_seed": 31277,
+        "updates": 128,
+        "mode": "ema",
+        "beta": 0.999
+      },
+      {
+        "id": "dev-1",
+        "seed": 42967,
+        "eval_seed": 53591,
+        "updates": 512,
+        "mode": "online",
+        "beta": 0.0
+      }
+    ],
+    "final": [
+      {
+        "id": "final-0",
+        "seed": 62869,
+        "eval_seed": 73553,
+        "updates": 128,
+        "mode": "ema",
+        "beta": 0.99
+      },
+      {
+        "id": "final-1",
+        "seed": 83423,
+        "eval_seed": 94109,
+        "updates": 512,
+        "mode": "online",
+        "beta": 0.0
+      },
+      {
+        "id": "final-2",
+        "seed": 103997,
+        "eval_seed": 114691,
+        "updates": 512,
+        "mode": "ema",
+        "beta": 0.999
+      }
+    ]
+  }
+}

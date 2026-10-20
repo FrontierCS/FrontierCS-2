@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "files": {
+    "src/queue_namespace.py": "da6a946423ce321272f63942eafc0715c87b61821ee7609c457c08353087e631",
+    "src/queue_actor.py": "7a2d7f7fd822fb66fc9389fa9f5f1daf948520577c4af874d0c6b7c2a3be1095",
+    "src/observer_queue.py": "c932ed4a7c5238f260199e986a4758192591538f360295254494b3f7324ec194",
+    "src/queue_wire.py": "9aca30d82ec9e3c0fdc64ba4c9bed2a1f89fde327b6a5f9439e81da0af746c3e",
+    "src/queue_observer_entry.py": "8b16779ebec5c5ff834deaafbd97a8c21fee651cce57065c061baf04795f03ea",
+    "src/queue_profile.py": "33f786e1092285cb5970bd62914a0ee6806b1dd6f41dfc67ad4c368bbf6cd663",
+    "src/queue_process.py": "461dd5f60e9dbac966f4ed2c70074f1f3695ffd76e589e1c0c5e65487cb494c3",
+    "src/restricted_runtime.py": "970f67b403e705d4cabfa797f70e93195d384cc5f4ec98f6acdb5a7b194276cb",
+    "src/trusted_queue.py": "69ce1f44acb7337904c6fbae86df3b3a2f315ee7cb77e61d5b7cffdddb0222a2",
+    "tools/libseccomp-provenance.json": "32cb44815655d37625ebb29f9c789cc2f7681d04e3777b68cf6f10bc1de34138",
+    "tools/bwrap-COPYRIGHT": "1787ea55b7ed2dd8cccfe1e07cee50c56388b9daae987645979049215340c694",
+    "tools/libseccomp.so.2": "ac34d87684bd6cc0023d024db0029fee51c035304795aa82f9ca5bc354dbf735",
+    "tools/device-binding-provenance.json": "b3a0f6512a9646ae6074e44137ff1e1c0fe7b275e09a067eda5ab136473a6ba0",
+    "tools/bwrap-provenance.json": "4d1223be402cfb4e332592bedbb7790ac27f64e433f079fb845ba64bf0c7e8fb",
+    "tools/libseccomp-COPYRIGHT": "6da0653a365b80ab31478dbfe9e7c358e80d58b6d2b52b4e16b4dbb42d7d9f5c",
+    "tools/bwrap": "4348d585ce8264f4ed27a4eebab95a865fb374975eb9a56376cfa8442b0b6bb6"
+  },
+  "accepted_r3_unchanged_files": {
+    "src/queue_namespace.py": "da6a946423ce321272f63942eafc0715c87b61821ee7609c457c08353087e631",
+    "src/queue_profile.py": "33f786e1092285cb5970bd62914a0ee6806b1dd6f41dfc67ad4c368bbf6cd663",
+    "src/restricted_runtime.py": "970f67b403e705d4cabfa797f70e93195d384cc5f4ec98f6acdb5a7b194276cb",
+    "src/trusted_queue.py": "69ce1f44acb7337904c6fbae86df3b3a2f315ee7cb77e61d5b7cffdddb0222a2",
+    "tools/libseccomp-provenance.json": "32cb44815655d37625ebb29f9c789cc2f7681d04e3777b68cf6f10bc1de34138",
+    "tools/bwrap-COPYRIGHT": "1787ea55b7ed2dd8cccfe1e07cee50c56388b9daae987645979049215340c694",
+    "tools/libseccomp.so.2": "ac34d87684bd6cc0023d024db0029fee51c035304795aa82f9ca5bc354dbf735",
+    "tools/device-binding-provenance.json": "b3a0f6512a9646ae6074e44137ff1e1c0fe7b275e09a067eda5ab136473a6ba0",
+    "tools/bwrap-provenance.json": "4d1223be402cfb4e332592bedbb7790ac27f64e433f079fb845ba64bf0c7e8fb",
+    "tools/libseccomp-COPYRIGHT": "6da0653a365b80ab31478dbfe9e7c358e80d58b6d2b52b4e16b4dbb42d7d9f5c",
+    "tools/bwrap": "4348d585ce8264f4ed27a4eebab95a865fb374975eb9a56376cfa8442b0b6bb6"
+  },
+  "integration_changes": [
+    "src/observer_queue.py",
+    "src/queue_observer_entry.py"
+  ],
+  "provenance": {
+    "upstream_revision": "5c03b8112fec8b9432631e4ce053c0d918cc24bc",
+    "private_cuda_canary_result_sha256": "2eb01fc638db6ec01a6b0f562e1e06191b19179955410deff966a1347a0293d1",
+    "qualification": "Successor to invalid R4 reference; local lifetime/confinement tests only. Fresh image and full scientific reference required."
+  },
+  "lifetime_repair_changes": [
+    "src/queue_actor.py",
+    "src/queue_process.py"
+  ],
+  "queue_count_repair": {
+    "date": "2026-09-21",
+    "old_sha256": "a7d8318e7c2c61a393c6aa099b6d7df647abeab5be26e28638b2ffb291521ea6",
+    "new_sha256": "9aca30d82ec9e3c0fdc64ba4c9bed2a1f89fde327b6a5f9439e81da0af746c3e",
+    "reason": "Genuine solver increments a nonnegative EMA observation counter beyond its 50000-image warm start. The private old cap rejected that admissible state at export.",
+    "qualification": "Local CPU regression only; requires an immutable successor before another platform trial."
+  }
+}

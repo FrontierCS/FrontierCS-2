@@ -1,0 +1,163 @@
+{
+  "schema_version": "frontier.beat-spec/v1",
+  "aggregation": "all_workloads_all_metrics",
+  "train_coverage": "public_suite_0",
+  "final_coverage": "public_suite_0_plus_hidden_suite_1_with_final_only_heap_capacities",
+  "workload_metric_aggregation": "query_weighted_mean_across_selected_suites",
+  "workloads": [
+    {
+      "name": "c=0.6,capacity=100"
+    },
+    {
+      "name": "c=0.6,capacity=200"
+    },
+    {
+      "name": "c=0.6,capacity=400"
+    },
+    {
+      "name": "c=0.6,capacity=800"
+    },
+    {
+      "name": "c=0.8,capacity=100"
+    },
+    {
+      "name": "c=0.8,capacity=200"
+    },
+    {
+      "name": "c=0.8,capacity=400"
+    },
+    {
+      "name": "c=0.8,capacity=800"
+    },
+    {
+      "name": "c=0.9,capacity=100"
+    },
+    {
+      "name": "c=0.9,capacity=200"
+    },
+    {
+      "name": "c=0.9,capacity=400"
+    },
+    {
+      "name": "c=0.9,capacity=800"
+    }
+  ],
+  "final_only_workloads": [
+    {
+      "name": "c=0.6,capacity=final-only-1"
+    },
+    {
+      "name": "c=0.6,capacity=final-only-2"
+    },
+    {
+      "name": "c=0.6,capacity=final-only-3"
+    },
+    {
+      "name": "c=0.6,capacity=final-only-4"
+    },
+    {
+      "name": "c=0.8,capacity=final-only-1"
+    },
+    {
+      "name": "c=0.8,capacity=final-only-2"
+    },
+    {
+      "name": "c=0.8,capacity=final-only-3"
+    },
+    {
+      "name": "c=0.8,capacity=final-only-4"
+    },
+    {
+      "name": "c=0.9,capacity=final-only-1"
+    },
+    {
+      "name": "c=0.9,capacity=final-only-2"
+    },
+    {
+      "name": "c=0.9,capacity=final-only-3"
+    },
+    {
+      "name": "c=0.9,capacity=final-only-4"
+    }
+  ],
+  "final_only_metrics": [
+    "recall_at_50",
+    "last_result_inner_product_ratio",
+    "verified_candidate_count"
+  ],
+  "metrics": [
+    {
+      "name": "mean_query_time",
+      "comparison": "strictly_lower",
+      "means": "Mean elapsed query time in milliseconds.",
+      "source": "judge/evaluator.py _reference_verdict: candidate/reference rows use time_ms; _combine_suite_rows pools selected suites by query count.",
+      "better": "lower",
+      "clears_when": "candidate time_ms < reference time_ms",
+      "tolerance": "None; compare measured floating-point values directly."
+    },
+    {
+      "name": "recall_at_50",
+      "comparison": "greater_than_or_equal",
+      "means": "Mean recall at 50.",
+      "source": "judge/evaluator.py _reference_verdict: candidate/reference rows use recall; _combine_suite_rows pools selected suites by query count.",
+      "better": "higher",
+      "clears_when": "candidate recall >= reference recall",
+      "tolerance": "None; compare measured floating-point values directly."
+    },
+    {
+      "name": "last_result_inner_product_ratio",
+      "comparison": "greater_than_or_equal",
+      "means": "Mean last-result inner-product ratio.",
+      "source": "judge/evaluator.py _reference_verdict: candidate/reference rows use kratio; _combine_suite_rows pools selected suites by query count.",
+      "better": "higher",
+      "clears_when": "candidate kratio >= reference kratio",
+      "tolerance": "None; compare measured floating-point values directly."
+    },
+    {
+      "name": "verified_candidate_count",
+      "comparison": "less_than_or_equal",
+      "means": "Mean distinct verified candidates per query.",
+      "source": "judge/evaluator.py _reference_verdict: candidate/reference rows use cost; _combine_suite_rows pools selected suites by query count.",
+      "better": "lower",
+      "clears_when": "candidate cost <= reference cost",
+      "tolerance": "None; compare measured floating-point values directly."
+    }
+  ],
+  "solver_feedback": [
+    {
+      "name": "mean_recall",
+      "means": "Arithmetic mean of candidate workload recall values.",
+      "reveals_reference": "No: an aggregate candidate-only measurement without reference values or private workload identities."
+    },
+    {
+      "name": "mean_kratio",
+      "means": "Arithmetic mean of candidate workload last-result inner-product ratios.",
+      "reveals_reference": "No: an aggregate candidate-only measurement without reference values or private workload identities."
+    },
+    {
+      "name": "mean_time_ms",
+      "means": "Arithmetic mean of candidate workload query milliseconds.",
+      "reveals_reference": "No: an aggregate candidate-only measurement without reference values or private workload identities."
+    },
+    {
+      "name": "mean_candidates",
+      "means": "Arithmetic mean of candidate workload distinct verified-candidate counts.",
+      "reveals_reference": "No: an aggregate candidate-only measurement without reference values or private workload identities."
+    }
+  ],
+  "unit": "One approximation-ratio/result-capacity workload, with metrics averaged over 150 public queries in train or 300 freshly measured public-plus-hidden queries in final. Final adds final_only_workloads, whose heap capacities are not disclosed to the solver and on which only final_only_metrics are compared.",
+  "beats_reference": "All four comparisons must pass on all 12 disclosed workloads (48 comparisons). Final additionally requires the three final_only_metrics comparisons (recall, last-result ratio, verified-candidate count; not query time) on the 12 final-only workloads (36 comparisons, 84 in total); no tolerance or compensation across workloads or metrics.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "statement_sentences": "PASS requires strictly lower mean query time, no lower recall at 50 and last-result inner-product ratio, and no higher verified-candidate count than the paired reference on every workload. Final pools freshly measured public and hidden queries before comparison. Final evaluation also includes heap capacities not shown in train, where the recall, last-result ratio and verified-candidate comparisons apply and the query-time comparison does not.",
+  "withheld": [
+    "beats_reference",
+    "reference_score",
+    "margin",
+    "beat_spec_workload_passes",
+    "evaluated_suites",
+    "queries_per_workload",
+    "aggregation"
+  ]
+}

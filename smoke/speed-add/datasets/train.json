@@ -1,0 +1,21 @@
+{
+  "schema_version": "frontier.speed-add-dataset/v1",
+  "mode": "train",
+  "correctness": [
+    { "a": 0, "b": 0 },
+    { "a": 1, "b": 0 },
+    { "a": 0, "b": 1 },
+    { "a": 17, "b": 25 },
+    { "a": 99999, "b": 1 },
+    { "a": 123456, "b": 654321 }
+  ],
+  "benchmarks": [
+    {
+      "a": 3000000,
+      "b": 2000000,
+      "iterations": 3,
+      "timeout_ms": 3000,
+      "reference_runtime_ns": 150000000
+    }
+  ]
+}

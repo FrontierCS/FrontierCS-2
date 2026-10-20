@@ -1,0 +1,15 @@
+{
+  "schema_version": "preview.native-client-workflow-proposal/v1",
+  "status": "SOURCE_ONLY_NOT_PUBLISHED_OR_REGISTERED",
+  "task_id": "native-client-workflow-smoke",
+  "agent_source": "smoke/client-workflow/agent-base",
+  "verifier_source": "smoke/speed-add/verifier",
+  "datasets_source": "smoke/speed-add/datasets",
+  "agent_seconds": 1800,
+  "train_calls": 1,
+  "train_seconds": 180,
+  "final_seconds": 180,
+  "submission_authority": "native-model-client",
+  "explicit_final_required": true,
+  "performance_target": null
+}

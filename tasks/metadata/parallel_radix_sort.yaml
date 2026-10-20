@@ -1,0 +1,27 @@
+id: "parallel_radix_sort"
+display_name: "In-place Integer Redistribution"
+category: "HPC"
+summary: "Speed up Regions Sort, a parallel in-place most-significant-digit radix sorter."
+paper_title: "Theoretically-Efficient and Practical Parallel In-Place Radix Sorting"
+paper_venue: "SPAA 2019"
+paper_url: "https://people.csail.mit.edu/jshun/RegionsSort.pdf"
+agent_cpu_cores: 4
+agent_memory_gib: 2
+agent_disk_gib: 2
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 4
+verifier_memory_gib: 2
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 18000
+eval_timeout_seconds: 900

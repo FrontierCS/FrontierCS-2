@@ -1,0 +1,315 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 196,
+      "path": "datasets/eval.json",
+      "version": "sha256:1567fd009f3094e7c997b9e61837fd89cf680c9ab672855d76600da05a8d4f4c"
+    },
+    "train": {
+      "bytes": 197,
+      "path": "datasets/train.json",
+      "version": "sha256:24fabc0dc6f36f9ad670a8296b396102ce877a1e7f7a7544bc9f843f1875065c"
+    }
+  },
+  "file_count": 58,
+  "files": [
+    {
+      "bytes": 3122,
+      "path": "README.md",
+      "sha256": "sha256:44974afdc3eacb2d6b7c2341ad65ec6d4ee634ab52c302b10e6513ddf51cd06b"
+    },
+    {
+      "bytes": 645,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:25335a15a16550094927685e242e1324948bd60423480ea55e93887774c2c0f7"
+    },
+    {
+      "bytes": 9673,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:7e87c9ed815e64fc5804724f0c6f648ee13064710bf7a882aa36c1e07980ee1d"
+    },
+    {
+      "bytes": 566,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:3f855210aa267b6499f72fde4f8fef615993ff2126775e91f5d435a055c8033c"
+    },
+    {
+      "bytes": 284,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:192e697e3f0e79e356f2bac39abeecc09f336435d7c9561c8d558a2ff187ad53"
+    },
+    {
+      "bytes": 17,
+      "path": "agent-base/frontier/task/repo/.gitignore",
+      "sha256": "sha256:a1404fad666485fb65e2172d0a76e8e4b5ada45179bd7e66def207f1b7289cf1"
+    },
+    {
+      "bytes": 2723,
+      "path": "agent-base/frontier/task/repo/CMakeLists.txt",
+      "sha256": "sha256:8f833586b2efabf774720b97e44cb366d92446d0e8ec084bd789ecd37a21b31b"
+    },
+    {
+      "bytes": 10758,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:a111b5902eaeb94cb51b3ead2fef619724817bf55ebe561b3d7caeb1d5305190"
+    },
+    {
+      "bytes": 968,
+      "path": "agent-base/frontier/task/repo/Makefile",
+      "sha256": "sha256:41b18ad67bcd7e2fe19d1b332618d301759d02b3d30d840473dfdd4b4cee21d4"
+    },
+    {
+      "bytes": 8792,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:eac1a40933940f3788ed33202b171e8b45bb402d9c68e1f71f04f6cc32d1f6e3"
+    },
+    {
+      "bytes": 265,
+      "path": "agent-base/frontier/task/repo/benchmarks/CMakeLists.txt",
+      "sha256": "sha256:2f6279e25f128d6702e076abcaf0f4334caabded4c1671940a5695113a584e29"
+    },
+    {
+      "bytes": 5881,
+      "path": "agent-base/frontier/task/repo/benchmarks/bench.c",
+      "sha256": "sha256:dada61ed25905fd1178144621768d4905481b421544f78a51be80a733acb8034"
+    },
+    {
+      "bytes": 4614,
+      "path": "agent-base/frontier/task/repo/benchmarks/query.c",
+      "sha256": "sha256:83c4b5a4f35f8116eabef85f5300464a6bc3de1c52bfa32350d1422942953d87"
+    },
+    {
+      "bytes": 3095,
+      "path": "agent-base/frontier/task/repo/benchmarks/spaceusage.c",
+      "sha256": "sha256:dae60cb61704a8f9bf32498c52b64490552745b2d78509520adb197b223effa6"
+    },
+    {
+      "bytes": 126,
+      "path": "agent-base/frontier/task/repo/cmake/config.cmake.in",
+      "sha256": "sha256:73b9705f76279c3879dcdb03b408a3ae81fa0aa8b2befcc7e4bfb027a609c960"
+    },
+    {
+      "bytes": 24006,
+      "path": "agent-base/frontier/task/repo/include/binaryfusefilter.h",
+      "sha256": "sha256:666806fa19540eb721424ab5f3439006dc9674ddb8459fd8e953cd66932723b6"
+    },
+    {
+      "bytes": 23051,
+      "path": "agent-base/frontier/task/repo/include/xorfilter.h",
+      "sha256": "sha256:a1a990f7aef91db0ef8bf8b9dbbc7fed32b77dc26a8466d58c91158bdf5e1d57"
+    },
+    {
+      "bytes": 101,
+      "path": "agent-base/frontier/task/repo/tests/CMakeLists.txt",
+      "sha256": "sha256:988a76e9cf4374d98b0aa63b9d47f421295baa13429347b62f5fd4fb48858e33"
+    },
+    {
+      "bytes": 113,
+      "path": "agent-base/frontier/task/repo/tests/a.c",
+      "sha256": "sha256:20bcd14f0d4cdde7ad94fa9da032ffcf78082d5c4b87ac87c73e5e4b4e762c60"
+    },
+    {
+      "bytes": 52,
+      "path": "agent-base/frontier/task/repo/tests/b.c",
+      "sha256": "sha256:0237c27f6fd4fdc5d9716af555b735313ea0ff42bf5eded03726795f42757459"
+    },
+    {
+      "bytes": 927,
+      "path": "agent-base/frontier/task/repo/tests/installation_tests/find/CMakeLists.txt",
+      "sha256": "sha256:df1ce0a7956e36f3f9d14cc23ffa270bedeea9b3e125ca04418517f533539310"
+    },
+    {
+      "bytes": 15248,
+      "path": "agent-base/frontier/task/repo/tests/unit.c",
+      "sha256": "sha256:ac292e74f212fb1aeb6b6b967a42cc811177d590ff7b4fc386fb657538864ad2"
+    },
+    {
+      "bytes": 196,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:1567fd009f3094e7c997b9e61837fd89cf680c9ab672855d76600da05a8d4f4c"
+    },
+    {
+      "bytes": 197,
+      "path": "datasets/train.json",
+      "sha256": "sha256:24fabc0dc6f36f9ad670a8296b396102ce877a1e7f7a7544bc9f843f1875065c"
+    },
+    {
+      "bytes": 12573,
+      "path": "judge/accuracy_metrics.py",
+      "sha256": "sha256:9bbec678fa09efb9cab72453c66a1995bd15b5b4879ab111a542ec276ace007a"
+    },
+    {
+      "bytes": 7908,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:bf8000cfd153a0544140babea151b4614cc144a23880070d4610110c84d1b9fd"
+    },
+    {
+      "bytes": 2089,
+      "path": "judge/bridge.c",
+      "sha256": "sha256:2427bcf905ae5a59940b52e52a3977deda56b91dee11a0ee625cbcee0e164801"
+    },
+    {
+      "bytes": 381,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:e0317255e0f152ed1205fce75a56489acd4742a05af275a4afc20f6017d28b59"
+    },
+    {
+      "bytes": 18926,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:dde84943da93d9059fd30db3ec0ca1b273913006fcc41e6cebc3c148fd8f60c6"
+    },
+    {
+      "bytes": 6570,
+      "path": "judge/harness.c",
+      "sha256": "sha256:f970a6edf94521a8b1edd15c19c00ce312c7dc7928cc1220cfcd9695c564dea2"
+    },
+    {
+      "bytes": 214,
+      "path": "judge/reference/.gitignore",
+      "sha256": "sha256:a51187f27e104a17ce541bd1982c6d86e1d4efb2acb251fe285c1991c3869c26"
+    },
+    {
+      "bytes": 10758,
+      "path": "judge/reference/LICENSE",
+      "sha256": "sha256:a111b5902eaeb94cb51b3ead2fef619724817bf55ebe561b3d7caeb1d5305190"
+    },
+    {
+      "bytes": 1314,
+      "path": "judge/reference/history/calibration-migration-r7.json",
+      "sha256": "sha256:db969dc8ad244884a2f1e9fc067ec7d9d647527d33c2710181fb05a0a7195c93"
+    },
+    {
+      "bytes": 11174,
+      "path": "judge/reference/history/measurement-r6/accuracy_metrics.py",
+      "sha256": "sha256:451dda53a9fb82ae4b9cf1fc746e23754d0100a326f6b3153d0c3855863a5be7"
+    },
+    {
+      "bytes": 5132,
+      "path": "judge/reference/history/measurement-r6/beat_spec.json",
+      "sha256": "sha256:463e035263e9a03b078dcee34b2e93fcd3a5abbf9cf6d2d8c5aa2abc5d64cd7c"
+    },
+    {
+      "bytes": 2089,
+      "path": "judge/reference/history/measurement-r6/bridge.c",
+      "sha256": "sha256:2427bcf905ae5a59940b52e52a3977deda56b91dee11a0ee625cbcee0e164801"
+    },
+    {
+      "bytes": 381,
+      "path": "judge/reference/history/measurement-r6/config.yaml",
+      "sha256": "sha256:e0317255e0f152ed1205fce75a56489acd4742a05af275a4afc20f6017d28b59"
+    },
+    {
+      "bytes": 18190,
+      "path": "judge/reference/history/measurement-r6/evaluator.py",
+      "sha256": "sha256:51719571443d02276431240b8e62ee3b43422cdb48751239b3568d30428e74bb"
+    },
+    {
+      "bytes": 6570,
+      "path": "judge/reference/history/measurement-r6/harness.c",
+      "sha256": "sha256:f970a6edf94521a8b1edd15c19c00ce312c7dc7928cc1220cfcd9695c564dea2"
+    },
+    {
+      "bytes": 35927,
+      "path": "judge/reference/history/measurement-r6/reference/include/binaryfusefilter.h",
+      "sha256": "sha256:26f192bdff8a971c9db49afce4c9cf51cc17477ca7047c6ae7c5a272a1b6985f"
+    },
+    {
+      "bytes": 49530,
+      "path": "judge/reference/history/measurement-r6/reference/include/xorfilter.h",
+      "sha256": "sha256:5574a1b6f3e4e1764e996f4642db33376e0618657ec39936a9828064909a196e"
+    },
+    {
+      "bytes": 3339,
+      "path": "judge/reference/history/runtime-qualification-r6.json",
+      "sha256": "sha256:efe951b13bbbd8f0397559a2fbbc7554cd6670b46262831219f69737c98be1e1"
+    },
+    {
+      "bytes": 1783,
+      "path": "judge/reference/history/runtime-qualification-r7.json",
+      "sha256": "sha256:c1ef990855d10d71def58cc5bd7f3c09490532b9fc641aacd68c26da3e383383"
+    },
+    {
+      "bytes": 127135,
+      "path": "judge/reference/history/statistical-calibration-r6.json",
+      "sha256": "sha256:053dc7a2e1a59fc971c2a7f12135429ad0e557952397f7484aaaf6bdb2481fa7"
+    },
+    {
+      "bytes": 866,
+      "path": "judge/reference/history/statistical_calibration-manifest-r7.json",
+      "sha256": "sha256:a009ec91f8fdb5488d7fe6041c8c3ddfcbca8a352cf0bf2260f79d39a442b775"
+    },
+    {
+      "bytes": 35927,
+      "path": "judge/reference/include/binaryfusefilter.h",
+      "sha256": "sha256:26f192bdff8a971c9db49afce4c9cf51cc17477ca7047c6ae7c5a272a1b6985f"
+    },
+    {
+      "bytes": 49530,
+      "path": "judge/reference/include/xorfilter.h",
+      "sha256": "sha256:5574a1b6f3e4e1764e996f4642db33376e0618657ec39936a9828064909a196e"
+    },
+    {
+      "bytes": 3565,
+      "path": "judge/reference/runtime-qualification.json",
+      "sha256": "sha256:c250ce89c28465da60c4369450157ef666b9e0080e6716371407c9b2cc6c491a"
+    },
+    {
+      "bytes": 135007,
+      "path": "judge/reference/statistical-calibration.json",
+      "sha256": "sha256:474e095297e8fb4da6cfafa48b156da4bae90a882c46a95db3f3c8c9e7f57d25"
+    },
+    {
+      "bytes": 42576,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:0eba1a94672d9c43edf0b0dd2f6eefbb8f7ca053fdb07273281fe1f153fadb77"
+    },
+    {
+      "bytes": 915,
+      "path": "judge/statistical_calibration.json",
+      "sha256": "sha256:cac6792e1181ccbfef36391d480a079dd5b229d0459a8148d147897561c564ce"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 5289,
+      "path": "policy.json",
+      "sha256": "sha256:b94cfc0465e4e66b40f13844366d88525a1886c50942089bc04a05add797d253"
+    },
+    {
+      "bytes": 1037,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:5e2c40f5bb7f82ac89ff9d18f33f571cc41ea98eb3f9505d6561f10a48c559ee"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 34369,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:14802a41a961a7ce78558388ae5e7079bcf443adebade3d96ed108870d6a7977"
+    },
+    {
+      "bytes": 187,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:5ab0775042ba548c1e039b263639b3d87a91974571e88e7ccbd61c79f55cf073"
+    },
+    {
+      "bytes": 514,
+      "path": "verifier/verify_reference.py",
+      "sha256": "sha256:02dd9f6adaf13612c5dc615c5830ce0e1b24ec067e9d9505c540c5b6e931c065"
+    }
+  ],
+  "problem_id": "binary_fuse_filter",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "commit": "3e10fb185a0c51e5866518d13b403e07db63d8d8",
+    "evaluator_sha256": "sha256:dde84943da93d9059fd30db3ec0ca1b273913006fcc41e6cebc3c148fd8f60c6",
+    "repo": "https://github.com/FastFilter/xor_singleheader",
+    "statement_sha256": "sha256:7e87c9ed815e64fc5804724f0c6f648ee13064710bf7a882aa36c1e07980ee1d"
+  }
+}

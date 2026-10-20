@@ -1,0 +1,72 @@
+tag: security
+runtime:
+  language: python
+  timeout_seconds: 3600
+  environment: Python 3.12, OpenJDK 25, fixed Qwen3-8B GGUF CUDA inference on one
+    Driver-managed Modal L4
+  apt_packages:
+  - git
+  judge_apt_packages:
+  - git
+  pip_packages:
+  - PyYAML==6.0.2
+  judge_pip_packages:
+  - PyYAML==6.0.2
+  - editdistance==0.8.1
+  - exrex==0.12.0
+  - regex==2024.11.6
+  - timeout-decorator==0.5.0
+  - tqdm==4.67.1
+  - xeger==0.4.0
+  docker:
+    image: ghcr.io/ggml-org/llama.cpp@sha256:17155a3ce4cc906728ec99a2814bf0b4eaffaf3b4872bad8c3affed310cdbc35
+    judge_image: ghcr.io/ggml-org/llama.cpp@sha256:17155a3ce4cc906728ec99a2814bf0b4eaffaf3b4872bad8c3affed310cdbc35
+    gpu_recipe:
+      path: fcs2-build/runtime.Dockerfile
+      sha256: sha256:87eb6697aede45331d3a235ff0f55843ef94a605e9915c0dad4133494ed4019d
+      stage: lrr_gpu_runtime
+  accelerator:
+    provider: modal
+    max_ssh_bytes_per_direction: 4194304
+    gpu_types:
+    - L4
+    agent:
+      instances: 0
+      max_instance_seconds: 0
+      max_gpu_seconds: 0
+    verifier:
+      instances: 1
+      max_instance_seconds: 3600
+      max_gpu_seconds: 7200
+environment:
+  cpus: 4
+  memory_mb: 12288
+  storage_mb: 8192
+  build_timeout_seconds: 1200
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+  - scripts/scalpel_to_thinking_steps.py
+  - prompts/localization.txt
+  - prompts/5-shot-localization-prompt.txt
+  - prompts/1-shot-prompt.txt
+  - prompts/5-shot-prompt.txt
+  - frontier_solution/
+  max_changed_files: 20
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics:
+  - train_vulnerability_elimination_rate
+  - train_repair_rate
+  - train_well_formed_rate
+  - train_mean_rli
+  - train_mean_nls
+  - train_mean_jaccard
+  - train_mean_precision
+  - train_mean_recall
+  max_train_wall_seconds: 5400
+  answering_timeout_seconds: 18000

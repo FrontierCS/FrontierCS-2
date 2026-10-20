@@ -1,0 +1,35 @@
+{
+  "model_list": [
+    {
+      "model_name": "step-5-preview",
+      "litellm_params": {
+        "model": "openrouter/stepfun/step-5-preview",
+        "api_base": "https://openrouter.ai/api/v1",
+        "api_key": "os.environ/OPENROUTER_STEPFUN_API_KEY",
+        "drop_params": true,
+        "additional_drop_params": [
+          "max_tokens",
+          "max_completion_tokens",
+          "reasoning_effort"
+        ],
+        "extra_body": {
+          "reasoning": {
+            "effort": "high"
+          },
+          "provider": {
+            "order": [
+              "StepFun"
+            ],
+            "allow_fallbacks": true
+          }
+        }
+      },
+      "model_info": {
+        "mode": "chat",
+        "base_model": "openrouter/stepfun/step-5-preview",
+        "supports_function_calling": true,
+        "supports_reasoning": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+id: "flow_opd"
+display_name: "OCR Distillation Trajectory Sampling"
+category: "Machine Learning"
+summary: "Implement the trajectory sampler and SDE step with log-probabilities for on-policy distillation of a flow-matching text-to-image model."
+paper_title: "Flow-OPD: On-Policy Distillation for Flow Matching Models"
+paper_venue: "arXiv 2026"
+paper_url: "https://arxiv.org/abs/2605.08063"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 3000
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 15000
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 4
+train_wall_seconds: 12000
+eval_timeout_seconds: 3000

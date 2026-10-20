@@ -1,0 +1,5 @@
+{
+  "source": "authoring runtime context: os-packages/bwrap-netlink-readback",
+  "sha256": "4348d585ce8264f4ed27a4eebab95a865fb374975eb9a56376cfa8442b0b6bb6",
+  "method": "Reuse retained campaign netlink-readback bubblewrap build, no rebuild or download"
+}

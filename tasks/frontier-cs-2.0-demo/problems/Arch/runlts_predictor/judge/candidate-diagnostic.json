@@ -1,0 +1,5 @@
+{
+  "diagnostic_schema": "runlts.candidate-diagnostic/v1",
+  "helper_sha256": "aa91ba241b8848117da6c47def37c796ab1f52d4c236ad2390775ae54e93931a",
+  "schema": "frontier.candidate-diagnostic-validator/v1"
+}

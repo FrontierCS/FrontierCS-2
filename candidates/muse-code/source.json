@@ -1,0 +1,47 @@
+{
+  "repository": "https://github.com/FrontierCS/FrontierCS-2",
+  "platform_source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33",
+  "dockerfile": {
+    "source": "candidate-overlays/muse-code/Dockerfile",
+    "sha256": "sha256:94f916a4afb809238a2c16598a480d13753d91ba607a5b1d6e02d819377db9b7",
+    "local_sha256": "sha256:89493c74339582a94a467c69717f989fb10f1a924bc14887f5277e7b2b186b1f"
+  },
+  "files": {
+    "launch": {
+      "source": "candidate-overlays/muse-code/launch",
+      "sha256": "sha256:fa610007a5bd418d9618e898c6304f4563b7ce03c17cfc971be54a25cd118105"
+    },
+    "launcher.mjs": {
+      "source": "candidate-overlays/muse-code/launcher.mjs",
+      "sha256": "sha256:fd14f95b78fdfdd0e9e09c9efa4945f09508ecff688f4e09afea9f79f5cff659"
+    },
+    "transport.mjs": {
+      "source": "candidate-overlays/muse-code/transport.mjs",
+      "sha256": "sha256:4ec4003fca908eb0ed1c7b174fce635f1a24e4f4031c0e830b6de8fdbfa9fa20"
+    },
+    "model-catalog.json": {
+      "source": "candidate-overlays/muse-code/model-catalog.json",
+      "sha256": "sha256:485ee9bad564950592d9f9fed79175e1ae0a100a2f36aa49ff522da996245398"
+    },
+    "submit/frontier_submit.py": {
+      "source": "candidate-overlays/codex/frontier_submit.py",
+      "sha256": "sha256:f4cbc551acd10a729e5cade5cc3a70b653d9aee1dee4b1cbfeb20b3208df6f00"
+    },
+    "gpu-helper/frontier_gpu.py": {
+      "source": "candidate-overlays/codex/frontier_gpu.py",
+      "sha256": "sha256:b0e659a8c67447a14f405eea1e21b7e54b5c7e5f3ddc3103021e5d5305c9adfc"
+    },
+    "gpu-helper/frontier_gpu_connect_proxy.py": {
+      "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
+      "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+    },
+    "submit/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-submit/SKILL.md",
+      "sha256": "sha256:7b2970a46013672fefaaa92a75552347c129af18fabd4f9bccad74033b9021cb"
+    },
+    "gpu-helper/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-gpu/SKILL.md",
+      "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    }
+  }
+}

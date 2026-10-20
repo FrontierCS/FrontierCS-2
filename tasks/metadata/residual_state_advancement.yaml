@@ -1,0 +1,27 @@
+id: "residual_state_advancement"
+display_name: "Residual State Advancement"
+category: "Database"
+summary: "Speed up residual updates in JoinBoost's SQL-only gradient-boosted tree training over normalized data."
+paper_title: "JoinBoost: Grow Trees over Normalized Data Using Only SQL"
+paper_venue: "PVLDB 2023"
+paper_url: "https://www.vldb.org/pvldb/vol16/p3071-huang.pdf"
+agent_cpu_cores: 2
+agent_memory_gib: 16
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 16
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 720000
+eval_timeout_seconds: 7200

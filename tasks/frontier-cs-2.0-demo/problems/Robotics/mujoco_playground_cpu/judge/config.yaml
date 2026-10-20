@@ -1,0 +1,57 @@
+tag: robotics
+runtime:
+  language: python
+  timeout_seconds: 5400
+  final_timeout_seconds: 14400
+  environment: Python 3.12 control pod; Driver-provisioned single NVIDIA H100 runner;
+    MuJoCo Playground Go1 joystick training and pristine-environment policy evaluation
+    with JAX 0.4.35, Brax 0.12.1 and MuJoCo MJX 3.2.7
+  docker:
+    image: ubuntu:24.04
+    gpu_image: nvidia/cuda:12.6.3-base-ubuntu24.04
+  apt_packages:
+  - git
+  accelerator:
+    provider: modal
+    gpu_types:
+    - H100
+    agent:
+      instances: 1
+      max_instance_seconds: 14400
+      max_gpu_seconds: 14400
+    verifier:
+      instances: 1
+      max_instance_seconds: 14400
+      max_gpu_seconds: 30600
+    ssh_session_budgets:
+      agent: 32
+      verifier_train: 12
+      verifier_eval: 4
+  judge_apt_packages:
+  - git
+  judge_pip_requirements: agent-base/frontier/task/runtime/requirements-gpu.lock
+environment:
+  cpus: 3
+  memory_mb: 12288
+  storage_mb: 10240
+  build_timeout_seconds: 900
+evaluation:
+  max_dev_submissions: 3
+  suite_relation: same_distribution
+  solver_visible_metrics:
+  - development_mean_episode_reward
+  - development_mean_tracking_lin_vel
+  - development_mean_tracking_ang_vel
+  - development_mean_energy
+  - development_mean_action_rate
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+  - frontier_solution/
+  - mujoco_playground/_src/locomotion/go1/joystick.py
+  - mujoco_playground/_src/locomotion/go1/randomize.py
+  - mujoco_playground/config/locomotion_params.py
+  max_changed_files: 50
+  max_patch_bytes: 262144

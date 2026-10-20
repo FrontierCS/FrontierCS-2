@@ -1,0 +1,6 @@
+.git
+__pycache__
+*.pyc
+.pytest_cache
+local_trials
+upstream.lock.json

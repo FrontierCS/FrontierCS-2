@@ -1,0 +1,19 @@
+{
+  "schema": "preview.reviewed-feedback-statement/v1",
+  "problem_id": "semantic_robot_world_model",
+  "bindings": {
+    "upstream.lock.json": "sha256:de8f662e557b753545ed284527977227c8f83e0271894a188d8eb0256ab6255f",
+    "policy.json": "sha256:e4db3eef4464c0e7089431f31809803fa70b27822eecad93cd407f5e7168b212",
+    "judge/beat_spec.json": "sha256:b7a40808547ef3f3d46fd3c0172c963c2b479324ad2a4e94c65bec2c5c924d18",
+    "agent-base/frontier/task/README.md": "sha256:941c353c9cfbd5468b634de1ab31eb18eb1bfc6e8adb81a961630ef183a6007b",
+    "agent-base/frontier/task/repo/README.md": "sha256:01ceef70d51b7d86d4ba626c8ad15ba0213db72e290baa4d535fe3e9b652e4de"
+  },
+  "sentence": "Development feedback contains only the candidate's absolute mean PSNR, SSIM, LPIPS, semantic reconstruction MSE, and CEM action-recovery L2.",
+  "fields": {
+    "dev_psnr_mean": "PSNR",
+    "dev_ssim_mean": "SSIM",
+    "dev_lpips_mean": "LPIPS",
+    "dev_semantic_reconstruction_mse_mean": "semantic reconstruction MSE",
+    "dev_cem_action_recovery_l2_mean": "CEM action-recovery L2"
+  }
+}

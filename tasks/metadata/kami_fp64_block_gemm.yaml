@@ -1,0 +1,27 @@
+id: "kami_fp64_block_gemm"
+display_name: "KAMI FP64 Block GEMM — trusted batched harness adaptation"
+category: "Arch"
+summary: "Implement the missing FP64 KAMI tensor-core block-GEMM device kernel on one H100."
+paper_title: "KAMI: Communication-Avoiding General Matrix Multiplication within a Single GPU"
+paper_venue: "SC 2025"
+paper_url: "https://www.ssslab.cn/assets/papers/2025-wang-KAMI.pdf"
+agent_cpu_cores: 3
+agent_memory_gib: 4
+agent_disk_gib: 4
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 900
+verifier_cpu_cores: 3
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 1800
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 12
+train_wall_seconds: 21600
+eval_timeout_seconds: 1800

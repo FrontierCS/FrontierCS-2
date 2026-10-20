@@ -1,0 +1,11 @@
+{
+  "allowed_paths": [
+    "sql_testing/environment.py",
+    "sql_testing/smt/formula.py",
+    "sql_testing/smt/knowledgebase.py",
+    "sql_testing/smt/search_extensions/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 20,
+  "member": "solution.patch"
+}

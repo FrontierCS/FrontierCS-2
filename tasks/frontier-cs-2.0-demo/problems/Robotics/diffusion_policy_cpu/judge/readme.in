@@ -1,0 +1,175 @@
+# Closed-loop action sampling
+
+Implement the missing conditional sampler and evaluate it through the supplied
+train/final submission workflow. Each published evaluation uses source-bound
+private workload manifests and independently measured calibration constants.
+
+## Problem
+
+A simulated robot pushes a T-shaped object into a target region. A controller
+observes object and robot keypoints and generates an action sequence for the next
+part of the motion. The existing controller provides a frozen learned transformer,
+normalization, an observation window and receding-horizon execution. The missing
+component generates normalized samples conditioned on those observations. Its
+output must preserve specified entries and have the required finite shape, dtype
+and device. The objective is to maximize the calibrated continuous score;
+the separate criterion also measures original manipulation quality and CPU cost.
+You supply only the removed conditional sampler body.
+
+## Your workspace
+
+Run `/frontier/task/bin/prepare_workspace.sh` to copy the retained source
+from `/frontier/task/repo` to `/workspace/repo` before editing it. The only editable paths are:
+
+```text
+diffusion_policy/policy/diffusion_transformer_lowdim_policy.py
+diffusion_policy/sampler_extensions/*.py
+```
+
+Only `DiffusionTransformerLowdimPolicy.conditional_sample`'s body may change in
+the policy file. Its signature, constructor, other methods, imports and all
+retained dependencies are locked. Helper subdirectories are allowed. The supplied
+physics, reward, learned transformer, normalizer and action slicing stay fixed.
+
+## Design space
+
+The permitted area is observation-conditioned reverse sampling using the frozen
+transformer and compatible scheduler semantics. Denoising-step allocation,
+stochastic or deterministic updates and sampling-loop implementation are in scope.
+The controller architecture, weights, training, environment and reward are out
+of scope. Preserve the conditioning and output contract; valid alternatives do
+not have to return exactly the same tensor or use exactly the same number of
+denoising steps. No environment inspection, seed-specific lookup, RNG reseeding,
+background work that hides cost or mutation of retained code is permitted.
+
+## Workload
+
+The workload runs complete Push-T episodes through the unchanged
+runner with the original 300-step cap and observation/prediction/action horizons
+2/10/8. An episode ends on original environment success or original truncation;
+truncation is not success. Candidate and restored method receive identical
+episode manifests and diffusion seeds under equal resources. Private group membership, three repetitions per condition and paired scheduling
+are fixed for the published version. Development and final diffusion seeds are
+independent. The workload is representative of the
+specified manipulation experiment, not a table of initial states to recognize.
+
+## Interface
+
+The preserved entry point accepts `condition_data`, `condition_mask`, optional
+`cond`, optional `generator` and scheduler keyword arguments. Return a normalized
+CPU tensor matching `condition_data` in shape and dtype. All entries must be
+finite. Every entry selected by `condition_mask` must equal the corresponding
+entry of `condition_data`; the caller performs normalization and action slicing.
+
+For example, in a three-entry illustration with data `[1.0, 2.0, 3.0]` and mask
+`[True, False, True]`, a result `[1.0, 0.5, 3.0]` respects the masking invariant,
+while `[0.0, 0.5, 3.0]` does not. This is a shape/masking illustration only;
+actual workloads use the fixed sequence horizon and measure closed-loop behavior.
+
+## Validity
+
+Static checks apply the patch to a disposable copy, verify the original source
+inventory, reject changes outside the sampler body, and check bounded helpers.
+You may add at most 16 regular, non-executable Python files with at most 65536
+aggregate bytes in the helper namespace. Symlinks, hard links, native extensions
+and data files are forbidden. The mixed policy file is limited to 131072 bytes.
+The sampler executes in a separate process through a bounded tensor protocol
+inside the standard platform Verifier sandbox. It can request frozen
+transformer evaluations and fresh random tensors. The protocol does not expose
+model weights, environment state, private manifests or rewards; submitted code
+must not read private answers or modify scoring. Trial patches, trajectories and
+available logs are reviewed for concrete violations after execution.
+Each prediction must invoke the
+frozen model at least once and at most 200 times. Source and tensor guards do not
+prove that an arbitrary method follows the permitted scientific design; that
+requirement also remains subject to solution review.
+
+## Scoring
+
+The selected continuous formula uses original mean episode-maximum reward Q,
+mean prediction latency L and median complete-workload duration T. Independent
+constants Qn, Ln and Tn come from a frozen natural 20-step DDPM calibration on
+the exact workload, source, runtime and hardware policy. For every workload w:
+
+```text
+G(w) = max(0, (Q(w) - Qn(w)) / (1 - Qn(w)))
+u(w) = G(w) * min(Ln(w) / L(w), Tn(w) / T(w))
+U = mean of u(w) over every workload, with equal workload weight
+F = 100 * U / (1 + U)
+```
+
+F is the bounded display and U retains unbounded improvement. Reward at or below
+the independent naive anchor has zero utility. Improving the nonlimiting cost
+alone can leave utility unchanged; both cost ratios must improve to increase
+their minimum. Original binary success remains a mandatory separate comparison
+and absolute feedback metric; it is not mixed into the continuous formula.
+
+The optimized comparison method is not a formula input. Its pass/fail flag does
+not zero a valid continuous score. Missing or mismatched calibration and
+trusted reference infrastructure are authoring errors, not invented solver
+zeros. A separate stricter comparison uses every metric on every workload.
+
+{beat_statement}
+
+## Calibration
+
+Calibration is bound to the exact source, runtime, hardware and private suite.
+Natural 20-step baseline constants and original 100-step reference measurements
+are collected separately from solver trials.
+Strict timing comparisons presently have zero tolerance; a later change needs
+measured justification and an explicit specification revision. Small frozen
+groups can establish performance only on their declared manifest, not a general
+claim of distribution-wide superiority.
+
+## Feedback and grading
+
+The development allowance is {max_dev_submissions} submissions, derived from
+the task's single development-submission setting.
+The graded suite is not the suite you receive feedback on.
+The graded suite includes additional initial
+conditions beyond those in feedback, and freshly reruns public conditions with
+independent private diffusion seeds. This extends membership without claiming
+an intentional change in the initial-condition sampling distribution.
+
+Development feedback is limited to candidate-only reward, success, prediction
+latency and complete-workload duration summaries plus aggregate criterion counts.
+No private rows, seeds, withheld method values or final measurements are exposed.
+Invalid or incomplete development measurements remain unavailable, not invented
+zeros.
+
+## Submission
+
+Prepare a unified Git patch rooted at the repository root, at most 262144 bytes
+and 17 changed files. Include new helper files explicitly. Empty patches and
+changes outside the declared surface are rejected. For an initialized disposable
+working copy, an example preparation command is:
+
+```bash
+git add -N diffusion_policy/sampler_extensions
+git diff --binary > /workspace/solution.patch
+```
+
+For both train and final, the uncompressed tar contains only
+`payload/solution.patch` (regular file, mode 0644). The tar must fit the 262144-byte
+submission limit, including archive overhead. The supplied `make_submission.sh`
+packages the patch. Submit the archive through the Candidate-owned tools:
+
+```bash
+frontier-submit train /workspace/submission.tar
+frontier-submit final /workspace/submission.tar
+```
+
+Final selects your explicit submitted patch, independently of earlier train scores.
+
+## Resources
+
+CPU-only execution is required. Each verification uses 2 CPUs, 4096 MiB memory and
+4096 MiB storage, with one Torch/BLAS thread. A complete trajectory process has
+a 150-second deadline, including imports, strict model loading and cleanup;
+the sampler process has a 130-second lifetime. Development and independent
+final budgets are 1860 and 3720 seconds. These are conservative limits derived
+from private raw measurements and complete episode counts, not measured native
+runtime guarantees for arbitrary submitted methods. Work exceeding a declared
+limit is invalid; final receives its independent evaluation window.
+
+Rejected development submissions return `candidate_diagnostic`, a fixed source-policy rejection category without exception details or private measurements. Only the `conditional_sample` body may change; signature whitespace remains protected.

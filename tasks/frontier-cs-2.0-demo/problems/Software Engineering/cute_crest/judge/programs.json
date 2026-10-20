@@ -1,0 +1,66 @@
+{
+ "schema": "cute_crest.programs/v1",
+ "relabel_salt": "cute_crest/relabel/7f3c1a9e52d84b06",
+ "development": [
+  {
+   "id": "dev",
+   "directory": "dev",
+   "argv": [
+    "grep",
+    "aaaaaaaaaaaaaaaaaaaa",
+    "in.txt"
+   ],
+   "needs_pty": false,
+   "term": "dumb",
+   "seed_base": 1001,
+   "branch_count": 3982,
+   "baseline_mean_coverage": 1057.0,
+   "reference_run_wall_seconds": 120,
+   "run_wall_seconds": 320,
+   "reference_max_run_wall_seconds": 263
+  }
+ ],
+ "final": [
+  {
+   "id": "final_a",
+   "directory": "final_a",
+   "argv": [
+    "vim",
+    "-m",
+    "-n",
+    "-Z",
+    "-i",
+    "NONE",
+    "-u",
+    "NONE"
+   ],
+   "needs_pty": true,
+   "term": "vt100",
+   "seed_base": 2001,
+   "branch_count": 35556,
+   "baseline_mean_coverage": 3560.0,
+   "reference_run_wall_seconds": 430,
+   "run_wall_seconds": 1000,
+   "reference_max_run_wall_seconds": 693
+  },
+  {
+   "id": "final_b",
+   "directory": "final_b",
+   "argv": [
+    "sed",
+    "-e",
+    "aaaaaaaaaaaaaaaaaaaa",
+    "in.txt"
+   ],
+   "needs_pty": false,
+   "term": "dumb",
+   "seed_base": 3001,
+   "branch_count": 2816,
+   "baseline_mean_coverage": 320.0,
+   "reference_run_wall_seconds": 79,
+   "run_wall_seconds": 150,
+   "reference_max_run_wall_seconds": 112
+  }
+ ],
+ "note": "baseline_mean_coverage is the mean coverage at budget of bounded depth-first search (depth 12); reference_run_wall_seconds and reference_max_run_wall_seconds are the mean and the largest wall time of one reference run measured eight at a time; run_wall_seconds is the per-run wall-clock budget, about 1.2 to 1.4 times that largest time. None of them enters the PASS rule."
+}

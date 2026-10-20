@@ -1,0 +1,27 @@
+id: "parallel_dbscan"
+display_name: "Exact DBSCAN Connectivity"
+category: "HPC"
+summary: "Speed up exact parallel DBSCAN cluster connectivity."
+paper_title: "Theoretically-Efficient and Practical Parallel DBSCAN"
+paper_venue: "SIGMOD 2020"
+paper_url: "https://doi.org/10.1145/3318464.3380582"
+agent_cpu_cores: 8
+agent_memory_gib: 4
+agent_disk_gib: 2
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 8
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 24000
+eval_timeout_seconds: 600

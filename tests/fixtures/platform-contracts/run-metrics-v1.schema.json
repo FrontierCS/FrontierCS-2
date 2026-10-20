@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontiercs.dev/contracts/run-metrics-v1.schema.json",
+  "title": "FrontierCS2 operator Run metrics v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "mode",
+    "visible"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "frontier.run-metrics/v1"
+    },
+    "mode": {
+      "const": "eval"
+    },
+    "visible": {
+      "type": "object"
+    },
+    "private": {
+      "$ref": "#/$defs/PrivateMetrics"
+    },
+    "truncated": {
+      "const": true
+    }
+  },
+  "$defs": {
+    "NonNull": {
+      "not": {
+        "type": "null"
+      },
+      "if": {
+        "type": "object"
+      },
+      "then": {
+        "additionalProperties": {
+          "$ref": "#/$defs/NonNull"
+        }
+      },
+      "else": {
+        "if": {
+          "type": "array"
+        },
+        "then": {
+          "items": {
+            "$ref": "#/$defs/NonNull"
+          }
+        }
+      }
+    },
+    "PrivateMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "beats_reference": {
+          "type": "integer",
+          "enum": [
+            0,
+            1
+          ]
+        },
+        "reference_score": {
+          "type": "number"
+        },
+        "margin": {
+          "type": "number"
+        },
+        "aggregation": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/NonNull"
+          }
+        },
+        "beat_spec_progress": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "passed",
+              "failed",
+              "total",
+              "pass_percent",
+              "fail_percent"
+            ],
+            "properties": {
+              "passed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pass_percent": {
+                "type": "number"
+              },
+              "fail_percent": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$comment": "Runtime validation additionally limits private metrics to 16384 compact canonical UTF-8 bytes and requires integer token representations (1.0 is rejected for beats_reference and progress counts). Standard JSON Schema treats integral floating representations as integers."
+}

@@ -1,0 +1,32 @@
+tag: algorithms
+runtime:
+  language: cpp
+  timeout_seconds: 1800
+  environment: "C++14/OpenMP repository task; exactly 4 CPU threads; generated AdjacencyHypergraph inputs"
+  apt_packages: [build-essential, git, python3]
+  judge_apt_packages: [build-essential, git, python3]
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 4
+  memory_mb: 8192
+  storage_mb: 4096
+  build_timeout_seconds: 180
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+    - apps/hyper/butterfly_count_total.h
+    - apps/hyper/butterfly_count.h
+    - apps/hyper/butterfly_ecount.h
+    - apps/hyper/butterfly_peel.h
+    - apps/hyper/butterfly_epeel.h
+    - apps/hyper/butterfly_putils.h
+    - apps/hyper/butterfly_utils.h
+    - apps/hyper/solver_extensions/
+  max_changed_files: 20
+  max_patch_bytes: 524288
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics: [dev_counting_seconds_median, dev_counting_seconds_p90]

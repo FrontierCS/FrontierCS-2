@@ -1,0 +1,27 @@
+id: "babble_anti_unification"
+display_name: "Reusable Library Candidates"
+category: "Programming Language"
+summary: "Improve BABBLE's library learning so refactored program corpora become smaller."
+paper_title: "babble: Learning Better Abstractions with E-Graphs and Anti-unification"
+paper_venue: "POPL 2023"
+paper_url: "https://arxiv.org/abs/2212.04596"
+agent_cpu_cores: 2
+agent_memory_gib: 8
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 2
+verifier_memory_gib: 2
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 100
+train_wall_seconds: 1800
+eval_timeout_seconds: 600

@@ -1,0 +1,40 @@
+defaults:
+  - model: nanowm_b2
+  - latent_codec: sd_vae
+  - dataset: dino_wm/point_maze
+  - experiment: default
+  - planning: base
+  - override hydra/job_logging: disabled
+  - override hydra/hydra_logging: disabled
+  - _self_
+
+# Paths (from environment variables with defaults)
+dataset_dir: ${oc.env:DATASET_DIR,./data}
+csgo_data_dir: ${oc.env:CSGO_DATA_DIR,./data/csgo}
+vae_model_path: ${oc.env:VAE_MODEL_PATH,stabilityai/sd-vae-ft-mse}
+webdino_model_path: ${oc.env:WEBDINO_MODEL_PATH,facebook/webssl-dino300m-full2b-224}
+vjepa21_model_path: ${oc.env:VJEPA21_MODEL_PATH,null}
+vjepa2_repo_path: ${oc.env:VJEPA2_REPO_PATH,null}
+results_dir: ${oc.env:RESULTS_DIR,./results}
+
+# Planning checkpoint (set via CLI for experiment=planning)
+ckpt_path: null
+
+# Logger
+logger:
+  name: wandb
+  save_dir: ${hydra:runtime.output_dir}/tb
+  logger_name: nanowm
+
+# Experiment tracking (all fields overridable via env var or Hydra CLI)
+wandb:
+  enabled: true
+  entity: ${oc.env:WANDB_ENTITY,null}
+  project: ${oc.env:WANDB_PROJECT,nano-world-model}
+  mode: ${oc.env:WANDB_MODE,online}
+
+hydra:
+  run:
+    dir: ${results_dir}/${now:%Y%m%d_%H%M%S}-${model.name}-F${model.num_frames}S${dataset.frame_interval}-${dataset.name}
+  job:
+    chdir: true

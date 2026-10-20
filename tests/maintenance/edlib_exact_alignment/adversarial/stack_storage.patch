@@ -1,0 +1,458 @@
+diff --git a/edlib/src/edlib.cpp b/edlib/src/edlib.cpp
+--- a/edlib/src/edlib.cpp
++++ b/edlib/src/edlib.cpp
+@@ -1233,9 +1233,452 @@
+         const unsigned char* const target, const unsigned char* const rTarget, const int targetLength,
+         const EqualityDefinition& equalityDefinition, const int alphabetLength, const int bestScore,
+         unsigned char** const alignment, int* const alignmentLength) {
+-    *alignment = NULL;
++    *alignment = static_cast<unsigned char*>(malloc(queryLength + targetLength));
+     *alignmentLength = 0;
+-    return EDLIB_STATUS_ERROR;
++    if (queryLength == 0 || targetLength == 0 || bestScore == 0) {
++        *alignmentLength = bestScore == 0 ? queryLength : queryLength + targetLength;
++        if (*alignmentLength)
++            memset(*alignment, bestScore == 0 ? EDLIB_EDOP_MATCH
++                   : queryLength == 0 ? EDLIB_EDOP_DELETE : EDLIB_EDOP_INSERT, *alignmentLength);
++        return EDLIB_STATUS_OK;
++    }
++    bool identityEquality = true;
++    for (int first = 0; first < alphabetLength && identityEquality; ++first)
++        for (int second = 0; second < first; ++second)
++            if (equalityDefinition.areEqual(first, second)) {
++                identityEquality = false;
++                break;
++            }
++    auto wavefrontAlignment = [&]() -> bool {
++        if (bestScore > 512 || static_cast<long long>(bestScore) * bestScore > 8ll * max(queryLength, targetLength)
++            || static_cast<long long>(max(queryLength, targetLength)) + bestScore >= 65535) return false;
++        const int width = 2 * bestScore + 3;
++        const int origin = bestScore + 1;
++        const int tileSize = 32;
++        // ADVERSARIAL FIXTURE. Not a solution; see test_adversarial.py.
++        struct FxSpan { uint16_t* p; size_t n; uint16_t* data() { return p; } size_t size() const { return n; } };
++        const size_t fx_a = static_cast<size_t>(bestScore / tileSize + 1) * width, fx_b = static_cast<size_t>(tileSize) * width, fx_c = static_cast<size_t>(2 * width);
++        uint16_t fx_store_a[17 * 1027], fx_store_b[32 * 1027], fx_store_c[2 * 1027];
++        memset(fx_store_a, 0, fx_a * 2); memset(fx_store_b, 0, fx_b * 2); memset(fx_store_c, 0, fx_c * 2);
++        FxSpan checkpoints{fx_store_a, fx_a};
++        FxSpan columns{fx_store_b, fx_b};
++        FxSpan work{fx_store_c, fx_c};
++        uint16_t* previous = work.data();
++        uint16_t* current = previous + width;
++        auto extend = [&](int queryPosition, int diagonal) {
++            int targetPosition = queryPosition - diagonal;
++            if (identityEquality) {
++                const int wordLimit = min(queryLength, targetLength + diagonal) - static_cast<int>(sizeof(Word));
++                while (queryPosition <= wordLimit) {
++                    Word queryWord, targetWord;
++                    memcpy(&queryWord, query + queryPosition, sizeof(Word));
++                    memcpy(&targetWord, target + targetPosition, sizeof(Word));
++                    const Word difference = queryWord ^ targetWord;
++                    if (difference) return queryPosition + __builtin_ctzll(difference) / 8;
++                    queryPosition += sizeof(Word);
++                    targetPosition += sizeof(Word);
++                }
++                while (queryPosition < queryLength && targetPosition < targetLength &&
++                       query[queryPosition] == target[targetPosition]) {
++                    ++queryPosition;
++                    ++targetPosition;
++                }
++            } else {
++                while (queryPosition < queryLength && targetPosition < targetLength &&
++                       equalityDefinition.areEqual(query[queryPosition], target[targetPosition])) {
++                    ++queryPosition;
++                    ++targetPosition;
++                }
++            }
++            return queryPosition;
++        };
++        const int prefix = extend(0, 0);
++        previous[origin] = prefix + 1;
++        memcpy(checkpoints.data(), previous, width * sizeof(uint16_t));
++        auto startingPoint = [&](const uint16_t* wave, int diagonal, unsigned char* operation) {
++            const int index = origin + diagonal;
++            const int limit = min(queryLength, targetLength + diagonal) + 1;
++            int value = 0;
++            if (wave[index] && wave[index] < limit) {
++                value = wave[index] + 1;
++                *operation = EDLIB_EDOP_MISMATCH;
++            }
++            if (wave[index - 1] && wave[index - 1] < limit && wave[index - 1] + 1 > value) {
++                value = wave[index - 1] + 1;
++                *operation = EDLIB_EDOP_INSERT;
++            }
++            if (wave[index + 1] && wave[index + 1] <= limit && wave[index + 1] > value) {
++                value = wave[index + 1];
++                *operation = EDLIB_EDOP_DELETE;
++            }
++            return value;
++        };
++        auto advance = [&](const uint16_t* input, uint16_t* output, int score) {
++            for (int diagonal = -score; diagonal <= score; ++diagonal) {
++                const int index = origin + diagonal;
++                const int queryPosition = max(max(input[index], input[index - 1]) + 1, input[index + 1]) - 1;
++                output[index] = extend(queryPosition, diagonal) + 1;
++            }
++        };
++        for (int score = 1; score <= bestScore; ++score) {
++            advance(previous, current, score);
++            swap(previous, current);
++            if (score % tileSize == 0)
++                memcpy(checkpoints.data() + static_cast<size_t>(score / tileSize) * width,
++                       previous, width * sizeof(uint16_t));
++        }
++        int diagonal = queryLength - targetLength;
++        if (abs(diagonal) > bestScore || previous[origin + diagonal] != queryLength + 1) return false;
++        int queryPosition = queryLength;
++        int score = bestScore;
++        while (score > 0) {
++            const int base = (score - 1) / tileSize * tileSize;
++            memset(columns.data(), 0, columns.size() * sizeof(uint16_t));
++            memcpy(columns.data(), checkpoints.data() + static_cast<size_t>(base / tileSize) * width,
++                   width * sizeof(uint16_t));
++            for (int step = base + 1; step < score; ++step)
++                advance(columns.data() + static_cast<size_t>(step - base - 1) * width,
++                        columns.data() + static_cast<size_t>(step - base) * width, step);
++            while (score > base) {
++                const uint16_t* wave = columns.data() + static_cast<size_t>(score - base - 1) * width;
++                unsigned char operation = EDLIB_EDOP_MATCH;
++                const int start = startingPoint(wave, diagonal, &operation) - 1;
++                if (start < 0 || start > queryPosition) {
++                    *alignmentLength = 0;
++                    return false;
++                }
++                memset(*alignment + *alignmentLength, EDLIB_EDOP_MATCH, queryPosition - start);
++                *alignmentLength += queryPosition - start;
++                (*alignment)[(*alignmentLength)++] = operation;
++                if (operation == EDLIB_EDOP_INSERT) --diagonal;
++                if (operation == EDLIB_EDOP_DELETE) ++diagonal;
++                queryPosition = wave[origin + diagonal] - 1;
++                --score;
++            }
++        }
++        memset(*alignment + *alignmentLength, EDLIB_EDOP_MATCH, queryPosition);
++        *alignmentLength += queryPosition;
++        reverse(*alignment, *alignment + *alignmentLength);
++        return true;
++    };
++    if (wavefrontAlignment()) return EDLIB_STATUS_OK;
++    auto checkpointAlignment = [&]() -> bool {
++        if (queryLength < 256 || targetLength < 256 || bestScore == 0) return false;
++        const int blockCount = ceilDiv(queryLength, WORD_SIZE);
++        int tileSize = 64;
++        while (static_cast<long long>(tileSize) * tileSize < targetLength) tileSize *= 2;
++        const int checkpointCount = targetLength / tileSize + 1;
++        const int maximumStep = ceilDiv(queryLength, targetLength);
++        struct ColumnRange { int first, last; };
++        struct TraceBlock { Word vertical, horizontal; };
++        Word* peq;
++        if (identityEquality) {
++            peq = new Word[(alphabetLength + 1) * blockCount]();
++            for (int row = 0; row < queryLength; ++row)
++                peq[query[row] * blockCount + row / WORD_SIZE] |= Word(1) << (row % WORD_SIZE);
++            if (queryLength % WORD_SIZE)
++                for (int symbol = 0; symbol < alphabetLength; ++symbol)
++                    peq[(symbol + 1) * blockCount - 1] |= ~Word(0) << (queryLength % WORD_SIZE);
++            fill(peq + alphabetLength * blockCount, peq + (alphabetLength + 1) * blockCount, ~Word(0));
++        } else {
++            peq = buildPeq(alphabetLength, query, queryLength, equalityDefinition);
++        }
++        vector<Block> blocks(blockCount);
++        bool success = false;
++        const int initialRadius = bestScore < WORD_SIZE * WORD_SIZE ? WORD_SIZE / 2 : WORD_SIZE;
++        for (int radius = initialRadius; !success; radius *= 2) {
++            const int width = min(blockCount, ceilDiv(2 * radius + maximumStep, WORD_SIZE) + 1);
++            if (static_cast<long long>(width) * (tileSize + checkpointCount) * sizeof(Block) > 131072)
++                break;
++            vector<Block> checkpoints(static_cast<size_t>(checkpointCount) * width);
++            vector<TraceBlock> columns(static_cast<size_t>(tileSize) * width);
++            vector<ColumnRange> checkpointRanges(checkpointCount), columnRanges(tileSize);
++            int firstBlock = 0, lastBlock = min(blockCount - 1, radius / WORD_SIZE);
++            for (int block = 0; block <= lastBlock; ++block)
++                blocks[block] = Block(~Word(0), 0, (block + 1) * WORD_SIZE);
++            auto saveCheckpoint = [&](int index) {
++                checkpointRanges[index] = {firstBlock, lastBlock};
++                memcpy(checkpoints.data() + static_cast<size_t>(index) * width,
++                       blocks.data() + firstBlock, (lastBlock - firstBlock + 1) * sizeof(Block));
++            };
++            auto advance = [&](int columnIndex, int traceIndex) {
++                const Word* equalities = peq + target[columnIndex] * blockCount;
++                TraceBlock* trace = traceIndex < 0 ? NULL
++                    : columns.data() + static_cast<size_t>(traceIndex) * width;
++                const int firstComputedBlock = firstBlock;
++                auto update = [&](int block, int carry) {
++                    const Word positive = blocks[block].P, negative = blocks[block].M;
++                    const Word carryNegative = static_cast<Word>(carry >> 2) & 1;
++                    const Word vertical = equalities[block] | negative;
++                    const Word equality = equalities[block] | carryNegative;
++                    const Word diagonal = (((equality & positive) + positive) ^ positive) | equality;
++                    Word horizontalPositive = negative | ~(diagonal | positive);
++                    Word horizontalNegative = positive & diagonal;
++                    const int nextCarry = static_cast<int>(horizontalPositive >> 63)
++                        - static_cast<int>(horizontalNegative >> 63);
++                    if (trace) trace[block - firstComputedBlock].horizontal = horizontalPositive;
++                    horizontalPositive = (horizontalPositive << 1) | static_cast<Word>((carry + 1) >> 1);
++                    horizontalNegative = (horizontalNegative << 1) | carryNegative;
++                    blocks[block].P = horizontalNegative | ~(vertical | horizontalPositive);
++                    blocks[block].M = horizontalPositive & vertical;
++                    if (trace) trace[block - firstComputedBlock].vertical = blocks[block].P;
++                    return nextCarry;
++                };
++                int carry = 1;
++                for (int block = firstBlock; block <= lastBlock; ++block) {
++                    carry = update(block, carry);
++                    blocks[block].score += carry;
++                }
++                const int center = static_cast<int>(static_cast<long long>(columnIndex + 1) * queryLength / targetLength);
++                const int endBlock = min(blockCount - 1, (center + radius) / WORD_SIZE);
++                while (lastBlock < endBlock) {
++                    ++lastBlock;
++                    blocks[lastBlock].P = ~Word(0);
++                    blocks[lastBlock].M = 0;
++                    const int nextCarry = update(lastBlock, carry);
++                    blocks[lastBlock].score = blocks[lastBlock - 1].score - carry + WORD_SIZE + nextCarry;
++                    carry = nextCarry;
++                }
++                if (traceIndex >= 0) {
++                    columnRanges[traceIndex] = {firstBlock, lastBlock};
++                }
++                firstBlock = max(0, (center - radius) / WORD_SIZE);
++            };
++            auto blockScore = [](const Block& block, int offset) {
++                const Word mask = offset == WORD_SIZE ? Word(0) : ~Word(0) << offset;
++                auto population = [](Word word) {
++                    word -= (word >> 1) & 0x5555555555555555ULL;
++                    word = (word & 0x3333333333333333ULL) + ((word >> 2) & 0x3333333333333333ULL);
++                    word = (word + (word >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
++                    return static_cast<int>((word * 0x0101010101010101ULL) >> 56);
++                };
++                return block.score - population(block.P & mask) + population(block.M & mask);
++            };
++            saveCheckpoint(0);
++            for (int columnIndex = 0; columnIndex < targetLength; ++columnIndex) {
++                advance(columnIndex, -1);
++                if ((columnIndex + 1) % tileSize == 0) saveCheckpoint((columnIndex + 1) / tileSize);
++            }
++            const int finalScore = blockScore(blocks[blockCount - 1], queryLength - (blockCount - 1) * WORD_SIZE);
++            if (finalScore != bestScore) {
++                if (width == blockCount) break;
++                continue;
++            }
++            int queryPosition = queryLength, targetPosition = targetLength, currentScore = bestScore;
++            *alignmentLength = 0;
++            success = true;
++            while (targetPosition > 0 && success) {
++                const int checkpointIndex = (targetPosition - 1) / tileSize;
++                const int base = checkpointIndex * tileSize;
++                const ColumnRange initialRange = checkpointRanges[checkpointIndex];
++                firstBlock = initialRange.first;
++                lastBlock = initialRange.last;
++                const Block* initialBlocks = checkpoints.data() + static_cast<size_t>(checkpointIndex) * width;
++                memcpy(blocks.data() + firstBlock, initialBlocks, (lastBlock - firstBlock + 1) * sizeof(Block));
++                for (int columnIndex = base; columnIndex < targetPosition; ++columnIndex)
++                    advance(columnIndex, columnIndex - base);
++                while (targetPosition > base) {
++                    const int traceIndex = targetPosition - base - 1;
++                    const ColumnRange range = columnRanges[traceIndex];
++                    if (queryPosition <= range.first * WORD_SIZE) {
++                        (*alignment)[(*alignmentLength)++] = EDLIB_EDOP_DELETE;
++                        --targetPosition;
++                        --currentScore;
++                        continue;
++                    }
++                    if (queryPosition > (range.last + 1) * WORD_SIZE) {
++                        (*alignment)[(*alignmentLength)++] = EDLIB_EDOP_INSERT;
++                        --queryPosition;
++                        --currentScore;
++                        continue;
++                    }
++                    const int block = (queryPosition - 1) / WORD_SIZE;
++                    const Word mask = Word(1) << ((queryPosition - 1) % WORD_SIZE);
++                    const TraceBlock& trace = columns[static_cast<size_t>(traceIndex) * width + block - range.first];
++                    if (trace.vertical & mask) {
++                        (*alignment)[(*alignmentLength)++] = EDLIB_EDOP_INSERT;
++                        --queryPosition;
++                        --currentScore;
++                    } else if (trace.horizontal & mask) {
++                        (*alignment)[(*alignmentLength)++] = EDLIB_EDOP_DELETE;
++                        --targetPosition;
++                        --currentScore;
++                    } else {
++                        const int difference = !equalityDefinition.areEqual(query[queryPosition - 1], target[targetPosition - 1]);
++                        (*alignment)[(*alignmentLength)++] = difference ? EDLIB_EDOP_MISMATCH : EDLIB_EDOP_MATCH;
++                        --queryPosition;
++                        --targetPosition;
++                        currentScore -= difference;
++                    }
++                }
++            }
++            if (success && currentScore == queryPosition) {
++                memset(*alignment + *alignmentLength, EDLIB_EDOP_INSERT, queryPosition);
++                *alignmentLength += queryPosition;
++                reverse(*alignment, *alignment + *alignmentLength);
++            } else {
++                success = false;
++                break;
++            }
++        }
++        delete[] peq;
++        if (!success) *alignmentLength = 0;
++        return success;
++    };
++    if (checkpointAlignment()) return EDLIB_STATUS_OK;
++    auto reconstruct = [&](auto&& self, const unsigned char* queryPart,
++                           const unsigned char* reverseQueryPart, int querySize,
++                           const unsigned char* targetPart,
++                           const unsigned char* reverseTargetPart, int targetSize,
++                           int score) -> int {
++        int prefix = 0;
++        while (prefix < querySize && prefix < targetSize &&
++               equalityDefinition.areEqual(queryPart[prefix], targetPart[prefix])) {
++            (*alignment)[(*alignmentLength)++] = EDLIB_EDOP_MATCH;
++            ++prefix;
++        }
++        queryPart += prefix;
++        targetPart += prefix;
++        querySize -= prefix;
++        targetSize -= prefix;
++        int suffix = 0;
++        while (suffix < querySize && suffix < targetSize &&
++               equalityDefinition.areEqual(reverseQueryPart[suffix], reverseTargetPart[suffix]))
++            ++suffix;
++        querySize -= suffix;
++        targetSize -= suffix;
++        reverseQueryPart += suffix;
++        reverseTargetPart += suffix;
++
++        int status = EDLIB_STATUS_OK;
++        const int blockCount = ceilDiv(querySize, WORD_SIZE);
++        if (querySize == 0 || targetSize == 0) {
++            const int length = querySize + targetSize;
++            memset(*alignment + *alignmentLength,
++                   querySize == 0 ? EDLIB_EDOP_DELETE : EDLIB_EDOP_INSERT, length);
++            *alignmentLength += length;
++        } else if ((20ll * blockCount + 8) * targetSize < 65536 || targetSize == 1) {
++            unsigned char* localAlignment = NULL;
++            int localLength = 0;
++            AlignmentData* data = NULL;
++            Word* peq = buildPeq(alphabetLength, queryPart, querySize, equalityDefinition);
++            int foundScore, position;
++            myersCalcEditDistanceNW(peq, blockCount * WORD_SIZE - querySize, blockCount,
++                                   querySize, targetPart, targetSize, score,
++                                   &foundScore, &position, true, &data, -1);
++            status = obtainAlignmentTraceback(querySize, targetSize, score, data,
++                                              &localAlignment, &localLength);
++            memcpy(*alignment + *alignmentLength, localAlignment, localLength);
++            *alignmentLength += localLength;
++            free(localAlignment);
++            delete data;
++            delete[] peq;
++        } else {
++            const int middle = targetSize / 2;
++            int split = -1, leftScore = 0;
++            for (int radius = 64; split < 0; radius *= 2) {
++                vector<int> forward(querySize + 1, querySize + targetSize + 1);
++                forward[0] = middle;
++                auto column = [&](const unsigned char* localQuery,
++                                  const unsigned char* localTarget, int stop) {
++                    Word* peq = buildPeq(alphabetLength, localQuery, querySize, equalityDefinition);
++                    AlignmentData* data = NULL;
++                    if (radius >= score) {
++                        int foundScore, position;
++                        myersCalcEditDistanceNW(peq, blockCount * WORD_SIZE - querySize, blockCount,
++                                               querySize, localTarget, targetSize, score,
++                                               &foundScore, &position, false, &data, stop - 1);
++                    } else {
++                        vector<Block> blocks(blockCount);
++                        int firstBlock = 0;
++                        int lastBlock = min(blockCount - 1, radius / WORD_SIZE);
++                        for (int block = 0; block <= lastBlock; ++block)
++                            blocks[block] = Block(~Word(0), 0, (block + 1) * WORD_SIZE);
++                        for (int columnIndex = 0; columnIndex < stop; ++columnIndex) {
++                            const Word* equalities = peq + localTarget[columnIndex] * blockCount;
++                            int carry = 1;
++                            for (int block = firstBlock; block <= lastBlock; ++block) {
++                                carry = calculateBlock(blocks[block].P, blocks[block].M,
++                                                       equalities[block], carry,
++                                                       blocks[block].P, blocks[block].M);
++                                blocks[block].score += carry;
++                            }
++                            const int center = static_cast<int>((static_cast<long long>(columnIndex + 1) * querySize) / targetSize);
++                            const int endBlock = min(blockCount - 1, (center + radius) / WORD_SIZE);
++                            while (lastBlock < endBlock) {
++                                ++lastBlock;
++                                const int nextCarry = calculateBlock(~Word(0), 0, equalities[lastBlock], carry,
++                                                                      blocks[lastBlock].P, blocks[lastBlock].M);
++                                blocks[lastBlock].score = blocks[lastBlock - 1].score - carry + WORD_SIZE + nextCarry;
++                                carry = nextCarry;
++                            }
++                            firstBlock = max(0, (center - radius) / WORD_SIZE);
++                        }
++                        data = new AlignmentData(blockCount, 1);
++                        data->firstBlocks[0] = firstBlock;
++                        data->lastBlocks[0] = lastBlock;
++                        for (int block = firstBlock; block <= lastBlock; ++block) {
++                            data->Ps[block] = blocks[block].P;
++                            data->Ms[block] = blocks[block].M;
++                            data->scores[block] = blocks[block].score;
++                        }
++                    }
++                    delete[] peq;
++                    return data;
++                };
++                AlignmentData* data = column(queryPart, targetPart, middle);
++                for (int block = data->firstBlocks[0]; block <= data->lastBlocks[0]; ++block) {
++                    int value = data->scores[block];
++                    Word positive = data->Ps[block], negative = data->Ms[block];
++                    for (int bit = WORD_SIZE - 1; bit >= 0; --bit) {
++                        int row = block * WORD_SIZE + bit + 1;
++                        if (row <= querySize) forward[row] = value;
++                        value -= (positive >> bit) & 1;
++                        value += (negative >> bit) & 1;
++                    }
++                }
++                delete data;
++                data = column(reverseQueryPart, reverseTargetPart, targetSize - middle);
++                if (forward[querySize] + targetSize - middle == score) {
++                    split = querySize;
++                    leftScore = forward[querySize];
++                }
++                for (int block = data->firstBlocks[0]; block <= data->lastBlocks[0] && split < 0; ++block) {
++                    int value = data->scores[block];
++                    Word positive = data->Ps[block], negative = data->Ms[block];
++                    for (int bit = WORD_SIZE - 1; bit >= 0; --bit) {
++                        int row = querySize - (block * WORD_SIZE + bit + 1);
++                        if (row >= 0 && forward[row] + value == score) {
++                            split = row;
++                            leftScore = forward[row];
++                            break;
++                        }
++                        value -= (positive >> bit) & 1;
++                        value += (negative >> bit) & 1;
++                    }
++                }
++                delete data;
++                if (radius >= score && split < 0) return EDLIB_STATUS_ERROR;
++            }
++            if (split < 0) return EDLIB_STATUS_ERROR;
++            status = self(self, queryPart, reverseQueryPart + querySize - split, split,
++                          targetPart, reverseTargetPart + targetSize - middle, middle, leftScore);
++            if (status == EDLIB_STATUS_OK)
++                status = self(self, queryPart + split, reverseQueryPart, querySize - split,
++                              targetPart + middle, reverseTargetPart, targetSize - middle, score - leftScore);
++        }
++        memset(*alignment + *alignmentLength, EDLIB_EDOP_MATCH, suffix);
++        *alignmentLength += suffix;
++        return status;
++    };
++    const int status = reconstruct(reconstruct, query, rQuery, queryLength,
++                                   target, rTarget, targetLength, bestScore);
++    if (status != EDLIB_STATUS_OK) {
++        free(*alignment);
++        *alignment = NULL;
++        *alignmentLength = 0;
++    }
++    return status;
+ }
+ 
+ 

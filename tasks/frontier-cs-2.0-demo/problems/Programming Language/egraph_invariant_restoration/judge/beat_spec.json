@@ -1,0 +1,59 @@
+{
+  "unit": "one independently configured equality-saturation workload: a fixed input expression, rewrite set, Runner limits, and expected extraction/correctness checks",
+  "metrics": [
+    {
+      "name": "wall_clock_seconds",
+      "means": "the median elapsed seconds of repeated release-mode executions of the complete upstream Runner workload, measured by the trusted parent process and excluding compilation and warmup runs",
+      "source": "unchanged upstream integration tests through Runner, timed by the judge parent around each complete test-process invocation",
+      "better": "lower",
+      "clears_when": "candidate_wall_clock_seconds[w] <= 0.95 * reference_wall_clock_seconds[w] for workload w, where each named value is the median of that implementation's valid measured repetitions in the paired run",
+      "tolerance": "no non-inferiority tolerance; the candidate must demonstrate at least a 5% material speedup, and equality at the 0.95 boundary clears"
+    },
+    {
+      "name": "congruence_seconds",
+      "means": "the median, over the nine paired timed samples, of the mean congruence-maintenance seconds per workload process: Runner-measured time spent applying rewrite matches plus EGraph::rebuild, summed over all equality-saturation iterations (paper Section 3.4, Fig. 6 and Fig. 7 congruence-maintenance time = apply + rebuild)",
+      "source": "the single Runner report printed by the fixed upstream harness (src/test.rs test_runner/bench_egraph and src/run.rs Runner::run_one Instant timers, both outside the editable surface) in every timed workload process; parsed by evaluator.py _runner_report, which rejects a missing, malformed or duplicated report, and averaged per sample by _sample after the wall-clock timer stops",
+      "better": "lower",
+      "clears_when": "candidate_congruence_seconds[w] <= 0.95 * reference_congruence_seconds[w] for workload w, where each named value is the median over the nine paired samples of that implementation's per-process mean apply+rebuild seconds",
+      "tolerance": "same rule as wall_clock_seconds: no non-inferiority tolerance; the candidate must show at least a 5% material reduction, and equality at the 0.95 boundary clears"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff every graded workload w first passes all correctness guards and both candidate_wall_clock_seconds[w] <= 0.95 * reference_wall_clock_seconds[w] and candidate_congruence_seconds[w] <= 0.95 * reference_congruence_seconds[w]; otherwise beats_reference = 0",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "candidate_dev_wall_clock_seconds_median",
+      "means": "the median, over development workloads, of the candidate's per-workload median wall_clock_seconds values",
+      "reveals_reference": "no — it contains only an aggregate of the candidate's own absolute development timings and includes neither reference measurements nor workload-keyed rows"
+    },
+    {
+      "name": "candidate_dev_congruence_seconds_median",
+      "means": "the median, over development workloads, of the candidate's per-workload median congruence-maintenance (apply + rebuild) seconds per process",
+      "reveals_reference": "no — it contains only an aggregate of the candidate's own absolute development Runner timings and includes neither reference measurements nor workload-keyed rows"
+    }
+  ],
+  "withheld": [
+    "candidate_wall_clock_seconds_by_workload",
+    "reference_wall_clock_seconds_by_workload",
+    "candidate_final_wall_clock_seconds_median",
+    "candidate_congruence_seconds_by_workload",
+    "reference_congruence_seconds_by_workload",
+    "runner_rebuild_union_counts"
+  ],
+  "statement_sentences": "A separate beats-reference criterion is evaluated in addition to the candidate-only continuous score. Every selected equality-saturation workload must pass all correctness guards, its candidate median wall-clock time must be at most 95% of the paired reference median, and its candidate median congruence-maintenance time (Runner-measured time applying matches plus rebuilding) must also be at most 95% of the paired reference median. Development covers three public workloads; final freshly covers those three plus three hidden workloads. Every comparison must pass; reference timings and final measurements are not disclosed.",
+  "comments": "The evaluator measures complete upstream test-process wall time with a trusted parent clock, excluding compilation and warmups. It uses one warmup, nine paired samples, at least four seconds and three invocations per sample, one Rust test thread, one Rayon thread, and deterministic randomized pair order. Correctness guards cover congruence closure, canonical representatives, memoization, analysis propagation, explanations, and extraction. Continuous scoring uses only candidate time. PASS is the conjunction of all per-workload 5% comparisons: three in train and six freshly measured public-plus-hidden in final. Beat spec v2 (2026-10-07): adds the paper's Section 3.4 congruence-maintenance time (apply + rebuild, Fig. 6/7) as an independent per-workload metric with the same 5% material-speedup rule, measured from the same timed processes by the fixed upstream Runner. Wall-clock rule, workloads, sampling and continuous score are unchanged. The paper's Fig. 8 repair-call count is not added: every rebuild/repair routine is inside the editable src/egraph.rs (and solver_extensions), so no trusted function boundary exists to count repairs; Runner's 'Rebuilds' value is the union count returned by the candidate's own rebuild and is retained only as an operator diagnostic. Residual limitation: work moved out of apply/rebuild into search via interior mutability would not be counted here, but still counts in wall clock.",
+  "continuous_score": {
+    "objective": "G_C = exp(mean_w(ln(C_w))) over candidate per-workload median wall-clock seconds",
+    "formula": "score = 100 * 0.020 / (0.020 + G_C) for valid submissions; invalid submissions score 0",
+    "independent_of_reference": true,
+    "upper_plateau": false,
+    "calibration": {
+      "environment": "Rust 1.94.1 CPU-only x86_64; final public3+hidden3; one Rust test thread and one Rayon thread",
+      "observed_reference_geomean_seconds": 0.02008310432925681,
+      "fixed_scale_seconds": 0.02,
+      "status": "accepted by user 2026-09-17"
+    }
+  }
+}

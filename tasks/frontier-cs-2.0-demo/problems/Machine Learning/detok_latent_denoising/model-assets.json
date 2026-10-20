@@ -1,0 +1,22 @@
+{
+  "models": [
+    {
+      "allow_patterns": [
+        "detok-BB-gamm3.0-m0.7.pth"
+      ],
+      "files": [
+        {
+          "bytes": 3040937682,
+          "git_blob_id": "e65de32d9ceaf5d187a0f63d8a82081fd6545ed8",
+          "path": "detok-BB-gamm3.0-m0.7.pth",
+          "sha256": "8e0790fd04a2f70db764db0ecea56ad844a2587062eded1ce8c7b34a654638df"
+        }
+      ],
+      "repo_id": "jjiaweiyang/l-DeTok",
+      "revision": "8e6475697ac1505fe39d35221836f55e4fbc6ce5",
+      "target": "detok",
+      "total_bytes": 3040937682
+    }
+  ],
+  "schema_version": "frontier.frontiersmith-model-assets/v1"
+}

@@ -1,0 +1,279 @@
+{
+  "schema_version": "frontier.candidate-roster/v1",
+  "description": "Agent harnesses and models of the FrontierCS 2 formal evaluation. Each harness recipe is a self-contained Docker build context under candidates/; overlay_image is the published linux/amd64 overlay each model was evaluated with.",
+  "source_repository": "https://github.com/FrontierCS/FrontierCS-2",
+  "builtin_candidate": "codex",
+  "harnesses": {
+    "claude-code": {
+      "display_name": "Claude Code",
+      "version": "2.1.296",
+      "recipe": {
+        "path": "candidates/claude-code",
+        "source_commit": "bc42240f72ccab6d97dc23d9af8b3884b439c6a5"
+      },
+      "upstream": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.296.tgz"
+    },
+    "codex": {
+      "display_name": "Codex CLI",
+      "version": "0.162.1",
+      "recipe": {
+        "path": "candidates/codex",
+        "source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12"
+      },
+      "upstream": "https://registry.npmjs.org/@openai/codex/-/codex-0.162.1-linux-x64.tgz"
+    },
+    "deepseek-harness": {
+      "display_name": "DeepSeek Harness",
+      "version": "0.2.0-rc.2",
+      "recipe": {
+        "path": "candidates/deepseek-harness",
+        "source_commit": "69dc7de7d780076557de84f9a191f3b4a41aa883"
+      },
+      "upstream": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.0-rc.2.tgz"
+    },
+    "kimi-code": {
+      "display_name": "Kimi Code",
+      "version": "0.31.0",
+      "recipe": {
+        "path": "candidates/kimi-code",
+        "source_commit": "341949767be14411465bbb704ce87e8453773965"
+      },
+      "upstream": "https://registry.npmjs.org/@moonshot-ai/kimi-code/-/kimi-code-0.31.0.tgz",
+      "attestation": "config/kimi-candidate-image.json"
+    },
+    "muse-code": {
+      "display_name": "Muse Code",
+      "version": "1.4.2",
+      "recipe": {
+        "path": "candidates/muse-code",
+        "source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33"
+      },
+      "upstream": "https://lookaside.facebook.com/lookaside/muse/download/?channel=muse&version=1.4.2-R4684.1&file=muse-x86-linux"
+    },
+    "pi-gemini": {
+      "display_name": "Pi",
+      "version": "1.2.0",
+      "recipe": {
+        "path": "candidates/pi-gemini",
+        "source_commit": "68fb0550ec1e10f64a98463b663289259e0d712e"
+      },
+      "upstream": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.2.0.tgz"
+    },
+    "qwen-code": {
+      "display_name": "Qwen Code",
+      "version": "0.25.0",
+      "recipe": {
+        "path": "candidates/qwen-code",
+        "source_commit": "0c26747c4cb53baf2221b3fdc16a14a1e157c156"
+      },
+      "upstream": "https://registry.npmjs.org/@qwen-code/qwen-code/-/qwen-code-0.25.0.tgz"
+    },
+    "stepcode-step5": {
+      "display_name": "Step Code",
+      "version": "0.1.0",
+      "recipe": {
+        "path": "candidates/stepcode-step5",
+        "source_commit": "5c62641a2e208d0a8c72829f63890dd537e98150"
+      },
+      "upstream": "https://github.com/stepfun-ai/Step-Code/tree/d0ec996df81f4089054f2cc80f1ae11139761f81"
+    },
+    "zcode": {
+      "display_name": "ZCode",
+      "version": "0.16.9",
+      "recipe": {
+        "path": "candidates/zcode",
+        "source_commit": "13abe33b780794267158eb19cfc1a5d689d31ce8"
+      },
+      "upstream": "https://github.com/zai-org/ZCode/tree/29628c9acdb81b703bbd4080c207a0e7ce5e276e"
+    }
+  },
+  "candidates": [
+    {
+      "id": "claude-code-opus-5-5",
+      "model": "Claude Opus 5.5",
+      "model_id": "claude-opus-5-5",
+      "harness": "claude-code",
+      "harness_version": "2.1.296",
+      "reasoning_effort": "max",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-claude-overlay",
+        "tag": "sha-bc42240f72ccab6d97dc23d9af8b3884b439c6a5",
+        "digest": "sha256:9cbd8602a44cadd8d26303601223492a91206bc00942238e57cf7ee8242739de",
+        "index_digest": "sha256:cb925d2d6f388adfc032bcd7cef1e78eb70158e54e65aebb2b05571bdce25c5d"
+      },
+      "image_source_commit": "bc42240f72ccab6d97dc23d9af8b3884b439c6a5",
+      "note": "The recipe in candidates/claude-code authenticates with ANTHROPIC_API_KEY; the listed image was built from the same Claude Code 2.1.296 package with a different credential setting."
+    },
+    {
+      "id": "codex-gpt-6-astra",
+      "model": "GPT-6 Astra",
+      "model_id": "gpt-6-astra",
+      "harness": "codex",
+      "harness_version": "0.162.1",
+      "reasoning_effort": "xhigh",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-codex-overlay",
+        "tag": "sha-61533f7351f8762ac8f6c3dac71cf24cc34a2b12",
+        "digest": "sha256:62f7b124d33fa14f4b593d784ecdf3b52066a4ae59e3f5370fa92a3cbf40430d"
+      },
+      "image_source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12"
+    },
+    {
+      "id": "codex-gpt-6.1-sol",
+      "model": "GPT-6.1 Sol",
+      "model_id": "gpt-6.1-sol",
+      "harness": "codex",
+      "harness_version": "0.162.1",
+      "reasoning_effort": "xhigh",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-codex-overlay",
+        "tag": "sha-61533f7351f8762ac8f6c3dac71cf24cc34a2b12",
+        "digest": "sha256:62f7b124d33fa14f4b593d784ecdf3b52066a4ae59e3f5370fa92a3cbf40430d"
+      },
+      "image_source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12"
+    },
+    {
+      "id": "pi-gemini-4-argon",
+      "model": "Gemini 4 Argon",
+      "model_id": "gemini-4-argon",
+      "harness": "pi-gemini",
+      "harness_version": "1.2.0",
+      "reasoning_effort": "high",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-pi-gemini-overlay",
+        "tag": "source-68fb0550ec1e10f64a98463b663289259e0d712e",
+        "digest": "sha256:5bd0470b24ac64047fd28336d7c9b444e84c8e53dfe0144b0186d13c267aead6"
+      },
+      "image_source_commit": "68fb0550ec1e10f64a98463b663289259e0d712e"
+    },
+    {
+      "id": "zcode-glm-5.3",
+      "model": "GLM 5.3",
+      "model_id": "glm-5.3",
+      "harness": "zcode",
+      "harness_version": "0.16.9",
+      "reasoning_effort": "max",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-candidate-zcode",
+        "tag": "sha-13abe33b780794267158eb19cfc1a5d689d31ce8",
+        "digest": "sha256:06651d57cf25a06e9948eb2e1942bf7e21a073bd174de0b2095585bb76199f92"
+      },
+      "image_source_commit": "13abe33b780794267158eb19cfc1a5d689d31ce8"
+    },
+    {
+      "id": "zcode-glm-5.3-flash",
+      "model": "GLM 5.3 Flash",
+      "model_id": "glm-5.3-flash",
+      "harness": "zcode",
+      "harness_version": "0.16.9",
+      "reasoning_effort": "max",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-candidate-zcode",
+        "tag": "sha-13abe33b780794267158eb19cfc1a5d689d31ce8",
+        "digest": "sha256:06651d57cf25a06e9948eb2e1942bf7e21a073bd174de0b2095585bb76199f92"
+      },
+      "image_source_commit": "13abe33b780794267158eb19cfc1a5d689d31ce8"
+    },
+    {
+      "id": "muse-code-wonder-1.0",
+      "model": "Muse Wonder 1.0",
+      "model_id": "muse-wonder-1.0",
+      "harness": "muse-code",
+      "harness_version": "1.4.2",
+      "reasoning_effort": "max",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-muse-overlay",
+        "tag": "sha-4b67d95cfb6d426e26b7bf4261508c2d7e119d33",
+        "digest": "sha256:f7f1887fe02c7bfeddc7424e30aa0327f648637bf64094565dc02ce175cb4360"
+      },
+      "image_source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33"
+    },
+    {
+      "id": "muse-code-spark-1.3",
+      "model": "Muse Spark 1.3",
+      "model_id": "muse-spark-1.3",
+      "harness": "muse-code",
+      "harness_version": "1.4.2",
+      "reasoning_effort": "high",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-muse-overlay",
+        "tag": "sha-ceb0a62693806477d426e057026ed556b06406d7",
+        "digest": "sha256:675dac56e51628c7862a444f7755edde1ab61316cad29acac7876ac23f09a32c"
+      },
+      "image_source_commit": "ceb0a62693806477d426e057026ed556b06406d7",
+      "recipe_note": "Built from an earlier revision of candidates/muse-code whose launcher and model catalog listed only muse-spark-1.3."
+    },
+    {
+      "id": "deepseek-harness-v4.1-flash",
+      "model": "DeepSeek V4.1 Flash",
+      "model_id": "deepseek-v4.1-flash",
+      "harness": "deepseek-harness",
+      "harness_version": "0.2.0-rc.2",
+      "reasoning_effort": "max",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-candidate-deepseek-harness",
+        "tag": "sha-69dc7de7d780076557de84f9a191f3b4a41aa883",
+        "digest": "sha256:73f8b4681ee386c21dffef0ce4adb5f8de55fa1ba2a25e3d8da26bec3f476151"
+      },
+      "image_source_commit": "69dc7de7d780076557de84f9a191f3b4a41aa883"
+    },
+    {
+      "id": "kimi-code-k3",
+      "model": "Kimi K3",
+      "model_id": "kimi-k3",
+      "harness": "kimi-code",
+      "harness_version": "0.31.0",
+      "reasoning_effort": "high",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-kimi-overlay",
+        "tag": "sha-4755adb77a6b11cff0b1d2461f6f441ef32a2f03",
+        "digest": "sha256:8b033f2fce4e84e2db2cbe07f4369e7a2543098c61892433bc70e9c8a64c4470"
+      },
+      "image_source_commit": "4755adb77a6b11cff0b1d2461f6f441ef32a2f03",
+      "recipe_note": "Same Dockerfile, launcher and skills as candidates/kimi-code; the shared submit/GPU clients are the versions in candidates/codex."
+    },
+    {
+      "id": "kimi-code-k2.7",
+      "model": "Kimi K2.7",
+      "model_id": "kimi-k2.7-code",
+      "harness": "kimi-code",
+      "harness_version": "0.31.0",
+      "reasoning_effort": "medium",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-kimi-overlay",
+        "tag": "sha-34f21abb62e262e56785bf4e1dea7274aa6eb473",
+        "digest": "sha256:defa7f4677a381694daf03423a9bebdcb65d0f9e2024aca379b5d43bf9eef6c2"
+      },
+      "image_source_commit": "34f21abb62e262e56785bf4e1dea7274aa6eb473",
+      "recipe_note": "Built from an earlier revision of candidates/kimi-code (launcher, submit client and skills differ); same Kimi Code 0.31.0 runtime."
+    },
+    {
+      "id": "qwen-code-qwen3.8-max",
+      "model": "Qwen 3.8 Max",
+      "model_id": "qwen3.8-max-vl-thinking",
+      "harness": "qwen-code",
+      "harness_version": "0.25.0",
+      "reasoning_effort": "high",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-candidate-qwen-code",
+        "tag": "sha-0c26747c4cb53baf2221b3fdc16a14a1e157c156",
+        "digest": "sha256:6b6195812038a61c6748fbaeba314f49ccbd46bb1caa245e615231f56b8428c4"
+      },
+      "image_source_commit": "0c26747c4cb53baf2221b3fdc16a14a1e157c156"
+    },
+    {
+      "id": "stepcode-step5",
+      "model": "Step 5 Preview",
+      "model_id": "step-5-preview",
+      "harness": "stepcode-step5",
+      "harness_version": "0.1.0",
+      "reasoning_effort": "high",
+      "overlay_image": {
+        "repository": "docker.io/joyemang33/fcs2-stepcode-step5-overlay",
+        "tag": "source-5c62641a2e208d0a8c72829f63890dd537e98150",
+        "digest": "sha256:60ea9f12dda73c90f6684a4cc159e84a3b5c83fdd357a4ffdc34bad8b4d69691"
+      },
+      "image_source_commit": "5c62641a2e208d0a8c72829f63890dd537e98150"
+    }
+  ]
+}

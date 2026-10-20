@@ -1,0 +1,5 @@
+*
+!judge/
+!judge/variant_batch.py
+!judge/scheduler_relay.py
+**/__pycache__/

@@ -1,0 +1,83 @@
+{
+  "unit": "One deterministic finite queue-operation trace with a fixed offered-cycle schedule, initial queue contents, reset schedule, and generated BBQ configuration (bitmap depth, width, capacity 2^k-1, and entry width), executed through the authentic generated RTL on the CPU simulator. Each workload includes a nonempty timed legal-operation segment followed by pipeline drain and separate correctness probes. Candidate and reference receive identical inputs and schedules.",
+  "metrics": [
+    {
+      "name": "throughput_ops_per_second",
+      "means": "Packet rate in the paper's decomposition (performance = fmax x operations per cycle): N_w / (T_w x period_ps x 1e-12) correctly completed operations per second. N_w is the fixed number of legal enqueue and dequeue requests in the timed segment, all of which must complete exactly once. T_w = last_completion_cycle - first_offered_cycle + 1 simulated cycles, including offered idle cycles, pipeline fill and drain; separately rejected empty/full probes are excluded. The minimum clock period is period_ps = 300 + max over timing paths of (start offset + 500 x lookup tables on the path), in integer picoseconds, computed by harbor/app/frontier_cpu/timing.py from the exact generated RTL that was simulated: sv2v 0.0.13, Yosys 0.69 `synth -flatten`, the fixed ABC 6-input lookup-table script timing_lut6.abc, no placement, routing or seed. Paths start at positive-edge register outputs, module inputs and RAM/FIFO primitive outputs (offset 1000 ps for a RAM without output register, 500 ps for FIFO status flags, otherwise 0) and end at register data/enable/synchronous-reset inputs, RAM/FIFO primitive inputs and module outputs; every structural path counts. A design outside the timed design rules (latch, negative-edge or asynchronous register, clock other than clk, combinational loop, added memory primitive, read memory primitive removed by synthesis, signal driven from more than one place, unmapped cell, forbidden source construct) has no period and the workload is invalid. Use integer cross multiplication for comparison.",
+      "source": "upstream/hardware/bbq/generator/bbq.py::emit_module defines one operation per cycle and emits in_valid/out_valid; upstream/hardware/bbq/tb/bbq/tb_bbq.sv::TEST_PIPELINING_ENQUE_ENQUE counts num_enques_\n...[truncated]...\nrting must be added to the trusted harness; upstream currently reports PASS/FAIL. Paper section 3.3 defines overall performance as the product of fmax and operations issued per cycle; frontier_cpu/timing.py supplies the fixed open-source period estimate in place of the paper's vendor fmax measurement.",
+      "better": "higher",
+      "clears_when": "For workload w: valid_candidate(w) AND N_candidate(w) = N_reference(w) = N_w > 0 AND N_candidate(w) * T_reference(w) * period_reference(w) > N_reference(w) * T_candidate(w) * period_candidate(w). Equivalently throughput_ops_per_second_candidate(w) > throughput_ops_per_second_reference(w).",
+      "tolerance": "none; simulated clock-edge counts and the modelled period are deterministic integers, not host-time samples."
+    },
+    {
+      "name": "latency_seconds",
+      "means": "Worst observed request-to-response latency in the timed segment in time units: max_i(completion_cycle_i - acceptance_cycle_i) simulated cycles multiplied by the same minimum clock period period_ps used for throughput_ops_per_second. Acceptance is the external ready AND in_valid sampling edge for a request independently established to be legal. The minimum clock period is period_ps = 300 + max over timing paths of (start offset + 500 x lookup tables on the path), in integer picoseconds, computed by harbor/app/frontier_cpu/timing.py from the exact generated RTL that was simulated: sv2v 0.0.13, Yosys 0.69 `synth -flatten`, the fixed ABC 6-input lookup-table script timing_lut6.abc, no placement, routing or seed. Paths start at positive-edge register outputs, module inputs and RAM/FIFO primitive outputs (offset 1000 ps for a RAM without output register, 500 ps for FIFO status flags, otherwise 0) and end at register data/enable/synchronous-reset inputs, RAM/FIFO primitive inputs and module outputs; every structural path counts. A design outside the timed design rules (latch, negative-edge or asynchronous register, clock other than clk, combinational loop, added memory primitive, read memory primitive removed by synthesis, signal driven from more than one place, unmapped cell, forbidden source construct) has no period and the workload is invalid.",
+      "source": "upstream/hardware/bbq/generator/bbq_level.py::latency and end_cycle; upstream/hardware/bbq/generator/bbq_level_lx.py::latency; upstream/hardware/bbq/generator/bbq.py::BBQ.__init__ sets num_pipeline_st\n...[truncated]...\nmestamps must report the actual latency, not trust a solver-declared stage count. The cycle count is multiplied by the period from frontier_cpu/timing.py.",
+      "better": "lower",
+      "clears_when": "For workload w: valid_candidate(w) AND latency_cycles_candidate(w) * period_candidate(w) <= latency_cycles_reference(w) * period_reference(w).",
+      "tolerance": "none; deterministic simulated cycle counts and a deterministic modelled period have no measurement noise."
+    }
+  ],
+  "beats_reference": "Let W be the entire nonempty graded suite (for final: freshly rerun public development workloads UNION distinct held-out workloads/configurations), frozen before candidate execution. beats_reference = 1 iff the reference has a valid measurement on every w in W AND for EVERY w in W: valid_candidate(w) AND throughput_ops_per_second_candidate(w) > throughput_ops_per_second_reference(w) AND latency_seconds_candidate(w) <= latency_seconds_reference(w). Otherwise 0. A missing/invalid reference is an evaluator error, never a candidate pass. No workload may be omitted; no aggregate score participates. valid_candidate includes successful compilation/simulation, a design inside the timed design rules with a computed clock period, exact required acceptance and response counts, correct min/max priority selection, conservation, no duplicate/missing/extra outputs, capacity/empty/reset behavior, subtree-empty and back-to-back hazard checks, and the prescribed FIFO/coloring semantics.",
+  "solver_feedback": [
+    {
+      "name": "dev_min_throughput_ops_per_second",
+      "means": "Minimum of the candidate's absolute throughput_ops_per_second over the fixed public development subset; scalar only. Return 0 if any development workload is invalid or missing. Do not include hidden or final runs.",
+      "reveals_reference": "no — computed exclusively from the candidate's cycle counts and the candidate's own modelled clock period on public development inputs."
+    },
+    {
+      "name": "dev_max_latency_picoseconds",
+      "means": "Maximum of the candidate's worst latency in picoseconds (latency_cycles x period_ps) over the fixed public development subset; scalar only. Return -1 if any development workload is invalid or missing.",
+      "reveals_reference": "no — candidate timestamps and candidate period only."
+    },
+    {
+      "name": "dev_max_clock_period_picoseconds",
+      "means": "Maximum of the candidate's modelled minimum clock period period_ps over the fixed public development configurations; scalar only. Return -1 if any development workload is invalid or missing. The same value is printed by the supplied local runner.",
+      "reveals_reference": "no — a deterministic function of the candidate's generated RTL and the public timing model."
+    },
+    {
+      "name": "dev_min_throughput_ops_per_cycle",
+      "means": "Diagnostic: minimum of the candidate's completed operations per simulated cycle over the fixed public development subset; scalar only. Return 0 if any development workload is invalid or missing. Do not include hidden or final runs.",
+      "reveals_reference": "no — this is computed exclusively from candidate cycle counts on public development inputs and contains no reference-dependent normalization."
+    },
+    {
+      "name": "dev_max_latency_cycles",
+      "means": "Diagnostic: maximum of the candidate's worst latency in simulated cycles over the fixed public development subset; scalar only. Return -1 as an explicitly documented invalid sentinel if any development workload is invalid or missing. Do not include hidden or final runs.",
+      "reveals_reference": "no — this is computed exclusively from candidate timestamps on public development inputs, without a reference value, difference, ratio, or private identity."
+    },
+    {
+      "name": "dev_valid_fraction",
+      "means": "Number of fully correct public development workloads divided by the fixed public development workload count; independent of performance comparisons.",
+      "reveals_reference": "no — correctness is checked against queue semantics on public inputs rather than the reference's performance or private workload membership."
+    }
+  ],
+  "withheld": [
+    "per_workload_throughput_ops_per_cycle",
+    "per_workload_latency_cycles",
+    "per_workload_throughput_ops_per_second",
+    "per_workload_latency_seconds",
+    "per_workload_clock_period",
+    "reference_clock_period",
+    "reference_throughput_ops_per_second",
+    "reference_latency_seconds",
+    "resource_diagnostics",
+    "per_workload_accepted_requests",
+    "per_workload_completed_responses",
+    "per_workload_first_offered_cycle",
+    "per_workload_last_completion_cycle",
+    "per_request_acceptance_and_completion_cycles",
+    "reference_throughput_ops_per_cycle",
+    "reference_latency_cycles",
+    "per_workload_metric_pass_flags",
+    "per_workload_correctness_flags",
+    "workload_ids",
+    "hidden_seeds",
+    "hidden_configuration_membership",
+    "candidate_reference_ratios",
+    "candidate_reference_deltas",
+    "reference_score",
+    "final_metrics"
+  ],
+  "statement_sentences": "A separate beats_reference flag is stricter than the continuous score: every graded workload must be correct, sustain strictly more queue operations per second than the reference, and have no greater worst request-to-response latency in seconds. Operations per second is completed operations divided by (simulated cycles of the full timed trace including pipeline fill and drain, multiplied by the design's minimum clock period); latency in seconds is the worst latency in cycles multiplied by the same period. The period is computed for each configuration by a fixed open-source synthesis and timing model shipped with the task, not by a vendor tool or a physical FPGA. These conditions must hold separately on every workload, including the freshly rerun development subset and held-out traces and configurations; gains on one workload cannot compensate for a loss on another. Training feedback reports only scalar summaries of your own absolute public-development measurements, plus aggregate criterion pass/fail counts and percentages, without per-workload rows or reference measurements.",
+  "comments": "Read reproduction.json first: accelerator_required is null and CPU-only execution is binding. Inspected generator wiring, stage latency definitions, ingress rejection behavior, testbench counters/deadlines, pipelining tests, and simulation documentation. The artifact grounds operation throughput and pipeline latency, but it does not already emit this numeric finite-trace report; instrumenting existing events is required, not evidence of measurements already obtained. Finite-trace throughput includes fill/drain and is below the one-operation-per-cycle ceiling for a nonzero pipeline latency; strict improvement does not demand exceeding that ceiling. Equality with the reference fails the strict throughput bar. Do not weaken either condition to obtain a passing witness. The paper's physical frequency/resource tradeoffs cannot be measured here and are explicitly outside this CPU task; host runtime must not substitute for them. There is a material unresolved feasibility conflict: retained ingress/ready wiring offers no general stall handshake and adjacent stages couple timing to LX.latency(), so selective stalls cannot silently drop/retry requests or modify retained wiring. The author must establish whether any permitted reconstruction can improve finite-trace completion time while preserving this interface; if timing is fixed, performance headroom is absent, and that conflict must be recorded rather than claiming a tunable throughput task. No performance calibration or additional configuration validation was performed. Only D=2, W=32, N=127, entry width 64 is established by reproduction; additional depths, widths, capacities and arbitrary mixed streams must be validated before freezing a multi-configuration suite. Do not merely change the upstream testbench constants: it explicitly warns that tests depend on them. Preserve the enabled upstream FIFO/reset/capacity regressions and add deterministic semantic tests covering the stated hazards, with a public subset and privately recorded distinct held-out schedules/configurations. An independently checked legal timed schedule must avoid upstream free-list refill rejection; ready means initialized, not unconditional capacity acceptance. Empty/full rejection probes and reset cancellation are checked separately and cannot reduce the timed operation denominator. Reset only outside timed segments; outstanding pre-reset requests require explicit cancellation checks. Match outputs by operation slots and permit only the paper's adjacent same-bucket dequeue coloring reorderings, while retaining isolated-dequeue and upstream FIFO behavior. Drain the queue for conservation outside the timed segment and check for extra outputs beyond the last expected response using a fixed trusted observation bound; timeout, missing output or disabled checking is invalid. Preserve the independent simulation-only adapter and its provenance, and validate its latency/collision/FIFO semantics at all admitted configurations. Continuous scoring is separate: a provisional reference-independent efficiency domain is [0,1], with invalid workloads assigned zero and valid finite-trace operations/cycle bounded by one; any aggregate used for that score must never determine this flag or use private reference normalization. Actual baseline, attainable headroom, aggregation choice and evaluation quotas/timeouts still require authorized measurement; this review does not invent those results. Solver edits remain confined to bbq_level_lx.py and reachable fresh helpers; retain bbq.py, CodeGen, neighboring stages and bucket coloring. Final metrics and all detailed rows remain private, including logs and failure diagnostics that could leak hidden identities. Automatically supplied aggregate criterion progress is not duplicated in solver_feedback. Revision with physical-time metrics: the gate compares operations per second and latency in seconds, each the simulated cycle measurement combined with a deterministic modelled clock period, following the paper's decomposition of performance into fmax and operations per cycle. The period model is a unit-delay 6-input lookup-table model without placement or routing; it is an estimate for comparing designs under one fixed flow, not a physical FPGA measurement. Lookup-table, register and memory-bit counts of candidate and reference are recorded as operator-only resource_diagnostics and take no part in the flag or score."
+}

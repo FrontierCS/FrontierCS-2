@@ -1,0 +1,133 @@
+{
+  "unit": "One fixed workload/load group: final swe/public (N=48), swe/hidden (N=48), bfcl/public (N=155), bfcl/hidden (N=155); train uses only swe/public (N=5) and bfcl/public (N=8). Public and hidden final loads use the same full instance list within each workload. The same five comparisons apply independently to every group; no BFCL flip gate exists.",
+  "metrics": [
+    {
+      "name": "paired_timing",
+      "means": "Paired geometric-mean reference/candidate end-to-end latency speedup over the complete fixed instance list, computed in log space. The exported exp(log_ratio) is descriptive; its rounding must not decide PASS. Reference latency_i is the fixed per-case fastest observed reference vector across three captures.",
+      "source": "judge/fixed_targets.py::evaluate_fixed (using existing CPU A-D scorer) (log_ratio, paired_speedup_over_reference, comparisons.paired_timing); legacy primitive judge/reference_verdict.py::_evaluate_phase",
+      "better": "higher",
+      "clears_when": "For EACH applicable group, require all N candidate instances complete with positive finite latency, then math.fsum(log(reference_latency_i) - log(candidate_latency_i) for i in expected_ids) / N > 0. Compare the log_ratio itself, not the rounded exported speedup. No cross-group compensation.",
+      "tolerance": "0; strict log_ratio > 0, equality fails; no added margin or confidence interval."
+    },
+    {
+      "name": "p90",
+      "means": "90th percentile of complete instance end-to-end latencies in seconds, using integer nearest rank on all N expected instances.",
+      "source": "judge/latency.py::tail_latencies; judge/fixed_targets.py::evaluate_fixed (using existing CPU A-D scorer) (comparisons.p90); legacy primitive judge/reference_verdict.py::_evaluate_phase",
+      "better": "lower",
+      "clears_when": "For EACH applicable group, require complete positive finite candidate timings and candidate p90 strictly below min(capture group p90 for the three authenticated captures). Each fixed percentile retains its own original source provenance; do not recompute targets from the per-case minimum vector.",
+      "tolerance": "0; strict candidate p90 < reference p90; equality fails."
+    },
+    {
+      "name": "p95",
+      "means": "95th percentile of complete instance end-to-end latencies in seconds, using integer nearest rank on all N expected instances.",
+      "source": "judge/latency.py::tail_latencies; judge/fixed_targets.py::evaluate_fixed (using existing CPU A-D scorer) (comparisons.p95); legacy primitive judge/reference_verdict.py::_evaluate_phase",
+      "better": "lower",
+      "clears_when": "For EACH applicable group, require complete positive finite candidate timings and candidate p95 strictly below min(capture group p95 for the three authenticated captures). Each fixed percentile retains its own original source provenance; do not recompute targets from the per-case minimum vector.",
+      "tolerance": "0; strict candidate p95 < reference p95; equality fails."
+    },
+    {
+      "name": "p99",
+      "means": "99th percentile of complete instance end-to-end latencies in seconds, using integer nearest rank on all N expected instances.",
+      "source": "judge/latency.py::tail_latencies; judge/fixed_targets.py::evaluate_fixed (using existing CPU A-D scorer) (comparisons.p99); legacy primitive judge/reference_verdict.py::_evaluate_phase",
+      "better": "lower",
+      "clears_when": "For EACH applicable group, require complete positive finite candidate timings and candidate p99 strictly below min(capture group p99 for the three authenticated captures). Each fixed percentile retains its own original source provenance; do not recompute targets from the per-case minimum vector.",
+      "tolerance": "0; strict candidate p99 < reference p99; equality fails."
+    },
+    {
+      "name": "correctness",
+      "means": "Candidate correct-instance count against optimized-reference correct-instance count on the identical fixed N-instance group, from boolean test/answer results. Missing candidate answers contribute no correct instances; they do not reduce N.",
+      "source": "judge/reference_verdict.py::_normalize; judge/fixed_targets.py::evaluate_fixed (using existing CPU A-D scorer) (quality_ok, candidate_correct, reference_correct, comparisons.correctness); legacy primitive judge/reference_verdict.py::_evaluate_phase",
+      "better": "higher",
+      "clears_when": "For EACH applicable group, C >= median(R1,R2,R3) - max(1,ceil(0.05*N)), where R1/R2/R3 are the three authenticated reference group correct totals and N is the fixed full selector cardinality. Equality passes; missing/failed execution never shrinks N and complete usable timing coverage is additionally required.",
+      "tolerance": "FINAL SWE N48: 3; FINAL BFCL N155: 8; TRAIN SWE N5 and BFCL N8: 1. Preserve the literal threshold even when negative."
+    }
+  ],
+  "beats_reference": "Conjunction of complete usable candidate coverage and the same five reference comparisons independently on every expected group. Final has 20 comparisons; train has 10 comparisons. No BFCL flip gate, extra BFCL threshold, flip-triggered whole-submission invalidity or score-zero override exists. Trusted measurements are required; typed infrastructure remains unscored. Candidate Runtime Error retains affected-workload no-credit. Continuous vanilla-relative 80/20 arithmetic cannot offset a failed comparison.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "swe_public_geometric_mean_latency_seconds",
+      "means": "Geometric mean of all fixed public candidate per-case end-to-end latencies in seconds; the entire metric is omitted unless every expected case has usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "swe_public_speedup_over_vanilla",
+      "means": "Paired geometric-mean vanilla/candidate latency ratio on the same public cases, using per-case median-of-three vanilla timings; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "swe_public_p90_latency_seconds",
+      "means": "Candidate public p90 latency in seconds, integer nearest rank; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "swe_public_p95_latency_seconds",
+      "means": "Candidate public p95 latency in seconds, integer nearest rank; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "swe_public_p99_latency_seconds",
+      "means": "Candidate public p99 latency in seconds, integer nearest rank; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "swe_public_correct",
+      "means": "Candidate correct count on the fixed public group (SWE 5 cases, BFCL 8 cases).",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "bfcl_public_geometric_mean_latency_seconds",
+      "means": "Geometric mean of all fixed public candidate per-case end-to-end latencies in seconds; the entire metric is omitted unless every expected case has usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "bfcl_public_speedup_over_vanilla",
+      "means": "Paired geometric-mean vanilla/candidate latency ratio on the same public cases, using per-case median-of-three vanilla timings; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "bfcl_public_p90_latency_seconds",
+      "means": "Candidate public p90 latency in seconds, integer nearest rank; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "bfcl_public_p95_latency_seconds",
+      "means": "Candidate public p95 latency in seconds, integer nearest rank; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "bfcl_public_p99_latency_seconds",
+      "means": "Candidate public p99 latency in seconds, integer nearest rank; omitted without complete usable timing.",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    },
+    {
+      "name": "bfcl_public_correct",
+      "means": "Candidate correct count on the fixed public group (SWE 5 cases, BFCL 8 cases).",
+      "reveals_reference": "no; public candidate-only aggregate or ratio to the fixed median-of-three vanilla baseline"
+    }
+  ],
+  "withheld": [
+    "Reference measurements, thresholds derived from measurements, margins, speedups relative to optimized reference, per-instance identities and decisions",
+    "Hidden rates, final per-group results and operator-only reference/validity breakdowns"
+  ],
+  "statement_sentences": "Improve end-to-end serving latency while preserving correctness. Every workload/load group must independently clear the paired timing and all three tail-latency comparisons, meet the median reference group correct count minus the fixed 5% allowance. No additional BFCL gate applies.",
+  "comments": "Fixed-target scientific policy v5: ordinary evaluation runs candidate only. Three genuine authenticated calibration captures independently per phase (TRAIN and FINAL may use different actual run sets) fix per-case fastest reference timing, independent minimum observed group percentiles and median reference group correct counts with allowance max(1,ceil(0.05*N)). Timing is strict with zero margin; equality fails. Vanilla timing is the per-case median across three captures, and both SWE and BFCL vanilla labels/counts use per-case majority across those three captures for continuous accuracy only; the BFCL flip gate and its whole-submission score-zero override are removed. TRAIN feedback exposes the documented public candidate aggregates and aggregate check counts only; private targets stay withheld. Earlier online-baseline contract descriptions are historical; this release changes the baseline policy and requires new qualification.",
+  "fixed_targets_policy": {
+    "calibration_captures": 3,
+    "ordinary_variants": [
+      "candidate"
+    ],
+    "paired_target": "per-instance minimum reference latency across three authenticated captures",
+    "tail_target": "independent minimum observed group percentile across three captures, with per-metric source provenance",
+    "correctness_target": "median of three observed reference group correct totals minus max(1,ceil(0.05*N)); N is fixed full selector cardinality",
+    "timing_margin_fraction": 0,
+    "timing_equality_passes": false,
+    "release_binding": "private manifest SHA256 pinned by trusted release; missing or mismatched manifest is unscored infrastructure failure before candidate input or GPU allocation",
+    "bfcl_flip_gate": false,
+    "vanilla_timing": "per-instance median vanilla latency across three authenticated captures",
+    "vanilla_correctness": "per-instance majority of three binary correctness labels, for both SWE and BFCL"
+  },
+  "aggregate_progress": "Reserved platform feedback metrics.beat_spec_progress exposes passed/failed/total/pass_percent/fail_percent for the five existing PASS metrics across the two public groups only. No per-group decisions, reference values, thresholds, margins, hidden measurements or case identities."
+}

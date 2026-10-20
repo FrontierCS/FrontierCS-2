@@ -1,0 +1,12 @@
+diff --git a/src/diffusion/df_sample.py b/src/diffusion/df_sample.py
+index a57ec71..0bad9e7 100644
+--- a/src/diffusion/df_sample.py
++++ b/src/diffusion/df_sample.py
+@@ -216,4 +216,6 @@ def dfot_sample(
+     history_stabilization_level: float = 0.0,
+ ) -> Tensor:
+     """Return a sampled latent video with the requested ``shape``."""
+-    raise NotImplementedError("Implement the future-video sampler")
++    if context is None or n_context_frames < 1:
++        raise ValueError("context is required")
++    return context[:, -1:].expand(shape).clone()

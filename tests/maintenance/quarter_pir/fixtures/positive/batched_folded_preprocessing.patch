@@ -1,0 +1,522 @@
+diff --git a/quarter_pir/code/pir/client.go b/quarter_pir/code/pir/client.go
+index d5ff6c9..47463fd 100644
+--- a/quarter_pir/code/pir/client.go
++++ b/quarter_pir/code/pir/client.go
+@@ -5,6 +5,7 @@ import (
+ 	"sync"
+ 
+ 	"easypir/refwire"
++	"easypir/safeaes"
+ 
+ 	"example.com/util"
+ )
+@@ -31,7 +32,7 @@ type LocalReplacementGroup struct {
+ // reconstruction and hint-refresh code behind the harness interface.
+ type Client struct {
+ 	p   refwire.Params
+-	gen *refwire.Generator
++	gen *generator
+ 
+ 	localSetNum          uint64
+ 	backupSetNumPerGroup uint64
+@@ -48,7 +49,7 @@ type Client struct {
+ // NewClient starts the preprocessing clock's work: it derives the client
+ // keys from the coin seed and allocates the hint tables.
+ func NewClient(p refwire.Params, coinSeed int64) *Client {
+-	gen := refwire.NewGenerator(p, coinSeed)
++	gen := newGenerator(p, coinSeed)
+ 	c := &Client{p: p, gen: gen}
+ 	localSetNum := gen.LocalSetNum
+ 	backupSetNumPerGroup := gen.BackupPerGroup
+@@ -107,108 +108,104 @@ func NewClient(p refwire.Params, coinSeed int64) *Client {
+ 
+ // Preprocess consumes the streamed database. next returns the chunks in
+ // order, two words per entry, and nil after the last chunk.
+-//
+-//	When the client gets i-th chunk, it updates all local sets' parities
+-//	It also needs to update the backup sets' parities
+-//	It also needs to update the i-th group's punct point parity
+ func (c *Client) Preprocess(next func() []uint64) {
+-	ChunkSize, SetSize, SBSize, SBSizeLog2 := c.p.ChunkSize, c.p.SetSize, c.p.SBSize, c.p.SBSizeLog2
++	ChunkSize, SBSize, SBNum := c.p.ChunkSize, c.p.SBSize, c.p.SBNum
+ 	threadNum := c.p.Threads
+-	longKey := c.gen.LongKey
++	master := &c.gen.Master
+ 	localSetNum, backupSetNumPerGroup, totalBackupSetNum := c.localSetNum, c.backupSetNumPerGroup, c.totalBackupSetNum
+ 	localSets, localBackupSets := c.localSets, c.localBackupSets
+-	LocalBackupSetGroups, LocalReplacementGroups := c.LocalBackupSetGroups, c.LocalReplacementGroups
+-	localMissElements := c.localMissElements
+-
+-	// temporal storage
+-	tempLongKey := make([]*refwire.LongKey, localSetNum)
+-	tempLongKeyBackup := make([]*refwire.LongKey, totalBackupSetNum)
+ 
+-	for i := uint64(0); i < SetSize; i++ {
+-		if i%SBSize == 0 {
+-			for j := uint64(0); j < localSetNum; j++ {
+-				tempSubKey := refwire.SubKey(longKey, localSets[j].Tag, i>>SBSizeLog2)
+-				tempLongKey[j] = refwire.NewLongKey(&tempSubKey)
++	const batch = 8
++	mask := ChunkSize - 1
++	keysPrimary := make([]safeaes.RoundKeys, localSetNum)
++	keysBackup := make([]safeaes.RoundKeys, totalBackupSetNum)
++	chunks := make([][]uint64, batch)
++	parallel := func(n uint64, work func(lo, hi uint64)) {
++		var wg sync.WaitGroup
++		per := (n + threadNum - 1) / threadNum
++		for t := uint64(0); t < threadNum; t++ {
++			lo, hi := t*per, (t+1)*per
++			if hi > n {
++				hi = n
+ 			}
+-			for j := uint64(0); j < totalBackupSetNum; j++ {
+-				tempSubKey := refwire.SubKey(longKey, localBackupSets[j].Tag, i>>SBSizeLog2)
+-				tempLongKeyBackup[j] = refwire.NewLongKey(&tempSubKey)
++			if lo >= hi {
++				continue
+ 			}
++			wg.Add(1)
++			go func(lo, hi uint64) { defer wg.Done(); work(lo, hi) }(lo, hi)
+ 		}
+-
+-		chunk := next()
+-		if chunk == nil {
+-			break
+-		}
+-		hitMap := make([]bool, ChunkSize)
+-
+-		// use multiple threads to parallelize the computation for the chunk
+-
+-		var wg sync.WaitGroup
+-		wg.Add(int(threadNum))
+-
+-		perTheadSetNum := (localSetNum+threadNum-1)/threadNum + 1 // make sure all sets are covered
+-		perThreadBackupNum := (totalBackupSetNum+threadNum-1)/threadNum + 1
+-
+-		for tid := uint64(0); tid < threadNum; tid++ {
+-			startIndex := uint64(tid) * uint64(perTheadSetNum)
+-			endIndex := startIndex + uint64(perTheadSetNum)
+-			if endIndex > localSetNum {
+-				endIndex = localSetNum
++		wg.Wait()
++	}
++	for sb := uint64(0); sb < SBNum; sb++ {
++		// one key expansion per hint and superblock, in parallel
++		parallel(localSetNum, func(lo, hi uint64) {
++			for j := lo; j < hi; j++ {
++				subkey := subkeyOf(master, localSets[j].Tag, sb)
++				safeaes.ExpandKey(&subkey, &keysPrimary[j])
+ 			}
+-
+-			startIndexBackup := uint64(tid) * uint64(perThreadBackupNum)
+-			endIndexBackup := startIndexBackup + uint64(perThreadBackupNum)
+-			if endIndexBackup > totalBackupSetNum {
+-				endIndexBackup = totalBackupSetNum
++		})
++		parallel(totalBackupSetNum, func(lo, hi uint64) {
++			for j := lo; j < hi; j++ {
++				subkey := subkeyOf(master, localBackupSets[j].Tag, sb)
++				safeaes.ExpandKey(&subkey, &keysBackup[j])
+ 			}
+-
+-			go func(start, end, start1, end1 uint64) {
+-				defer wg.Done()
+-				for j := uint64(start); j < uint64(end); j++ {
+-					offset := refwire.Eval(tempLongKey[j], i&(SBSize-1)) & (ChunkSize - 1)
+-					hitMap[offset] = true
+-					util.DBEntryXorFromRaw(&localSets[j].SetParity, chunk[offset*util.DBEntryLength:(offset+1)*util.DBEntryLength])
+-				}
+-				for j := uint64(start1); j < uint64(end1); j++ {
+-					offset := refwire.Eval(tempLongKeyBackup[j], i&(SBSize-1)) & (ChunkSize - 1)
+-					util.DBEntryXorFromRaw(&localBackupSets[j].SetParity, chunk[offset*util.DBEntryLength:(offset+1)*util.DBEntryLength])
++		})
++		for base := uint64(0); base < SBSize; base += batch {
++			for t := uint64(0); t < batch; t++ {
++				chunks[t] = next()
++				if chunks[t] == nil {
++					panic("database stream ended early")
+ 				}
+-			}(startIndex, endIndex, startIndexBackup, endIndexBackup)
+-		}
+-
+-		wg.Wait()
+-
+-		for j := uint64(0); j < ChunkSize; j++ {
+-			if hitMap[j] == false {
+-				entry := util.DBEntryFromSlice(chunk[j*util.DBEntryLength : (j+1)*util.DBEntryLength])
+-				localMissElements[j+i*ChunkSize] = entry
+ 			}
+-		}
+-
+-		// for the i-th group of backups, set the ProgPointVal to the i-th chunk
+-		for k := uint64(0); k < backupSetNumPerGroup; k++ {
+-			offset := refwire.SetOffset(longKey, LocalBackupSetGroups[i].sets[k].Tag, i, c.p)
+-			util.DBEntryXorFromRaw(&LocalBackupSetGroups[i].sets[k].ProgPointVal, chunk[offset*util.DBEntryLength:(offset+1)*util.DBEntryLength])
+-		}
+-
+-		// for the groups in the same superblock, update their block parities
+-		SBId := i / SBSize
+-		for j := SBId * SBSize; j < (SBId+1)*SBSize; j++ {
+-			for k := uint64(0); k < backupSetNumPerGroup; k++ {
+-				offset := refwire.SetOffset(longKey, LocalBackupSetGroups[j].sets[k].Tag, i, c.p)
+-				util.DBEntryXorFromRaw(&LocalBackupSetGroups[j].sets[k].BlockParity, chunk[offset*util.DBEntryLength:(offset+1)*util.DBEntryLength])
++			firstChunk := sb*SBSize + base
++			// several chunks per hint: the parity stays in registers
++			parallel(localSetNum, func(lo, hi uint64) {
++				for j := lo; j < hi; j++ {
++					var p0, p1 uint64
++					for t := uint64(0); t < batch; t++ {
++						offset := mmo64(&keysPrimary[j], base+t) & mask
++						p0 ^= chunks[t][2*offset]
++						p1 ^= chunks[t][2*offset+1]
++					}
++					localSets[j].SetParity[0] ^= p0
++					localSets[j].SetParity[1] ^= p1
++				}
++			})
++			// backup hints reuse the same offsets for block parity and programmed point
++			parallel(totalBackupSetNum, func(lo, hi uint64) {
++				for j := lo; j < hi; j++ {
++					group := j / backupSetNumPerGroup
++					set := &localBackupSets[j]
++					var p0, p1 uint64
++					for t := uint64(0); t < batch; t++ {
++						offset := mmo64(&keysBackup[j], base+t) & mask
++						p0 ^= chunks[t][2*offset]
++						p1 ^= chunks[t][2*offset+1]
++						if group == firstChunk+t {
++							set.ProgPointVal[0] ^= chunks[t][2*offset]
++							set.ProgPointVal[1] ^= chunks[t][2*offset+1]
++						}
++					}
++					set.SetParity[0] ^= p0
++					set.SetParity[1] ^= p1
++					if group/SBSize == sb {
++						set.BlockParity[0] ^= p0
++						set.BlockParity[1] ^= p1
++					}
++				}
++			})
++			// replacement coins are drawn in the reference's chunk order
++			for t := uint64(0); t < batch; t++ {
++				i := firstChunk + t
++				c.gen.DrawReplacements(i)
++				for k := uint64(0); k < backupSetNumPerGroup; k++ {
++					index := c.gen.ReplIndices[i*backupSetNumPerGroup+k]
++					offset := index - i*ChunkSize
++					c.LocalReplacementGroups[i].indices[k] = index
++					c.LocalReplacementGroups[i].value[k] = util.DBEntryFromSlice(chunks[t][offset*util.DBEntryLength : (offset+1)*util.DBEntryLength])
++				}
+ 			}
+ 		}
+-
+-		// store the replacement: random offsets between 0 and ChunkSize - 1
+-		c.gen.DrawReplacements(i)
+-		for k := uint64(0); k < backupSetNumPerGroup; k++ {
+-			index := c.gen.ReplIndices[i*backupSetNumPerGroup+k]
+-			offset := index - i*ChunkSize
+-			LocalReplacementGroups[i].indices[k] = index
+-			LocalReplacementGroups[i].value[k] = util.DBEntryFromSlice(chunk[offset*util.DBEntryLength : (offset+1)*util.DBEntryLength])
+-		}
+ 	}
+ }
+ 
+diff --git a/quarter_pir/code/pir/gen.go b/quarter_pir/code/pir/gen.go
+new file mode 100644
+index 0000000..217c802
+--- /dev/null
++++ b/quarter_pir/code/pir/gen.go
+@@ -0,0 +1,225 @@
++package pir
++
++import (
++	"encoding/binary"
++	"math/rand"
++
++	"easypir/refwire"
++	"easypir/safeaes"
++
++	"example.com/util"
++)
++
++// Allocation-free PRF evaluation on the trusted typed AES package.
++
++func mmo64(rk *safeaes.RoundKeys, x uint64) uint64 {
++	var src, dst [16]byte
++	binary.LittleEndian.PutUint64(src[:], x)
++	safeaes.MMO(rk, &dst, &src)
++	return binary.LittleEndian.Uint64(dst[:])
++}
++
++func subkeyOf(master *safeaes.RoundKeys, tag uint32, superBlock uint64) [16]byte {
++	var src, dst [16]byte
++	binary.LittleEndian.PutUint64(src[:], (uint64(tag)<<35)+superBlock)
++	safeaes.MMO(master, &dst, &src)
++	return dst
++}
++
++func keyEval(key *util.PrfKey, x uint64) uint64 {
++	var rk safeaes.RoundKeys
++	safeaes.ExpandKey((*[16]byte)(key), &rk)
++	return mmo64(&rk, x)
++}
++
++func fastSetOffset(master *safeaes.RoundKeys, tag uint32, chunkId uint64, p refwire.Params) uint64 {
++	subkey := subkeyOf(master, tag, chunkId>>p.SBSizeLog2)
++	var rk safeaes.RoundKeys
++	safeaes.ExpandKey(&subkey, &rk)
++	return mmo64(&rk, chunkId&(p.SBSize-1)) & (p.ChunkSize - 1)
++}
++
++// LastQuery describes the hint bookkeeping of the most recent Query call.
++type lastQuery struct {
++	X          uint64
++	HitSetId   uint64
++	CaseId     int
++	Y          uint64 // previous positive label of the hit set, or refwire.NoLabel
++	ChunkId    uint64
++	SBofX      uint64
++	ReplSlot   uint64 // consumed replacement slot in ChunkId's group
++	ReplUsed   bool   // false when the group had no replacement left
++	BackupSlot uint64 // backup hint of ChunkId's group promoted by this query
++}
++
++// Generator reproduces every byte the reference client sends. It holds the
++// coins, tags, labels, history and consumption counters; no database content.
++type generator struct {
++	P              refwire.Params
++	Master         safeaes.RoundKeys
++	LocalSetNum    uint64
++	BackupPerGroup uint64
++	Tags           []uint32 // current tag of each primary hint
++	Labels         []uint64 // positive constraint of each primary hint
++	HistoryHit     []uint64
++	HistoryQueries []uint64
++	Count          uint64
++	BackupConsumed []uint64
++	ReplConsumed   []uint64
++	ReplIndices    []uint64 // SetSize*BackupPerGroup database indices
++	Last           lastQuery
++	rng            *rand.Rand
++}
++
++func newGenerator(p refwire.Params, coinSeed int64) *generator {
++	rng := rand.New(rand.NewSource(coinSeed))
++	masterKey := util.RandKey(rng)
++	g := &generator{
++		P: p, rng: rng,
++		LocalSetNum:    p.LocalSetNum(),
++		BackupPerGroup: p.BackupPerGroup(),
++	}
++	safeaes.ExpandKey((*[16]byte)(&masterKey), &g.Master)
++	g.Tags = make([]uint32, g.LocalSetNum)
++	g.Labels = make([]uint64, g.LocalSetNum)
++	for j := range g.Tags {
++		g.Tags[j] = uint32(j)
++		g.Labels[j] = refwire.NoLabel
++	}
++	g.HistoryHit = make([]uint64, 0, 1000)
++	g.HistoryQueries = make([]uint64, 0, 1000)
++	g.BackupConsumed = make([]uint64, p.SetSize)
++	g.ReplConsumed = make([]uint64, p.SetSize)
++	g.ReplIndices = make([]uint64, p.SetSize*g.BackupPerGroup)
++	return g
++}
++
++// BackupTag is the tag of the k-th backup hint of a chunk's group.
++func (g *generator) BackupTag(chunkId, k uint64) uint32 {
++	return uint32(g.LocalSetNum + chunkId*g.BackupPerGroup + k)
++}
++
++// DrawReplacements consumes the coins of one chunk's replacement indices.
++// Chunks must be drawn in increasing order, each exactly once, before Query.
++func (g *generator) DrawReplacements(chunkId uint64) {
++	for k := uint64(0); k < g.BackupPerGroup; k++ {
++		offset := g.rng.Uint64() & (g.P.ChunkSize - 1)
++		g.ReplIndices[chunkId*g.BackupPerGroup+k] = offset + chunkId*g.P.ChunkSize
++	}
++}
++
++// Query returns the reference request for x and advances the bookkeeping.
++func (g *generator) Query(x uint64) ([]byte, []uint32) {
++	p := g.P
++	q := g.Count
++	g.HistoryQueries = append(g.HistoryQueries, x)
++
++	hitSetId := refwire.NoLabel
++	queryOffset := x % p.ChunkSize
++	chunkId := x / p.ChunkSize
++	for i := uint64(0); i < g.LocalSetNum; i++ {
++		if fastSetOffset(&g.Master, g.Tags[i], chunkId, p) == queryOffset {
++			if g.Labels[i] != refwire.NoLabel && chunkId == (g.Labels[i]/p.ChunkSize) {
++				continue
++			}
++			hitSetId = i
++			break
++		}
++	}
++	if hitSetId == refwire.NoLabel {
++		panic("no hit set found")
++	}
++	g.HistoryHit = append(g.HistoryHit, hitSetId)
++	y := g.Labels[hitSetId]
++
++	caseId := 0
++	if y != refwire.NoLabel {
++		if y/(p.SBSize*p.ChunkSize) == x/(p.SBSize*p.ChunkSize) {
++			caseId = 1
++		} else {
++			caseId = 2
++		}
++	}
++
++	subkeyBytes := make([]byte, p.SBNum*util.KeyByteLength)
++	offsets := make([]uint64, p.SBSize)
++	SBofX := x / (p.SBSize * p.ChunkSize)
++	for i := uint64(0); i < p.SBNum; i++ {
++		subkey := subkeyOf(&g.Master, g.Tags[hitSetId], i)
++		copy(subkeyBytes[i*util.KeyByteLength:(i+1)*util.KeyByteLength], subkey[:])
++	}
++	for j := uint64(0); j < p.SBSize; j++ {
++		offsets[j] = fastSetOffset(&g.Master, g.Tags[hitSetId], SBofX*p.SBSize+j, p)
++	}
++
++	nxtAvailable := g.ReplConsumed[chunkId]
++	repOffset := g.rng.Uint64() % p.ChunkSize // a dummy random offset
++	replUsed := false
++	if nxtAvailable != g.BackupPerGroup {
++		repOffset = g.ReplIndices[chunkId*g.BackupPerGroup+nxtAvailable] % p.ChunkSize
++		g.ReplConsumed[chunkId]++
++		replUsed = true
++	}
++	offsets[chunkId%p.SBSize] = repOffset
++	randKey := util.RandKey(g.rng)
++	copy(subkeyBytes[SBofX*util.KeyByteLength:(SBofX+1)*util.KeyByteLength], randKey[:])
++
++	if caseId == 1 {
++		offsets[(y/p.ChunkSize)%p.SBSize] = y % p.ChunkSize
++	}
++
++	if caseId == 2 {
++		negConst := make([]uint64, 0)
++		for i := int(q) - 1; i >= 0; i-- {
++			if g.HistoryHit[i] == hitSetId {
++				break
++			}
++			if g.HistoryHit[i] > hitSetId {
++				if g.HistoryQueries[i]/(p.SBSize*p.ChunkSize) == y/(p.SBSize*p.ChunkSize) {
++					negConst = append(negConst, g.HistoryQueries[i])
++				}
++			}
++		}
++		randKey := util.RandKey(g.rng)
++		yOffset := y % p.ChunkSize
++		yChunkId := y / p.ChunkSize
++		yRelativeChunkId := yChunkId % p.SBSize
++		for true {
++			newOffset := keyEval(&randKey, yRelativeChunkId) & (p.ChunkSize - 1)
++			if newOffset != yOffset {
++				randKey = util.RandKey(g.rng)
++				continue
++			}
++			ok := true
++			for i := 0; i < len(negConst); i++ {
++				tmpOffset := keyEval(&randKey, (negConst[i]/p.ChunkSize)%p.SBSize) % p.ChunkSize
++				if tmpOffset == negConst[i]%p.ChunkSize {
++					ok = false
++					break
++				}
++			}
++			if ok == true {
++				break
++			} else {
++				randKey = util.RandKey(g.rng)
++			}
++		}
++		copy(subkeyBytes[(yChunkId/p.SBSize)*util.KeyByteLength:(yChunkId/p.SBSize+1)*util.KeyByteLength], randKey[:])
++	}
++	offsetsuint32 := make([]uint32, len(offsets))
++	for i := 0; i < len(offsets); i++ {
++		offsetsuint32[i] = uint32(offsets[i])
++	}
++
++	backupSlot := g.BackupConsumed[chunkId]
++	if backupSlot == g.BackupPerGroup {
++		panic("no backup set available")
++	}
++	g.Last = lastQuery{X: x, HitSetId: hitSetId, CaseId: caseId, Y: y, ChunkId: chunkId,
++		SBofX: SBofX, ReplSlot: nxtAvailable, ReplUsed: replUsed, BackupSlot: backupSlot}
++	g.Tags[hitSetId] = g.BackupTag(chunkId, backupSlot)
++	g.BackupConsumed[chunkId]++
++	g.Labels[hitSetId] = x
++	g.Count++
++	return subkeyBytes, offsetsuint32
++}
+diff --git a/quarter_pir/code/pir/server.go b/quarter_pir/code/pir/server.go
+index e3ce71a..d064279 100644
+--- a/quarter_pir/code/pir/server.go
++++ b/quarter_pir/code/pir/server.go
+@@ -2,6 +2,7 @@ package pir
+ 
+ import (
+ 	"easypir/refwire"
++	"easypir/safeaes"
+ 
+ 	"example.com/util"
+ )
+@@ -27,5 +28,54 @@ func dbAccess(db []uint64, id uint64) util.DBEntry {
+ // timer wraps this whole call, including request decoding and response
+ // encoding.
+ func HandleQuery(db []uint64, p refwire.Params, request []byte) []byte {
+-	panic("list decoding is not implemented")
++	keys, offsets, ok := refwire.DecodeRequest(p, request)
++	if !ok {
++		panic("malformed request")
++	}
++	SBNum, SBSize, ChunkSize := p.SBNum, p.SBSize, p.ChunkSize
++
++	//First, compute the common set's parity
++	commonParity := util.ZeroEntry()
++	superblockParities := make([]util.DBEntry, SBNum)
++	paritiesFromListDecoding := make([]util.DBEntry, SBNum)
++
++	for i := uint64(0); i < SBNum; i++ {
++		superblockParities[i] = util.ZeroEntry()
++		paritiesFromListDecoding[i] = util.ZeroEntry()
++		var longKey safeaes.RoundKeys
++		safeaes.ExpandKey((*[16]byte)(&keys[i]), &longKey)
++		chunkBase := i * SBSize * ChunkSize
++		for j := uint64(0); j < SBSize; j++ {
++			// offset from the i-th key, evaluating at the j-th chunk in the superblock
++			tmpOffset := mmo64(&longKey, j) & (ChunkSize - 1)
++			index := tmpOffset + chunkBase
++			val1 := dbAccess(db, index)
++			util.DBEntryXor(&superblockParities[i], &val1)
++
++			// offset from the client's given offset array
++			val2 := dbAccess(db, chunkBase+uint64(offsets[j]))
++			util.DBEntryXor(&paritiesFromListDecoding[i], &val2)
++
++			chunkBase += ChunkSize
++		}
++		util.DBEntryXor(&commonParity, &superblockParities[i])
++	}
++
++	//Second, compute the parities for the list decoding sets
++	//Also compute the parities based on the offsets
++
++	for i := uint64(0); i < SBNum; i++ {
++		util.DBEntryXor(&paritiesFromListDecoding[i], &superblockParities[i])
++		util.DBEntryXor(&paritiesFromListDecoding[i], &commonParity)
++	}
++
++	paritiesFromListDecodingUint64 := make([]uint64, SBNum*util.DBEntryLength)
++	paritiesFromKeysUint64 := make([]uint64, SBNum*util.DBEntryLength)
++	// convert to uint64
++	for i := uint64(0); i < SBNum; i++ {
++		copy(paritiesFromListDecodingUint64[i*util.DBEntryLength:(i+1)*util.DBEntryLength], paritiesFromListDecoding[i][:])
++		copy(paritiesFromKeysUint64[i*util.DBEntryLength:(i+1)*util.DBEntryLength], superblockParities[i][:])
++	}
++
++	return refwire.EncodeResponse(p, paritiesFromListDecodingUint64, paritiesFromKeysUint64)
+ }

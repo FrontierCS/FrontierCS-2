@@ -1,0 +1,1477 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 512,
+      "path": "datasets/eval.json",
+      "version": "sha256:010829acceaf4a68d1bf9ec8383f4057a3d19648127ff548f411cc1c26e63bb8"
+    },
+    "train": {
+      "bytes": 519,
+      "path": "datasets/train.json",
+      "version": "sha256:7073fb3ea6b5c74cf77c95ca09c7c0328e79b42917699eacf741f1728a771220"
+    }
+  },
+  "file_count": 289,
+  "files": [
+    {
+      "bytes": 2404,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:bbb63ba7677e6c70a329311cb663f9337dade3c4c8281f0ab17425184c26771c"
+    },
+    {
+      "bytes": 3882,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:1ddbfaa593e5b73f29fe3e7678d7ec9872fd6055755ff6f7780a2b92cf29055b"
+    },
+    {
+      "bytes": 3438,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:856e2b87913aee18cde43c43a4dbd9d42baa259e3013ad83b360d2441507f290"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 4649,
+      "path": "agent-base/frontier/task/bin/run_episodes.py",
+      "sha256": "sha256:c93b0b8ac37ebf1dc21b35c9544279408e8f799f6318b6b5f20ee21733742074"
+    },
+    {
+      "bytes": 155,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:db9dea36d019a926f2d73e6981527f1229017a5018b2ab1805959bb71de507df"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 7053,
+      "path": "agent-base/frontier/task/harness/episodes.py",
+      "sha256": "sha256:e999fb439227354788002a6e3ec69fd5ea726c9e7e291d870a3f101a10445d1f"
+    },
+    {
+      "bytes": 3426,
+      "path": "agent-base/frontier/task/harness/kernel_boundary.py",
+      "sha256": "sha256:d4323ea529ddb64b936bf98d745303cb7c802fa4c789122c455137e4d57a8a25"
+    },
+    {
+      "bytes": 8166,
+      "path": "agent-base/frontier/task/harness/llm_gateway.py",
+      "sha256": "sha256:1f8e2620de4b26d6bc9020121ecb819f77ab6d68303768b6cda254751cf0a932"
+    },
+    {
+      "bytes": 1001,
+      "path": "agent-base/frontier/task/harness/plain_bootstrap.py",
+      "sha256": "sha256:f6f4301297b96dc8137ddcffd27e9414479ba9609d87574e91514dd4ba700e81"
+    },
+    {
+      "bytes": 6221,
+      "path": "agent-base/frontier/task/harness/policy_boundary.py",
+      "sha256": "sha256:f82a420925d91b654435be87a33113553922233efef9f160f8107f995697bb69"
+    },
+    {
+      "bytes": 3133,
+      "path": "agent-base/frontier/task/harness/policy_protocol.py",
+      "sha256": "sha256:a5e22195b0625d571fc8033cb18e4acac0a80e0c3e31d2e367d01c0b713e2938"
+    },
+    {
+      "bytes": 3540,
+      "path": "agent-base/frontier/task/harness/policy_worker.py",
+      "sha256": "sha256:dde679eed9ca50feae088a2a12a3a4066927a710a376e28334c108168a1206eb"
+    },
+    {
+      "bytes": 12071,
+      "path": "agent-base/frontier/task/harness/sealed_bootstrap.py",
+      "sha256": "sha256:6aa5b20e050f8b4ffb1c3087b0aeb5714fafb618acd6ef074430af960f5bd442"
+    },
+    {
+      "bytes": 1718,
+      "path": "agent-base/frontier/task/harness/suite_tasks.json",
+      "sha256": "sha256:7c97b357cb782b2e140083c85e99bf40419757d2c62a023361c620ad510558aa"
+    },
+    {
+      "bytes": 5304,
+      "path": "agent-base/frontier/task/harness/trusted/secagent/__init__.py",
+      "sha256": "sha256:428a9c5b7d49f1af87a0b7efec302040d40c30000b6f64cee26302a2522b3c38"
+    },
+    {
+      "bytes": 1064,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:edf91d27e4acd6f0db848aae9032bee8674ce0eb85ca380667414e135a39ea0a"
+    },
+    {
+      "bytes": 12536,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:f10fa156b31ad7d2c00f5fc2a44f84f63c5beded8c647cd0cb69d03b6bcccf4d"
+    },
+    {
+      "bytes": 1161,
+      "path": "agent-base/frontier/task/repo/agentdojo/LICENSE",
+      "sha256": "sha256:4285a071f2d382338e52b4fb0a186d952984a34d43a33d8872e1a1d8cb43401e"
+    },
+    {
+      "bytes": 3228,
+      "path": "agent-base/frontier/task/repo/agentdojo/pyproject.toml",
+      "sha256": "sha256:4db7ad8dc2082c10f330624fed306de454edd4108ce6665f81d12e0c4f55a558"
+    },
+    {
+      "bytes": 1,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/__init__.py",
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "bytes": 1479,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/__init__.py",
+      "sha256": "sha256:63802741c094b11348894c5752891f355e886645d4c33b8ec8d7133d528199d6"
+    },
+    {
+      "bytes": 8910,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/agent_pipeline.py",
+      "sha256": "sha256:56b15a6538f0e7eb48bac27663d4d5a74aef409030bda3399f28c87439d500dc"
+    },
+    {
+      "bytes": 1318,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/base_pipeline_element.py",
+      "sha256": "sha256:b15f0eb72a286fdfd26f45a3ac587fd4f44063c2a49ed017d580f5f3f0d1fc34"
+    },
+    {
+      "bytes": 2085,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/basic_elements.py",
+      "sha256": "sha256:4b6bdc79c5740f228da64cd1322e5f6b33776749ffc39ae4a1c70c987042d0ea"
+    },
+    {
+      "bytes": 741,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/errors.py",
+      "sha256": "sha256:89c0a904fadb8f041e208b0f6b4c2fabf537ff0934f46c567530843e4231ef32"
+    },
+    {
+      "bytes": 2167,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/ground_truth_pipeline.py",
+      "sha256": "sha256:dcbfad07881c8a19bff23d8857d679723299f4630a771292236c19246d2e3a0f"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 9176,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/anthropic_llm.py",
+      "sha256": "sha256:2c203b1e0752ed31a1e0e8d02eda41fa83c1334cfc49b8034ad331db2c1ffdee"
+    },
+    {
+      "bytes": 9460,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/cohere_llm.py",
+      "sha256": "sha256:b46093d273c0026e432be169b4fe85e1ac6cd5d3c36cf8cf3ebda859665b539d"
+    },
+    {
+      "bytes": 8739,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/google_llm.py",
+      "sha256": "sha256:60edf83c5a52d43b9da8826f5f753ff498427a80b3fc599c319c0a9c1d693b8d"
+    },
+    {
+      "bytes": 8215,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/openai_llm.py",
+      "sha256": "sha256:ea615e41ba8672e585d4513ecb32357497166f2cdbe58e57210a403688f4dec1"
+    },
+    {
+      "bytes": 13833,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/prompting_llm.py",
+      "sha256": "sha256:021c397a556df29455374938477c06a3cb6b21e433b7403079c296aa5e662393"
+    },
+    {
+      "bytes": 7286,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/llms/secalign_local_llm.py",
+      "sha256": "sha256:7c8a91d19f3f0b8d418cb9d3f62114ba1ab7af7a296e9984b8bd9824e34f299a"
+    },
+    {
+      "bytes": 6635,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/pi_detector.py",
+      "sha256": "sha256:f97ea0c8caccac47daee6135b8a1a6b7ac910481266ce78d499e8d6ebc1cce96"
+    },
+    {
+      "bytes": 1867,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/planner.py",
+      "sha256": "sha256:b5bb490fb3e88ebcc1f995c87b8bdf438419bc67b06ae8d3e812b9fcb3ee851b"
+    },
+    {
+      "bytes": 6968,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/agent_pipeline/tool_execution.py",
+      "sha256": "sha256:5083d7dabd757db83957e81edb4b9179dec7802ceeedfdb9d6022ef10081edcd"
+    },
+    {
+      "bytes": 3190,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/ast_utils.py",
+      "sha256": "sha256:08d84f74f66151ff0438cb81aa58d3cd4fdc3f0881a0b5eb26d0b527948be221"
+    },
+    {
+      "bytes": 493,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/attacks/__init__.py",
+      "sha256": "sha256:e5f2a950166c3ef6974ce8f8fcb7ab7dd33a6cd3496205b10c7bd907aa4287b6"
+    },
+    {
+      "bytes": 1326,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/attacks/attack_registry.py",
+      "sha256": "sha256:cdbfefa137485531fa3ff33f3235b769d5116b4a1a4544b0fe48bffe212aafe5"
+    },
+    {
+      "bytes": 6399,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/attacks/base_attacks.py",
+      "sha256": "sha256:ca9e0e7675268e51c17d2da75f216a0f48023d5d46f5781f54291c40cab9415c"
+    },
+    {
+      "bytes": 2864,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/attacks/baseline_attacks.py",
+      "sha256": "sha256:0e3f3cec2173524989d67bd3d934d032774ad3fc5995969c9565613efaa21c6d"
+    },
+    {
+      "bytes": 4540,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/attacks/dos_attacks.py",
+      "sha256": "sha256:160aa9604ce31cd3e54ecb06d9ed4acc770066a0dedd11d0742f6205d6077859"
+    },
+    {
+      "bytes": 6222,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/attacks/important_instructions_attacks.py",
+      "sha256": "sha256:519f24e0b9d72f43343d665679adacc33758b50cd1b586a81fa53fb098dcfe71"
+    },
+    {
+      "bytes": 6880,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/base_tasks.py",
+      "sha256": "sha256:08d3a4646d1a250968045b0f933803335650a4ed04c9d2387b17d08b1e0427c5"
+    },
+    {
+      "bytes": 15685,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/benchmark.py",
+      "sha256": "sha256:09e633ea9937910507633c07ca6ab9ecb4a3c3c22fe5802156e28411be4a6c5d"
+    },
+    {
+      "bytes": 2267,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/banking/environment.yaml",
+      "sha256": "sha256:3f539da1d97779b244cd122afc683dc69d602f338e1b3c42d126cbde33611c8b"
+    },
+    {
+      "bytes": 655,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/banking/injection_vectors.yaml",
+      "sha256": "sha256:5a18bd3aeb6d8d9e9fe94458cd7e06ceab4ed80aad85c2f42df2391af41eb0b5"
+    },
+    {
+      "bytes": 3867,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/slack/environment.yaml",
+      "sha256": "sha256:0ea2f9b83e5ffaae0bf50fab2b13d6c8ee59a952f791b16c9554fdc48935c87d"
+    },
+    {
+      "bytes": 554,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/slack/injection_vectors.yaml",
+      "sha256": "sha256:efc01621ffa7955ee10e00e916ac933a41bd8347ba285e1e4888813bf5e0d3a2"
+    },
+    {
+      "bytes": 20964,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/travel/environment.yaml",
+      "sha256": "sha256:ca8ef591bde5a8d8b9e2efe6830b8e4646c43f633c86f14cb878f588bb4b8a3c"
+    },
+    {
+      "bytes": 1529,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/travel/injection_vectors.yaml",
+      "sha256": "sha256:a6ab848b39d862439e7b4844a617e578294de93cd0176c1851184dd901edb51c"
+    },
+    {
+      "bytes": 123,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/workspace/environment.yaml",
+      "sha256": "sha256:08a22c4eac0f72012e23c135cf3157b6fa7b35881b57bd2e910a5b059c02d157"
+    },
+    {
+      "bytes": 5751,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/workspace/gpt_prompts.txt",
+      "sha256": "sha256:2fa475cc5a4e2df6cb7cd944cc1291aaa69191d4e388fd88c36521c877b13cda"
+    },
+    {
+      "bytes": 9610,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/workspace/include/calendar.yaml",
+      "sha256": "sha256:69b0ae96804e986b5a0dba694ad6ca34cf01c8c6b57bb8ceb618d9ed8640b803"
+    },
+    {
+      "bytes": 28245,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/workspace/include/cloud_drive.yaml",
+      "sha256": "sha256:a9731cd49fe7eb726e43c1727c40eff0d6ca2d85d53728aa744860a8c4214130"
+    },
+    {
+      "bytes": 13942,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/workspace/include/inbox.yaml",
+      "sha256": "sha256:e6fac364bfb0e89d3d0251ef8079ffa2791504673a426029034356b8228f2082"
+    },
+    {
+      "bytes": 2997,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/suites/workspace/injection_vectors.yaml",
+      "sha256": "sha256:3390ac3da090ea0fde5f50ef0a74bf260786b35ab6ff14d47a199ecb41a15489"
+    },
+    {
+      "bytes": 494,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/data/system_messages.yaml",
+      "sha256": "sha256:b65b4fa81ee473447ae6314b1c41e08f0d53a2e07f2a766901f1f4f1a53c51a4"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/__init__.py",
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "bytes": 348,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/banking/__init__.py",
+      "sha256": "sha256:06dbcff8dddf069419eb0bc4ff7ffaf45c38fc6d0f5ac978d76da47b03700ac3"
+    },
+    {
+      "bytes": 15309,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/banking/injection_tasks.py",
+      "sha256": "sha256:fa2dedf8e66c95ffadb54f5a26648728b08c56f302858de4ee9a5cc0b3891618"
+    },
+    {
+      "bytes": 1594,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/banking/task_suite.py",
+      "sha256": "sha256:08676bc973efc27ba41910126da805fddbdf170d786f17ea358d0aa8cd9a6c4b"
+    },
+    {
+      "bytes": 11460,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/banking/user_tasks.py",
+      "sha256": "sha256:865613386e005ec7f5dba703d327a8b5b4e04a0410b5f837c4206f883a9c2d38"
+    },
+    {
+      "bytes": 334,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/slack/__init__.py",
+      "sha256": "sha256:711f6ab4ef9cbe2ca5f4ba24cd29ad0d749117572716dcd8ec2d06416ea1def1"
+    },
+    {
+      "bytes": 9144,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/slack/injection_tasks.py",
+      "sha256": "sha256:d5775da1689e13192b665837e72cee88ed76f622e9b998e9def18b700fdc5afc"
+    },
+    {
+      "bytes": 1450,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/slack/task_suite.py",
+      "sha256": "sha256:06e9f39c2a89d058aabc6ca9c7d1bc38a6d3f5f17d403495962edab22efdb213"
+    },
+    {
+      "bytes": 12460,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/slack/user_tasks.py",
+      "sha256": "sha256:dc1fe5e95f63481b22236767b04d8589085e904d05529a09c678af587c4b1dce"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5137,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/banking_client.py",
+      "sha256": "sha256:0e4273f521db7ff6d5e7f7f552e917b11940102abd932aea8a2998b517441b42"
+    },
+    {
+      "bytes": 10237,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/calendar_client.py",
+      "sha256": "sha256:5d551339fb87237dd1414a003b26f4f851dbdd2b0826225025e44f16420add22"
+    },
+    {
+      "bytes": 5577,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/cloud_drive_client.py",
+      "sha256": "sha256:19376d95731c46477037986319bc8522b4bc96f4924e730b11906df23fc00b93"
+    },
+    {
+      "bytes": 10235,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/email_client.py",
+      "sha256": "sha256:782adb70c81ec765919ae835494fac163dbb46f21ef46f6dcf18eab390b5e294"
+    },
+    {
+      "bytes": 435,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/file_reader.py",
+      "sha256": "sha256:09438864a1e1ac6564df3e4f7eb60a9a224de2ef8a92c4eb4899f7768ce49d6d"
+    },
+    {
+      "bytes": 4586,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/slack.py",
+      "sha256": "sha256:c70dbc7b3356e93a1c2bd4e78700859ea58b36adbf8169e51b03f355b0a5fe69"
+    },
+    {
+      "bytes": 15177,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/travel_booking_client.py",
+      "sha256": "sha256:ad6b3441a38a1ff4bdc7227a15fb9ed764a7906baf2f75902bdb70f2100f69ba"
+    },
+    {
+      "bytes": 3422,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/types.py",
+      "sha256": "sha256:691ed3353bd04e9f8233c4f70901daefb564e56209a8946f516496520aca3c13"
+    },
+    {
+      "bytes": 1978,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/user_account.py",
+      "sha256": "sha256:f097c4b2b6cd6784272987d8d37dd7cc5d599620d64b371f7c2af8e65d7ad673"
+    },
+    {
+      "bytes": 1436,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/tools/web.py",
+      "sha256": "sha256:246cc534a939ade2864bb62441d8452de7a840d007147c22391ad07bff91594c"
+    },
+    {
+      "bytes": 341,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/travel/__init__.py",
+      "sha256": "sha256:bd0bf8a57c39846c9476adc60be5c870faba09dd497254c2d4520bea21ab3bba"
+    },
+    {
+      "bytes": 12669,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/travel/injection_tasks.py",
+      "sha256": "sha256:4868205396ad538b9f9d4b87ab31c137a44ea8f28271dd2685e4240f1bfb8640"
+    },
+    {
+      "bytes": 4415,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/travel/task_suite.py",
+      "sha256": "sha256:e9a2a98a9120229e9d958db3d7c51442cfc659b2a96e4a937281bffdd8cbd8fd"
+    },
+    {
+      "bytes": 49051,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/travel/user_tasks.py",
+      "sha256": "sha256:3da816c7bebd3cb1e32322575fa8a243bd2074690186ab8299cac8a9fd352489"
+    },
+    {
+      "bytes": 362,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/workspace/__init__.py",
+      "sha256": "sha256:b50429a079625b039389dce1063d993e38d18213ace046dffa65a735e73d08f9"
+    },
+    {
+      "bytes": 10615,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/workspace/injection_tasks.py",
+      "sha256": "sha256:03e0894ffb544a79fd0bfd2c62cc5f90b19a2b1d429068d800239bfd020b6dcc"
+    },
+    {
+      "bytes": 3068,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/workspace/task_suite.py",
+      "sha256": "sha256:64dc57230f4ff3bc10fd3283d66b287ebf0fbd126afd8d8b26f1dea93c86b445"
+    },
+    {
+      "bytes": 29921,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1/workspace/user_tasks.py",
+      "sha256": "sha256:9ed13906b3fa07181231bb4241b03ea29257fe4514796e3f5f6e708781454a47"
+    },
+    {
+      "bytes": 69,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1/__init__.py",
+      "sha256": "sha256:6afde4c3d03f2535eaf4b7764f6bc35864fe748c2e89b4673e952c2665813b71"
+    },
+    {
+      "bytes": 47246,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1/travel/user_tasks.py",
+      "sha256": "sha256:03e3ace02e5c39ffc1835420ad22f129ba9ed4028b385fc9a47e2c307f8dc915"
+    },
+    {
+      "bytes": 307,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/__init__.py",
+      "sha256": "sha256:c12b7d8faa09c773e1432f680c55d2272a21609b8a8460844c0d4f313483e022"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/banking/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2751,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/banking/user_tasks.py",
+      "sha256": "sha256:d7858d3f9a573fcc334d19d4aa63ba92867cd8d5b99e2d102f7c60840fd42b81"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/slack/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5056,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/slack/user_tasks.py",
+      "sha256": "sha256:40ae83de947a339df4c9c0047d1648917c84f8fcd0cc1e26912605798abedb1b"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/travel/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2995,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/travel/injection_tasks.py",
+      "sha256": "sha256:23f325aa0821c7982991657588ee0b58057423559e97d6ebd6febc8274b5ac1b"
+    },
+    {
+      "bytes": 4257,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/travel/user_tasks.py",
+      "sha256": "sha256:356e46470861de40172a252e92149a2396bca3f66cfcadc0e5a4450fe11c979f"
+    },
+    {
+      "bytes": 4494,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_1/workspace/user_tasks.py",
+      "sha256": "sha256:c4e0e48e9595af292e45ada440c8357567f1e8ddb199919ac5ab57f7746d3e2d"
+    },
+    {
+      "bytes": 201,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_2/__init__.py",
+      "sha256": "sha256:2a9e4756075bf0f0db19525d86dec24c98df7ac7a1f5e7fb239a5d438fd6b720"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_2/travel/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5267,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_2/travel/injection_tasks.py",
+      "sha256": "sha256:d8688a8896736e4807b649340b84af65eb7b36f34d082073690333445a410b39"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_2/workspace/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 8339,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_2/workspace/injection_tasks.py",
+      "sha256": "sha256:3ffccf1e54362377a3d02955010b041a572c64aa209bb3e8b70c1fe5fc76fdad"
+    },
+    {
+      "bytes": 3607,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_1_2/workspace/user_tasks.py",
+      "sha256": "sha256:7c4297c54bc0612b55b488df22ef5343baca3279645d22576aa200c3aa8714b3"
+    },
+    {
+      "bytes": 365,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/__init__.py",
+      "sha256": "sha256:cc643d412ba5aea5dfe7896a130af95d05740bcc62ff9df97835ed66786b7498"
+    },
+    {
+      "bytes": 15207,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/banking/injection_tasks.py",
+      "sha256": "sha256:3e678ad165f911dbc16c8307de761dcc15da274716bec7ac0d05db167ec2c311"
+    },
+    {
+      "bytes": 1268,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/slack/user_tasks.py",
+      "sha256": "sha256:8ca2913d40e1bb0e4536614d3a3c25c13f995d2c007a6e5ec5a64763d8966064"
+    },
+    {
+      "bytes": 2050,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/travel/injection_tasks.py",
+      "sha256": "sha256:04eaf5d350a16e59a0631ad03be483ce248c50bd98f4e52dc556cadf261841f1"
+    },
+    {
+      "bytes": 5037,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/travel/user_tasks.py",
+      "sha256": "sha256:a563163efea5e723e4fbbafae66fca33e6b743e50f6c25865167dc0663615ef9"
+    },
+    {
+      "bytes": 17855,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/workspace/injection_tasks.py",
+      "sha256": "sha256:d11a9a4aa86085a1b0e8cea20652dd20f903adedfc6065175a0ead858c29e4a3"
+    },
+    {
+      "bytes": 2052,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/default_suites/v1_2/workspace/user_tasks.py",
+      "sha256": "sha256:42d0bf5eb1241194ecbf9daa3ef9514b779d0bef4a2fcca2628c6b2deba8eb81"
+    },
+    {
+      "bytes": 12472,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/functions_runtime.py",
+      "sha256": "sha256:5f425246cabb2ffe28a75f7108817dc32205876db4c67ffb3bc2113cf55bb8eb"
+    },
+    {
+      "bytes": 9453,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/logging.py",
+      "sha256": "sha256:d7ba56d2179f2cb0af96017e2d88d847ebc5c523388389523ad7d7be84469921"
+    },
+    {
+      "bytes": 4837,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/models.py",
+      "sha256": "sha256:f93cb82de19253ad6c83bb91afb864d8ef9fd818095807079ff0c7094edab450"
+    },
+    {
+      "bytes": 1897,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/openapi_utils.py",
+      "sha256": "sha256:959f8a6a14692ae5089866a99b4bb3ab8bd6c3de02449a827aae3bfc45e7f618"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/scripts/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 8212,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/scripts/benchmark.py",
+      "sha256": "sha256:c5784344a4075f52de142cad4991f171e1d3b0e11f7e9b71295d412e57b0293b"
+    },
+    {
+      "bytes": 2591,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/scripts/check_suites.py",
+      "sha256": "sha256:7806527357e126d54fa88a2a0ef2eec3f7b6ffefca90f63c179012dc51d91ef6"
+    },
+    {
+      "bytes": 280,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/strenum.py",
+      "sha256": "sha256:ac76fd07924a27fc42c33e626c77ed93ea48e9f7d4effc1548b8b908b166737f"
+    },
+    {
+      "bytes": 374,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/task_suite/__init__.py",
+      "sha256": "sha256:6821364aecf7c72451e36fde92974188e221e71b19936659795d9ff771718406"
+    },
+    {
+      "bytes": 2352,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/task_suite/load_suites.py",
+      "sha256": "sha256:8e338232f243b30bc91f7f64f56fe2e6df43db60f29e76eaef1625572e842e1e"
+    },
+    {
+      "bytes": 3526,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/task_suite/task_combinators.py",
+      "sha256": "sha256:a225f427c006b2fd814df86c47225ce9193d51857e3f14e69c8a56ee49116df1"
+    },
+    {
+      "bytes": 19465,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/task_suite/task_suite.py",
+      "sha256": "sha256:21fd5aab1ad653912d82b143ec65c1c3988bde95b8d2ad48d42313b79ad20fe6"
+    },
+    {
+      "bytes": 2564,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/types.py",
+      "sha256": "sha256:c1b0e707978a7936d172ec7c0ede30d9885394746374ac3a3fd561eb9b489fc7"
+    },
+    {
+      "bytes": 2597,
+      "path": "agent-base/frontier/task/repo/agentdojo/src/agentdojo/yaml_loader.py",
+      "sha256": "sha256:73443ec93c140dd2365d1c093f983729dca25075ee39e99047fa6c3d22ad9194"
+    },
+    {
+      "bytes": 105,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:e6120a7a06fa852ab2774733af3c234ff2e85cb0afd37ae76c9517c13df129b3"
+    },
+    {
+      "bytes": 276,
+      "path": "agent-base/frontier/task/repo/pyproject.toml",
+      "sha256": "sha256:cecea31ef1b4ae2412d0f0586d3e770afc594275e69c324e252fe1372dfba92c"
+    },
+    {
+      "bytes": 315,
+      "path": "agent-base/frontier/task/repo/secagent/__init__.py",
+      "sha256": "sha256:edd5b4df72a48e671a89aad5365a90aaf21b828802434bc79a2d1f5fe4f70cf9"
+    },
+    {
+      "bytes": 1737,
+      "path": "agent-base/frontier/task/repo/secagent/mcp_proxy.py",
+      "sha256": "sha256:0ed206f1211fd0260c4275d119f00fa60c004128aa93fa1eb2fb678ddc6be8eb"
+    },
+    {
+      "bytes": 19605,
+      "path": "agent-base/frontier/task/repo/secagent/policy_analysis.py",
+      "sha256": "sha256:e4d03f0f77a41e0a464056c03218faabf7a493c742cf69ae3cc507911e954cef"
+    },
+    {
+      "bytes": 5089,
+      "path": "agent-base/frontier/task/repo/secagent/policy_type_check.py",
+      "sha256": "sha256:96204e413ed982a723ca171f1bd545fce16a33302c659536f1fc2cce929d4b02"
+    },
+    {
+      "bytes": 12830,
+      "path": "agent-base/frontier/task/repo/secagent/progent_proxy.py",
+      "sha256": "sha256:7cbb6cac7f3a86d36f89ea09e4945a739b4151bcf648059586294268eefa8c6c"
+    },
+    {
+      "bytes": 31124,
+      "path": "agent-base/frontier/task/repo/secagent/role_analyzer.py",
+      "sha256": "sha256:4acb307d32e6c7f619ec9b3cea205b2bbcd1619963b26aa074e3bbbb3a8cc22c"
+    },
+    {
+      "bytes": 37648,
+      "path": "agent-base/frontier/task/repo/secagent/tool.py",
+      "sha256": "sha256:59b2cd642a9c29f2459e919720fae935a5f6f99a2a5fa0c17f1ea95e9efbcd52"
+    },
+    {
+      "bytes": 1087,
+      "path": "agent-base/frontier/task/repo/secagent/utils.py",
+      "sha256": "sha256:6b185684f5255acc33fcbaa615ec408368981f2a1f2902b4b28803fa188338e1"
+    },
+    {
+      "bytes": 1897,
+      "path": "agent-base/frontier/task/requirements-lock.txt",
+      "sha256": "sha256:ef45afc65e97a262a341b772d2f23ef021ae9b57ae3d6314d7c1c3b8d6011269"
+    },
+    {
+      "bytes": 512,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:010829acceaf4a68d1bf9ec8383f4057a3d19648127ff548f411cc1c26e63bb8"
+    },
+    {
+      "bytes": 519,
+      "path": "datasets/train.json",
+      "sha256": "sha256:7073fb3ea6b5c74cf77c95ca09c7c0328e79b42917699eacf741f1728a771220"
+    },
+    {
+      "bytes": 3915,
+      "path": "judge/attacker_identities.py",
+      "sha256": "sha256:27c29894c06c660b9fa027f2a6942d05e99a6af293aac5790f59e13b5643aa51"
+    },
+    {
+      "bytes": 6772,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:c6d0f685a317f44bdaeaa90ad3ba2d1187ae9b826a028ba21ebb7f581e89c098"
+    },
+    {
+      "bytes": 9958,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:89159a7021d2ec3c457a706ce3d8089b052fb1a7d623e9f949bc7abf0325c43e"
+    },
+    {
+      "bytes": 1532,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:43111502475dc10ad46aba96547163d9cec880481ffd6b800be2f3941ccbcdd6"
+    },
+    {
+      "bytes": 7055,
+      "path": "judge/episodes.py",
+      "sha256": "sha256:cac521ca911a2eaf35dd8a2cc647d07dc323c3def99de8be5dd8a803b95d9dcf"
+    },
+    {
+      "bytes": 67,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:d4afdc83b37da4c0cb4c1be57d79405cb045bb100558eab2310dca244c9271bd"
+    },
+    {
+      "bytes": 15089,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:2f95a1e612ca69eb0386325b94fe85b188d0f2b73e0e3f62e1b992a91cf73de1"
+    },
+    {
+      "bytes": 1064,
+      "path": "judge/harbor/app/LICENSE",
+      "sha256": "sha256:edf91d27e4acd6f0db848aae9032bee8674ce0eb85ca380667414e135a39ea0a"
+    },
+    {
+      "bytes": 12536,
+      "path": "judge/harbor/app/README.md",
+      "sha256": "sha256:f10fa156b31ad7d2c00f5fc2a44f84f63c5beded8c647cd0cb69d03b6bcccf4d"
+    },
+    {
+      "bytes": 1161,
+      "path": "judge/harbor/app/agentdojo/LICENSE",
+      "sha256": "sha256:4285a071f2d382338e52b4fb0a186d952984a34d43a33d8872e1a1d8cb43401e"
+    },
+    {
+      "bytes": 3228,
+      "path": "judge/harbor/app/agentdojo/pyproject.toml",
+      "sha256": "sha256:4db7ad8dc2082c10f330624fed306de454edd4108ce6665f81d12e0c4f55a558"
+    },
+    {
+      "bytes": 1,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/__init__.py",
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "bytes": 1479,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/__init__.py",
+      "sha256": "sha256:63802741c094b11348894c5752891f355e886645d4c33b8ec8d7133d528199d6"
+    },
+    {
+      "bytes": 8910,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/agent_pipeline.py",
+      "sha256": "sha256:56b15a6538f0e7eb48bac27663d4d5a74aef409030bda3399f28c87439d500dc"
+    },
+    {
+      "bytes": 1318,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/base_pipeline_element.py",
+      "sha256": "sha256:b15f0eb72a286fdfd26f45a3ac587fd4f44063c2a49ed017d580f5f3f0d1fc34"
+    },
+    {
+      "bytes": 2085,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/basic_elements.py",
+      "sha256": "sha256:4b6bdc79c5740f228da64cd1322e5f6b33776749ffc39ae4a1c70c987042d0ea"
+    },
+    {
+      "bytes": 741,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/errors.py",
+      "sha256": "sha256:89c0a904fadb8f041e208b0f6b4c2fabf537ff0934f46c567530843e4231ef32"
+    },
+    {
+      "bytes": 2167,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/ground_truth_pipeline.py",
+      "sha256": "sha256:dcbfad07881c8a19bff23d8857d679723299f4630a771292236c19246d2e3a0f"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 9176,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/anthropic_llm.py",
+      "sha256": "sha256:2c203b1e0752ed31a1e0e8d02eda41fa83c1334cfc49b8034ad331db2c1ffdee"
+    },
+    {
+      "bytes": 9460,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/cohere_llm.py",
+      "sha256": "sha256:b46093d273c0026e432be169b4fe85e1ac6cd5d3c36cf8cf3ebda859665b539d"
+    },
+    {
+      "bytes": 8739,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/google_llm.py",
+      "sha256": "sha256:60edf83c5a52d43b9da8826f5f753ff498427a80b3fc599c319c0a9c1d693b8d"
+    },
+    {
+      "bytes": 8215,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/openai_llm.py",
+      "sha256": "sha256:ea615e41ba8672e585d4513ecb32357497166f2cdbe58e57210a403688f4dec1"
+    },
+    {
+      "bytes": 13833,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/prompting_llm.py",
+      "sha256": "sha256:021c397a556df29455374938477c06a3cb6b21e433b7403079c296aa5e662393"
+    },
+    {
+      "bytes": 7286,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/llms/secalign_local_llm.py",
+      "sha256": "sha256:7c8a91d19f3f0b8d418cb9d3f62114ba1ab7af7a296e9984b8bd9824e34f299a"
+    },
+    {
+      "bytes": 6635,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/pi_detector.py",
+      "sha256": "sha256:f97ea0c8caccac47daee6135b8a1a6b7ac910481266ce78d499e8d6ebc1cce96"
+    },
+    {
+      "bytes": 1867,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/planner.py",
+      "sha256": "sha256:b5bb490fb3e88ebcc1f995c87b8bdf438419bc67b06ae8d3e812b9fcb3ee851b"
+    },
+    {
+      "bytes": 6968,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/agent_pipeline/tool_execution.py",
+      "sha256": "sha256:5083d7dabd757db83957e81edb4b9179dec7802ceeedfdb9d6022ef10081edcd"
+    },
+    {
+      "bytes": 3190,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/ast_utils.py",
+      "sha256": "sha256:08d84f74f66151ff0438cb81aa58d3cd4fdc3f0881a0b5eb26d0b527948be221"
+    },
+    {
+      "bytes": 493,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/attacks/__init__.py",
+      "sha256": "sha256:e5f2a950166c3ef6974ce8f8fcb7ab7dd33a6cd3496205b10c7bd907aa4287b6"
+    },
+    {
+      "bytes": 1326,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/attacks/attack_registry.py",
+      "sha256": "sha256:cdbfefa137485531fa3ff33f3235b769d5116b4a1a4544b0fe48bffe212aafe5"
+    },
+    {
+      "bytes": 6399,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/attacks/base_attacks.py",
+      "sha256": "sha256:ca9e0e7675268e51c17d2da75f216a0f48023d5d46f5781f54291c40cab9415c"
+    },
+    {
+      "bytes": 2864,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/attacks/baseline_attacks.py",
+      "sha256": "sha256:0e3f3cec2173524989d67bd3d934d032774ad3fc5995969c9565613efaa21c6d"
+    },
+    {
+      "bytes": 4540,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/attacks/dos_attacks.py",
+      "sha256": "sha256:160aa9604ce31cd3e54ecb06d9ed4acc770066a0dedd11d0742f6205d6077859"
+    },
+    {
+      "bytes": 6222,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/attacks/important_instructions_attacks.py",
+      "sha256": "sha256:519f24e0b9d72f43343d665679adacc33758b50cd1b586a81fa53fb098dcfe71"
+    },
+    {
+      "bytes": 6880,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/base_tasks.py",
+      "sha256": "sha256:08d3a4646d1a250968045b0f933803335650a4ed04c9d2387b17d08b1e0427c5"
+    },
+    {
+      "bytes": 15685,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/benchmark.py",
+      "sha256": "sha256:09e633ea9937910507633c07ca6ab9ecb4a3c3c22fe5802156e28411be4a6c5d"
+    },
+    {
+      "bytes": 2267,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/banking/environment.yaml",
+      "sha256": "sha256:3f539da1d97779b244cd122afc683dc69d602f338e1b3c42d126cbde33611c8b"
+    },
+    {
+      "bytes": 655,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/banking/injection_vectors.yaml",
+      "sha256": "sha256:5a18bd3aeb6d8d9e9fe94458cd7e06ceab4ed80aad85c2f42df2391af41eb0b5"
+    },
+    {
+      "bytes": 3867,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/slack/environment.yaml",
+      "sha256": "sha256:0ea2f9b83e5ffaae0bf50fab2b13d6c8ee59a952f791b16c9554fdc48935c87d"
+    },
+    {
+      "bytes": 554,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/slack/injection_vectors.yaml",
+      "sha256": "sha256:efc01621ffa7955ee10e00e916ac933a41bd8347ba285e1e4888813bf5e0d3a2"
+    },
+    {
+      "bytes": 20964,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/travel/environment.yaml",
+      "sha256": "sha256:ca8ef591bde5a8d8b9e2efe6830b8e4646c43f633c86f14cb878f588bb4b8a3c"
+    },
+    {
+      "bytes": 1529,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/travel/injection_vectors.yaml",
+      "sha256": "sha256:a6ab848b39d862439e7b4844a617e578294de93cd0176c1851184dd901edb51c"
+    },
+    {
+      "bytes": 123,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/workspace/environment.yaml",
+      "sha256": "sha256:08a22c4eac0f72012e23c135cf3157b6fa7b35881b57bd2e910a5b059c02d157"
+    },
+    {
+      "bytes": 5751,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/workspace/gpt_prompts.txt",
+      "sha256": "sha256:2fa475cc5a4e2df6cb7cd944cc1291aaa69191d4e388fd88c36521c877b13cda"
+    },
+    {
+      "bytes": 9610,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/workspace/include/calendar.yaml",
+      "sha256": "sha256:69b0ae96804e986b5a0dba694ad6ca34cf01c8c6b57bb8ceb618d9ed8640b803"
+    },
+    {
+      "bytes": 28245,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/workspace/include/cloud_drive.yaml",
+      "sha256": "sha256:a9731cd49fe7eb726e43c1727c40eff0d6ca2d85d53728aa744860a8c4214130"
+    },
+    {
+      "bytes": 13942,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/workspace/include/inbox.yaml",
+      "sha256": "sha256:e6fac364bfb0e89d3d0251ef8079ffa2791504673a426029034356b8228f2082"
+    },
+    {
+      "bytes": 2997,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/suites/workspace/injection_vectors.yaml",
+      "sha256": "sha256:3390ac3da090ea0fde5f50ef0a74bf260786b35ab6ff14d47a199ecb41a15489"
+    },
+    {
+      "bytes": 494,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/data/system_messages.yaml",
+      "sha256": "sha256:b65b4fa81ee473447ae6314b1c41e08f0d53a2e07f2a766901f1f4f1a53c51a4"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/__init__.py",
+      "sha256": "sha256:01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "bytes": 348,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/banking/__init__.py",
+      "sha256": "sha256:06dbcff8dddf069419eb0bc4ff7ffaf45c38fc6d0f5ac978d76da47b03700ac3"
+    },
+    {
+      "bytes": 15309,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/banking/injection_tasks.py",
+      "sha256": "sha256:fa2dedf8e66c95ffadb54f5a26648728b08c56f302858de4ee9a5cc0b3891618"
+    },
+    {
+      "bytes": 1594,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/banking/task_suite.py",
+      "sha256": "sha256:08676bc973efc27ba41910126da805fddbdf170d786f17ea358d0aa8cd9a6c4b"
+    },
+    {
+      "bytes": 19450,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/banking/user_tasks.py",
+      "sha256": "sha256:37af838194f001af80cc040315bcb2d69d0112324d424f9a323473b41b317f82"
+    },
+    {
+      "bytes": 334,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/slack/__init__.py",
+      "sha256": "sha256:711f6ab4ef9cbe2ca5f4ba24cd29ad0d749117572716dcd8ec2d06416ea1def1"
+    },
+    {
+      "bytes": 9144,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/slack/injection_tasks.py",
+      "sha256": "sha256:d5775da1689e13192b665837e72cee88ed76f622e9b998e9def18b700fdc5afc"
+    },
+    {
+      "bytes": 1450,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/slack/task_suite.py",
+      "sha256": "sha256:06e9f39c2a89d058aabc6ca9c7d1bc38a6d3f5f17d403495962edab22efdb213"
+    },
+    {
+      "bytes": 26012,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/slack/user_tasks.py",
+      "sha256": "sha256:25e43a0c58109765da090aa2f01bfb0892aaee70ca1622028074d7b49443a57b"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5137,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/banking_client.py",
+      "sha256": "sha256:0e4273f521db7ff6d5e7f7f552e917b11940102abd932aea8a2998b517441b42"
+    },
+    {
+      "bytes": 10237,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/calendar_client.py",
+      "sha256": "sha256:5d551339fb87237dd1414a003b26f4f851dbdd2b0826225025e44f16420add22"
+    },
+    {
+      "bytes": 5577,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/cloud_drive_client.py",
+      "sha256": "sha256:19376d95731c46477037986319bc8522b4bc96f4924e730b11906df23fc00b93"
+    },
+    {
+      "bytes": 10235,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/email_client.py",
+      "sha256": "sha256:782adb70c81ec765919ae835494fac163dbb46f21ef46f6dcf18eab390b5e294"
+    },
+    {
+      "bytes": 435,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/file_reader.py",
+      "sha256": "sha256:09438864a1e1ac6564df3e4f7eb60a9a224de2ef8a92c4eb4899f7768ce49d6d"
+    },
+    {
+      "bytes": 4586,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/slack.py",
+      "sha256": "sha256:c70dbc7b3356e93a1c2bd4e78700859ea58b36adbf8169e51b03f355b0a5fe69"
+    },
+    {
+      "bytes": 15177,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/travel_booking_client.py",
+      "sha256": "sha256:ad6b3441a38a1ff4bdc7227a15fb9ed764a7906baf2f75902bdb70f2100f69ba"
+    },
+    {
+      "bytes": 3422,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/types.py",
+      "sha256": "sha256:691ed3353bd04e9f8233c4f70901daefb564e56209a8946f516496520aca3c13"
+    },
+    {
+      "bytes": 1978,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/user_account.py",
+      "sha256": "sha256:f097c4b2b6cd6784272987d8d37dd7cc5d599620d64b371f7c2af8e65d7ad673"
+    },
+    {
+      "bytes": 1436,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/tools/web.py",
+      "sha256": "sha256:246cc534a939ade2864bb62441d8452de7a840d007147c22391ad07bff91594c"
+    },
+    {
+      "bytes": 341,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/travel/__init__.py",
+      "sha256": "sha256:bd0bf8a57c39846c9476adc60be5c870faba09dd497254c2d4520bea21ab3bba"
+    },
+    {
+      "bytes": 12669,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/travel/injection_tasks.py",
+      "sha256": "sha256:4868205396ad538b9f9d4b87ab31c137a44ea8f28271dd2685e4240f1bfb8640"
+    },
+    {
+      "bytes": 4415,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/travel/task_suite.py",
+      "sha256": "sha256:e9a2a98a9120229e9d958db3d7c51442cfc659b2a96e4a937281bffdd8cbd8fd"
+    },
+    {
+      "bytes": 76962,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/travel/user_tasks.py",
+      "sha256": "sha256:757f0e28208f92c2082e016469654524cb1120ec10928ce229da15fe32f6d3ee"
+    },
+    {
+      "bytes": 362,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/workspace/__init__.py",
+      "sha256": "sha256:b50429a079625b039389dce1063d993e38d18213ace046dffa65a735e73d08f9"
+    },
+    {
+      "bytes": 10615,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/workspace/injection_tasks.py",
+      "sha256": "sha256:03e0894ffb544a79fd0bfd2c62cc5f90b19a2b1d429068d800239bfd020b6dcc"
+    },
+    {
+      "bytes": 3068,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/workspace/task_suite.py",
+      "sha256": "sha256:64dc57230f4ff3bc10fd3283d66b287ebf0fbd126afd8d8b26f1dea93c86b445"
+    },
+    {
+      "bytes": 54007,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1/workspace/user_tasks.py",
+      "sha256": "sha256:d4996f29cc975cc56f2595b2c99eff56052c7346b2039c08372ab209828c2acb"
+    },
+    {
+      "bytes": 69,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1/__init__.py",
+      "sha256": "sha256:6afde4c3d03f2535eaf4b7764f6bc35864fe748c2e89b4673e952c2665813b71"
+    },
+    {
+      "bytes": 73458,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1/travel/user_tasks.py",
+      "sha256": "sha256:de8746e57fa85a5ee3ec9e4e6d66316c7c33e166e51404ffb64709b4458b9ae6"
+    },
+    {
+      "bytes": 307,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/__init__.py",
+      "sha256": "sha256:c12b7d8faa09c773e1432f680c55d2272a21609b8a8460844c0d4f313483e022"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/banking/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2751,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/banking/user_tasks.py",
+      "sha256": "sha256:d7858d3f9a573fcc334d19d4aa63ba92867cd8d5b99e2d102f7c60840fd42b81"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/slack/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 11114,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/slack/user_tasks.py",
+      "sha256": "sha256:d63bace385d0f341cb3d20bbb698a3d1530d7eb6e346cc65d04e4b7ea255467d"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/travel/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2995,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/travel/injection_tasks.py",
+      "sha256": "sha256:23f325aa0821c7982991657588ee0b58057423559e97d6ebd6febc8274b5ac1b"
+    },
+    {
+      "bytes": 4257,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/travel/user_tasks.py",
+      "sha256": "sha256:356e46470861de40172a252e92149a2396bca3f66cfcadc0e5a4450fe11c979f"
+    },
+    {
+      "bytes": 8010,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_1/workspace/user_tasks.py",
+      "sha256": "sha256:76da20246f658609a96d95dc206ae7f58785cab5b1f100f76d367c8e4b6fc7f9"
+    },
+    {
+      "bytes": 201,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_2/__init__.py",
+      "sha256": "sha256:2a9e4756075bf0f0db19525d86dec24c98df7ac7a1f5e7fb239a5d438fd6b720"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_2/travel/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5267,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_2/travel/injection_tasks.py",
+      "sha256": "sha256:d8688a8896736e4807b649340b84af65eb7b36f34d082073690333445a410b39"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_2/workspace/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 8339,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_2/workspace/injection_tasks.py",
+      "sha256": "sha256:3ffccf1e54362377a3d02955010b041a572c64aa209bb3e8b70c1fe5fc76fdad"
+    },
+    {
+      "bytes": 5395,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_1_2/workspace/user_tasks.py",
+      "sha256": "sha256:ff4e1b65f10346ba167d44b3236f4fe10fbb2066d6e2a22c4edc8b243d0f0a53"
+    },
+    {
+      "bytes": 365,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/__init__.py",
+      "sha256": "sha256:cc643d412ba5aea5dfe7896a130af95d05740bcc62ff9df97835ed66786b7498"
+    },
+    {
+      "bytes": 15207,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/banking/injection_tasks.py",
+      "sha256": "sha256:3e678ad165f911dbc16c8307de761dcc15da274716bec7ac0d05db167ec2c311"
+    },
+    {
+      "bytes": 3377,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/slack/user_tasks.py",
+      "sha256": "sha256:36c51c6fd744301ed5dd9b654f02aca504af50df827453d1754862ed6201fcc2"
+    },
+    {
+      "bytes": 2050,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/travel/injection_tasks.py",
+      "sha256": "sha256:04eaf5d350a16e59a0631ad03be483ce248c50bd98f4e52dc556cadf261841f1"
+    },
+    {
+      "bytes": 5037,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/travel/user_tasks.py",
+      "sha256": "sha256:a563163efea5e723e4fbbafae66fca33e6b743e50f6c25865167dc0663615ef9"
+    },
+    {
+      "bytes": 17855,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/workspace/injection_tasks.py",
+      "sha256": "sha256:d11a9a4aa86085a1b0e8cea20652dd20f903adedfc6065175a0ead858c29e4a3"
+    },
+    {
+      "bytes": 8951,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/default_suites/v1_2/workspace/user_tasks.py",
+      "sha256": "sha256:6b21b84053d1ac1703674e75d75dd4986e489d3434fcf60e8707b96114ab03bb"
+    },
+    {
+      "bytes": 12472,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/functions_runtime.py",
+      "sha256": "sha256:5f425246cabb2ffe28a75f7108817dc32205876db4c67ffb3bc2113cf55bb8eb"
+    },
+    {
+      "bytes": 9453,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/logging.py",
+      "sha256": "sha256:d7ba56d2179f2cb0af96017e2d88d847ebc5c523388389523ad7d7be84469921"
+    },
+    {
+      "bytes": 4837,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/models.py",
+      "sha256": "sha256:f93cb82de19253ad6c83bb91afb864d8ef9fd818095807079ff0c7094edab450"
+    },
+    {
+      "bytes": 1897,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/openapi_utils.py",
+      "sha256": "sha256:959f8a6a14692ae5089866a99b4bb3ab8bd6c3de02449a827aae3bfc45e7f618"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/scripts/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 8212,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/scripts/benchmark.py",
+      "sha256": "sha256:c5784344a4075f52de142cad4991f171e1d3b0e11f7e9b71295d412e57b0293b"
+    },
+    {
+      "bytes": 2591,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/scripts/check_suites.py",
+      "sha256": "sha256:7806527357e126d54fa88a2a0ef2eec3f7b6ffefca90f63c179012dc51d91ef6"
+    },
+    {
+      "bytes": 280,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/strenum.py",
+      "sha256": "sha256:ac76fd07924a27fc42c33e626c77ed93ea48e9f7d4effc1548b8b908b166737f"
+    },
+    {
+      "bytes": 374,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/task_suite/__init__.py",
+      "sha256": "sha256:6821364aecf7c72451e36fde92974188e221e71b19936659795d9ff771718406"
+    },
+    {
+      "bytes": 2352,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/task_suite/load_suites.py",
+      "sha256": "sha256:8e338232f243b30bc91f7f64f56fe2e6df43db60f29e76eaef1625572e842e1e"
+    },
+    {
+      "bytes": 3526,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/task_suite/task_combinators.py",
+      "sha256": "sha256:a225f427c006b2fd814df86c47225ce9193d51857e3f14e69c8a56ee49116df1"
+    },
+    {
+      "bytes": 19465,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/task_suite/task_suite.py",
+      "sha256": "sha256:21fd5aab1ad653912d82b143ec65c1c3988bde95b8d2ad48d42313b79ad20fe6"
+    },
+    {
+      "bytes": 2564,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/types.py",
+      "sha256": "sha256:c1b0e707978a7936d172ec7c0ede30d9885394746374ac3a3fd561eb9b489fc7"
+    },
+    {
+      "bytes": 2597,
+      "path": "judge/harbor/app/agentdojo/src/agentdojo/yaml_loader.py",
+      "sha256": "sha256:73443ec93c140dd2365d1c093f983729dca25075ee39e99047fa6c3d22ad9194"
+    },
+    {
+      "bytes": 105,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:e6120a7a06fa852ab2774733af3c234ff2e85cb0afd37ae76c9517c13df129b3"
+    },
+    {
+      "bytes": 276,
+      "path": "judge/harbor/app/pyproject.toml",
+      "sha256": "sha256:cecea31ef1b4ae2412d0f0586d3e770afc594275e69c324e252fe1372dfba92c"
+    },
+    {
+      "bytes": 315,
+      "path": "judge/harbor/app/secagent/__init__.py",
+      "sha256": "sha256:edd5b4df72a48e671a89aad5365a90aaf21b828802434bc79a2d1f5fe4f70cf9"
+    },
+    {
+      "bytes": 1737,
+      "path": "judge/harbor/app/secagent/mcp_proxy.py",
+      "sha256": "sha256:0ed206f1211fd0260c4275d119f00fa60c004128aa93fa1eb2fb678ddc6be8eb"
+    },
+    {
+      "bytes": 19605,
+      "path": "judge/harbor/app/secagent/policy_analysis.py",
+      "sha256": "sha256:e4d03f0f77a41e0a464056c03218faabf7a493c742cf69ae3cc507911e954cef"
+    },
+    {
+      "bytes": 5089,
+      "path": "judge/harbor/app/secagent/policy_type_check.py",
+      "sha256": "sha256:96204e413ed982a723ca171f1bd545fce16a33302c659536f1fc2cce929d4b02"
+    },
+    {
+      "bytes": 12830,
+      "path": "judge/harbor/app/secagent/progent_proxy.py",
+      "sha256": "sha256:7cbb6cac7f3a86d36f89ea09e4945a739b4151bcf648059586294268eefa8c6c"
+    },
+    {
+      "bytes": 31124,
+      "path": "judge/harbor/app/secagent/role_analyzer.py",
+      "sha256": "sha256:4acb307d32e6c7f619ec9b3cea205b2bbcd1619963b26aa074e3bbbb3a8cc22c"
+    },
+    {
+      "bytes": 37648,
+      "path": "judge/harbor/app/secagent/tool.py",
+      "sha256": "sha256:59b2cd642a9c29f2459e919720fae935a5f6f99a2a5fa0c17f1ea95e9efbcd52"
+    },
+    {
+      "bytes": 1087,
+      "path": "judge/harbor/app/secagent/utils.py",
+      "sha256": "sha256:6b185684f5255acc33fcbaa615ec408368981f2a1f2902b4b28803fa188338e1"
+    },
+    {
+      "bytes": 3426,
+      "path": "judge/kernel_boundary.py",
+      "sha256": "sha256:d4323ea529ddb64b936bf98d745303cb7c802fa4c789122c455137e4d57a8a25"
+    },
+    {
+      "bytes": 8166,
+      "path": "judge/llm_gateway.py",
+      "sha256": "sha256:1f8e2620de4b26d6bc9020121ecb819f77ab6d68303768b6cda254751cf0a932"
+    },
+    {
+      "bytes": 1001,
+      "path": "judge/plain_bootstrap.py",
+      "sha256": "sha256:f6f4301297b96dc8137ddcffd27e9414479ba9609d87574e91514dd4ba700e81"
+    },
+    {
+      "bytes": 6221,
+      "path": "judge/policy_boundary.py",
+      "sha256": "sha256:f82a420925d91b654435be87a33113553922233efef9f160f8107f995697bb69"
+    },
+    {
+      "bytes": 3133,
+      "path": "judge/policy_protocol.py",
+      "sha256": "sha256:a5e22195b0625d571fc8033cb18e4acac0a80e0c3e31d2e367d01c0b713e2938"
+    },
+    {
+      "bytes": 3540,
+      "path": "judge/policy_worker.py",
+      "sha256": "sha256:dde679eed9ca50feae088a2a12a3a4066927a710a376e28334c108168a1206eb"
+    },
+    {
+      "bytes": 639,
+      "path": "judge/provenance.json",
+      "sha256": "sha256:225a48f6b33dea5fb1834adbd8e4c5ff310ec3fb46ec442f7f5a6e7acb03dd5c"
+    },
+    {
+      "bytes": 13070,
+      "path": "judge/readme",
+      "sha256": "sha256:9d88e9efef198c5c64603f9855c854a7dc5120612fbed87f56a3435054cc59bf"
+    },
+    {
+      "bytes": 416,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:12d37a04a0e575625ae6f907dc7a252068080c4c157441142be42aae452791c6"
+    },
+    {
+      "bytes": 627,
+      "path": "judge/reference_train.json",
+      "sha256": "sha256:379314643535d667f28f607eb39b95ebe1c5ee54d32f7380b49a3e1ee9d80df5"
+    },
+    {
+      "bytes": 12071,
+      "path": "judge/sealed_bootstrap.py",
+      "sha256": "sha256:6aa5b20e050f8b4ffb1c3087b0aeb5714fafb618acd6ef074430af960f5bd442"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 2595,
+      "path": "judge/suite_tasks.json",
+      "sha256": "sha256:6d2c69605917b103739f482afe72a70f611349ae825c3457891c81c3325dd89e"
+    },
+    {
+      "bytes": 5304,
+      "path": "judge/trusted/secagent/__init__.py",
+      "sha256": "sha256:428a9c5b7d49f1af87a0b7efec302040d40c30000b6f64cee26302a2522b3c38"
+    },
+    {
+      "bytes": 1318,
+      "path": "judge/workloads.py",
+      "sha256": "sha256:58ce1ebd8103de0d1c6aa09b8664119fc29471610b53bbc4c47edaee9b5e9302"
+    },
+    {
+      "bytes": 5192,
+      "path": "policy.json",
+      "sha256": "sha256:317d3af58426166878345b3e53398b7585e8e2241a3d38299311c13aff24dec5"
+    },
+    {
+      "bytes": 2559,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:9c144f55f8c8aa21b0640f470c7fa3a0304bd372c796f2a3ec7d27a7e83a5496"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 32758,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:feb510f305e1b45e21bc36c378f220330d14f319d9fe03768c5c818e499d6029"
+    },
+    {
+      "bytes": 362,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:3d18d9eae94529314f9c3cc24ac00ba058ec9bc22c4c8db60226c48f5d8b12d0"
+    }
+  ],
+  "problem_id": "progent_privilege_control",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:66648b53b7efc89e88c0606e86eedcf333bd93490bcc9a084bedc76eecc712dd",
+    "statement_sha256": "sha256:0e83f0b6af317d705ce129c6f23be9486781001e43e52274832c5a7fcfc1a94d",
+    "task_dir": "task"
+  },
+  "upstream_artifact": {
+    "commit": "5be7b63fa96f70bc19b72fbcee81f1c0bcc1a565",
+    "delta": "agentdojo/src/agentdojo/models.py registers the task model alias; README.md replaced by the task statement; the agent copy omits the held-out final user tasks (and combined user tasks built from them); judge/harbor/app keeps the full suites",
+    "license": "MIT",
+    "license_sha256": "sha256:edf91d27e4acd6f0db848aae9032bee8674ce0eb85ca380667414e135a39ea0a",
+    "prior_code_commit": "8a8eb894b9d568a32b4e58252fea85b47f789c77",
+    "repository": "https://github.com/sunblaze-ucb/progent"
+  }
+}

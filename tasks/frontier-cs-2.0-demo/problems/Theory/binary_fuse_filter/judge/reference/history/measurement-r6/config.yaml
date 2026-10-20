@@ -1,0 +1,19 @@
+tag: data_structures
+runtime:
+  language: c
+  timeout_seconds: 180
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 4096
+evaluation:
+  max_dev_submissions: 100
+  max_train_wall_seconds: 12000
+  answering_timeout_seconds: 18000
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths: [include/]
+  max_changed_files: 32
+  max_patch_bytes: 524288

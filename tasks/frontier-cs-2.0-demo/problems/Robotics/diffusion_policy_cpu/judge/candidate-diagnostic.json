@@ -1,0 +1,5 @@
+{
+  "diagnostic_schema": "diffusion-policy.candidate-diagnostic/v1",
+  "helper_sha256": "c5e6cac74f17078c741117f15d5e56fb8f1d3b42741de69a12cbf811c86ac4ba",
+  "schema": "frontier.candidate-diagnostic-validator/v1"
+}

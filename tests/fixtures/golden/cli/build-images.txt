@@ -1,0 +1,5 @@
+usage: frontier_deploy.py build-images [-h] --config CONFIG
+
+options:
+  -h, --help       show this help message and exit
+  --config CONFIG

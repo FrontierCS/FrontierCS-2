@@ -1,0 +1,291 @@
+{
+  "adaptations": [
+    "Move immutable public task assets from /app to /frontier/task.",
+    "Move the writable cumulative ledger to /workspace/payload/solution.json.",
+    "Replace Harbor submit/wait/list commands with generic frontier-submit train/final.",
+    "Wrap the single JSON file in a deterministic application/x-tar payload.",
+    "Split train and eval into distinct immutable mode-selector dataset objects.",
+    "Write FrontierCS2 result JSON plus deterministic zstd-compressed evidence.",
+    "Replace the three-pending queue-width limit with 100 accepted asynchronous total train calls.",
+    "Score the explicit final ledger; historical-best payload selection remains unsupported.",
+    "Separate mathematical statement from operational README for the direct-payload profile.",
+    "Place Agent license inside the public task build subtree.",
+    "Add complete converted-source inventory and explicit pending-scoring migration status.",
+    "Submit the ledger as payload/solution.patch, a unified diff against the published starter ledger; the Verifier applies it to its own starter copy before scoring (every task uses patch submissions).",
+    "Keep solver-facing operational and scientific guide copies consistent with patch submission and asynchronous train acceptance; reject malformed non-diff text rather than treating it as an unchanged starter."
+  ],
+  "adapter_source": {
+    "commit": "a48a08703c02e2765040584ddca1df1c780e25c2",
+    "path": "2.0/fcs2/problems/lwe_structured_recovery",
+    "repository": "private authoring repository"
+  },
+  "commit": "15ce5cc28f69a79bc3555bc4c8de65424360b77f",
+  "commit_date": "2026-08-13T15:34:26-07:00",
+  "conversion_source": {
+    "commit": "ad37be5d8d8ba59c8d4e62ed35c3a13489cf17d4",
+    "path": "2.0/problems/lwe_structured_recovery",
+    "repository": "https://github.com/FrontierCS/Frontier-CS",
+    "unchanged_since": "15ce5cc28f69a79bc3555bc4c8de65424360b77f"
+  },
+  "file_count": 34,
+  "files": [
+    {
+      "path": "LICENSE.frontier-cs",
+      "bytes": 1072,
+      "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+    },
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 1235,
+      "sha256": "sha256:e76d8dfd0165eb3e404b35e9e3c13879b3cbcc425e0185691717f289d51177ee"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 4638,
+      "sha256": "sha256:7e1332bb7f210e67e615e80ca0b002a6a03159677e2a3f1a09f09836698569f4"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/README.md",
+      "bytes": 3706,
+      "sha256": "sha256:4e6f1cdac3bc51f43ada8ddffff212538f43874e663bdbd951e32d85d0f73449"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/add_solution.py",
+      "bytes": 2708,
+      "sha256": "sha256:0060558c2261a143dde40a29432f97db398a557c6865e07321db331e5dfb8052"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "bytes": 1060,
+      "sha256": "sha256:b2b452cd9675cd186894a64627ec165a60b1f5749be659c153d714e9ef66c55c"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "bytes": 357,
+      "sha256": "sha256:13030a9e08f649294b19ee7f3a237ecfd8c5d5baf4ec3989b618f35eddd1eadb"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/LICENSE.frontier-cs",
+      "bytes": 1072,
+      "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/README.md",
+      "bytes": 15865,
+      "sha256": "sha256:1ec9fde4d27376d7a1fd082d6dee4cc5503b9bb31fc8ea51a457bc8cf1109eae"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/catalog.jsonl",
+      "bytes": 307038,
+      "sha256": "sha256:318f32b68e8a30c6bcd5867c89eb10d87a5472614401f4e6df0f55356cdc98a6"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/catalog.sha256",
+      "bytes": 80,
+      "sha256": "sha256:d67ae2efccf35c81d9cd9a6dd712337fc83d1634ca12d3e7ed2f76c1f8e26821"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/__init__.py",
+      "bytes": 66,
+      "sha256": "sha256:bfba7d1e69edd08dfe21a51a159efe3fc4bd4a8b0ae356a4fdbeb77c7c8e88be"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/evaluator_core.py",
+      "bytes": 7009,
+      "sha256": "sha256:8e6b55e20ba03ad4d7a99cf8f2ac2aafc847dd5a639b52d09ea43372770db357"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/ledger.py",
+      "bytes": 21273,
+      "sha256": "sha256:726ea5a2a74aa3368db4c01477dc4ac671a3093873b3abca02b38c2171bf87de"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/matrix.py",
+      "bytes": 3709,
+      "sha256": "sha256:ec6e8b291150597dd1256d222869f2317a7f90e662f06bfd56635ba3b2c379df"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/schema.py",
+      "bytes": 28433,
+      "sha256": "sha256:18b169adbb00048fcbddf44f08f1ef93dc68cbd4f89153a12f21cc5c2da5946e"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/shake.py",
+      "bytes": 1863,
+      "sha256": "sha256:60406d7a2de3d3877556cf58921319e14f8a449f6ec4b876b300ee40f8a0d696"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/strict_json.py",
+      "bytes": 2514,
+      "sha256": "sha256:f60cd732c022ef723e9b23f5838f43f097d13e21483ef56cfd39dc15588452a0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/submission.py",
+      "bytes": 7213,
+      "sha256": "sha256:bd413fba47ad3974f78c7c40a74aaa2af0c873a3ad53fde4a178d42343338ab4"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_challenge/verification.py",
+      "bytes": 3904,
+      "sha256": "sha256:63ce634a99ddd14f74b7dfca71d8b405dcbc4e72d94292edb70347273935784d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/lwe_instance.py",
+      "bytes": 5933,
+      "sha256": "sha256:99f558ac690f53ec8f723fbb66b39ac7f9ec5689dd3b3050eb06a022e1be64ea"
+    },
+    {
+      "path": "agent-base/frontier/task/starter/payload/solution.json",
+      "bytes": 36,
+      "sha256": "sha256:8f42cea9ad1d68c3b3a9dff9a5fc50849142d779e7d20bcaa34dabb765fb601d"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 209,
+      "sha256": "sha256:f0b74e925bdd4493e50063e4f275a20f4cc91cda9729f4ac95bd7c67e0aa9b64"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 210,
+      "sha256": "sha256:ae554d21e1fd3684e09b93a0983b9aef1494d03e37f67acd34ff23d817fbca65"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 3137,
+      "sha256": "sha256:0d88f33985f07b971e9f86e1ab1130c084f9fddf68e977808f33d4c1e1d81ecb"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 1825,
+      "sha256": "sha256:aef70fe7d6bd6110a325e66cb07aab9818764ab127b4b9721fae073e1f358e01"
+    },
+    {
+      "path": "judge/metadata.json",
+      "bytes": 1472,
+      "sha256": "sha256:67a5b6e63ac89e3627bb0d76645e8eef172cf3fdf7f4f746e3f596f71fecc01d"
+    },
+    {
+      "path": "judge/reference.json",
+      "bytes": 36,
+      "sha256": "sha256:8f42cea9ad1d68c3b3a9dff9a5fc50849142d779e7d20bcaa34dabb765fb601d"
+    },
+    {
+      "path": "judge/reference.patch",
+      "bytes": 0,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 4294,
+      "sha256": "sha256:1624f12bb88154e4bbf0d174d8eb5205578bf8fe37a6e95757a74957d2a03784"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 1650,
+      "sha256": "sha256:7752669cb1db0e530381c365cd072479ff8db528ef0efef8edf0a5d3f6d50b03"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 11943,
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "path": "verifier/patch_payload.py",
+      "bytes": 11240,
+      "sha256": "sha256:0958fafcdb4165bf9a09263ab587326a2336e307ea0bdaa3fcf3fd66a5484c75"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 15472,
+      "sha256": "sha256:c8d23f185d3d627b9c0e1f8cdaed4a4bed60df27970dc6192c521c22ebddbf24"
+    }
+  ],
+  "license": {
+    "copied_to": "LICENSE.frontier-cs",
+    "path": "LICENSE",
+    "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+  },
+  "path": "2.0/problems/lwe_structured_recovery",
+  "problem_id": "lwe_structured_recovery",
+  "repository": "https://github.com/FrontierCS/Frontier-CS",
+  "schema_version": "frontier.lwe-structured-recovery-upstream-lock/v1",
+  "source_files": [
+    {
+      "path": "config.yaml",
+      "sha256": "sha256:91fe04636299304e34d389020d4fa8d15a078749cdaf97609497652388d36709"
+    },
+    {
+      "path": "evaluate.sh",
+      "sha256": "sha256:4617a0fc3e1cdea43ab57ba228344afeeb4ffc875c922ed561e832001f3acde7"
+    },
+    {
+      "path": "evaluator.py",
+      "sha256": "sha256:fee63777476d16e439dbe2a4852a08c8d94808b96d2150fac667c0131d10aec2"
+    },
+    {
+      "path": "harbor/app/add_solution.py",
+      "sha256": "sha256:cfaabf3d32e98a6029e54ac3c29e67400a0f5a9bf769d56be6e0a97088a1c1be"
+    },
+    {
+      "path": "harbor/app/public/catalog.jsonl",
+      "sha256": "sha256:318f32b68e8a30c6bcd5867c89eb10d87a5472614401f4e6df0f55356cdc98a6"
+    },
+    {
+      "path": "harbor/app/public/catalog.sha256",
+      "sha256": "sha256:d67ae2efccf35c81d9cd9a6dd712337fc83d1634ca12d3e7ed2f76c1f8e26821"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/__init__.py",
+      "sha256": "sha256:bfba7d1e69edd08dfe21a51a159efe3fc4bd4a8b0ae356a4fdbeb77c7c8e88be"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/evaluator_core.py",
+      "sha256": "sha256:8e6b55e20ba03ad4d7a99cf8f2ac2aafc847dd5a639b52d09ea43372770db357"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/ledger.py",
+      "sha256": "sha256:726ea5a2a74aa3368db4c01477dc4ac671a3093873b3abca02b38c2171bf87de"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/matrix.py",
+      "sha256": "sha256:ec6e8b291150597dd1256d222869f2317a7f90e662f06bfd56635ba3b2c379df"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/schema.py",
+      "sha256": "sha256:18b169adbb00048fcbddf44f08f1ef93dc68cbd4f89153a12f21cc5c2da5946e"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/shake.py",
+      "sha256": "sha256:60406d7a2de3d3877556cf58921319e14f8a449f6ec4b876b300ee40f8a0d696"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/strict_json.py",
+      "sha256": "sha256:f60cd732c022ef723e9b23f5838f43f097d13e21483ef56cfd39dc15588452a0"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/submission.py",
+      "sha256": "sha256:bd413fba47ad3974f78c7c40a74aaa2af0c873a3ad53fde4a178d42343338ab4"
+    },
+    {
+      "path": "harbor/app/public/lwe_challenge/verification.py",
+      "sha256": "sha256:63ce634a99ddd14f74b7dfca71d8b405dcbc4e72d94292edb70347273935784d"
+    },
+    {
+      "path": "harbor/app/public/lwe_instance.py",
+      "sha256": "sha256:99f558ac690f53ec8f723fbb66b39ac7f9ec5689dd3b3050eb06a022e1be64ea"
+    },
+    {
+      "path": "harbor/app/solution.json",
+      "sha256": "sha256:8f42cea9ad1d68c3b3a9dff9a5fc50849142d779e7d20bcaa34dabb765fb601d"
+    },
+    {
+      "path": "readme",
+      "sha256": "sha256:2187fd9fbf1d9b702ed1d013ce633d3181c92a0a42ce81129ff77fd36612c6cb"
+    },
+    {
+      "path": "reference.py",
+      "sha256": "sha256:6cd4edf90ad5cbf9920b30f4e0f76b40bda9110dbe16a99319a859639971a11c"
+    }
+  ],
+  "tree": "fb32796dd56df81a3a31634851a6a9fe5274d7f9"
+}

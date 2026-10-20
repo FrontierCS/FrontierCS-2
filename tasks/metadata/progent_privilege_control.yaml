@@ -1,0 +1,27 @@
+id: "progent_privilege_control"
+display_name: "Privilege Control for Tool-Using LLM Agents"
+category: "Security"
+summary: "Write the policy generation and update logic that confines tool-using LLM agents on AgentDojo, blocking prompt-injection attacks while preserving task utility."
+paper_title: "Progent: Securing AI Agents with Privilege Control"
+paper_venue: "arXiv 2025"
+paper_url: "https://arxiv.org/pdf/2504.11703"
+agent_cpu_cores: 4
+agent_memory_gib: 8
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 8
+verifier_memory_gib: 16
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: ["progent-agent-gpt-4o-mini"]
+task_model_budget_usd: 65
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 5
+train_wall_seconds: 18000
+eval_timeout_seconds: 10800

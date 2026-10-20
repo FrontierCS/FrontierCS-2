@@ -1,0 +1,272 @@
+{
+  "models": {
+    "hunyuan": {
+      "entrypoint": "scripts/hyvideo/hyvideo_t2v_720p_ear.sh",
+      "num_frames": 81
+    },
+    "wan": {
+      "entrypoint": "scripts/wan/wan_t2v_720p_ear.sh",
+      "num_frames": 81
+    }
+  },
+  "parallel_gpu_workers": 4,
+  "schema_version": 2,
+  "targets": {
+    "hunyuan_t2v_720p_feedback_0": {
+      "dense": {
+        "e2e_latency_seconds": 797.575589797,
+        "path": "hunyuan-feedback-0-dense.mp4",
+        "sha256": "e5af10cf180b725796c02a7e2315dadf31cfef8652088bc3ee6e1947071177b2"
+      },
+      "model": "hunyuan",
+      "prompt_id": 3,
+      "reference": {
+        "e2e_latency_seconds": 445.954326167,
+        "path": "hunyuan-feedback-0-reference.mp4",
+        "sha256": "982fd3a768f3456a2f4d83620170f011d0a715d27ce37586abe5ed95d843fa6d"
+      },
+      "seed": 104779,
+      "status": "ready"
+    },
+    "hunyuan_t2v_720p_feedback_1": {
+      "dense": {
+        "e2e_latency_seconds": 803.248058606,
+        "path": "hunyuan-feedback-1-dense.mp4",
+        "sha256": "fe8191fe7ac0a67e7f88a893ea2900e77720b747223c8a9510b75154b9595b9d"
+      },
+      "model": "hunyuan",
+      "prompt_id": 4,
+      "reference": {
+        "e2e_latency_seconds": 444.251547768,
+        "path": "hunyuan-feedback-1-reference.mp4",
+        "sha256": "6930aed1da2428d69767a5f432067c75dfc23fd9569716eb22a5ef914ae0e6ce"
+      },
+      "seed": 104789,
+      "status": "ready"
+    },
+    "hunyuan_t2v_720p_graded_0": {
+      "dense": {
+        "e2e_latency_seconds": 800.7861156390001,
+        "path": "hunyuan-graded-0-dense.mp4",
+        "sha256": "57cac0cf0e4ef03e597644625a5652b70531b6b9f1d28dcc50786e777fc76b7b"
+      },
+      "model": "hunyuan",
+      "prompt_id": 1,
+      "reference": {
+        "e2e_latency_seconds": 443.342898285,
+        "path": "hunyuan-graded-0-reference.mp4",
+        "sha256": "4ccae25b325316b7e013a455af677b45962ef51367ec1f079806572b32c2378a"
+      },
+      "seed": 130457,
+      "status": "ready"
+    },
+    "hunyuan_t2v_720p_graded_1": {
+      "dense": {
+        "e2e_latency_seconds": 801.88388144,
+        "path": "hunyuan-graded-1-dense.mp4",
+        "sha256": "e577326d1d336ae9606644058caf56322a6dec24cec15776369fc712721dafb6"
+      },
+      "model": "hunyuan",
+      "prompt_id": 2,
+      "reference": {
+        "e2e_latency_seconds": 438.31819408900003,
+        "path": "hunyuan-graded-1-reference.mp4",
+        "sha256": "3da9482a7bc49cc3f3a82e8024701334d0b58236f9c1e7c53ba7af427e026246"
+      },
+      "seed": 130469,
+      "status": "ready"
+    },
+    "hunyuan_t2v_720p_graded_2": {
+      "dense": {
+        "e2e_latency_seconds": 811.279401595,
+        "path": "hunyuan-graded-2-dense.mp4",
+        "sha256": "a2bb98cee610e423eb28cbf6afc5968ac918f79e851172966d8ea2e61dbfe523"
+      },
+      "model": "hunyuan",
+      "prompt_id": 3,
+      "reference": {
+        "e2e_latency_seconds": 446.08581122699997,
+        "path": "hunyuan-graded-2-reference.mp4",
+        "sha256": "c9db47144570a4f9a19fd06922ad442b154f6efea092b0983c8fbe2fc7affc52"
+      },
+      "seed": 130477,
+      "status": "ready"
+    },
+    "hunyuan_t2v_720p_graded_3": {
+      "dense": {
+        "e2e_latency_seconds": 795.566055568,
+        "path": "hunyuan-graded-3-dense.mp4",
+        "sha256": "504bf4f0c223eb05466ce64662092f932cbec9f4edca33ef35b520cb02330467"
+      },
+      "model": "hunyuan",
+      "prompt_id": 4,
+      "reference": {
+        "e2e_latency_seconds": 438.880842691,
+        "path": "hunyuan-graded-3-reference.mp4",
+        "sha256": "b8e3751441ba6d68ff62383b46d3e656ff83f79d433205873face0f6ef382348"
+      },
+      "seed": 130483,
+      "status": "ready"
+    },
+    "wan_t2v_720p_feedback_0": {
+      "dense": {
+        "e2e_latency_seconds": 1912.3200491000002,
+        "path": "feedback-0-dense.mp4",
+        "sha256": "16e70c647656ab192cadd455339379eb08ad486a77f36db80b4f0160ee05e0f2"
+      },
+      "model": "wan",
+      "prompt_id": 1,
+      "reference": {
+        "e2e_latency_seconds": 1124.3309590240005,
+        "path": "feedback-0-reference.mp4",
+        "sha256": "19f3b8bb22b175feb9d574de6ec2ffc51eb6e824c7334304fa0193ca85ba3333"
+      },
+      "seed": 104729,
+      "status": "ready"
+    },
+    "wan_t2v_720p_feedback_1": {
+      "dense": {
+        "e2e_latency_seconds": 1890.5490620720002,
+        "path": "feedback-1-dense.mp4",
+        "sha256": "06feb9aafc845a7264edc220a3b1b987fe6d6e9338e3eb7b1b53d75f33b66f14"
+      },
+      "model": "wan",
+      "prompt_id": 2,
+      "reference": {
+        "e2e_latency_seconds": 1110.474322095,
+        "path": "feedback-1-reference.mp4",
+        "sha256": "eb94a87f0e60de6b4ffb7e222be00c107a99bb872ffbaa4254cf974de54cc959"
+      },
+      "seed": 104759,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_0": {
+      "dense": {
+        "e2e_latency_seconds": 1880.534046341,
+        "path": "graded-0-dense.mp4",
+        "sha256": "e88d599eaa08451ceb764d6257326fecc2620b385bf5e6833bf2314dca81f988"
+      },
+      "model": "wan",
+      "prompt_id": 1,
+      "reference": {
+        "e2e_latency_seconds": 1128.6343379740001,
+        "path": "graded-0-reference.mp4",
+        "sha256": "2c8e3fb170e9452091f2fad08e83f456d0232b6dd7c57a900123bd6354086d02"
+      },
+      "seed": 130363,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_1": {
+      "dense": {
+        "e2e_latency_seconds": 1880.1084964739998,
+        "path": "graded-1-dense.mp4",
+        "sha256": "7ceb31bd1cc1e29333f073b4a652a43a827403445d4db6f1a1095c13ff6a9ca1"
+      },
+      "model": "wan",
+      "prompt_id": 2,
+      "reference": {
+        "e2e_latency_seconds": 1105.6666261730002,
+        "path": "graded-1-reference.mp4",
+        "sha256": "dafa336db9b10c2d692c3673ec8709ef074ffeb8a39ea000a2fc926c39c41207"
+      },
+      "seed": 130367,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_2": {
+      "dense": {
+        "e2e_latency_seconds": 1890.9691874569999,
+        "path": "graded-2-dense.mp4",
+        "sha256": "c324b003134aa039435d6f7790cec9a48d236b7fb0201c0bb6ac5fa0c9576199"
+      },
+      "model": "wan",
+      "prompt_id": 3,
+      "reference": {
+        "e2e_latency_seconds": 1105.1080265350001,
+        "path": "graded-2-reference.mp4",
+        "sha256": "467c8fd180d82c14fe64df70d65b3bf51be85052c7b3305d1ea3f2bb72db69c3"
+      },
+      "seed": 130399,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_3": {
+      "dense": {
+        "e2e_latency_seconds": 1882.545800807,
+        "path": "graded-3-dense.mp4",
+        "sha256": "fd16e3160f8f401bf8bf928b460c927c83d3eae3fdc15023ca916c084515aa14"
+      },
+      "model": "wan",
+      "prompt_id": 4,
+      "reference": {
+        "e2e_latency_seconds": 1111.620174191,
+        "path": "graded-3-reference.mp4",
+        "sha256": "57bc7968577309594f0852cb0d93191f4cd6e8aed3b8503e2298c45630162251"
+      },
+      "seed": 130409,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_4": {
+      "dense": {
+        "e2e_latency_seconds": 1891.201149562,
+        "path": "graded-4-dense.mp4",
+        "sha256": "e89da630361dd941fc06fbfeb74f5b8914af476c415c7b7952b03b01419cc5b4"
+      },
+      "model": "wan",
+      "prompt_id": 1,
+      "reference": {
+        "e2e_latency_seconds": 1127.134258181,
+        "path": "graded-4-reference.mp4",
+        "sha256": "e8893a08f5f7bcdf50cd925a3d70a7e285cba017180a115df70c9ca4685b41f6"
+      },
+      "seed": 130411,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_5": {
+      "dense": {
+        "e2e_latency_seconds": 1881.0820645540002,
+        "path": "graded-5-dense.mp4",
+        "sha256": "79c4a687a5f0d5395f79de20aa71a0da433014db8a5b06180daf232cdfd921e1"
+      },
+      "model": "wan",
+      "prompt_id": 2,
+      "reference": {
+        "e2e_latency_seconds": 1112.8818076910002,
+        "path": "graded-5-reference.mp4",
+        "sha256": "e0977fea2c2ba4f1ceced80c4be3d7571d69ff9aca812344d0fa23ead7214631"
+      },
+      "seed": 130423,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_6": {
+      "dense": {
+        "e2e_latency_seconds": 1918.801564888,
+        "path": "graded-6-dense.mp4",
+        "sha256": "96785cceb34fdf69c881ebff50a115fe9452014152ccb022855c57903d23b6ef"
+      },
+      "model": "wan",
+      "prompt_id": 3,
+      "reference": {
+        "e2e_latency_seconds": 1124.1353085609999,
+        "path": "graded-6-reference.mp4",
+        "sha256": "6837c673bce2d038dc9124e6a7c8171f7355c5900a254fa2be88ad7b17170bff"
+      },
+      "seed": 130439,
+      "status": "ready"
+    },
+    "wan_t2v_720p_graded_7": {
+      "dense": {
+        "e2e_latency_seconds": 1892.9967192330002,
+        "path": "graded-7-dense.mp4",
+        "sha256": "5af4198b9e2cfcb51ecf5762a642d45305757989ea0e76e8e03c7dceb3175f20"
+      },
+      "model": "wan",
+      "prompt_id": 4,
+      "reference": {
+        "e2e_latency_seconds": 1110.068625851,
+        "path": "graded-7-reference.mp4",
+        "sha256": "2d0b6e5335b18a3d14e0979c89c2c4f31aa3401be60133999be811b42eed5822"
+      },
+      "seed": 130447,
+      "status": "ready"
+    }
+  }
+}

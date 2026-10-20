@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "lrr/code",
+  "authentic_execution": {
+    "entrypoint": "scripts/inference.py",
+    "retained_files": [
+      "scripts/inference.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "scripts/scalpel_to_thinking_steps.py",
+      "mode": "stubbed",
+      "symbols": [
+        "subpattern_to_string",
+        "generate_cot_prompt"
+      ]
+    },
+    {
+      "path": "prompts/localization.txt",
+      "mode": "stubbed",
+      "symbols": [
+        "localization_prompt_template"
+      ]
+    },
+    {
+      "path": "prompts/5-shot-localization-prompt.txt",
+      "mode": "stubbed",
+      "symbols": [
+        "five_shot_localization_prompt_template"
+      ]
+    },
+    {
+      "path": "prompts/1-shot-prompt.txt",
+      "mode": "stubbed",
+      "symbols": [
+        "one_shot_prompt_template"
+      ]
+    },
+    {
+      "path": "prompts/5-shot-prompt.txt",
+      "mode": "stubbed",
+      "symbols": [
+        "five_shot_prompt_template"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "scripts/scalpel_to_thinking_steps.py",
+      "prompts/localization.txt",
+      "prompts/5-shot-localization-prompt.txt",
+      "prompts/1-shot-prompt.txt",
+      "prompts/5-shot-prompt.txt"
+    ],
+    "add_under": [
+      "frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "make_submission.sh",
+      "reason": "Packages the solver patch and includes new helper files."
+    },
+    {
+      "path": "frontier-build.sh",
+      "reason": "Checks the retained Python execution spine in the fixed offline runtime."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Runs the public constructor smoke check without implementing the policy."
+    },
+    {
+      "path": "scripts/peft.py",
+      "reason": "Import adapter that lets the byte-identical constructor entrypoint execute without the unused training backend."
+    },
+    {
+      "path": "scripts/transformers.py",
+      "reason": "Import adapter that lets the byte-identical constructor entrypoint execute before the separate fixed CUDA model runtime is called."
+    },
+    {
+      "path": "scripts/parse_regex_scalpel.py",
+      "reason": "AST-identical Unicode escape normalization of dependency marker literals to satisfy English-only source text. Original parser behavior and wiring retained."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "README.md",
+    "resources/framework.png",
+    "scripts/closed_inference.py",
+    "scripts/closed_inference.sh",
+    "scripts/scalpel_to_chat.py",
+    "scripts/update_scores.sh"
+  ],
+  "minimality_note": "The small upstream repository is retained byte-for-byte except answer-bearing documentation/media, the excised policy, and unrelated closed-model or alternate prompt frontends. The authentic open-model constructor and original scoring utilities remain. Parser source has AST-identical Unicode escapes; it is not byte-identical."
+}

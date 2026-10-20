@@ -1,0 +1,30 @@
+[
+  {
+    "id": "dev_a",
+    "depth": 2,
+    "width": 4,
+    "capacity": 63,
+    "seed": 1321
+  },
+  {
+    "id": "dev_b",
+    "depth": 2,
+    "width": 8,
+    "capacity": 127,
+    "seed": 2718
+  },
+  {
+    "id": "dev_c",
+    "depth": 3,
+    "width": 4,
+    "capacity": 127,
+    "seed": 8911
+  },
+  {
+    "id": "dev_d",
+    "depth": 3,
+    "width": 8,
+    "capacity": 255,
+    "seed": 4177
+  }
+]

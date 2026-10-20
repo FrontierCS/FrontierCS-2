@@ -1,0 +1,119 @@
+# Differentiable Population Statistics
+
+> **Source revision awaiting runtime qualification.** Submitted queue code now
+> has an isolated execution route. The resulting verifier image and complete
+> scientific workloads still require validation before this revision can be
+> used as a solver benchmark.
+
+## Problem
+
+This repository post-trains a class-conditional image generator using Fréchet distances measured by frozen representation models. It reads generated feature batches together with persistent population state built from generated images. It produces population mean/covariance estimates or feature snapshots that remain differentiable with respect to the current batch, and it must preserve that state through ordinary PyTorch checkpoints. The generator update must have finite nonzero gradients and all reported features and covariances must be finite. Quality is measured after post-training by held-out normalized Fréchet distances in six representation spaces, where lower is better. The implementation bodies of `frechet_distance.queue.FeatureQueue` have been removed and must be supplied.
+
+## Your workspace
+
+The real project tree is mounted at `/app`. You may change only:
+
+```
+frechet_distance/queue.py
+frechet_distance/frontier_solution/**
+```
+
+The retained training, model, feature extraction, loss, checkpoint, and harness files must not change and are verified by the judge.
+
+`frechet_distance/queue.py` is an existing upstream module whose public class, constructor arguments, registered buffers, and caller-facing methods must remain compatible with the rest of the tree. The optional `frechet_distance/frontier_solution/` prefix is initially absent and is available for new helper modules if your queue module imports them. Do not place generated checkpoints, downloaded weights, caches, benchmark outputs, or submission patches in that namespace. Model weights and private workload data are supplied outside the editable repository by the trusted runner. Files elsewhere in `/app` are fixed context, even when Python makes them importable.
+
+## Required behavior
+
+The implementation must satisfy the `FeatureQueue` constructor and method
+contracts below for snapshot, online-accumulator, and EMA modes. Returned means,
+covariances, and snapshots must have the declared shapes, remain differentiable
+with respect to the current batch where called by training, and stay finite.
+Persistent state must update without retaining an autograd graph and must
+round-trip through ordinary PyTorch `state_dict` save/load. Every retained
+caller must continue to work. Helper code may live in the fresh solution
+namespace, but the integration surface remains `FeatureQueue`. Generator
+sampling, representation extraction, Fréchet algebra, optimizer behavior, and
+checkpoint orchestration are outside the editable surface.
+
+## Workload
+
+Every workload starts from the same released base pMF-B generator at 256 pixels and uses the unchanged FD-SIM training path. It builds a 50,000-image generated warm-start population, performs a bounded post-training schedule, and evaluates an equal-count held-out generated set in Inception, ConvNeXt, DINOv2, MAE, SigLIP, and CLIP spaces. Workloads vary fixed random streams, update counts, and queue estimator settings; they include 128- and 512-update schedules. ImageNet images, statistics regeneration, precision/recall, visualization, compilation, and online evaluation are outside the workload. These are generated workloads rather than records to recognize. The source defines exactly two development and three final workloads.
+
+## Interface
+
+`FeatureQueue(size: int, feat_dim: int, online_accum: bool = False, ema_beta: float = 0.0)` must retain its registered-buffer/state-dict surface. `build_feats_stats(new_feats)` returns `(mu, sigma)` with shapes `(feat_dim,)` and `(feat_dim, feat_dim)`. `build_feats_snapshot(new_feats)` returns a `(size, feat_dim)` tensor. `enqueue(new_feats)` updates persistent state without retaining an autograd graph. The initialization methods used by `frechet_distance/judges.py` must remain callable.
+
+For example:
+
+```python
+q = FeatureQueue(size=4, feat_dim=2)
+q.feats.copy_(torch.tensor([[0., 0.], [1., 0.], [0., 1.], [1., 1.]]))
+x = torch.tensor([[2., 3.]], requires_grad=True)
+s = q.build_feats_snapshot(x)
+tuple(s.shape)                 # (4, 2)
+s[0].tolist()                  # [2.0, 3.0]
+```
+
+The retained training entrypoint accepts the following workload arguments:
+
+```text
+torchrun --standalone --local-addr=127.0.0.1 --nproc-per-node=1 main_fd.py --model pMF_B --img_size 256 --patch_size 16 --rope_2d --learned_pe --disable_v_head --load_from <offline-base-checkpoint> --batch_size 8 --queue_size 50000 --fd_queue_fill_bsz 8 --fd_eigvalsh --fd_repr_models vit_so400m_patch16_siglip_256.v2_webli vit_large_patch16_224.mae inception --fd_repr_pool_types cls cls cls --fd_target_sizes 224 224 256 --num_sampling_steps 1 --epochs 1 --steps_per_epoch <private-bounded-schedule> --disable_vis --disable_wandb --output_dir <private-output>
+```
+
+The adapter supplies the workload's declared estimator option and offline statistics paths.
+
+## Validity contract
+
+The evaluator rejects patches outside the editable surface and requires
+the submitted implementation to execute through `main_fd.py` on the assigned
+NVIDIA GPU. Before quality is scored, trusted checks must establish locked
+source/model identity, finite features/covariances/losses/gradients, a genuine
+generator update, queue-state round-trip, an authentic generated warm start,
+and equal candidate/reference held-out sample counts. The trusted runner owns
+training and evaluation, and calls the submitted queue in a separate isolated
+process. This revision's complete scientific execution remains unqualified.
+
+## Scoring
+
+For each workload, let `FDr6` be the arithmetic mean of the candidate's six held-out FDr values. The score to maximise is
+
+```text
+score = 100 / (1 + mean_workloads(FDr6))
+```
+
+and is clipped to `[0, 100]`. The six published normalization constants are 1.68 (Inception), 56.87 (ConvNeXt), 14.19 (DINOv2), 0.04 (MAE), 0.60 (SigLIP), and 5.60 (CLIP).
+
+For a representation `r`, `FDr_r = held_out_FD_r / validation_FD_r`; all terms are nonnegative and lower candidate values produce a higher score. Each workload contributes exactly one `FDr6` regardless of its update count or estimator setting, and workloads receive equal weight in the outer arithmetic mean. Invalid submissions receive zero rather than entering this formula. The returned unbounded score equals the bounded score. Development feedback reports the candidate-only arithmetic mean for each of the six `FDr_r` quantities, so those values can be compared between your own submissions without exposing paired measurements from the withheld implementation.
+
+## Calibration status
+
+No admissible non-reference baseline has reached quality scoring. Historical
+published-runtime evidence contains one development measurement and one final
+measurement only; it is not a repeatability study. Paired results and final
+measurements remain private author evidence. No zero-noise claim, tolerance,
+meaningful-improvement band, or repeated stability claim is supported. The
+strict comparisons and scientific workloads remain unchanged. Any further
+measurement must address a specific uncertainty in those comparisons; automatic
+repeated reference trials and a beating solver are not prerequisites. This
+candidate awaits validation of the integrated verifier and full workloads.
+The available local CPU checks are boundary and contract tests, not scientific
+quality calibration.
+
+## Feedback and grading
+
+The configured limit is 3 development submissions. Development
+feedback includes only the candidate's
+mean absolute FDr for each representation and aggregate pass/fail percentages;
+it must not identify workload rows or reference values. Development and final
+suites contain two and three disjoint workloads respectively. These feedback
+paths still require validation on this revision's verifier image.
+
+In addition to the continuous score, a separate stricter criterion compares your held-out generated-image FDr independently in Inception, ConvNeXt, DINOv2, MAE, SigLIP, and CLIP space against the reference on the same private workload. Lower is better for every quantity, and the stricter criterion is met only if your value is strictly lower in all six representations on every graded workload and all validity checks pass. Values from the withheld implementation, paired differences, private workload identities, per-workload rows, and all final measurements are not disclosed. The continuous score remains the optimization objective whether or not this stricter criterion is met.
+
+## Submission
+
+Run `bash /app/make_submission.sh`; it stages tracked and untracked changes in the editable surface and writes `/app/solution.patch`. Changes outside that surface are rejected rather than silently omitted. An empty patch is invalid. Submit with `frontier-submit /app/solution.patch`.
+
+## Resources
+
+The control pod has 3 vCPUs, 12,288 MiB RAM, and 10,240 MiB workspace storage, with a 900-second build limit. Agent and verifier work use one Driver-provisioned A100 80GB GPU. A verification has a 7,200-second timeout; the declared development GPU allowance is 7,200 seconds and the verifier GPU pool is 28,800 seconds.

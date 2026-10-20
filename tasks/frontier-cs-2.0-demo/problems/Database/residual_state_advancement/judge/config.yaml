@@ -1,0 +1,43 @@
+tag: databases
+runtime:
+  language: python
+  timeout_seconds: 7200
+  environment: "Python 3.12; DuckDB 1.5.1, pandas 2.3.3, scikit-learn 1.7.2; patch the bundled JoinBoost tree"
+  apt_packages:
+    - bash
+    - git
+  judge_apt_packages:
+    - git
+  pip_packages:
+    - duckdb==1.5.1
+    - pandas==2.3.3
+    - scikit-learn==1.7.2
+    - pyyaml==6.0.2
+  judge_pip_packages:
+    - duckdb==1.5.1
+    - pandas==2.3.3
+    - scikit-learn==1.7.2
+    - pyyaml==6.0.2
+  docker:
+    image: python:3.12-slim-bookworm
+environment:
+  cpus: 2
+  memory_mb: 16384
+  storage_mb: 4096
+  build_timeout_seconds: 300
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - src/joinboost/app.py
+    - src/joinboost/semiring.py
+    - src/joinboost/aggregator.py
+    - src/joinboost/cjt.py
+    - src/joinboost/joingraph.py
+  max_changed_files: 5
+  max_patch_bytes: 131072
+evaluation:
+  max_dev_submissions: 100
+  public_suite_id: joinboost-residual-public-v3
+  final_suite_id: joinboost-residual-final-v3

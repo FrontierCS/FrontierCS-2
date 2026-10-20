@@ -1,0 +1,2 @@
+# Exact public runtime assets recovered from the inherited dependency image.
+agent-base/frontier/task/runtime/dependency-base/assets/** filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,107 @@
+diff --git a/scheduler/shockwave.py b/scheduler/shockwave.py
+index a002fce..a66423b 100644
+--- a/scheduler/shockwave.py
++++ b/scheduler/shockwave.py
+@@ -40,14 +40,99 @@ class ShockwaveScheduler(object):
+         self.round_ptr = 0
+         self.resolve = True
+         self.completed_jobs = OrderedDict()
++        # Track the set of job IDs scheduled in the previous round to
++        # encourage continuity and avoid preemption overhead.
++        self._prev_schedule = set()
+         for jobid, jobobj in init_metadata.items():
+             self.add_metadata(jobid, jobobj)
+ 
++    # ------------------------------------------------------------------
+     # Public interface: ShockwaveScheduler.round_schedule
++    # ------------------------------------------------------------------
+     def round_schedule(self):
+-        """Return the active job IDs selected for the current round."""
+-        raise NotImplementedError("scheduler policy removed")
++        """Return the active job IDs selected for the current round.
+ 
++        The returned list respects the cluster GPU capacity, contains no
++        duplicates, and is non-empty whenever live jobs remain.
++        """
++        active_jobs = [
++            job for job in self.metadata.values()
++            if job.epoch_progress < job.epochs
++        ]
++        if not active_jobs:
++            self._prev_schedule = set()
++            return []
++
++        # Sort by a per-GPU work score (lower == schedule sooner).
++        active_jobs.sort(key=self._job_priority)
++
++        # Greedily pack jobs into the available GPUs.
++        selected = []
++        used_gpus = 0
++        for job in active_jobs:
++            if used_gpus + job.nworkers <= self.ngpus:
++                selected.append(job.jobid)
++                used_gpus += job.nworkers
++
++        # Defensive fallback: if packing somehow left us empty, take the
++        # highest-priority job that fits by itself.
++        if not selected and active_jobs:
++            for job in active_jobs:
++                if job.nworkers <= self.ngpus:
++                    selected = [job.jobid]
++                    used_gpus = job.nworkers
++                    break
++
++        self._prev_schedule = set(selected)
++        return selected
++
++    def _job_priority(self, job):
++        """Lower values indicate higher scheduling priority.
++
++        Combines shortest-remaining-processing-time (SRPT) logic with
++        waiting-time fairness and a continuation bonus for jobs that ran
++        in the previous round (avoiding checkpoint/resume overhead).
++        """
++        remaining = self._remaining_time(job)
++        width = max(1, job.nworkers)
++        score = float(remaining) / float(width)
++        if width == self.ngpus:
++            score *= 0.85
++
++        # Continuation bonus: jobs that ran in the previous round are
++        # cheaper to keep running than to preempt.
++        if job.jobid in self._prev_schedule:
++            score *= 0.65
++
++        # Waiting-time urgency: jobs that have been queued for many rounds
++        # get a progressively higher priority.
++        rounds_waited = float(job.waiting_delay) / max(1.0, float(self.round_duration))
++        if rounds_waited > 0.0:
++            score /= (1.0 + 0.45 * rounds_waited)
++
++        # Fairness guard: if a job is projected to exceed its fair
++        # isolated-time multiple, boost its priority sharply.
++        isolated_time = self._isolated_time(job)
++        if isolated_time > 0 and job.timestamp_submit is not None:
++            elapsed = max(0.0, self.round_ptr * self.round_duration - job.timestamp_submit)
++            projected_jct = elapsed + remaining
++            if projected_jct > 2.0 * isolated_time:
++                score *= 0.5
++
++        return score
++
++    def _remaining_time(self, job):
++        """Remaining isolated execution time from current epoch progress."""
++        progress = min(job.epoch_progress, job.epochs)
++        return float(sum(job.epoch_duration[progress:]))
++
++    def _isolated_time(self, job):
++        """Total isolated execution time over all epochs."""
++        return float(sum(job.epoch_duration))
++
++    # ------------------------------------------------------------------
++    # Lifecycle hooks used by scheduler.Scheduler
++    # ------------------------------------------------------------------
+     def increment_round_ptr(self):
+         self.round_ptr += 1
+ 
+

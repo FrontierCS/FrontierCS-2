@@ -1,0 +1,15 @@
+diff --git a/scheduler/shockwave.py b/scheduler/shockwave.py
+index a002fce..1e99384 100644
+--- a/scheduler/shockwave.py
++++ b/scheduler/shockwave.py
+@@ -46,7 +46,9 @@ class ShockwaveScheduler(object):
+     # Public interface: ShockwaveScheduler.round_schedule
+     def round_schedule(self):
+         """Return the active job IDs selected for the current round."""
+-        raise NotImplementedError("scheduler policy removed")
++        for jobid, job in self.metadata.items():
++            return [jobid]
++        return []
+ 
+     def increment_round_ptr(self):
+         self.round_ptr += 1

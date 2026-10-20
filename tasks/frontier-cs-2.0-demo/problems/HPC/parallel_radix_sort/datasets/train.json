@@ -1,0 +1,7 @@
+{
+  "schema_version": "frontier.parallel-radix-sort-dataset/v1",
+  "problem_id": "parallel_radix_sort",
+  "mode": "train",
+  "suite_revision": "pr29-ac19add-public-plus-hidden-v1",
+  "suite": "DEV"
+}

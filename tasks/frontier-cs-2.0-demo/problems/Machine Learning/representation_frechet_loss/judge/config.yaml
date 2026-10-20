@@ -1,0 +1,113 @@
+tag: generative-models
+runtime:
+  language: python
+  timeout_seconds: 7200
+  final_timeout_seconds: 10800
+  environment: Python 3.11 control pod; Driver-provisioned single NVIDIA A100 80GB
+    runner; authentic pMF-B/256 FD-SIM post-training and six-representation evaluation
+  docker:
+    image: python:3.11-slim
+    gpu_image: nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+  apt_packages:
+  - git
+  accelerator:
+    provider: modal
+    gpu_types:
+    - A100-80GB
+    agent:
+      instances: 1
+      max_instance_seconds: 7200
+      max_gpu_seconds: 7200
+    verifier:
+      instances: 1
+      max_instance_seconds: 10800
+      max_gpu_seconds: 32400
+    ssh_session_budgets:
+      agent: 32
+      verifier_train: 12
+      verifier_eval: 4
+  judge_apt_packages:
+  - git
+  judge_pip_packages:
+  - torch==2.6.0
+  - torchvision==0.21.0
+  - einops
+  - muon-optimizer
+  - rich
+  - diffusers
+  - opencv-python-headless
+  - matplotlib
+  - tabulate
+  - scipy
+  - timm
+  - pandas
+  - pyyaml
+  - numpy
+  - pillow
+  - tqdm
+  - wandb
+  - typing_extensions
+  - requests
+  huggingface_models:
+  - repo_id: jjiaweiyang/FD-Loss
+    revision: 88ce2bb4061b0dd58839a1827235ffcffa51eed2
+    target: fd-loss
+    allow_patterns:
+    - checkpoints/base/pMF-B_256.pth
+    - data/fid_stats/paper_ref_stats.pkl
+  - repo_id: timm/vit_large_patch16_224.mae
+    revision: 126727e9b8ccd632d08a0d75fff095017c225e54
+    target: mae
+    allow_patterns:
+    - config.json
+    - model.safetensors
+  - repo_id: timm/vit_so400m_patch16_siglip_256.v2_webli
+    revision: a8dedb158968170d6fb45a000e0d5755d8021386
+    target: siglip2
+    allow_patterns:
+    - config.json
+    - model.safetensors
+  - repo_id: timm/convnextv2_base.fcmae_ft_in22k_in1k
+    revision: 9e250ed8f88b436472d2b24af26f82a8aa8c719d
+    target: convnextv2
+    allow_patterns:
+    - config.json
+    - model.safetensors
+  - repo_id: timm/vit_large_patch14_dinov2.lvd142m
+    revision: 4741e1cafbf45415e77074bb0cb42dba76c8684a
+    target: dinov2
+    allow_patterns:
+    - config.json
+    - model.safetensors
+  - repo_id: timm/vit_large_patch14_clip_224.openai
+    revision: 18d0535469bb561bf468d76c1d73aa35156c922b
+    target: clip
+    allow_patterns:
+    - config.json
+    - pytorch_model.bin
+  torchvision_models:
+  - torch-fidelity-inception-v3
+environment:
+  cpus: 3
+  memory_mb: 12288
+  storage_mb: 10240
+  build_timeout_seconds: 900
+evaluation:
+  max_dev_submissions: 3
+  suite_relation: same_distribution
+  solver_visible_metrics:
+  - development_mean_inception_fdr
+  - development_mean_convnext_fdr
+  - development_mean_dinov2_fdr
+  - development_mean_mae_fdr
+  - development_mean_siglip_fdr
+  - development_mean_clip_fdr
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+  - frechet_distance/queue.py
+  - frechet_distance/frontier_solution/
+  max_changed_files: 20
+  max_patch_bytes: 262144

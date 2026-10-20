@@ -1,0 +1,47 @@
+tag: numerical_linear_algebra
+runtime:
+  language: python
+  timeout_seconds: 1800
+  environment: "Python 3.12 CPU; NumPy, PyTorch, Matplotlib, and Jupyter notebook execution"
+  pip_packages:
+    - numpy==2.2.6
+    - matplotlib==3.10.6
+    - nbformat==5.10.4
+    - nbclient==0.10.2
+    - nbconvert==7.16.6
+    - ipykernel==6.30.1
+    - https://download.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl
+  judge_pip_packages:
+    - numpy==2.2.6
+    - matplotlib==3.10.6
+    - nbformat==5.10.4
+    - nbclient==0.10.2
+    - ipykernel==6.30.1
+    - https://download.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl
+  apt_packages: [git]
+  judge_apt_packages: [git]
+  docker:
+    image: python:3.12-slim-bookworm
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 4096
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+    - polar_express.py
+    - frontier_solution/
+  max_changed_files: 20
+  max_patch_bytes: 1048576
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics:
+    - worst_case_scalar_error
+    - relative_polar_factor_error
+    - paper_regime_relative_polar_factor_error
+    - spectral_polar_error
+    - polar_cosine_similarity
+    - top_subspace_polar_error

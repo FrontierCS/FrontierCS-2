@@ -1,0 +1,44 @@
+{
+  "unit": "one benchmark-iteration corpus: one DreamCoder benchmark JSON file whose frontiers are jointly processed by equality saturation, anti-unification candidate generation, library selection, and extraction under the fixed benchmark parameters and domain rewrite set",
+  "metrics": [
+    {
+      "name": "compression_ratio",
+      "means": "The workload's initial corpus AST cost divided by its final extracted corpus AST cost, including the shared root/library representation used by BABBLE.",
+      "source": "upstream/src/experiments.rs::Experiment::run_multi_summary computes initial_cost and final_cost and Summary::compression_ratio defines their ratio; upstream/src/bin/benchmark/main.rs::plot_raw_data wr\n...[truncated]...\nscripts/plot.py::plot_scatter uses it as the paper-facing Compression Ratio axis.",
+      "better": "higher",
+      "clears_when": "candidate_compression_ratio(w) >= reference_compression_ratio(w) - 1e-12",
+      "tolerance": "absolute tolerance 1e-12, covering only floating-point serialization of the exact integer initial_cost/final_cost ratio"
+    },
+    {
+      "name": "runtime_seconds",
+      "means": "Wall-clock seconds for the complete per-workload library-learning run measured around run_multi, including equality saturation, co-occurrence analysis, anti-unification candidate generation, deduplication, beam extraction, and library application.",
+      "source": "upstream/src/experiments.rs::Experiment::run_multi_summary measures run_time with std::time::Instant around run_multi; upstream/src/bin/benchmark/main.rs::plot_raw_data writes run_time.as_secs_f32() a\n...[truncated]...\nts/plot.py::plot_scatter uses that field as the paper-facing Time (seconds) axis.",
+      "better": "lower",
+      "clears_when": "candidate_runtime_seconds(w) < reference_runtime_seconds(w)",
+      "tolerance": "none at workload level; equality is a failure"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff compression is non-inferior on every workload and runtime is strictly lower on every workload. Otherwise it is 0. Runtime equality on any workload fails.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "compression_ratio",
+      "means": "The candidate's own absolute compression ratio for each workload, initial_cost(w) / candidate_final_cost(w).",
+      "reveals_reference": "no — it contains only the candidate's measured costs and the workload's fixed input cost, with no reference-relative value."
+    },
+    {
+      "name": "runtime_seconds",
+      "means": "The candidate's own measured end-to-end wall-clock runtime in seconds for each workload.",
+      "reveals_reference": "no — it is an absolute measurement of the candidate run and contains no reference runtime or reference-relative value."
+    }
+  ],
+  "withheld": [
+    "reference_compression_ratio",
+    "reference_runtime_seconds",
+    "per_workload_beats_reference"
+  ],
+  "statement_sentences": "Alongside the continuous compression score, evaluation reports a separate beats_reference criterion. Compression must be non-inferior on every workload within the 1e-12 serialization tolerance. Runtime comparisons are strict per workload and every workload must win. Reference measurements and workload-specific outcomes are not disclosed.",
+  "comments": "The authentic CPU benchmark, compression metric, three-run runtime median, validity checks, and continuous score are retained. PASS is the conjunction of every workload and both metrics: compression is non-inferior within 1e-12 and runtime is strictly lower. Aggregate score and aggregate runtime improvements are diagnostic only and cannot determine PASS. The old fused-enumeration witness won only 4/5 development and 9/10 final workloads, so it is calibration history rather than proof of this stricter rule. Candidate and reference otherwise use identical inputs, parameters, resources, repetitions, and timing boundaries."
+}

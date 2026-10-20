@@ -1,0 +1,57 @@
+tag: systems
+runtime:
+  language: cpp
+  timeout_seconds: 7200
+  environment:
+    cpus: 1
+    memory_mb: 4096
+    storage_mb: 40960
+    description: C++17, original sequential cycle simulator; full trace assets require
+      admitted private provisioning.
+  apt_packages:
+  - build-essential
+  - zlib1g-dev
+  - git
+  - python3
+  judge_apt_packages:
+  - build-essential
+  - zlib1g-dev
+  - git
+  - python3
+  judge_pip_packages:
+  - PyYAML==6.0.3
+  - libclang==18.1.1
+  docker:
+    image: ubuntu:24.04
+  judge_build_commands:
+  - python3 /opt/frontier/task/acquire_training_data.py --materialize
+  - mv /opt/frontier/task/private_data /opt/runlts-private-data
+  - chmod -R a+rX,a-w /opt/runlts-private-data
+  - ln -s /opt/runlts-private-data /opt/frontier/task/private_data
+environment:
+  cpus: 8
+  memory_mb: 32768
+  storage_mb: 40960
+  build_timeout_seconds: 180
+  agent:
+    cpus: 1
+    memory_mb: 4096
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+  - my_cond_branch_predictor.cc
+  - solver_extensions/
+  max_patch_bytes: 262144
+  max_changed_files: 50
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics:
+  - train_br_mis_pki_mean
+  - train_cyc_wp_pki_mean
+  - all_metrics_progress
+  - category_means
+  - candidate_diagnostic
+  max_train_wall_seconds: 18000
+  answering_timeout_seconds: 18000

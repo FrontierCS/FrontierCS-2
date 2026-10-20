@@ -1,0 +1,129 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 17179869184,
+    "workspace_bytes": 10737418240
+  },
+  "display_name": "KV Cache Compaction",
+  "family": "frontier-cs-2.0/machine_learning_systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 18000,
+      "max_instance_seconds": 18000,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 8,
+      "max_gpu_seconds": 86400
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "calibration": {
+      "manifest": "judge/targets/manifest.json",
+      "script": "judge/calibrate.py",
+      "status": "READY",
+      "manifest_sha256": "sha256:006eec8c62f7df9e2084a228964f6d3c8585a635c2216f86cc2a324c3ddafb8a",
+      "max_capture_wall_seconds": 2288.6795676266775,
+      "final_timeout_reserve_seconds": 3111.3204323733225
+    },
+    "conversion": {
+      "method": "Native port; upstream evaluation path preserved",
+      "source_commit": "2020f6d37940fe013e7e7f1ebf409e5d107c5670",
+      "source_repo": "https://github.com/adamzweiger/compaction"
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 446,
+        "path": "datasets/eval.json",
+        "version": "sha256:f3f0d897b0f9c3e1c50d8070913d45d17c64ec9892b4aea6d855f25b17b9060b"
+      },
+      "train": {
+        "bytes": 453,
+        "path": "datasets/train.json",
+        "version": "sha256:c84da98ff7d42c363e88c564d646684d625fa6142a35d76f77f6250dce17b5b1"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 8,
+      "beat_spec_sha256": "sha256:b4b5bd4ba5c62354a9f32e8b345a8ee55b0f67583d11eb4d934d6a4885a7fc42",
+      "solver_visible_metrics": [
+        "dev_qa_accuracy",
+        "dev_compaction_seconds",
+        "dev_compact_cache_bytes"
+      ],
+      "suite_relation": "development grades the 12 public articles; final grades those 12 plus 12 hidden articles with the same evaluator and beat-spec rules"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "preview-manual",
+      "run_id": null,
+      "source": "authoring proposal (scope, QuALITY subset, metric definitions)"
+    },
+    "isolation": "hidden articles, gold labels, the reference patch and the frozen targets are compiled into the verifier image only; the agent images hold the public tree with the 12 development articles",
+    "paper": {
+      "arxiv": "2602.16284",
+      "code": "https://github.com/adamzweiger/compaction",
+      "code_commit": "2020f6d37940fe013e7e7f1ebf409e5d107c5670",
+      "license": "MIT",
+      "title": "Fast KV Compaction via Attention Matching"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "compaction/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 536870912,
+      "max_ssh_sessions": 1104,
+      "ssh_session_budgets": {
+        "agent": 1024,
+        "verifier_eval": 16,
+        "verifier_train": 64
+      }
+    }
+  },
+  "problem_id": "fast_kv_compaction",
+  "quota": {
+    "eval_timeout_seconds": 5400,
+    "max_train_calls": 8,
+    "max_train_wall_seconds": 28800,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "fastkv-v1-calibrated"
+}

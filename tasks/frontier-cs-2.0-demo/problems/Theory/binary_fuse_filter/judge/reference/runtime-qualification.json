@@ -1,0 +1,111 @@
+{
+  "schema": "binary-fuse-runtime-qualification/v2",
+  "status": "QUALIFIED_EXACT_RUNTIME",
+  "measured_at": "2026-10-11T16:55:41.075388+00:00",
+  "measurement_sha256": "sha256:a6d16904e60808bb0d12954b957ff6076d3983bb6d16ad2f4bf7a9e3e15cec90",
+  "rule": "certified-non-inferiority/v1",
+  "full_entrypoint_train_final": true,
+  "answering_seconds": 18000,
+  "train_calls": 100,
+  "train_pool_fit_seconds": 3197.91436069645,
+  "train_pool_scope": "100 times observed complete train container wall, not 100 executed calls",
+  "final_wall_seconds": 60.58572592202108,
+  "peak_memory_bytes": 77377536,
+  "qualified_image_id": "sha256:9bb5e64b60e19a61e667859c3073996b98c45c3481bbf4c1dc863a0eef673995",
+  "qualified_uid": 65532,
+  "cpu_limit": 2,
+  "memory_limit_bytes": 4294967296,
+  "reference_entrypoint": "python3 /opt/frontier/verify_reference.py; exact private patch only",
+  "production_gate_at_measurement": "Confirmed closed (RuntimeQualificationRequired) in train mode before this receipt existed",
+  "local_qualification_receipt_sha256": "sha256:bd1910a1f7217285e16a94d1fc1c486b7d64c52b7f0ca56b415089d34f566ca5",
+  "train_evidence_sha256": "sha256:4f5da4958317b2515ee031369e67b3770c4d89ca6d0b340d8de8a87baf354a83",
+  "final_evidence_sha256": "sha256:62b71ed533704a85a758d9beec5bfc97d040f6a97ff8a4ecf3c6daf5bd71a675",
+  "metric_progress": {
+    "train": {
+      "build_ns": {
+        "fail_percent": 33.33,
+        "failed": 24,
+        "pass_percent": 66.67,
+        "passed": 48,
+        "total": 72
+      },
+      "effective_fpr": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 72,
+        "total": 72
+      },
+      "lookup_ns": {
+        "fail_percent": 47.22,
+        "failed": 34,
+        "pass_percent": 52.78,
+        "passed": 38,
+        "total": 72
+      },
+      "resident_bytes": {
+        "fail_percent": 100.0,
+        "failed": 72,
+        "pass_percent": 0.0,
+        "passed": 0,
+        "total": 72
+      },
+      "space_overhead_pct": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 72,
+        "total": 72
+      }
+    },
+    "eval": {
+      "build_ns": {
+        "fail_percent": 61.11,
+        "failed": 88,
+        "pass_percent": 38.89,
+        "passed": 56,
+        "total": 144
+      },
+      "effective_fpr": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 144,
+        "total": 144
+      },
+      "lookup_ns": {
+        "fail_percent": 51.39,
+        "failed": 74,
+        "pass_percent": 48.61,
+        "passed": 70,
+        "total": 144
+      },
+      "resident_bytes": {
+        "fail_percent": 100.0,
+        "failed": 144,
+        "pass_percent": 0.0,
+        "passed": 0,
+        "total": 144
+      },
+      "space_overhead_pct": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 144,
+        "total": 144
+      }
+    }
+  },
+  "accuracy_guard_failures": 0,
+  "scientific_verdict": "valid reference; strict FAIL on the paired performance ties, expected for comparison against itself; both accuracy guards pass on every workload",
+  "private_profile_sha256": "sha256:474e095297e8fb4da6cfafa48b156da4bae90a882c46a95db3f3c8c9e7f57d25",
+  "calibration_rounds_added": 0,
+  "statistical_anchors_changed": false,
+  "formal_native_acceptance": false,
+  "genuine_solver_qualification": false,
+  "runtime": {
+    "python": "3.12.3",
+    "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "zstandard": "0.23.0"
+  }
+}

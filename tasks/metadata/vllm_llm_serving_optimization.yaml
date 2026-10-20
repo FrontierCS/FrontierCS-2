@@ -1,0 +1,27 @@
+id: "vllm_llm_serving_optimization"
+display_name: "GPU vLLM Serving Optimization"
+category: "MLSys"
+summary: "Optimize vLLM 0.11.0's Python scheduling and serving for multi-turn SWE-bench and BFCL agent conversations on Qwen3-Coder-30B-A3B, cutting end-to-end latency on one H100 while keeping correctness."
+paper_title: "Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live"
+paper_venue: "arXiv 2025"
+paper_url: "https://arxiv.org/pdf/2511.02230"
+agent_cpu_cores: 8
+agent_memory_gib: 32
+agent_disk_gib: 64
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 18000
+verifier_cpu_cores: 8
+verifier_memory_gib: 32
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 4
+verifier_gpu_seconds: 691200
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 25
+train_wall_seconds: 7620
+eval_timeout_seconds: 108000

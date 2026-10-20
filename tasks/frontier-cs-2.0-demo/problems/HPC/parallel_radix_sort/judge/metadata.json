@@ -1,0 +1,59 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "parallel_radix_sort",
+  "domain": "systems",
+  "generator": {
+    "pipeline": null,
+    "commit": null,
+    "run_id": null,
+    "candidate_id": null,
+    "config_sha256": null
+  },
+  "paper": {
+    "paper_id": null,
+    "title": "Theoretically-Efficient and Practical Parallel In-Place Radix Sorting",
+    "authors": [
+      "Omar Obeya",
+      "Endrias Kahssay",
+      "Edward Fan",
+      "Julian Shun"
+    ],
+    "year": 2019,
+    "venue": "31st ACM Symposium on Parallelism in Algorithms and Architectures (SPAA '19)",
+    "pdf_url": "https://people.csail.mit.edu/jshun/RegionsSort.pdf",
+    "doi": "10.1145/3323165.3323198"
+  },
+  "rank": {
+    "rank": null,
+    "overall_score": null,
+    "recommendation": null,
+    "scores": {},
+    "risks": []
+  },
+  "artifact": {
+    "repo_url": "https://github.com/omarobeya/parallel-inplace-radixsort",
+    "commit": "4f5884733748b51550e9ef7d69791fb9decb922f",
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": null,
+    "summary": null,
+    "paper_location": null,
+    "code_location": [],
+    "metric": null
+  },
+  "host": {},
+  "promotion": {},
+  "provenance_note": "Manual Harbor-to-native conversion of the contributed source. The source has no metadata.json, so no Smith paper_id, generator/ranking/promotion history or measured host is claimed. The source license and exact artifact commit identify the SPAA 2019 Regions Sort paper and author repository. Requested runtime resources are not measured host provenance.",
+  "generated_at": null,
+  "conversion_decisions": {
+    "source": "decision M010, 2026-09-14",
+    "baseline": "new independent std::sort; not optimized reference and not original invalid starter",
+    "continuous": "S=geomean(B_w/C_w);0 if S<=1 else100*log(S)/(log(10)+log(S))",
+    "final": "fresh original public4+hidden4, no new shapes/seeds",
+    "reference_role": "strict C_w<R_w on every selected workload only",
+    "private_reference_score_margin": "omitted: no meaningful fixed reference continuous score is fabricated",
+    "superseded_unapproved_proposal": "100*S/(1+S) was proposed but never approved or implemented; current logarithmic formula supersedes it"
+  }
+}

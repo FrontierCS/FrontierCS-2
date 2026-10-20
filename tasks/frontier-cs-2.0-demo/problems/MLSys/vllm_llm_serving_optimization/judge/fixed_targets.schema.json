@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontiercs.org/schemas/vllm-fixed-targets-v1.json",
+  "title": "Private fixed vLLM targets; semantic validation is mandatory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "policy",
+    "environment",
+    "calibrations",
+    "margin_fraction",
+    "phases",
+    "timing_comparison"
+  ],
+  "properties": {
+    "schema": {
+      "const": "frontier.vllm-fixed-targets/v1"
+    },
+    "policy": {
+      "const": "median3-vanilla-time-majority-correct-min-reference-strict-5pct-no-flip/v5"
+    },
+    "environment": {
+      "$ref": "#/$defs/environment"
+    },
+    "calibrations": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 6,
+      "items": {
+        "$ref": "#/$defs/calibration"
+      }
+    },
+    "margin_fraction": {
+      "const": 0
+    },
+    "phases": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "train",
+        "eval"
+      ],
+      "properties": {
+        "train": {
+          "$ref": "#/$defs/groups"
+        },
+        "eval": {
+          "$ref": "#/$defs/groups"
+        }
+      }
+    },
+    "timing_comparison": {
+      "const": "strict_less_than"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_artifact_binding_sha256",
+        "tokenizer_artifact_binding_sha256",
+        "instance_manifest_sha256",
+        "answer_keys_sha256",
+        "scientific_runtime_sha256",
+        "schedule_sha256",
+        "serving_parameters_sha256",
+        "resource_contract_sha256"
+      ],
+      "properties": {
+        "model_artifact_binding_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "tokenizer_artifact_binding_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "instance_manifest_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "answer_keys_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "scientific_runtime_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "schedule_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "serving_parameters_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "resource_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "run_id",
+        "environment",
+        "phases",
+        "environment_provenance"
+      ],
+      "properties": {
+        "schema": {
+          "const": "frontier.vllm-authenticated-calibration/v1"
+        },
+        "run_id": {
+          "type": "string",
+          "pattern": "^run_",
+          "not": {
+            "const": "run_01M5559CGK46W7R879S59DZR9Q"
+          }
+        },
+        "environment": {
+          "$ref": "#/$defs/environment"
+        },
+        "phases": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "train": {
+              "$ref": "#/$defs/capturePhase"
+            },
+            "eval": {
+              "$ref": "#/$defs/capturePhase"
+            }
+          },
+          "minProperties": 1,
+          "maxProperties": 2
+        },
+        "environment_provenance": {
+          "type": "object",
+          "required": [
+            "model_artifact_binding_sha256",
+            "tokenizer_artifact_binding_sha256"
+          ],
+          "minProperties": 2,
+          "maxProperties": 2
+        }
+      }
+    },
+    "capturePhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_sha256",
+        "consumer_receipt_sha256",
+        "groups"
+      ],
+      "properties": {
+        "evidence_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "consumer_receipt_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "groups": {
+          "type": "object",
+          "minProperties": 2,
+          "maxProperties": 4
+        }
+      }
+    },
+    "groups": {
+      "type": "object",
+      "minProperties": 2,
+      "maxProperties": 4,
+      "propertyNames": {
+        "enum": [
+          "swe/public",
+          "swe/hidden",
+          "bfcl/public",
+          "bfcl/hidden"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expected_ids",
+          "vanilla",
+          "reference"
+        ],
+        "properties": {
+          "expected_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          },
+          "vanilla": {
+            "$ref": "#/$defs/variant"
+          },
+          "reference": {
+            "$ref": "#/$defs/variant"
+          }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "latency_seconds",
+        "timing_sources",
+        "tails_seconds",
+        "correct",
+        "correct_labels",
+        "correctness_policy",
+        "correctness_sources",
+        "tail_sources",
+        "observed_group_tails_seconds",
+        "per_case_envelope_tails_diagnostic_seconds",
+        "observed_correct_counts",
+        "selected_count_source_runs"
+      ],
+      "properties": {
+        "latency_seconds": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "timing_sources": {
+          "type": "object"
+        },
+        "tails_seconds": {
+          "type": "object",
+          "required": [
+            "p90",
+            "p95",
+            "p99"
+          ],
+          "additionalProperties": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "correct": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correct_labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "correctness_policy": {
+          "enum": [
+            "per_case_majority_of_three",
+            "median_observed_group_count"
+          ]
+        },
+        "correctness_sources": {
+          "type": "object"
+        },
+        "tail_sources": {
+          "type": "object"
+        },
+        "observed_group_tails_seconds": {
+          "type": "object"
+        },
+        "per_case_envelope_tails_diagnostic_seconds": {
+          "type": "object"
+        },
+        "selected_count_source_runs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "observed_correct_counts": {
+          "type": "object",
+          "minProperties": 3,
+          "maxProperties": 3,
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "selector_cardinality": {
+          "type": "integer"
+        },
+        "median_correct_count": {
+          "type": "integer"
+        },
+        "correctness_tolerance": {
+          "type": "integer"
+        },
+        "required_correct_count": {
+          "type": "integer"
+        },
+        "timing_policy": {
+          "const": "per_case_median_of_three"
+        },
+        "tail_policy": {
+          "const": "percentiles_of_per_case_median_vector"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "correctness_policy": {
+                "const": "median_observed_group_count"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "selector_cardinality",
+              "median_correct_count",
+              "correctness_tolerance",
+              "required_correct_count"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

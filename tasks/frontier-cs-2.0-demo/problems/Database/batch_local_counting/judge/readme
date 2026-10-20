@@ -1,0 +1,295 @@
+# Batch Local Counting
+
+## Problem
+
+SCOPE is a C++ system for exact local subgraph counting. A query is a
+small connected pattern graph with one distinguished vertex orbit; for every
+vertex in a larger data graph, SCOPE reports how many distinct matching
+subgraphs place that orbit at that data vertex. These per-vertex structural
+counts are useful as features in graph neural networks, clustering, anomaly
+detection, and network analysis. The evaluated input consists of three simple
+undirected graphs used in the paper, precomputed triangle-intersection data,
+and batches selected from the artifact's `4voc` and `5voc` pattern collections;
+the selected patterns have two through five vertices. The data graphs contain
+4,767–7,601 vertices and 37,375–156,945 edges. The program writes one decimal
+count file per query, and every filename and byte must equal the independent
+counting path's output on every case and repetition. The objective is to
+maximize the score derived from lower single-core wall time for the complete
+six-case batch. The batch implementation selected by `-share` has been removed
+and must be supplied.
+
+## Your workspace
+
+`/app` is a clean CMake/C++17 checkout of the stripped SCOPE artifact. It
+contains the graph and query inputs, bundled nauty source, build files, and the
+independent counting implementation. Only these files may change:
+
+```text
+counting/forest.h
+counting/forest.cpp
+counting/execution.h
+counting/execution.cpp
+counting/aggregation.h
+counting/aggregation.cpp
+executable/scope.cpp
+executable/command.cpp
+plan/tree.h
+plan/tree.cpp
+```
+
+No other file may be modified or added. Graph and pattern loading, triangle
+data, result serialization, dependencies, build configuration, and evaluation
+harnesses are fixed. The judge applies the submitted patch to a pristine copy
+of `/app` and rejects changes outside the literal list.
+
+## Design space
+
+The optimization surface is the behavior of the evaluated `-b -share`
+invocation within the ten allowlisted C++ source and header files. Any
+declaration or implementation in those existing files is editable; no new file
+is permitted. The submitted code is compiled into the same `scope.out` target
+and receives the same command-line arguments, graph objects, pattern records,
+triangle data, and output directory as the independent path. The input
+languages, local-count semantics, result filenames, result record ordering,
+integer values, and process exit status remain fixed contracts. The evaluator
+does not prescribe an internal representation or require a particular
+organization of the allowlisted code. Only behavior observable through the
+evaluated command, its generated result files, its completion time, and the
+submission policy affects acceptance and scoring.
+
+## Workload
+
+The artifact packages 15 query records under `4voc` and all 58 five-vertex
+query records under `5voc`. The evaluator uses the 48 five-vertex records and
+eight `4voc` records for which its two counting paths agree exactly. The latter
+eight comprise one two-vertex, one three-vertex, and six four-vertex patterns.
+Alternating records form fixed, disjoint development and graded halves. Each
+half contains 24 five-vertex queries and four smaller queries, and is evaluated
+against all three graphs below:
+
+| Evaluator name | Paper graph | Vertices | Undirected edges |
+| --- | --- | ---: | ---: |
+| `web-spam` | `web-spam` | 4,767 | 37,375 |
+| `rec-movielens` | `rec-movielens-user-movies-10m` | 7,601 | 55,384 |
+| `bio-grid-yeast` | `bio-grid-yeast` | 6,008 | 156,945 |
+
+The paper describes these as web, recommendation, and biological networks and
+states that its graph corpus came from the Network Repository and SNAP. All are
+stored here as simple undirected graphs with consecutive vertex IDs. The
+triangle-intersection inputs use the paper artifact's preprocessing format.
+The two larger binary inputs are stored compressed and expanded before
+evaluation.
+
+One timing round runs six cases: the selected `5voc` batch and selected `4voc`
+batch on each graph. An evaluation builds fresh patched trees and performs five
+output-producing timing rounds. The implementations run in a deterministic
+rotating order. Case membership, order within each workload directory,
+repetition count, graph sizes, and query sizes are fixed; no synthetic cases or
+random seeds are used. The workload is a representative batch of exact local
+counting queries, not a set of records to identify. Added source is rejected if
+it contains any evaluator-listed workload or judge-role substring given under
+Validity.
+
+## Interface
+
+The evaluator builds `scope.out` in Release mode and invokes this complete
+logical command from the repository root, once for every graph and query
+collection in each timed run:
+
+```text
+.frontier-build/executable/scope.out \
+  -q .frontier-workload-<graph>-<size> \
+  -d exp/data_graph/<graph-file>.txt \
+  -t <triangle-cache-path> \
+  -r .frontier-results-<graph>-<size> \
+  -b -share
+```
+
+`<size>` is `5` or `4`. For the three graph cases, `<graph-file>` is
+`web-spam`, `rec-movielens`, or `bio-grid-yeast`. The paths are fresh absolute
+paths in the evaluator but have the relative forms shown above. `-q` names the
+directory of selected query files; `-d` names the text data graph; `-t` names
+the binary triangle-intersection input; and `-r` names an existing empty output
+directory. `-b` makes `-q` and `-r` directory arguments. `-share` selects the
+batch behavior to be supplied. The evaluator passes no other flags.
+
+Each text data graph begins with its vertex and undirected-edge counts, followed
+by exactly that many edge records:
+
+```text
+num_vertices num_undirected_edges
+smaller_vertex_id larger_vertex_id
+... one line per undirected edge
+```
+
+Vertex IDs are consecutive from zero, and each edge occurs once. These are the
+first real records of `web-spam.txt`:
+
+```text
+4767 37375
+0 3015
+1 4493
+```
+
+Thus the graph has 4,767 vertices and 37,375 undirected edges; the next two
+records denote edges `{0, 3015}` and `{1, 4493}`.
+
+Each query file begins with its pattern vertex and edge counts, followed by the
+undirected edges and one orbit record:
+
+```text
+num_pattern_vertices num_undirected_edges
+src_vertex_id dst_vertex_id
+... one line per undirected edge
+1 orbit_vertex_id
+```
+
+The literal `1` identifies a vertex-orbit query, and the second field is the
+orbit representative. The complete real query `15.txt` is:
+
+```text
+5 4
+0 2
+0 4
+1 3
+1 4
+1 3
+```
+
+It has five vertices, four edges, and selects the orbit represented by pattern
+vertex 3.
+
+The triangle input is a native little-endian binary serialization consumed by
+the supplied loader. For a graph with `m` undirected edges it contains, in this
+order, three arrays named `offset1`, `offset2`, and `offset3`, each with `m + 1`
+unsigned 32-bit entries; one signed 64-bit `triangle_count`; and
+`triangle_count` unsigned 32-bit endpoint IDs. The packaged records are:
+
+| Graph | Entries per offset array | `triangle_count` | Expanded bytes |
+| --- | ---: | ---: | ---: |
+| `web-spam` | 37,376 | 387,051 | 1,996,724 |
+| `rec-movielens` | 55,385 | 216,843 | 1,532,000 |
+| `bio-grid-yeast` | 156,946 | 2,807,427 | 13,113,068 |
+
+For every input query filename `<query_filename>`, batch mode creates
+`.frontier-results-<graph>-<size>/<query_filename>`. All evaluated queries are
+vertex-orbit queries. A result is plain decimal text containing exactly one
+newline-terminated signed 64-bit integer per data vertex and no header. Line
+`i + 1` is the local count for data vertex `i`, so files contain 4,767, 7,601,
+or 6,008 records according to the graph. For the real `15.txt` query on
+`web-spam`, the matching result begins:
+
+```text
+37589
+342369
+81862
+```
+
+Those are the counts for data vertices 0, 1, and 2.
+
+A local count includes each matching data subgraph once with the selected
+pattern orbit placed at the output line's data vertex. More formally, let
+`ISO_p,o(v)` be the injective edge-preserving mappings of pattern `p` whose
+representative `o` maps to `v`, let `theta` be the automorphism orbit containing
+`o`, and let `Aut(p)` be the automorphism group of `p`. The required value is:
+
+```text
+|SubG_p,o(v)| = |ISO_p,o(v)| * |theta| / |Aut(p)|
+```
+
+Every expected filename, file length, line order, integer, byte, and repeated
+run must equal the independent path's output.
+
+## Validity
+
+The submission must be a nonempty textual git patch no larger than 524,288
+bytes. It may touch at most twelve files, all from the ten-file editable list.
+Binary patch content, absolute paths, parent traversal, a patch with no
+`+++ b/<path>` entry, an unappliable patch, and any out-of-scope destination are
+rejected. Matching of added source is case-insensitive, and none of these
+workload- or judge-specific substrings may occur in added lines: `web-spam`,
+`rec-movielens`, `bio-grid-yeast`, `4voc`, `5voc`, `frontier_`, or
+`submission_role`.
+
+After patch validation, the judge configures bundled nauty with a 120-second
+limit, builds its library using one job with a 300-second limit, configures
+CMake in Release mode with a 120-second limit, and builds `scope.out` using one
+job with a 600-second limit. Each counting invocation—one graph and one query
+collection—has a 180-second limit. Patch rejection, apply failure, build
+failure, timeout, crash, nonzero exit, no result files, output changes between
+repetitions, or any
+filename or content mismatch scores zero before performance is considered. The
+complete evaluation has a 1,800-second limit.
+
+## Scoring
+
+The goal is to maximize the returned score in `[0, 100]`. For timing round `r`,
+let `B_r` be the wall time of the independent implementation and `C_r` be the
+submitted implementation's wall time on the same six cases. After exact output
+validation, the evaluator computes exactly:
+
+```text
+L     = max(0, median_{r=1..5}(log2(B_r / C_r)))
+score = 100 * L / (2 + L)
+```
+
+The constants `2` and `100` are challenge constants (not from the paper).
+Ratios of 1, 2, 4, 8, and 16 correspond to 0, 100/3, 50, 60, and 200/3
+points. The 4-times speedup anchor remains 50 points. A median ratio at or below
+1 receives zero; above 1, every improvement increases the score. No finite
+speedup reaches 100, and there is no upper clipping or score rounding.
+
+Each `B_r` and `C_r` is the aggregate wall time of six complete `scope.out`
+processes. It includes graph and triangle loading, query loading and planning,
+counting, and result-file emission. Build time and triangle decompression are
+outside these timing terms. An incorrect or unstable output receives zero
+instead of the timing score.
+
+## Calibration
+
+A semantic no-op leaves the evaluated command on the independent behavior. Its
+idealized ratio is `B_r / C_r = 1`, which scores 0. The evaluator has no
+separate noise allowance or minimum speedup: a positive score requires the
+median of the five paired log-ratios to be positive. An effect present in fewer
+than three paired rounds cannot move that median by itself. A repeatable 2×
+reduction in complete-process time corresponds to 100/3 points. Exactness still
+requires every output file and every per-vertex record in all six cases and all
+five repetitions.
+
+## Feedback and grading
+
+The judge returns the score and a concise acceptance or failure message after
+each submission. At most 100 development submissions are allowed. **The graded
+suite is not the suite you receive feedback on**: it uses the other fixed query
+half, and neither suite's membership is disclosed. Both suites use the same
+graphs and five-round protocol, with no random seeds.
+
+## Submission
+
+Submit the patch artifact at `/app/solution.patch`. From `/app`, run exactly:
+
+```text
+bash /app/make_submission.sh
+bash /app/submit.sh
+```
+
+`make_submission.sh` writes the worktree diff to `/app/solution.patch`, and
+`submit.sh` sends that artifact to the judge. The evaluator validates the
+entire patch; changes outside the editable surface are rejected rather than
+silently omitted. An empty patch is invalid.
+
+## Resources
+
+Evaluation uses Ubuntu 24.04 with 1 vCPU, 4,096 MB memory, and 4,096 MB storage.
+The environment provides C++17, CMake, GLPK, and bundled nauty. The configured
+C++ build limit is 600 seconds, each counting process has 180 seconds, and the
+complete evaluation has 1,800 seconds. The additional 120-second nauty
+configuration, 300-second nauty build, and 120-second CMake configuration
+limits are listed under Validity.
+
+
+## Beat-reference specification
+
+The separate `beats_reference` criterion requires both metrics to clear on every workload. A workload is one graph and pattern-size batch: all six fixed combinations are retained in each suite. `exact_counts` requires every output filename and byte to match the validated upstream result. `batch_latency_seconds` requires strictly lower execution time than the paired reference in each of the five existing interleaved rounds on that workload; equality is not a timing win. Correctness is a prerequisite for a timing pass. The continuous score above preserves the paired aggregate timing objective and is independent of this conjunction.
+
+Train feedback includes only your own absolute `median_seconds` for the full suite and `beat_spec_progress` for each metric, with `passed`, `failed`, `total`, `pass_percent`, and `fail_percent`. The denominator is always six workloads. Private workload identities, individual comparison decisions, reference values, speedup ratios, and margins are withheld. Final feedback exposes no metric dictionary.

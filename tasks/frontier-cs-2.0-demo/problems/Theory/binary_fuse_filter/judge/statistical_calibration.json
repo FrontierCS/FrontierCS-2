@@ -1,0 +1,14 @@
+{
+ "schema": "binary-fuse-calibration-manifest/v3",
+ "reference_statistics_status": "CALIBRATED_REFERENCE_ONLY",
+ "rule": "certified-non-inferiority/v1",
+ "statistical_profile_sha256": "sha256:474e095297e8fb4da6cfafa48b156da4bae90a882c46a95db3f3c8c9e7f57d25",
+ "measurement_sha256": "sha256:a6d16904e60808bb0d12954b957ff6076d3983bb6d16ad2f4bf7a9e3e15cec90",
+ "complete_reference_rounds": 5,
+ "reference_scope": "900 authentic host constructions from the retained r6 rounds, rederived without native replay; anchors preregistered from reference-only points and the fingerprint specification",
+ "production_runtime": {
+  "status": "QUALIFIED_EXACT_RUNTIME",
+  "receipt_sha256": "sha256:c250ce89c28465da60c4369450157ef666b9e0080e6716371407c9b2cc6c491a"
+ },
+ "note": "r8 certified-non-inferiority successor; the r7 documentation migration and its r6 statistics reuse fence are retired under judge/reference/history/"
+}

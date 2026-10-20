@@ -1,0 +1,125 @@
+{
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "problem_id": "binary_fuse_filter",
+  "display_name": "Binary Fuse Filter Construction and Lookup",
+  "family": "frontier-cs-2.0/data_structures",
+  "version": "certified-non-inferiority-r8",
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 4294967296
+  },
+  "quota": {
+    "wall_time_seconds": 18000,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 12000,
+    "eval_timeout_seconds": 180
+  },
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 1048576
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "max_evidence_bytes": 4194304
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 4194304,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 1048576,
+      "max_ssh_sessions": 1
+    }
+  },
+  "metadata": {
+    "generator": {
+      "method": "manual-native-skill",
+      "pipeline_stages_invoked": false
+    },
+    "paper": {
+      "repo": "FastFilter/xor_singleheader",
+      "pin": "3e10fb185a0c51e5866518d13b403e07db63d8d8",
+      "license": {
+        "key": "apache-2.0",
+        "name": "Apache License 2.0",
+        "spdx_id": "Apache-2.0",
+        "url": "https://api.github.com/licenses/apache-2.0",
+        "node_id": "MDc6TGljZW5zZTI="
+      },
+      "license_path": "LICENSE",
+      "archive_sha256": "66f9c67699ef3ab409c710fa36a8bb8e574304781e8e3bfccbf665aae2e3d19a",
+      "archive_bytes": 150983,
+      "unpacked_bytes": 272412,
+      "file_count": 21,
+      "paper_url": "https://arxiv.org/pdf/2201.01174",
+      "paper_sha256": "cad450437b5cd2cf18d87441a5e4d71dd50c40a8adffcd5fe4a2904d21e87e14",
+      "paper_version": "arXiv:2201.01174v1, 2022-01-04",
+      "doi": "10.1145/3510449",
+      "base_revision": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "files": {
+        ".travis.yml": "9c9dbbcc54b9d5985a67c7edcfc168f0d02977b76c3cb142315e65d08e2bce24",
+        "LICENSE": "a111b5902eaeb94cb51b3ead2fef619724817bf55ebe561b3d7caeb1d5305190",
+        "README.md": "eac1a40933940f3788ed33202b171e8b45bb402d9c68e1f71f04f6cc32d1f6e3",
+        ".gitignore": "a1404fad666485fb65e2172d0a76e8e4b5ada45179bd7e66def207f1b7289cf1",
+        "CMakeLists.txt": "8f833586b2efabf774720b97e44cb366d92446d0e8ec084bd789ecd37a21b31b",
+        "Makefile": "41b18ad67bcd7e2fe19d1b332618d301759d02b3d30d840473dfdd4b4cee21d4",
+        "figures/comparison.png": "6d564a5a5a31a55ac27aaeb9aa11f49939bb69db83afa990fca14449be41b575",
+        "benchmarks/spaceusage.c": "dae60cb61704a8f9bf32498c52b64490552745b2d78509520adb197b223effa6",
+        "benchmarks/bench.c": "dada61ed25905fd1178144621768d4905481b421544f78a51be80a733acb8034",
+        "benchmarks/query.c": "83c4b5a4f35f8116eabef85f5300464a6bc3de1c52bfa32350d1422942953d87",
+        "benchmarks/CMakeLists.txt": "2f6279e25f128d6702e076abcaf0f4334caabded4c1671940a5695113a584e29",
+        "tests/unit.c": "ac292e74f212fb1aeb6b6b967a42cc811177d590ff7b4fc386fb657538864ad2",
+        "tests/b.c": "0237c27f6fd4fdc5d9716af555b735313ea0ff42bf5eded03726795f42757459",
+        "tests/a.c": "20bcd14f0d4cdde7ad94fa9da032ffcf78082d5c4b87ac87c73e5e4b4e762c60",
+        "tests/CMakeLists.txt": "988a76e9cf4374d98b0aa63b9d47f421295baa13429347b62f5fd4fb48858e33",
+        "include/xorfilter.h": "5574a1b6f3e4e1764e996f4642db33376e0618657ec39936a9828064909a196e",
+        "include/binaryfusefilter.h": "26f192bdff8a971c9db49afce4c9cf51cc17477ca7047c6ae7c5a272a1b6985f",
+        "cmake/config.cmake.in": "73b9705f76279c3879dcdb03b408a3ae81fa0aa8b2befcc7e4bfb027a609c960",
+        "tests/installation_tests/find/CMakeLists.txt": "df1ce0a7956e36f3f9d14cc23ffa270bedeea9b3e125ca04418517f533539310",
+        ".github/workflows/msys2.yml": "0e9eafc770002e485f799a459467911a5c5cca6adc0b60111489e552a72ce19b",
+        ".github/workflows/ubuntu.yml": "bbaa3d0d6d2a63706777afb9163be25a8f26a6f2bd5408aa1ed5639cbc022543"
+      }
+    },
+    "runtime": {
+      "language": "c",
+      "submission_kind": "patch",
+      "allowed_paths": [
+        "include/"
+      ]
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "authored_max_train_wall_seconds": 12000,
+      "authored_answering_timeout_seconds": 18000,
+      "suite_relation": "train plus disjoint seeded extension",
+      "solver_visible_metrics": [
+        "mean_resident_bytes",
+        "mean_build_ns",
+        "mean_lookup_ns",
+        "mean_effective_fpr",
+        "space_overhead_defined_workloads"
+      ],
+      "successor_status": "REFERENCE_STATISTICS_CALIBRATED_EXACT_RUNTIME_QUALIFIED",
+      "predecessor_native_tree_sha256": "sha256:880181bdba38509421aa87d3ebba1e9a78d90a1ea0a12f22a4774625b37df51b"
+    },
+    "datasets": {
+      "train": {
+        "path": "datasets/train.json",
+        "version": "sha256:24fabc0dc6f36f9ad670a8296b396102ce877a1e7f7a7544bc9f843f1875065c",
+        "bytes": 197
+      },
+      "eval": {
+        "path": "datasets/eval.json",
+        "version": "sha256:1567fd009f3094e7c997b9e61837fd89cf680c9ab672855d76600da05a8d4f4c",
+        "bytes": 196
+      }
+    }
+  }
+}

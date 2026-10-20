@@ -1,0 +1,20 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "hypergraph_core_numbers",
+  "domain": "algorithms",
+  "promotion": {},
+  "generated_at": null,
+  "generator": {"pipeline": "manual-transfer", "commit": null, "run_id": null, "candidate_id": null, "config_sha256": null},
+  "paper": {"paper_id": "external-hygra-ppopp20", "title": "Practical Parallel Hypergraph Algorithms", "authors": ["Julian Shun"], "year": 2020, "venue": "PPoPP", "pdf_url": "https://people.csail.mit.edu/jshun/hygra.pdf", "doi": "10.1145/3332466.3374527"},
+  "rank": {"rank": null, "overall_score": null, "recommendation": null, "scores": {}, "risks": []},
+  "artifact": {"repo_url": "https://github.com/jshun/ligra", "commit": "8763202ef09ebf8c5f7d7787cf72f3ca55efbe4c", "cloned_at": null, "census": {}},
+  "contribution": {
+    "title": "Parallel hypergraph core-number computation",
+    "summary": "Implement and optimize exact vertex core numbers in the retained Hygra/Ligra hypergraph substrate.",
+    "paper_location": "Section 5.3 and Algorithm 3 (pp. 239-240), work-efficient coreness in Hygra",
+    "code_location": ["apps/hyper/HyperKCore-Efficient.C", "apps/hyper/frontier_solution/"],
+    "metric": "exact core numbers plus per-workload complete-process runtime against the reference"
+  },
+  "host": null,
+  "provenance_note": "Manual native-format transfer from the authoring source at 52c793d1b7144f66e45cdf30a36c66869a1f07aa. The source has no standalone Smith metadata, ranking, promotion, or measured-host record. Paper and artifact provenance is recovered from retained bytes: the reference patch restores jshun/ligra's apps/hyper/HyperKCore-Efficient.C exactly at 8763202ef09ebf8c5f7d7787cf72f3ca55efbe4c, every retained ligra framework file matches that commit, the upstream README names the file as the work-efficient hypergraph k-core implementation and cites the paper, and Section 5.3/Algorithm 3 describes the same algorithm. Crossref confirms DOI 10.1145/3332466.3374527. Other unavailable fields remain null or empty."
+}

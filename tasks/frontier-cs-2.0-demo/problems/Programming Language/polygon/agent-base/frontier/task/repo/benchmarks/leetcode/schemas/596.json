@@ -1,0 +1,22 @@
+{
+  "Problem Number": "596",
+  "Tables": [
+    {
+      "TableName": "courses",
+      "PKeys": [
+        {
+          "Name": "student",
+          "Type": "varchar"
+        }
+      ],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "class",
+          "Type": "varchar"
+        }
+      ]
+    }
+  ],
+  "Tuples": []
+}

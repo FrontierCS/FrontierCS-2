@@ -1,0 +1,69 @@
+{
+  "models": [
+    {
+      "files": [
+        {
+          "bytes": 1519,
+          "git_blob_id": "a6344aac8c09253b3b630fb776ae94478aa0275b",
+          "path": ".gitattributes"
+        },
+        {
+          "bytes": 1806,
+          "git_blob_id": "1297ba4ae78365acfb5bd087f2ebe7637a2ca681",
+          "path": "README.md"
+        },
+        {
+          "bytes": 2784,
+          "git_blob_id": "446b9fa8e5c98f7f30d4a01f8986cf19744db822",
+          "path": "config.yaml"
+        },
+        {
+          "bytes": 634416296,
+          "git_blob_id": "86658493fbc58539b9b85331df8d295e40119295",
+          "path": "model.safetensors",
+          "sha256": "86ac17ff150da027618476817ca48708014de6f5d8d09277fe352e2584f54f28"
+        }
+      ],
+      "repo_id": "knightnemo/nanowm-b2-dino-wm-point-maze-30k",
+      "revision": "b84303b7151cbd1836841c3a87bf095e1015b150",
+      "target": "point-maze",
+      "total_bytes": 634422405
+    },
+    {
+      "files": [
+        {
+          "bytes": 1456,
+          "git_blob_id": "99f243ff7947dfc5afddaf3d818da3d0124d5ca2",
+          "path": ".gitattributes"
+        },
+        {
+          "bytes": 6844,
+          "git_blob_id": "61d3c7cf571c574a406544612b857ac1b26f4439",
+          "path": "README.md"
+        },
+        {
+          "bytes": 547,
+          "git_blob_id": "0db26717579be63eb0ddbf15b43faa43700dfe5a",
+          "path": "config.json"
+        },
+        {
+          "bytes": 334707217,
+          "git_blob_id": "ba36f34d64ad3be997b7cab94b0b9acd61272851",
+          "path": "diffusion_pytorch_model.bin",
+          "sha256": "1b4889b6b1d4ce7ae320a02dedaeff1780ad77d415ea0d744b476155c6377ddc"
+        },
+        {
+          "bytes": 334643276,
+          "git_blob_id": "90464d67ac7303d0ee4696334df13da130a948ea",
+          "path": "diffusion_pytorch_model.safetensors",
+          "sha256": "a1d993488569e928462932c8c38a0760b874d166399b14414135bd9c42df5815"
+        }
+      ],
+      "repo_id": "stabilityai/sd-vae-ft-mse",
+      "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+      "target": "sd-vae",
+      "total_bytes": 669359340
+    }
+  ],
+  "schema_version": "frontier.frontiersmith-model-assets/v1"
+}

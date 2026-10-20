@@ -1,0 +1,2751 @@
+{
+  "agent": {
+    "cpu_millis": 8000,
+    "memory_bytes": 34359738368,
+    "workspace_bytes": 68719476736
+  },
+  "display_name": "GPU vLLM Serving Optimization",
+  "family": "frontier-cs-2.0/systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 18000,
+      "max_instance_seconds": 18000,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 4,
+      "max_gpu_seconds": 691200
+    }
+  },
+  "gpu_parent_resources": {
+    "verifier": {
+      "cpu_millis": 16000,
+      "memory_bytes": 68719476736
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 5021,
+        "path": "datasets/eval.json",
+        "version": "sha256:4a46f566c9ec8ffbda6896198f03d603d6655dff22fc276ae34db99908f9e618"
+      },
+      "train": {
+        "bytes": 500,
+        "path": "datasets/train.json",
+        "version": "sha256:d01bc3509809825288794d7ce5f526768e6953b10db5a6c310735dc6a3115b7b"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 25,
+      "solver_visible_metrics": [
+        "swe_public_geometric_mean_latency_seconds",
+        "swe_public_speedup_over_vanilla",
+        "swe_public_p90_latency_seconds",
+        "swe_public_p95_latency_seconds",
+        "swe_public_p99_latency_seconds",
+        "swe_public_correct",
+        "bfcl_public_geometric_mean_latency_seconds",
+        "bfcl_public_speedup_over_vanilla",
+        "bfcl_public_p90_latency_seconds",
+        "bfcl_public_p95_latency_seconds",
+        "bfcl_public_p99_latency_seconds",
+        "bfcl_public_correct"
+      ],
+      "suite_relation": "public_prefix_of_final"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "manual-native-transfer",
+      "run_id": null
+    },
+    "isolation": "the candidate vLLM server runs alone in the GPU parent; timing, SWE tooling and correctness run in Driver-declared sidecars whose evidence is Ed25519-signed with a per-operation key the parent never holds",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "vllm/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 256,
+      "max_ssh_bytes_per_direction": 268435456,
+      "max_ssh_sessions": 1754,
+      "ssh_session_budgets": {
+        "agent": 512,
+        "verifier_eval": 342,
+        "verifier_train": 900
+      }
+    }
+  },
+  "problem_id": "vllm_llm_serving_optimization",
+  "quota": {
+    "eval_timeout_seconds": 108000,
+    "max_train_calls": 25,
+    "max_train_wall_seconds": 7620,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "sidecars": {
+    "scheduler": {
+      "args": [
+        "/opt/frontier/python/bin/python",
+        "/opt/frontier/judge/scheduler_service.py",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8002",
+        "--max-request-bytes",
+        "67108864",
+        "--max-response-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "attestation_key": true,
+      "image": "scheduler",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/tmp"
+    },
+    "swe-000-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "scikit-learn__scikit-learn-11281",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-000",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-000-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "scikit-learn__scikit-learn-11281",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-000",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-001-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13925",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-001",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-001-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13925",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-001",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-002-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "pytest-dev__pytest-5495",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-002",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-002-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "pytest-dev__pytest-5495",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-002",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-003-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-12236",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-003",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-003-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-12236",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-003",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-004-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "scikit-learn__scikit-learn-10949",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-004",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-004-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "scikit-learn__scikit-learn-10949",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-004",
+      "phases": [
+        "train",
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-005-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11179",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-005",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-005-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11179",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-005",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-006-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "mwaskom__seaborn-3010",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-006",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-006-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "mwaskom__seaborn-3010",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-006",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-007-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sphinx-doc__sphinx-8595",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-007",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-007-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sphinx-doc__sphinx-8595",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-007",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-008-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16041",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-008",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-008-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16041",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-008",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-009-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-15819",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-009",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-009-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-15819",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-009",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-010-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-21612",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-010",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-010-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-21612",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-010",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-011-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-15790",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-011",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-011-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-15790",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-011",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-012-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16139",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-012",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-012-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16139",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-012",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-013-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13768",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-013",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-013-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13768",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-013",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-014-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-15308",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-014",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-014-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-15308",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-014",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-015-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16229",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-015",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-015-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16229",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-015",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-016-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13447",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-016",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-016-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13447",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-016",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-017-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-14817",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-017",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-017-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-14817",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-017",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-019-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-21847",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-019",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-019-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-21847",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-019",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-020-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-18189",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-020",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-020-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-18189",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-020",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-021-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11099",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-021",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-021-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11099",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-021",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-022-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-15609",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-022",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-022-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-15609",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-022",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-023-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-13773",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-023",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-023-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-13773",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-023",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-024-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-15678",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-024",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-024-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-15678",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-024",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-025-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-14365",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-025",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-025-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-14365",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-025",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-026-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-14182",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-026",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-026-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-14182",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-026",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-027-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "scikit-learn__scikit-learn-25638",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-027",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-027-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "scikit-learn__scikit-learn-25638",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-027",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-028-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13710",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-028",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-028-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-13710",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-028",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-029-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-14752",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-029",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-029-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-14752",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-029",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-030-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-12747",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-030",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-030-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-12747",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-030",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-031-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-12856",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-031",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-031-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-12856",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-031",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-032-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16255",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-032",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-032-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16255",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-032",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-033-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11620",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-033",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-033-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11620",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-033",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-034-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-23117",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-034",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-034-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-23117",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-034",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-035-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "pylint-dev__pylint-7080",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-035",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-035-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "pylint-dev__pylint-7080",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-035",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-036-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "pytest-dev__pytest-5227",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-036",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-036-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "pytest-dev__pytest-5227",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-036",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-037-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11910",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-037",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-037-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-11910",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-037",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-038-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-14787",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-038",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-038-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-14787",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-038",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-040-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sphinx-doc__sphinx-7738",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-040",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-040-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sphinx-doc__sphinx-7738",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-040",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-041-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-17139",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-041",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-041-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-17139",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-041",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-042-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-11897",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-042",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-042-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-11897",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-042",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-043-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-14608",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-043",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-043-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-14608",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-043",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-044-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-19487",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-044",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-044-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-19487",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-044",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-045-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-7746",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-045",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-045-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-7746",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-045",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-046-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16910",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-046",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-046-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "django__django-16910",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-046",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-047-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "psf__requests-3362",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-047",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-047-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "psf__requests-3362",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-047",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-048-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-13043",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-048",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-048-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "sympy__sympy-13043",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-048",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-049-candidate": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_tool_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-6938",
+        "--listen-profile",
+        "bridge",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+        "--max-request-bytes",
+        "1048576",
+        "--max-output-bytes",
+        "16777216"
+      ],
+      "image": "swe-049",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    },
+    "swe-049-check": {
+      "args": [
+        "/opt/frontier/worker-python/bin/python",
+        "-P",
+        "-m",
+        "serving_eval.swe_correctness_service",
+        "--driver-identity-file",
+        "/tmp/frontier-identity.json",
+        "--instance-id",
+        "astropy__astropy-6938",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8003",
+        "--max-request-bytes",
+        "2097152",
+        "--max-output-bytes",
+        "67108864",
+        "--variants",
+        "candidate"
+      ],
+      "image": "swe-049",
+      "phases": [
+        "eval"
+      ],
+      "workdir": "/testbed"
+    }
+  },
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 2097152
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/python/bin/python",
+      "/opt/frontier/verifier/verify.py"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 67108864,
+    "memory_bytes": 34359738368
+  },
+  "version": "declared-sidecars-final-enabled-r003"
+}

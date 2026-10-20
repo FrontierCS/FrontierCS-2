@@ -1,0 +1,14 @@
+{
+  "original_end_line": 7532,
+  "original_path": "src/language/language.rs",
+  "original_start_line": 4475,
+  "patch_envelope_change": null,
+  "pin": "f8e341ed9fedb6be149694e3a7ab7e6cf542fd2e",
+  "private_coverage": "Append one newline and these exact bytes to restored language.rs in a disposable judge-only source tree. cargo test --lib language::language:: includes the original tests. Never copy this module into an Agent image.",
+  "public_start_line_before": 1393,
+  "reference_patch_sha256": "817f2cf4635195c14d0db85f0db0dba8bb1f8462ff236a9d39c75c2ffe384a2b",
+  "separator_note": "Public excision also removes the one blank separator immediately before cfg(test). Exact original reconstruction is include expansion + one newline + the exact private test module.",
+  "sha256": "7d440cab9af783c4057d214d6f3386427b87820fa994bc78f278a79f3a0b1c63",
+  "tests": 132,
+  "upstream_language_sha256": "8fbc89a4aee4d2f0d8a5d3e2a807eb454597e4e784f3dd2ba1950cc4f70f1ed5"
+}

@@ -1,0 +1,2 @@
+qid,mysql_groundtruth
+1350,"select id, name from Students where department_id not in (select id from departments) "

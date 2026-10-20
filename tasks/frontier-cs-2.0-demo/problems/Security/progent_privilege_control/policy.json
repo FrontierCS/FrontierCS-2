@@ -1,0 +1,173 @@
+{
+  "additional_keys": [
+    {
+      "budget_usd": 15,
+      "envs": [
+        "agent"
+      ],
+      "model_aliases": [
+        "progent-agent-gpt-4o-mini"
+      ],
+      "name": "explore"
+    },
+    {
+      "budget_usd": 20,
+      "envs": [
+        "verifier-train"
+      ],
+      "model_aliases": [
+        "progent-agent-gpt-4o-mini"
+      ],
+      "name": "train"
+    },
+    {
+      "budget_usd": 30,
+      "envs": [
+        "verifier-eval"
+      ],
+      "model_aliases": [
+        "progent-agent-gpt-4o-mini"
+      ],
+      "name": "final"
+    }
+  ],
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Privilege Control for Tool-Using LLM Agents",
+  "family": "frontier-cs-2.0/security",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 512,
+        "path": "datasets/eval.json",
+        "version": "sha256:010829acceaf4a68d1bf9ec8383f4057a3d19648127ff548f411cc1c26e63bb8"
+      },
+      "train": {
+        "bytes": 519,
+        "path": "datasets/train.json",
+        "version": "sha256:7073fb3ea6b5c74cf77c95ca09c7c0328e79b42917699eacf741f1728a771220"
+      }
+    },
+    "evaluation": {
+      "authored_answering_timeout_seconds": 18000,
+      "authored_max_dev_submissions": 5,
+      "authored_max_train_wall_seconds": 18000,
+      "solver_visible_metrics": [
+        "banking_breached_episodes",
+        "banking_attacked_episodes",
+        "banking_utility_under_attack",
+        "banking_benign_utility",
+        "banking_policy_worker_failures",
+        "banking_capped_episodes",
+        "slack_breached_episodes",
+        "slack_attacked_episodes",
+        "slack_utility_under_attack",
+        "slack_benign_utility",
+        "slack_policy_worker_failures",
+        "slack_capped_episodes",
+        "travel_breached_episodes",
+        "travel_attacked_episodes",
+        "travel_utility_under_attack",
+        "travel_benign_utility",
+        "travel_policy_worker_failures",
+        "travel_capped_episodes",
+        "workspace_breached_episodes",
+        "workspace_attacked_episodes",
+        "workspace_utility_under_attack",
+        "workspace_benign_utility",
+        "workspace_policy_worker_failures",
+        "workspace_capped_episodes"
+      ],
+      "suite_relation": "held_out_user_tasks"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "the user-task split, the reference measurements and the attacker-identity generator are in the verifier image and absent from every agent-visible layer; submitted policy code runs in a fresh sealed process per episode (Landlock/seccomp, no network, files or processes) whose only model access is a metered channel to the trusted judge; train and eval authority read the same evaluator",
+    "model_requirements": {
+      "additional_keys": [
+        "explore",
+        "train",
+        "final"
+      ],
+      "expected_usd_per_run": {
+        "final": "about 5 (reference and candidate, 2 repetitions, 1,136 episodes; 3 repetitions measured 7.29)",
+        "train_call": "about 2.5 (candidate, 1 repetition, 402 episodes)"
+      },
+      "model_aliases": [
+        "progent-agent-gpt-4o-mini"
+      ],
+      "note": "The run's keys are LiteLLM virtual keys on this alias; a site must serve the alias with nonzero pricing (features.task_model_aliases).",
+      "pricing_usd_per_million_tokens": {
+        "cached_input": 0.075,
+        "input": 0.15,
+        "output": 0.6
+      },
+      "upstream_model": "openai/gpt-4o-mini via OpenRouter"
+    },
+    "paper": {
+      "authors": [
+        "Tianneng Shi",
+        "Jingxuan He",
+        "Zhun Wang",
+        "Hongwei Li",
+        "Linyu Wu",
+        "Wenbo Guo",
+        "Dawn Song"
+      ],
+      "code": "https://github.com/sunblaze-ucb/progent/tree/5be7b63fa96f70bc19b72fbcee81f1c0bcc1a565",
+      "paper_id": "progent_privilege_control_2025",
+      "pdf_url": "https://arxiv.org/pdf/2504.11703",
+      "title": "Progent: Securing AI Agents with Privilege Control",
+      "venue": "arXiv",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "secagent/tool.py",
+        "secagent/solver_utils/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "progent_privilege_control",
+  "quota": {
+    "eval_timeout_seconds": 10800,
+    "max_train_calls": 5,
+    "max_train_wall_seconds": 18000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 8388608
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 8000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 17179869184
+  },
+  "version": "real-agent-r1"
+}

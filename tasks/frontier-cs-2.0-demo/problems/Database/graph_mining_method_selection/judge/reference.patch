@@ -1,0 +1,82 @@
+diff --git a/performance_model/src/main.py b/performance_model/src/main.py
+index 4349fd4..91360a2 100644
+--- a/performance_model/src/main.py
++++ b/performance_model/src/main.py
+@@ -1,9 +1,76 @@
+ import argparse
++import math
+ import data
+ 
++COMPUTE_FACTOR_NS = ((2.45 * 10 ** -9) / (128 / 3)) / 50
++COMPUTE_FACTOR_GS = 2.45 * 10 ** -9
++MANUAL_OVERHEAD = {"friendster": 15, "youtube": .13, "mico": .003529,
++                   "livej": .05, "gsh2015": 11.5}
++
++def _neighbor_size(graph, c=1):
++    return graph.e / c / graph.v
++
++def _intersection_size(level, graph, c=1):
++    edges = graph.e / c
++    triangles = graph.tri_cnt / (c ** 2)
++    p1 = edges / (graph.v ** 2)
++    p2 = triangles * graph.v / (edges ** 2)
++    return graph.v * p1 * p2 ** (level - 1)
++
++def _work_ns(g, pattern, ns):
++    if pattern.type == "clique":
++        bounds = (g.mem_look_up_time * (1 + _neighbor_size(g)),
++                  g.mem_look_up_time * (1 + _neighbor_size(g)) * pattern.k)
++    elif pattern.type == "path":
++        bounds = (g.mem_look_up_time * (1 + _neighbor_size(g)),
++                  g.mem_look_up_time * (1 + _neighbor_size(g)) * pattern.k ** 2)
++    elif pattern.type == "house":
++        bounds = (g.mem_look_up_time * (1 + _neighbor_size(g)) * 5,
++                  g.mem_look_up_time * (1 + _neighbor_size(g)) * 25)
++    else:
++        bounds = (g.mem_look_up_time * (1 + _neighbor_size(g)),
++                  g.mem_look_up_time * _neighbor_size(g) * 3)
++    return tuple(ns * COMPUTE_FACTOR_NS * work for work in bounds)
++
++def _work_gs(g, pattern, c):
++    if pattern.type == "clique":
++        work = g.v * (1 + _neighbor_size(g, c)) ** 2
++        for level in range(2, pattern.k - 1):
++            work *= (1 + _intersection_size(level, g, c)) ** 2
++    elif pattern.type == "path":
++        work = g.v * (1 + _neighbor_size(g, c)) ** (pattern.k - 2)
++    elif pattern.type == "house":
++        scale = 1.5 if g.name == "livej" else 1
++        work = g.v * 0.5 * (1 + _neighbor_size(g, c)) ** (scale * 5 - 1)
++        work *= 1 + _intersection_size(2, g, c)
++    else:
++        work = g.v * (1 + _neighbor_size(g, c)) ** (pattern.k - 1)
++    if g.name in MANUAL_OVERHEAD:
++        overhead = MANUAL_OVERHEAD[g.name]
++    else:
++        overhead = 2 * g.e * (1 + 1 / c) * g.mem_look_up_time / 10 * COMPUTE_FACTOR_GS
++    return overhead + work * COMPUTE_FACTOR_GS
++
+ def threshold(graph, pattern, error, ns=None, c=None, cores=1):
+     """Return ``GS`` or ``NS`` for one supplied workload."""
+-    raise NotImplementedError("workload selector removed")
++    g = data.graphs[graph]
++    p = data.patterns[pattern]
++    average = g.e / g.v
++    clustering = max(1e-9, 3 * g.tri_cnt / (g.e * average))
++    gs_features = (1, math.log(_work_gs(g, p, c)), math.log(cores),
++                   1 if p.k == 4 else 0, math.log(average),
++                   math.log(clustering), math.log(c))
++    ns_features = (1, math.log(_work_ns(g, p, ns)[1]), math.log(g.e),
++                   math.log(cores), 1 if p.k == 4 else 0, error, math.log(ns))
++    gs_coeff = (1.407052683178831, 0.9991069020067183, -0.6932684901093811,
++                0.047256874375015884, -0.37490400316816835,
++                -0.16362094325746707, 0.40590354347306595)
++    ns_coeff = (-15.076528119460068, 0.1295186450134651, 0.6192355891680392,
++                -0.38181109599855784, 0.07317150925822323,
++                0.21716160994745032, 0.36636028925084896)
++    gs_time = sum(a * b for a, b in zip(gs_coeff, gs_features))
++    ns_time = sum(a * b for a, b in zip(ns_coeff, ns_features))
++    return "GS" if gs_time < ns_time else "NS"
+ 
+ def main(graph, pattern, error, ns, c, cores):
+     print(threshold(graph, pattern, error, ns, c, cores))

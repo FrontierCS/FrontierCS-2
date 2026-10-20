@@ -1,0 +1,90 @@
+tag: robotics
+authoring:
+  status: standard_platform_source_bound_calibration
+  execution_authority: external_private_seal_and_receipts
+  source_revision: 5ba07ac6661db573af695b419a7947ecb704690f
+  checkpoint_sha256: fa302d345467ef5927d60f3fd7cdd222e1ee8fda52216ca64323a08e2ce700a8
+  calibration_required:
+    - workload_membership_and_repetitions
+    - fresh_exact_version_naive_calibration_constants
+    - frozen_private_development_and_independent_final_seeds
+    - actual_exported_runtime_and_new_measurement_wiring_validation
+    - reference_train_and_final
+runtime:
+  language: patch
+  environment: Official frozen Push-T diffusion transformer; CPU only
+  python_version: '3.10'
+  timeout_seconds: 3720
+  visible_inputs: []
+  judge_apt_packages: [bubblewrap, libgl1, libglib2.0-0]
+  judge_pip_packages: [PyYAML==6.0.3, zstandard==0.25.0]
+  docker:
+    image: python@sha256:6dafe336b64dbf76f7ec872d07e58b5c7de0e2ea5d4c0853a05c3b6be3278b00
+  judge_build_commands:
+    - python3 /opt/frontier/task/prepare_runtime.py
+  measurement:
+    prefix: /opt/diffusion-policy/python
+    checkpoint: /opt/diffusion-policy/assets/pusht-transformer.ckpt
+    checkpoint_sha256: fa302d345467ef5927d60f3fd7cdd222e1ee8fda52216ca64323a08e2ce700a8
+    ema_sha256: 9ea3d96eeaecca7912577d326ae0a0712b8aa04b7e846b7a56004997989e5a54
+    python_version: '3.10.20'
+    dependency_versions: measurement-requirements.txt
+    placement_status: immutable_cpu_runtime_image_with_fresh_dataset_binding
+environment:
+  cpus: 2
+  memory_mb: 4096
+  storage_mb: 2048
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: extends
+  suite_axis: additional initial conditions and independent diffusion seeds
+  final_includes_public_workloads: true
+  max_steps: 300
+  observation_horizon: 2
+  prediction_horizon: 10
+  action_horizon: 8
+  checkpoint_inference_steps: 100
+  solver_visible_metrics:
+    - dev_mean_episode_max_reward
+    - dev_episode_success_rate
+    - dev_mean_predict_action_seconds
+    - dev_total_workload_wall_seconds
+    - candidate_diagnostic
+  development_manifest: null
+  final_manifest: null
+  repetitions: 3
+  dataset_files:
+    train: {path: train.tar, media_type: application/x-tar}
+    eval: {path: eval.tar, media_type: application/x-tar}
+  private_suite_bindings: null
+  private_naive_calibration_bindings: null
+  continuous_score:
+    formula: option_b_bottleneck
+    gain: max(0, (Q - Qn) / (1 - Qn))
+    utility: gain * min(Ln / L, Tn / T)
+    aggregation: equal_workload_mean
+    display: 100 * U / (1 + U)
+    baseline_method: original_ddpm_20_steps
+  measurement_limits:
+    episode_seconds: 150
+    sampler_seconds: 130
+    dev_seconds: 1860
+    final_seconds: 3720
+    max_model_calls_per_prediction: 200
+    max_random_calls_per_episode: 38000
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  max_bytes: 262144
+  max_patch_bytes: 262144
+  max_changed_files: 17
+  allow_empty: false
+  allow_paths:
+    - diffusion_policy/policy/diffusion_transformer_lowdim_policy.py
+    - diffusion_policy/sampler_extensions/
+  forbid_paths:
+    - .git
+  source_limit_bytes: 131072
+  helper_max_files: 16
+  helper_max_bytes: 65536

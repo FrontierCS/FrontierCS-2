@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "upstream_revision": "5ba07ac6661db573af695b419a7947ecb704690f",
+  "files": {
+    "LICENSE": {
+      "sha256": "304e99a48271e10820f71a1b86ef395c06c100d7f68dd1d308790d1064fc4d41",
+      "executable_bits": 0
+    },
+    "diffusion_policy/common/pytorch_util.py": {
+      "sha256": "96ce50e191b4c837532529040af65d2b9a1f433f33a5187f8cf256b62d84b6b4",
+      "executable_bits": 0
+    },
+    "diffusion_policy/common/timestamp_accumulator.py": {
+      "sha256": "16f32c9e626debca2c495e859152e6fee4166732c5cb8b8923f4399854fcb6e9",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env/pusht/__init__.py": {
+      "sha256": "3047be4b156d8fa96834db16ca29853271cc641216a0b0051f7e67669f15a685",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env/pusht/pusht_env.py": {
+      "sha256": "759107dc0ea6017b8afe3380ce23817713edf26af725fc4f03c0416ced940bd0",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env/pusht/pusht_keypoints_env.py": {
+      "sha256": "7103face7a744bd85815eaf7d7a6d292c0910ef933d3f730e4c34aea95b529af",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env/pusht/pymunk_keypoint_manager.py": {
+      "sha256": "26cb951d046992906ca55d7a89a44022d930be5ec4ea8fd56db889f9d6e12275",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env/pusht/pymunk_override.py": {
+      "sha256": "85e7c54b5e9630a9f7e675250ee514ae9b2249d11654ec0811d8e4bcf413fe39",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env_runner/base_lowdim_runner.py": {
+      "sha256": "f24ea57e14c7084f027ced8e0fa7d835fcf56db2ea05738f61d3efb30d0e73a8",
+      "executable_bits": 0
+    },
+    "diffusion_policy/env_runner/pusht_keypoints_runner.py": {
+      "sha256": "5abec23f1edd40067fcd7c0d010fcdbc52cc31cb8a303fa222579f2bdf761503",
+      "executable_bits": 0
+    },
+    "diffusion_policy/gym_util/async_vector_env.py": {
+      "sha256": "b9ba8353fe6a187a4c254184e08a22a461b3086a2da60035d2c07422184853c6",
+      "executable_bits": 0
+    },
+    "diffusion_policy/gym_util/multistep_wrapper.py": {
+      "sha256": "2923e73c13ff9f782451ab61bed43a802670bbf29419471f82878c690f26a342",
+      "executable_bits": 0
+    },
+    "diffusion_policy/gym_util/video_recording_wrapper.py": {
+      "sha256": "415cbf6055c897eac1db89e9a0a2c9c2c5885bcc4b291543094e389adc029cb1",
+      "executable_bits": 0
+    },
+    "diffusion_policy/model/common/dict_of_tensor_mixin.py": {
+      "sha256": "158b63a244bcfb9aa377206730f5f59778c6aeb9138ff55c76d2c28ec46952d1",
+      "executable_bits": 0
+    },
+    "diffusion_policy/model/common/module_attr_mixin.py": {
+      "sha256": "658dececa20f7628960fc1a8db89e4be3693e1bba47f63d1ff8a4faa2d481e45",
+      "executable_bits": 0
+    },
+    "diffusion_policy/model/common/normalizer.py": {
+      "sha256": "92322852fc04d956d0dd43a2e41fb461dee246bbf97ddc7940186a9307525ed3",
+      "executable_bits": 0
+    },
+    "diffusion_policy/model/diffusion/mask_generator.py": {
+      "sha256": "23dba4c112ed57e41d530612c79d9841c9b3c5bd3d6790863d1739190a9ab7b0",
+      "executable_bits": 0
+    },
+    "diffusion_policy/model/diffusion/positional_embedding.py": {
+      "sha256": "2266c75ecc9c9ac8ca126839d39a7bafbdd7af8800d6de903f66815e64cc366c",
+      "executable_bits": 0
+    },
+    "diffusion_policy/model/diffusion/transformer_for_diffusion.py": {
+      "sha256": "c4cfd71a2f1b4f5181c7ccc391d71f19ebce74c698fc12725bb88317b6f8fd8f",
+      "executable_bits": 0
+    },
+    "diffusion_policy/policy/base_lowdim_policy.py": {
+      "sha256": "80779d2492f629be926f0788e763fb3d33beba024ed94c4327bc8eae5f4100bb",
+      "executable_bits": 0
+    },
+    "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py": {
+      "sha256": "8e59af7195c4574a9b812a0f83c1c055d8f7e943eac4948f25bf80c3219c3b4b",
+      "executable_bits": 0
+    },
+    "diffusion_policy/real_world/video_recorder.py": {
+      "sha256": "26ca27d8ac42b7c17247cbf33edad6b68b642b7f95f89252e65aefd0ef79dcb7",
+      "executable_bits": 0
+    },
+    "setup.py": {
+      "sha256": "d6d2a5820f236940c1566d2117d84c556e008475542ea0e4a0bb0b650c14fb2d",
+      "executable_bits": 0
+    }
+  }
+}

@@ -1,0 +1,60 @@
+tag: systems
+runtime:
+  language: python
+  # Provisional: final grades 24 articles on 8 single-H100 instances (3 repetitions + QA each).
+  timeout_seconds: 3600
+  environment: "Python 3.12, PyTorch 2.8.0, transformers 4.57.1, vLLM 0.11.0, accelerate 1.12.0; Verifier up to 8 single-H100 instances (train 4, final 8; articles sharded across instances), Agent debug runner 1x H100; offline Qwen/Qwen3-4B (bf16) and the upstream compaction tree at adamzweiger/compaction@2020f6d"
+  apt_packages: [bash, git]
+  judge_apt_packages: [bash, git]
+  pip_packages:
+    - accelerate==1.12.0
+    - datasets==4.4.1
+    - torch==2.8.0
+    - transformers==4.57.1
+    - vllm==0.11.0
+  judge_pip_packages:
+    - accelerate==1.12.0
+    - datasets==4.4.1
+    - torch==2.8.0
+    - transformers==4.57.1
+    - vllm==0.11.0
+    - zstandard
+  accelerator:
+    provider: modal
+    gpu_types: [H100]
+    agent:
+      instances: 1
+      max_instance_seconds: 18000
+      max_gpu_seconds: 18000
+    verifier:
+      instances: 8
+      max_instance_seconds: 3600
+      max_gpu_seconds: 86400
+  huggingface_models:
+    - repo_id: Qwen/Qwen3-4B
+      revision: 1cfa9a7208912126459214e8b04321603b3df60c
+      target: Qwen3-4B
+  docker:
+    image: ubuntu:24.04
+    # Python closure: agent-base/frontier/task/runtime/requirements-cp312-linux-x86_64.lock (see verifier-gpu/BASE_IMAGE.md)
+    gpu_image: nvidia/cuda:12.8.1-devel-ubuntu24.04@sha256:4b9ed5fa8361736996499f64ecebf25d4ec37ff56e4d11323ccde10aa36e0c43
+environment:
+  cpus: 4
+  memory_mb: 16384
+  storage_mb: 10240
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+    - compaction/
+  max_changed_files: 40
+  max_patch_bytes: 262144
+evaluation:
+  solver_visible_metrics:
+    - dev_qa_accuracy
+    - dev_compaction_seconds
+    - dev_compact_cache_bytes
+  suite_relation: development grades the 12 public articles; final grades those 12 plus 12 hidden articles with the same evaluator and beat-spec rules
+  max_dev_submissions: 8

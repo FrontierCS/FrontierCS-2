@@ -1,0 +1,24 @@
+tag: algorithms
+runtime:
+  language: cpp
+  timeout_seconds: 300
+  environment: "GNU C++ 13, OpenMP, 8 execution threads; retained upstream randHypergraph outputs"
+  apt_packages: [bash, build-essential, git, python3]
+  judge_apt_packages: [bash, build-essential, git, python3, time]
+  docker:
+    image: ubuntu:24.04
+environment:
+  cpus: 8
+  memory_mb: 4096
+  storage_mb: 2048
+  build_timeout_seconds: 180
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths: [apps/hyper/HyperKCore-Efficient.C, apps/hyper/frontier_solution/]
+  max_changed_files: 20
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 100
+  suite_relation: same_distribution
+  solver_visible_metrics: [candidate_runtime_seconds_median, candidate_sequential_runtime_seconds_median]

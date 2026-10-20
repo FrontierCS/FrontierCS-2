@@ -1,0 +1,88 @@
+tag: reinforcement_learning
+runtime:
+  language: python
+  timeout_seconds: 1800
+  environment: Python 3.11 control pod; Modal A100 GPU; RAGEN/veRL PPO with vLLM 0.8.2
+    and an offline Qwen2.5-0.5B-Instruct snapshot
+  apt_packages:
+  - bash
+  - git
+  - python3
+  - python3-pip
+  judge_apt_packages:
+  - bash
+  - git
+  - python3
+  - python3-pip
+  pip_packages:
+  - gym==0.26.2
+  - gym-sokoban==0.0.6
+  - gymnasium[toy-text]==1.1.1
+  - anthropic==0.49.0
+  - together==1.5.8
+  - hydra-core==1.3.2
+  - tensordict==0.6.2
+  - codetiming==1.4.0
+  - torchdata==0.11.0
+  - setuptools==80.9.0
+  - wheel==0.45.1
+  judge_pip_packages:
+  - numpy==1.26.4
+  - pillow==11.1.0
+  - torch==2.6.0
+  - transformers==4.51.3
+  - tqdm==4.67.1
+  - gym==0.26.2
+  - gym-sokoban==0.0.6
+  - gymnasium[toy-text]==1.1.1
+  - anthropic==0.49.0
+  - together==1.5.8
+  - hydra-core==1.3.2
+  - tensordict==0.6.2
+  - codetiming==1.4.0
+  - torchdata==0.11.0
+  - setuptools==80.9.0
+  - wheel==0.45.1
+  docker:
+    image: ubuntu:24.04
+    gpu_image: hiyouga/verl:ngc-th2.6.0-cu120-vllm0.8.2@sha256:41dc66525bd551be71cb8abe9c1dd8e93c6bc1620c335038bc256ac4cbc09beb
+  accelerator:
+    provider: modal
+    gpu_types:
+    - A100-80GB
+    agent:
+      instances: 1
+      max_instance_seconds: 1800
+      max_gpu_seconds: 1800
+    verifier:
+      instances: 1
+      max_instance_seconds: 1800
+      max_gpu_seconds: 7200
+    ssh_session_budgets:
+      agent: 32
+      verifier_train: 12
+      verifier_eval: 4
+  huggingface_models:
+  - repo_id: Qwen/Qwen2.5-0.5B-Instruct
+    revision: 7ae557604adf67be50417f59c2c2f167def9a775
+    target: qwen2.5-0.5b-instruct
+environment:
+  cpus: 3
+  memory_mb: 12288
+  storage_mb: 10240
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  repo_root: /app
+  allow_paths:
+  - ragen/llm_agent/ctx_manager.py
+  - ragen/llm_agent/solver_extensions/
+  max_changed_files: 20
+  max_patch_bytes: 262144
+evaluation:
+  max_dev_submissions: 3
+  suite_relation: same_distribution
+  solver_visible_metrics:
+  - success_rate
+  - average_episodic_reward

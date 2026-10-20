@@ -1,0 +1,64 @@
+{
+  "warmup_iterations": 2,
+  "timed_iterations": 7,
+  "worker_timeout_seconds": 3600,
+  "recall_threshold": 0.99,
+  "data": {
+    "path": "/data/sift.hdf5",
+    "sha256": "sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+    "provenance_status": "original_modal_volume_bytes_verified"
+  },
+  "workloads": [
+    {
+      "id": "sift_q4k_np32",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 32,
+      "Q": 4096,
+      "k": 100,
+      "ordinal": 0,
+      "base_seed": 20260702
+    },
+    {
+      "id": "sift_q4k_np64",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 64,
+      "Q": 4096,
+      "k": 100,
+      "ordinal": 1,
+      "base_seed": 20260702
+    },
+    {
+      "id": "sift_q2k_np64",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 64,
+      "Q": 2048,
+      "k": 100,
+      "ordinal": 2,
+      "base_seed": 20260702
+    },
+    {
+      "id": "sift_q2k_np128",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 128,
+      "Q": 2048,
+      "k": 100,
+      "ordinal": 3,
+      "base_seed": 20260702
+    }
+  ],
+  "distance_check": {
+    "mode": "enforce",
+    "atol": 0.0,
+    "rtol": 1e-06,
+    "status": "user_confirmed_after_six_workload_h100_reference_calibration",
+    "oracle": "Float32 residual ADC on the same bf16-rounded query/centroid/codebook inputs, with naive dsub-then-m reduction; compare valid returned IDs only."
+  }
+}

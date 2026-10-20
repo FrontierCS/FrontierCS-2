@@ -1,0 +1,91 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 17179869184
+  },
+  "display_name": "BBQ bitmap traversal",
+  "family": "frontier-cs-2.0/systems",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 430,
+        "media_type": "application/json",
+        "path": "datasets/eval.json",
+        "source": "task",
+        "version": "sha256:d7ea29bd1ebff3a012bad3e326cc258fdc4db2b4ef6a1f62c007fbb66eed8739"
+      },
+      "train": {
+        "bytes": 437,
+        "media_type": "application/json",
+        "path": "datasets/train.json",
+        "source": "task",
+        "version": "sha256:0032bbab241f6ccbf837a76ca809d468124f85ba653028d4dfed88954ab753f2"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "dev_min_throughput_ops_per_second",
+        "dev_max_latency_picoseconds",
+        "dev_max_clock_period_picoseconds",
+        "dev_min_throughput_ops_per_cycle",
+        "dev_max_latency_cycles",
+        "dev_valid_fraction"
+      ],
+      "suite_relation": "extends"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_scheduling_s2r9_python"
+    },
+    "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
+    "paper": {
+      "title": "BBQ: A Fast and Scalable Integer Priority Queue for Hardware Packet Scheduling",
+      "url": "https://www.usenix.org/system/files/nsdi24-atre.pdf"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "hardware/bbq/generator/bbq_level_lx.py",
+        "hardware/bbq/generator/solver_extensions/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 25165824,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "bbq_packet_scheduling",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 60000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 8388608
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "s2r11_clock-period-r3"
+}

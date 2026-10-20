@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "2507.15856/code",
+  "authentic_execution": {
+    "entrypoint": "main_reconstruction.py",
+    "retained_files": [
+      "main_reconstruction.py",
+      "models/__init__.py",
+      "models/ema.py",
+      "utils/builders.py",
+      "utils/loader.py",
+      "utils/losses.py",
+      "utils/misc.py",
+      "utils/train_utils.py",
+      "utils/distributed.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "models/detok.py",
+      "mode": "stubbed",
+      "symbols": [
+        "mae_random_masking",
+        "forward",
+        "encode"
+      ]
+    },
+    {
+      "path": "models/autoencoder.py",
+      "mode": "stubbed",
+      "symbols": [
+        "forward"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "models/detok.py",
+      "models/autoencoder.py"
+    ],
+    "add_under": [
+      "models/frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "GPU workspace compile adapter; it contains no model logic."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Agent-side GPU adapter invoking the retained upstream training entrypoint with frozen challenge arguments."
+    },
+    {
+      "path": "third_party_notices/LPIPS-LICENSE.txt",
+      "reason": "Public license supplement for the pinned dependency runtime; no scientific implementation."
+    },
+    {
+      "path": "third_party_notices/README.txt",
+      "reason": "Public license supplement for the pinned dependency runtime; no scientific implementation."
+    },
+    {
+      "path": "third_party_notices/TRITON-LICENSE.txt",
+      "reason": "Public license supplement for the pinned dependency runtime; no scientific implementation."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "main_diffusion.py",
+    "demo.ipynb",
+    "README.md",
+    "assets/demo.png",
+    "assets/method.png"
+  ],
+  "minimality_note": "The observed reconstruction import closure is retained. Parallel frontends, documentation, media, checkpoints, data and Git history are omitted. Registry support modules remain because models/__init__.py imports them eagerly."
+}

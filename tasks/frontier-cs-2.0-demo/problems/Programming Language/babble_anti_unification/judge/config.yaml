@@ -1,0 +1,44 @@
+tag: algorithms
+runtime:
+  language: rust
+  timeout_seconds: 600
+  environment: "Rust workspace; submissions target the Rust 1.64 verifier; CPU-only paired DreamCoder benchmark"
+  apt_packages:
+    - build-essential
+    - ca-certificates
+    - git
+    - python3
+  judge_apt_packages:
+    - build-essential
+    - ca-certificates
+    - git
+    - python3
+  docker:
+    image: rust:1.85-bookworm
+    judge_image: rust:1.64-bullseye
+environment:
+  cpus: 2
+  memory_mb: 2048
+  storage_mb: 4096
+  # Harbor waits for the judge's reference calibration during environment
+  # startup, so this must cover one build plus both scored workloads.
+  build_timeout_seconds: 600
+evaluation:
+  max_dev_submissions: 3
+  suite_relation: same_distribution
+  solver_visible_metrics:
+    - compression_ratio
+    - runtime_seconds
+  build_timeout_seconds: 300
+  workload_timeout_seconds: 30
+submission:
+  kind: patch
+  path: /workspace/payload/solution.patch
+  repo_root: /frontier/task/repo
+  allow_empty: false
+  allow_paths:
+    - src/learn.rs
+    - src/dfta.rs
+    - src/learn_extensions/
+  max_changed_files: 20
+  max_patch_bytes: 262144

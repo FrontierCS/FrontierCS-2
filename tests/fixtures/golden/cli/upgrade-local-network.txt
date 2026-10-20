@@ -1,0 +1,7 @@
+usage: frontier_deploy.py upgrade-local-network [-h] --config CONFIG
+                                                --image-receipt IMAGE_RECEIPT
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG
+  --image-receipt IMAGE_RECEIPT

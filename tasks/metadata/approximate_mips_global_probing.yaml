@@ -1,0 +1,27 @@
+id: "approximate_mips_global_probing"
+display_name: "FARGO paper-aligned query core"
+category: "Database"
+summary: "Rebuild FARGO's global multi-probing query core to beat the reference latency at equal recall."
+paper_title: "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing"
+paper_venue: "PVLDB 2023"
+paper_url: "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf"
+agent_cpu_cores: 4
+agent_memory_gib: 4
+agent_disk_gib: 4
+agent_gpu_type: null
+agent_gpu_count: 0
+agent_gpu_seconds: 0
+verifier_cpu_cores: 4
+verifier_memory_gib: 4
+verifier_disk_gib: null
+verifier_gpu_type: null
+verifier_gpu_count: 0
+verifier_gpu_seconds: 0
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 50
+train_wall_seconds: 18000
+eval_timeout_seconds: 900

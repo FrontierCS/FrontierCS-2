@@ -1,0 +1,110 @@
+{
+  "agent": {
+    "cpu_millis": 3000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 10737418240
+  },
+  "display_name": "Learned Transformer Layer Mapping",
+  "family": "frontier-cs-2.0/machine_learning_systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "L4"
+      ],
+      "max_gpu_seconds": 1800,
+      "max_instance_seconds": 900,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 3600
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "L4"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 421,
+        "path": "datasets/eval.json",
+        "version": "sha256:718531453fa54c5453349df0815f67dea61551810a7dceafb2f94fb12a367cf4"
+      },
+      "train": {
+        "bytes": 428,
+        "path": "datasets/train.json",
+        "version": "sha256:b50da37ba5b87391ca738abbd9d51fc769048be0849f31b861cf205c69a06080"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 3,
+      "solver_visible_metrics": [
+        "top1_accuracy_pct",
+        "training_latency_ms",
+        "inference_latency_ms",
+        "candidate_diagnostic"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2503.10622"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "dynamic_tanh.py",
+        "solver_extensions/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 48,
+      "ssh_session_budgets": {
+        "agent": 32,
+        "verifier_eval": 4,
+        "verifier_train": 12
+      }
+    }
+  },
+  "problem_id": "dynamic_tanh",
+  "quota": {
+    "eval_timeout_seconds": 900,
+    "max_train_calls": 3,
+    "max_train_wall_seconds": 2700,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "preflight-9740a08b6f00-beat-spec-v3"
+}

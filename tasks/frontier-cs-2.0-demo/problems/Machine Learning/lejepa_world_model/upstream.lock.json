@@ -1,0 +1,209 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 427,
+      "path": "datasets/eval.json",
+      "version": "sha256:7bb46eefebceab8de1117f003d20813579288e28d2a1bd166c16904ae8508a13"
+    },
+    "train": {
+      "bytes": 434,
+      "path": "datasets/train.json",
+      "version": "sha256:55eef4375c86dddc9337883d339c8155639b9b86911a78e6ec62345ff920722d"
+    }
+  },
+  "file_count": 37,
+  "files": [
+    {
+      "bytes": 2224,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:3a276b343172f9dc8e426bd3801a9cf165e51275da210c47e7eb73bf3780ca4b"
+    },
+    {
+      "bytes": 3712,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:3115988de6f4615dcb6f487b50aa691b1450e586c5d0e35ab7ede3d7ec5337ae"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:9fc959f77195898353af6476c6262688c5deedae49ee07b9d87af6e9893ae4b4"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 1069,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:a8f31ee50823efca8067850a6bd23875273bdbf839881c8779c3f60ca0267eb5"
+    },
+    {
+      "bytes": 21140,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:60daa8d0ddadfa8b438251718bff9b0b71a330f7d7626ce4775341c44ef685a2"
+    },
+    {
+      "bytes": 1143,
+      "path": "agent-base/frontier/task/repo/experiments/configs/2d.yaml",
+      "sha256": "sha256:89be3ac4881dbec89574af4a4ebd085f5a951fa34be76d181b9b313b57b6f0e8"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1420,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/data.py",
+      "sha256": "sha256:450e79e7a7bb52bd10489d7fc1f226f351f5250c24d0825e513412937f791de1"
+    },
+    {
+      "bytes": 4411,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/engine.py",
+      "sha256": "sha256:96c178b96d583b6797367f3e3ddd4d956dd92aff95f0c513ce8e7c6b416cf23e"
+    },
+    {
+      "bytes": 985,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/losses.py",
+      "sha256": "sha256:ad79859b57bfef9aef994dcad3f1e3f543a9d6bd7694e532713a0aff92398f2d"
+    },
+    {
+      "bytes": 2517,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/metrics.py",
+      "sha256": "sha256:11961971fe4ef6e45c95d373de55befe4f64537550f02dec0b25c25ea4cf9257"
+    },
+    {
+      "bytes": 1843,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/mixing.py",
+      "sha256": "sha256:fff1e08f5cfef8121499e6a85318c18559b016691e08319dee1e90e5c861790c"
+    },
+    {
+      "bytes": 1850,
+      "path": "agent-base/frontier/task/repo/experiments/lejepa_id/models.py",
+      "sha256": "sha256:9f6ab75192f150b0d83ebd7d0739ae6ecde3795f82b32ce8750c30124d6757fb"
+    },
+    {
+      "bytes": 11863,
+      "path": "agent-base/frontier/task/repo/experiments/run.py",
+      "sha256": "sha256:cfd2153b14caa49fd994eadc8b84949d1c25583dfabe845af59c65f0a62ca4a9"
+    },
+    {
+      "bytes": 223,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:0bbb43a854216243511337144b031a4262d420bd2d78a67b30724fbe34f8f9db"
+    },
+    {
+      "bytes": 176,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:0645fcaf1e705963c948cbd9fc2b49b2a676b8015e1b39203c7f6f9559e642ab"
+    },
+    {
+      "bytes": 427,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:7bb46eefebceab8de1117f003d20813579288e28d2a1bd166c16904ae8508a13"
+    },
+    {
+      "bytes": 434,
+      "path": "datasets/train.json",
+      "sha256": "sha256:55eef4375c86dddc9337883d339c8155639b9b86911a78e6ec62345ff920722d"
+    },
+    {
+      "bytes": 1069,
+      "path": "judge/LICENSE",
+      "sha256": "sha256:a8f31ee50823efca8067850a6bd23875273bdbf839881c8779c3f60ca0267eb5"
+    },
+    {
+      "bytes": 1755,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:2a09d7947d3737c670b6aa7360b42dda23e958a797fee565cbcc61faf6be0cc4"
+    },
+    {
+      "bytes": 1378,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:b460cd9bebcfe25307272b9666e5c6e26de4d273a38dd3c94a74db881c5d51d3"
+    },
+    {
+      "bytes": 13302,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:503dcc590fa6b473077959edd2066adfc568a5a0d31e6aae079df15313cd54bc"
+    },
+    {
+      "bytes": 205,
+      "path": "judge/candidate-diagnostic.json",
+      "sha256": "sha256:4628bfec65830a0a4d7528a8fbd3b286de92957f052502c88f1efafc7fe9a380"
+    },
+    {
+      "bytes": 1702,
+      "path": "judge/candidate_failure.py",
+      "sha256": "sha256:0d165cefe44abe17697bfaee7712930a642a936438874de52479839e614c6cbb"
+    },
+    {
+      "bytes": 1247,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:d79282ecb2e34eb22c791d140fef7d4d3ac3d325a3065aa5b1ab9a6ac641428e"
+    },
+    {
+      "bytes": 186,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:5e23227aedf7032c025cc34f7f4f73e3922d046f380863ed0158a148f699153e"
+    },
+    {
+      "bytes": 29698,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:d96b008f4f16dfd60b2f6dd7489a9f6048704400252d2f06ec4d7a35ede50582"
+    },
+    {
+      "bytes": 21363,
+      "path": "judge/readme",
+      "sha256": "sha256:39436fbce50a19980156b3e189620568fd7da6766dd8f87e650b20dec668a68e"
+    },
+    {
+      "bytes": 2931,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:a52d543ef306fdc2da861214e9d3511f550d89e90a1722c9fdd35c3ef1265c24"
+    },
+    {
+      "bytes": 13489,
+      "path": "judge/sandbox_runner.py",
+      "sha256": "sha256:02c77e43059336c720ce61bab11b8417c9b8919ad3f1df480f6b0536588cd4c2"
+    },
+    {
+      "bytes": 8551,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:0de9ab9e1561d812bad29d0c1da6a092b3611442ed6e67b822339d0e9aeca54b"
+    },
+    {
+      "bytes": 2531,
+      "path": "policy.json",
+      "sha256": "sha256:5371b96f863be33e7158c0184eee38cfb66137a502c0746cd71c13323cc46141"
+    },
+    {
+      "bytes": 2720,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:d2ef8847aed710a5f7f1a262ba114f8d170a12c5ee91d8eac0f80398e149a7b0"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 33930,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:8a65d96e7bbf23012e20d3558ab9858374f4c55bc50d9b8f41470d87bd91abf5"
+    },
+    {
+      "bytes": 355,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:c0ba6a56a96cf031cd10bbf500a04946ee95c31b2b727eb554f948ec10234f25"
+    }
+  ],
+  "problem_id": "lejepa_world_model",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:d96b008f4f16dfd60b2f6dd7489a9f6048704400252d2f06ec4d7a35ede50582",
+    "statement_sha256": "sha256:39436fbce50a19980156b3e189620568fd7da6766dd8f87e650b20dec668a68e",
+    "task_dir": "lejepa_world_model"
+  }
+}

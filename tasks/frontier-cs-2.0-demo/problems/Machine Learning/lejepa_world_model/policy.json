@@ -1,0 +1,89 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Latent Objective Recovery",
+  "family": "frontier-cs-2.0/machine_learning",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 427,
+        "path": "datasets/eval.json",
+        "version": "sha256:7bb46eefebceab8de1117f003d20813579288e28d2a1bd166c16904ae8508a13"
+      },
+      "train": {
+        "bytes": 434,
+        "path": "datasets/train.json",
+        "version": "sha256:55eef4375c86dddc9337883d339c8155639b9b86911a78e6ec62345ff920722d"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 8,
+      "solver_visible_metrics": [
+        "r2_zh",
+        "r2_hz",
+        "orth_err_normalized",
+        "epsilon",
+        "delta",
+        "procrustes_mse",
+        "candidate_diagnostic"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "a77b75e928acc1eef87107639b42bddc10c97f8c",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2605.26379"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "artifact_commit": "de7503f1b2291ba1e9fc03d9c433180794803440",
+      "id": "2605.26379",
+      "title": "When Does LeJEPA Learn a World Model?"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "experiments/lejepa_id/losses.py",
+        "experiments/lejepa_id/frontier_solution/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "lejepa_world_model",
+  "quota": {
+    "eval_timeout_seconds": 400,
+    "max_train_calls": 8,
+    "max_train_wall_seconds": 3200,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 2147483648
+  },
+  "version": "r002-preview-5h-beat-spec-v2-r2"
+}

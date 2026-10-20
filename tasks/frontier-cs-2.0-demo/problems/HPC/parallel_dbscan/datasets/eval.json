@@ -1,0 +1,7 @@
+{
+  "schema": "parallel-dbscan-dataset/v1",
+  "mode": "eval",
+  "source_commit": "6d415b1c92ebb6bcb615c9104ad05bca276bdc26",
+  "source_partition": "public_plus_hidden",
+  "problem_id": "parallel_dbscan"
+}

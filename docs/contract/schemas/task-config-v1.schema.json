@@ -1,0 +1,295 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontiercs.dev/contracts/task-config-v1.schema.json",
+  "title": "FrontierCS2 Task config v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_version_id",
+    "images",
+    "agent",
+    "quota",
+    "submission",
+    "datasets",
+    "verifier"
+  ],
+  "properties": {
+    "additional_keys": { "type": "array", "items": { "$ref": "#/$defs/additional_key" } },
+    "schema_version": { "const": "frontier.task-config/v1" },
+    "task_version_id": { "type": "string", "pattern": "^taskver_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_cpu_base", "verifier"],
+      "properties": {
+        "agent_cpu_base": { "$ref": "#/$defs/image" },
+        "gpu_sidecars": {
+          "type": "object",
+          "maxProperties": 250,
+          "propertyNames": { "pattern": "^(?!main$)[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$" },
+          "additionalProperties": { "$ref": "#/$defs/gpu_sidecar_profile" }
+        },
+        "gpu_parent_resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "agent": { "$ref": "#/$defs/gpu_host_resources" },
+            "verifier": { "$ref": "#/$defs/gpu_host_resources" }
+          }
+        },
+        "agent_gpu": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tag", "digest"],
+          "properties": {
+            "tag": { "type": "string", "minLength": 1 },
+            "digest": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "verifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reference", "digest"],
+          "properties": {
+            "reference": { "type": "string", "minLength": 1 },
+            "gpu_tag": { "type": "string", "minLength": 1 },
+            "gpu_digest": { "$ref": "#/$defs/sha256" },
+            "digest": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu_millis", "memory_bytes", "workspace_bytes"],
+      "properties": {
+        "cpu_millis": { "type": "integer", "minimum": 1, "maximum": 64000 },
+        "memory_bytes": { "type": "integer", "minimum": 1, "maximum": 549755813888 },
+        "workspace_bytes": { "type": "integer", "minimum": 1, "maximum": 1099511627776 }
+      }
+    },
+    "quota": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_time_seconds", "agent_gpu", "verifier"],
+      "properties": {
+        "wall_time_seconds": { "type": "integer", "minimum": 1, "maximum": 604800 },
+        "agent_gpu": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["allowed_types", "max_instances", "max_gpu_seconds", "max_instance_seconds"],
+          "properties": {
+            "allowed_types": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "max_instances": { "type": "integer", "minimum": 0 },
+            "max_gpu_seconds": { "type": "integer", "minimum": 0 },
+            "max_instance_seconds": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "verifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_train_calls", "max_train_wall_seconds", "max_gpu_instances", "max_gpu_seconds", "eval_timeout_seconds"],
+          "properties": {
+            "max_train_calls": { "type": "integer", "minimum": 0 },
+            "max_train_wall_seconds": { "type": "integer", "minimum": 0 },
+            "max_gpu_instances": { "type": "integer", "minimum": 0 },
+            "max_gpu_seconds": { "type": "integer", "minimum": 0 },
+            "eval_timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 604800 }
+          }
+        }
+      }
+    },
+    "submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_bytes", "media_type", "required_sha256", "entrypoint"],
+      "properties": {
+        "max_bytes": { "type": "integer", "minimum": 1 },
+        "media_type": { "const": "application/x-tar" },
+        "required_sha256": { "const": true },
+        "entrypoint": { "type": "string", "minLength": 1, "not": { "pattern": "^/" } }
+      }
+    },
+    "datasets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["train", "eval"],
+      "properties": {
+        "train": { "$ref": "#/$defs/dataset" },
+        "eval": { "$ref": "#/$defs/dataset" }
+      }
+    },
+    "verifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "result_path", "evidence_path", "cpu_millis", "memory_bytes"],
+      "properties": {
+        "command": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "result_path": { "type": "string", "pattern": "^/frontier/output/.+" },
+        "evidence_path": { "type": "string", "pattern": "^/frontier/output/.+" },
+        "cpu_millis": { "type": "integer", "minimum": 1, "maximum": 64000 },
+        "memory_bytes": { "type": "integer", "minimum": 1, "maximum": 549755813888 },
+        "workspace_bytes": { "type": "integer", "minimum": 1, "maximum": 1099511627776 },
+        "max_evidence_bytes": { "type": "integer", "minimum": 1, "maximum": 67108864, "default": 8388608 }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowed_domains": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/publicDomain" }
+        },
+        "audit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_model_sessions",
+            "max_ssh_sessions",
+            "max_model_request_bytes",
+            "max_model_response_bytes",
+            "max_ssh_bytes_per_direction",
+            "max_bundle_bytes"
+          ],
+          "properties": {
+            "max_model_sessions": { "type": "integer", "minimum": 1, "maximum": 2048 },
+            "max_ssh_sessions": { "type": "integer", "minimum": 1, "maximum": 2048 },
+            "ssh_session_budgets": {
+              "type": "object", "additionalProperties": false,
+              "required": ["agent", "verifier_train", "verifier_eval"],
+              "properties": {
+                "agent": { "type": "integer", "minimum": 0, "maximum": 2048 },
+                "verifier_train": { "type": "integer", "minimum": 0, "maximum": 2048 },
+                "verifier_eval": { "type": "integer", "minimum": 0, "maximum": 2048 }
+              },
+              "$comment": "Opt-in disjoint SSH pools. Rust/publisher require their sum to equal max_ssh_sessions and positive budgets for enabled GPU roles. Omission preserves legacy shared accounting."
+            },
+            "max_model_request_bytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+            "max_model_response_bytes": { "type": "integer", "minimum": 1, "maximum": 67108864 },
+            "max_ssh_bytes_per_direction": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+            "max_bundle_bytes": { "type": "integer", "minimum": 25165825, "maximum": 34359738368 }
+          },
+          "default": {
+            "max_model_sessions": 256,
+            "max_ssh_sessions": 32,
+            "max_model_request_bytes": 1048576,
+            "max_model_response_bytes": 8388608,
+            "max_ssh_bytes_per_direction": 8388608,
+            "max_bundle_bytes": 209715200
+          },
+          "$comment": "Rust validation additionally requires model+SSH sessions <=4096 and a bundle large enough for verifier evidence, archive reserve, one maximum model exchange, one maximum SSH plaintext gateway channel, and its bounded request metadata when GPU is enabled."
+        }
+      },
+      "default": {}
+    }
+  },
+  "$defs": {
+    "additional_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "model_aliases", "budget_usd", "envs"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,62}$", "not": { "pattern": "[\\r\\n]" } },
+        "model_aliases": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z](?:[a-z0-9._-]*[a-z0-9])?$", "not": { "pattern": "[\\r\\n]" } }
+        },
+        "budget_usd": { "type": "number", "exclusiveMinimum": 0, "maximum": 18446744073709.55, "multipleOf": 0.000001 },
+        "envs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["agent", "verifier-train", "verifier-eval"] } }
+      }
+    },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "gpu_host_resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu_millis", "memory_bytes"],
+      "properties": {
+        "cpu_millis": { "type": "integer", "minimum": 1, "maximum": 64000 },
+        "memory_bytes": { "type": "integer", "minimum": 1048576, "maximum": 549755813888, "multipleOf": 1048576 }
+      }
+    },
+    "gpu_sidecar_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "args", "workdir", "phases"],
+      "properties": {
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["tag", "digest"],
+          "properties": {
+            "tag": { "type": "string", "minLength": 1 },
+            "digest": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "args": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "prefixItems": [{ "type": "string", "minLength": 1, "maxLength": 32768, "pattern": "^[^\\u0000]*$" }],
+          "items": { "type": "string", "maxLength": 32768, "pattern": "^[^\\u0000]*$" }
+        },
+        "workdir": { "type": "string", "maxLength": 32768, "pattern": "^/[^\\u0000]*$" },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["agent", "train", "eval"] }
+        },
+        "attestation_key": { "type": "boolean" }
+      }
+    },
+    "publicDomain": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 253,
+      "pattern": "^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+      "allOf": [
+        {
+          "not": {
+            "pattern": "^[0-9]+(?:\\.[0-9]+)+$"
+          }
+        },
+        {
+          "not": {
+            "pattern": "(?:^|\\.)(?:local|localhost|internal|home|lan|test|invalid|example)$"
+          }
+        }
+      ]
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os", "architecture"],
+      "properties": {
+        "os": { "const": "linux" },
+        "architecture": { "const": "amd64" }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "digest", "platform"],
+      "properties": {
+        "reference": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/sha256" },
+        "platform": { "$ref": "#/$defs/platform" }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uri", "version"],
+      "properties": {
+        "uri": { "type": "string", "pattern": "^s3://[^/]+/.+[^/]$" },
+        "version": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  },
+  "$comment": "Rust validation enforces cross-field image/quota, distinct dataset URI, and distinct output path invariants. Dataset version is the exact object-body SHA-256 returned to the Verifier as X-Content-SHA256."
+}

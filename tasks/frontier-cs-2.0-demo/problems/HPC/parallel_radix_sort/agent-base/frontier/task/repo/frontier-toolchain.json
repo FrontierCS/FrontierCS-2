@@ -1,0 +1,71 @@
+{
+  "toolchain": "GCC 7.5 with Cilk Plus",
+  "archive_sha256": "13f10181b8e4a26f9e452a02ddbbf77620929b69f9d3eac09f3b3a27adae73b3",
+  "packages": [
+    {
+      "package": "cpp-7",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/cpp-7_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "54ef20b753876e38ac478f05170ef1c4fc856db12b1dfaa0ffb14e220e527d61",
+      "size": 8591092
+    },
+    {
+      "package": "g++-7",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/g++-7_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "1ba415a38d09c2b3c16c063372f4cfb381e6bcd2cc919468953e28d785e96f04",
+      "size": 9697404
+    },
+    {
+      "package": "gcc-7",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/gcc-7_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "e325ed51b24372d0d655e0887922778932b11f7948ec37dbd4ff357688081b40",
+      "size": 9381188
+    },
+    {
+      "package": "gcc-7-base",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/gcc-7-base_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "6c30e2237e5a7c7264d24b2130b160271232a7748325a4659af19f4d861e9a23",
+      "size": 18268
+    },
+    {
+      "package": "libcilkrts5",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/libcilkrts5_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "1a744e3bbd1a3e18ad49cbb7c5b7670dae494a0748aecff4bc2fc11e7a4f44f6",
+      "size": 42464
+    },
+    {
+      "package": "libgcc-7-dev",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/libgcc-7-dev_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "65b9b7817a6d103bd737fd35be5e9d462ccb9fa23076e0ae02e662404ee26694",
+      "size": 2378308
+    },
+    {
+      "package": "libisl19",
+      "version": "0.19-1",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/i/isl/libisl19_0.19-1_amd64.deb",
+      "sha256": "07a0827aba14140b1833ca19ced3f939b2d075646094926d43678a0d19cc942f",
+      "size": 551452
+    },
+    {
+      "package": "libstdc++-7-dev",
+      "version": "7.5.0-3ubuntu1~18.04",
+      "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gcc-7/libstdc++-7-dev_7.5.0-3ubuntu1~18.04_amd64.deb",
+      "sha256": "d7402d9fb25ccde6c7e42a33ac64ea58663b711d47f073e083e2286f355b5a51",
+      "size": 1471256
+    }
+  ],
+  "license_notices": "Archive gcc7/usr/share/doc includes upstream package copyright/license notices.",
+  "runtime_dependencies": [
+    "build-essential",
+    "libgmp10",
+    "libmpfr6",
+    "libmpc3",
+    "zlib1g"
+  ],
+  "runtime_base": "ubuntu:24.04"
+}

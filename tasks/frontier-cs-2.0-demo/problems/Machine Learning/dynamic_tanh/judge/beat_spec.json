@@ -1,0 +1,65 @@
+{
+  "unit": "one fixed hidden GPU workload: a ViT-Base training configuration with a fixed real-image training shard, validation shard, seed, and fixed-size timed forward-backward batch sequence whose input values are drawn anew for every repeat, executed on the Driver-owned Verifier NVIDIA GPU runner",
+  "metrics": [
+    {
+      "name": "top1_accuracy_pct",
+      "means": "the candidate model's top-1 classification accuracy, in percentage points, on that workload's validation shard after the workload's fixed bounded training run",
+      "source": "upstream/engine.py::evaluate (the acc1 value computed with timm.utils.accuracy and returned to upstream/main.py); the paper reports top-1 classification accuracy in Section 5",
+      "better": "higher",
+      "clears_when": "candidate_top1_accuracy_pct[w] >= reference_top1_accuracy_pct[w]",
+      "tolerance": "zero; no top-1 accuracy regression permitted"
+    },
+    {
+      "name": "training_latency_ms",
+      "means": "the median CUDA-synchronized elapsed milliseconds for the workload's fixed timed block of ViT-Base forward, cross-entropy, and backward passes, after untimed warmup and using identical batches and settings for candidate and reference within each repeat; every warmup and timed repeat uses new input values derived from the workload's validation photographs",
+      "source": "upstream/other_tasks/Efficiency/benchmark.py (the synchronized timed forward-cross_entropy-backward block at lines 45-65); the paper reports training latency in Appendix C",
+      "better": "lower",
+      "clears_when": "candidate_training_latency_ms[w] < reference_training_latency_ms[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "inference_latency_ms",
+      "means": "the median CUDA-synchronized elapsed milliseconds for the workload's fixed forward-only inference block (eval mode, no gradient, fp16 autocast) of the trained ViT-Base model on batches of the same shape built in the same way, new for every repeat and identical for candidate and reference within it, after three untimed warmups, over eleven blocks paired and interleaved between candidate and reference",
+      "source": "judge/evaluator.py::_inference_block and _paired_inference_latency (beat spec v3); the paper's efficiency analysis reports inference latency together with training latency for DyT versus normalization layers (Zhu et al., Transformers without Normalization, CVPR 2025, efficiency table in the analysis section; upstream other_tasks/Efficiency/benchmark.py times both)",
+      "better": "lower",
+      "clears_when": "candidate_inference_latency_ms[w] < reference_inference_latency_ms[w]",
+      "tolerance": "none; strict, the same paired protocol as training_latency_ms"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff every workload w has candidate_top1_accuracy_pct[w] >= reference_top1_accuracy_pct[w] AND candidate_training_latency_ms[w] < reference_training_latency_ms[w] AND candidate_inference_latency_ms[w] < reference_inference_latency_ms[w], and all correctness guards pass; otherwise 0.",
+  "solver_feedback": [
+    {
+      "name": "top1_accuracy_pct",
+      "means": "Arithmetic mean of the candidate's own absolute top1_accuracy_pct across development workloads; one finite scalar, with no private IDs or rows.",
+      "reveals_reference": "no; candidate-only development scalar without reference values, comparisons, ratios or identities; final metrics withheld"
+    },
+    {
+      "name": "training_latency_ms",
+      "means": "Arithmetic mean of the candidate's own absolute training_latency_ms across development workloads; one finite scalar, with no private IDs or rows.",
+      "reveals_reference": "no; candidate-only development scalar without reference values, comparisons, ratios or identities; final metrics withheld"
+    },
+    {
+      "name": "inference_latency_ms",
+      "means": "Arithmetic mean of the candidate's own absolute inference_latency_ms across development workloads; one finite scalar, with no private IDs or rows.",
+      "reveals_reference": "no; candidate-only development scalar without reference values, comparisons, ratios or identities; final metrics withheld"
+    },
+    {
+      "name": "candidate_diagnostic",
+      "means": "Present only when a development submission is rejected as invalid (scored zero), in place of the measurements: one object from a fixed table with the stage of the rejection (patch_policy, semantic_validation, model_workload, timed_path) and, for the timed-path validation, the block (training or inference) and the first failing quantity (model output, loss, a gradient group, a missing or wrong-shape result, nonfinite values that do not match), plus a fixed sentence saying the same; no number, threshold, workload identity or repeat position.",
+      "reveals_reference": "no; a categorical fact about the candidate's own rejection built from a fixed table, without reference values, comparisons, ratios or identities; final responses never include it"
+    }
+  ],
+  "withheld": [
+    "all_final_metrics",
+    "beats_reference",
+    "margin",
+    "per_workload_beats_reference",
+    "per_workload_metrics",
+    "private_workload_ids",
+    "reference_score",
+    "reference_top1_accuracy_pct",
+    "reference_training_latency_ms"
+  ],
+  "statement_sentences": "A separate strict criterion requires non-regressing top-1 accuracy and strictly lower synchronized training latency on every graded workload, with all correctness checks passing. The correctness checks include the outputs, loss and parameter gradients the candidate produces under the timed conditions: every warmup and timed repeat of the two latency protocols uses new input values, and every such call is compared with the trusted implementation holding the same trained state. Train feedback contains only scalar candidate metrics and aggregate workload pass/fail percentages. Reference measurements and private workload rows are withheld; final metrics are never solver-visible. Beat spec v3 also requires the candidate's median forward-only inference latency to be strictly lower than the reference's on every graded workload.",
+  "comments": "Explicit supervisor correction before any Evaluation: the task preserves method semantics, so requiring strictly improved accuracy excludes equivalent faster implementations. Accuracy now uses >= with zero tolerance; latency retains < and all-workload conjunction. Timing noise remains uncalibrated and requires paired measurements before genuine trials. Use multiple genuinely labeled, image-disjoint dev/final workloads through upstream main.py; see AUTHORING_BRIEF.md. Never expose private IDs/rows in feedback. Beat spec v3 (2026-10-08): 3/7 formal model runs cleared earlier versions (0/3 on the latest). The paper reports DyT's efficiency as both inference and training latency, but the verdict measured training latency only, so a replacement could be slower at inference, where DyT's elementwise form matters most, and still pass. v3 keeps both metrics, their rules, the three workloads per suite and the continuous score (training latency only, unchanged), and adds inference_latency_ms with the same paired protocol (3 warmups, 11 interleaved blocks, CUDA events) on the trained models and the same batch. Not GPU-validated: L4 inference-block noise and the added seconds are unmeasured. ESTIMATE of the added work: under 3 s per verification (basis: 84 forward-only passes over the three workloads; recorded L4 training-step latency about 30 ms). Limits are unchanged (900 s); two-suite formal runs recorded train verifications of 43-678 s from submission to feedback, so the existing 900 s limit has little slack in the slowest recorded case. The platform reference qualification must confirm the timings. Timed-path validation (2026-10-12): the fp32 guards call the model with an input that requires gradients and without autocast, which a guarded fast path can route to a different code path than the timed blocks, and the timed repeats reused one batch, so correctly computed results could be kept from one repeat to the next. Every warmup and timed repeat of both paired protocols now draws a new batch (the workload's batch size; a random selection of its ten validation photographs, circularly shifted, optionally flipped, plus Gaussian noise of 0.05; random targets; generator seeded from the operating system), identical for candidate and reference within the repeat. After both timing windows of a repeat have closed, an oracle (reference implementation, candidate state) runs the same block function on that batch and the candidate's in-window logits, loss and parameter gradients are compared with it. Workload count, gate, score, batch shape, repeat counts, pairing order and limits are unchanged; the timed input values are no longer the first validation photographs. Parameter-only precomputation still amortises across repeats because no optimizer step is taken; that is legitimate. Outputs and loss keep the tolerance 1e-2 relative plus 1e-4 per element (on the L4 an independent all-fp16 formulation stayed within 0.18 of it on all six workloads). Gradient validation (2026-10-12, second revision): the first gradient bounds compared the candidate with the reference's own fp16 gradient (3e-2 joint) and rejected that honest all-fp16 formulation on the L4 by up to 15.5x; on the trained states most replacement-site inputs lie in the flat part of tanh and the unscaled fp16 backward is near half-precision resolution, so honest arrangements differ by tens of percent on some repeats. Each training repeat yields trusted gradients from the oracle and the candidate's gradient must be within floor + 3 x spread of the nearest, jointly and per group (site alpha, weight, bias; other parameters). L4 calibration 2026-10-12 (six trained workloads, 14 repeats, trusted set: reference under autocast, reference with all-fp16 sites, fp32): all nine attacks met the rejection rule on every workload and the fp16 noise proved heavy-tailed (joint spread 0.1-1% on most repeats, 10-15% on three of 84, concentrated in the first block and the patch embedding); one honest variant, a fused fp16 form, reached 0.696 of the bound on the largest-spread repeat, 2.1 spreads from the nearest trusted gradient, against a required margin of 0.67. Decision: not a larger factor (4.25 would be needed, fitted to one outlier, and leaves the weakest attack at the rule's minimum) but a better estimate of the noise: the fused all-fp16 form joins the trusted set (four trusted gradients); factor 3 and the floors (0.02 joint and other, 0.10 alpha, 0.05 weight and bias) stay at their pre-calibration values, and the honest margin required by the rule is now 0.5. This was decided after seeing that one run; it must be confirmed by two further runs of task_tests/dynamic_tanh/calibrate_timed_path.py on the L4 (new input draws, two additional held-out honest variants) before publication. ESTIMATE of the added work: about 11-14 s per verification (per training repeat four oracle blocks, one of them fp32, and one comparison). See docs/task-authoring/dynamic_tanh/timed-path-validation.md."
+}

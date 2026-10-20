@@ -1,0 +1,72 @@
+{
+  "unit": "one unchanged DBSCAN workload with two warmups and three fresh timed inputs on one H100; from beat spec v3 final adds two hidden strict-only workloads (200,000 points; and a min_samples 20 regime with noise points)",
+  "metrics": [
+    {
+      "name": "dbscan_latency_ms",
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "means": "median synchronized H100 call latency across the three timed repetitions",
+      "tolerance": "strict improvement; equality fails",
+      "source": "judge/evaluator.py"
+    },
+    {
+      "name": "adjusted_rand_index",
+      "better": "higher",
+      "clears_when": "candidate >= reference and candidate >= 0.99",
+      "means": "minimum over timed iterations of permutation-invariant ARI against the frozen naive labels on identical inputs",
+      "tolerance": "zero reference non-inferiority tolerance; original 0.99 correctness floor on every iteration",
+      "source": "judge/evaluator.py"
+    },
+    {
+      "name": "noise_mismatch_fraction",
+      "better": "lower",
+      "clears_when": "candidate <= reference",
+      "means": "maximum over timed iterations of the fraction whose noise marker differs from the frozen naive output",
+      "tolerance": "zero reference non-inferiority tolerance; if reference is zero candidate must be zero",
+      "source": "judge/evaluator.py"
+    }
+  ],
+  "beats_reference": "every required comparison on every selected workload, two train or all six final (four original plus two v3 strict-only workloads); an optimized reference that misses the 0.99 ARI gate on any timed input is an evaluator error",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "geomean_speedup",
+      "reveals_reference": "no: only candidate aggregates or speedup over the public naive baseline; optimized reference values and workload identities are withheld",
+      "means": "independent paired median speedup over the naive baseline"
+    },
+    {
+      "name": "dbscan_latency_ms",
+      "reveals_reference": "no: only candidate aggregates or speedup over the public naive baseline; optimized reference values and workload identities are withheld",
+      "means": "independently sorted candidate workload aggregates without identities"
+    },
+    {
+      "name": "adjusted_rand_index",
+      "reveals_reference": "no: only candidate aggregates or speedup over the public naive baseline; optimized reference values and workload identities are withheld",
+      "means": "independently sorted candidate workload aggregates without identities"
+    },
+    {
+      "name": "noise_mismatch_fraction",
+      "reveals_reference": "no: only candidate aggregates or speedup over the public naive baseline; optimized reference values and workload identities are withheld",
+      "means": "independently sorted candidate workload aggregates without identities"
+    }
+  ],
+  "progress_feedback": {
+    "name": "beat_spec_progress",
+    "granularity": "one half of train; one sixth of private final",
+    "means": "aggregate per-metric pass counts across the selected suite",
+    "reveals_reference": "no"
+  },
+  "withheld": [
+    "reference measurements",
+    "workload identities attached to measurements",
+    "per-workload decisions",
+    "beats_reference",
+    "reference_score",
+    "margin"
+  ],
+  "calibration_status": "user_reviewed_pending_h100_validation",
+  "statement_sentences": "Continuous score depends only on paired speedup over the frozen naive baseline on the original workloads and the original per-iteration ARI correctness gate. Every workload, including the hidden strict-only ones, must strictly improve median reference latency, match or improve minimum timed reference ARI while every ARI is at least 0.99, and match or improve maximum timed reference noise mismatch. Train returns candidate measurements and aggregate comparison progress; final verdicts and reference measurements remain private.",
+  "comments": "Beat spec v3 (2026-10-08): 3/7 formal model runs (1/3 on the latest version) cleared v2. The v2 suite has 20,000-50,000 points, no noise points (measured with the frozen naive on CPU: 0 noise in all four shapes) and min_samples 5, so the noise-mismatch comparison is vacuous and an O(N^2) brute-force kernel faces no scale pressure. v3 keeps all metrics, rules, workloads and the continuous score (still over the original four), and adds two hidden final-only strict workloads: w4 with 200,000 points (D 16, eps 0.5, min_samples 20; about 16% non-core points by a sampled density estimate) and w5 (20,000 points, D 16, eps 0.6, min_samples 20; the frozen naive gives 422 noise points and 8 clusters). An optimized reference that misses the 0.99 ARI gate now raises an evaluator error instead of setting the bar and zeroing the reference score. Measured 2026-10-11 on one Modal H100 80 GB (main's published verifier-gpu image with this source's judge and repo laid over it): only the new hidden shapes, one worker each; this is a precheck, not a platform reference qualification. Frozen reference against the frozen naive: w4 ARI 0.99983-0.99994 with noise mismatch 5e-5 to 1.4e-4 (8 clusters, 1,885-2,073 noise points), w5 ARI 0.99987-0.99993 with noise mismatch 5e-5 to 1e-4 (8 clusters, 354-419 noise points), so the 0.99 reference gate holds on both. The naive takes 44-47 s per call on w4 (worker 235 s, peak 23 GB) and about 0.42 s on w5; the reference takes about 0.1 s on w4 and 4 ms on w5, with one cold timed sample near 0.3 s on each. The six-workload final is therefore about 370 s (recorded four-workload final 85 s plus the measured workers) against the unchanged 2,400 s limit. A full six-workload final with a candidate has not been run."
+}

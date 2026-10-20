@@ -1,0 +1,46 @@
+#!/bin/sh
+# The bootstrap seed uses ordinary host tools; user arguments belong to Python.
+set -eu
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
+# shellcheck source=scripts/bootstrap-uv.sh
+. "$root/scripts/bootstrap-uv.sh"
+uv=$(bootstrap_uv "$root" python)
+cache=${FRONTIER_TOOL_CACHE:-${XDG_CACHE_HOME:-"$HOME/.cache"}/frontier-preview-tools}
+offline=false
+[ "${FRONTIER_BOOTSTRAP_OFFLINE-0}" != 1 ] || offline=true
+python_identity=$(bootstrap_checksum "$root/config/python-downloads.json")
+# Keep selection and dependency-source overrides inside bootstrap subprocesses.
+# Preserve proxy/certificate settings and uv's ordinary download cache locations.
+managed_uv() (
+    bootstrap_uv_sanitize
+    export UV_PROJECT_ENVIRONMENT="$root/.tooling/venv"
+    export UV_PYTHON_DOWNLOADS_JSON_URL="$root/config/python-downloads.json"
+    # Metadata identity prevents another same-patch Python build from satisfying
+    # the managed interpreter request.
+    export UV_PYTHON_INSTALL_DIR="$cache/python/$python_identity"
+    export UV_PYTHON_INSTALL_BIN=0 UV_NO_PROGRESS=1 UV_OFFLINE="$offline"
+    "$uv" "$@"
+)
+python_version=$(cat "$root/.python-version")
+managed_uv --no-config python install --no-bin --quiet "$python_version"
+python_location=$(managed_uv --no-config python find --managed-python --no-project --system "$python_version")
+export FRONTIER_UV="$uv"
+export FRONTIER_PYTHON_BASE="${python_location%/bin/*}"
+managed_uv --no-config sync --locked --managed-python --python "$python_location" \
+    --project "$root" --no-build --quiet
+
+# These two variables can redirect CPython's executable or standard library.
+# Other Python flags, PYTHONPATH (including sitecustomize), and caller settings
+# retain their normal meaning in the final interpreter and its children.
+unset PYTHONHOME __PYVENV_LAUNCHER__
+"$root/.tooling/venv/bin/python" -I -B -c '
+from pathlib import Path
+import sys
+expected, base = sys.argv[1:]
+if ".".join(map(str, sys.version_info[:3])) != expected:
+    raise SystemExit(f"python: expected managed Python {expected}; rerun ./python")
+if Path(sys.base_prefix).resolve() != Path(base).resolve():
+    raise SystemExit("python: virtual environment uses a different Python build; remove .tooling/venv and rerun ./python")
+' "$python_version" "$FRONTIER_PYTHON_BASE"
+export PATH="$root/.tooling/venv/bin:$PATH"
+exec "$root/.tooling/venv/bin/python" "$@"

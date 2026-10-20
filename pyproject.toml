@@ -1,0 +1,37 @@
+[project]
+name = "frontiercs-2-tooling"
+version = "0.0.0"
+description = "FrontierCS-2 deployment and task tooling"
+requires-python = "==3.13.*"
+dependencies = [
+    "jsonschema>=4.23,<5",
+    "pytest>=8,<10",
+    "zstandard>=0.23,<1",
+]
+
+[dependency-groups]
+dev = ["ruff==0.16.10", "PyYAML==6.0.3"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+include = ["scripts/**/*.py", "tests/**/*.py"]
+extend-exclude = ["tasks", "tests/fixtures"]
+cache-dir = ".tooling/ruff"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Compatibility entrypoints deliberately re-export their imported names.
+"scripts/frontier_deploy.py" = ["F401"]
+"scripts/reference_candidates.py" = ["F401"]
+"scripts/reference_parity.py" = ["F401"]
+"scripts/task_baselines.py" = ["F401"]
+# Native probes pass these imports to compiled task functions through globals().
+"scripts/join_tree_contract.py" = ["F401"]
+# Bytecode writes are disabled before importing task modules.
+"scripts/import_task.py" = ["E402"]
+# Tests select local script modules before importing them.
+"tests/*.py" = ["E402"]

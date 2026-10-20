@@ -1,0 +1,161 @@
+diff --git a/estimator/operations.go b/estimator/operations.go
+--- a/estimator/operations.go
++++ b/estimator/operations.go
+@@ -246,11 +246,72 @@
+ }
+ 
+ func (e Estimator) Mul(op0 *Element, op1 rlwe.Operand, op2 *Element) (err error) {
+-	panic("implement Mul")
++	// Compute into fresh storage so either input may alias the output.
++	result := e.NewElement(nil, op0.Degree, op0.Level, op0.Scale)
++	mul := bignum.NewComplexMultiplier().Mul
++	tmp := bignum.NewComplex()
++	switch rhs := op1.(type) {
++	case *Element:
++		if op0.Degree < 0 || rhs.Degree < 0 || op0.Degree+rhs.Degree > 2 {
++			return fmt.Errorf("product degree exceeds representation")
++		}
++		result.Degree = op0.Degree + rhs.Degree
++		result.Level = min(op0.Level, rhs.Level)
++		result.Scale = op0.Scale.Mul(rhs.Scale)
++		for i := 0; i <= op0.Degree; i++ {
++			for j := 0; j <= rhs.Degree; j++ {
++				for k := range result.Value[i+j] {
++					mul(op0.Value[i][k], rhs.Value[j][k], tmp)
++					result.Value[i+j][k].Add(result.Value[i+j][k], tmp)
++				}
++			}
++		}
++	case complex128, float64, int, int64, uint, uint64, *big.Int, *big.Float, *bignum.Complex:
++		factor := bignum.ToComplex(rhs, prec)
++		// Integral Gaussian scalars need no extra encoding scale. Fractional
++		// scalars use the current modulus so the retained Rescale callers work.
++		if !factor[0].IsInt() || !factor[1].IsInt() {
++			q := &e.Q[op0.Level]
++			factor[0].Mul(factor[0], q)
++			factor[1].Mul(factor[1], q)
++			Round(factor[0])
++			Round(factor[1])
++			result.Scale = op0.Scale.Mul(rlwe.NewScale(q))
++		}
++		for i := 0; i <= op0.Degree; i++ {
++			for k := range result.Value[i] {
++				mul(op0.Value[i][k], factor, result.Value[i][k])
++			}
++		}
++	case []*bignum.Complex:
++		if len(rhs) > e.MaxSlots() {
++			return fmt.Errorf("too many slots")
++		}
++		q := &e.Q[op0.Level]
++		result.Scale = op0.Scale.Mul(rlwe.NewScale(q))
++		for k, value := range rhs {
++			factor := bignum.ToComplex(value, prec)
++			factor[0].Mul(factor[0], q)
++			factor[1].Mul(factor[1], q)
++			Round(factor[0])
++			Round(factor[1])
++			for i := 0; i <= op0.Degree; i++ {
++				mul(op0.Value[i][k], factor, result.Value[i][k])
++			}
++		}
++	default:
++		return fmt.Errorf("unsupported operand %T", op1)
++	}
++	*op2 = *result
++	return nil
+ }
+ 
+ func (e Estimator) MulThenAdd(op0 *Element, op1 rlwe.Operand, op2 *Element) (err error) {
+-	panic("implement MulThenAdd")
++	product := op0.CopyNew()
++	if err := e.Mul(op0, op1, product); err != nil {
++		return err
++	}
++	return e.Add(op2, product, op2)
+ }
+ 
+ func (e Estimator) ScaleUp(op0 *Element, scale rlwe.Scale) (err error) {
+@@ -380,7 +441,22 @@
+ }
+ 
+ func (e Estimator) Relinearize(op0, op1 *Element) (err error) {
+-	panic("implement Relinearize")
++	if op0.Degree < 0 || op0.Degree > 2 {
++		return fmt.Errorf("invalid degree")
++	}
++	result := op0.CopyNew()
++	if result.Degree == 2 {
++		// The public adapter consumes the deterministic transfer returned by
++		// this baseline's KeySwitchingNoise. No new stochastic error is added.
++		e.AddRelinearizationNoise(result)
++		result.Degree = 1
++		for _, z := range result.Value[2] {
++			z[0].SetInt64(0)
++			z[1].SetInt64(0)
++		}
++	}
++	*op1 = *result
++	return nil
+ }
+ 
+ // RotateHoisted applies a rotation without ModDown.
+@@ -422,9 +498,24 @@
+ }
+ 
+ func (e Estimator) Rescale(op0, op1 *Element) (err error) {
+-	panic("implement Rescale")
++	if op0.Level <= 0 || op0.Level >= len(e.Q) {
++		return fmt.Errorf("cannot rescale level %d", op0.Level)
++	}
++	level, scale := op0.Level, op0.Scale
++	e.DivideAndAddRoundingNoise(op0, &e.Q[level], op1)
++	op1.Level = level - 1
++	op1.Scale = scale.Div(rlwe.NewScale(&e.Q[level]))
++	return nil
+ }
+ 
+ func (e Estimator) DivideAndAddRoundingNoise(op0 *Element, P *big.Float, op1 *Element) {
+-	panic("implement DivideAndAddRoundingNoise")
+-}
++	// Deliberate omission: divide deterministically; add no rounding sample.
++	result := op0.CopyNew()
++	for i := 0; i <= result.Degree; i++ {
++		for _, z := range result.Value[i] {
++			z[0].Quo(z[0], P)
++			z[1].Quo(z[1], P)
++		}
++	}
++	*op1 = *result
++}
+diff --git a/estimator/noise.go b/estimator/noise.go
+--- a/estimator/noise.go
++++ b/estimator/noise.go
+@@ -110,9 +110,25 @@
+ }
+ 
+ func (e Estimator) KeySwitchingNoise(levelQ int, eCt, sk []*bignum.Complex) (e0, e1 []*bignum.Complex) {
+-	panic("implement KeySwitchingNoise")
++	// Preserve the public Decrypt identity c0+c1*s+c2*s^2 by moving the
++	// supplied component times its supplied key into component zero.
++	// Deliberate omission: neither output receives new stochastic noise.
++	e0 = make([]*bignum.Complex, e.MaxSlots())
++	e1 = make([]*bignum.Complex, e.MaxSlots())
++	mul := bignum.NewComplexMultiplier().Mul
++	for i := range e0 {
++		e0[i], e1[i] = bignum.NewComplex(), bignum.NewComplex()
++		mul(eCt[i], sk[i], e0[i])
++	}
++	return
+ }
+ 
+ func (e Estimator) KeySwitchingNoiseRaw(levelQ int, eCt, sk []*bignum.Complex) (noise []*bignum.Complex) {
+-	panic("implement KeySwitchingNoiseRaw")
++	// The public hoisted caller scales by P and later calls ModDown.
++	noise, _ = e.KeySwitchingNoise(levelQ, eCt, sk)
++	for _, z := range noise {
++		z[0].Mul(z[0], e.P)
++		z[1].Mul(z[1], e.P)
++	}
++	return
+ }

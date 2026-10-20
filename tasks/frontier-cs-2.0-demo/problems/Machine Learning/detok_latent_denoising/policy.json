@@ -1,0 +1,110 @@
+{
+  "agent": {
+    "cpu_millis": 3000,
+    "memory_bytes": 12884901888,
+    "workspace_bytes": 10737418240
+  },
+  "display_name": "Robust Image Tokenizer",
+  "family": "frontier-cs-2.0/vision",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "L4"
+      ],
+      "max_gpu_seconds": 5400,
+      "max_instance_seconds": 5400,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 5400
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "L4"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 431,
+        "path": "datasets/eval.json",
+        "version": "sha256:31469270d87e7c0543fc9705aa1059f2a8ee5f9bf7bbe640f4d54189f3563e24"
+      },
+      "train": {
+        "bytes": 438,
+        "path": "datasets/train.json",
+        "version": "sha256:d6f34beccd62adda662a989f7a5dca96e6eda8022648c5b9613b8c31a3010a5e"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 6,
+      "solver_visible_metrics": [
+        "development_mean_ordinary_quantized_png_psnr_db",
+        "development_mean_ema_quantized_png_psnr_db",
+        "development_mean_method_process_wall_seconds"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "models/detok.py",
+        "models/autoencoder.py",
+        "models/frontier_solution/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 60,
+      "ssh_session_budgets": {
+        "agent": 32,
+        "verifier_eval": 4,
+        "verifier_train": 24
+      }
+    }
+  },
+  "problem_id": "detok_latent_denoising",
+  "quota": {
+    "eval_timeout_seconds": 5400,
+    "max_train_calls": 6,
+    "max_train_wall_seconds": 32400,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 262144
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 12884901888
+  },
+  "version": "g1"
+}

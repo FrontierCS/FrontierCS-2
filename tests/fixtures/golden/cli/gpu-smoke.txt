@@ -1,0 +1,10 @@
+usage: frontier_deploy.py gpu-smoke [-h] --config CONFIG --patch PATCH
+                                    --patch-sha256 PATCH_SHA256
+                                    --attempt ATTEMPT
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG
+  --patch PATCH
+  --patch-sha256 PATCH_SHA256
+  --attempt ATTEMPT

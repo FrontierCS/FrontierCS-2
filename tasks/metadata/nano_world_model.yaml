@@ -1,0 +1,27 @@
+id: "nano_world_model"
+display_name: "Future Video Sampling"
+category: "Machine Learning"
+summary: "Speed up future-video sampling in the NanoWM action-conditioned video world model."
+paper_title: "Nano World Models: A Minimalist Implementation of Future Video Prediction"
+paper_venue: "arXiv 2026"
+paper_url: "https://arxiv.org/abs/2605.23993"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "A10G"
+agent_gpu_count: 1
+agent_gpu_seconds: 1800
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "A10G"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 20400
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 3
+train_wall_seconds: 10800
+eval_timeout_seconds: 10200

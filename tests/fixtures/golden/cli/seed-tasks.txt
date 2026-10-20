@@ -1,0 +1,9 @@
+usage: frontier_deploy.py seed-tasks [-h] --config CONFIG [--catalog CATALOG]
+                                     [--check]
+
+options:
+  -h, --help         show this help message and exit
+  --config CONFIG
+  --catalog CATALOG
+  --check            GET existing versions and compare digests; do not seed or
+                     write state

@@ -1,0 +1,90 @@
+{
+  "frontier_deploy": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/frontier_deploy.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: frontier_deploy.py [-h]\n                          {validate,render,preflight,plan,deploy,upgrade-runtime,build-images,smoke,verify,seed-tasks,upgrade-local-network,gpu-smoke,apply} ...\n\nGuarded fresh-account installer for the executable FrontierCS2 Preview\nprofile. The site file is deliberately non-secret. AWS CLI, Terraform, Docker,\nand kubectl receive credentials through their ordinary local credential\nchains.\n\npositional arguments:\n  {validate,render,preflight,plan,deploy,upgrade-runtime,build-images,smoke,verify,seed-tasks,upgrade-local-network,gpu-smoke,apply}\n\noptions:\n  -h, --help            show this help message and exit\n",
+    "stderr": ""
+  },
+  "reference_parity": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/reference_parity.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: reference_parity.py [-h] (--task TASK | --all)\n                           --management-url MANAGEMENT_URL [--config CONFIG]\n                           [--catalog CATALOG] [--seed-receipt SEED_RECEIPT]\n                           [--mirrors MIRRORS] --receipt RECEIPT\n                           [--attempt ATTEMPT] [--poll-seconds POLL_SECONDS]\n\nReplay native reference overlays against seeded Preview tasks, resumably.\n\noptions:\n  -h, --help            show this help message and exit\n  --task TASK\n  --all\n  --management-url MANAGEMENT_URL\n  --config CONFIG\n  --catalog CATALOG\n  --seed-receipt SEED_RECEIPT\n  --mirrors MIRRORS     default: task-images.json beside the seed receipt\n  --receipt RECEIPT\n  --attempt ATTEMPT\n  --poll-seconds POLL_SECONDS\n",
+    "stderr": ""
+  },
+  "reference_candidates": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/reference_candidates.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "task_baselines": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/task_baselines.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "build_demo_images": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/build_demo_images.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: build_demo_images.py [-h]\n                            [--problem {all,cpu,batch_local_counting,bounded_evm_path_prediction,evm_state_checkpoints,graph_mining_method_selection,join_tree_rewriting,sparse_video_attention_policy}]\n                            [--image-prefix IMAGE_PREFIX]\n                            [--manifest MANIFEST] [--push]\n                            [--incremental-from INCREMENTAL_FROM]\n                            [--crane CRANE]\n\nBuild the bundled CPU and native GPU demo images locally. This entrypoint\ndeliberately has no AWS, Kubernetes, registry-login, or secret handling. A\npush is opt-in and relies on the operator's existing Docker credential\nconfiguration without reading or copying it.\n\noptions:\n  -h, --help            show this help message and exit\n  --problem {all,cpu,batch_local_counting,bounded_evm_path_prediction,evm_state_checkpoints,graph_mining_method_selection,join_tree_rewriting,sparse_video_attention_policy}\n  --image-prefix IMAGE_PREFIX\n  --manifest MANIFEST\n  --push                push after verification; never performs docker login\n  --incremental-from INCREMENTAL_FROM\n                        verify this previous Git commit and plan source-only\n                        OCI layers; --push publishes them\n  --crane CRANE         crane executable for optional incremental publication\n",
+    "stderr": ""
+  },
+  "import_task": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/import_task.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: import_task.py [-h] [--published-images PUBLISHED_IMAGES]\n                      [--images {auto,published,build}] [--publish]\n                      [--image-namespace IMAGE_NAMESPACE]\n                      [--baseline-comparable NOTE] [--plan | --check]\n                      [--replace] [--no-reference |\n                      --reference-payload REFERENCE_PAYLOAD]\n                      export_dir\n\nImport a native FrontierSmith export into Preview's publication catalog.\n\npositional arguments:\n  export_dir\n\noptions:\n  -h, --help            show this help message and exit\n  --published-images PUBLISHED_IMAGES\n  --images {auto,published,build}\n  --publish\n  --image-namespace IMAGE_NAMESPACE\n  --baseline-comparable NOTE\n                        assert result.json measured this export revision, with\n                        an operator note\n  --plan\n  --check\n  --replace\n  --no-reference\n  --reference-payload REFERENCE_PAYLOAD\n",
+    "stderr": ""
+  },
+  "render_task_definition": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/render_task_definition.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: render_task_definition.py [-h] [--name NAME] [--all] [problem_dir]\n\nRender Preview definitions from native task trees, without network or Docker.\n\npositional arguments:\n  problem_dir\n\noptions:\n  -h, --help   show this help message and exit\n  --name NAME\n  --all\n",
+    "stderr": ""
+  },
+  "resolve_catalog_digests": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/resolve_catalog_digests.py",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: resolve_catalog_digests.py [-h] [--catalog CATALOG] [--task TASK]\n\nResolve public Docker Hub tags to linux/amd64 digests; no Docker or\ncredentials. All reads finish and validate before the catalog is rewritten.\nAuthentication uses only Docker Hub's anonymous pull grant, held in memory and\nnever logged.\n\noptions:\n  -h, --help         show this help message and exit\n  --catalog CATALOG\n  --task TASK        resolve only this task; leave all other pins unchanged\n",
+    "stderr": ""
+  }
+}

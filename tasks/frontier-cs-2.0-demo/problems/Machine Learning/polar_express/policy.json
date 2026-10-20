@@ -1,0 +1,84 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 4294967296
+  },
+  "display_name": "Polar-Factor Approximation",
+  "family": "frontier-cs-2.0/numerical_linear_algebra",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 422,
+        "path": "datasets/eval.json",
+        "version": "sha256:8a29b425c35c3f197d3cdf71f58f243ce938e4882af55a1333b21c55af6ca5e7"
+      },
+      "train": {
+        "bytes": 429,
+        "path": "datasets/train.json",
+        "version": "sha256:538c333777b602292fd2e55607c00c3033405d8fe32ed086b71fc4442a56d76b"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "worst_case_scalar_error",
+        "relative_polar_factor_error",
+        "paper_regime_relative_polar_factor_error",
+        "spectral_polar_error",
+        "polar_cosine_similarity",
+        "top_subspace_polar_error"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "polar_express.py",
+        "frontier_solution/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "polar_express",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 24000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 1048576
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "g1-beat-spec-v3"
+}

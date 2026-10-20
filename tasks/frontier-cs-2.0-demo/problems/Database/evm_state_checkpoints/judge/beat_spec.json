@@ -1,0 +1,78 @@
+{
+  "unit": "One fixed Spectrum workload record and generator seed, together with the checkpoint correctness/profile trace using that seed. The development suite has two workloads; the disjoint final suite has three. Each workload has five one-second Spectrum observations and five 400-round checkpoint-profile observations per compared variant.",
+  "metrics": [
+    {
+      "name": "correctness",
+      "means": "Successful exact checkpoint state/lifetime/reclamation checks and valid finite-positive Spectrum execution.",
+      "source": "The fixed independent array oracle in checkpoint_bench.cpp and the authentic Spectrum bench process.",
+      "better": "higher",
+      "clears_when": "Candidate passes all patch, compile, oracle, lifetime, allocation, and execution gates; the reference must also pass. No correctness tolerance.",
+      "tolerance": "none"
+    },
+    {
+      "name": "committed_tps",
+      "means": "Committed transactions per second measured independently for each workload.",
+      "source": "The authentic Spectrum bench commit statistic, in five rotated interleaved runs per workload.",
+      "better": "higher",
+      "clears_when": "min(candidate five committed-TPS observations) > max(reference five committed-TPS observations). All observations must be finite and positive.",
+      "tolerance": "No fixed percentage band is inferred from aggregate historical scores. Require strict separation of the five observed timing ranges; equality, overlap, or fewer than five observations fails."
+    },
+    {
+      "name": "checkpoint_create_ns",
+      "means": "Nanoseconds per created checkpoint on the 400-round same-seed lifetime trace.",
+      "source": "checkpoint_bench.cpp divides measured creation nanoseconds by 400 times 16 checkpoints.",
+      "better": "lower",
+      "clears_when": "max(candidate five create-ns observations) < min(reference five create-ns observations). All observations must be finite and positive.",
+      "tolerance": "Strict observed-range separation across five complete 400-round traces; equality or overlap fails. No fabricated hardware-independent nanosecond/percentage tolerance."
+    },
+    {
+      "name": "checkpoint_restore_ns",
+      "means": "Nanoseconds per restored checkpoint on the 400-round same-seed lifetime trace.",
+      "source": "checkpoint_bench.cpp divides measured first-restore nanoseconds by 400 rounds.",
+      "better": "lower",
+      "clears_when": "max(candidate five restore-ns observations) < min(reference five restore-ns observations). All observations must be finite and positive.",
+      "tolerance": "Strict observed-range separation across five complete 400-round traces; equality or overlap fails."
+    },
+    {
+      "name": "retained_bytes_per_checkpoint",
+      "means": "Peak tracked requested bytes apportioned across 16 simultaneous checkpoints, including inline state and nested allocations.",
+      "source": "The representation-neutral allocation tracker in checkpoint_bench.cpp.",
+      "better": "lower",
+      "clears_when": "max(candidate five retained-byte observations) < min(reference five retained-byte observations). The exact integer capacity metric must decrease; equality fails.",
+      "tolerance": "No tolerance: requested allocation bytes are an exact deterministic capacity measurement, not RSS or elapsed time."
+    }
+  ],
+  "beats_reference": "1 iff every declared metric passes for every workload in the fixed selected suite; otherwise 0. The continuous score and its cached upstream anchor remain separate and cannot turn a failed metric into a pass.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "committed_tps",
+      "means": "Geometric mean over development workload medians of the candidate committed TPS.",
+      "reveals_reference": "no — an absolute candidate-only scalar, with no workload identities or comparison-derived values"
+    },
+    {
+      "name": "checkpoint_create_ns",
+      "means": "Median of the first candidate creation-time profile per development seed, in nanoseconds.",
+      "reveals_reference": "no — an absolute candidate-only scalar, with no workload identities or comparison-derived values"
+    },
+    {
+      "name": "checkpoint_restore_ns",
+      "means": "Median of the first candidate restoration-time profile per development seed, in nanoseconds.",
+      "reveals_reference": "no — an absolute candidate-only scalar, with no workload identities or comparison-derived values"
+    },
+    {
+      "name": "retained_bytes_per_checkpoint",
+      "means": "Maximum of the first candidate retained-byte profiles over development seeds.",
+      "reveals_reference": "no — an absolute candidate-only scalar, with no workload identities or comparison-derived values"
+    }
+  ],
+  "withheld": [
+    "All reference measurements and reference scores.",
+    "Per-workload identities, individual pass/fail decisions, timing samples, margins, speedups, and ratios to any private reference.",
+    "All hidden-final measurements; development feedback contains only the selected development suite."
+  ],
+  "statement_sentences": "The beat-reference flag is separate from the continuous score. Each of the two development workloads or three final workloads must pass correctness and independently improve committed TPS, checkpoint creation time, checkpoint restoration time, and retained bytes per checkpoint. For every performance metric, all five candidate measurements must strictly outperform all five same-workload reference measurements: the minimum candidate TPS must exceed the maximum reference TPS, and the maximum candidate creation time, restoration time, and retained bytes must each be below the corresponding minimum reference value. Equality or overlapping timing ranges do not pass. An invalid evaluation makes every comparison fail; no workload is removed. Development feedback exposes candidate-only aggregate measurements and per-metric workload pass/fail counts and percentages, never the individual decisions or reference measurements.",
+  "comments": "Repair of the exported task missing Stage-2 beat-spec contract. Existing aggregate equality-as-win was invalid. The upstream patch, generated workloads, original first-profile measurements and continuous score formula are unchanged. Four extra checkpoint traces per seed and compared variant are necessary because the original one observation per seed provides no per-workload noise estimate; no extra Spectrum run or build is added. Subsequent profile order rotates by seed/repetition. Existing hardware, per-process limits and total evaluation budget remain authoritative. Strict separation is a conservative empirical gate, not a claim of a calibrated confidence level or that five observations bound all future timing noise. Current/reference self-comparison need not beat itself."
+}

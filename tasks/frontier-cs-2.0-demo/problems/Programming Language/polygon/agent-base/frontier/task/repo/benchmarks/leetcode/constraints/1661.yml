@@ -1,0 +1,2 @@
+row_dep: unique(Activity.machine_id, Activity.process_id, Activity.activity_type)
+col_val: Activity.activity_type<-{'start', 'end'}

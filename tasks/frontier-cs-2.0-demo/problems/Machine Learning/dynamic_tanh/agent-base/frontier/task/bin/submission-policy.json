@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "dynamic_tanh.py",
+    "solver_extensions/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 32,
+  "member": "solution.patch"
+}

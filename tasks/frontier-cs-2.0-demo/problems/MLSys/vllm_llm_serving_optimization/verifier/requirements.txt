@@ -1,0 +1,7 @@
+# Native controller/harness environment observed locally; not historical parity.
+openai==3.13.0
+numpy==2.5.3
+rank-bm25==0.2.2
+swebench==4.1.0
+zstandard==0.25.0
+cryptography==41.0.7

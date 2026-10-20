@@ -1,0 +1,72 @@
+{
+  "unit": "One graded instrumented program. On it the candidate strategy and the private reference strategy (CREST's control-flow-directed search) are each run on the same 30 seeds with a budget of 4000 iterations per run, interleaved on the same machine. Development grades one program; final grades two other programs. Each program is one workload.",
+  "metrics": [
+    {
+      "name": "branches_covered",
+      "means": "Branches of the program covered when a run ends, counted by the harness over the whole run. Compared as the mean over the 30 seeds.",
+      "source": "Burnim and Sen, Heuristics for Scalable Dynamic Test Generation, ASE 2008: branch coverage at a fixed iteration budget (Figures 3 to 5); src/run_crest/search_harness.cc::Harness::UpdateCoverage.",
+      "better": "higher",
+      "clears_when": "mean(C[w].branches_covered) - mean(R[w].branches_covered) > 3 * s * sqrt(2/30), s^2 = (var(C[w]) + var(R[w])) / 2 over the 30 per-seed values of this judgment; evaluated exactly in integers by judge/gate.py::significantly_greater.",
+      "tolerance": "none; the margin of three standard errors of the difference of two 30-seed means is part of the rule, not a tolerance in the candidate's favour"
+    },
+    {
+      "name": "search_overhead_seconds",
+      "means": "Search overhead of a run: CPU time of the strategy process plus CPU time of constraint solving, in whole milliseconds; executing the program under test is excluded. Compared as the mean over the 30 seeds.",
+      "source": "The gate includes efficiency as well as effectiveness; src/run_crest/search_harness.cc::Harness::ComputeUsed.",
+      "better": "lower",
+      "clears_when": "mean(R[w].search_overhead_seconds) - mean(C[w].search_overhead_seconds) > 3 * s * sqrt(2/30), s^2 = (var(C[w]) + var(R[w])) / 2 over the 30 per-seed values of this judgment; evaluated exactly in integer milliseconds by judge/gate.py::significantly_greater.",
+      "tolerance": "none; the margin of three standard errors of the difference of two 30-seed means is part of the rule"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff the candidate is valid and, for every graded program w, both metrics clear: the candidate's mean branches_covered exceeds the reference's by more than 3 * s_cov * sqrt(2/30) AND its mean search_overhead_seconds is below the reference's by more than 3 * s_ovh * sqrt(2/30), where each s is the pooled per-seed sample standard deviation of that quantity in the same judgment. No program or metric can be dropped or offset by another. A candidate whose strategy process faults in any run is invalid and clears nothing. A failure of the reference or of the judge is an evaluator failure, never a candidate result.",
+  "solver_feedback": [
+    {
+      "name": "dev_branches_covered_mean",
+      "means": "Mean over the 30 development runs of the branches the candidate covered when the run ended.",
+      "reveals_reference": "no - it is the candidate's own coverage on the development program and contains no reference value or comparison."
+    },
+    {
+      "name": "dev_coverage_curve",
+      "means": "List of [iteration, mean branches covered by the candidate after that many iterations] at fixed checkpoints over the 30 development runs; a run that ended before a checkpoint counts with its final coverage.",
+      "reveals_reference": "no - every point is a mean of the candidate's own runs on the development program."
+    },
+    {
+      "name": "dev_search_overhead_seconds_mean",
+      "means": "Mean over the 30 development runs of the candidate's search overhead: CPU seconds of strategy code plus constraint solving.",
+      "reveals_reference": "no - it is the candidate's own CPU time and contains no reference value or comparison."
+    },
+    {
+      "name": "dev_solver_attempts_mean",
+      "means": "Mean over the 30 development runs of the number of constraint-solver queries the candidate's requests caused, feasible and infeasible.",
+      "reveals_reference": "no - it counts the candidate's own solver queries only."
+    },
+    {
+      "name": "dev_runs_ended_early",
+      "means": "Number of the 30 development runs that ended before the iteration budget was spent, because a compute cap was reached or the strategy returned.",
+      "reveals_reference": "no - it counts the candidate's own runs only."
+    },
+    {
+      "name": "dev_killed_executions_mean",
+      "means": "Mean over the 30 development runs of the launches of the program under test that crashed or were stopped by the time limit.",
+      "reveals_reference": "no - it counts events in the candidate's own runs only."
+    }
+  ],
+  "withheld": [
+    "reference_metrics",
+    "per_workload_comparisons",
+    "reference_coverage",
+    "reference_overhead",
+    "reference_solver_attempts",
+    "coverage_margin_required",
+    "overhead_margin_required_seconds",
+    "workload_ids",
+    "program_names",
+    "seeds",
+    "relabel_keys",
+    "reference_relative_scores",
+    "reference_gaps",
+    "all_final_metrics"
+  ],
+  "statement_sentences": "Alongside the continuous score, a separate beats_reference criterion must hold on every graded program: over 30 seeds, the candidate's mean branches covered at the 4000-iteration budget must exceed the reference's by more than three standard errors of the difference of the two means, and its mean search overhead (CPU time of strategy code plus constraint solving) must be lower than the reference's by more than three standard errors of that difference. Training feedback gives the candidate's own development measurements and the aggregate criterion progress; reference values and all final measurements stay private.",
+  "comments": "The reference is CREST's CfgHeuristicSearch expressed against the strategy interface (judge/reference.patch); the baseline is bounded depth-first search at depth 12 (judge/baseline_naive.patch). Both sides run live in every judgment because CPU time is not a pinnable quantity and one of the final programs is not bit-reproducible."
+}

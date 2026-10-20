@@ -1,0 +1,20 @@
+{
+  "unit": "one synthetic value",
+  "beats_reference": "all values strictly exceed reference",
+  "statement_sentences": "A value must exceed its reference.",
+  "metrics": [
+    {
+      "name": "value",
+      "means": "synthetic value",
+      "source": "supplied value",
+      "clears_when": "strictly larger",
+      "tolerance": "zero",
+      "better": "higher"
+    }
+  ],
+  "solver_feedback": [],
+  "withheld": [
+    "reference_score",
+    "beat_spec_workload_passes"
+  ]
+}

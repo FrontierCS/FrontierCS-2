@@ -1,0 +1,107 @@
+{
+  "schema": "frontiersmith/result@1",
+  "task_id": "persistent_treap_update_engine",
+  "run_id": "r_top49_54c892bcba",
+  "candidate_id": "cand_000",
+  "final": {
+    "round": 3,
+    "reference": {
+      "ok": true,
+      "samples": 5,
+      "scores": [
+        30.0,
+        30.0,
+        30.0,
+        30.0,
+        30.0
+      ],
+      "dev_scores": [
+        30.0,
+        30.0,
+        30.0,
+        30.0,
+        30.0
+      ],
+      "spread": {
+        "n": 5,
+        "spread": 0.0,
+        "mean": 30.0,
+        "rel": 0.0
+      },
+      "reasons": [],
+      "round": 3
+    },
+    "trials": [
+      {
+        "round": 3,
+        "idx": 0,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.5400076153417878,
+        "score": 54.00076153417877,
+        "beats_reference": 1,
+        "reference_score": 30.0,
+        "margin": 24.00076153417877,
+        "submissions": 11,
+        "cost": 26.08067399999999,
+        "wall_s": 3267.425785,
+        "status": "scored"
+      }
+    ],
+    "best_reward": 0.5400076153417878,
+    "n_beating_reference": 1
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "revise",
+      "scores": {
+        "paper_alignment": 90,
+        "difficulty": 12,
+        "stability": 100,
+        "statement_quality": 62
+      },
+      "trials": 1,
+      "best_reward": 1.0
+    },
+    {
+      "round": 2,
+      "verdict": "revise",
+      "scores": {
+        "paper_alignment": 96,
+        "difficulty": 32,
+        "stability": 100,
+        "statement_quality": 94
+      },
+      "trials": 3,
+      "best_reward": 0.4847923798683523
+    },
+    {
+      "round": 3,
+      "verdict": "revise",
+      "scores": {
+        "paper_alignment": 92,
+        "difficulty": 32,
+        "stability": 100,
+        "statement_quality": 88
+      },
+      "trials": 1,
+      "best_reward": 0.5400076153417878
+    }
+  ],
+  "judge_pre_execution": {},
+  "cost_usd": {
+    "total": 99.85,
+    "by_stage": {
+      "reproduce": 0.19,
+      "contribs": 0.28,
+      "generate": 8.89,
+      "judge": 0.75,
+      "refine": 6.96,
+      "trials": 71.01,
+      "review": 0.49,
+      "re-refine": 11.25,
+      "finalise": 0.04
+    }
+  }
+}

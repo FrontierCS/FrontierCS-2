@@ -1,0 +1,280 @@
+# Exact Sequence Alignment
+
+## Problem
+
+Sequence alignment compares a query string with a target string using insertions,
+deletions and substitutions, each costing one. This task uses a retained C++
+library and FASTA command-line program to find exact edit distances and optimal
+alignment paths. Inputs are DNA strings ranging from short boundary cases to
+30,000-base aligned cores, with several mutation rates and alignment modes. The
+output must preserve the library's exact distance, endpoint, equality and path
+contracts. Any optimal tied path is acceptable. The objective is to maximize a
+continuous score that increases as measured elapsed time decreases. The body of
+`obtainAlignmentHirschberg` has been removed; supply that missing implementation.
+
+## Your workspace
+
+The read-only source tree is at `/frontier/task/repo`;
+`/frontier/task/prepare_workspace.sh` copies it to `/workspace/repo`. The only editable source file is:
+
+```text
+edlib/src/edlib.cpp
+```
+
+Within that file only the body of `obtainAlignmentHirschberg` may change. Preserve
+its signature and the text outside the body (blank lines and line-end
+whitespace aside; see "Design space"). No new source files are accepted.
+The retained public header, CLI, CMake build and surrounding library implementation
+remain available; evaluator and reference files are private. `challenge_data/`
+contains the public workload metadata and generator, and is read-only task data.
+
+## Design space
+
+The editable area covers optimal path reconstruction and its local data structures,
+allocation strategy and execution order. Local helper types and lambdas may live
+inside the function body. Preserve the result's allocation ownership and return
+status conventions. Other distance/location routines, API wrappers, mode dispatch,
+build settings and timing instrumentation must remain unchanged.
+
+Outside the body the file must keep the provided text. The comparison ignores
+only the number of blank lines (empty, or spaces and tabs only), spaces and
+tabs at the end of a line, and CRLF against LF line endings; any other
+difference on a line outside the body, including spacing inside a line, added
+or removed code and comments, is a change outside the body.
+
+The submitted text must remain the body of that one function. It may not close
+the function to add anything at namespace scope, and line continuations (a
+backslash at the end of a line), trigraphs and raw string literals are not
+accepted in it. None of your code may run outside a call of this function: the
+built program must have the same constructor and destructor tables and define
+the same runtime symbols as the reference build of the same tree, otherwise the
+evaluation is invalid.
+
+## Workload
+
+There are 30 public performance workloads: nominal core lengths 10,000 and
+30,000 crossed with nominal similarities 60%, 70%, 80%, 90% and 99% and
+the NW, SHW and HW modes. Final evaluation freshly measures these public cases
+and 30 separately seeded held-out cases from the same distribution. Each case
+contains one query and one target. Mutations include substitutions, insertions
+and deletions; the labels describe generator strata, not certified edit distances
+or a reproduction of the paper's biological datasets. SHW adds a target suffix;
+HW adds target prefix and suffix flanks. Public seeds and hashes are in
+`challenge_data/public_workloads.json`; the generator materializes the exact
+FASTA bytes locally. Private seeds are not distributed.
+
+Short correctness cases cover all modes and DISTANCE/LOC/PATH requests, empty
+inputs, equality pairs, bounded and unlimited distance searches, word boundaries,
+ties, repetitive strings and unequal lengths. These are mandatory validity checks,
+not extra performance rows. Workloads are representative algorithm inputs; there
+is no permission to recognize fixture identities or change behavior by the phase.
+
+## Interface
+
+The existing static function declaration in `edlib/src/edlib.cpp` is the binding
+interface. Its encoded query and target arrays, reversed arrays, equality definition
+and known optimal score are inputs. Return `EDLIB_STATUS_OK` with an allocated
+alignment array and its length when reconstruction succeeds; retain the allocator
+ownership convention used by the surrounding library. Operation bytes are 0 for
+match, 1 for query insertion, 2 for query deletion and 3 for mismatch. The retained
+public `edlibAlign` API selects NW (global), SHW (prefix) or HW (infix) semantics;
+the existing header describes each result field and empty-input behavior.
+
+For example, query `ACGT` and target `ACCT` in global mode have distance 1 and one
+valid operation sequence `0,0,3,0`, encoded by extended CIGAR `2=1X1=`. A FASTA
+file for that query is:
+
+```text
+>query
+ACGT
+```
+
+The retained build is `cmake -S /workspace/repo -B build -DCMAKE_BUILD_TYPE=Release`, followed
+by `cmake --build build -j1`. The evaluator runs the built program with two
+command lines. The path run is:
+
+```text
+build/bin/edlib-aligner -m NW -p -f CIG_EXT -r 1 -k -1 query.fa target.fa
+```
+
+The location-only run is:
+
+```text
+build/bin/edlib-aligner -m NW -l -r 1 -k -1 query.fa target.fa
+```
+
+The evaluator substitutes SHW or HW for the mode on those rows. The
+location-only run performs the same start-up, input, edit-distance and location
+search as the path run and prints the distance and the locations, but the
+program does not call the reconstruction in it. Every execution of either kind,
+timed or not, is validated. A path run must print the exact optimum distance
+and a path that consumes the query and the chosen target interval at a cost
+equal to that distance. A location-only run must print the exact distance and
+exactly the reference locations. No time is accepted from a run that was not
+checked. The complete output must be exactly what the retained program prints;
+anything extra, missing or repeated invalidates the evaluation. A private API
+adapter checks locations, equality pairs and output modes not fully exposed by
+the CLI.
+
+Every time is the elapsed wall time of a whole process, measured by the
+evaluator and not by the program: a monotonic clock is read immediately before
+the program is started and again when the operating system reports that it has
+exited. The `Cpu time of searching` line that the program prints is not used
+for scoring or comparison; it is only checked: it must be present, well formed,
+positive and no greater than the measured elapsed time, otherwise the
+evaluation is invalid.
+
+For each workload and each implementation the evaluator makes fifteen path
+runs and fifteen location-only runs, each in a fresh process, in fifteen
+interleaved rounds that alternate candidate/reference order. The reconstruction time
+(`cpu_time_seconds`, a retained name) is the smallest path-run time minus the
+smallest location-only time of the same executable on the same input. Start-up,
+input, the retained distance and location search and exit are common to both
+runs of one executable and cancel in the difference; what remains is the
+reconstruction together with the conversion and printing of its path. There is
+no batching, caching, sample discard beyond taking the two minima, or
+retry-to-pass. Scheduling noise remains part of elapsed time.
+
+## Validity
+
+Invalid patches, changes outside the function body, build failures, process
+failures, malformed outputs, incorrect distances or paths and resource overruns
+score zero. A train submission that is rejected by a static check before any
+measurement returns score 0 and, in place of the measurements,
+`metrics.candidate_diagnostic`: a `category` from a fixed table and a fixed
+`message` saying the same. The categories are `patch_policy` (the patch was
+not accepted: allowed file, size, file count or application to the provided
+tree), `outside_before_body` and `outside_after_body` (the patch modifies
+source outside the permitted function body, before or after it), `body_scope`
+(the body closes its function or uses a line continuation, a trigraph or a raw
+string literal), `body_forbidden_construct` (a preprocessor directive, or a
+call that accesses the environment, processes, files or timing, in the body)
+and `launch_surface` (the built program's start-up or runtime symbols differ
+from the reference build). It contains no source text, path, symbol or value,
+and a final submission returns none. Other failures are not categorised. Nonempty paths must consume the query and chosen target interval
+and have cost equal to the exact optimum under the configured equality relation.
+Any tied optimal path is accepted; distance and required endpoint information
+must remain exact. All workloads and all repetitions must complete; partial
+suites are invalid.
+
+The implementation must not access files, environment, processes or timing
+APIs, and each alignment must be computed from its inputs inside the process
+that is asked for it. The function must return to its caller: ending the
+process, or writing any of the program's output, from inside it is invalid. Candidate and reference executions are pinned to one CPU
+and use the same fixed environment and restricted syscall policy. The policy
+blocks file creation and modification, shared-memory and message-queue creation,
+sockets, process signals, and process or thread creation. Read-only file access
+remains available for dynamic loading and input data; this is not isolation from
+all existing files or a guarantee against every cross-execution observation.
+Denied operations fail with an error; creating a thread or process or changing
+CPU affinity terminates the process and invalidates the evaluation with no score
+and no retry. The reference runs under exactly the same restrictions. Before execution, the
+trusted verifier requires every candidate and reference binary to be a dynamic
+x86-64 ELF executable with the system loader; unsupported or static binaries
+invalidate the evaluation.
+
+## Scoring
+
+Maximize `100 * mean_w(A_w / (A_w + T_w))`, where `T_w` is the median elapsed
+time in seconds of the fifteen path runs (whole process, as defined under
+"Interface") on workload `w`, and `A_w = (nominal_core_length_w / 100000)^2`
+seconds. This scale is a challenge constant (not from materials). The score
+uses only the candidate's absolute path-run times and is separate from the
+strict comparison criterion. Correctness failures score zero before performance
+is considered. Candidate and reference measurements use the same inputs and
+alternate execution order within each round.
+
+## Calibration
+
+The reference is a complete implementation of the removed function body. It is
+private, is restored in the same source tree and is measured afresh in every
+evaluation. It is not the implementation that was removed: it reconstructs
+faster and with less storage. The provided substrate fails reconstruction when
+the removed core is needed, so it is not a performance baseline, and no
+naive-baseline score is published.
+
+## Feedback and grading
+
+At most 20 development submissions are configured. Train starts asynchronously
+and returns a verification ID; results are read with `frontier-submit status`.
+Completed valid train feedback includes the continuous score and, for each
+metric below, only aggregate counts over the 30 train workloads
+(`beat_spec_progress`): the number of workloads on which the metric clears, the
+number on which it does not, the total and the two percentages. No raw
+measurement is returned. A train submission rejected by a static check returns
+the categorical `candidate_diagnostic` described under "Validity" instead.
+Per-workload rows and all reference measurements
+remain private.
+Final metrics are not solver-visible. The public and held-out suites have the
+same distribution; final includes both and freshly measures all 60 rows rather
+than reusing training measurements.
+
+A separate, stricter comparison criterion accompanies the continuous
+performance score. After every correctness requirement passes, it is decided
+on every graded workload (one query/target pair in one alignment mode) by
+exactly two metrics:
+
+- `cpu_time_seconds`: your reconstruction time on the workload (smallest of
+  fifteen path-run times minus smallest of fifteen location-only times, whole
+  processes measured by the evaluator, as defined under "Interface") must be
+  positive and strictly less than the reference's on that same workload. No
+  tolerance; equality fails. A difference that is not positive is not a
+  reconstruction time and fails the workload.
+- `core_peak_live_bytes`: the storage used by reconstruction (heap, stack and
+  static, defined under "Reconstruction storage metric") must be no greater
+  than the reference's on that same workload. No tolerance; equality passes.
+
+Both must hold on every workload; success on one workload or metric cannot
+offset failure on another. Nothing else enters the criterion: in particular
+the process's resident memory (RSS) is not compared.
+
+## Submission
+
+Submit a unified text patch, relative to the provided source root;
+`/frontier/task/make_submission.sh` writes it to `/workspace/payload/solution.patch`. Only `edlib/src/edlib.cpp` may change, and only its designated function
+body may differ. Maximum patch size is 262,144 bytes and maximum changed-file count
+is one. No binary patches or new files are accepted. An empty patch leaves the
+missing implementation and is not a valid complete solution. Native packaging
+instructions are supplied by the export's submission section.
+
+## Resources
+
+The planned CPU verifier allocation is 2 vCPUs, 4,096 MiB memory and 5,120 MiB
+storage. The aligner runs on one pinned CPU, with OMP/BLAS threads set to one.
+Compilation is serial. Answering lasts exactly 18,000 seconds (five hours),
+including train work. Up to 20 train calls share a cumulative 12,000-second train
+wall-time pool. Every verification, including compilation and correctness checks,
+has a 600-second limit. The original 900-second individual process ceiling is
+additionally clipped to the remaining verification time. Final has its own
+independent 600-second allowance after answering; it does not add to the answering
+clock. A maximum serial train schedule consumes 12,000 seconds, leaving 6,000
+seconds within answering for other solver work. GPU execution is not used.
+
+## Reconstruction storage metric
+
+Every row requires `core_peak_live_bytes` candidate <= reference, with zero
+byte tolerance. A private untimed derivative of your exact source measures the
+storage of the outermost reconstruction call, including everything it calls, as
+the sum of three parts:
+
+- heap: the peak of requested live bytes from malloc, calloc, realloc, aligned
+  allocation and C++ new, and of bytes mapped with mmap, including the returned
+  alignment buffer and allocations that library routines make on the call's
+  behalf;
+- stack: the deepest extent of the stack written during the call, measured from
+  the frame of the function itself;
+- static: the size of all writable and thread-local static storage of the
+  compiled `edlib.cpp`, whether or not an input uses it.
+
+Storage that existed before the call, allocator overhead and collector metadata
+are excluded. Moving working storage between heap, stack and static storage
+therefore does not lower the value. In the derivative the function is never
+inlined. Stack use deeper than 4 MiB below its frame ends the run, and memory
+may not be obtained in any other way (for example by changing the program
+break, remapping, shared memory, a direct system call or the dynamic loader);
+either invalidates the evaluation. Five fresh processes run in each lane; their
+maximum is compared. They use the path-run command line, run under the same
+restrictions, and each printed path is validated in the same way; all
+executions must finish. The collector does not instrument the timed binaries or
+change the continuous score. Only aggregate per-metric progress is visible,
+never reference bytes or per-workload results.

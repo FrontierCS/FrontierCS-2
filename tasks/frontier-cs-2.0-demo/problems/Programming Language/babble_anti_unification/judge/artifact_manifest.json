@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "external-babble-popl23/code",
+  "authentic_execution": {
+    "entrypoint": "src/bin/benchmark/main.rs",
+    "retained_files": [
+      "Makefile",
+      "harness/data/benchmark-dsrs/list.rewrites",
+      "harness/data/benchmark-dsrs/physics.rewrites",
+      "harness/scripts/plot.py",
+      "src/bin/benchmark/main.rs",
+      "src/experiments.rs",
+      "src/experiments/beam_experiment.rs"
+    ]
+  },
+  "excision": [
+    {
+      "path": "src/learn.rs",
+      "mode": "stubbed",
+      "symbols": ["pub fn new"]
+    },
+    {
+      "path": "src/dfta.rs",
+      "mode": "stubbed",
+      "symbols": ["pub(crate) fn cross_over"]
+    }
+  ],
+  "solution_surface": {
+    "modify": ["src/learn.rs", "src/dfta.rs"],
+    "add_under": ["src/learn_extensions/"],
+    "no_new_files_reason": ""
+  },
+  "offline_dependencies": {
+    "lockfile": "frontier-build/Cargo.lock",
+    "vendor_root": "frontier-deps/vendor",
+    "file_count": 6434,
+    "bytes": 141658167,
+    "aggregate_sha256": "1ae0562362938281f2f167224525729978c7dae905dcf9b5906d667e9f4192f5",
+    "derivation": "cargo vendor --locked with rust:1.64-bullseye"
+  },
+  "task_owned_files": [
+    {
+      "path": ".cargo/config.toml",
+      "reason": "Task-owned Cargo source replacement that forces all locked registry dependencies to the shipped offline vendor directory."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Task-owned patch packager that stages new solver files and enforces the editable surface."
+    },
+    {
+      "path": "frontier-build.sh",
+      "reason": "Task-owned deterministic build adapter for the retained upstream benchmark binary."
+    },
+    {
+      "path": "frontier-build/Cargo.toml",
+      "reason": "Task-owned build manifest that preserves build fields while removing solver-visible source-retrieval metadata."
+    },
+    {
+      "path": "frontier-build/Cargo.lock",
+      "reason": "Task-owned lockfile preserving upstream dependency versions while replacing an identifying Git source with the exact local dependency."
+    },
+    {
+      "path": "frontier-deps/egg/Cargo.toml",
+      "reason": "Minimal local dependency manifest for the exact API-compatible e-graph fork required by the retained upstream source."
+    },
+    {
+      "path": "frontier-deps/egg/LICENSE",
+      "reason": "License text shipped with the required locally vendored e-graph dependency."
+    },
+    {
+      "path": "frontier-deps/egg/src/dot.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/eclass.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/egraph.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/explain.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/extract.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/language.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/lib.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/machine.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/macros.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/pattern.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/rewrite.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/run.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/subst.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/test.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/tutorials/_01_background.rs",
+      "reason": "Exact required e-graph dependency module vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/tutorials/_02_getting_started.rs",
+      "reason": "Exact required e-graph dependency module vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/tutorials/_03_explanations.rs",
+      "reason": "Exact required e-graph dependency module vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/tutorials/mod.rs",
+      "reason": "Exact required e-graph dependency module vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/unionfind.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-deps/egg/src/util.rs",
+      "reason": "Exact required e-graph dependency source vendored locally to remove source-retrieval metadata."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Task-owned local smoke adapter that invokes the retained benchmark entrypoint on an upstream sample corpus."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "src/bin/compression/main.rs",
+    "src/bin/drawings/main.rs",
+    "src/bin/list/main.rs",
+    "src/bin/parse_dc/main.rs",
+    "src/bin/print_benchmarks/main.rs",
+    "src/bin/smiley/main.rs"
+  ],
+  "minimality_note": "The retained benchmark, BeamExperiment wiring, Rust library modules, the two rewrite sets exercised by evaluation, one public upstream sample, and the exact locked crates needed for zero-network builds are the smallest self-contained reproduced path to the excised hooks; unrelated binaries, experiment frontends, generated CSVs, plots, and hidden evaluation corpora are omitted."
+}

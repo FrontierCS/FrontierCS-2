@@ -1,0 +1,26 @@
+diff --git a/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu b/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu
+index 793126c..2c6a8ec 100644
+--- a/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu
++++ b/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu
+@@ -41,6 +41,21 @@ const int shmem_size_block_gemm = (SUB_N_BLOCK / NUM_PIPE_N_BLOCK) * (K_BLOCK /
+ 
+ __global__ void block_gemm_1d_double_mma(const double *A, const double *B, double *C, const double alpha, const double beta)
+ {
++    // NAIVE_BASELINE: one scalar thread loop per output element.
++    for (int output = threadIdx.x; output < M_BLOCK * N_BLOCK; output += blockDim.x)
++    {
++        const int row = output / N_BLOCK;
++        const int col = output % N_BLOCK;
++        double value = 0.0;
++        for (int iteration = 0; iteration < NUM_ITER; ++iteration)
++        {
++            for (int inner = 0; inner < K_BLOCK; ++inner)
++            {
++                value += A[row * K_BLOCK + inner] * B[col * K_BLOCK + inner];
++            }
++        }
++        C[output] = alpha * value + beta * C[output];
++    }
+ }
+ 
+ int main(int argc, char *argv[])

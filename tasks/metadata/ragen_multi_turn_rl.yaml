@@ -1,0 +1,27 @@
+id: "ragen_multi_turn_rl"
+display_name: "Multi-turn Trajectory Batches"
+category: "Machine Learning"
+summary: "Build correct multi-turn trajectory batches for RAGEN PPO training of language-model agents."
+paper_title: "RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning"
+paper_venue: "arXiv 2025"
+paper_url: "https://arxiv.org/abs/2504.20073"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "A100-80GB"
+agent_gpu_count: 1
+agent_gpu_seconds: 1800
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "A100-80GB"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 7200
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 3
+train_wall_seconds: 5400
+eval_timeout_seconds: 1800

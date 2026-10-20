@@ -1,0 +1,99 @@
+{
+  "unit": "one private NVIDIA-GPU pMF-B/256 FD-SIM post-training workload: a fixed seed, fixed generated warm-start population, fixed queue estimator setting and update schedule, followed by equal-count held-out generated-image evaluation in all six representation spaces",
+  "metrics": [
+    {
+      "name": "inception_fdr",
+      "means": "held-out generated-image Fréchet distance in the Inception (FID/ADM) representation divided by the paper's published Inception validation-set FD normalizer, 1.68",
+      "source": "eval_all_fds.py::FDR_VALIDATION_FD, FDR6_MODELS, _resolve_prc, and _build_csv_rows (with raw FD computed by frechet_distance/metrics.py::compute_fid)",
+      "better": "lower",
+      "clears_when": "candidate_inception_fdr[w] < reference_inception_fdr[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "convnext_fdr",
+      "means": "held-out generated-image Fréchet distance in the ConvNeXt representation divided by the paper's published ConvNeXt validation-set FD normalizer, 56.87",
+      "source": "eval_all_fds.py::FDR_VALIDATION_FD, FDR6_MODELS, _resolve_prc, and _build_csv_rows (with raw FD computed by frechet_distance/metrics.py::compute_fid)",
+      "better": "lower",
+      "clears_when": "candidate_convnext_fdr[w] < reference_convnext_fdr[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "dinov2_fdr",
+      "means": "held-out generated-image Fréchet distance in the DINOv2 CLS representation divided by the paper's published DINOv2 validation-set FD normalizer, 14.19",
+      "source": "eval_all_fds.py::FDR_VALIDATION_FD, FDR6_MODELS, _resolve_prc, and _build_csv_rows (with raw FD computed by frechet_distance/metrics.py::compute_fid)",
+      "better": "lower",
+      "clears_when": "candidate_dinov2_fdr[w] < reference_dinov2_fdr[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "mae_fdr",
+      "means": "held-out generated-image Fréchet distance in the MAE CLS representation divided by the paper's published MAE validation-set FD normalizer, 0.04",
+      "source": "eval_all_fds.py::FDR_VALIDATION_FD, FDR6_MODELS, _resolve_prc, and _build_csv_rows (with raw FD computed by frechet_distance/metrics.py::compute_fid)",
+      "better": "lower",
+      "clears_when": "candidate_mae_fdr[w] < reference_mae_fdr[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "siglip_fdr",
+      "means": "held-out generated-image Fréchet distance in the SigLIP CLS representation divided by the paper's published SigLIP validation-set FD normalizer, 0.60",
+      "source": "eval_all_fds.py::FDR_VALIDATION_FD, FDR6_MODELS, _resolve_prc, and _build_csv_rows (with raw FD computed by frechet_distance/metrics.py::compute_fid)",
+      "better": "lower",
+      "clears_when": "candidate_siglip_fdr[w] < reference_siglip_fdr[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "clip_fdr",
+      "means": "held-out generated-image Fréchet distance in the CLIP CLS representation divided by the paper's published CLIP validation-set FD normalizer, 5.60; CLIP is outside the three-representation FD-SIM training objective",
+      "source": "eval_all_fds.py::FDR_VALIDATION_FD, FDR6_MODELS, _resolve_prc, and _build_csv_rows (with raw FD computed by frechet_distance/metrics.py::compute_fid)",
+      "better": "lower",
+      "clears_when": "candidate_clip_fdr[w] < reference_clip_fdr[w]",
+      "tolerance": "none"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff all validity guards pass and, for every graded workload w, candidate_inception_fdr[w] < reference_inception_fdr[w] AND candidate_convnext_fdr[w] < reference_convnext_fdr[w] AND candidate_dinov2_fdr[w] < reference_dinov2_fdr[w] AND candidate_mae_fdr[w] < reference_mae_fdr[w] AND candidate_siglip_fdr[w] < reference_siglip_fdr[w] AND candidate_clip_fdr[w] < reference_clip_fdr[w]; otherwise beats_reference = 0. Validity requires locked source/model and genuine execution of the submitted FeatureQueue implementation on the Verifier NVIDIA GPU, finite features/covariances/gradients, a genuine generator-parameter update, queue-state persistence, and equal held-out sample counts.",
+  "solver_feedback": [
+    {
+      "name": "development_mean_inception_fdr",
+      "means": "arithmetic mean of the candidate's own absolute Inception FDr measurements over the development workloads, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate's measurements and the paper-published constant 1.68, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_convnext_fdr",
+      "means": "arithmetic mean of the candidate's own absolute ConvNeXt FDr measurements over the development workloads, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate's measurements and the paper-published constant 56.87, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_dinov2_fdr",
+      "means": "arithmetic mean of the candidate's own absolute DINOv2 FDr measurements over the development workloads, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate's measurements and the paper-published constant 14.19, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_mae_fdr",
+      "means": "arithmetic mean of the candidate's own absolute MAE FDr measurements over the development workloads, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate's measurements and the paper-published constant 0.04, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_siglip_fdr",
+      "means": "arithmetic mean of the candidate's own absolute SigLIP FDr measurements over the development workloads, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate's measurements and the paper-published constant 0.60, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_clip_fdr",
+      "means": "arithmetic mean of the candidate's own absolute CLIP FDr measurements over the development workloads, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate's measurements and the paper-published constant 5.60, without a reference-relative value or workload identity"
+    }
+  ],
+  "withheld": [
+    "per_workload_inception_fdr",
+    "per_workload_convnext_fdr",
+    "per_workload_dinov2_fdr",
+    "per_workload_mae_fdr",
+    "per_workload_siglip_fdr",
+    "per_workload_clip_fdr",
+    "all_final_workload_metrics",
+    "all_reference_values",
+    "all_candidate_reference_margins"
+  ],
+  "statement_sentences": "In addition to the continuous score, a separate stricter beats-reference criterion compares your held-out generated-image FDr independently in Inception, ConvNeXt, DINOv2, MAE, SigLIP, and CLIP space against the reference on the same private workload. Lower is better for every quantity, and the stricter criterion is met only if your value is strictly lower in all six representations on every graded workload and all validity checks pass. Reference values, comparison margins, private workload identities, per-workload rows, and all final measurements are not disclosed.",
+  "comments": "Checked reproduction.json first: accelerator_required is nvidia_gpu, so each graded workload must execute the submitted queue implementation in the authentic pMF-B/256 training path on a Driver-owned Verifier NVIDIA GPU; CPU calculations may only be auxiliary oracles. Checked eval_all_fds.py: it emits raw fd and per-representation fdr rows and defines FDr6 as an arithmetic mean of the six FDr values. The brief's provisional FDr6 binary gate conflicts with the non-mixing rule, so FDr6 is deliberately excluded from beats_reference and replaced by the conjunction of its six artifact-reported components. Raw CLIP FD and CLIP FDr are the same underlying quantity up to the fixed published normalizer, so gating on both would duplicate one metric; clip_fdr supplies the requested held-out CLIP check. No tolerance is used because reproduction.json says quality and measurement noise remain unmeasured. The author must calibrate noise but must not insert a tolerance until repeated paired measurements justify a concrete value; any later justified tolerance must preserve strict per-workload, per-metric comparison. Development means are feedback summaries only and never enter beats_reference. Keep exact workload manifests, ordering, seeds, estimator settings, cached authentic warm-start states, reference rows, margins, and all hidden-final values private. The authoritative evaluator must enforce source/model locks, finite numerics and gradients, a real optimizer update, queue checkpoint round-trip, authentic generated warm starts, and equal evaluation sample counts before applying the conjunction."
+}

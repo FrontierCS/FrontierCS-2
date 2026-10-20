@@ -1,0 +1,4 @@
+# Private calibrated point values and exact-runtime receipts are supplied with
+# the private verifier build context; never include them in the genuine Agent.
+statistical-calibration.json
+runtime-qualification.json

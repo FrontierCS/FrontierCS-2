@@ -1,0 +1,9 @@
+{
+  "schema_version": "frontier.metaopt-dataset/v1",
+  "problem_id": "metaopt_combined_te_gap_search",
+  "mode": "train",
+  "suite_revision": "original-dev15-public-plus-hidden30-v1",
+  "selects": {
+    "FRONTIER_SUBMISSION_ROLE": "development"
+  }
+}

@@ -1,0 +1,7 @@
+logs/
+__pycache__/
+.vscode/
+.DS_Store
+.claude/
+data/reference_answers_cache/*ruler*
+data/longbenchv2_cache.jsonl

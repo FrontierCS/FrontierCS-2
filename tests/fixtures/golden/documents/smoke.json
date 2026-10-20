@@ -1,0 +1,173 @@
+[
+  {
+    "candidate_id": "speed-add-scripted-preview",
+    "definition_digest": "sha256:055376adb0593ca1d0f54b405d6bce1e64c5cac93567c617f80c53e3f55cb030",
+    "definition_ref": "preview://speed-add/scripted-candidate",
+    "display_name": "Speed Add scripted Preview",
+    "driver_config": {
+      "candidate_version_id": "candver_3GMJ2NVNFWR46W49V0B08266NM",
+      "execution": {
+        "args": [],
+        "entrypoint": [
+          "/opt/frontier/candidate/local-e2e-start"
+        ],
+        "env": {},
+        "user": "1000:1000",
+        "working_dir": "/workspace"
+      },
+      "model_api": {
+        "allowed_domains": [],
+        "secret_refs": []
+      },
+      "overlay_image": {
+        "digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "format": "frontier.oci-overlay/v1",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "reference": "123456789012.dkr.ecr.us-east-1.amazonaws.com/frontier/speed-add-scripted-overlay:v1"
+      },
+      "schema_version": "frontier.candidate-config/v1"
+    },
+    "metadata": {
+      "model_execution": "scripted",
+      "purpose": "deployment-smoke"
+    },
+    "version": "3GMJ2NVNFWR46W49V0B08266NM"
+  },
+  {
+    "author_receipt": {
+      "build": {
+        "inputs_sha256": "sha256:123a141657039be8bbb988731ff634a4d7b7623660df07df68149a65c26251e9",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "tool_versions": {
+          "frontier-preview-publisher": "2"
+        }
+      },
+      "datasets": {
+        "eval": {
+          "body_sha256": "sha256:6b0538c684a4bfb6ac49ea2b8f194bbcbd4c5eaa8eec2f35629a211974123c4d",
+          "s3_version_id": "local-sha256:6b0538c684a4bfb6ac49ea2b8f194bbcbd4c5eaa8eec2f35629a211974123c4d",
+          "size_bytes": 559,
+          "uri": "s3://frontier-local-task-data/tasks/speed-add/v1/eval.json"
+        },
+        "train": {
+          "body_sha256": "sha256:2d45c36f579aa5a8e0d750a393174fbad39f9ba8395652cdc6ec58eaba12ad8b",
+          "s3_version_id": "local-sha256:2d45c36f579aa5a8e0d750a393174fbad39f9ba8395652cdc6ec58eaba12ad8b",
+          "size_bytes": 422,
+          "uri": "s3://frontier-local-task-data/tasks/speed-add/v1/train.json"
+        }
+      },
+      "definition": {
+        "digest": "sha256:9c3ded5e33193e38cd7c172cda946bef0ea8f653c5a1bb3b0673289469c45f44",
+        "ref": "s3://frontier-local-task-data/definitions/speed-add/9c3ded5e33193e38cd7c172cda946bef0ea8f653c5a1bb3b0673289469c45f44.json"
+      },
+      "images": {
+        "agent_cpu_base": {
+          "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+          "reference": "123456789012.dkr.ecr.us-east-1.amazonaws.com/frontier/speed-add-agent-base:v1"
+        },
+        "verifier": {
+          "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+          "reference": "123456789012.dkr.ecr.us-east-1.amazonaws.com/frontier/speed-add-verifier:v1"
+        }
+      },
+      "schema_version": "frontier.task-author-release/v1",
+      "source": {
+        "reference": "preview-source-manifest:sha256:29eecc47dcb7722f87019666798586ea45da13eb9c1159436d00a794c9fe90a8",
+        "sha256": "sha256:29eecc47dcb7722f87019666798586ea45da13eb9c1159436d00a794c9fe90a8"
+      },
+      "task_version_id": "taskver_3S1JGM5V662A6VJHYS9W6TB5KV"
+    },
+    "definition_digest": "sha256:9c3ded5e33193e38cd7c172cda946bef0ea8f653c5a1bb3b0673289469c45f44",
+    "definition_ref": "s3://frontier-local-task-data/definitions/speed-add/9c3ded5e33193e38cd7c172cda946bef0ea8f653c5a1bb3b0673289469c45f44.json",
+    "display_name": "Speed Add Preview",
+    "driver_config": {
+      "agent": {
+        "cpu_millis": 300,
+        "memory_bytes": 536870912,
+        "workspace_bytes": 268435456
+      },
+      "datasets": {
+        "eval": {
+          "uri": "s3://frontier-local-task-data/tasks/speed-add/v1/eval.json",
+          "version": "sha256:6b0538c684a4bfb6ac49ea2b8f194bbcbd4c5eaa8eec2f35629a211974123c4d"
+        },
+        "train": {
+          "uri": "s3://frontier-local-task-data/tasks/speed-add/v1/train.json",
+          "version": "sha256:2d45c36f579aa5a8e0d750a393174fbad39f9ba8395652cdc6ec58eaba12ad8b"
+        }
+      },
+      "images": {
+        "agent_cpu_base": {
+          "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "reference": "123456789012.dkr.ecr.us-east-1.amazonaws.com/frontier/speed-add-agent-base:v1"
+        },
+        "verifier": {
+          "digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+          "reference": "123456789012.dkr.ecr.us-east-1.amazonaws.com/frontier/speed-add-verifier:v1"
+        }
+      },
+      "network": {
+        "allowed_domains": [],
+        "audit": {
+          "max_bundle_bytes": 67108864,
+          "max_model_request_bytes": 1048576,
+          "max_model_response_bytes": 8388608,
+          "max_model_sessions": 256,
+          "max_ssh_bytes_per_direction": 8388608,
+          "max_ssh_sessions": 32
+        }
+      },
+      "quota": {
+        "agent_gpu": {
+          "allowed_types": [],
+          "max_gpu_seconds": 0,
+          "max_instance_seconds": 0,
+          "max_instances": 0
+        },
+        "verifier": {
+          "eval_timeout_seconds": 180,
+          "max_gpu_instances": 0,
+          "max_gpu_seconds": 0,
+          "max_train_calls": 1,
+          "max_train_wall_seconds": 180
+        },
+        "wall_time_seconds": 600
+      },
+      "schema_version": "frontier.task-config/v1",
+      "submission": {
+        "entrypoint": "payload/run.sh",
+        "max_bytes": 8388608,
+        "media_type": "application/x-tar",
+        "required_sha256": true
+      },
+      "task_version_id": "taskver_3S1JGM5V662A6VJHYS9W6TB5KV",
+      "verifier": {
+        "command": [
+          "/opt/frontier/speed-add-verifier"
+        ],
+        "cpu_millis": 200,
+        "evidence_path": "/frontier/output/evidence.tar.zst",
+        "max_evidence_bytes": 8388608,
+        "memory_bytes": 268435456,
+        "result_path": "/frontier/output/result.json"
+      }
+    },
+    "family": "cpu",
+    "metadata": {
+      "fixture": "speed-add",
+      "model_execution": "scripted"
+    },
+    "task_id": "speed-add-preview",
+    "version": "3S1JGM5V662A6VJHYS9W6TB5KV"
+  }
+]

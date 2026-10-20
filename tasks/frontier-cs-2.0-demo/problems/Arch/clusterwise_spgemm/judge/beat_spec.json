@@ -1,0 +1,48 @@
+{
+  "unit": "one whole sparse matrix, frozen A-row permutation, width eight, 60-logical-CPU execution",
+  "metrics": [
+    {
+      "name": "execution_time_ms",
+      "means": "median parent-clock fresh-process time for loading, reordering, representation construction, multiplication, complete output transfer and process exit; seven paired runs with every product checked",
+      "source": "ReorderedFlengthClusterSpGEMM.cpp selected fixed-length spine; task adapts sections3.1-3.2 and4.5 representation/construction/multiplication cost into a full-execution measurement, explicitly not paper kernel-only time",
+      "better": "lower",
+      "clears_when": "C_execution_time_ms[w] < 0.85 * R_execution_time_ms[w]",
+      "tolerance": "strict 15% improvement; exact-image 5% reference MAD/drift/self-comparison gates precede acceptance"
+    },
+    {
+      "name": "throughput_mflops",
+      "means": "independent trusted multiplication-plus-addition count divided by that same execution time and 1000; a reciprocal diagnostic, not an independent measurement",
+      "source": "authentic entrypoint reports nfop / elapsed_ms / 1000; task uses independent operation counts and parent timing",
+      "better": "higher",
+      "clears_when": "C_throughput_mflops[w] > R_throughput_mflops[w] / 0.85",
+      "tolerance": "reciprocal of the same strict 15% execution-time margin"
+    }
+  ],
+  "beats_reference": "1 if and only if every measured complete product is independently correct and both same-workload metric inequalities pass for every workload; otherwise0. No aggregate score substitutes for the conjunction.",
+  "solver_feedback": [
+    {
+      "name": "candidate_median_execution_time_ms",
+      "means": "median absolute execution milliseconds",
+      "reveals_reference": "no; candidate-only absolute scalar with no row identity or reference-derived value"
+    },
+    {
+      "name": "candidate_median_throughput_mflops",
+      "means": "median absolute derived MFLOPS",
+      "reveals_reference": "no; candidate-only absolute scalar with no row identity or reference-derived value"
+    },
+    {
+      "name": "candidate_max_output_bytes",
+      "means": "largest captured candidate product in bytes",
+      "reveals_reference": "no; candidate-only absolute scalar with no row identity or reference-derived value"
+    }
+  ],
+  "withheld": [
+    "reference_score",
+    "margin",
+    "private_workload_measurements",
+    "all final measurements",
+    "individual workload identifiers and rows"
+  ],
+  "statement_sentences": "Every private workload requires a correct full product and more than15% reduction in fresh-process execution time, with the corresponding reciprocal throughput gain. Only candidate absolute aggregate metrics and anonymous per-metric pass/fail counts and percentages are disclosed.",
+  "comments": "Unchanged upstream reconstruction with parent-owned full-execution timing, independent ordered source-semantic numeric validation for every output, seven fresh-process pairs, strict conjunction. Exact-image train/final reference and a same-version genuine solver trial remain separate acceptance gates; author witness is optional. SEPARATE KERNEL BUILD (2026-10-15): the retained program is compiled as two translation units linked main first: sample/ReorderedFlengthClusterSpGEMM.cpp (main, loading, reordering, CSR construction, flop count, output; no editable header) and sample/ReorderedFlengthClusterSpGEMM_kernel.cpp (editable headers and the fixed entry point frontier_clustered_spgemm). The build is rejected when the kernel object defines a symbol the main object or another linked object or archive defines or references, except the entry point and COMDAT instantiations whose kernel copy the linker map records as discarded, or a symbol a linked shared library exports, except the replaceable allocation functions and COMDAT code the pristine headers emit identically. Flags, OpenMP, timing boundary, workloads, oracle, metrics and rules are unchanged."
+}

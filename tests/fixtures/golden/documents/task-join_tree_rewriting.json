@@ -1,0 +1,151 @@
+{
+  "definition_digest": "sha256:20a3b0a6f7512d20e06cd8eb17329a8aa4c93ecb540acefd5ff5aafa6ae50d48",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/join_tree_rewriting/20a3b0a6f7512d20e06cd8eb17329a8aa4c93ecb540acefd5ff5aafa6ae50d48.json",
+  "display_name": "Join-Tree Rewriting",
+  "driver_config": {
+    "agent": {
+      "cpu_millis": 2000,
+      "memory_bytes": 8589934592,
+      "workspace_bytes": 1073741824
+    },
+    "datasets": {
+      "eval": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/join_tree_rewriting/eval/sha256/c0bf7e56e798755cbedda1511341d3bab74f403c7d44ec2eae2a0e29e6a94ae2.json",
+        "version": "sha256:c0bf7e56e798755cbedda1511341d3bab74f403c7d44ec2eae2a0e29e6a94ae2"
+      },
+      "train": {
+        "uri": "s3://frontier-local-task-data/datasets/frontier-cs-2.0-demo/join_tree_rewriting/train/sha256/99c99eee6760054f3e60245f7f188b321f4e5f3b5ded28080abed8c33338590b.json",
+        "version": "sha256:99c99eee6760054f3e60245f7f188b321f4e5f3b5ded28080abed8c33338590b"
+      }
+    },
+    "images": {
+      "agent_cpu_base": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000071",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "reference": "172.20.0.50:5000/frontier/tasks/join_tree_rewriting/agent_image@sha256:0000000000000000000000000000000000000000000000000000000000000071"
+      },
+      "verifier": {
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000072",
+        "reference": "172.20.0.50:5000/frontier/tasks/join_tree_rewriting/verifier_image@sha256:0000000000000000000000000000000000000000000000000000000000000072"
+      }
+    },
+    "network": {
+      "allowed_domains": [
+        "openrouter.ai"
+      ],
+      "audit": {
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 8388608,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 8388608,
+        "max_ssh_sessions": 32
+      }
+    },
+    "quota": {
+      "agent_gpu": {
+        "allowed_types": [],
+        "max_gpu_seconds": 0,
+        "max_instance_seconds": 0,
+        "max_instances": 0
+      },
+      "verifier": {
+        "eval_timeout_seconds": 900,
+        "max_gpu_instances": 0,
+        "max_gpu_seconds": 0,
+        "max_train_calls": 100,
+        "max_train_wall_seconds": 24000
+      },
+      "wall_time_seconds": 18000
+    },
+    "schema_version": "frontier.task-config/v1",
+    "submission": {
+      "entrypoint": "payload/solution.patch",
+      "max_bytes": 65536,
+      "media_type": "application/x-tar",
+      "required_sha256": true
+    },
+    "task_version_id": "taskver_34T6M1DTYQVK2V1BCHR7SD5THS",
+    "verifier": {
+      "command": [
+        "/opt/frontier/verifier"
+      ],
+      "cpu_millis": 2000,
+      "evidence_path": "/frontier/output/evidence.tar.zst",
+      "max_evidence_bytes": 4194304,
+      "memory_bytes": 8589934592,
+      "result_path": "/frontier/output/result.json"
+    }
+  },
+  "family": "frontier-cs-2.0/databases",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 563,
+        "path": "datasets/eval.json",
+        "version": "sha256:c0bf7e56e798755cbedda1511341d3bab74f403c7d44ec2eae2a0e29e6a94ae2"
+      },
+      "train": {
+        "bytes": 562,
+        "path": "datasets/train.json",
+        "version": "sha256:99c99eee6760054f3e60245f7f188b321f4e5f3b5ded28080abed8c33338590b"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "historical_authored_max_dev_submissions": 25,
+      "solver_visible_metrics": [
+        "all_metrics_progress",
+        "candidate_median_latency_us"
+      ],
+      "suite_relation": null
+    },
+    "frontier_cs_2_0": {
+      "adapter_version": "g1-public-runtime-python31116-zstandard0230",
+      "identity_algorithm": "preview-source-identity/v1",
+      "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
+      "problem_id": "join_tree_rewriting",
+      "source_set_sha256": "sha256:13ec0acfd2ef9d3d4cd8dc112fed5c200bb594f8b5f478dd117f8c43d0f60d37"
+    },
+    "generator": {
+      "candidate_id": "cand_001",
+      "commit": "ef47b82d98fb26e99f06f996d47a0c35297b524e",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top17_78569b6083"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Liese Bekkers",
+        "Frank Neven",
+        "Stijn Vansummeren",
+        "Remy Wang"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2025-instance-optimal-acyclic-join-processing-without-regret-engineering-the-yannakakis-algorithm-in-78569b6083",
+      "pdf_url": "https://www.vldb.org/pvldb/vol18/p2413-vansummeren.pdf",
+      "title": "Instance-Optimal Acyclic Join Processing Without Regret: Engineering the Yannakakis Algorithm in Column Stores",
+      "venue": "PVLDB 18",
+      "year": 2025
+    },
+    "runtime": {
+      "allowed_paths": [
+        "2phase_nsa/binary_plan/rewrite_policy.py"
+      ],
+      "language": "python",
+      "release": {
+        "evidence_codec": "zstandard==0.23.0",
+        "independent_measurement_required": true,
+        "python_base": "python:3.11.16-slim-bookworm@sha256:4b4c524dc3dce996864e030c7bd9c6b0e517597189fee48f48e05b499442444b",
+        "supersedes_source_sha256": "sha256:a1140bc0d2211f66c5d29bc72b8c41ef2f365068c3e149102e13b84fac63ce3f"
+      },
+      "submission_kind": "patch"
+    }
+  },
+  "task_id": "frontier-cs-2.0-join-tree-rewriting",
+  "version": "g1-public-runtime-python31116-zstandard0230-cfg-20a3b0a6f751"
+}

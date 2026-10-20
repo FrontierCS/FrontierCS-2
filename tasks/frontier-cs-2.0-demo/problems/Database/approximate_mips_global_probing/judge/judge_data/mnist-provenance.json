@@ -1,0 +1,15 @@
+{
+  "url": "https://storage.googleapis.com/tensorflow/tf-keras-datasets/mnist.npz",
+  "documentation": "https://keras.io/api/datasets/mnist/",
+  "license": "CC-BY-SA-3.0 as documented by Keras; dataset copyright Yann LeCun and Corinna Cortes",
+  "source_sha256": "731c5ac602752760c8e48fbffcf8c3b850d9dc2a2aedcf2cc48468fc17b673d1",
+  "dimensions": [
+    60000,
+    784
+  ],
+  "seed": 20260919,
+  "queries": "first 300 after fixed permutation, self included",
+  "data_sha256": "93577705877c3b03618b1f064886cc93f411ac2fcdae7416c80d80c12bfb03de",
+  "compressed_data_sha256": "622ae052176fac80eae385920b442af612608ce15f599f1369a6c9dd93d2f740",
+  "truth_sha256": "ff6590df287cd288ae74c27d80b4b59ee588f448bbbeeb9b26c935b7d9354d57"
+}

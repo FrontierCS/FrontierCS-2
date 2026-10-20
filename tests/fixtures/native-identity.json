@@ -1,0 +1,47 @@
+{
+  "batch_local_counting": {
+    "datasets": {
+      "eval": "b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7",
+      "train": "192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
+    },
+    "identity_algorithm": "preview-source-identity/v1",
+    "image_tag": "source-4297a26b0db2d387a2e49f3d0dba62bcd87c9702c91399c5d8ec7604503d2461",
+    "source_set_sha256": "sha256:4297a26b0db2d387a2e49f3d0dba62bcd87c9702c91399c5d8ec7604503d2461"
+  },
+  "bounded_evm_path_prediction": {
+    "datasets": {
+      "eval": "dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4",
+      "train": "e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
+    },
+    "identity_algorithm": "preview-source-identity/v1",
+    "image_tag": "source-71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328",
+    "source_set_sha256": "sha256:71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328"
+  },
+  "evm_state_checkpoints": {
+    "datasets": {
+      "eval": "5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
+      "train": "a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
+    },
+    "identity_algorithm": "preview-source-identity/v1",
+    "image_tag": "source-ea7fdba730d92b83838d20c6d556790668e9383151ba1381f42db7e91898c0ff",
+    "source_set_sha256": "sha256:ea7fdba730d92b83838d20c6d556790668e9383151ba1381f42db7e91898c0ff"
+  },
+  "graph_mining_method_selection": {
+    "datasets": {
+      "eval": "706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e",
+      "train": "6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+    },
+    "identity_algorithm": "preview-source-identity/v1",
+    "image_tag": "source-95db68c9fbcb0cd0335f1dfae5c2e73edd4414f05ca87d60e7cbfb193e4701bf",
+    "source_set_sha256": "sha256:95db68c9fbcb0cd0335f1dfae5c2e73edd4414f05ca87d60e7cbfb193e4701bf"
+  },
+  "join_tree_rewriting": {
+    "datasets": {
+      "eval": "c0bf7e56e798755cbedda1511341d3bab74f403c7d44ec2eae2a0e29e6a94ae2",
+      "train": "99c99eee6760054f3e60245f7f188b321f4e5f3b5ded28080abed8c33338590b"
+    },
+    "identity_algorithm": "preview-source-identity/v1",
+    "image_tag": "source-13ec0acfd2ef9d3d4cd8dc112fed5c200bb594f8b5f478dd117f8c43d0f60d37",
+    "source_set_sha256": "sha256:13ec0acfd2ef9d3d4cd8dc112fed5c200bb594f8b5f478dd117f8c43d0f60d37"
+  }
+}

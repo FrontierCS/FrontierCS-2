@@ -1,0 +1,15 @@
+{
+  "allowed_paths": [
+    "CSR_FlengthCluster.h",
+    "BIN_FlengthCluster.h",
+    "hash_mult_flengthcluster.h",
+    "hash_mult.h",
+    "cluster_utility.h",
+    "CSR_VlengthCluster.h",
+    "BIN.h",
+    "frontier_solution/"
+  ],
+  "max_bytes": 266240,
+  "max_files": 24,
+  "member": "solution.patch"
+}

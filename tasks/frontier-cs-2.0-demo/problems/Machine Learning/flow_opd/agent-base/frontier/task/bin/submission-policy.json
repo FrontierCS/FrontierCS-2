@@ -1,0 +1,10 @@
+{
+  "allowed_paths": [
+    "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py",
+    "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py",
+    "flow_grpo/frontier_solution/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 32,
+  "member": "solution.patch"
+}

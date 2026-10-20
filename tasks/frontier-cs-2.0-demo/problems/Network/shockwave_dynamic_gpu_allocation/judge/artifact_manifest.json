@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "external-shockwave-nsdi23/code",
+  "authentic_execution": {
+    "entrypoint": "scheduler/scripts/drivers/simulate_scheduler_with_trace.py",
+    "retained_files": [
+      "scheduler/scripts/drivers/simulate_scheduler_with_trace.py",
+      "scheduler/utils.py",
+      "scheduler/policies/shockwave.py",
+      "scheduler/scheduler.py",
+      "scheduler/JobMetaData.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "scheduler/shockwave.py",
+      "mode": "stubbed",
+      "symbols": [
+        "ShockwaveScheduler.round_schedule"
+      ]
+    },
+    {
+      "path": "scheduler/shockwave_helper.py",
+      "mode": "removed",
+      "symbols": ["MinMaxSumKSubarrays"]
+    }
+  ],
+  "solution_surface": {
+    "modify": ["scheduler/shockwave.py", "scheduler/shockwave_helper.py"],
+    "add_under": ["scheduler/solver_extensions/"],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Task-owned deterministic build adapter that compiles the retained upstream RPC protocol stubs."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Task-owned command adapter that invokes the retained upstream trace driver without implementing scheduling."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Task-owned patch packager that stages solver-authored files and enforces the declared editable surface."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "scheduler/scripts/drivers/run_scheduler_with_trace.py",
+    "scheduler/scripts/drivers/simulate_scheduler_with_generated_jobs.py",
+    "scheduler/policies/shockwave_helper.py",
+    "scheduler/reproduce/tacc_32gpus.sh"
+  ],
+  "minimality_note": "The retained tree is the smallest import-complete reproduced path from the original trace driver through Scheduler to the excised hook; experiment frontends, result pickles, traces, physical workers, and the older parallel allocator are omitted."
+}

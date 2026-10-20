@@ -1,0 +1,91 @@
+{
+  "agent": {
+    "cpu_millis": 2000,
+    "memory_bytes": 4294967296,
+    "workspace_bytes": 8589934592
+  },
+  "display_name": "Access-Pattern Rewriting",
+  "family": "frontier-cs-2.0/compilers",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 417,
+        "path": "datasets/eval.json",
+        "version": "sha256:fedd71bba0f9005cdc251f0d58be6aa5edc0bacdc4a4aad49d4c8ab600742733"
+      },
+      "train": {
+        "bytes": 424,
+        "path": "datasets/train.json",
+        "version": "sha256:cf428d96ae29243ca1470243b6f02b07baaf91f06acf32b3f4b996f29024c82f"
+      }
+    },
+    "evaluation": {
+      "authored_answering_timeout_seconds": 18000,
+      "authored_max_dev_submissions": 100,
+      "authored_max_train_wall_seconds": 12000,
+      "solver_visible_metrics": [
+        "development_im2col_discovered_count",
+        "development_rewrite_time_seconds_median",
+        "development_egraph_node_growth_median"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2105-09377"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "arxiv": "2105.09377",
+      "sections": [
+        "5.3 / Figure 4",
+        "5.2 / Figure 3"
+      ],
+      "title": "Pure Tensor Program Rewriting via Access Patterns",
+      "venue": "MAPS 2021"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "code/src/language/rewrites.rs",
+        "code/src/language/solver_extensions/"
+      ],
+      "language": "rust",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 5010096128,
+      "max_model_request_bytes": 8388608,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 256,
+      "max_ssh_bytes_per_direction": 8388608,
+      "max_ssh_sessions": 32
+    }
+  },
+  "problem_id": "glenside",
+  "quota": {
+    "eval_timeout_seconds": 300,
+    "max_train_calls": 100,
+    "max_train_wall_seconds": 12000,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 1048576
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 2000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 4294967296
+  },
+  "version": "r11-public-semantic-contract-20261011"
+}

@@ -1,0 +1,27 @@
+id: "mujoco_playground_cpu"
+display_name: "Go1 Joystick Policy Training"
+category: "Robotics"
+summary: "Train a Unitree Go1 joystick locomotion policy in MuJoCo Playground within a fixed GPU budget."
+paper_title: "Demonstrating MuJoCo Playground"
+paper_venue: "RSS 2025"
+paper_url: "https://arxiv.org/abs/2502.08844"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "H100"
+agent_gpu_count: 1
+agent_gpu_seconds: 14400
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "H100"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 30600
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 3
+train_wall_seconds: 16200
+eval_timeout_seconds: 14400

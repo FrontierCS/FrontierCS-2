@@ -1,0 +1,43 @@
+tag: cryptography
+runtime:
+  language: go
+  timeout_seconds: 1800
+  verifier_metrics_limit_bytes: 3145728
+  environment: Go 1.19.13, Python 3.11.16, Linux amd64 AES-NI; offline Go module cache required
+  docker:
+    image: quarter-pir-runtime:go1.19.13-python-compatible@sha256:f953ab984e467b6c4c39938770dfa706c2b7d5b302284df78edc666002f58c6b
+  apt_packages: [python3, python3-yaml, git]
+  judge_apt_packages: [python3, python3-yaml, git]
+  judge_pip_packages: [PyYAML==6.0.2]
+  judge_build_commands:
+    - cp -a /opt/frontier/task/harbor/app/quarter_pir/code /opt/frontier/build-deps && cd /opt/frontier/build-deps && GOMODCACHE=/opt/frontier/go-mod /usr/local/go/bin/go mod download && rm -rf /opt/frontier/build-deps
+    - chmod -R a+rX /opt/frontier/go-mod
+  judge_env:
+    GOMODCACHE: /opt/frontier/go-mod
+environment:
+  cpus: 4
+  memory_mb: 8192
+  storage_mb: 8192
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths: [quarter_pir/code/pir/]
+  max_changed_files: 50
+  max_patch_bytes: 524288
+evaluation:
+  max_dev_submissions: 8
+  suite_relation: same_distribution
+  solver_visible_metrics:
+    - candidate_public_server_compute_time_ns_median
+    - candidate_public_online_time_ms_median
+    - candidate_public_preprocessing_seconds_small
+    - candidate_public_preprocessing_seconds_large
+    - candidate_public_online_communication_bytes_small
+    - candidate_public_online_communication_bytes_large
+    - candidate_public_client_storage_bytes_small
+    - candidate_public_client_storage_bytes_large
+    - candidate_public_validity_code
+  dataset_files:
+    train: {path: quarter_pir_train.tar, media_type: application/x-tar}
+    eval: {path: quarter_pir_eval.tar, media_type: application/x-tar}

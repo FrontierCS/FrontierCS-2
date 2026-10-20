@@ -1,0 +1,25 @@
+{
+  "agent": {"cpu_millis": 8000, "memory_bytes": 4294967296, "workspace_bytes": 2147483648},
+  "display_name": "Hypergraph Core Numbers",
+  "family": "frontier-cs-2.0/algorithms",
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {"bytes": 313, "path": "datasets/eval.json", "version": "sha256:a6ff2b61e604f152cf22ef1f7f6888e64d191029b2b40ecedfceaa3ef526210e"},
+      "train": {"bytes": 346, "path": "datasets/train.json", "version": "sha256:639b86ebca311ac505235a2727e42381b3f4e95a9863f7519b9e9aaec5eed8e7"}
+    },
+    "evaluation": {"authored_max_dev_submissions": 100, "solver_visible_metrics": ["candidate_runtime_seconds_median", "candidate_sequential_runtime_seconds_median"], "suite_relation": "same_distribution"},
+    "generator": {"candidate_id": null, "commit": null, "pipeline": "manual-transfer", "run_id": null},
+    "isolation": "feedback and graded hypergraph bytes, evaluator, oracle and reference patch exist only in the verifier image; the Agent receives the retained source substrate and scientific statement",
+    "paper": {"authors": ["Julian Shun"], "doi": "10.1145/3332466.3374527", "paper_id": "external-hygra-ppopp20", "pdf_url": "https://people.csail.mit.edu/jshun/hygra.pdf", "title": "Practical Parallel Hypergraph Algorithms", "venue": "PPoPP", "year": 2020},
+    "runtime": {"allowed_paths": ["apps/hyper/HyperKCore-Efficient.C", "apps/hyper/frontier_solution/"], "language": "c++", "submission_kind": "patch"},
+    "conversion": {"source_repository": "private authoring repository", "source_commit": "52c793d1b7144f66e45cdf30a36c66869a1f07aa", "source_path": "original_format_problems/hypergraph_core_numbers", "scope": "Original-format to native transfer; scientific task, authentic execution, workloads, reference, scoring and thresholds preserved", "original_metadata_path": null, "historical_evidence_path": null, "note": "No standalone Smith metadata exists in the source PR. Paper and artifact provenance is recovered from the byte-matched retained jshun/ligra source, its README citation, the paper's Section 5.3/Algorithm 3, and Crossref's DOI record; other unknown fields remain null rather than inferred."}
+  },
+  "network": {"allowed_domains": [], "audit": {"max_bundle_bytes": 34359738368, "max_model_request_bytes": 67108864, "max_model_response_bytes": 8388608, "max_model_sessions": 1024, "max_ssh_bytes_per_direction": 8388608, "max_ssh_sessions": 32}},
+  "problem_id": "hypergraph_core_numbers",
+  "quota": {"eval_timeout_seconds": 1800, "max_train_calls": 100, "max_train_wall_seconds": 30000, "wall_time_seconds": 18000},
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {"entrypoint": "payload/solution.patch", "max_bytes": 262144},
+  "verifier": {"command": ["/opt/frontier/verifier"], "cpu_millis": 8000, "max_evidence_bytes": 4194304, "memory_bytes": 4294967296},
+  "version": "native-transfer-4-framework-first-build"
+}

@@ -1,0 +1,129 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 17179869184
+  },
+  "display_name": "GPU K-Means Kernel Optimization",
+  "family": "frontier-cs-2.0/systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 10800,
+      "max_instance_seconds": 10800,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 18000
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "conversion": {
+      "continuous_score": "0 for speedup <= 1; otherwise 100 * log(speedup) / (log(10) + log(speedup)); 10x=50, asymptotic to 100 without upper clipping; independent of reference.patch",
+      "pass_fail": "on every workload in the selected suite (four train or all six public and hidden final): latency < reference, inertia <= reference * 1.05, and mismatch <= reference + 0.002; all comparisons must pass",
+      "source_commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
+      "source_path": "2.0/problems/kmeans_gpu_kernel_optimization",
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "status": "reviewed_bands_pending_modal_validation"
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 411,
+        "path": "datasets/eval.json",
+        "version": "sha256:fa1fd567442bc1c22cdaa24c8bd939cfcb6d179e1eafe067ff4a3829e92e4ebb"
+      },
+      "train": {
+        "bytes": 339,
+        "path": "datasets/train.json",
+        "version": "sha256:3a50c16262f1a3a77033140280b6248e9724ebeff77adfcee68ceeccb4745261"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 25,
+      "beat_spec_sha256": "sha256:b04da49c533997ae82fb6e3af009346f7433c6790c9ba63a7f3fb41239ab2ba9",
+      "solver_visible_metrics": [
+        "geomean_speedup",
+        "lloyd_loop_latency_ms",
+        "labeled_inertia",
+        "label_mismatch_fraction"
+      ],
+      "suite_relation": "train uses original public w0-w3; final freshly measures original w0-w5 together, public w0-w3 with the same train seeds and hidden w4-w5 with an independent deterministic seed domain; all six contribute to final score and PASS",
+      "continuous_score": "0 for speedup <= 1; otherwise 100 * log(speedup) / (log(10) + log(speedup)); 10x=50, asymptotic to 100 without upper clipping; independent of reference.patch"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "config_sha256": null,
+      "pipeline": null,
+      "run_id": null
+    },
+    "isolation": "Hidden final shapes, workload generator, seeds, reference patch, comparisons and evidence exist only in the Verifier GPU image. Agent images contain the public train shapes, naive starter and runtime content.",
+    "paper": {
+      "authors": [],
+      "doi": null,
+      "paper_id": null,
+      "pdf_url": null,
+      "title": null,
+      "venue": null,
+      "year": null
+    },
+    "provenance_file": "judge/metadata.json",
+    "runtime": {
+      "allowed_paths": [
+        "kmeanslib/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 67108864,
+      "max_ssh_sessions": 1076,
+      "ssh_session_budgets": {
+        "agent": 1024,
+        "verifier_eval": 2,
+        "verifier_train": 50
+      }
+    }
+  },
+  "problem_id": "kmeans_gpu_kernel_optimization",
+  "quota": {
+    "eval_timeout_seconds": 1800,
+    "max_train_calls": 25,
+    "max_train_wall_seconds": 16200,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 2097152
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 8589934592
+  },
+  "version": "native-staging.10"
+}

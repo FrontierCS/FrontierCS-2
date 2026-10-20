@@ -1,0 +1,114 @@
+{
+  "unit": "one fixed-seed 1000-step Gaussian 2D spiral LeJEPA training-and-evaluation run through experiments/run.py and lejepa_id/engine.py, with the fixed 10,000-sample evaluation set generated for that seed",
+  "metrics": [
+    {
+      "name": "r2_zh",
+      "means": "the final coefficient of determination of the affine least-squares map from true latent z to learned representation h on the workload's fixed evaluation set",
+      "source": "upstream/experiments/lejepa_id/metrics.py (bidirectional_r2 and compute_all_metrics), emitted as r2_zh by upstream/experiments/run.py",
+      "better": "higher",
+      "clears_when": "candidate_r2_zh(workload) > reference_r2_zh(workload)",
+      "tolerance": "none"
+    },
+    {
+      "name": "r2_hz",
+      "means": "the final coefficient of determination of the affine least-squares map from learned representation h to true latent z on the workload's fixed evaluation set",
+      "source": "upstream/experiments/lejepa_id/metrics.py (bidirectional_r2 and compute_all_metrics), emitted as r2_hz by upstream/experiments/run.py",
+      "better": "higher",
+      "clears_when": "candidate_r2_hz(workload) > reference_r2_hz(workload)",
+      "tolerance": "none"
+    },
+    {
+      "name": "orth_err_normalized",
+      "means": "the final Frobenius error ||A^T A - I||_F divided by sqrt(N), where A is the linear part of the affine least-squares fit from z to h on the workload's fixed evaluation set",
+      "source": "upstream/experiments/lejepa_id/metrics.py (compute_all_metrics), emitted as orth_err_normalized by upstream/experiments/run.py and reported by upstream/experiments/analysis/make_table_scaling.py and plot_scaling.py",
+      "better": "lower",
+      "clears_when": "candidate_orth_err_normalized(workload) < reference_orth_err_normalized(workload)",
+      "tolerance": "none"
+    },
+    {
+      "name": "epsilon",
+      "means": "the final covariance deviation epsilon = ||Cov(h) - I||_F of the learned representation on the workload's fixed evaluation set (paper Appendix H.5 bound quantity, Fig. 9)",
+      "source": "upstream/experiments/lejepa_id/metrics.py (compute_all_metrics), emitted by upstream/experiments/run.py in the final metrics of the same fixed 10,000-sample evaluation set",
+      "better": "lower",
+      "clears_when": "candidate_epsilon(workload) < reference_epsilon(workload)",
+      "tolerance": "none. The reference values measured locally (about 0.47-0.48 on the spiral seeds) are an order of magnitude above the 10,000-sample estimation floor (about 0.02), so a strict comparison is attainable."
+    },
+    {
+      "name": "delta",
+      "means": "the final alignment gap delta = max(L_h - 2(1-rho) tr(Cov h), 0), where L_h is the mean squared distance between representations of the evaluation set and of one OU-perturbed view (paper Appendix H.5 bound quantity, Fig. 9)",
+      "source": "upstream/experiments/lejepa_id/metrics.py (compute_all_metrics), emitted by upstream/experiments/run.py in the final metrics of the same fixed 10,000-sample evaluation set",
+      "better": "lower",
+      "clears_when": "candidate_delta(workload) < reference_delta(workload), OR candidate_delta(workload) == 0 AND reference_delta(workload) == 0",
+      "tolerance": "none except the clamp floor: delta is clamped at 0 by its definition, so when the reference is already 0 a strictly smaller value is impossible and exact equality at 0 clears; a positive tie fails."
+    },
+    {
+      "name": "procrustes_mse",
+      "means": "the final orthogonal-recovery error: mean squared error between h and z Q^T for the orthogonal Q from the SVD of the cross-covariance h^T z / n (paper Appendix H.5, Fig. 9)",
+      "source": "upstream/experiments/lejepa_id/metrics.py (compute_all_metrics), emitted by upstream/experiments/run.py in the final metrics of the same fixed 10,000-sample evaluation set",
+      "better": "lower",
+      "clears_when": "candidate_procrustes_mse(workload) < reference_procrustes_mse(workload)",
+      "tolerance": "none"
+    }
+  ],
+  "beats_reference": "For every graded workload w: (candidate_r2_zh(w) > reference_r2_zh(w)) AND (candidate_r2_hz(w) > reference_r2_hz(w)) AND (candidate_orth_err_normalized(w) < reference_orth_err_normalized(w)) AND (candidate_epsilon(w) < reference_epsilon(w)) AND (candidate_delta(w) < reference_delta(w) OR candidate_delta(w) == reference_delta(w) == 0) AND (candidate_procrustes_mse(w) < reference_procrustes_mse(w)); beats_reference is 1 if and only if this conjunction is true for every w, otherwise it is 0.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "r2_zh",
+      "means": "A scalar arithmetic mean of the candidate's own absolute r2_zh over development workloads only; no workload identifiers, keyed rows, or ordered per-workload arrays. Hidden-final metrics are never solver-visible.",
+      "reveals_reference": "No reference values, ratios, differences, margins, private workload identities, per-workload decisions, or hidden-final measurements. Only anonymous beat_spec_progress counts and pass/fail percentages provide comparison feedback."
+    },
+    {
+      "name": "r2_hz",
+      "means": "A scalar arithmetic mean of the candidate's own absolute r2_hz over development workloads only; no workload identifiers, keyed rows, or ordered per-workload arrays. Hidden-final metrics are never solver-visible.",
+      "reveals_reference": "No reference values, ratios, differences, margins, private workload identities, per-workload decisions, or hidden-final measurements. Only anonymous beat_spec_progress counts and pass/fail percentages provide comparison feedback."
+    },
+    {
+      "name": "orth_err_normalized",
+      "means": "A scalar arithmetic mean of the candidate's own absolute orth_err_normalized over development workloads only; no workload identifiers, keyed rows, or ordered per-workload arrays. Hidden-final metrics are never solver-visible.",
+      "reveals_reference": "No reference values, ratios, differences, margins, private workload identities, per-workload decisions, or hidden-final measurements. Only anonymous beat_spec_progress counts and pass/fail percentages provide comparison feedback."
+    },
+    {
+      "name": "epsilon",
+      "means": "A scalar arithmetic mean of the candidate's own absolute epsilon over development workloads only; no workload identifiers, keyed rows, or ordered per-workload arrays. Hidden-final metrics are never solver-visible.",
+      "reveals_reference": "No reference values, ratios, differences, margins, private workload identities, per-workload decisions, or hidden-final measurements. Only anonymous beat_spec_progress counts and pass/fail percentages provide comparison feedback."
+    },
+    {
+      "name": "delta",
+      "means": "A scalar arithmetic mean of the candidate's own absolute delta over development workloads only; no workload identifiers, keyed rows, or ordered per-workload arrays. Hidden-final metrics are never solver-visible.",
+      "reveals_reference": "No reference values, ratios, differences, margins, private workload identities, per-workload decisions, or hidden-final measurements. Only anonymous beat_spec_progress counts and pass/fail percentages provide comparison feedback."
+    },
+    {
+      "name": "procrustes_mse",
+      "means": "A scalar arithmetic mean of the candidate's own absolute procrustes_mse over development workloads only; no workload identifiers, keyed rows, or ordered per-workload arrays. Hidden-final metrics are never solver-visible.",
+      "reveals_reference": "No reference values, ratios, differences, margins, private workload identities, per-workload decisions, or hidden-final measurements. Only anonymous beat_spec_progress counts and pass/fail percentages provide comparison feedback."
+    },
+    {
+      "name": "candidate_diagnostic",
+      "means": "Present only when a development submission is rejected by the loss-purity check (scored zero), in place of the measurements: one object from a fixed table with the category stateful_loss and the fixed sentence of that category. It carries no number measured from the submission, no path or symbol name and no text from the submission.",
+      "reveals_reference": "No; a categorical fact about the candidate's own rejection built from a fixed table, decided before any reference comparison, without reference values, comparisons or workload identities; final responses never include it."
+    }
+  ],
+  "withheld": [
+    "reference_r2_zh",
+    "reference_r2_hz",
+    "reference_orth_err_normalized",
+    "reference_epsilon",
+    "reference_delta",
+    "reference_procrustes_mse",
+    "r2_zh_clear_by_workload",
+    "r2_hz_clear_by_workload",
+    "orth_err_normalized_clear_by_workload",
+    "epsilon_clear_by_workload",
+    "delta_clear_by_workload",
+    "procrustes_mse_clear_by_workload",
+    "private_workload_ids",
+    "per_workload_metric_rows",
+    "ordered_per_workload_arrays",
+    "hidden_final_metrics"
+  ],
+  "statement_sentences": "A separate, stricter beats-reference criterion compares final bidirectional linear-recovery R-squared, normalized orthogonality error, and the paper's Appendix H.5 covariance deviation epsilon, alignment gap delta and orthogonal (Procrustes) recovery error independently on every fixed training workload. It is satisfied only when, on every workload, both the z-to-h and h-to-z R-squared values are strictly higher than the reference's, and the normalized orthogonality error, epsilon and Procrustes error are strictly lower than the reference's, and delta is strictly lower than the reference's unless both are exactly 0 at delta's clamp floor. All six comparisons must hold everywhere; the reference values and workload-specific pass decisions are withheld.",
+  "comments": "Checked reproduction.json first: accelerator_required is null, so the reviewed authentic spine is CPU, not a GPU-redefined unit. The retained run.py -> lejepa_id/engine.py path performs online OU-view generation, invokes the solver-owned loss, trains the encoder, and evaluates using lejepa_id/metrics.py; configs/2d.yaml supplies the authored Gaussian 2D setup. The bounded reviewed workload changes the paper configuration from 20,000 to 1,000 steps; the author must state that deviation and must define the graded fixed seed list explicitly (the brief reports three exact 1,000-step probes, so those fixed seeds should be separate workloads, never averaged). No tolerance is justified: the available 0.9775-0.9848 range is across different seeded workloads, not repeated measurement noise for an identical workload. Wall time and peak RSS were reproduction-harness measurements rather than quantities measured and reported by the retained paper artifact, so despite the brief's training-efficiency preference they cannot enter this beats-reference conjunction under the artifact-native-metric rule; they may remain ordinary resource limits. final_align/final_sigreg are also excluded because the allowed solution space includes alternative differentiable Gaussianity estimators whose raw regularizer scales need not be like-for-like; callable shape, finite loss, gradient, and training-path checks must instead remain reference-independent validity guards, and latent labels must remain unavailable to solver-owned training code. Preserve the noted upstream discrepancies: the two views are independently perturbed from common z (their view-to-view correlation is rho squared), AdamW uses default weight decay although Appendix H says zero, and the constructed MLP has five Linear modules although Appendix H says four. AUTHORING_NOTES.md and CPU_FEASIBILITY.json requested by AUTHORING_BRIEF.md were not present in this workspace; this review therefore uses the supervisor measurements quoted verbatim in AUTHORING_BRIEF.md plus reproduction.json and must not be treated as having independently inspected those absent files. Supervisor privacy clarification from coordinator checkpoint 5484f83cf: all per-workload metric rows and their identities remain private. Solver train feedback exposes only scalar means of candidate absolute development metrics plus anonymous per-metric pass/fail counts and percentages. No final metrics are returned to the solver. This changes feedback visibility only; unit, metrics, tolerances and the every-workload numerical conjunction are unchanged. Beat spec v2 (2026-10-07): adds the three Appendix H.5 bound/recovery quantities already computed by the unchanged upstream metrics.py (epsilon, delta, procrustes_mse) as independent per-workload metrics; the three original metrics, workloads, seeds, steps and continuous score are unchanged. approx_bound and D_bound are derived from epsilon and delta and are not separate axes; r2_zx/r2_xz depend only on the fixed mixing; training-loss values are solver-defined and not like-for-like. Reacher (H.11) needs image assets, an environment and budget outside this CPU task. Workload difficulty was reviewed: the other 2D mixings of the paper's configs/2d.yaml (banana, sinusoid, NVP) are a natural harder stratum, but each 1,000-step run takes about 70 s on the review host, so adding them would require raising the 400 s final and 3,200 s train budgets; that is left for an explicit decision."
+}

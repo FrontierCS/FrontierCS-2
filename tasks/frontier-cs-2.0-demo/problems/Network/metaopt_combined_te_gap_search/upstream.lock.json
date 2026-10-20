@@ -1,0 +1,824 @@
+{
+  "adaptations": [
+    "Native directory tar at payload/project retains exact source lock and source bytes/file limits.",
+    "Continuous score unchanged, per-instance gap >= same-instance reference, public15 plus hidden15 final union and CPU train100.",
+    "Formal answering18000 and independent final3600. Native cumulative train wall18000 spans the answering window; CPU train100 overrides original30.",
+    "Task-local native runtime uses immutable pre-restored NuGet packages without changing supplied package versions. Standard sandbox-driver-verifier container separation with verifier and C# child at UID/GID65532; legacy root-only judge and UID switching are removed, without claiming an inner OS isolation boundary. All scratch stays below /frontier.",
+    "Route the .NET8 fixed /tmp/.dotnet named-mutex path through an image symlink to /frontier/tmp/.dotnet; pre-create shm at verifier startup to avoid initialization mkdtemp on read-only /tmp. No additional writable mount.",
+    "CPU-only TaskConfig requires every audit limit nonzero: reserve max_ssh_sessions=1 to satisfy the current schema; GPU images and quota remain absent/zero, with no GPU permission enabled.",
+    "Packaging: relocate the existing Agent scientific guide from agent-base/README.md to agent-base/frontier/task/repo/README.md with identical bytes and the same image destination; retain the canonical operational README.",
+    "Align effective authored_max_dev_submissions to the existing train100; retain original30 as legacy_max_dev_submissions. All resource and submission budgets are unchanged.",
+    "Complete beat-spec descriptive metadata and document existing absolute train feedback fields and aggregate progress. The exact per-instance comparison, workloads, score and final/private behavior are unchanged.",
+    "Export the unchanged native 2.0/task_lib/beat_spec_feedback.py from Smith commit19ea4de4d139cbb64128976cac4af2c6f82455a4 (SHA2569839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805), and route successful train feedback through its public allowlist with equivalent private evidence rows.",
+    "Split Verifier COPY sources into individual native paths and make the three Python adapter modules world-readable for UID65532 even after restrictive host umasks. Retain the exact .NET8 base digest and all runtime dependencies.",
+    "Submit payload/solution.patch, a text diff of the editable search file and Candidate/ helpers against the published starter project; the Verifier applies it to its own starter copy before the unchanged build and scoring (every task uses patch submissions).",
+    "Keep solver-facing operational and scientific guide copies consistent with patch submission and asynchronous train acceptance; reject malformed non-diff text rather than treating it as an unchanged starter.",
+    "Restore owner write permission only on the Verifier private scratch project copied from its read-only image starter; preserve immutable starter permissions and all source-lock checks.",
+    "Preserve trusted candidate rejection category, validation reason, case identity and process exit code in private evidence; return a closed safe reason in solver feedback. Keep original score 0/FAIL, successful scores, source boundaries, case suites, reference comparisons and all resource/process limits unchanged.",
+    "Retain bounded sanitized build stdout/stderr and case stderr in trusted rejection evidence only, without threads or unbounded files. Preserve normal build helper lifetime and immutable Program. Nonblocking case stdin shares the existing 33-second watchdog with stderr drainage, closing the previously unbounded blocking handoff; numerical limits, science and resource contracts remain unchanged. Visible cgroup event deltas are aggregate observations, not child OOM attribution."
+  ],
+  "commit": "f15ce24eedd0f17e8f9214fa90dffe6287ad40d0",
+  "file_count": 83,
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 65,
+      "sha256": "sha256:baed01c6d353bfa2bf50f8bc4b1c1a10d945026bfd93c4776b67e83515d5c969"
+    },
+    {
+      "path": "LICENSE.frontier-cs",
+      "bytes": 1072,
+      "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+    },
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 1103,
+      "sha256": "sha256:058f1b1f41f68a09e545fb8dc5110cc5e744a50330331877e4c49318f0a42444"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 3914,
+      "sha256": "sha256:71d6df52a1c772938d146452e152c91418738ffdd99cd8befda67f10f5a960d4"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/README.md",
+      "bytes": 2239,
+      "sha256": "sha256:04ad0f9b226308ae91cd482ec67876085f4649b1923cdf90cdf0fade467b96a1"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "bytes": 1442,
+      "sha256": "sha256:b0fb019e730fb49a19fdf9820c658e40abe18606a2af7a58f8fc290b7e359417"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "bytes": 678,
+      "sha256": "sha256:2a60488acdc8ebf30977074ed53c795d728acb68c7f52414bfdd5b633d88e6ad"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/README.md",
+      "bytes": 8404,
+      "sha256": "sha256:0df310447cee6d18b9591f0eec170fdb047fce9d7cd35d8073c27a2f5bcb85b7"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/.stylecop/AnalysisDictionary.xml",
+      "bytes": 164,
+      "sha256": "sha256:2ae485e003f687ed11c8e1a019085fda00ecf5a831a301b23cfef01f0ab37672"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/.stylecop/StyleCop.props",
+      "bytes": 1425,
+      "sha256": "sha256:2b80e5b23d2261621b0a49cdbd9020938b7fe9071e9f980beaa2d3c20cfb24be"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/.stylecop/stylecop.json",
+      "bytes": 328,
+      "sha256": "sha256:9491697a12ef67fab3fc668b59e8dc1cb33846bbe500d6ee8fe003232531e34e"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/.stylecop/stylecop.ruleset",
+      "bytes": 6878,
+      "sha256": "sha256:c9b899c857c6b03d409fe292d0718fab085a848f22dda8243718e5622a5c1b4f"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/Directory.Build.props",
+      "bytes": 132,
+      "sha256": "sha256:de7639133ece533aa3922e9990ea6e442930d4ff02d4168838e53fbee6a25a2f"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/Directory.Packages.props",
+      "bytes": 2013,
+      "sha256": "sha256:114baf4bf3dc030e7c66715c66616a23a2ec1eaebb024ed8b36cbe1cabaa2765"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/LICENSE",
+      "bytes": 1141,
+      "sha256": "sha256:c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/AdversarialGenMethod.cs",
+      "bytes": 261,
+      "sha256": "sha256:71aaa0aca5a5c98131645077f4f9fd40d6898ad781dab702d94446e820e67287"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/Bins.cs",
+      "bytes": 4157,
+      "sha256": "sha256:bf81ea1d814a65fbbd4ea7b3cb2929c433d65fda758403e936a035ccc3ab7eb6"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/EncodingUtils.cs",
+      "bytes": 24302,
+      "sha256": "sha256:ed224bb143a6e32aadf167ccb49970bbf01429ae65a8105cffa06baf6639c93a"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/Exceptions.cs",
+      "bytes": 298,
+      "sha256": "sha256:402bdd7327113fccf329810b77a400117bc56ba44ace7805be7d91e756911e5e"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GenericDemandList.cs",
+      "bytes": 1804,
+      "sha256": "sha256:1adf4a575209d01d6d1e1a3cc4cc14e8aa120ed3ff0cf40ea02a3fe54549407a"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GenericList.cs",
+      "bytes": 1732,
+      "sha256": "sha256:93e91dd2d93f5bba9b83683cb58a773aaae6a4ee4b41c1ca3772fd65ab21464f"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiBinary.cs",
+      "bytes": 4178,
+      "sha256": "sha256:ebb754aea79c033d2d4dafc16cb2309ba56c7c1db0cb59644e2ba997a0ab5b7c"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiCallback.cs",
+      "bytes": 5463,
+      "sha256": "sha256:4cbb1f3f83fe0746122b109a9bc689ccdbcf129d5dce19dd4404782634fe2856"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiEnvironment.cs",
+      "bytes": 899,
+      "sha256": "sha256:9d8e5186af5608eacc3f93dc6fb2520698e72bd6a5ec9f2e5f2e3f5b3a6e7055"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiMin.cs",
+      "bytes": 2350,
+      "sha256": "sha256:161ba9ce9c0ce3647f0def74a96186f99d7eb9a919eee9379330a322e26f9974"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiSOS.cs",
+      "bytes": 46760,
+      "sha256": "sha256:e49ec2837eef130109dff42b4b82fc76ca8e5cc28754a7a188d2aa57e9d2bf47"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiStoreProgressCallback.cs",
+      "bytes": 3639,
+      "sha256": "sha256:22db1036b28ee6e774181c5288795b11a8e2b6f7f775f9791c18f7382074064d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiTerminationCallback.cs",
+      "bytes": 2382,
+      "sha256": "sha256:99bd4c107402da9b88a79f3acecd1b6e64587f8d6a41f2e965c9d869ea9a12fe"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/GurobiTimeoutCallback.cs",
+      "bytes": 2696,
+      "sha256": "sha256:db6d891aff09ca782bfcd04ef1c52c42d4e03a84f3a4b3baa188d7bd7e7223b6"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/IDemandList.cs",
+      "bytes": 868,
+      "sha256": "sha256:1739ea8d99fdeb7b6cb765306f3f9a9e05b4ad953dd9daae462d5cfb037f5e6a"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/IEncoder.cs",
+      "bytes": 8114,
+      "sha256": "sha256:9d1a746922d8cb6d5c15b5e3a84fd2dd96b1877bb9d59d061e0700a170bd4c44"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/IList.cs",
+      "bytes": 859,
+      "sha256": "sha256:10d6826d5b78b54ef033c5bb456de862c855e0a58fef07fb83f79e0bb29e5a0f"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/ISolver.cs",
+      "bytes": 10765,
+      "sha256": "sha256:cda5a3b61ccfbbf7f4b810f81e3663878ee57b99a5ec80399f7325bff5be90c6"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/InnerEncodingMethod.cs",
+      "bytes": 418,
+      "sha256": "sha256:13b10772231b31b528bbd5740afdb156f8a16d2abe3dc87b6b573ce3590c7303"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/KktOptimizationGenerator.cs",
+      "bytes": 8717,
+      "sha256": "sha256:cb2d809b898b38758fe6a842026f7e952cc158df5ee313fc69b8e02b359d4748"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/McCormickRelaxation.cs",
+      "bytes": 3594,
+      "sha256": "sha256:6c3021b761ebe30a24968d50f0d1e75ab30d43a76a6f1d4c52c2b603ed8858e9"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/MetaOptimize.csproj",
+      "bytes": 657,
+      "sha256": "sha256:797dd6f68e1cf7715e7608ee36f0be1586e3bb4081eda56a85891b8a8f54d731"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/ORToolsSolver.cs",
+      "bytes": 48467,
+      "sha256": "sha256:9eb1da0cfa799b3fc2ee9a58115144cf95b6e17d8cbfdece0cf343b3c92e9bef"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/OptimizationEncoding.cs",
+      "bytes": 629,
+      "sha256": "sha256:9e2d77679097e36bee39912851849954e78c9d94598163954ad82abbc9981129"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/OptimizationSolution.cs",
+      "bytes": 1204,
+      "sha256": "sha256:1e77e5be700e21fa3a1fa66efc8e6249884cdecf311f76f04af1c7291ccd6e18"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/PairwiseDemandList.cs",
+      "bytes": 1478,
+      "sha256": "sha256:9bf2facb464776c77cd0439f1c80763003041a31218e0d881f65b4396585e4cf"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/PathComparer.cs",
+      "bytes": 1349,
+      "sha256": "sha256:219b0faa6a56da004d5f0b5f0af36ff0518392370e6eb0171ad066b1a9c95b15"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/Polynomial.cs",
+      "bytes": 9027,
+      "sha256": "sha256:33922fef106f29cbc9d4e432e14e9dba07bea9005635cd203a8ece7c27729fd9"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/PrimalDualOptimizationGenerator.cs",
+      "bytes": 15057,
+      "sha256": "sha256:28b740207f6776c9641fabf6455ef5dfe5d052e504af6777dda09939f4e94619"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/SolverGurobi.cs",
+      "bytes": 25614,
+      "sha256": "sha256:d1d04e75fac177a6ac366c473678288b6f8b4c25aa5f32474f555d72ba59e5f0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/SolverZen.cs",
+      "bytes": 17116,
+      "sha256": "sha256:b4e8b248b9934c200ce84fe1690ef2b0f83d0582701791f0f1e62cf516078eeb"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/Term.cs",
+      "bytes": 6624,
+      "sha256": "sha256:06d4a25023567382b1f6f3390e9626446b901b1fa6371875e162bc7ce9d5e819"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/AdversarialSearchModel.cs",
+      "bytes": 2389,
+      "sha256": "sha256:33fa68be1d198466da8aa32809bb8c6ade66260ba705dfffb75c30520a8e4e15"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs",
+      "bytes": 772,
+      "sha256": "sha256:fa0f17cc4cdb292dfe3f8a06511b0eadf8f4a9541cdc73f020dc8c90df37ad8a"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/DemandPinningEncoder.cs",
+      "bytes": 22820,
+      "sha256": "sha256:da5006564c0afe3e55c708757bba37d3ab64160a396af979738a3b926feca254"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/DemandPinningLinkNegativeException.cs",
+      "bytes": 883,
+      "sha256": "sha256:bdf5cbd114093955f4bd6bcd1a486706b630a64994d939636ee2c26d0fe76e0c"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/DemandPinningQuantizedEncoder.cs",
+      "bytes": 4348,
+      "sha256": "sha256:b0db6f21c21b0d2dc41180eb36e001f497083eb9f4b6d70b55069595fa2d4ab7"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/DirectDemandPinningEncoder.cs",
+      "bytes": 15146,
+      "sha256": "sha256:2cce21a0373558d4cda515c8c5c3adbab4d5e9a8630bb620eeea74c43d047b42"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/ExpectedPopEncoder.cs",
+      "bytes": 8883,
+      "sha256": "sha256:c05e519dd7d553cfe1a4f387400ca0b5d88fa10af9c02766b3f3451f9c2d8d59"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/ModifiedDemandPinningQuantizedEncoder.cs",
+      "bytes": 5706,
+      "sha256": "sha256:41db9e7558b416027d0a5380b996bdbcecd06353bc6a30f60b40647c169b6bff"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/PathType.cs",
+      "bytes": 314,
+      "sha256": "sha256:4d6af8034718853ba8a8243933510a042da5845519a3090214071a071285b64b"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/PopEncoder.cs",
+      "bytes": 14689,
+      "sha256": "sha256:e26dd9a614ea823fce25ef86b56c156d3f8f5495558a4db640411f72a96ea00c"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/TECombineHeuristicsEncoder.cs",
+      "bytes": 8191,
+      "sha256": "sha256:94b2c6f78bd0b4f1deee88ff4327b7c4e6fb6e90edde49ac3bd0ac8c6d6a48e9"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/TEMaxFlowOptimalEncoder.cs",
+      "bytes": 20469,
+      "sha256": "sha256:aaeaa57e1343257bb0d8486f00c51e57fcdcdac0090efb50568963cb2c55f227"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/TEMaxFlowOptimizationSolution.cs",
+      "bytes": 676,
+      "sha256": "sha256:a31b553b9a462c7003dbf070ab884f4906808702ef011205e826a28e923931ae"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/TEOptimizationEncoding.cs",
+      "bytes": 580,
+      "sha256": "sha256:f43458afd0fabc99329bae1808e48b2bac4da4d28d01fbd5ae7f11dc3268b3ae"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/TEOptimizationSolution.cs",
+      "bytes": 697,
+      "sha256": "sha256:6e379944fe842189ec88fc4000007d9a1f93a2e3f2e7f6f20ab9618c4d2b66ec"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/TrafficEngineering/Topology.cs",
+      "bytes": 33067,
+      "sha256": "sha256:4a54ef9cddd3955cf4a1fd078e682b3ef0e268a6126dd3391fb66ac21b57e7ca"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/VariableType.cs",
+      "bytes": 541,
+      "sha256": "sha256:1ba49036605c65f970061c987241f74314142cb673a9910bfe42ddaa7b2dddef"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize/utils.cs",
+      "bytes": 14840,
+      "sha256": "sha256:d1a33efabb1400a95bba3c2a65258328114f8e1d2b8e75c71e316e9a6c81e146"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize.Challenge/MetaOptimize.Challenge.csproj",
+      "bytes": 215,
+      "sha256": "sha256:a2d33e77e31a5a98feb5c82770aa0e0f42c2893844e7781dfa7ee18a3f881319"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize.Challenge/Program.cs",
+      "bytes": 1327,
+      "sha256": "sha256:f6e61088228963fe23e63a8773073df26ec9389382ea457ffc6488a642dd37f4"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/MetaOptimize.Challenge/ReplayOracle.cs",
+      "bytes": 6139,
+      "sha256": "sha256:025a58ac2328987d3d76a7cd544b3a3fde80f5058ada5fb623cff0e6a39e5cf0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/project/SUBSTRATE.md",
+      "bytes": 727,
+      "sha256": "sha256:1e3993699b3c160a65c257a54ab3ab5c1327acbc271e8cf98dd4bae6b3fdc374"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 244,
+      "sha256": "sha256:53a960d138f4c14e214aba859d09bde3c3608b89350d7604fd5fa9e9078539a1"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 251,
+      "sha256": "sha256:533031bfd42060dab6f44ba2b12ae536eef3292e520e11875d7f7379393e7b8e"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 1908,
+      "sha256": "sha256:0d907e0c09ba0f49b4e478c46f5a75765d5a38eb98c8405c80d620f5416dca56"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 4793,
+      "sha256": "sha256:c269b7375e380539379ae6f029561362959091d2dd7ca2a57bf034cbc1e7fb8e"
+    },
+    {
+      "path": "judge/legacy_engine.py",
+      "bytes": 51160,
+      "sha256": "sha256:05906660334f07b5fe1b18bb06d8bce9ebfd6f5c007d4a44855c1aa32fe280d9"
+    },
+    {
+      "path": "judge/metadata.json",
+      "bytes": 1316,
+      "sha256": "sha256:7ffbd1399c59525c8b46a3b3a5c08008ec4b1e5955bd19ce5d580342fb30c5e2"
+    },
+    {
+      "path": "judge/reference.py",
+      "bytes": 12623,
+      "sha256": "sha256:b3751006330c062d1e4a7377e557b6245266843b64a13fdcd7c2612ad15266ba"
+    },
+    {
+      "path": "judge/scoring_config.json",
+      "bytes": 1042,
+      "sha256": "sha256:9b68c58e8bb272ad50ae1bca64b0db7ec410920c7486578a9cbbe70985f3c082"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 3109,
+      "sha256": "sha256:e7757648a4c75047594b767358b455961ef309ac08d2251b35ef0ea6d0dcf97d"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 1913,
+      "sha256": "sha256:2b7f71a80ccef5412e9f81d5b30e6969e86f8e895ffe984d4f2a9eb000fa5ccb"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 13321,
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "path": "verifier/fcs2_verifier.py",
+      "bytes": 22446,
+      "sha256": "sha256:9b944bf5ee56f49669020c29df121c8ebbc67740dca4ec1c51487ab970763ae3"
+    },
+    {
+      "path": "verifier/patch_payload.py",
+      "bytes": 11240,
+      "sha256": "sha256:0958fafcdb4165bf9a09263ab587326a2336e307ea0bdaa3fcf3fd66a5484c75"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 411,
+      "sha256": "sha256:9dc21754db5cf8c72f1d9a79e90667f06f3c107d7a7ff11ad44aa9a2592a5bc8"
+    }
+  ],
+  "path": "2.0/problems/metaopt_combined_te_gap_search",
+  "problem_id": "metaopt_combined_te_gap_search",
+  "reference_artifact": {
+    "kind": "standalone Python strategy, no reference patch; actual legacy evaluator also embeds its joint MILP reference",
+    "path": "reference.py",
+    "sha256": "sha256:b3751006330c062d1e4a7377e557b6245266843b64a13fdcd7c2612ad15266ba"
+  },
+  "repository": "https://github.com/FrontierCS/Frontier-CS",
+  "upstream_files": [
+    {
+      "bytes": 6732,
+      "path": "DESIGN.md",
+      "sha256": "sha256:aef0aecfc60bcd1b9e179fbe79afb558271bf51560df952aede392be0e40a100"
+    },
+    {
+      "bytes": 3583,
+      "path": "NOTES.md",
+      "sha256": "sha256:a9a02157d261ea7c6f131f272b785f3a2c39814b0a941a44e3b1c0c45176b784"
+    },
+    {
+      "bytes": 10199,
+      "path": "REVIEW_DOSSIER.md",
+      "sha256": "sha256:a23a37522ae6678b2330eee6b88829e10b49cb6482298c220ab5beb803fd8eb4"
+    },
+    {
+      "bytes": 1950,
+      "path": "baseline_clustered.py",
+      "sha256": "sha256:18fde43ae3fb5bcee76d5a78d7d2e3872950046c53ae868570b726389b31fc1e"
+    },
+    {
+      "bytes": 875,
+      "path": "baseline_mid.py",
+      "sha256": "sha256:610df5afc5020b3aeac5e72b06a0ee345c4fcab141ea2c9d6b0294740571d7f6"
+    },
+    {
+      "bytes": 338,
+      "path": "baseline_naive.py",
+      "sha256": "sha256:66b70cfc4667bba150770eb12c9f41a0f9eb59d9df03418e26334d7e277b6e44"
+    },
+    {
+      "bytes": 627,
+      "path": "baseline_strong.py",
+      "sha256": "sha256:a357d045d94164707faec7b34fe8a174dda1ffe5b6b6ff3d38da56a47d8be488"
+    },
+    {
+      "bytes": 1026,
+      "path": "config.yaml",
+      "sha256": "sha256:568df0261f9c96b0d2ca745a52d0196f2d8e0ec3ca3c2ccfdea4a700aed24433"
+    },
+    {
+      "bytes": 114,
+      "path": "evaluate.sh",
+      "sha256": "sha256:0311f9da96ea736cd868f5f5242ce67472c48211f6cf1e61ee3d971fc7924f81"
+    },
+    {
+      "bytes": 44793,
+      "path": "evaluator.py",
+      "sha256": "sha256:ffa03ebaf7af1d404511c11fd51cbe699e8daecc294858c156f71424bc910b5c"
+    },
+    {
+      "bytes": 164,
+      "path": "harbor/app/.stylecop/AnalysisDictionary.xml",
+      "sha256": "sha256:2ae485e003f687ed11c8e1a019085fda00ecf5a831a301b23cfef01f0ab37672"
+    },
+    {
+      "bytes": 1425,
+      "path": "harbor/app/.stylecop/StyleCop.props",
+      "sha256": "sha256:2b80e5b23d2261621b0a49cdbd9020938b7fe9071e9f980beaa2d3c20cfb24be"
+    },
+    {
+      "bytes": 328,
+      "path": "harbor/app/.stylecop/stylecop.json",
+      "sha256": "sha256:9491697a12ef67fab3fc668b59e8dc1cb33846bbe500d6ee8fe003232531e34e"
+    },
+    {
+      "bytes": 6878,
+      "path": "harbor/app/.stylecop/stylecop.ruleset",
+      "sha256": "sha256:c9b899c857c6b03d409fe292d0718fab085a848f22dda8243718e5622a5c1b4f"
+    },
+    {
+      "bytes": 132,
+      "path": "harbor/app/Directory.Build.props",
+      "sha256": "sha256:de7639133ece533aa3922e9990ea6e442930d4ff02d4168838e53fbee6a25a2f"
+    },
+    {
+      "bytes": 2013,
+      "path": "harbor/app/Directory.Packages.props",
+      "sha256": "sha256:114baf4bf3dc030e7c66715c66616a23a2ec1eaebb024ed8b36cbe1cabaa2765"
+    },
+    {
+      "bytes": 1141,
+      "path": "harbor/app/LICENSE",
+      "sha256": "sha256:c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "bytes": 261,
+      "path": "harbor/app/MetaOptimize/AdversarialGenMethod.cs",
+      "sha256": "sha256:71aaa0aca5a5c98131645077f4f9fd40d6898ad781dab702d94446e820e67287"
+    },
+    {
+      "bytes": 4157,
+      "path": "harbor/app/MetaOptimize/Bins.cs",
+      "sha256": "sha256:bf81ea1d814a65fbbd4ea7b3cb2929c433d65fda758403e936a035ccc3ab7eb6"
+    },
+    {
+      "bytes": 24302,
+      "path": "harbor/app/MetaOptimize/EncodingUtils.cs",
+      "sha256": "sha256:ed224bb143a6e32aadf167ccb49970bbf01429ae65a8105cffa06baf6639c93a"
+    },
+    {
+      "bytes": 298,
+      "path": "harbor/app/MetaOptimize/Exceptions.cs",
+      "sha256": "sha256:402bdd7327113fccf329810b77a400117bc56ba44ace7805be7d91e756911e5e"
+    },
+    {
+      "bytes": 1804,
+      "path": "harbor/app/MetaOptimize/GenericDemandList.cs",
+      "sha256": "sha256:1adf4a575209d01d6d1e1a3cc4cc14e8aa120ed3ff0cf40ea02a3fe54549407a"
+    },
+    {
+      "bytes": 1732,
+      "path": "harbor/app/MetaOptimize/GenericList.cs",
+      "sha256": "sha256:93e91dd2d93f5bba9b83683cb58a773aaae6a4ee4b41c1ca3772fd65ab21464f"
+    },
+    {
+      "bytes": 4178,
+      "path": "harbor/app/MetaOptimize/GurobiBinary.cs",
+      "sha256": "sha256:ebb754aea79c033d2d4dafc16cb2309ba56c7c1db0cb59644e2ba997a0ab5b7c"
+    },
+    {
+      "bytes": 5463,
+      "path": "harbor/app/MetaOptimize/GurobiCallback.cs",
+      "sha256": "sha256:4cbb1f3f83fe0746122b109a9bc689ccdbcf129d5dce19dd4404782634fe2856"
+    },
+    {
+      "bytes": 899,
+      "path": "harbor/app/MetaOptimize/GurobiEnvironment.cs",
+      "sha256": "sha256:9d8e5186af5608eacc3f93dc6fb2520698e72bd6a5ec9f2e5f2e3f5b3a6e7055"
+    },
+    {
+      "bytes": 2350,
+      "path": "harbor/app/MetaOptimize/GurobiMin.cs",
+      "sha256": "sha256:161ba9ce9c0ce3647f0def74a96186f99d7eb9a919eee9379330a322e26f9974"
+    },
+    {
+      "bytes": 46760,
+      "path": "harbor/app/MetaOptimize/GurobiSOS.cs",
+      "sha256": "sha256:e49ec2837eef130109dff42b4b82fc76ca8e5cc28754a7a188d2aa57e9d2bf47"
+    },
+    {
+      "bytes": 3639,
+      "path": "harbor/app/MetaOptimize/GurobiStoreProgressCallback.cs",
+      "sha256": "sha256:22db1036b28ee6e774181c5288795b11a8e2b6f7f775f9791c18f7382074064d"
+    },
+    {
+      "bytes": 2382,
+      "path": "harbor/app/MetaOptimize/GurobiTerminationCallback.cs",
+      "sha256": "sha256:99bd4c107402da9b88a79f3acecd1b6e64587f8d6a41f2e965c9d869ea9a12fe"
+    },
+    {
+      "bytes": 2696,
+      "path": "harbor/app/MetaOptimize/GurobiTimeoutCallback.cs",
+      "sha256": "sha256:db6d891aff09ca782bfcd04ef1c52c42d4e03a84f3a4b3baa188d7bd7e7223b6"
+    },
+    {
+      "bytes": 868,
+      "path": "harbor/app/MetaOptimize/IDemandList.cs",
+      "sha256": "sha256:1739ea8d99fdeb7b6cb765306f3f9a9e05b4ad953dd9daae462d5cfb037f5e6a"
+    },
+    {
+      "bytes": 8114,
+      "path": "harbor/app/MetaOptimize/IEncoder.cs",
+      "sha256": "sha256:9d1a746922d8cb6d5c15b5e3a84fd2dd96b1877bb9d59d061e0700a170bd4c44"
+    },
+    {
+      "bytes": 859,
+      "path": "harbor/app/MetaOptimize/IList.cs",
+      "sha256": "sha256:10d6826d5b78b54ef033c5bb456de862c855e0a58fef07fb83f79e0bb29e5a0f"
+    },
+    {
+      "bytes": 10765,
+      "path": "harbor/app/MetaOptimize/ISolver.cs",
+      "sha256": "sha256:cda5a3b61ccfbbf7f4b810f81e3663878ee57b99a5ec80399f7325bff5be90c6"
+    },
+    {
+      "bytes": 418,
+      "path": "harbor/app/MetaOptimize/InnerEncodingMethod.cs",
+      "sha256": "sha256:13b10772231b31b528bbd5740afdb156f8a16d2abe3dc87b6b573ce3590c7303"
+    },
+    {
+      "bytes": 8717,
+      "path": "harbor/app/MetaOptimize/KktOptimizationGenerator.cs",
+      "sha256": "sha256:cb2d809b898b38758fe6a842026f7e952cc158df5ee313fc69b8e02b359d4748"
+    },
+    {
+      "bytes": 3594,
+      "path": "harbor/app/MetaOptimize/McCormickRelaxation.cs",
+      "sha256": "sha256:6c3021b761ebe30a24968d50f0d1e75ab30d43a76a6f1d4c52c2b603ed8858e9"
+    },
+    {
+      "bytes": 657,
+      "path": "harbor/app/MetaOptimize/MetaOptimize.csproj",
+      "sha256": "sha256:797dd6f68e1cf7715e7608ee36f0be1586e3bb4081eda56a85891b8a8f54d731"
+    },
+    {
+      "bytes": 48467,
+      "path": "harbor/app/MetaOptimize/ORToolsSolver.cs",
+      "sha256": "sha256:9eb1da0cfa799b3fc2ee9a58115144cf95b6e17d8cbfdece0cf343b3c92e9bef"
+    },
+    {
+      "bytes": 629,
+      "path": "harbor/app/MetaOptimize/OptimizationEncoding.cs",
+      "sha256": "sha256:9e2d77679097e36bee39912851849954e78c9d94598163954ad82abbc9981129"
+    },
+    {
+      "bytes": 1204,
+      "path": "harbor/app/MetaOptimize/OptimizationSolution.cs",
+      "sha256": "sha256:1e77e5be700e21fa3a1fa66efc8e6249884cdecf311f76f04af1c7291ccd6e18"
+    },
+    {
+      "bytes": 1478,
+      "path": "harbor/app/MetaOptimize/PairwiseDemandList.cs",
+      "sha256": "sha256:9bf2facb464776c77cd0439f1c80763003041a31218e0d881f65b4396585e4cf"
+    },
+    {
+      "bytes": 1349,
+      "path": "harbor/app/MetaOptimize/PathComparer.cs",
+      "sha256": "sha256:219b0faa6a56da004d5f0b5f0af36ff0518392370e6eb0171ad066b1a9c95b15"
+    },
+    {
+      "bytes": 9027,
+      "path": "harbor/app/MetaOptimize/Polynomial.cs",
+      "sha256": "sha256:33922fef106f29cbc9d4e432e14e9dba07bea9005635cd203a8ece7c27729fd9"
+    },
+    {
+      "bytes": 15057,
+      "path": "harbor/app/MetaOptimize/PrimalDualOptimizationGenerator.cs",
+      "sha256": "sha256:28b740207f6776c9641fabf6455ef5dfe5d052e504af6777dda09939f4e94619"
+    },
+    {
+      "bytes": 25614,
+      "path": "harbor/app/MetaOptimize/SolverGurobi.cs",
+      "sha256": "sha256:d1d04e75fac177a6ac366c473678288b6f8b4c25aa5f32474f555d72ba59e5f0"
+    },
+    {
+      "bytes": 17116,
+      "path": "harbor/app/MetaOptimize/SolverZen.cs",
+      "sha256": "sha256:b4e8b248b9934c200ce84fe1690ef2b0f83d0582701791f0f1e62cf516078eeb"
+    },
+    {
+      "bytes": 6624,
+      "path": "harbor/app/MetaOptimize/Term.cs",
+      "sha256": "sha256:06d4a25023567382b1f6f3390e9626446b901b1fa6371875e162bc7ce9d5e819"
+    },
+    {
+      "bytes": 2389,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/AdversarialSearchModel.cs",
+      "sha256": "sha256:33fa68be1d198466da8aa32809bb8c6ade66260ba705dfffb75c30520a8e4e15"
+    },
+    {
+      "bytes": 772,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs",
+      "sha256": "sha256:fa0f17cc4cdb292dfe3f8a06511b0eadf8f4a9541cdc73f020dc8c90df37ad8a"
+    },
+    {
+      "bytes": 22820,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/DemandPinningEncoder.cs",
+      "sha256": "sha256:da5006564c0afe3e55c708757bba37d3ab64160a396af979738a3b926feca254"
+    },
+    {
+      "bytes": 883,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/DemandPinningLinkNegativeException.cs",
+      "sha256": "sha256:bdf5cbd114093955f4bd6bcd1a486706b630a64994d939636ee2c26d0fe76e0c"
+    },
+    {
+      "bytes": 4348,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/DemandPinningQuantizedEncoder.cs",
+      "sha256": "sha256:b0db6f21c21b0d2dc41180eb36e001f497083eb9f4b6d70b55069595fa2d4ab7"
+    },
+    {
+      "bytes": 15146,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/DirectDemandPinningEncoder.cs",
+      "sha256": "sha256:2cce21a0373558d4cda515c8c5c3adbab4d5e9a8630bb620eeea74c43d047b42"
+    },
+    {
+      "bytes": 8883,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/ExpectedPopEncoder.cs",
+      "sha256": "sha256:c05e519dd7d553cfe1a4f387400ca0b5d88fa10af9c02766b3f3451f9c2d8d59"
+    },
+    {
+      "bytes": 5706,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/ModifiedDemandPinningQuantizedEncoder.cs",
+      "sha256": "sha256:41db9e7558b416027d0a5380b996bdbcecd06353bc6a30f60b40647c169b6bff"
+    },
+    {
+      "bytes": 314,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/PathType.cs",
+      "sha256": "sha256:4d6af8034718853ba8a8243933510a042da5845519a3090214071a071285b64b"
+    },
+    {
+      "bytes": 14689,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/PopEncoder.cs",
+      "sha256": "sha256:e26dd9a614ea823fce25ef86b56c156d3f8f5495558a4db640411f72a96ea00c"
+    },
+    {
+      "bytes": 8191,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/TECombineHeuristicsEncoder.cs",
+      "sha256": "sha256:94b2c6f78bd0b4f1deee88ff4327b7c4e6fb6e90edde49ac3bd0ac8c6d6a48e9"
+    },
+    {
+      "bytes": 20469,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/TEMaxFlowOptimalEncoder.cs",
+      "sha256": "sha256:aaeaa57e1343257bb0d8486f00c51e57fcdcdac0090efb50568963cb2c55f227"
+    },
+    {
+      "bytes": 676,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/TEMaxFlowOptimizationSolution.cs",
+      "sha256": "sha256:a31b553b9a462c7003dbf070ab884f4906808702ef011205e826a28e923931ae"
+    },
+    {
+      "bytes": 580,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/TEOptimizationEncoding.cs",
+      "sha256": "sha256:f43458afd0fabc99329bae1808e48b2bac4da4d28d01fbd5ae7f11dc3268b3ae"
+    },
+    {
+      "bytes": 697,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/TEOptimizationSolution.cs",
+      "sha256": "sha256:6e379944fe842189ec88fc4000007d9a1f93a2e3f2e7f6f20ab9618c4d2b66ec"
+    },
+    {
+      "bytes": 33067,
+      "path": "harbor/app/MetaOptimize/TrafficEngineering/Topology.cs",
+      "sha256": "sha256:4a54ef9cddd3955cf4a1fd078e682b3ef0e268a6126dd3391fb66ac21b57e7ca"
+    },
+    {
+      "bytes": 541,
+      "path": "harbor/app/MetaOptimize/VariableType.cs",
+      "sha256": "sha256:1ba49036605c65f970061c987241f74314142cb673a9910bfe42ddaa7b2dddef"
+    },
+    {
+      "bytes": 14840,
+      "path": "harbor/app/MetaOptimize/utils.cs",
+      "sha256": "sha256:d1a33efabb1400a95bba3c2a65258328114f8e1d2b8e75c71e316e9a6c81e146"
+    },
+    {
+      "bytes": 215,
+      "path": "harbor/app/MetaOptimize.Challenge/MetaOptimize.Challenge.csproj",
+      "sha256": "sha256:a2d33e77e31a5a98feb5c82770aa0e0f42c2893844e7781dfa7ee18a3f881319"
+    },
+    {
+      "bytes": 1327,
+      "path": "harbor/app/MetaOptimize.Challenge/Program.cs",
+      "sha256": "sha256:f6e61088228963fe23e63a8773073df26ec9389382ea457ffc6488a642dd37f4"
+    },
+    {
+      "bytes": 6139,
+      "path": "harbor/app/MetaOptimize.Challenge/ReplayOracle.cs",
+      "sha256": "sha256:025a58ac2328987d3d76a7cd544b3a3fde80f5058ada5fb623cff0e6a39e5cf0"
+    },
+    {
+      "bytes": 727,
+      "path": "harbor/app/SUBSTRATE.md",
+      "sha256": "sha256:1e3993699b3c160a65c257a54ab3ab5c1327acbc271e8cf98dd4bae6b3fdc374"
+    },
+    {
+      "bytes": 7103,
+      "path": "readme",
+      "sha256": "sha256:d3f16d19ec3a5121e7144c5bff511b8e73bc20821ee132c4891b8b0ee8fd8ed0"
+    },
+    {
+      "bytes": 12623,
+      "path": "reference.py",
+      "sha256": "sha256:b3751006330c062d1e4a7377e557b6245266843b64a13fdcd7c2612ad15266ba"
+    },
+    {
+      "bytes": 105,
+      "path": "tests/run_ci.sh",
+      "sha256": "sha256:3f457f7f180b5d23edd37ddf2336303876d5691a031fbc742b6d0fd02ed6b937"
+    },
+    {
+      "bytes": 8374,
+      "path": "tests/test_harbor_submission.py",
+      "sha256": "sha256:d66ba24926478554e5f51ee1b30090290c58b3563e752917af76df9f3706a8ee"
+    }
+  ]
+}

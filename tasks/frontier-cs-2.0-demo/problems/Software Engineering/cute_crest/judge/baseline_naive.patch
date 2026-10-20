@@ -1,0 +1,71 @@
+diff --git a/src/frontier_solution/strategy.cc b/src/frontier_solution/strategy.cc
+index b0790e8..20903e9 100644
+--- a/src/frontier_solution/strategy.cc
++++ b/src/frontier_solution/strategy.cc
+@@ -1,9 +1,10 @@
+-// Your search strategy goes here.
++// Bounded depth-first search (CREST's BoundedDepthFirstSearch, depth 12),
++// expressed against the strategy interface.  This is the task's baseline.
+ //
+-// This starter only restarts the program on fresh random inputs until the
+-// budget is spent.  It compiles and runs, and it is a poor search: replace
+-// the body of Run().  You may add files to this directory and include them
+-// from here; see the task README for the rules on what this code may use.
++// Copyright (c) 2008, Jacob Burnim (jburnim@cs.berkeley.edu)
++// CREST is distributed under the revised BSD license; see LICENSE.
++
++#include <vector>
+ 
+ #include "strategy/strategy_api.h"
+ 
+@@ -11,18 +12,45 @@ namespace frontier {
+ 
+ namespace {
+ 
+-class RandomRestartSearch : public Strategy {
++class BoundedDepthFirstSearch : public Strategy {
+  public:
++  BoundedDepthFirstSearch() : host_(NULL) {}
++
+   virtual void Run(Host& host) {
+-    while (true) {
+-      const Execution* ex = host.Restart();
+-      host.Release(ex);
++    host_ = &host;
++    const Execution* ex = host.Restart();
++    DFS(0, kMaxDepth, ex);
++    host.Release(ex);
++  }
++
++ private:
++  static const int kMaxDepth = 12;
++  Host* host_;
++
++  bool CheckPrediction(const Execution* old_ex, const Execution* new_ex, size_t branch_idx) {
++    if (old_ex->path.size() <= branch_idx || new_ex->path.size() <= branch_idx) return false;
++    for (size_t j = 0; j < branch_idx; j++)
++      if (new_ex->path[j] != old_ex->path[j]) return false;
++    return new_ex->path[branch_idx] == host_->program().paired[old_ex->path[branch_idx]];
++  }
++
++  void DFS(size_t pos, int depth, const Execution* prev_ex) {
++    for (size_t i = pos; i < prev_ex->constraint_pos.size() && depth > 0; i++) {
++      const Execution* cur_ex = host_->Negate(prev_ex, i);
++      if (!cur_ex) continue;
++      if (!CheckPrediction(prev_ex, cur_ex, prev_ex->constraint_pos[i])) {
++        host_->Release(cur_ex);
++        continue;
++      }
++      depth--;
++      DFS(i + 1, depth, cur_ex);
++      host_->Release(cur_ex);
+     }
+   }
+ };
+ 
+ }  // namespace
+ 
+-Strategy* MakeStrategy() { return new RandomRestartSearch(); }
++Strategy* MakeStrategy() { return new BoundedDepthFirstSearch(); }
+ 
+ }  // namespace frontier

@@ -1,0 +1,30 @@
+{
+  "name": "sift",
+  "source_volume": "flashlib-ann-datasets",
+  "source_path": "sift.hdf5",
+  "size_bytes": 525128288,
+  "sha256": "sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+  "arrays": {
+    "train": {
+      "shape": [
+        1000000,
+        128
+      ],
+      "dtype": "float32"
+    },
+    "test": {
+      "shape": [
+        10000,
+        128
+      ],
+      "dtype": "float32"
+    }
+  },
+  "public_url": "https://ann-benchmarks.com/sift-128-euclidean.hdf5",
+  "public_url_bytes_match_unverified": true,
+  "schema_version": "frontier.ann-data-asset/v1",
+  "container_path": "/data/sift.hdf5",
+  "build_context": "ann_data",
+  "source_kind": "read-only snapshot of original Modal volume",
+  "verification": "Original-volume bytes frozen and SHA256/HDF5 train/test array metadata verified; public URL bytes not compared."
+}

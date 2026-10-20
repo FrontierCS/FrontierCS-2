@@ -1,0 +1,43 @@
+diff --git a/quarter_pir/code/pir/server.go b/quarter_pir/code/pir/server.go
+index e3ce71a..440f973 100644
+--- a/quarter_pir/code/pir/server.go
++++ b/quarter_pir/code/pir/server.go
+@@ -27,5 +27,37 @@ func dbAccess(db []uint64, id uint64) util.DBEntry {
+ // timer wraps this whole call, including request decoding and response
+ // encoding.
+ func HandleQuery(db []uint64, p refwire.Params, request []byte) []byte {
+-	panic("list decoding is not implemented")
++	keys, offsets, ok := refwire.DecodeRequest(p, request)
++	if !ok {
++		panic("malformed request")
++	}
++	SBNum, SBSize, ChunkSize := p.SBNum, p.SBSize, p.ChunkSize
++	candidates := make([]uint64, SBNum*util.DBEntryLength)
++	auxiliary := make([]uint64, SBNum*util.DBEntryLength)
++	for candidate := uint64(0); candidate < SBNum; candidate++ {
++		for block := uint64(0); block < SBNum; block++ {
++			longKey := refwire.NewLongKey((*[16]byte)(&keys[block]))
++			for chunk := uint64(0); chunk < SBSize; chunk++ {
++				offset := uint64(offsets[chunk])
++				if block != candidate {
++					offset = refwire.Eval(longKey, chunk) & (ChunkSize - 1)
++				}
++				entry := dbAccess(db, (block*SBSize+chunk)*ChunkSize+offset)
++				for word := 0; word < util.DBEntryLength; word++ {
++					candidates[candidate*util.DBEntryLength+uint64(word)] ^= entry[word]
++				}
++			}
++		}
++	}
++	for block := uint64(0); block < SBNum; block++ {
++		longKey := refwire.NewLongKey((*[16]byte)(&keys[block]))
++		for chunk := uint64(0); chunk < SBSize; chunk++ {
++			offset := refwire.Eval(longKey, chunk) & (ChunkSize - 1)
++			entry := dbAccess(db, (block*SBSize+chunk)*ChunkSize+offset)
++			for word := 0; word < util.DBEntryLength; word++ {
++				auxiliary[block*util.DBEntryLength+uint64(word)] ^= entry[word]
++			}
++		}
++	}
++	return refwire.EncodeResponse(p, candidates, auxiliary)
+ }

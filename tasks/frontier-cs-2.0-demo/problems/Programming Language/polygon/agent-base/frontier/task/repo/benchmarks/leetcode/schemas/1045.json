@@ -1,0 +1,34 @@
+{
+  "Problem Number": "1045",
+  "Tables": [
+    {
+      "TableName": "Customer",
+      "PKeys": [],
+      "FKeys": [
+        {
+          "FName": "product_key",
+          "PName": "product_key",
+          "PTable": "1"
+        }
+      ],
+      "Others": [
+        {
+          "Name": "customer_id",
+          "Type": "int"
+        }
+      ]
+    },
+    {
+      "TableName": "Product",
+      "PKeys": [
+        {
+          "Name": "product_key",
+          "Type": "int"
+        }
+      ],
+      "FKeys": [],
+      "Others": []
+    }
+  ],
+  "Tuples": []
+}

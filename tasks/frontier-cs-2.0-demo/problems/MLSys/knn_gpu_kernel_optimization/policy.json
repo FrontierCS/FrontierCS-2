@@ -1,0 +1,134 @@
+{
+  "agent": {
+    "cpu_millis": 4000,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 17179869184
+  },
+  "display_name": "GPU Brute-Force k-NN Kernel Optimization",
+  "family": "frontier-cs-2.0/systems",
+  "gpu": {
+    "agent": {
+      "allowed_types": [
+        "H100"
+      ],
+      "max_gpu_seconds": 10800,
+      "max_instance_seconds": 10800,
+      "max_instances": 1
+    },
+    "verifier": {
+      "max_gpu_instances": 1,
+      "max_gpu_seconds": 16200
+    }
+  },
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "H100"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "conversion": {
+      "continuous_score": "S is geomean of seven-paired-ratio workload medians; score 0 for S<=1, otherwise 100*log(S)/(log(10)+log(S)); absolute recall gate applies independently of optimized reference",
+      "pass_fail": "on every selected workload: median latency < optimized reference and worst ball-recall >= optimized reference worst ball-recall and worst exact recall >= optimized reference worst exact recall; every candidate timed recall >= 0.88; every returned distance must satisfy the rtol=1e-6, atol=0 consistency gate (exact zero at zero oracle)",
+      "source_commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
+      "source_path": "2.0/problems/knn_gpu_kernel_optimization",
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "status": "draft_science_approved_pending_gpu_model_validation"
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 342,
+        "path": "datasets/eval.json",
+        "version": "sha256:a08b15ae44c682d5a3f8c0964533bdcdba87e7281af38d08e92d3a8be31c4875"
+      },
+      "train": {
+        "bytes": 287,
+        "path": "datasets/train.json",
+        "version": "sha256:5ed85112b3d9b35a6836c9b0762f71c7ef5f544981e2aee8669cce2ceb0a84b0"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 25,
+      "beat_spec_sha256": "sha256:d039e771fab35e26a7661c329e6284d389d2c50791570cf4697a77101efd866c",
+      "solver_visible_metrics": [
+        "geomean_speedup",
+        "latency_ms",
+        "worst_ball_recall",
+        "worst_exact_recall"
+      ],
+      "suite_relation": "train original SIFT k10/k50/k100 and GIST k10; final all original six SIFT/GIST workloads; public same seeds, hidden GIST k50/k100 independent seeds. Beat spec v3 (2026-10-08): final also measures hidden strict-only sift_full_k256 and gist_full_k100 (PASS only; continuous score over the original six).",
+      "continuous_score": "S is geomean of seven-paired-ratio workload medians; score 0 for S<=1, otherwise 100*log(S)/(log(10)+log(S)); absolute recall gate applies independently of optimized reference",
+      "distance_consistency": "FP64 direct squared-L2 from actual bf16 inputs and returned valid IDs; rtol=1e-6, atol=0, exact zero at zero oracle; legal padding excluded",
+      "formal_answering_seconds": 18000,
+      "independent_final_seconds": 5400,
+      "short_trial_policy": "1800-second answering is an external migration-evidence override only; formal publication requires 18000 seconds"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "config_sha256": null,
+      "pipeline": null,
+      "run_id": null
+    },
+    "isolation": "Hidden workloads, seeds, pinned real-data files, naive oracle, optimized reference and private decisions exist only in the Verifier GPU image; Agent images contain public shapes, starter and diagnostics.",
+    "paper": {
+      "authors": [],
+      "doi": null,
+      "paper_id": null,
+      "pdf_url": null,
+      "title": null,
+      "venue": null,
+      "year": null
+    },
+    "provenance_file": "judge/metadata.json",
+    "runtime": {
+      "allowed_paths": [
+        "knnlib/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    },
+    "data_readiness": "original SIFT/GIST volume bytes frozen in judge/data_manifest.json; supply external BuildKit ann_data context; verifier image build and runtime both verify exact file sizes and hashes"
+  },
+  "network": {
+    "allowed_domains": [],
+    "audit": {
+      "max_bundle_bytes": 34359738368,
+      "max_model_request_bytes": 67108864,
+      "max_model_response_bytes": 8388608,
+      "max_model_sessions": 1024,
+      "max_ssh_bytes_per_direction": 67108864,
+      "max_ssh_sessions": 1076,
+      "ssh_session_budgets": {
+        "agent": 1024,
+        "verifier_eval": 2,
+        "verifier_train": 50
+      }
+    }
+  },
+  "problem_id": "knn_gpu_kernel_optimization",
+  "quota": {
+    "eval_timeout_seconds": 5400,
+    "max_train_calls": 25,
+    "max_train_wall_seconds": 10800,
+    "wall_time_seconds": 18000
+  },
+  "schema_version": "frontier.frontiersmith-task-policy/v1",
+  "submission": {
+    "entrypoint": "payload/solution.patch",
+    "max_bytes": 2097152
+  },
+  "verifier": {
+    "command": [
+      "/opt/frontier/verifier"
+    ],
+    "cpu_millis": 3000,
+    "max_evidence_bytes": 4194304,
+    "memory_bytes": 8589934592
+  },
+  "version": "native-staging.1-beat-spec-v3"
+}

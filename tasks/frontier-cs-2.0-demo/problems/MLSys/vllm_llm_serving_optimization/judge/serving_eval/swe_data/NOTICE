@@ -1,0 +1,13 @@
+Frozen projection of princeton-nlp/SWE-bench_Lite, test split.
+Dataset revision: 6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2
+Upstream: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Lite
+Paper: SWE-bench: Can Language Models Resolve Real-World GitHub Issues?
+https://arxiv.org/abs/2310.06770
+
+This projection retains original issue text, test patches and test identities
+from the original source repositories identified per row. It does not claim a
+new license over third-party source/test material. The observed immutable
+upstream dataset card did not declare a license field. Preserve original
+repository notices when packaging the matching testbed source images.
+Gold implementation patches and hint text are not included in this projection.
+See provenance.json for hashes and the unknown historical-runtime identity.

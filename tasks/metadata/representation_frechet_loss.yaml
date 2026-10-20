@@ -1,0 +1,27 @@
+id: "representation_frechet_loss"
+display_name: "Differentiable Population Statistics"
+category: "Machine Learning"
+summary: "Implement differentiable population mean/covariance statistics (FeatureQueue) for post-training an image generator with representation Frechet distances."
+paper_title: "Representation Fréchet Loss for Visual Generation"
+paper_venue: "arXiv 2026"
+paper_url: "https://arxiv.org/abs/2604.28190"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "A100-80GB"
+agent_gpu_count: 1
+agent_gpu_seconds: 7200
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "A100-80GB"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 32400
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 3
+train_wall_seconds: 21600
+eval_timeout_seconds: 10800

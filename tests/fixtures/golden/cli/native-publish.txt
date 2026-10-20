@@ -1,0 +1,9 @@
+usage: frontier_deploy.py native-publish [-h] --config CONFIG
+                                         {plan,prepare,render-seed,render-inspector,finalize,register} ...
+
+positional arguments:
+  {plan,prepare,render-seed,render-inspector,finalize,register}
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG

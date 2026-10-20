@@ -1,0 +1,27 @@
+id: "dynamic_tanh"
+display_name: "Learned Transformer Layer Mapping"
+category: "Machine Learning"
+summary: "Train ViT image classifiers whose normalization layers are replaced by Dynamic Tanh-style element-wise mappings without losing accuracy."
+paper_title: "Transformers without Normalization"
+paper_venue: "CVPR 2025"
+paper_url: "https://arxiv.org/abs/2503.10622"
+agent_cpu_cores: 3
+agent_memory_gib: 12
+agent_disk_gib: 10
+agent_gpu_type: "L4"
+agent_gpu_count: 1
+agent_gpu_seconds: 1800
+verifier_cpu_cores: 3
+verifier_memory_gib: 12
+verifier_disk_gib: null
+verifier_gpu_type: "L4"
+verifier_gpu_count: 1
+verifier_gpu_seconds: 3600
+agent_model_api: "candidate"
+task_model_keys: []
+task_model_budget_usd: 0
+network_domains: []
+agent_wall_time_seconds: 18000
+train_calls: 3
+train_wall_seconds: 2700
+eval_timeout_seconds: 900

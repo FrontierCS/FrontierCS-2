@@ -1,0 +1,9 @@
+{
+  "allowed_paths": [
+    "ragen/llm_agent/ctx_manager.py",
+    "ragen/llm_agent/solver_extensions/"
+  ],
+  "max_bytes": 262144,
+  "max_files": 20,
+  "member": "solution.patch"
+}

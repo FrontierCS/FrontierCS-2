@@ -1,0 +1,66 @@
+tag: security
+runtime:
+  language: python
+  timeout_seconds: 10800
+  environment:
+    python: '3.12'
+    cpus: 8
+    memory_mb: 16384
+    storage_mb: 8192
+  docker:
+    image: ubuntu:24.04
+  apt_packages:
+  - git
+  - python3
+  - python3-pip
+  - python3-venv
+  - libseccomp2
+  - ca-certificates
+  judge_apt_packages:
+  - git
+  - python3
+  - python3-pip
+  - python3-venv
+  - libseccomp2
+  - ca-certificates
+  pip_requirements: agent-base/frontier/task/requirements-lock.txt
+environment:
+  cpus: 4
+  memory_mb: 8192
+  storage_mb: 4096
+  build_timeout_seconds: 600
+submission:
+  kind: patch
+  path: /app/solution.patch
+  allow_paths:
+  - secagent/tool.py
+  - secagent/solver_utils/
+  max_patch_bytes: 8388608
+evaluation:
+  max_dev_submissions: 5
+  suite_relation: held_out_user_tasks
+  solver_visible_metrics:
+  - banking_breached_episodes
+  - banking_attacked_episodes
+  - banking_utility_under_attack
+  - banking_benign_utility
+  - banking_policy_worker_failures
+  - banking_capped_episodes
+  - slack_breached_episodes
+  - slack_attacked_episodes
+  - slack_utility_under_attack
+  - slack_benign_utility
+  - slack_policy_worker_failures
+  - slack_capped_episodes
+  - travel_breached_episodes
+  - travel_attacked_episodes
+  - travel_utility_under_attack
+  - travel_benign_utility
+  - travel_policy_worker_failures
+  - travel_capped_episodes
+  - workspace_breached_episodes
+  - workspace_attacked_episodes
+  - workspace_utility_under_attack
+  - workspace_benign_utility
+  - workspace_policy_worker_failures
+  - workspace_capped_episodes

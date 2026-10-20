@@ -1,0 +1,840 @@
+{
+  "calibration": {
+    "diagnostic_10000_11000_64": {
+      "threads_1": 0.126569477,
+      "threads_2": 0.093923388,
+      "threads_4": 0.068519593,
+      "threads_8": 0.074213514
+    },
+    "host": "AMD EPYC 7R13, 16 physical cores/32 SMT, affinity CPUs 0-31",
+    "rationale": "four workers were fastest in the bounded 1/2/4/8 diagnostic; larger same-generator graphs make authentic author-parallel CountTotal work dominate the source task's reported startup overhead",
+    "reference_seconds_median": {
+      "threads_1": 0.517132435,
+      "threads_4": 0.246523506
+    },
+    "selected_stratum": [
+      20000,
+      22000,
+      96
+    ]
+  },
+  "conversion_adaptations": [
+    "Final independently re-evaluates all three public workloads together with three hidden same-distribution workloads.",
+    "Calibration-driven alignment to the author BATCHS parallel branch and representative graph scale was adopted. The source-locked reference uses CountWorkEfficientParallelTotal/CountOrigCompactParallelTotal while the independent baseline uses the frozen serial dispatch.",
+    "Continuous score is independent of the pass/fail reference and has no finite upper clipping; raw timing and speedup measurements are retained.",
+    "Formal answering is 18000 seconds and independent final evaluation is 1800 seconds; model requests are 64 MiB and audit bundle allowance is 8 GiB.",
+    "Beat spec v3 (2026-10-07): each suite adds one deterministic Chung-Lu graph with power-law degrees on both sides, where vertex ranking decides the wedge count; uniform graphs, metrics and the 1.05 rule are unchanged; train verifier-wall budget 30000 -> 40000 s for the fourth development graph.",
+    "Reference f-metric selection (2026-10-12): the source-locked reference no longer computes the requested ACOCORE ranking unconditionally on the BATCHS path; CountTotal applies the paper's Section 6.2.2 runtime rule, using side ordering when (ws - wr)/ws < 0.1 for degree-order wedge count wr and degree ordering otherwise. Only apps/hyper/butterfly_count_total.h differs from upstream; workloads, metrics, the 1.05 rule, the serial oracle path and the frozen baseline are unchanged."
+  ],
+  "file_count": 155,
+  "files": [
+    {
+      "bytes": 37,
+      "path": ".dockerignore",
+      "sha256": "sha256:b139db4c5121e7e008c457ae7196f6e5ed7b702f408754912270e3c5a85c2498"
+    },
+    {
+      "bytes": 58,
+      "path": ".gitattributes",
+      "sha256": "sha256:d2fdde9af7984b537c7e87e9d923f5dbdb7c824c8fcdb96d7e0d51e69bacaaac"
+    },
+    {
+      "bytes": 1401,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:6e2c54ce0df1becdb0c6afaad11802510157ea0c7f2087b04da4cc1dc8a16fa5"
+    },
+    {
+      "bytes": 2796,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:59d05c1a157c68993be4e681ca88f1018f1192893e320fcad5e56a53f9df64bd"
+    },
+    {
+      "bytes": 15163,
+      "path": "agent-base/frontier/task/STATEMENT.md",
+      "sha256": "sha256:ca338a94566f4b7a390e3c522282530e51f7bb821f02352abbb1fe6c8d07739e"
+    },
+    {
+      "bytes": 2082,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:d2013a7e7a203adc4843ace58dd29d4dee834aaeba8baab092479d752e7a1d72"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:1784ebe42ce619cdd3f27e0d720582af66af0eec36cf774628e0388aae819b8a"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 1073,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:09247d610f3dba65ed27c14a1bc5b9014b36f3a26ea9ac3a208ab7addbcd70a9"
+    },
+    {
+      "bytes": 10092,
+      "path": "agent-base/frontier/task/repo/apps/hyper/BipartiteButterflies.C",
+      "sha256": "sha256:e988e0b40656f8776dc1aaae3b30e5ec8a8a4b2b4331a9f5775483e8cf2b0684"
+    },
+    {
+      "bytes": 1463,
+      "path": "agent-base/frontier/task/repo/apps/hyper/Makefile",
+      "sha256": "sha256:b9a07892014f6f6319e9f2ecc4b619ce1a1a2767240cb20f7711754e1ebee9b5"
+    },
+    {
+      "bytes": 680,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_count.h",
+      "sha256": "sha256:925e076a8427c35b92aa6c27fb3ac07a281b3edceccde49c5ad1ea18a3e844d8"
+    },
+    {
+      "bytes": 525,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_count_total.h",
+      "sha256": "sha256:87efbed703d51e7d6ab4471908cc9fed0d90bd91fd424d31b3254d88503392aa"
+    },
+    {
+      "bytes": 744,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_ecount.h",
+      "sha256": "sha256:04e7d391e068dcf4e70eecfb5b60efca433421b382825a54717c7610db676855"
+    },
+    {
+      "bytes": 421,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_epeel.h",
+      "sha256": "sha256:24f02adbf53cbf355ba077a81d75c9209649c0f40cf4547e1b51b648888898bf"
+    },
+    {
+      "bytes": 413,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_peel.h",
+      "sha256": "sha256:58c7b0d0bfcb1e3c2d3f867015b83ffaae51af839c1a0645c17bdcd68d637ec9"
+    },
+    {
+      "bytes": 153,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_putils.h",
+      "sha256": "sha256:a1f7bd5b8e6c8f5de660932b1bddc0b1129a97a94107b0a8d9c756913985ffa9"
+    },
+    {
+      "bytes": 56547,
+      "path": "agent-base/frontier/task/repo/apps/hyper/butterfly_utils.h",
+      "sha256": "sha256:d6847c831df3bc40cc0b56e67fac32a843a77e192d68e7502703821f34076eae"
+    },
+    {
+      "bytes": 258,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:30a4bbc0f1025e0f77b47b578cc33c1bb324c0787a1685f0ef6cc8aef06e2204"
+    },
+    {
+      "bytes": 177,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:04555e1726bf99c6dcf56064c7de3cef274f9416e2dfdc945b65f81d57bc091f"
+    },
+    {
+      "bytes": 789,
+      "path": "agent-base/frontier/task/repo/lib/binary_search.h",
+      "sha256": "sha256:2c0f2f58359f44ed91682d637b22adb584cd5ab2ec8aaeb7ece1675d2952ece4"
+    },
+    {
+      "bytes": 3672,
+      "path": "agent-base/frontier/task/repo/lib/concurrent_stack.h",
+      "sha256": "sha256:9d1ffd6219ffc19a0b48b340123d38d26c6a8129c980571d8cd788ccab2b4ed5"
+    },
+    {
+      "bytes": 9745,
+      "path": "agent-base/frontier/task/repo/lib/counting_sort.h",
+      "sha256": "sha256:bc8132c2cd28fc9f894c753604f275e7abc92e8d2ad7800e8731bb16bfeddff7"
+    },
+    {
+      "bytes": 4832,
+      "path": "agent-base/frontier/task/repo/lib/gbbs-counting_sort_no_transpose.h",
+      "sha256": "sha256:66260b39d30b23aff0eca6004b9fd2c47cf0784324e6143998929b9cd4e64929"
+    },
+    {
+      "bytes": 16723,
+      "path": "agent-base/frontier/task/repo/lib/gbbs-histogram.h",
+      "sha256": "sha256:5a1af9e2f0b19c74a375371ff89a4d1fd01bbd22d61ca029452f7eebcc75ca98"
+    },
+    {
+      "bytes": 4238,
+      "path": "agent-base/frontier/task/repo/lib/gbbs-sequential-ht.h",
+      "sha256": "sha256:424af4719479f406acc08a2c80215d11fde73fadd797c7bf6182a0f236441946"
+    },
+    {
+      "bytes": 11004,
+      "path": "agent-base/frontier/task/repo/lib/gbbs-utilities.h",
+      "sha256": "sha256:7e8ed88087e3b20fc05a7c1431dd1017b3a4d06f9a726a5833ec7bc32eb78955"
+    },
+    {
+      "bytes": 1421,
+      "path": "agent-base/frontier/task/repo/lib/get_time.h",
+      "sha256": "sha256:1bf693afa7d18eb2454bba6e77b93ae22a190aaefd39634ec1a20037564df5fc"
+    },
+    {
+      "bytes": 41677,
+      "path": "agent-base/frontier/task/repo/lib/histogram.h",
+      "sha256": "sha256:9cabce5de7c3fe53e6ce44d5d59b59f4d12021cd46fc05b0ac55654e0712819f"
+    },
+    {
+      "bytes": 4707,
+      "path": "agent-base/frontier/task/repo/lib/index_map.h",
+      "sha256": "sha256:e2112a7822cc931b1e684112fb01225f8213dbfefdaeb42f8797b1d8cf8205e7"
+    },
+    {
+      "bytes": 3037,
+      "path": "agent-base/frontier/task/repo/lib/integer_sort.h",
+      "sha256": "sha256:a60f7c7e0584889e4255072fbe149603b2dc68324aa3b6ca407547977a2ecf01"
+    },
+    {
+      "bytes": 8074,
+      "path": "agent-base/frontier/task/repo/lib/list_allocator.h",
+      "sha256": "sha256:245076b186bb518da50a48d7488e9987795042eb4530bd8d4f2a1a9f4163f6e0"
+    },
+    {
+      "bytes": 2956,
+      "path": "agent-base/frontier/task/repo/lib/macros.h",
+      "sha256": "sha256:db86a1fc69643574784308e8c06935022fb8654d4d4cbd97a2e441f264f0c582"
+    },
+    {
+      "bytes": 496,
+      "path": "agent-base/frontier/task/repo/lib/makefile",
+      "sha256": "sha256:6dc577f020102bdcabf03c76fbf40dafba24600caa3ffc1af6e2794e90458172"
+    },
+    {
+      "bytes": 1044,
+      "path": "agent-base/frontier/task/repo/lib/maybe.h",
+      "sha256": "sha256:91cc5ecf3138d2805eb445ce66876cf81b9f3823632712e739f833561c83eb22"
+    },
+    {
+      "bytes": 1302,
+      "path": "agent-base/frontier/task/repo/lib/merge.h",
+      "sha256": "sha256:56bdadcad38ed86061dbd72b508748a292167db70a406a91f9dfa7acb0294548"
+    },
+    {
+      "bytes": 3952,
+      "path": "agent-base/frontier/task/repo/lib/par_string.h",
+      "sha256": "sha256:ffb1530c74c69afae21975c9c7a8a5c9baaa0760c84902e806b1d82ff11a022c"
+    },
+    {
+      "bytes": 3664,
+      "path": "agent-base/frontier/task/repo/lib/quicksort.h",
+      "sha256": "sha256:8f8459572bbe954eef6c1e5854ccee0d52ec67e5f99d5235b5d121e9ef764892"
+    },
+    {
+      "bytes": 2103,
+      "path": "agent-base/frontier/task/repo/lib/random.h",
+      "sha256": "sha256:b0bcf7321eb3dd71f170ca6a7ad55614d021d264cf048e0dbd2c2eca927d665c"
+    },
+    {
+      "bytes": 2536,
+      "path": "agent-base/frontier/task/repo/lib/random_shuffle.h",
+      "sha256": "sha256:fd2b6f48542397456cb75f03f7171e5fed3ad66100a8aab6568003000fba7403"
+    },
+    {
+      "bytes": 5171,
+      "path": "agent-base/frontier/task/repo/lib/sample_sort.h",
+      "sha256": "sha256:63113da75ee22d6539f9e85cdeb5390efef59624ef69266ebf8f15812268cf92"
+    },
+    {
+      "bytes": 2934,
+      "path": "agent-base/frontier/task/repo/lib/seq.h",
+      "sha256": "sha256:6143b3cbb8b43161bd0cf7ce181392e4a213699660200ef79e3173f9969865d3"
+    },
+    {
+      "bytes": 11769,
+      "path": "agent-base/frontier/task/repo/lib/sequence_ops.h",
+      "sha256": "sha256:d9480a1e32720405b0b558d8d45a6044432868f79d25f57a64e5e70e6247f678"
+    },
+    {
+      "bytes": 9591,
+      "path": "agent-base/frontier/task/repo/lib/sequentialHT.h",
+      "sha256": "sha256:99706fe8d1b1d0b1a7e69d9e07602b99d07a7bdab6defd36bebf572f6a0153c6"
+    },
+    {
+      "bytes": 581,
+      "path": "agent-base/frontier/task/repo/lib/sparse_mat_vec_mult.h",
+      "sha256": "sha256:9b4f5dcd0458301d2728385a1ea904e4059eb72d707827fc0a8aa0eea6c060d1"
+    },
+    {
+      "bytes": 8224,
+      "path": "agent-base/frontier/task/repo/lib/time_operations.h",
+      "sha256": "sha256:5f9777eb3a3a94198beba48c1450ba43d3f34d128741c34cc934233d66ee1028"
+    },
+    {
+      "bytes": 5090,
+      "path": "agent-base/frontier/task/repo/lib/time_tests.cpp",
+      "sha256": "sha256:cafa831c1b9bb83b990875d971857ed29c4e97fa5176f61322ec5e35e7b04445"
+    },
+    {
+      "bytes": 1514,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.8.Dec20.16",
+      "sha256": "sha256:26359808f2ba35d26fdffa80e604a630d4fe6ea8d163c8e36ae2edb4db6a40c0"
+    },
+    {
+      "bytes": 1333,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.8.Nov11.16",
+      "sha256": "sha256:748cbb1183c09e0f73408c543fa3514b628df2022c5dc9f514d945aefacf13ec"
+    },
+    {
+      "bytes": 1330,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.8.Nov21.16",
+      "sha256": "sha256:c2d425ce870b0df50a726838fb5e21207921d9d42a15bfad5458a3332291c90b"
+    },
+    {
+      "bytes": 1338,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.8.Nov22.16",
+      "sha256": "sha256:170e0f00dc23308950bcac03a2372106bda175659c6776a17459e3e673bc07bf"
+    },
+    {
+      "bytes": 1462,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.9.Dec20.16",
+      "sha256": "sha256:dee24c3af4160660fd41852c281458c4a757b405d07b4df3f00c30b2307c13ee"
+    },
+    {
+      "bytes": 1257,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.9.Nov11.16",
+      "sha256": "sha256:d62e1f04f4fa718401fac6fbde02a835f675c0d2c9d9c15c5cb442595a0251e5"
+    },
+    {
+      "bytes": 1266,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.144.9.Nov22.16",
+      "sha256": "sha256:78760ecfaa869233d219a51e9d1f56dbc040835abfe45da0a9214a0770dcd608"
+    },
+    {
+      "bytes": 1302,
+      "path": "agent-base/frontier/task/repo/lib/timings/aware.72.8.Nov11.16",
+      "sha256": "sha256:953547a409b267ec36e880c900cb2f10c234c1c6c374ea1b78a20a4d1c9e8d44"
+    },
+    {
+      "bytes": 1316,
+      "path": "agent-base/frontier/task/repo/lib/timings/pbbs.64.8.Nov11.16",
+      "sha256": "sha256:9f4f39c794853c42b5e14c0bc1b6ed28f6443c64c51db47d13e3b47fdd736f23"
+    },
+    {
+      "bytes": 1247,
+      "path": "agent-base/frontier/task/repo/lib/timings/pbbs.64.9.Nov11.16",
+      "sha256": "sha256:701536b648782ccb2dc6480ca06370aa6f0bb24a288882618c45cd79f61323ab"
+    },
+    {
+      "bytes": 6067,
+      "path": "agent-base/frontier/task/repo/lib/transpose.h",
+      "sha256": "sha256:7e6f9dab9cb64c733ffe4395a43567b0550a52b3102df400acbf5a6c90acdeed"
+    },
+    {
+      "bytes": 4561,
+      "path": "agent-base/frontier/task/repo/lib/tt.cpp",
+      "sha256": "sha256:b3977a82a45c93e5ff05e2eca31b133238529a4245c2df38e2c47cc2c35d0ae9"
+    },
+    {
+      "bytes": 10196,
+      "path": "agent-base/frontier/task/repo/lib/utilities.h",
+      "sha256": "sha256:760425975966ee65e495e98cf10cb20fd2de96b0e5590309c47557d303ff7b03"
+    },
+    {
+      "bytes": 4342,
+      "path": "agent-base/frontier/task/repo/lib/utilities_temp.h",
+      "sha256": "sha256:0a5090e8ed1f04d0c94f1cc5e1ed605d41441e26ae3600a4636cae169881923d"
+    },
+    {
+      "bytes": 15050,
+      "path": "agent-base/frontier/task/repo/ligra/IO.h",
+      "sha256": "sha256:229ff95a5cb2ad7d6619bb810efb4fc0ff7d4d3379505ee70d0ce0f521e2bc32"
+    },
+    {
+      "bytes": 807,
+      "path": "agent-base/frontier/task/repo/ligra/binary_search.h",
+      "sha256": "sha256:ed9f0ad60c5d864f8f671d8588403777e5ff8cbc3ac628a7e4c14be0ed11da62"
+    },
+    {
+      "bytes": 10654,
+      "path": "agent-base/frontier/task/repo/ligra/blockRadixSort.h",
+      "sha256": "sha256:f306b99f375ddb72d5bfeae2e27e44ae85d4e09fcf6c0773980bae0543a160c4"
+    },
+    {
+      "bytes": 11745,
+      "path": "agent-base/frontier/task/repo/ligra/bucket.h",
+      "sha256": "sha256:ab9140a74f07e1ec5169fe4b4851a7237e697b64ec940dcfd9ded44252e9acd0"
+    },
+    {
+      "bytes": 14057,
+      "path": "agent-base/frontier/task/repo/ligra/byte-pd.h",
+      "sha256": "sha256:d9917572f02d03815e32b7ab8dca412625b4cf5497f9b1ddd6d77fffb01904b5"
+    },
+    {
+      "bytes": 12853,
+      "path": "agent-base/frontier/task/repo/ligra/byte.h",
+      "sha256": "sha256:549a389f7c7ff339eadb418190d4d3607ee19349cad133a9ed2892c004d1fe0a"
+    },
+    {
+      "bytes": 28972,
+      "path": "agent-base/frontier/task/repo/ligra/byteRLE-pd.h",
+      "sha256": "sha256:be0ab26db7484ab23355ff77eba41ff9c9c4933e376bf55345e7a55e3701d6e3"
+    },
+    {
+      "bytes": 21858,
+      "path": "agent-base/frontier/task/repo/ligra/byteRLE.h",
+      "sha256": "sha256:bcad7911c3ec03ba08ca5dd6266b69ea4ce883fddb55e5a2812111ef1dd6fee5"
+    },
+    {
+      "bytes": 12404,
+      "path": "agent-base/frontier/task/repo/ligra/compressedVertex.h",
+      "sha256": "sha256:6be2ff270dbaf152f2d635aaa287db939a9a860a0bb9f5d79c7832a940929bd3"
+    },
+    {
+      "bytes": 4948,
+      "path": "agent-base/frontier/task/repo/ligra/counting_sort.h",
+      "sha256": "sha256:4e60fef3b0cfc234d80ac6230d6b5bfb634d302069d78854af6bd16a8862a732"
+    },
+    {
+      "bytes": 4267,
+      "path": "agent-base/frontier/task/repo/ligra/decoder.C",
+      "sha256": "sha256:4b2b3ad80d4fa911a5948eb40fe4888f5c7e3b60515a2227f262eb74106e80a0"
+    },
+    {
+      "bytes": 1240,
+      "path": "agent-base/frontier/task/repo/ligra/dyn_arr.h",
+      "sha256": "sha256:a0c9a31c0bd146c4fb3635c887edde88a3ca72006e1c738127d605dc90f6c934"
+    },
+    {
+      "bytes": 3013,
+      "path": "agent-base/frontier/task/repo/ligra/edgeMapReduce.h",
+      "sha256": "sha256:10db38d16faf02384aa88ce8581164080a2f3486bf5a820a4d9668a326922063"
+    },
+    {
+      "bytes": 4309,
+      "path": "agent-base/frontier/task/repo/ligra/edgeMap_utils.h",
+      "sha256": "sha256:eecc9c31155a015474c12edbf6fafcc5717ad1bb5f7f27acea4fdcceff43fe26"
+    },
+    {
+      "bytes": 16971,
+      "path": "agent-base/frontier/task/repo/ligra/encoder.C",
+      "sha256": "sha256:059aa6b4a347280a7846947af1f1b24f652018e2466256ef046de22852fb9a63"
+    },
+    {
+      "bytes": 3321,
+      "path": "agent-base/frontier/task/repo/ligra/gettime.h",
+      "sha256": "sha256:45a35247cd234259a217c983d7ea979bb172ff20c5a52eb2077bd0d0abfce688"
+    },
+    {
+      "bytes": 4950,
+      "path": "agent-base/frontier/task/repo/ligra/graph.h",
+      "sha256": "sha256:47ae0dcdc2caa43915b4e0aefceed13f3144b8afa325332d4225468386d31682"
+    },
+    {
+      "bytes": 7713,
+      "path": "agent-base/frontier/task/repo/ligra/histogram.h",
+      "sha256": "sha256:26e718c50102e71ceaf471caf9b65acd17897a389e7fcd203150fd8fde0e00ec"
+    },
+    {
+      "bytes": 17213,
+      "path": "agent-base/frontier/task/repo/ligra/hygra.h",
+      "sha256": "sha256:2d2b63cbbc67c4f83bc809869ce44a5e1a64a56c2a124228d295f6c123701563"
+    },
+    {
+      "bytes": 4849,
+      "path": "agent-base/frontier/task/repo/ligra/hypergraphDecoder.C",
+      "sha256": "sha256:0d692a7a353e8db860f93b446d4b63d197244544a49e18cc4fecc01d723979ac"
+    },
+    {
+      "bytes": 28771,
+      "path": "agent-base/frontier/task/repo/ligra/hypergraphEncoder.C",
+      "sha256": "sha256:47cb10af7c54fb2008231cf2385f802d2b4ccf5d8e1a39d5e84fcc3071f94ada"
+    },
+    {
+      "bytes": 21897,
+      "path": "agent-base/frontier/task/repo/ligra/hypergraphIO.h",
+      "sha256": "sha256:16f94b80d4a688906a6943d5c4786d1606b947df72966df546f3acb93db5a071"
+    },
+    {
+      "bytes": 4658,
+      "path": "agent-base/frontier/task/repo/ligra/index_map.h",
+      "sha256": "sha256:5476d4120d2c782b9395a83081472907e318f83d21e464a6e573fa6d41b597a8"
+    },
+    {
+      "bytes": 15093,
+      "path": "agent-base/frontier/task/repo/ligra/ligra.h",
+      "sha256": "sha256:3bb63dae790170b19c5bbd42d8af81eafabe60c5eb3bacbed54414157775b5db"
+    },
+    {
+      "bytes": 1232,
+      "path": "agent-base/frontier/task/repo/ligra/maybe.h",
+      "sha256": "sha256:f3be32a46670b7351f2f629e2bd2623344eae18ec8ce6c3388942b55edf7b6f7"
+    },
+    {
+      "bytes": 14151,
+      "path": "agent-base/frontier/task/repo/ligra/nibble-pd.h",
+      "sha256": "sha256:437bd53c04efb13a1d0c53c0f31a05570900ad099201bbe9c81963f91ddc1711"
+    },
+    {
+      "bytes": 11694,
+      "path": "agent-base/frontier/task/repo/ligra/nibble.h",
+      "sha256": "sha256:e4c2390609667636f9f2021c02c294539928c7b07ed1228961e14d1dc86da712"
+    },
+    {
+      "bytes": 3914,
+      "path": "agent-base/frontier/task/repo/ligra/parallel.h",
+      "sha256": "sha256:a5bee9af106a8ae6bd320b9b74f0b64d913b9109bc322669ae244236bffbfee9"
+    },
+    {
+      "bytes": 3445,
+      "path": "agent-base/frontier/task/repo/ligra/parseCommandLine.h",
+      "sha256": "sha256:32c79b8a42f1d1a81c8937a6675afc0bbb69c05a665ebc87f1613d49fe3a563f"
+    },
+    {
+      "bytes": 3468,
+      "path": "agent-base/frontier/task/repo/ligra/quickSort.h",
+      "sha256": "sha256:a254c675ff097aa2b50ba1d9b49b4842ad53c30870039a3b700ca2b41b1278ae"
+    },
+    {
+      "bytes": 4461,
+      "path": "agent-base/frontier/task/repo/ligra/sampleSort.h",
+      "sha256": "sha256:07bc956085692a4791bdd911101fb00a77937c4b750421b857b82e9419d0c6fc"
+    },
+    {
+      "bytes": 10360,
+      "path": "agent-base/frontier/task/repo/ligra/sequence.h",
+      "sha256": "sha256:5962fc8ca465aefc685c53dd8ed50d0267a11c8c600f20d64b06071cf1f01b8b"
+    },
+    {
+      "bytes": 3982,
+      "path": "agent-base/frontier/task/repo/ligra/sequentialHT.h",
+      "sha256": "sha256:4c1052e107996dffb426417452732f7066c90266aea2e14c675859a4cfacca72"
+    },
+    {
+      "bytes": 13902,
+      "path": "agent-base/frontier/task/repo/ligra/sparseSet.h",
+      "sha256": "sha256:10a892097fe15c66af29c3221bb73574a684ba61a4ea2d9cd0632684f4cdb964"
+    },
+    {
+      "bytes": 3705,
+      "path": "agent-base/frontier/task/repo/ligra/transpose.h",
+      "sha256": "sha256:7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa"
+    },
+    {
+      "bytes": 16419,
+      "path": "agent-base/frontier/task/repo/ligra/utils.h",
+      "sha256": "sha256:17476903153ce057bb579d1dd6c63934852961e23e179f48fa34ad090a5c9785"
+    },
+    {
+      "bytes": 12168,
+      "path": "agent-base/frontier/task/repo/ligra/vertex.h",
+      "sha256": "sha256:8d30a3c8c743b323215e9712fe1b04d23fad13953f68d17ca4d09d2a4f1c191f"
+    },
+    {
+      "bytes": 6948,
+      "path": "agent-base/frontier/task/repo/ligra/vertexSubset.h",
+      "sha256": "sha256:3f268b6e712f21e6823eff1754ef54dfc6b0b553dbad9c09692a73d984778103"
+    },
+    {
+      "bytes": 2880,
+      "path": "agent-base/frontier/task/repo/radixsort/README.md",
+      "sha256": "sha256:00768b3b3e029a0bec269a7011db4809c6b449120c56262e7ca2b7a1f59582d4"
+    },
+    {
+      "bytes": 59,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/.gitignore",
+      "sha256": "sha256:f17ec4a27134346d1bb8113671603bd7d58bbe40c3339ada46be6b9cca51c0ee"
+    },
+    {
+      "bytes": 6852,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/IO.h",
+      "sha256": "sha256:965cec32f3340d0bc67b3f37e873089da2fb56c8bdf52e1adadad86453efb6d1"
+    },
+    {
+      "bytes": 928,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/block.h",
+      "sha256": "sha256:620395e36d30130756d996cb340431072a80f56cbc48a07ec5a86d8637bf9e4b"
+    },
+    {
+      "bytes": 7935,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/common_sort.h",
+      "sha256": "sha256:43142a1cc42d4aa5ff03cef03b422d94c1c0c87ebd72182dc7700e0b6386e5d4"
+    },
+    {
+      "bytes": 6130,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/cyclegraph.h",
+      "sha256": "sha256:e2cb0fbd9e48149e4c5424eceb9855edc794d7769646873315db7bfc338702f1"
+    },
+    {
+      "bytes": 1240,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/edge.h",
+      "sha256": "sha256:bff6bf45b558da1e14f51564b7bacf0d988eb279ad0e404df01ec26b81720982"
+    },
+    {
+      "bytes": 8103,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/edgelistgraph.h",
+      "sha256": "sha256:c47cc7c298eabf166ddca27d708cfd9e4c6d8e7eb134407ba86725419d304f23"
+    },
+    {
+      "bytes": 3103,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/example.cpp",
+      "sha256": "sha256:eda7f606122eca8ad83eb991dd32b9a8dbead29e2a5d21d1e02ec4fa30578c09"
+    },
+    {
+      "bytes": 1262,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/misc.h",
+      "sha256": "sha256:a4f0a044ccbadb5dc511b5c88a09de5717698d0293b5cc4ea62f6eb7467726fd"
+    },
+    {
+      "bytes": 2398,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/parallel.h",
+      "sha256": "sha256:8abb88cab9f80cf9c62102585b1b413f0683ef812aa69d64589b3d2e18a647d2"
+    },
+    {
+      "bytes": 3484,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/parseCommandLine.h",
+      "sha256": "sha256:7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46"
+    },
+    {
+      "bytes": 2397,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/prefixsum.h",
+      "sha256": "sha256:a2b290943178c972f14f1f33b1239e73f0fb0f178b5412196f8bb0544881d7b0"
+    },
+    {
+      "bytes": 4949,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/radixSort.h",
+      "sha256": "sha256:6c2afe201611d3a6cc35f02aea1b9f8969ccd2591ab13888dfa1cee058f81dde"
+    },
+    {
+      "bytes": 963,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/radix_configs.h",
+      "sha256": "sha256:dcfd65da4085ef4848c477fd1a71931aba8144f252db8b7208b90d077902c739"
+    },
+    {
+      "bytes": 5111,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/regionsSort.h",
+      "sha256": "sha256:c6ac0ffdbb84710b34ef2e5c5c015ef95b85ce1c2a0afdd93f533b1286e61b60"
+    },
+    {
+      "bytes": 18180,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/sequence.h",
+      "sha256": "sha256:bcae163540373a8ec69cf589c69d20815c338ac201ad827916be6a5f5c009510"
+    },
+    {
+      "bytes": 6008,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/sequenceIO.h",
+      "sha256": "sha256:6bebf3088d23196a03f0add6699d76c385fb31b2a046e4b7a1e818ea5bc4345d"
+    },
+    {
+      "bytes": 33894,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/ska_sort.hpp",
+      "sha256": "sha256:851e0b6b8b10bc198de0e801dab2bba9f0831201a93699d04c4a44333f7a695f"
+    },
+    {
+      "bytes": 2257,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/triangle.h",
+      "sha256": "sha256:d97c08fc388317543bff33eefdd46d2dac9dbc6aa0635e667fcdc6981e42c541"
+    },
+    {
+      "bytes": 3171,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/types.h",
+      "sha256": "sha256:610d78ccb65851f763ee93da7795c9bde3f2b6f00c53322ef03586ea0e3eade4"
+    },
+    {
+      "bytes": 8356,
+      "path": "agent-base/frontier/task/repo/radixsort/RadixSort/utils.h",
+      "sha256": "sha256:870a47370c1900eae53b73fc9b876c920ee4c2c18a22f2518d467c6de9adf684"
+    },
+    {
+      "bytes": 6835,
+      "path": "agent-base/frontier/task/repo/radixsort/common/IO.h",
+      "sha256": "sha256:e305d9e17f90981aa1a5cd79378716d95bde083a3a1b5d8d7df0492f3e029e08"
+    },
+    {
+      "bytes": 11825,
+      "path": "agent-base/frontier/task/repo/radixsort/common/blockRadixSort.h",
+      "sha256": "sha256:150afafbef14af5cabd4c9ade5441f0be8a36bc54ce8d4a3d75244768334bf26"
+    },
+    {
+      "bytes": 10943,
+      "path": "agent-base/frontier/task/repo/radixsort/common/blockRadixSort2.h",
+      "sha256": "sha256:c5e7d34959a3bac9f1c51add2a468ca46efd97309098ce4ba1804fde465da048"
+    },
+    {
+      "bytes": 2213,
+      "path": "agent-base/frontier/task/repo/radixsort/common/gettime.h",
+      "sha256": "sha256:ce7a3a4fce686fe476811e3bdf9730d004cc1625602f6290a79d42bd18dab955"
+    },
+    {
+      "bytes": 2456,
+      "path": "agent-base/frontier/task/repo/radixsort/common/isortCheck.C",
+      "sha256": "sha256:fe2d06bc67c961994d95ca31135ee29e286467467e31e5754e6a53caf65d955d"
+    },
+    {
+      "bytes": 2458,
+      "path": "agent-base/frontier/task/repo/radixsort/common/isortTime.C",
+      "sha256": "sha256:c3c0a3a07ff3aff488c6e38d8ba023a38042da2867f20c6240dd6ec74405a80c"
+    },
+    {
+      "bytes": 2228,
+      "path": "agent-base/frontier/task/repo/radixsort/common/parallel.h",
+      "sha256": "sha256:3f6bec42935b71ae6aad8f5e3566f1019cac029cfac4e39ce691a1ee9c08abe4"
+    },
+    {
+      "bytes": 3484,
+      "path": "agent-base/frontier/task/repo/radixsort/common/parseCommandLine.h",
+      "sha256": "sha256:7d0fa864f63949c6c89bb7e29f5a12ebd325056645c3db85bfa8384d29591c46"
+    },
+    {
+      "bytes": 11131,
+      "path": "agent-base/frontier/task/repo/radixsort/common/runTests.py",
+      "sha256": "sha256:00b6c25dfcfb5213f244eb5dbb63458a78bfec1dd16241ac6d0ba89912776de1"
+    },
+    {
+      "bytes": 18184,
+      "path": "agent-base/frontier/task/repo/radixsort/common/sequence.h",
+      "sha256": "sha256:5eb17db93e5969cd98b57856ca934b4d74506eadba7425d1c51c1ab8d1a69b3f"
+    },
+    {
+      "bytes": 4860,
+      "path": "agent-base/frontier/task/repo/radixsort/common/sequenceIO.h",
+      "sha256": "sha256:fb95f00fb094b7664325db59fb6c183e82a379772aa36f697917aa29a92ba049"
+    },
+    {
+      "bytes": 3722,
+      "path": "agent-base/frontier/task/repo/radixsort/common/transpose.h",
+      "sha256": "sha256:e26e8782002643598801dead5454dd7100845d2e573ccc21d5e891bf88b00e32"
+    },
+    {
+      "bytes": 8240,
+      "path": "agent-base/frontier/task/repo/radixsort/common/utils.h",
+      "sha256": "sha256:f12d74d0f9b3339d59de3829bbdca6fb6d49b70d6e5262eae207d428ccd4920d"
+    },
+    {
+      "bytes": 326,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:6c673f2cf789cc74c36a08ed39761a52d461d8d3a58e3915faeaface364a5f12"
+    },
+    {
+      "bytes": 337,
+      "path": "datasets/train.json",
+      "sha256": "sha256:0c45c882bb0de7580063e7131d70b04461073e69be7450aca42272fb5850ddb4"
+    },
+    {
+      "bytes": 3111,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:f56fb68846d1dda933f6ae9dbfeeed8c7de06801ea29825d3806152c73fd9f64"
+    },
+    {
+      "bytes": 41898,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:0472d27c2b1245299f0929027b9c87a719c64773a7aabb65db84213ae5ec2a10"
+    },
+    {
+      "bytes": 6555,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:81b77fe8969bcfdcaef95e52970c44675c6795d5f51819dc5e6d8eb228ec2ec2"
+    },
+    {
+      "bytes": 961,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:db0e43ddd7da9cf698c60bfab1e0f2685f4c8d428eb8617901212a3229a5c597"
+    },
+    {
+      "bytes": 110,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:e93e1a02240461f4ec7412183ce6b230425ca8222dd8816024943ef95683d82a"
+    },
+    {
+      "bytes": 15851,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:129888421b4a7cd7d0cba6953df47195bb400660b1dd1cf966d8febcdf9e0a02"
+    },
+    {
+      "bytes": 1541,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:1a8876f69409fc3d4bf2d41c1d9bc57f017c23cf6fa956dccfadf7849ac38a9a"
+    },
+    {
+      "bytes": 333867,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:44768de2ee3af3f2e4f57b388a8b768e24e9f31d545ec1b7b8bde5c4ff0f6145"
+    },
+    {
+      "bytes": 826,
+      "path": "judge/sandbox_build.cpp",
+      "sha256": "sha256:609d12776f89175fb18dc3b394754bf5385a811bec8f4536091e9c30dbe63caf"
+    },
+    {
+      "bytes": 8551,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:0de9ab9e1561d812bad29d0c1da6a092b3611442ed6e67b822339d0e9aeca54b"
+    },
+    {
+      "bytes": 5394,
+      "path": "judge/trusted_build.py",
+      "sha256": "sha256:5b7c3d7eaccf5730b14e6a506e77436abbbc10aa536e01b78988544534d166e1"
+    },
+    {
+      "bytes": 3751,
+      "path": "judge/trusted_count_total.h",
+      "sha256": "sha256:af941316f52468737740767b4f4f3e3535a67eba74cc2b90bc5a355850482124"
+    },
+    {
+      "bytes": 5532,
+      "path": "judge/trusted_isolation.h",
+      "sha256": "sha256:0d55a2ae0d7e7a577cb60e51491bdd2d8349b8c4725c42b857bc86033e702c1a"
+    },
+    {
+      "bytes": 3469,
+      "path": "policy.json",
+      "sha256": "sha256:098fbc52d00c867cdb823a263c301141642397c6bfbbb145d0d92bed986baa51"
+    },
+    {
+      "bytes": 1164,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:473144b51baffcb061325820f74f2f1e281bf23c8a2ca70168a387bfe2f7a73e"
+    },
+    {
+      "bytes": 11943,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "bytes": 21124,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:85796151f8743e1f4d07aec84a19b9253316168315e37aab2306f8b8edb40e40"
+    },
+    {
+      "bytes": 1474,
+      "path": "verifier/private_metrics.py",
+      "sha256": "sha256:9a0cd18c54b407b868c220e4395cf14190dc944f66df4df270500f8d0c9eb118"
+    },
+    {
+      "bytes": 300,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:560e20a3f1bd5862a8716ab2e4c8892aebd587ea28c617aec446e264e8591efd"
+    }
+  ],
+  "problem_id": "parbutterfly",
+  "profile": "patch-workspace",
+  "schema_version": "frontier.frontiersmith-upstream-lock/v1",
+  "scientific_contract": {
+    "continuous_score": "invalid or inexact: 0; S<=1: 0; otherwise 100*ln(S)/(ln(10)+ln(S)), where S is the geometric mean across active uniform-degree workloads of frozen-serial-naive/candidate paired timing speedup",
+    "count_mode": "BATCHS",
+    "final_suite": "four public workloads plus four hidden same-distribution workloads (three uniform-degree and one both-sides power-law skewed graph per suite)",
+    "ranking": "ACOCORE",
+    "reference_pass": "on every active workload, candidate and source-locked reference equal the serial oracle and median of 31 adjacent alternating reference/candidate timing ratios is strictly greater than 1.05",
+    "repeats": 31,
+    "threads": 4
+  },
+  "source": {
+    "commit": "b55ddd03f6b726235f03603b15b4f4c489d478bc",
+    "path": "original_format_problems/parbutterfly2",
+    "pull_request": null,
+    "repository": "private authoring repository"
+  },
+  "submission": {
+    "allowed_paths": [
+      "apps/hyper/butterfly_count_total.h",
+      "apps/hyper/butterfly_count.h",
+      "apps/hyper/butterfly_ecount.h",
+      "apps/hyper/butterfly_peel.h",
+      "apps/hyper/butterfly_epeel.h",
+      "apps/hyper/butterfly_putils.h",
+      "apps/hyper/butterfly_utils.h",
+      "apps/hyper/solver_extensions/"
+    ],
+    "entrypoint": "payload/solution.patch",
+    "max_changed_files": 20,
+    "max_patch_bytes": 524288
+  }
+}
