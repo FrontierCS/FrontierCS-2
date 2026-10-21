@@ -307,7 +307,7 @@ licenses.
 &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://scale.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/scale-dark.svg"><img src="docs/assets/sponsors/scale.svg" alt="Scale AI" height="30"></picture></a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://www.kaggle.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/kaggle.svg"><img src="docs/assets/sponsors/kaggle.svg" alt="Kaggle" height="32"></picture></a>
+  <a href="https://www.kaggle.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/kaggle-dark.svg"><img src="docs/assets/sponsors/kaggle.svg" alt="Kaggle" height="32"></picture></a>
 </p>
 
 We give special thanks to [Modal](https://modal.com) for its strong support of
