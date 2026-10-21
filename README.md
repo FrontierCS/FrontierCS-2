@@ -1,11 +1,6 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/frontiercs-logo-dark.svg">
-    <img src="docs/assets/frontiercs-logo.svg" alt="FrontierCS 2" width="460">
-  </picture>
+  <img src="docs/assets/frontiercs2.gif" alt="FrontierCS 2: A Benchmark for Computer Science R&amp;D" width="100%">
 </p>
-
-<h3 align="center">FrontierCS 2: A Benchmark for Computer Science R&amp;D</h3>
 
 <p align="center">
   <a href="https://frontier-cs.org">Website</a> ·
