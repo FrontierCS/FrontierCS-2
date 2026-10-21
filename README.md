@@ -6,6 +6,7 @@
   <a href="https://frontier-cs.org">Website</a> ·
   <a href="https://frontier-cs.org/blog/">Blog</a> ·
   <a href="TASKS.md">Tasks</a> ·
+  <a href="https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-runs">Runs</a> ·
   <a href="https://github.com/FrontierCS/Frontier-CS">FrontierCS 1.0</a> ·
   <a href="https://join.slack.com/t/frontiercs-org/shared_invite/zt-4dpo0sew2-c2FE0RPn2csApeDiXKKiEw">Slack</a> ·
   <a href="https://discord.gg/UhXzDTcey">Discord</a>
@@ -14,6 +15,7 @@
 <p align="center">
   <a href="TASKS.md"><img alt="Tasks released: 48 / 150" src="https://img.shields.io/badge/tasks%20released-48%20%2F%20150-0b57d0"></a>
   <a href="TASKS.md"><img alt="Domains: 13, more to be announced" src="https://img.shields.io/badge/domains-13%20%2B%20more%20TBA-0b57d0"></a>
+  <a href="https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-runs"><img alt="Runs on Hugging Face" src="https://img.shields.io/badge/runs-Hugging%20Face-0b57d0?logo=huggingface&logoColor=white"></a>
   <a href="https://join.slack.com/t/frontiercs-org/shared_invite/zt-4dpo0sew2-c2FE0RPn2csApeDiXKKiEw"><img alt="Join our Slack" src="https://img.shields.io/badge/Slack-join%20us-0b57d0?logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU%2BU2xhY2s8L3RpdGxlPjxwYXRoIGZpbGw9IndoaXRlIiBkPSJNNS4wNDIgMTUuMTY1YTIuNTI4IDIuNTI4IDAgMCAxLTIuNTIgMi41MjNBMi41MjggMi41MjggMCAwIDEgMCAxNS4xNjVhMi41MjcgMi41MjcgMCAwIDEgMi41MjItMi41MmgyLjUydjIuNTJ6TTYuMzEzIDE1LjE2NWEyLjUyNyAyLjUyNyAwIDAgMSAyLjUyMS0yLjUyIDIuNTI3IDIuNTI3IDAgMCAxIDIuNTIxIDIuNTJ2Ni4zMTNBMi41MjggMi41MjggMCAwIDEgOC44MzQgMjRhMi41MjggMi41MjggMCAwIDEtMi41MjEtMi41MjJ2LTYuMzEzek04LjgzNCA1LjA0MmEyLjUyOCAyLjUyOCAwIDAgMS0yLjUyMS0yLjUyQTIuNTI4IDIuNTI4IDAgMCAxIDguODM0IDBhMi41MjggMi41MjggMCAwIDEgMi41MjEgMi41MjJ2Mi41Mkg4LjgzNHpNOC44MzQgNi4zMTNhMi41MjggMi41MjggMCAwIDEgMi41MjEgMi41MjEgMi41MjggMi41MjggMCAwIDEtMi41MjEgMi41MjFIMi41MjJBMi41MjggMi41MjggMCAwIDEgMCA4LjgzNGEyLjUyOCAyLjUyOCAwIDAgMSAyLjUyMi0yLjUyMWg2LjMxMnpNMTguOTU2IDguODM0YTIuNTI4IDIuNTI4IDAgMCAxIDIuNTIyLTIuNTIxQTIuNTI4IDIuNTI4IDAgMCAxIDI0IDguODM0YTIuNTI4IDIuNTI4IDAgMCAxLTIuNTIyIDIuNTIxaC0yLjUyMlY4LjgzNHpNMTcuNjg4IDguODM0YTIuNTI4IDIuNTI4IDAgMCAxLTIuNTIzIDIuNTIxIDIuNTI3IDIuNTI3IDAgMCAxLTIuNTItMi41MjFWMi41MjJBMi41MjcgMi41MjcgMCAwIDEgMTUuMTY1IDBhMi41MjggMi41MjggMCAwIDEgMi41MjMgMi41MjJ2Ni4zMTJ6TTE1LjE2NSAxOC45NTZhMi41MjggMi41MjggMCAwIDEgMi41MjMgMi41MjJBMi41MjggMi41MjggMCAwIDEgMTUuMTY1IDI0YTIuNTI3IDIuNTI3IDAgMCAxLTIuNTItMi41MjJ2LTIuNTIyaDIuNTJ6TTE1LjE2NSAxNy42ODhhMi41MjcgMi41MjcgMCAwIDEtMi41Mi0yLjUyMyAyLjUyNiAyLjUyNiAwIDAgMSAyLjUyLTIuNTJoNi4zMTNBMi41MjcgMi41MjcgMCAwIDEgMjQgMTUuMTY1YTIuNTI4IDIuNTI4IDAgMCAxLTIuNTIyIDIuNTIzaC02LjMxM3oiLz48L3N2Zz4%3D"></a>
   <a href="https://discord.gg/UhXzDTcey"><img alt="Join our Discord" src="https://img.shields.io/badge/Discord-join%20us-0b57d0?logo=discord&logoColor=white"></a>
 </p>
@@ -215,6 +217,13 @@ Regenerate the metadata and table after changing a task:
 ./python scripts/task_metadata.py write            # refresh derived fields
 ./python scripts/task_metadata.py table            # rewrite TASKS.md
 ```
+
+## Released runs
+
+The formal runs are on Hugging Face at
+[FrontierCS2/FrontierCS-2-runs](https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-runs): one run per task and model,
+48 tasks × 13 models, each with its score, verdict,
+final patch (when one was submitted) and full agent trace.
 
 ## Adding a task
 
