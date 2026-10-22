@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2610.29932">Paper</a> ·
   <a href="https://frontier-cs.org">Website</a> ·
   <a href="https://frontier-cs.org/blog/">Blog</a> ·
   <a href="TASKS.md">Tasks</a> ·
@@ -13,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2610.29932"><img alt="arXiv 2610.29932" src="https://img.shields.io/badge/arXiv-2610.29932-0b57d0?logo=arxiv&logoColor=white"></a>
   <a href="TASKS.md"><img alt="Tasks released: 48 / 150" src="https://img.shields.io/badge/tasks%20released-48%20%2F%20150-0b57d0"></a>
   <a href="TASKS.md"><img alt="Domains: 13, more to be announced" src="https://img.shields.io/badge/domains-13%20%2B%20more%20TBA-0b57d0"></a>
   <a href="https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-runs"><img alt="Runs on Hugging Face" src="https://img.shields.io/badge/runs-Hugging%20Face-0b57d0?logo=huggingface&logoColor=white"></a>
@@ -276,7 +278,10 @@ If you use FrontierCS 2, please cite:
                Karthik R. Narasimhan and Jingbo Shang and Koushik Sen and Matei Zaharia and
                Alex Dimakis and Ion Stoica and Joseph E. Gonzalez and Alvin Cheung},
   year      = {2026},
-  url       = {https://frontier-cs.org/}
+  eprint    = {2610.29932},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url       = {https://arxiv.org/abs/2610.29932}
 }
 ```
 
