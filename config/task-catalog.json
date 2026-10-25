@@ -1449,9 +1449,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:10a36767edb3605beb828f8e33e1c61df01418d58a709df2c5ed629be98fdfbb",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "repository": "docker.io/joyemang33/fcs2-task-progent_privilege_control-agent",
-        "tag": "source-c308d6ea9f6ff47067be9cb491db53c173feee740d3226eae714e19de17b25c1"
+        "tag": "source-e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -1459,9 +1459,9 @@
         "provenance": "unverified"
       },
       "dataset_image": {
-        "digest": "sha256:cb9a7470994a28db677505448f80c259b50760042b321ecabeb84c359499c1ce",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "repository": "docker.io/joyemang33/fcs2-task-progent_privilege_control-datasets",
-        "tag": "source-c308d6ea9f6ff47067be9cb491db53c173feee740d3226eae714e19de17b25c1"
+        "tag": "source-e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1"
       },
       "datasets": {
         "eval_sha256": "sha256:010829acceaf4a68d1bf9ec8383f4057a3d19648127ff548f411cc1c26e63bb8",
@@ -1469,16 +1469,16 @@
       },
       "name": "progent_privilege_control",
       "reference": {
-        "digest": "sha256:30df0b865a1a32f67f9894d451d58538b555c0b750c57ade2274bdd040588387",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:12d37a04a0e575625ae6f907dc7a252068080c4c157441142be42aae452791c6",
         "repository": "docker.io/joyemang33/fcs2-task-progent_privilege_control-reference",
-        "tag": "source-c308d6ea9f6ff47067be9cb491db53c173feee740d3226eae714e19de17b25c1"
+        "tag": "source-e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1"
       },
       "verifier_image": {
-        "digest": "sha256:b69dd7f3d21a21bfcca86d0be4fd01d34ac67b13d27a969a427e987516e6cdb9",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-progent_privilege_control",
-        "tag": "source-c308d6ea9f6ff47067be9cb491db53c173feee740d3226eae714e19de17b25c1"
+        "tag": "source-e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1"
       }
     },
     {

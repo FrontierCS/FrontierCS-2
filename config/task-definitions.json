@@ -4605,7 +4605,7 @@
     },
     "display_name": "Privilege Control for Tool-Using LLM Agents",
     "family": "frontier-cs-2.0/security",
-    "image_tag": "source-c308d6ea9f6ff47067be9cb491db53c173feee740d3226eae714e19de17b25c1",
+    "image_tag": "source-e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4726,7 +4726,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:c308d6ea9f6ff47067be9cb491db53c173feee740d3226eae714e19de17b25c1"
+      "source_set_sha256": "sha256:e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
