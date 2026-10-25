@@ -59,9 +59,9 @@
       "sha256": "sha256:34d9a272b432fb249335af2439b3b533a8e335bd88e6b6e2e0bec82181c95b8a"
     },
     {
-      "bytes": 12212,
+      "bytes": 12954,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:d4ce1f80918e3c58a62fb095fcc834773695498e1f2c2194dbc693841db809ad"
+      "sha256": "sha256:e08a53c517b4c25e0691e59ffd2517f5093a52b6db3873543f72149ed84b57d8"
     },
     {
       "bytes": 3515,
@@ -164,9 +164,9 @@
       "sha256": "sha256:beba2a56de2ddbdd730f0499a376968f95fceaabe3636534f4e436a5a84af5d1"
     },
     {
-      "bytes": 47023,
+      "bytes": 49006,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:7daf31d470a44d713d4ac63b8f3f24952dcf2fd43880cd15d95c3785ba70cd55"
+      "sha256": "sha256:7f59fd8b4c07dcfd0dfbb8cce73e404bb2980842b5599dbf2b8ba82666aed3f7"
     },
     {
       "bytes": 418049,
@@ -1084,9 +1084,9 @@
       "sha256": "sha256:7251051bc22e1c122daae53680e8eb86479103a335ec508f82d9ef013e0c637a"
     },
     {
-      "bytes": 12338,
+      "bytes": 13080,
       "path": "judge/readme",
-      "sha256": "sha256:9ccaad5c9dd032feb009cf27ecf853737cec7c54fa32112a20b1786878739653"
+      "sha256": "sha256:2888cd5c6b120afdd8163ab394a470f715003b0e38f610612b5c98d46574dcc5"
     },
     {
       "bytes": 1847,
@@ -1146,7 +1146,7 @@
   "source": {
     "completion_parent_lock_sha256": "sha256:5b592604cb2a4ac2eccf442b4a28e95eb6f7cfe2e681cc6f8118a76ae547e16e",
     "completion_parent_tree_sha256": "sha256:3187246a03eab647105784dd97cb7e48b51284210f25ec4d0cf84280f1525889",
-    "evaluator_sha256": "sha256:7daf31d470a44d713d4ac63b8f3f24952dcf2fd43880cd15d95c3785ba70cd55",
+    "evaluator_sha256": "sha256:7f59fd8b4c07dcfd0dfbb8cce73e404bb2980842b5599dbf2b8ba82666aed3f7",
     "export_parent_lock_sha256": "sha256:ebb0df2e6c4e9c5a5b58350961041c506e17ba8b0f7dabdcbb65ff41d84d61c9",
     "export_parent_tree_sha256": "sha256:cb8246d2b910d4ed9324f434c63f9f4b0290db2c71114f77365f804f707495ee",
     "frozen_parent_lock_sha256": "sha256:9dce2981508ee529074a3079315c0b767519537ee6354e68b54c6c602924bead",
@@ -1155,7 +1155,7 @@
     "measured_source_binding_file_sha256": "sha256:4a1520bfc21929929613bed127f3fcb38b91468ab780531c27f8c58d571f4f66",
     "measured_task_version_id": "taskver-redacted-2878d408",
     "packaging_scope": "Stable problem/dataset identity, operational feedback definitions, native-checkout regression coverage, PASS-first instruction clarification, and descriptive judge metadata only; evaluator, reference, workload assets, runtime recipes, and policy limits unchanged. Historical image/source identities and measurements are not rebound.",
-    "statement_sha256": "sha256:9ccaad5c9dd032feb009cf27ecf853737cec7c54fa32112a20b1786878739653",
+    "statement_sha256": "sha256:2888cd5c6b120afdd8163ab394a470f715003b0e38f610612b5c98d46574dcc5",
     "task_dir": "prospective-task"
   },
   "preview_beat_spec_v3_refresh": {
