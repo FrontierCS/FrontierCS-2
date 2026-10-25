@@ -83,7 +83,12 @@ evaluation.
 One timing round runs six cases: the selected `5voc` batch and selected `4voc`
 batch on each graph. An evaluation builds fresh patched trees and performs five
 output-producing timing rounds. The implementations run in a deterministic
-rotating order. Case membership, order within each workload directory,
+rotating order. Every timed process starts from the same container state:
+after each case the evaluator checks the result files and deletes them, and
+each candidate round must leave everything else as it found it. A round that
+creates, changes, or removes any file outside its result directories, leaves a
+process running, or leaves a System V IPC object behind rejects the
+submission. Case membership, order within each workload directory,
 repetition count, graph sizes, and query sizes are fixed; no synthetic cases or
 random seeds are used. The workload is a representative batch of exact local
 counting queries, not a set of records to identify. Added source is rejected if
