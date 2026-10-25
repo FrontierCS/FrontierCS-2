@@ -14,6 +14,7 @@ import sys
 import tempfile
 import time
 
+from state_guard import StateGuard, StateGuardViolation
 from submission_patch import apply_submission_patch
 
 TASK_DIR = Path(__file__).resolve().parent
@@ -209,6 +210,9 @@ def _oracle(points, eps, minpts):
     return status, memberships
 
 
+_COMPONENTS = {}
+
+
 def _canonical(labels, expected_status):
     core_by_label = {}
     for i, (values, status) in enumerate(zip(labels, expected_status)):
@@ -221,7 +225,12 @@ def _canonical(labels, expected_status):
             if len(values) != 1:
                 raise ValueError("core point has multiple labels")
             core_by_label.setdefault(values[0], set()).add(i)
-    components = {label: frozenset(points) for label, points in core_by_label.items()}
+    components = {}
+    for label, points in core_by_label.items():
+        component = frozenset(points)
+        # Equal components share one object, so comparing two canonical results
+        # (once per execution) does not re-compare every component point by point.
+        components[label] = _COMPONENTS.setdefault(component, component)
     memberships = []
     for values in labels:
         memberships.append(frozenset(components[label] for label in values)
@@ -355,37 +364,54 @@ def _run_large(repo: Path, inp: Path, digest: str, n: int, eps, minpts, rounds, 
         return times
 
 
-def _measure_large(spec, candidate: Path, refroot: Path, checker: Path, workdir: Path):
+def _guarded(guard: StateGuard, function, *args, **kwargs):
+    # Snapshots are outside the DBSCAN-reported time; the evaluator's own
+    # temporary directory is created and removed inside the candidate tree.
+    before = guard.snapshot()
+    result = function(*args, **kwargs)
+    guard.require_unchanged(before)
+    return result
+
+
+def _measure_large(spec, candidate: Path, refroot: Path, checker: Path, workdir: Path,
+                   guard: StateGuard):
     """Paired timing of one large workload; None if the candidate is invalid.
 
     Same protocol as the original workloads: one -r 1 warm-up per
-    implementation, then REPEATS alternating -r TIMED_ROUNDS executions, every
-    execution fully checked against the independent oracle.
+    implementation, then REPEATS alternating groups of TIMED_ROUNDS fresh -r 1
+    executions, every execution fully checked against the independent oracle.
     """
     inp = Path(_trusted(tempfile.mkdtemp, prefix="walk-", dir=workdir)) / "input.txt"
     _trusted(_write_points, inp, _trusted(_walk_points, spec))
     digest = _trusted(_sha256, inp)
     expected = _trusted(_expected_large, checker, inp, spec["n"], spec["eps"], spec["minpts"])
 
-    def execute(repo, rounds):
-        args = (repo, inp, digest, spec["n"], spec["eps"], spec["minpts"], rounds, expected)
+    def execute(repo):
+        args = (repo, inp, digest, spec["n"], spec["eps"], spec["minpts"], 1, expected)
         if repo == refroot:
             return _trusted(_run_large, *args)
         try:
-            return _run_large(*args)
+            return _guarded(guard, _run_large, *args)
+        except StateGuardViolation:
+            raise
         except Exception:
             return None
 
     for repo in (candidate, refroot):
-        if execute(repo, 1) is None:
+        if execute(repo) is None:
             return None
     ct=[]; rt=[]
     for r in range(REPEATS):
         order=((candidate,ct),(refroot,rt)) if r%2==0 else ((refroot,rt),(candidate,ct))
         for repo,bucket in order:
-            ts = execute(repo, TIMED_ROUNDS)
-            if ts is None:
-                return None
+            # Each measured round is its own process: nothing a round computes
+            # can be reused by a later round.
+            ts = []
+            for _ in range(TIMED_ROUNDS):
+                t = execute(repo)
+                if t is None:
+                    return None
+                ts.extend(t)
             bucket.append(statistics.median(ts))
     shutil.rmtree(inp.parent, ignore_errors=True)
     return statistics.median(ct), statistics.median(rt)
@@ -429,15 +455,22 @@ def _build(repo: Path):
     if p.returncode: raise RuntimeError("build failed")
 
 
-def _run(repo: Path, points, eps, minpts, rounds=1, expected_status=None):
+def _run(repo: Path, points, eps, minpts, rounds=1, expected_status=None, shared=None):
     if expected_status is None:
         raise ValueError("expected point status is required for every execution")
     with tempfile.TemporaryDirectory(dir=repo) as td:
-        inp=Path(td)/"input.txt"; out=Path(td)/"output.txt"
-        _write_points(inp, points)
+        out=Path(td)/"output.txt"
+        if shared is None:
+            inp=Path(td)/"input.txt"
+            _write_points(inp, points)
+        else:
+            # A timing workload's input is written once and shared by both
+            # implementations; any change to it is detected after every execution.
+            inp, digest = shared
         env={**os.environ,"OMP_NUM_THREADS":str(WORKERS),"OMP_PROC_BIND":"true","OMP_PLACES":"cores"}
         cmd=[str(repo/"code"/"DBSCAN"),"-eps",str(eps),"-minpts",str(minpts),"-r",str(rounds),"-o",str(out),str(inp)]
         p=subprocess.run(cmd,cwd=repo/"code",env=env,capture_output=True,text=True,timeout=RUN_TIMEOUT)
+        if shared is not None and _sha256(inp) != digest: raise ValueError("shared workload input changed")
         if p.returncode: raise RuntimeError("DBSCAN execution failed")
         times=[]
         for line in p.stdout.splitlines():
@@ -486,6 +519,10 @@ def evaluate(solution_path: str):
         _trusted(subprocess.run,["g++", "-O2", "-std=c++17", "-fopenmp", str(TASK_DIR / "grid_oracle.cpp"),
                                  "-o", str(grid_checker)], capture_output=True, timeout=BUILD_TIMEOUT, check=True)
         final=os.environ.get("FRONTIER_SUBMISSION_ROLE")=="final"
+        # Every candidate execution must leave the container as it found it.
+        guard = StateGuard([candidate])
+        def candidate_run(*args, **kwargs):
+            return _guarded(guard, _run, *args, **kwargs)
         for _,pts,eps,m in _evaluation_correctness_cases(final):
             quantized = [[float(f"{value:.12g}") for value in point] for point in pts]
             expected = _trusted(_expected,checker, pts, eps, m)
@@ -493,7 +530,7 @@ def evaluate(solution_path: str):
                 raise EvaluatorRuntimeError("independent oracles disagree")
             for repo in (candidate, refroot):
                 _, got = (_trusted(_run, repo, pts, eps, m, expected_status=expected[0])
-                          if repo == refroot else _run(repo, pts, eps, m, expected_status=expected[0]))
+                          if repo == refroot else candidate_run(repo, pts, eps, m, expected_status=expected[0]))
                 if got != expected:
                     if repo == refroot:
                         raise EvaluatorRuntimeError("reference correctness failed")
@@ -502,10 +539,13 @@ def evaluate(solution_path: str):
         for spec in _evaluation_suite(final):
             pts=_points(spec)
             expected = _trusted(_expected,checker, pts, spec["eps"], spec["minpts"])
+            inp = Path(_trusted(tempfile.mkdtemp, prefix="small-", dir=refbase)) / "input.txt"
+            _trusted(_write_points, inp, pts)
+            shared = (inp, _trusted(_sha256, inp))
             # Every execution, including warm-ups, must produce the full exact output.
             for repo in (candidate, refroot):
-                _, got = (_trusted(_run, repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0])
-                          if repo == refroot else _run(repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0]))
+                _, got = (_trusted(_run, repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0], shared=shared)
+                          if repo == refroot else candidate_run(repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0], shared=shared))
                 if got != expected:
                     if repo == refroot:
                         raise EvaluatorRuntimeError("reference correctness failed")
@@ -514,16 +554,22 @@ def evaluate(solution_path: str):
             for r in range(REPEATS):
                 order=((candidate,ct),(refroot,rt)) if r%2==0 else ((refroot,rt),(candidate,ct))
                 for repo,bucket in order:
-                    ts, got = (_trusted(_run, repo, pts, spec["eps"], spec["minpts"], rounds=TIMED_ROUNDS,
-                                       expected_status=expected[0]) if repo == refroot else
-                               _run(repo, pts, spec["eps"], spec["minpts"], rounds=TIMED_ROUNDS,
-                                    expected_status=expected[0]))
-                    if got != expected:
-                        if repo == refroot:
-                            raise EvaluatorRuntimeError("reference correctness failed")
-                        return _invalid("timed workload correctness check failed")
+                    # Each measured round is its own process: nothing a round
+                    # computes can be reused by a later round.
+                    ts = []
+                    for _ in range(TIMED_ROUNDS):
+                        t, got = (_trusted(_run, repo, pts, spec["eps"], spec["minpts"],
+                                           expected_status=expected[0], shared=shared) if repo == refroot else
+                                  candidate_run(repo, pts, spec["eps"], spec["minpts"],
+                                                expected_status=expected[0], shared=shared))
+                        if got != expected:
+                            if repo == refroot:
+                                raise EvaluatorRuntimeError("reference correctness failed")
+                            return _invalid("timed workload correctness check failed")
+                        ts.extend(t)
                     # Stabilize each sample before taking the outer paired median.
                     bucket.append(statistics.median(ts))
+            shutil.rmtree(inp.parent, ignore_errors=True)
             cm=statistics.median(ct); rm=statistics.median(rt)
             cand.append(cm); ref.append(rm)
             rows.append({"workload":hashlib.sha256(spec["id"].encode()).hexdigest()[:16],
@@ -532,7 +578,7 @@ def evaluate(solution_path: str):
         # workloads; the v3 paper-regime workloads enter the strict verdict.
         cg=math.exp(statistics.mean(math.log(x) for x in cand)); rg=math.exp(statistics.mean(math.log(x) for x in ref))
         for spec in _large_evaluation_suite(final):
-            measured = _measure_large(spec, candidate, refroot, grid_checker, refbase)
+            measured = _measure_large(spec, candidate, refroot, grid_checker, refbase, guard)
             if measured is None:
                 return _invalid("timed workload correctness check failed")
             cm, rm = measured
@@ -562,6 +608,8 @@ def evaluate(solution_path: str):
         return score,raw,"exact result accepted; paired performance measured",metrics
     except EvaluatorRuntimeError:
         raise
+    except StateGuardViolation as exc:
+        return _invalid(str(exc))
     except Exception as exc:
         return _invalid("evaluation failed: "+type(exc).__name__)
     finally:
@@ -572,7 +620,8 @@ def evaluate(solution_path: str):
 def prepare():
     return {"task":"dbscan_core_connectivity","workers":WORKERS,
             "workloads":len(_suite(False))+len(_large_suite(False)),
-            "paired_repeats":REPEATS,"timed_rounds_per_execution":TIMED_ROUNDS,
+            "paired_repeats":REPEATS,"timed_rounds_per_repeat":TIMED_ROUNDS,
+            "rounds_per_process":1,
             "beat_margin":BEAT_MARGIN}
 
 

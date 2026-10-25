@@ -1,6 +1,6 @@
 {
   "base_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
-  "file_count": 91,
+  "file_count": 92,
   "files": [
     {
       "bytes": 463,
@@ -8,9 +8,9 @@
       "sha256": "sha256:08ed07bf49b002150d847a007ed136a0fb8f0ddd52ca8f3172a5df503c0474e4"
     },
     {
-      "bytes": 16906,
+      "bytes": 17336,
       "path": "agent-base/frontier/task/PROBLEM.md",
-      "sha256": "sha256:7f092b1aefa1d6f962cb88c5eff56ec58047894e2ae29d5e0174f7f976548fdb"
+      "sha256": "sha256:e713d12f68bad06b7b519ab0ad0a21cb27ac205f3707c229dffd0ac9b3ebf0fb"
     },
     {
       "bytes": 2849,
@@ -228,9 +228,9 @@
       "sha256": "sha256:bb103f8f44e404ceef471ff57a33b3aad18712ab833e70c9aa746988ddc117f8"
     },
     {
-      "bytes": 27475,
+      "bytes": 29752,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:eb110f7de33ac25bddf411a9a03abaf6d880b1d29c53d1f6c006a138689e1c58"
+      "sha256": "sha256:9dd4202415007329d242c5c7b0aaa5e004c21ac59336be3a9c2bbca179ca902d"
     },
     {
       "bytes": 1897,
@@ -428,6 +428,11 @@
       "sha256": "sha256:1558cfb297bfd1109ed1b5fc871a8c583de47990b14dbdbae2d973e7d06e88e0"
     },
     {
+      "bytes": 7308,
+      "path": "judge/state_guard.py",
+      "sha256": "sha256:13326181b386f30cd3ee5658b82759bc29af032f3c2ba05a3c8d535eeafe1b66"
+    },
+    {
       "bytes": 8170,
       "path": "judge/submission_patch.py",
       "sha256": "sha256:a774dacd84e8434b51d9a56b6f1a19e276df39ba3ca7dfbb6441fe401a4e270a"
@@ -438,9 +443,9 @@
       "sha256": "sha256:a48e76c04f7abba4fd9763f3b82751b00b2f8ee66ac4a37ff156eb3fe2da9582"
     },
     {
-      "bytes": 3125,
+      "bytes": 3145,
       "path": "policy.json",
-      "sha256": "sha256:436b25314090551fe9437c9b7daaef4cea58776d3c6aa2ad1270836d7a02fb04"
+      "sha256": "sha256:9dd3101988c0a0997be76eb716dd3109577800521a6e53440c797adee419a1fe"
     },
     {
       "bytes": 490,

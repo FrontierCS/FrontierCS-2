@@ -697,9 +697,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:9a3a5101abc7c0f9e9e816a4c735876d1d071aba99df34dca5d2746e719f8196",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "repository": "docker.io/joyemang33/fcs2-task-parallel_dbscan-agent",
-        "tag": "source-f2857aa506008ebaa3c9ba35e67a42c19265cb584fd8ff3b5265197d03a03540"
+        "tag": "source-484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -707,9 +707,9 @@
         "provenance": "unverified"
       },
       "dataset_image": {
-        "digest": "sha256:2809361983f3a9d65c8a367cbf386e3d41869b236cb4d419fc923575c812b326",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "repository": "docker.io/joyemang33/fcs2-task-parallel_dbscan-datasets",
-        "tag": "source-f2857aa506008ebaa3c9ba35e67a42c19265cb584fd8ff3b5265197d03a03540"
+        "tag": "v1"
       },
       "datasets": {
         "eval_sha256": "sha256:4071e78c3e6aaed3b3ca1a94b1166d3e7f5b300154cb947ef09ed6c1e0b9bca5",
@@ -717,16 +717,16 @@
       },
       "name": "parallel_dbscan",
       "reference": {
-        "digest": "sha256:a33a0e14454e627e090dfcff271c9ca8de6c6f709dc092b958f1ed7deb8fcf85",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:33e1a2f18c0642408189aa43857da7f1f2afa12aced40a035bdb4c164f67dde7",
         "repository": "docker.io/joyemang33/fcs2-task-parallel_dbscan-reference",
-        "tag": "source-f2857aa506008ebaa3c9ba35e67a42c19265cb584fd8ff3b5265197d03a03540"
+        "tag": "source-484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770"
       },
       "verifier_image": {
-        "digest": "sha256:51a54917f8f71635fd666a15471d381aae717b94a4d21d3227e46383e760f380",
+        "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-parallel_dbscan",
-        "tag": "source-f2857aa506008ebaa3c9ba35e67a42c19265cb584fd8ff3b5265197d03a03540"
+        "tag": "source-484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770"
       }
     },
     {

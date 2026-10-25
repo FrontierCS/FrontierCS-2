@@ -3934,7 +3934,7 @@
     },
     "display_name": "Exact DBSCAN Connectivity",
     "family": "frontier-cs-2.0/databases",
-    "image_tag": "source-f2857aa506008ebaa3c9ba35e67a42c19265cb584fd8ff3b5265197d03a03540",
+    "image_tag": "source-484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3969,7 +3969,7 @@
       "scientific_alignment": "M004: fresh original public4+hidden4 final, unchanged shapes/seeds, strict per-workload C<R without 5% margin. M010: fixed20ms independent continuous; invalid0. 2026-09-16: Agent/Verifier 8 vCPU and eight OpenMP workers; workloads/timing/scoring/reference/PASS unchanged. Beat spec v3 (2026-10-07): adds two paper-regime 200000-point seed-spreader workloads per partition (5D varden, 7D simden, minPts 10) to the strict C<R verdict; continuous score unchanged over the original workloads; train/final evaluator limits 120/300 -> 240/600 s and train wall 12000 -> 24000 s.",
       "scoring": {
         "approval": "decision M010; supersedes source reference-relative capped curve",
-        "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 execution medians, each of 5 timings",
+        "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 repeat medians, each of 5 single-round (-r 1) executions",
         "fixed_anchor_seconds": 0.02,
         "formula": "100 * 0.020 / (0.020 + C)",
         "invalid_score": 0,
@@ -3999,7 +3999,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f2857aa506008ebaa3c9ba35e67a42c19265cb584fd8ff3b5265197d03a03540"
+      "source_set_sha256": "sha256:484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
