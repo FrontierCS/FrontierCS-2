@@ -29,7 +29,7 @@ FINAL_SUITE = (("YCSB:15000:0.9", 24036583), ("Smallbank:15000:0.9", 24036619),
 FORBIDDEN_ADDITIONS = ("#define", "getenv", "system(", "popen", "fork(",
                        "malloc", "calloc", "realloc", "aligned_alloc", "mmap", "sbrk",
                        "operator new", "operator delete", "Statistics", "checkpoint_bench",
-                       "FRONTIER_", "int main")
+                       "FRONTIER_", "int main", "mallctl", "jemalloc")
 BEAT_METRICS = ("correctness", "committed_tps", "checkpoint_create_ns",
                 "checkpoint_restore_ns", "retained_bytes_per_checkpoint")
 BEAT_REPETITIONS = 5
@@ -39,13 +39,25 @@ def _workload_id(workload: str, seed: int) -> str:
     return f"{workload}:seed={seed}"
 
 
+MICRO_WORKLOAD = "checkpoint-micro"
+
+
+def _workload_ids(suite: tuple[tuple[str, int], ...]) -> list[str]:
+    """Every Spectrum workload and one checkpoint-micro workload per suite seed.
+
+    Each workload reports the same metric set (#646): throughput, checkpoint
+    create and restore nanoseconds, retained bytes per checkpoint, correctness.
+    """
+    return ([_workload_id(workload, seed) for workload, seed in suite]
+            + [_workload_id(MICRO_WORKLOAD, seed) for _, seed in suite])
+
+
 def _beat_rows(final: bool, decisions: dict[str, dict[str, bool]] | None = None) -> list[dict]:
     suite = FINAL_SUITE if final else DEV_SUITE
     decisions = decisions or {}
-    return [{"workload": _workload_id(workload, seed),
-             "metrics": {name: decisions.get(_workload_id(workload, seed), {}).get(name, False)
-                         for name in BEAT_METRICS}}
-            for workload, seed in suite]
+    return [{"workload": workload,
+             "metrics": {name: decisions.get(workload, {}).get(name, False) for name in BEAT_METRICS}}
+            for workload in _workload_ids(suite)]
 
 
 def _metrics(candidate: float, reference: float, extra: dict | None = None,
@@ -164,16 +176,19 @@ def _checkpoint_measurement(binary: Path, seed: int) -> dict[str, float]:
     if proc.returncode:
         raise ValueError("checkpoint lifetime or rollback validation failed")
     try:
-        create_ns, restore_ns, retained_bytes, live_checkpoints, _checksum = map(
+        create_ns, restore_ns, retained_bytes, live_checkpoints, _checksum, end_to_end_ns = map(
             int, proc.stdout.strip().split())
     except Exception as exc:
         raise ValueError("checkpoint validation returned invalid output") from exc
-    if not (0 < create_ns < 1_000_000_000 and 0 < restore_ns < 1_000_000_000):
+    if not (0 < create_ns < 1_000_000_000 and 0 < restore_ns < 1_000_000_000
+            and 0 < end_to_end_ns < 1_000_000_000):
         raise ValueError("checkpoint timing is invalid")
     if not (0 < retained_bytes <= 64 * 1024 * 1024 and live_checkpoints == 16):
         raise ValueError("retained checkpoint memory is invalid")
     return {"create_ns": float(create_ns), "restore_ns": float(restore_ns),
-            "retained_bytes": float(retained_bytes)}
+            "retained_bytes": float(retained_bytes),
+            # Rounds per second of the timed save -> write -> restore -> access loop.
+            "throughput": 1e9 / float(end_to_end_ns)}
 
 
 def _checkpoint_profile(tree: Path, output: Path, seeds: tuple[int, ...]) -> dict:
@@ -208,21 +223,29 @@ def _separated(candidate: list[float], reference: list[float], *, higher: bool) 
     return min(candidate) > max(reference) if higher else max(candidate) < min(reference)
 
 
+METRIC_FIELDS = (("committed_tps", "throughput", True),
+                 ("checkpoint_create_ns", "create_ns", False),
+                 ("checkpoint_restore_ns", "restore_ns", False),
+                 ("retained_bytes_per_checkpoint", "retained_bytes", False))
+
+
+def _row(candidate: list[dict], reference: list[dict]) -> dict[str, bool]:
+    row = {"correctness": True}
+    for metric, field, higher in METRIC_FIELDS:
+        row[metric] = _separated([sample[field] for sample in candidate],
+                                 [sample[field] for sample in reference], higher=higher)
+    return row
+
+
 def _beat_decisions(suite: tuple[tuple[str, int], ...], samples: dict,
                     profiles: dict[str, dict]) -> dict[str, dict[str, bool]]:
+    """The same metric set, decided by the same strict-separation rule, on every workload."""
     decisions = {}
     for workload, seed in suite:
-        candidate = profiles["candidate"]["per_seed"][seed]
-        reference = profiles["reference"]["per_seed"][seed]
-        row = {"correctness": True,
-               "committed_tps": _separated(samples["candidate"][workload],
-                                            samples["reference"][workload], higher=True)}
-        for metric, field in (("checkpoint_create_ns", "create_ns"),
-                              ("checkpoint_restore_ns", "restore_ns"),
-                              ("retained_bytes_per_checkpoint", "retained_bytes")):
-            row[metric] = _separated([sample[field] for sample in candidate],
-                                     [sample[field] for sample in reference], higher=False)
-        decisions[_workload_id(workload, seed)] = row
+        decisions[_workload_id(workload, seed)] = _row(samples["candidate"][workload],
+                                                       samples["reference"][workload])
+        decisions[_workload_id(MICRO_WORKLOAD, seed)] = _row(profiles["candidate"]["per_seed"][seed],
+                                                             profiles["reference"]["per_seed"][seed])
     return decisions
 
 
@@ -246,18 +269,37 @@ def _runtime_env(source: Path) -> dict[str, str]:
     return env
 
 
-def _one_benchmark(binary: Path, source: Path, workload: str, seed: int) -> float:
+CHECKPOINT_LINE = re.compile(
+    r"^checkpoint create_ns ([0-9.]+) restore_ns ([0-9.]+) retained_bytes ([0-9.]+) "
+    r"creates ([0-9]+) restores ([0-9]+) retained_samples ([0-9]+)$", re.MULTILINE)
+
+
+def _one_benchmark(binary: Path, source: Path, workload: str, seed: int) -> dict[str, float]:
+    """Committed TPS and the harness's checkpoint metrics from one Spectrum run.
+
+    The Spectrum harness (lib/transaction/evm-transaction.cpp) times every
+    save_checkpoint() and load_checkpoint() made during real execution, measures
+    the bytes held per live checkpoint, and checks every restore (height, code
+    position, top() and every item); a failed check aborts the run.
+    """
     proc = _run_checked([str(binary), "Spectrum:2:9973:CHECKPOINTED", workload, "1s", str(seed)],
                         timeout=20, env=_runtime_env(source))
     if proc.returncode:
-        raise ValueError("Spectrum workload crashed or timed out")
+        raise ValueError("Spectrum workload crashed, failed a restore check or timed out")
     match = re.search(r"^commit\s+([0-9]+(?:\.[0-9]+)?) tx/s$", proc.stderr, re.MULTILINE)
-    if not match:
+    checkpoint = CHECKPOINT_LINE.search(proc.stderr)
+    if not match or not checkpoint:
         raise ValueError("Spectrum workload returned invalid statistics")
     tps = float(match.group(1))
+    create_ns, restore_ns, retained = (float(checkpoint.group(i)) for i in (1, 2, 3))
+    creates, restores, retained_samples = (int(checkpoint.group(i)) for i in (4, 5, 6))
     if not math.isfinite(tps) or tps <= 0:
         raise ValueError("Spectrum committed no transactions")
-    return tps
+    if not (creates > 0 and restores > 0 and retained_samples > 0
+            and all(math.isfinite(x) and x > 0 for x in (create_ns, restore_ns, retained))):
+        raise ValueError("Spectrum workload returned invalid checkpoint statistics")
+    return {"throughput": tps, "create_ns": create_ns, "restore_ns": restore_ns,
+            "retained_bytes": retained}
 
 
 def _qualities(binaries: dict[str, Path], source: Path,
@@ -272,13 +314,23 @@ def _qualities(binaries: dict[str, Path], source: Path,
                 samples[name][workload].append(_one_benchmark(binaries[name], source, workload, seed))
     quality = {}
     for name in names:
-        medians = [statistics.median(samples[name][case]) for case, _ in suite]
-        geometric_tps = math.exp(sum(math.log(x) for x in medians) / len(medians))
-        profile = profiles[name]
-        checkpoint_latency = math.sqrt(profile["create_ns"] * profile["restore_ns"])
-        checkpoint_cost = profile["retained_bytes"] * checkpoint_latency
-        quality[name] = geometric_tps / (checkpoint_cost ** (1.0 / 3.0))
+        # One composite per workload over the uniform metric set, then the
+        # geometric mean over every Spectrum and checkpoint-micro workload.
+        observations = []
+        for case, seed in suite:
+            runs = samples[name][case]
+            observations.append({field: statistics.median(run[field] for run in runs)
+                                 for field in ("throughput", "create_ns", "restore_ns", "retained_bytes")})
+            observations.append(profiles[name]["per_seed"][seed][0])
+        logs = [math.log(_workload_quality(observation)) for observation in observations]
+        quality[name] = math.exp(sum(logs) / len(logs))
     return quality, samples
+
+
+def _workload_quality(observation: dict[str, float]) -> float:
+    checkpoint_latency = math.sqrt(observation["create_ns"] * observation["restore_ns"])
+    checkpoint_cost = observation["retained_bytes"] * checkpoint_latency
+    return observation["throughput"] / (checkpoint_cost ** (1.0 / 3.0))
 
 
 # 100 points is SCORE_DECADES orders of magnitude of composite quality over the
@@ -380,14 +432,15 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             candidate_profile = profiles["candidate"]
             metrics.update({"correct": 1, "spectrum_quality": round(qualities["candidate"], 6),
                             "committed_tps": math.exp(sum(math.log(statistics.median(
-                                samples["candidate"][workload])) for workload, _ in suite) / len(suite)),
+                                run["throughput"] for run in samples["candidate"][workload]))
+                                for workload, _ in suite) / len(suite)),
                             "retained_bytes_per_checkpoint": int(candidate_profile["retained_bytes"]),
                             "checkpoint_create_ns": candidate_profile["create_ns"],
                             "checkpoint_restore_ns": candidate_profile["restore_ns"],
                             "shipped_backend_quality": round(qualities["naive"], 6),
                             "quality_over_shipped": round(
                                 qualities["candidate"] / max(qualities["naive"], 1e-12), 4),
-                            "workload_cases": len(suite)})
+                            "workload_cases": 2 * len(suite)})
             return score, unbounded, f"valid Spectrum checkpoint backend; score {score:.3f}", metrics
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         return 0.0, 0.0, str(exc)[:160], _gate_metrics(final)

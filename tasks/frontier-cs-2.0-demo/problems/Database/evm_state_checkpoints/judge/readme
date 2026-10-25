@@ -107,15 +107,38 @@ Before performance measurement, the judge also runs deterministic checkpoint
 traces against an independent fixed-array oracle. For each suite seed, the
 driver performs 400 rounds. Each round pushes 1,000 values, retains 16
 simultaneous checkpoints, and performs 24 indexed writes after every checkpoint.
-It copy-constructs and move-constructs one selected checkpoint, restores that
-object, restores a second original checkpoint, and compares the height and all
-1,000 values with the corresponding oracle states. It then erases checkpoints
+It copy-constructs and move-constructs one selected checkpoint and restores that
+object; after each restore it runs a fixed interpreter-like access mix of 64
+reads and writes near the top of the stack through `top()`, `get()`,
+`get_mut()`, `pop()` and `push()`, checking every value read. It then compares
+the height and all 1,000 values with the oracle through `get()` and drains the
+stack through `top()` and `pop()`. When the selected checkpoint is not the
+oldest, it restores an older original checkpoint the same way (as in Spectrum,
+a rollback discards the checkpoints created after its target). It then erases checkpoints
 in a seed-dependent order, destroys the execution state, and requires tracked
-live allocation to return to zero. Thus each trace creates 6,400 checkpoints. The first trace per seed retains its original role in the continuous score. Four additional traces per compared variant and seed provide five measurements for the beat-reference timing gate; later trace order rotates between candidate and reference.
+live allocation to return to zero. `restore` time covers `load_checkpoint()`
+alone and `create` time covers `save_checkpoint()` plus storing the checkpoint,
+as before. The end-to-end time covers each save with the writes that follow it
+and each restore with the access mix that follows it; it is reported as the
+workload's throughput in completed rounds per second. Before the timed rounds,
+the driver also checks rollbacks at stack heights 1, 16, 64, 65, 200 and 1,000,
+with pushes, pops and writes between six checkpoints restored newest first,
+checking the height, the code position and every item, half of the restores
+only through `top()` and `pop()`. Thus each trace creates 6,400 checkpoints. The first trace per seed retains its original role in the continuous score. Four additional traces per compared variant and seed provide five measurements for the beat-reference timing gate; later trace order rotates between candidate and reference.
 
 Performance normally uses five runs per workload case. The evaluator accepts a
-configured repetition count from one through five and takes the median committed
-TPS over the selected runs for each case. Development uses the two records and
+configured repetition count from one through five and takes the median of each
+metric over the selected runs for each case. During every Spectrum run the
+harness (`lib/transaction/evm-transaction.cpp`, not the editable header) also
+measures the checkpoint metrics on real execution: create time of every
+`save_checkpoint()` (plus storing the checkpoint), restore time of every
+`load_checkpoint()`, and retained bytes per live checkpoint (the net heap bytes
+the executing thread has allocated since the transaction's execution state was
+created, excluding the harness's own records, divided by the live checkpoints,
+sampled at every checkpoint creation and averaged). It checks every restore:
+height, code position, `top()` and every item through `get()` must match the
+saved state, or the run aborts. So every workload, Spectrum or checkpoint-micro,
+reports throughput, create time, restore time, retained bytes and correctness. Development uses the two records and
 seeds shown above; grading uses the three graded records, fixed undisclosed
 seeds, and the configured repetition count. These generated cases represent the
 three workload families; submissions must satisfy the checkpoint contract for
@@ -160,7 +183,14 @@ commit        62965.0000 tx/s
 ```
 
 The line must start with `commit`, contain a finite positive decimal value, and
-end with `tx/s`. The surrounding record contains timestamp, duration, memory,
+end with `tx/s`. The harness adds one line with the checkpoint metrics, for
+example:
+
+```text
+checkpoint create_ns 248.60 restore_ns 103.40 retained_bytes 148488.05 creates 232341 restores 267 retained_samples 232341
+```
+
+Its three metrics must be finite and positive and all three counts positive. The surrounding record contains timestamp, duration, memory,
 execution, operation, latency-bucket, and latency-percentile lines; those fields
 do not enter the score.
 
@@ -177,12 +207,13 @@ On success, it writes one space-separated record to standard output. For
 example:
 
 ```text
-246 65 13408 16 206159111842
- │   │    │   │       └─ checksum
- │   │    │   └───────── live_checkpoints
- │   │    └───────────── retained_bytes_per_checkpoint
- │   └────────────────── restore_nanoseconds_per_checkpoint
- └────────────────────── create_nanoseconds_per_checkpoint
+246 65 13408 16 206159111842 8210
+ │   │    │   │       │        └─ end_to_end_nanoseconds_per_round
+ │   │    │   │       └────────── checksum
+ │   │    │   └────────────────── live_checkpoints
+ │   │    └────────────────────── retained_bytes_per_checkpoint
+ │   └─────────────────────────── restore_nanoseconds_per_checkpoint
+ └──────────────────────────────── create_nanoseconds_per_checkpoint
 ```
 
 Timing values vary by machine. The driver validates restored state before
@@ -210,7 +241,11 @@ The following C++ interface and semantics are required:
   iterator, stack height, and every stack value.
 - Creating, loading, copying, moving, or destroying one checkpoint must not
   change any other retained checkpoint. Every retained checkpoint remains valid
-  until it is destroyed.
+  until it is destroyed. After a checkpoint has been loaded and the stack
+  modified, only checkpoints created before it are loaded again (Spectrum
+  discards the later ones on rollback).
+- Every access path must observe the restored state immediately after
+  `load_checkpoint()` returns.
 
 For example, this state transition is required:
 
@@ -245,13 +280,14 @@ Added lines are rejected case-insensitively if they contain any of these tokens:
 malloc           calloc        realloc       aligned_alloc mmap
 sbrk             operator new  operator delete
 Statistics       checkpoint_bench             FRONTIER_     int main
+mallctl          jemalloc
 ```
 
 The submitted header must compile in both the correctness driver and the full
 Spectrum application. Every trace must restore the oracle’s height and values,
 preserve all other retained checkpoints through copy, move, load, and
-destruction, reclaim all tracked storage, exit normally, and print exactly five
-integers. Creation and restoration time must each satisfy
+destruction, reclaim all tracked storage, exit normally, and print exactly six
+integers. Creation, restoration and end-to-end time must each satisfy
 `0 < time < 1,000,000,000` nanoseconds. Retained bytes per checkpoint must
 satisfy `0 < M <= 67,108,864`, and the live-checkpoint count must be 16.
 
@@ -263,8 +299,9 @@ At the point where all 16 checkpoints are live, peak live requested bytes are
 divided by 16 and rounded upward to form `retained_bytes_per_checkpoint`.
 Allocation APIs that bypass this tracker are forbidden.
 
-Every performance process must exit normally within 20 seconds, emit the
-required `commit` line, and report finite positive TPS. Patch-policy violations,
+Every performance process must exit normally within 20 seconds, pass every
+restore check, emit the required `commit` and `checkpoint` lines, and report
+finite positive TPS and checkpoint metrics. Patch-policy violations,
 patch or build failures, correctness mismatches, leaks, malformed profile or
 statistics output, timeouts, crashes, and nonpositive TPS all score zero before
 performance is considered.
@@ -275,17 +312,18 @@ Maximize the returned score. For candidate `C`, workload case `j`, run `r`,
 selected repetition count `N`, and case count `J`, define:
 
 ```text
-t_Cj  = median(t_Cj1, t_Cj2, ..., t_CjN)
-T_C   = exp((1 / J) * sum_j(ln(t_Cj)))
-C_C   = median creation nanoseconds per checkpoint across suite seeds
-R_C   = median restoration nanoseconds per checkpoint across suite seeds
-M_C   = maximum retained bytes per live checkpoint across suite seeds
-L_C   = sqrt(C_C * R_C)
-Q_C   = T_C / (M_C * L_C)^(1/3)
+for every workload w (each Spectrum case and each checkpoint-micro seed):
+  T_Cw  = throughput   (Spectrum: median committed TPS over the runs;
+                        checkpoint-micro: rounds per second of the first trace)
+  C_Cw  = creation nanoseconds per checkpoint   (Spectrum: median over the runs)
+  R_Cw  = restoration nanoseconds per checkpoint (Spectrum: median over the runs)
+  M_Cw  = retained bytes per live checkpoint     (Spectrum: median over the runs)
+  Q_Cw  = T_Cw / (M_Cw * sqrt(C_Cw * R_Cw))^(1/3)
+Q_C = exp((1 / W) * sum_w(ln(Q_Cw)))
 ```
 
-Here `t_Cjr` is committed TPS for one run and `T_C` is geometric-mean committed
-TPS across cases. The cube-root combination is a challenge constant (not from
+Every workload contributes the same metric set; `W` is the number of workloads
+(twice the number of suite seeds). The cube-root combination is a challenge constant (not from
 the materials). Let `Q_B` be the quality measured in the same evaluation for the
 checkpoint backend this task ships — the implementation already present in the
 editable header — using the same suite, repetition count, allocation accounting,
@@ -328,7 +366,7 @@ so it is a guide and not a guarantee.
 
 ## Beat-reference specification
 
-The beat-reference flag is separate from the continuous score. Each of the two development workloads or three final workloads must pass correctness and independently improve committed TPS, checkpoint creation time, checkpoint restoration time, and retained bytes per checkpoint. For every performance metric, all five candidate measurements must strictly outperform all five same-workload reference measurements: the minimum candidate TPS must exceed the maximum reference TPS, and the maximum candidate creation time, restoration time, and retained bytes must each be below the corresponding minimum reference value. Equality or overlapping timing ranges do not pass. An invalid evaluation makes every comparison fail; no workload is removed. Development feedback exposes candidate-only aggregate measurements and per-metric workload pass/fail counts and percentages, never the individual decisions or reference measurements.
+The beat-reference flag is separate from the continuous score. Every workload, each Spectrum workload and each checkpoint-micro workload (one per suite seed: four development workloads or six final workloads), reports the same metric set and must pass correctness and independently improve throughput (committed TPS on a Spectrum workload; completed rounds per second of the timed loop on a checkpoint-micro workload), checkpoint creation time, checkpoint restoration time, and retained bytes per checkpoint. No workload is exempt from any metric. For every performance metric, all five candidate measurements must strictly outperform all five same-workload reference measurements: the minimum candidate throughput must exceed the maximum reference throughput, and the maximum candidate creation time, restoration time, and retained bytes must each be below the corresponding minimum reference value. Equality or overlapping timing ranges do not pass. An invalid evaluation makes every comparison fail; no workload is removed. Development feedback exposes candidate-only aggregate measurements and per-metric workload pass/fail counts and percentages, never the individual decisions or reference measurements.
 
 ## Feedback and grading
 
@@ -374,4 +412,4 @@ compilation has a 60-second limit; each correctness invocation has a 30-second
 limit; and each performance invocation has a 20-second limit. The initial
 dependency build is cached, and measured builds use that prepared source tree.
 
-Train returns these candidate-only absolute summaries: `committed_tps`, `checkpoint_create_ns`, `checkpoint_restore_ns`, `retained_bytes_per_checkpoint`. For each comparison metric, `beat_spec_progress` contains `passed`, `failed`, `total`, `pass_percent`, and `fail_percent`; the denominator is the fixed workload count for the selected suite. No reference measurements, private workload identities, per-workload decisions, or margins are returned.
+Train returns these candidate-only absolute summaries: `committed_tps`, `checkpoint_create_ns`, `checkpoint_restore_ns`, `retained_bytes_per_checkpoint`. For each comparison metric, `beat_spec_progress` contains `passed`, `failed`, `total`, `pass_percent`, and `fail_percent`; the denominator is the fixed workload count for the selected suite (four development or six final workloads). No reference measurements, private workload identities, per-workload decisions, or margins are returned.
