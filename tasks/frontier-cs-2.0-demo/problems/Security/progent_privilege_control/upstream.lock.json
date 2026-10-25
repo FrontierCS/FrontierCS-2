@@ -59,9 +59,9 @@
       "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
     },
     {
-      "bytes": 7053,
+      "bytes": 9180,
       "path": "agent-base/frontier/task/harness/episodes.py",
-      "sha256": "sha256:e999fb439227354788002a6e3ec69fd5ea726c9e7e291d870a3f101a10445d1f"
+      "sha256": "sha256:ad2fd93e3c55371277730e08e133b6cb2d02f3147f93439b5dce3aa5c02194d6"
     },
     {
       "bytes": 3426,
@@ -114,9 +114,9 @@
       "sha256": "sha256:edf91d27e4acd6f0db848aae9032bee8674ce0eb85ca380667414e135a39ea0a"
     },
     {
-      "bytes": 12536,
+      "bytes": 13087,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:f10fa156b31ad7d2c00f5fc2a44f84f63c5beded8c647cd0cb69d03b6bcccf4d"
+      "sha256": "sha256:a57c6d5b24711455d315b765d499fcefc001d33fdb8c5181dc33fbcd8a2c3b4c"
     },
     {
       "bytes": 1161,
@@ -744,9 +744,9 @@
       "sha256": "sha256:43111502475dc10ad46aba96547163d9cec880481ffd6b800be2f3941ccbcdd6"
     },
     {
-      "bytes": 7055,
+      "bytes": 9182,
       "path": "judge/episodes.py",
-      "sha256": "sha256:cac521ca911a2eaf35dd8a2cc647d07dc323c3def99de8be5dd8a803b95d9dcf"
+      "sha256": "sha256:78e7ed38c641bf9604c2b1e6ecca948ca57f3af83a8e504213a288de0c8fa297"
     },
     {
       "bytes": 67,
@@ -764,9 +764,9 @@
       "sha256": "sha256:edf91d27e4acd6f0db848aae9032bee8674ce0eb85ca380667414e135a39ea0a"
     },
     {
-      "bytes": 12536,
+      "bytes": 13087,
       "path": "judge/harbor/app/README.md",
-      "sha256": "sha256:f10fa156b31ad7d2c00f5fc2a44f84f63c5beded8c647cd0cb69d03b6bcccf4d"
+      "sha256": "sha256:a57c6d5b24711455d315b765d499fcefc001d33fdb8c5181dc33fbcd8a2c3b4c"
     },
     {
       "bytes": 1161,
@@ -1394,9 +1394,9 @@
       "sha256": "sha256:225a48f6b33dea5fb1834adbd8e4c5ff310ec3fb46ec442f7f5a6e7acb03dd5c"
     },
     {
-      "bytes": 13070,
+      "bytes": 13621,
       "path": "judge/readme",
-      "sha256": "sha256:9d88e9efef198c5c64603f9855c854a7dc5120612fbed87f56a3435054cc59bf"
+      "sha256": "sha256:149a595bb6a224fb5fd0b5fbbbd8a78c61f65c20809e936163ae8befb5dcd3b5"
     },
     {
       "bytes": 416,
