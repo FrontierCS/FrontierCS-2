@@ -19,6 +19,7 @@ TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
 from submission_patch import apply_submission_patch
+from state_guard import StateGuard
 
 CONFIG = {
     "submission": {
@@ -226,6 +227,9 @@ def _run_prepared(prepared: dict) -> float:
             raise RuntimeError("counting run failed")
         digest.update(name.encode())
         case_digest = _digest_outputs(output)
+        # Checked output is removed at once, so no later process (this or any
+        # other implementation, this or a later round) can read it back.
+        shutil.rmtree(output)
         previous = prepared["case_digests"].get(name)
         if previous is not None and previous != case_digest:
             raise RuntimeError("counts changed between repeated runs")
@@ -286,6 +290,13 @@ def _paired_protocol(candidate_patch: Path, final: bool) -> dict:
         for key in unique_keys:
             prepared[key] = _prepare_patch(key_patches[key], final)
 
+        # The five rounds repeat identical commands in one container, so every
+        # candidate round must leave the container as it found it (state_guard).
+        # Snapshots are outside the timed region.
+        candidate_key = label_keys["candidate"]
+        guard = (StateGuard([prepared[candidate_key]["tree"]])
+                 if candidate_key not in (label_keys["naive"], label_keys["reference"])
+                 else None)
         reference_logs: list[float] = []
         candidate_logs: list[float] = []
         for round_id in range(RUNS):
@@ -293,7 +304,10 @@ def _paired_protocol(candidate_patch: Path, final: bool) -> dict:
             order = unique_keys[shift:] + unique_keys[:shift]
             round_times: dict[str, float] = {}
             for key in order:
+                before = guard.snapshot() if guard and key == candidate_key else None
                 round_times[key] = _run_prepared(prepared[key])
+                if before is not None:
+                    guard.require_unchanged(before)
             naive_time = round_times[label_keys["naive"]]
             reference_logs.append(math.log2(
                 naive_time / round_times[label_keys["reference"]]))

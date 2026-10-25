@@ -5,8 +5,8 @@
       "train": "192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
     },
     "identity_algorithm": "preview-source-identity/v1",
-    "image_tag": "source-4297a26b0db2d387a2e49f3d0dba62bcd87c9702c91399c5d8ec7604503d2461",
-    "source_set_sha256": "sha256:4297a26b0db2d387a2e49f3d0dba62bcd87c9702c91399c5d8ec7604503d2461"
+    "image_tag": "source-563816fc066098b1af7c91b97484322e2960f503e3c1c2f33536df1d46f6b747",
+    "source_set_sha256": "sha256:563816fc066098b1af7c91b97484322e2960f503e3c1c2f33536df1d46f6b747"
   },
   "bounded_evm_path_prediction": {
     "datasets": {

@@ -74,7 +74,7 @@
     "scoring": {
       "formula": "100 * 0.020 / (0.020 + C)",
       "fixed_anchor_seconds": 0.02,
-      "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 execution medians, each of 5 timings",
+      "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 repeat medians, each of 5 single-round (-r 1) executions",
       "timing_unit": "seconds",
       "reference_independent": true,
       "invalid_score": 0,

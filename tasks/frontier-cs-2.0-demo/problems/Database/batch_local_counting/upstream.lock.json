@@ -11,7 +11,7 @@
       "version": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
     }
   },
-  "file_count": 264,
+  "file_count": 265,
   "files": [
     {
       "bytes": 2180,
@@ -39,9 +39,9 @@
       "sha256": "sha256:4a202990c64f41140d46d0b850e4f880b3c9365ee3a8c0b3cbf27349f7739e74"
     },
     {
-      "bytes": 12451,
+      "bytes": 12821,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:6a865eb50f97c72dceb9caa4f10ef091e36ca69ef9b7e5bd8f262e0b57dd48eb"
+      "sha256": "sha256:24b136019c024afe74d19dc14f5108f8487089908e6bd4756968762159fb9baa"
     },
     {
       "bytes": 31,
@@ -1279,9 +1279,9 @@
       "sha256": "sha256:94200f82ece67603e42fb5ac28e209447e7da764f962330bef57dbba9fe57960"
     },
     {
-      "bytes": 14910,
+      "bytes": 15740,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:02827eb0516bbe4fe3dd3ffc6bd587036bfb921b34f2daa3fff46477d1373cad"
+      "sha256": "sha256:cc0848f4d810f76319a3ef656281c0ce39953c03703ac36507f682ac4afad507"
     },
     {
       "bytes": 3097,
@@ -1289,9 +1289,9 @@
       "sha256": "sha256:e7b54354ff523d584a3e69746bd03910ae4bf0f2dc9e7f1273a9162ad1c9d598"
     },
     {
-      "bytes": 13495,
+      "bytes": 13865,
       "path": "judge/readme",
-      "sha256": "sha256:e04f5dbe5a6d5c581882e975ba7bc2e53bee55f2d208d738ab0d7f997b3e463a"
+      "sha256": "sha256:f95d5c308435e8495c6046f41cee13b9af17a565963cbe2d4536ea63b9d55667"
     },
     {
       "bytes": 178579,
@@ -1302,6 +1302,11 @@
       "bytes": 2963,
       "path": "judge/result.json",
       "sha256": "sha256:724001a24470472072f55a6474af56a813cfa521b25a7e64b9cd20b045af6745"
+    },
+    {
+      "bytes": 7308,
+      "path": "judge/state_guard.py",
+      "sha256": "sha256:13326181b386f30cd3ee5658b82759bc29af032f3c2ba05a3c8d535eeafe1b66"
     },
     {
       "bytes": 6752,
@@ -1339,8 +1344,8 @@
   "source": {
     "beat_spec_migration": "2026-09-11: formal per-workload contract and private-feedback audit",
     "beat_spec_sha256": "sha256:84755aa5099acd470d60f50f8a73c7acc6e477236048f72d0c69f9cfd74ff325",
-    "evaluator_sha256": "sha256:02827eb0516bbe4fe3dd3ffc6bd587036bfb921b34f2daa3fff46477d1373cad",
-    "statement_sha256": "sha256:e04f5dbe5a6d5c581882e975ba7bc2e53bee55f2d208d738ab0d7f997b3e463a",
+    "evaluator_sha256": "sha256:cc0848f4d810f76319a3ef656281c0ce39953c03703ac36507f682ac4afad507",
+    "statement_sha256": "sha256:f95d5c308435e8495c6046f41cee13b9af17a565963cbe2d4536ea63b9d55667",
     "task_dir": "batch_local_counting",
     "continuous_score_revision": {
       "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3",

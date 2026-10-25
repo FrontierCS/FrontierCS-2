@@ -61,7 +61,7 @@ Seed-spreader sets (the generator family of the source paper's SS datasets, at 2
 
 A seed spreader is a random walk in `[0, 100000)^d`. It emits points uniformly in an axis-aligned hypercube of half-width `r` around its current location and moves `50*d` in a uniformly random direction after every 100 points. Before each point after the first, it instead restarts at a uniformly random location with probability `10 / (n - n/10000)`. Similar density keeps `r = 100`; variable density draws `r` from {100, 200, 400} at every restart. The last `n/10000` points are uniform noise. Nearly every point is a core point and each set has roughly ten walk clusters, so the core-connectivity stage processes a large cell graph of adjacent core cells.
 
-Before timing, five development correctness probes (seven in final) cover duplicate and boundary-distance points, shared border membership, a sparse chain with noise, and seeded clustered sets in 3 and 7 dimensions. The 200,000-point sets are checked against a second independent exact oracle. For every timing workload, both the warm-up and every measured execution must also produce the exact full output. Each implementation receives one `-r 1` warm-up and eight measured `-r 5` executions per workload. Candidate and comparison executions alternate order; each execution contributes the median of its five reported DBSCAN times, and the workload time is the median of those eight execution medians. The public and hidden partitions use distinct undisclosed seeds; final freshly evaluates both partitions, including the original public seeds. They represent the stated distributions rather than records to recognize; suite membership, order, repetition, and scale may differ in later task revisions, while the declared evaluation uses the values above.
+Before timing, five development correctness probes (seven in final) cover duplicate and boundary-distance points, shared border membership, a sparse chain with noise, and seeded clustered sets in 3 and 7 dimensions. The 200,000-point sets are checked against a second independent exact oracle. For every timing workload, both the warm-up and every measured execution must also produce the exact full output. Each implementation receives one `-r 1` warm-up and eight measured repeats per workload; a repeat is five measured rounds, and every round is its own fresh `-r 1` process. Candidate and comparison repeats alternate order; each repeat contributes the median of its five reported DBSCAN times, and the workload time is the median of those eight repeat medians. Every measured round must perform the full computation from its input: state carried between rounds or executions is rejected. Every candidate execution must leave the container as it found it; an execution that creates, changes, or removes any file outside its own output, leaves a process running, or leaves a System V IPC object behind makes the submission invalid (score zero). The public and hidden partitions use distinct undisclosed seeds; final freshly evaluates both partitions, including the original public seeds. They represent the stated distributions rather than records to recognize; suite membership, order, repetition, and scale may differ in later task revisions, while the declared evaluation uses the values above.
 
 ## Interface
 
@@ -85,7 +85,7 @@ cd code && make clean
 cd code && make OPENMP=1 -j8
 ```
 
-Every warm-up and correctness execution uses the complete command below, with `-r 1`; timed executions use the same command with `-r 5`:
+Every warm-up, correctness, and measured execution uses the complete command below, with `-r 1`:
 
 ```text
 OMP_NUM_THREADS=8 OMP_PROC_BIND=true OMP_PLACES=cores ./DBSCAN -eps <epsilon> -minpts <minPts> -r <rounds> -o <output> <input>
@@ -123,7 +123,7 @@ Every process must exit successfully within its 45-second execution timeout. Eac
 
 ## Scoring
 
-The secondary continuous objective is to maximize the score on a 0–100 scale. For workload `w`, let `C_w` be the median of the candidate's eight execution medians and `R_w` the corresponding paired comparison median, where each execution median is taken over five valid `totaltime` measurements. For the selected original small-workload set W (four in development, eight in final), define
+The secondary continuous objective is to maximize the score on a 0–100 scale. For workload `w`, let `C_w` be the median of the candidate's eight repeat medians and `R_w` the corresponding paired comparison median, where each repeat median is taken over five valid `totaltime` measurements from five separate executions. For the selected original small-workload set W (four in development, eight in final), define
 
 ```text
 C = exp((1/|W|) * sum_w ln(C_w))
