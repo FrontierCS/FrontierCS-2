@@ -1504,7 +1504,7 @@
         "max_gpu_seconds": 3600
       }
     },
-    "image_tag": "source-d29be28fd3c2594ca549f714601af278c78bf115faabe13bae3a5c6c16281e87",
+    "image_tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1580,7 +1580,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d29be28fd3c2594ca549f714601af278c78bf115faabe13bae3a5c6c16281e87"
+      "source_set_sha256": "sha256:d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1820,7 +1820,7 @@
     },
     "display_name": "EVM State Checkpoints",
     "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-ea7fdba730d92b83838d20c6d556790668e9383151ba1381f42db7e91898c0ff",
+    "image_tag": "source-d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1837,7 +1837,7 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "beat_spec_sha256": "sha256:c7d0248e8fc5095eb831236414b34a2f032a2d71d9ea1779e2d2845300e5e96a",
+        "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
         "solver_visible_metrics": [
           "committed_tps",
           "checkpoint_create_ns",
@@ -1897,7 +1897,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ea7fdba730d92b83838d20c6d556790668e9383151ba1381f42db7e91898c0ff"
+      "source_set_sha256": "sha256:d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

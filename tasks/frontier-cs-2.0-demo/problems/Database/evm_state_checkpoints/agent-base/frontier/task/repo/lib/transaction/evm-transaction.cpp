@@ -14,6 +14,8 @@
 #include <glog/logging.h>
 #include <fmt/core.h>
 #include <stdexcept>
+#include <chrono>
+#include <spectrum/common/checkpoint-metrics.hpp>
 
 namespace spectrum {
 
@@ -89,8 +91,28 @@ size_t Transaction::MakeCheckpoint() {
     }
     if (evm_type == EVMType::CHECKPOINTED) {
         auto& _vm = std::get<evmcow::VM>(vm);
+        auto& state = *_vm.state.value();
         mm_count += sizeof(evmcow::Checkpoint);
-        _vm.checkpoints.push_back(_vm.state.value()->save_checkpoint());
+        // Record the expected stack for restore validation; the harness's own
+        // allocations are excluded from the retained-bytes measurement.
+        const int64_t before_record = frontier_checkpoint_thread_net_bytes();
+        std::vector<intx::uint256> expected(state.stack_top.height);
+        for (size_t i = 0; i < expected.size(); ++i) {
+            expected[expected.size() - 1 - i] = state.stack_top.get(i);
+        }
+        checkpoint_expected_stacks.push_back(std::move(expected));
+        checkpoint_expected_code.push_back(state.position.value().code_it);
+        checkpoint_harness_bytes += frontier_checkpoint_thread_net_bytes() - before_record;
+        const auto t0 = std::chrono::steady_clock::now();
+        _vm.checkpoints.push_back(state.save_checkpoint());
+        const auto t1 = std::chrono::steady_clock::now();
+        frontier_checkpoint_record_create(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count());
+        if (checkpoint_base_bytes >= 0) {
+            const int64_t held = frontier_checkpoint_thread_net_bytes() - checkpoint_base_bytes - checkpoint_harness_bytes;
+            frontier_checkpoint_record_retained(
+                static_cast<uint64_t>(std::max<int64_t>(held, 0)) / _vm.checkpoints.size());
+        }
         return _vm.checkpoints.size() - 1;
     }
     return 0;
@@ -113,7 +135,28 @@ void Transaction::ApplyCheckpoint(size_t checkpoint_id) {
     }
     if (evm_type == EVMType::CHECKPOINTED) {
         auto& _vm = std::get<evmcow::VM>(vm);
-        _vm.state.value()->load_checkpoint(_vm.checkpoints[checkpoint_id]);
+        auto& state = *_vm.state.value();
+        const auto t0 = std::chrono::steady_clock::now();
+        state.load_checkpoint(_vm.checkpoints[checkpoint_id]);
+        const auto t1 = std::chrono::steady_clock::now();
+        frontier_checkpoint_record_restore(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count());
+        // Correctness during real execution: height, code position, top() and
+        // every item through get() must match the state saved by this checkpoint.
+        const auto& expected = checkpoint_expected_stacks[checkpoint_id];
+        CHECK(state.stack_top.height == expected.size()) << "checkpoint restore changed the stack height";
+        CHECK(state.position.value().code_it == checkpoint_expected_code[checkpoint_id])
+            << "checkpoint restore changed the code position";
+        if (!expected.empty()) {
+            CHECK(state.stack_top.top() == expected.back()) << "checkpoint restore returned a wrong top()";
+        }
+        for (size_t i = 0; i < expected.size(); ++i) {
+            CHECK(state.stack_top.get(i) == expected[expected.size() - 1 - i]) << "checkpoint restore returned a wrong item";
+        }
+        const int64_t before_trim = frontier_checkpoint_thread_net_bytes();
+        checkpoint_expected_stacks.resize(checkpoint_id);
+        checkpoint_expected_code.resize(checkpoint_id);
+        checkpoint_harness_bytes += frontier_checkpoint_thread_net_bytes() - before_trim;
         _vm.checkpoints.resize(checkpoint_id);
         return;
     }
@@ -153,6 +196,11 @@ void Transaction::Execute() {
     }
     if (evm_type == EVMType::CHECKPOINTED) {
         auto& _vm = std::get<evmcow::VM>(vm);
+        if (checkpoint_base_bytes < 0) {
+            // The execution state is created by the first execute; its bytes and
+            // everything the backend allocates afterwards count as retained.
+            checkpoint_base_bytes = frontier_checkpoint_thread_net_bytes();
+        }
         auto host_interface = &host.get_interface();
         auto host_context   = host.to_context();
         const auto result = evmcow::baseline::execute(

@@ -47,6 +47,11 @@ class Transaction {
     std::vector<uint8_t> input;
     evmc_message message;
     size_t  op_count{0};
+    // Harness-side checkpoint metrics and restore validation (CHECKPOINTED).
+    int64_t checkpoint_base_bytes{-1};
+    int64_t checkpoint_harness_bytes{0};
+    std::vector<std::vector<intx::uint256>> checkpoint_expected_stacks;
+    std::vector<const uint8_t*> checkpoint_expected_code;
 
     public:
     size_t  mm_count{0};

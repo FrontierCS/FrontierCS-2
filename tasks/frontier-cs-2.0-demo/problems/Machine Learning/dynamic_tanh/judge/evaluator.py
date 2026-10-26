@@ -57,6 +57,37 @@ RETAINED_SHA256 = {
     "utils.py": "4b189315f67e25f612b9e7a6df6fb20111f96ca4a3ac989b6eeb1ab4264c40c9",
 }
 
+# Process and harness introspection (Preview issue #647). The accuracy run
+# (frontier-bench.sh -> main.py) and the evaluator's timed and validated calls
+# must execute the same implementation; submitted code may not inspect which
+# process, entry point, caller or environment it runs in. Every file the
+# candidate owns is scanned after the patch is applied, comments included.
+INTROSPECTION_PATTERN = re.compile(
+    r"argv|__main__|\binspect\b|_getframe|currentframe|f_back|f_globals|f_locals|f_code"
+    r"|\btraceback\b|getpid|getppid|/proc|environ|getenv|sys\.modules|cmdline|program_invocation",
+    re.IGNORECASE)
+INTROSPECTION_MESSAGE = "patch inspects the process, entry point, caller or environment"
+
+def _introspection_violation(tree: Path) -> bool:
+    owned = [tree / "dynamic_tanh.py"]
+    extensions = tree / "solver_extensions"
+    if extensions.is_dir():
+        owned += sorted(path for path in extensions.rglob("*") if path.is_file())
+    for path in owned:
+        if path.is_file() and INTROSPECTION_PATTERN.search(path.read_bytes().decode("utf-8", errors="replace")):
+            return True
+    return False
+
+@contextmanager
+def _training_argv(command):
+    """Candidate calls in this process see the argv of the authentic training process."""
+    saved = sys.argv
+    sys.argv = ["main.py", *command[1:]]
+    try:
+        yield
+    finally:
+        sys.argv = saved
+
 class InfrastructureError(RuntimeError):
     """A trusted task prerequisite or reference execution failed."""
 
@@ -751,6 +782,11 @@ def evaluate(solution_path: str):
             if _development(): invalid[3]["candidate_diagnostic"] = candidate_failure.diagnostic("patch_policy")
             return invalid
         candidate = Path(result.workdir)
+        if _introspection_violation(candidate):
+            shutil.rmtree(candidate.parent, ignore_errors=True)
+            invalid = _invalid(INTROSPECTION_MESSAGE)
+            if _development(): invalid[3]["candidate_diagnostic"] = candidate_failure.diagnostic("patch_policy")
+            return invalid
         try:
             import torch
             if not torch.cuda.is_available():
@@ -760,9 +796,13 @@ def evaluate(solution_path: str):
             with tempfile.TemporaryDirectory(prefix="dyt-eval-", dir=parent) as temporary, _candidate_imports(candidate):
                 root = Path(temporary); reference = _reference_tree(root)
                 candidate_stage = "semantic_validation"
-                guards = _validate_semantics(candidate, reference, suite)
+                with _training_argv(_train_command(candidate, suite[0], root / suite[0]["id"] / "candidate_output")):
+                    guards = _validate_semantics(candidate, reference, suite)
                 candidate_stage = "model_workload"
-                rows = [_run_workload(candidate, reference, root / x["id"], x) for x in suite]
+                rows = []
+                for x in suite:
+                    with _training_argv(_train_command(candidate, x, root / x["id"] / "candidate_output")):
+                        rows.append(_run_workload(candidate, reference, root / x["id"], x))
         finally:
             shutil.rmtree(candidate.parent, ignore_errors=True)
         result = _format_result(rows, suite, guards)

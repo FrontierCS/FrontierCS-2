@@ -11,7 +11,7 @@
       "version": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
     }
   },
-  "file_count": 137,
+  "file_count": 139,
   "files": [
     {
       "bytes": 2148,
@@ -19,9 +19,9 @@
       "sha256": "sha256:c9233b9fb1c5c779d207e17f438bec966c62d7559714afe30460e79aa65056da"
     },
     {
-      "bytes": 5132,
+      "bytes": 5488,
       "path": "agent-base/frontier/task/README.md",
-      "sha256": "sha256:2912c84cb638f50eed1c3b5f884d0ff896ef4c2d5b0947589a7f6850032c7137"
+      "sha256": "sha256:eb844b971c31fb7829a07e20eb3cbb0b83774dfcdf513e2e2532c6105d6e8efb"
     },
     {
       "bytes": 1049,
@@ -49,9 +49,9 @@
       "sha256": "sha256:47a7b328cb36eb46da28dd59a74ee9876a5aa58e1f0e34d9fc927a6d6fb38a4c"
     },
     {
-      "bytes": 16186,
+      "bytes": 19105,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:847fd0053dabc78c31e15e87b2de2e3d04701a369bf755b298a683a89bb38ea1"
+      "sha256": "sha256:1c3fea70ee1506f3070d684792192461ce63ae1b31983ff6f8a0bde38c5087ba"
     },
     {
       "bytes": 5533,
@@ -59,9 +59,9 @@
       "sha256": "sha256:898fecf861eec2934dc294480bcdabdd775b10db0200f7052bfb55f95410b621"
     },
     {
-      "bytes": 1536,
+      "bytes": 1642,
       "path": "agent-base/frontier/task/repo/bin/bench.cpp",
-      "sha256": "sha256:8eacd9e98f90d6df62db391a0b46d7e59fbb8ea1785ffddb426d241b0af85c59"
+      "sha256": "sha256:cf18d81903a0b5c5ba84e45899563f44dbc3cf431922d1a70f4804c70f0f7b23"
     },
     {
       "bytes": 4723,
@@ -107,6 +107,16 @@
       "bytes": 2174,
       "path": "agent-base/frontier/task/repo/contracts/ycsb.bin",
       "sha256": "sha256:6998e78c87bc922c095228bee58761a23b85a7717acc73b3f020c1f730797396"
+    },
+    {
+      "bytes": 2535,
+      "path": "agent-base/frontier/task/repo/lib/common/checkpoint-metrics.cpp",
+      "sha256": "sha256:5c9d17333f7673f18012e394492e770c467adc92e2fbdb579ae53f2bbcc55b24"
+    },
+    {
+      "bytes": 904,
+      "path": "agent-base/frontier/task/repo/lib/common/checkpoint-metrics.hpp",
+      "sha256": "sha256:45a50e55bf6432b969bbdbfe95ec076f7866fa0e20e47b07b5d3133da43282a3"
     },
     {
       "bytes": 831,
@@ -504,14 +514,14 @@
       "sha256": "sha256:e2bdfa6ee3dbc6513b52ea81f9ae5a44d0622ff4f28319d8e10001dc68458ff0"
     },
     {
-      "bytes": 7908,
+      "bytes": 10914,
       "path": "agent-base/frontier/task/repo/lib/transaction/evm-transaction.cpp",
-      "sha256": "sha256:8f529b247151f3a717c137da71bb7f303232b7b6508e1c2f88cf1f5ba95f6f52"
+      "sha256": "sha256:eb77beec26393eb0bdbefa37d72f6b8a6ef9631e9ff25c94709486aa9c009339"
     },
     {
-      "bytes": 2638,
+      "bytes": 2926,
       "path": "agent-base/frontier/task/repo/lib/transaction/evm-transaction.hpp",
-      "sha256": "sha256:d31f64fc7acc5ab44015105a7560ea53cbe8c09f823edd86df4faf97e4db0cd0"
+      "sha256": "sha256:ba842a3ebd3b8c035b9912afacf924f9553c08cab56eb84cdada535ec2c002e4"
     },
     {
       "bytes": 304,
@@ -564,14 +574,14 @@
       "sha256": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
     },
     {
-      "bytes": 6883,
+      "bytes": 8904,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:c7d0248e8fc5095eb831236414b34a2f032a2d71d9ea1779e2d2845300e5e96a"
+      "sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a"
     },
     {
-      "bytes": 7250,
+      "bytes": 13375,
       "path": "judge/checkpoint_bench.cpp",
-      "sha256": "sha256:29b49ea6db6c23a24b0ebff2aa7698faf096e3966857071ffddc2909662d9ffc"
+      "sha256": "sha256:15b3cd83e2a2120902ba5872e5dfb9e0c8c4f805b6c39283212204e0d860169b"
     },
     {
       "bytes": 1627,
@@ -584,9 +594,9 @@
       "sha256": "sha256:4dfd0f390e3a616974d3bfb16ba3cda79cd0a2429e6c304564b8fab6dbcd6fb6"
     },
     {
-      "bytes": 19993,
+      "bytes": 22785,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:e2bfcffaa0e394868a2b795191a3d336ffa3408c84959bfd485b3b716ad82fab"
+      "sha256": "sha256:1bb600ba1977abaa37c036b19155044b374032204adfc5581bd20b90cf0d2023"
     },
     {
       "bytes": 39967,
@@ -654,9 +664,9 @@
       "sha256": "sha256:412a919e4de56163bad896164fc024e1c0ca39f8d7e3a60854545a32bb5ea164"
     },
     {
-      "bytes": 18861,
+      "bytes": 22105,
       "path": "judge/readme",
-      "sha256": "sha256:1b346563c7a32f97c9d96055a1cf7611d39f273b357569c94afde82040c7de01"
+      "sha256": "sha256:623683d863bebb5f82343e3bf5c238527560ecb969acd8881efceca0a5c213f6"
     },
     {
       "bytes": 3571,
@@ -676,7 +686,7 @@
     {
       "bytes": 3003,
       "path": "policy.json",
-      "sha256": "sha256:907231eb2bbdd475b3ab4648b79f1aeed271380d8a43d2ca50db7c6ee198e386"
+      "sha256": "sha256:caf32c767df0017354e6e50a25fd5d8abda81613330b13e5285600e9784de059"
     },
     {
       "bytes": 2875,
@@ -703,9 +713,9 @@
   "schema_version": "frontier.frontiersmith-task-lock/v1",
   "source": {
     "beat_spec_migration": "2026-09-11: formal per-workload contract and private-feedback audit",
-    "beat_spec_sha256": "sha256:c7d0248e8fc5095eb831236414b34a2f032a2d71d9ea1779e2d2845300e5e96a",
-    "evaluator_sha256": "sha256:e2bfcffaa0e394868a2b795191a3d336ffa3408c84959bfd485b3b716ad82fab",
-    "statement_sha256": "sha256:1b346563c7a32f97c9d96055a1cf7611d39f273b357569c94afde82040c7de01",
+    "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
+    "evaluator_sha256": "sha256:1bb600ba1977abaa37c036b19155044b374032204adfc5581bd20b90cf0d2023",
+    "statement_sha256": "sha256:623683d863bebb5f82343e3bf5c238527560ecb969acd8881efceca0a5c213f6",
     "task_dir": "evm_state_checkpoints"
   }
 }

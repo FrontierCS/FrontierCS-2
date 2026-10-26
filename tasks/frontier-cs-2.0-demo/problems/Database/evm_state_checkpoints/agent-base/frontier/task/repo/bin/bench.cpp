@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include "argparse.hpp"
 #include <spectrum/common/glog-prefix.hpp>
+#include <spectrum/common/checkpoint-metrics.hpp>
 
 int main(int argc, char* argv[]) {
     // configure prefix formatting and eat google logging command line arguments
@@ -35,4 +36,5 @@ int main(int argc, char* argv[]) {
     // stop running and print statistics
     DLOG(WARNING) << "Debug Mode: don't expect good performance. " << std::endl;
     std::cerr << statistics->PrintWithDuration(duration_cast<milliseconds>(steady_clock::now() - start_time));
+    std::cerr << spectrum::frontier_checkpoint_print();
 }
