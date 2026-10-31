@@ -23,5 +23,5 @@ task_model_budget_usd: 0
 network_domains: []
 agent_wall_time_seconds: 18000
 train_calls: 8
-train_wall_seconds: 14400
-eval_timeout_seconds: 1800
+train_wall_seconds: 48000
+eval_timeout_seconds: 6000
