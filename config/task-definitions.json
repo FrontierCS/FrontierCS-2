@@ -4372,7 +4372,7 @@
     },
     "display_name": "Polar-Factor Approximation",
     "family": "frontier-cs-2.0/numerical_linear_algebra",
-    "image_tag": "source-ba575bbcebf6779c2f8440feaa467458083be2a33d32d734a9b8b2718cab821f",
+    "image_tag": "source-b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4436,7 +4436,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ba575bbcebf6779c2f8440feaa467458083be2a33d32d734a9b8b2718cab821f"
+      "source_set_sha256": "sha256:b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
