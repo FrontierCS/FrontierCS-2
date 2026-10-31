@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:1a9707a5848f2653447f9b1488be4c28f39853be3ef3cef31b3e59bb10d01c31",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/bounded_evm_path_prediction/1a9707a5848f2653447f9b1488be4c28f39853be3ef3cef31b3e59bb10d01c31.json",
+  "definition_digest": "sha256:07201c443b9c9a16bfa93009d7c7326c5dfb248e04226a43bed485b639007a3f",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/bounded_evm_path_prediction/07201c443b9c9a16bfa93009d7c7326c5dfb248e04226a43bed485b639007a3f.json",
   "display_name": "Bounded EVM Path Prediction",
   "driver_config": {
     "agent": {
@@ -68,7 +68,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_74SNN2PYAAB26QXJH2J4Z1BJD2",
+    "task_version_id": "taskver_7PV2N6R6XHDHNVFK3MHSPFD36D",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -111,7 +111,7 @@
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "bounded_evm_path_prediction",
-      "source_set_sha256": "sha256:71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328"
+      "source_set_sha256": "sha256:49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275"
     },
     "generator": {
       "candidate_id": "cand_001",
@@ -145,5 +145,5 @@
     }
   },
   "task_id": "frontier-cs-2.0-bounded-evm-path-prediction",
-  "version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3-cfg-1a9707a5848f"
+  "version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3-cfg-07201c443b9c"
 }

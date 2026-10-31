@@ -702,7 +702,7 @@
     },
     "display_name": "Bounded EVM Path Prediction",
     "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328",
+    "image_tag": "source-49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -779,7 +779,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328"
+      "source_set_sha256": "sha256:49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1702,7 +1702,7 @@
     },
     "display_name": "E-Graph Invariant Restoration",
     "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-eea618216affc15fe047b8665904e6acf6e47c7399810e7689a5ea2bd7e1d00d",
+    "image_tag": "source-48032017a867b8a2bea2d3a314a90e733a6b70a162a2ceb01115729b6c0f51c1",
     "metadata": {
       "accelerator": null,
       "conversion": {
@@ -1789,7 +1789,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:eea618216affc15fe047b8665904e6acf6e47c7399810e7689a5ea2bd7e1d00d"
+      "source_set_sha256": "sha256:48032017a867b8a2bea2d3a314a90e733a6b70a162a2ceb01115729b6c0f51c1"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3579,7 +3579,7 @@
     },
     "display_name": "MetaOpt Combined-TE Gap Search",
     "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-6717c9ffe023bbb916767a6a30bb2ff543b7aabf7be2aed77fcbac7131e8b1b7",
+    "image_tag": "source-94067aa71fbc0152e189e689fe525d73ff9597ec29a5a7597955df1b4443167e",
     "metadata": {
       "conversion": {
         "source_commit": "f15ce24eedd0f17e8f9214fa90dffe6287ad40d0",
@@ -3649,7 +3649,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:6717c9ffe023bbb916767a6a30bb2ff543b7aabf7be2aed77fcbac7131e8b1b7"
+      "source_set_sha256": "sha256:94067aa71fbc0152e189e689fe525d73ff9597ec29a5a7597955df1b4443167e"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -5106,7 +5106,7 @@
     },
     "display_name": "Residual State Advancement",
     "family": "frontier-cs-2.0/databases",
-    "image_tag": "source-6f56738686aed4dbb991dfe2b8e4b1faeb85274414cb9d32de1fd421f37c168b",
+    "image_tag": "source-d4b1b1132ae05243282ee3ad41a275b50b81632e90d5b3cbf343412fe31b2041",
     "metadata": {
       "accelerator": null,
       "conversion": {
@@ -5188,7 +5188,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:6f56738686aed4dbb991dfe2b8e4b1faeb85274414cb9d32de1fd421f37c168b"
+      "source_set_sha256": "sha256:d4b1b1132ae05243282ee3ad41a275b50b81632e90d5b3cbf343412fe31b2041"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
