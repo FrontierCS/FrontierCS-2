@@ -21,3 +21,8 @@ RUN chmod 0555 /frontier/task/bin/*.sh \
 USER 10001:10001
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /workspace
+
+# Use the image's pinned Rust toolchain (the one frontier-build.sh and the judge
+# use) instead of the floating `1.94` channel in rust-toolchain, which rustup
+# would download; the Agent sandbox has no network access.
+ENV RUSTUP_TOOLCHAIN=1.94.1-x86_64-unknown-linux-gnu
