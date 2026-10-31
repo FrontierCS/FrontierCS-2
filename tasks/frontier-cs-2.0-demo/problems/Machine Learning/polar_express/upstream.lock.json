@@ -59,9 +59,9 @@
       "sha256": "sha256:d54176e99ae8b4d371aff1bc699bfac01bb4e0ff56278914e6282015df96b453"
     },
     {
-      "bytes": 21572,
+      "bytes": 21613,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:7601986a0645926bb67cdb726ff82c429e53252c5e362f300de575e72d8d984b"
+      "sha256": "sha256:5bbec6bbc6965b09c2447423a59215b03f5d4ef85a9f711dcc96497d71ed0071"
     },
     {
       "bytes": 277,
@@ -104,9 +104,9 @@
       "sha256": "sha256:8536271c17428a0be6359567325faa2d6c4a65ba65310350c12d31f9c63f2570"
     },
     {
-      "bytes": 11268,
+      "bytes": 12792,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:23695015c6591ade483aab93c2cabd29f092538ad386fb62abbd9556ff510086"
+      "sha256": "sha256:112d7903eb352f9cebe1bad8d8dd5942037dee4e08a0cf7c8b139779cc18c5d0"
     },
     {
       "bytes": 1317,
@@ -119,9 +119,9 @@
       "sha256": "sha256:1b7b49f66da315071030a0211eb84202c8185b2b18b6e4475559d98e7b557eb6"
     },
     {
-      "bytes": 33120,
+      "bytes": 36445,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:09574b4560ca7b6550e09f2df7bca28a931e7c5a791fd05e78f21806224995de"
+      "sha256": "sha256:0107d7d41251a431f16a51163f32d75322195f2b83c7f59d06f8853e2655086f"
     },
     {
       "bytes": 1253,
@@ -129,9 +129,9 @@
       "sha256": "sha256:00bf345310e721bf07cb3c7589b3f208f58367d489b2db7207d2efb563a4efb7"
     },
     {
-      "bytes": 22545,
+      "bytes": 22586,
       "path": "judge/readme",
-      "sha256": "sha256:d5a47c8b2e50bea1cc13fe24bc6ab15e8292597092363dfeff74c99827d35a3b"
+      "sha256": "sha256:3d0a7755d527ac9ba864ba5897d27b4a35407a166dcee490cc69b0a7a4b284d4"
     },
     {
       "bytes": 4019,
@@ -172,8 +172,8 @@
   "problem_id": "polar_express",
   "schema_version": "frontier.frontiersmith-task-lock/v1",
   "source": {
-    "evaluator_sha256": "sha256:a2fc41ab3216299c3ca1cfa3002bfcd875221e91eab36d20e482564dca27cf6b",
-    "statement_sha256": "sha256:d5a47c8b2e50bea1cc13fe24bc6ab15e8292597092363dfeff74c99827d35a3b",
+    "evaluator_sha256": "sha256:0107d7d41251a431f16a51163f32d75322195f2b83c7f59d06f8853e2655086f",
+    "statement_sha256": "sha256:3d0a7755d527ac9ba864ba5897d27b4a35407a166dcee490cc69b0a7a4b284d4",
     "task_dir": "task"
   }
 }
