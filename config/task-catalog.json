@@ -127,9 +127,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:0356d89a0b639317dfaef87cfad470bebff1dc57a03a969de05fbe21314a8087",
+        "digest": "sha256:e711be388824aed39ccb80e7b07ebf4d3bff67d14ebcfa8aa112d85d2d3637e7",
         "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-agent",
-        "tag": "source-d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc"
+        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
       },
       "baseline": {
         "agreement_rule": {
@@ -144,7 +144,7 @@
           "eval": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
           "train": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
         },
-        "evaluator_sha256": "sha256:1bb600ba1977abaa37c036b19155044b374032204adfc5581bd20b90cf0d2023",
+        "evaluator_sha256": "sha256:78fb0c93715e4335a7c8cc54d450c72cc976120910fdbeb60f5959755a172238",
         "historical_mean": 50.0,
         "historical_scores": [
           50.0,
@@ -157,13 +157,13 @@
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
         "result_json_source": "judge/result.json",
-        "source_set_sha256": "sha256:d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc",
+        "source_set_sha256": "sha256:227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747",
         "verifier_adapter_sha256": "sha256:e278eb9db3817ddc011c88b1af885c433b6c34f5d7a29d2eb93bd316013581a3"
       },
       "dataset_image": {
         "digest": "sha256:b9299829fccc21858e35dc297e9250d2e9451ac23e22a0d1229286e26d19dec7",
         "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-datasets",
-        "tag": "source-d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc"
+        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
       },
       "datasets": {
         "eval_sha256": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
@@ -175,12 +175,12 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
         "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-reference",
-        "tag": "source-d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc"
+        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
       },
       "verifier_image": {
-        "digest": "sha256:5ac00600f58e437dfea71c53d5f7f220ad32367c94dcb0aca4e7e3ed6f508343",
+        "digest": "sha256:c42688c024cae2dc1295e903eb6db4761215d0e154bf28bbc0104d9e78d24d98",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-evm_state_checkpoints",
-        "tag": "source-d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc"
+        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
       }
     },
     {

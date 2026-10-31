@@ -23,8 +23,8 @@
       "train": "a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
     },
     "identity_algorithm": "preview-source-identity/v1",
-    "image_tag": "source-d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc",
-    "source_set_sha256": "sha256:d2d56032369e7a631c7c9d0b2337f54025f49373785b1b2dece9265d2daf48fc"
+    "image_tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747",
+    "source_set_sha256": "sha256:227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
   },
   "graph_mining_method_selection": {
     "datasets": {
