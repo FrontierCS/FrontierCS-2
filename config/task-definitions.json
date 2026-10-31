@@ -1942,7 +1942,7 @@
         "max_gpu_seconds": 86400
       }
     },
-    "image_tag": "source-51904c269b90c48201b2ab3db504e56b88f6152de1b4f8076f5b6d87e561bbbc",
+    "image_tag": "source-4fd03d585121a392258888309f7fd1dd68a971eccea6f6396951ba9281370bc2",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2037,7 +2037,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:51904c269b90c48201b2ab3db504e56b88f6152de1b4f8076f5b6d87e561bbbc"
+      "source_set_sha256": "sha256:4fd03d585121a392258888309f7fd1dd68a971eccea6f6396951ba9281370bc2"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4605,7 +4605,7 @@
     },
     "display_name": "Privilege Control for Tool-Using LLM Agents",
     "family": "frontier-cs-2.0/security",
-    "image_tag": "source-e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1",
+    "image_tag": "source-2a841f03f254be1043f91a7dc6bcb5a2e91f548d1e3c94270cb09a5b0662d741",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4726,7 +4726,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:e43614eb9be1ebf373cc3c5c60b614607f2c9491de8c93672581ea33313986a1"
+      "source_set_sha256": "sha256:2a841f03f254be1043f91a7dc6bcb5a2e91f548d1e3c94270cb09a5b0662d741"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
