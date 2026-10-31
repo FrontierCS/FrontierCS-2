@@ -49,3 +49,11 @@ RUN chmod -R a+rX /frontier/task \
 USER 10001:10001
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /workspace
+
+# Build backend for `pip install -e .` (pyproject requires setuptools). The Agent
+# sandbox has no network access, so pip takes it from this local wheel directory.
+USER 0:0
+RUN pip3 download --no-cache-dir --no-deps --only-binary=:all: --dest /opt/frontier/wheels setuptools==80.9.0 \
+    && chmod -R a+rX,a-w /opt/frontier/wheels
+USER 10001:10001
+ENV PIP_FIND_LINKS=/opt/frontier/wheels
