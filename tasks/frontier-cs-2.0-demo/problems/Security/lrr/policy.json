@@ -9,7 +9,7 @@
   "gpu": {
     "agent": {
       "allowed_types": [
-        "L4"
+        "A100-80GB"
       ],
       "max_gpu_seconds": 0,
       "max_instance_seconds": 0,
@@ -24,7 +24,7 @@
     "accelerator": {
       "agent_sandbox": false,
       "allowed_types": [
-        "L4"
+        "A100-80GB"
       ],
       "credential_reaches_agent": false,
       "provider": "driver-managed",

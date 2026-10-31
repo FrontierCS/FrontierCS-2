@@ -13,7 +13,7 @@ The frozen suite contains 100 unique, originally detector-confirmed vulnerable P
 
 Development contains 10 cases from each stratum, for 20 cases in total. Final evaluation includes those 20 cases and 40 additional held-out cases from each stratum, for 100 cases in total. Each stratum/split is evaluated as a separate workload. Missing localization is retained and uses the ordinary-prompt fallback. Every selected regex stays in the denominator when output parsing, detection, or semantic sampling cannot establish a credited repair.
 
-The current runtime uses greedy non-thinking Qwen3-8B Q4_K_M CUDA inference on a Driver-managed Modal L4 with seed 42 and at most 512 output tokens, ReDoSHunter under OpenJDK 25, and 100 Xeger samples in each semantic direction. Evaluation may vary execution order.
+The current runtime uses greedy non-thinking Qwen3-8B Q4_K_M CUDA inference on one NVIDIA A100 80GB GPU with seed 42 and at most 512 output tokens, ReDoSHunter under OpenJDK 25, and 100 Xeger samples in each semantic direction. Evaluation may vary execution order.
 
 ## Interface
 The constructor calls:

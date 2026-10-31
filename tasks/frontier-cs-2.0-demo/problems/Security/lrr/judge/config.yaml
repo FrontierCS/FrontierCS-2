@@ -3,7 +3,7 @@ runtime:
   language: python
   timeout_seconds: 3600
   environment: Python 3.12, OpenJDK 25, fixed Qwen3-8B GGUF CUDA inference on one
-    Driver-managed Modal L4
+    Driver-managed Modal A100-80GB
   apt_packages:
   - git
   judge_apt_packages:
@@ -29,7 +29,7 @@ runtime:
     provider: modal
     max_ssh_bytes_per_direction: 4194304
     gpu_types:
-    - L4
+    - A100-80GB
     agent:
       instances: 0
       max_instance_seconds: 0

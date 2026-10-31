@@ -64,9 +64,9 @@
       "sha256": "sha256:d7087dcb9e639b87e62c05ffd3126ce16b06b0e7116f202422e6aa0c22c62a98"
     },
     {
-      "bytes": 9754,
+      "bytes": 9753,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:d134883ddf9bc5706eed411cfdefd9a0903add5007f7e452179c29012884b4ea"
+      "sha256": "sha256:fe53bc8c59c5527a346c882c08346e8367e9500b834779ff7e41aba9bd655866"
     },
     {
       "bytes": 168,
@@ -269,9 +269,9 @@
       "sha256": "sha256:3d4a3493b7cd86d6211f9d9e644e5d04e46046992d45fda952f5cd2ccb6eba29"
     },
     {
-      "bytes": 1315,
+      "bytes": 1322,
       "path": "judge/SUMMARY.md",
-      "sha256": "sha256:f799e9e7dc66bd184092954f4fa9c46bf26e563a0205ca01ee985dd617512f18"
+      "sha256": "sha256:e9837e71083f857cee75e6620e704045d893a42c47b38d22a62bec647640ba89"
     },
     {
       "bytes": 3014,
@@ -279,14 +279,14 @@
       "sha256": "sha256:29e6a16b87f438f4c1ed971e0985aa5d4ab5400a679a80175f1018ccbd1f97ae"
     },
     {
-      "bytes": 11787,
+      "bytes": 11794,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:4b4e911622de70e6e734324b3cddca2d07a5ad5d7bc9cad866cac6732cb14a12"
+      "sha256": "sha256:3acf8f6514011c7f1fb77207eb848bf0e70bb241f6cb34f69942f30d3df1bdba"
     },
     {
-      "bytes": 1907,
+      "bytes": 1921,
       "path": "judge/config.yaml",
-      "sha256": "sha256:b29c2fe5fa4a8c86be22b58f464e4386943d9c772d2ce05ef3299b90733b99d9"
+      "sha256": "sha256:d499d46e87c75c3c4608d7e1ba1320a2647600e81d575214b6426440936cab3d"
     },
     {
       "bytes": 2415,
@@ -304,9 +304,9 @@
       "sha256": "sha256:e93e1a02240461f4ec7412183ce6b230425ca8222dd8816024943ef95683d82a"
     },
     {
-      "bytes": 21909,
+      "bytes": 21926,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:cf16b70a0e1263e4e2b35ee28b4c6bcb68aa03ec2652f768bca9b04ebc88d70f"
+      "sha256": "sha256:441e919c2e8452e6f12e1edd5da5ed133d225d658fada9e784b5dcc3c55eca06"
     },
     {
       "bytes": 57,
@@ -569,9 +569,9 @@
       "sha256": "sha256:b5d3563b371936b5c7ef96bc080f4e95bdbc0b0a8be838fdf8134f32580c77cf"
     },
     {
-      "bytes": 8472,
+      "bytes": 8471,
       "path": "judge/readme",
-      "sha256": "sha256:7c3cc6f1af0bfc9cee6597d06038f51d553d41d35dd8a672099b17ce89837a49"
+      "sha256": "sha256:d10c050628c413716907f00db6186254998003120a8064c6afcb417965cb42a5"
     },
     {
       "bytes": 17111,
@@ -604,14 +604,14 @@
       "sha256": "sha256:e945574d216d2b1263b3ed872daf7cf888ef288bc7224c2585d0568157b92456"
     },
     {
-      "bytes": 3439,
+      "bytes": 3453,
       "path": "policy.json",
-      "sha256": "sha256:3b04aeb0a631398329d0d6b55c6087056bfdbe067acfc24468f3cfa5a1a1cbb1"
+      "sha256": "sha256:5ef64ad513c8ce2fd7377379df420da2ba5e4f03f6b9bbf918243bf7cd52fc11"
     },
     {
-      "bytes": 1536,
+      "bytes": 1543,
       "path": "verifier/Dockerfile",
-      "sha256": "sha256:5e1308aeae608538488809dcc9af6db181691d5375789cdaa54ac2d78c217afe"
+      "sha256": "sha256:53a841e07b922c2d5cf7fc6b2771ec989e7059e8f92f747fbd91e44e65c9cc06"
     },
     {
       "bytes": 13321,
@@ -634,9 +634,9 @@
       "sha256": "sha256:cb8946ed8525413a1d909476f74fdd53256c209ed496f0f423aa6ad268f275f0"
     },
     {
-      "bytes": 7573,
+      "bytes": 7584,
       "path": "verifier-gpu/Dockerfile",
-      "sha256": "sha256:d392b91d065008bf52f8ce0cacb92cde742fd1455fc170998d6feb3cd5d4a8c4"
+      "sha256": "sha256:4824edbe4bd1fd842ab125ee20c48d84cab2ec9436082df34f60990533ee9854"
     },
     {
       "bytes": 191,

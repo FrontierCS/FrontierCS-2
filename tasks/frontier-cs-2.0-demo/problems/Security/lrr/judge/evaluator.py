@@ -149,8 +149,8 @@ def _model_answer(endpoint: str, chat: list[dict[str, str]]) -> str:
     }
     req = urllib.request.Request(endpoint + "/v1/chat/completions", data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"})
     try:
-        # Worst case on the L4 is an uncached 8,192-token prefill plus 512
-        # decoded tokens, about 20-30 s; 600 s keeps a wide margin. A timeout
+        # Worst case on the A100 is an uncached 8,192-token prefill plus 512
+        # decoded tokens, faster than the L4's 20-30 s; 600 s keeps a wide margin. A timeout
         # stays an execution failure (evaluator_error), never a candidate score.
         response = urllib.request.urlopen(req, timeout=600)
     except urllib.error.HTTPError as exc:
