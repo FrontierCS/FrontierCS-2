@@ -8,13 +8,13 @@ paper_url: "https://arxiv.org/abs/2507.15856"
 agent_cpu_cores: 3
 agent_memory_gib: 12
 agent_disk_gib: 10
-agent_gpu_type: "L4"
+agent_gpu_type: "A100-80GB"
 agent_gpu_count: 1
 agent_gpu_seconds: 5400
 verifier_cpu_cores: 3
 verifier_memory_gib: 12
 verifier_disk_gib: null
-verifier_gpu_type: "L4"
+verifier_gpu_type: "A100-80GB"
 verifier_gpu_count: 1
 verifier_gpu_seconds: 5400
 agent_model_api: "candidate"
