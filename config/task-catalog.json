@@ -2116,9 +2116,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:415c9a752bc7fa41580432d619e97de06c3eae62ef16f545395aa8a5aa627cfe",
+        "digest": "sha256:f09c9ad165f4562236614e0c396cd89c4371158164ed4a7e1c2f577e96490402",
         "repository": "docker.io/joyemang33/fcs2-task-lrr-agent",
-        "tag": "source-76965e39ff11b5c165bf5008d67cc7991942ded56695bf38e94cc6dcbb0696fc"
+        "tag": "source-588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -2140,17 +2140,17 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:fbfccfc975354d06b8ff12f5684d632986d57f5f07f77486e5ecf4ec8902f179",
         "repository": "docker.io/joyemang33/fcs2-task-lrr-reference",
-        "tag": "source-76965e39ff11b5c165bf5008d67cc7991942ded56695bf38e94cc6dcbb0696fc"
+        "tag": "source-588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf"
       },
       "verifier_gpu_image": {
-        "digest": "sha256:589beed9c7988230dd75cfa025868419678a2b55ae9866facac50dd1d073d612",
+        "digest": "sha256:0f3aeeb42169d1e73e91ca0988d41b5d48fc324061d864998dee7ffa2a0680ef",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-lrr-gpu",
-        "tag": "source-76965e39ff11b5c165bf5008d67cc7991942ded56695bf38e94cc6dcbb0696fc"
+        "tag": "source-588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf"
       },
       "verifier_image": {
-        "digest": "sha256:ae5b3f06f7650f33129843147909202604102fac1f63ceea6477af89be766c03",
+        "digest": "sha256:ea2a404d049a40bbc66a46c8031ac158c5c13a42b1596b499c5933e0c4810291",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-lrr",
-        "tag": "source-76965e39ff11b5c165bf5008d67cc7991942ded56695bf38e94cc6dcbb0696fc"
+        "tag": "source-588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf"
       }
     }
   ]
