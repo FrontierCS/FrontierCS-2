@@ -37,12 +37,19 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         cls.spec = json.loads((TASK / "judge/beat_spec.json").read_text())
 
     def result(self, *, size=65536, offline=1_000_000_000, online=400_000_000, storage=2_000_000,
-               hint="a" * 64, up=100, down=128, rss=700_000_000, probe=492, answered=None,
+               hint="a" * 64, up=100, down=128, rss=700_000_000, depth=492, volume=None, answered=None,
+               skipped=False,
                probe_failure="", probe_digest="d" * 64, audit=512, mismatched=(), audit_failure="",
                audit_digest="f" * 64):
-        if probe_failure:
-            audit, audit_digest = 0, ""
         import math
+        planned = int(math.sqrt(size) * math.log(size))
+        if volume is None:  # the volume phase reaches the planned budget
+            volume = max(0, planned - 1000 - depth)
+        probe = depth + volume
+        if answered is None:
+            answered = depth if skipped else probe
+        if probe_failure and answered < depth:  # no audit after a failed depth part
+            audit, audit_digest = 0, ""
         return {"valid": True, "failure": "", "db_size": size, "actual_queries": 1000,
                 "planned_queries": int(math.sqrt(size) * math.log(size)), "threads": 4,
                 "offline_elapsed_ns": offline, "online_elapsed_ns": online,
@@ -51,8 +58,9 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                 "hint_export_sha256": hint, "transcript_sha256": "b" * 64,
                 "upload_bytes": [up] * 1000, "download_bytes": [down] * 1000,
                 "offline_communication_bytes": size * 16,
-                "probe_queries": probe, "probe_answered": probe if answered is None else answered,
-                "probe_failure": probe_failure, "probe_sha256": probe_digest,
+                "probe_queries": probe, "probe_answered": answered,
+                "probe_failure": probe_failure, "probe_sha256": probe_digest, "probe_volume_queries": volume,
+                "probe_volume_skipped": skipped,
                 "audit_hints": audit, "audit_mismatched": list(mismatched), "audit_failure": audit_failure,
                 "audit_sha256": audit_digest}
 
@@ -150,6 +158,9 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                        {"online_elapsed_ns": 1.5}, {"upload_bytes": [100] * 999},
                        {"download_bytes": [0] * 1000}, {"hint_export_sha256": ""},
                        {"probe_sha256": ""}, {"probe_queries": 0}, {"probe_queries": 1840, "probe_answered": 1840},
+                       {"probe_queries": 1838, "probe_answered": 1838}, {"probe_volume_queries": 1839}, {"probe_volume_queries": -1},
+                       {"probe_volume_skipped": 0}, {"probe_volume_skipped": True},
+                       {"probe_volume_skipped": True, "probe_answered": 492, "audit_failure": "client_crashed_or_protocol"},
                        {"probe_answered": 491}, {"probe_failure": "wrong_value"},
                        {"probe_answered": 10, "probe_failure": "skipped"}, {"probe_answered": -1},
                        {"audit_hints": 0}, {"audit_sha256": ""}, {"audit_mismatched": [512]},
@@ -209,7 +220,8 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("11 failed an additional untimed query", json.dumps(self.spec))
 
     def test_coverage_probe_is_a_paired_validity_condition_outside_every_metric(self):
-        reference = self.result()
+        # The paired reference run skips the volume part, which it serves.
+        reference = self.gate.check_result(self.result(skipped=True), size=65536)
         self.gate.check_result(self.result(answered=300, probe_failure="wrong_value"), size=65536)
         self.assertIsNone(self.gate.probe_failure(self.result(), reference))
         # A failed additional query that the reference answered invalidates the run.
@@ -226,9 +238,22 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertEqual(self.gate.probe_failure(self.result(answered=299, probe_failure="wrong_value"), broken),
                          "wrong_value")
         # Both runs must have been asked the identical sequence.
-        for other in (self.result(probe_digest="e" * 64), self.result(probe=491)):
+        for other in (self.result(probe_digest="e" * 64), self.result(depth=491, volume=1347),
+                      self.result(skipped=True)):
             with self.assertRaises(ValueError):
                 self.gate.probe_failure(other, reference)
+        with self.assertRaises(ValueError):  # a reference that completed depth and audit skips the volume part
+            self.gate.probe_failure(self.result(), self.result())
+        # A failed volume query counts: the reference serves every volume query.
+        volume_failed = self.gate.check_result(self.result(answered=1500, probe_failure="wrong_value"), size=65536)
+        self.assertEqual(self.gate.probe_failure(volume_failed, reference), "wrong_value")
+        # An audit protocol failure stops the probe before the volume part; the audit decides.
+        stopped = self.gate.check_result(self.result(answered=492, audit_failure="client_crashed_or_protocol"),
+                                         size=65536)
+        self.assertIsNone(self.gate.probe_failure(stopped, reference))
+        self.assertEqual(self.gate.audit_failure(stopped, reference), "client_crashed_or_protocol")
+        evaluator = (TASK / "judge/evaluator.py").read_text()
+        self.assertIn("skip_volume=implementation == 'reference'", evaluator)
         # The probe changes no gate decision and no score input.
         decisions = self.gate.compare_experiment(self.result(answered=0, probe_failure="wrong_value"), reference)
         self.assertEqual(decisions, self.gate.compare_experiment(self.result(), reference))
@@ -271,6 +296,45 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("func (c *Client) PrimaryHint(j uint64) (uint32, util.DBEntry)", statement)
         self.assertIn("Nothing is asked about backup hints or about hints a query has consumed", statement)
 
+    def test_client_storage_is_the_peak_over_the_online_phase(self):
+        # A reading after the export alone misses state released before it and rebuilt by a query.
+        driver = (CODE / "ec24/ec24_client.go").read_text()
+        reading = driver[driver.index("if tag == 'M'"):driver.index("if tag == 'U'")]
+        self.assertIn("liveBytes()", reading)
+        self.assertIn("live-baseline", reading)
+        self.assertIn("frame.Write(out, 'm',", reading)
+        self.assertNotIn("online +=", reading)
+        conductor = (CODE / "conductor/conductor.go").read_text()
+        take = conductor[conductor.index("readStorage := func()"):conductor.index("transcript := make(")]
+        self.assertIn("live > outcome.StorageBytes", take)
+        self.assertIn("outcome.StorageBytes = live", take)
+        self.assertEqual(conductor.count("outcome.StorageBytes = binary.LittleEndian.Uint64(report[40:])"), 1)
+        # Readings lie between queries, after each query's clocked intervals; the probe is sampled too.
+        measured = conductor[conductor.index("for q := uint64(0); q < settings.Queries; q++"):
+                             conductor.index("outcome.OnlineNs =")]
+        self.assertLess(measured.index("outcome.OnlineReconstructNs +="), measured.index("readStorage()"))
+        self.assertIn("q == 0 || q == storageQuery || q+1 == settings.Queries", measured)
+        self.assertEqual(measured.count("readStorage()"), 1)
+        # The random reading is drawn from the private probe seed, never shown to the client.
+        self.assertIn("storageQuery := 1 + uint64(rand.New(rand.NewSource(settings.ProbeSeed", conductor)
+        probe = conductor[conductor.index("probe := func(volume bool) {"):conductor.index("outcome.ProbeNs =")]
+        self.assertEqual(probe.count("readStorage()"), 1)
+        self.assertLess(probe.index("outcome.ProbeAnswered++"), probe.index("readStorage()"))
+        # No reading during the volume phase that completes the planned budget.
+        self.assertIn("if !volume {\n\t\t\t\treadStorage()", probe)
+        # Depth part, audit, then volume part (skipped by the paired reference run).
+        self.assertLess(probe.index("probe(false)"), probe.index("planAudit(generator"))
+        self.assertLess(probe.index("planAudit(generator"), probe.index("probe(true)"))
+        self.assertIn("if settings.SkipVolume {", probe)
+        exchange = conductor[conductor.index("exchange := func("):conductor.index("readStorage := func()")]
+        self.assertNotIn("'M'", exchange)
+        for statement in ((TASK / "judge/readme").read_text(),
+                          (TASK / "agent-base/frontier/task/repo/README.md").read_text()):
+            self.assertIn("The peak live state of your client over the online phase", statement)
+            self.assertIn("State released before a reading and rebuilt afterwards does count", statement)
+        expected = json.loads((ROOT / "tests/maintenance/quarter_pir/fixtures/expected.json").read_text())["fixtures"]
+        self.assertEqual(expected["positive/release_state_before_storage_reading.patch"]["expect"], "valid_over_storage")
+
     def test_submission_code_is_given_the_planned_budget_not_the_measured_query_count(self):
         conductor = (CODE / "conductor/conductor.go").read_text()
         spawn = conductor[conductor.index("func spawn("):conductor.index("func peakResident(")]
@@ -295,6 +359,48 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertNotIn("For each of 1,000 queries", statement)
         for fixture in sorted((ROOT / "tests/maintenance/quarter_pir/fixtures").rglob("*.patch")) + [TASK / "judge/reference.patch"]:
             self.assertNotIn("OnlineQueries", fixture.read_text(), fixture.name)
+
+    def test_one_graded_size_and_a_probe_with_a_volume_phase(self):
+        # At 65,536 entries the whole database is smaller than the reference client's
+        # storage; and a probe of depth alone never reached a capacity limit on promoted hints.
+        self.assertEqual(self.evaluator.SIZES, (67108864,))
+        self.assertEqual([len(self.evaluator.experiment_plan(final)) for final in (False, True)], [1, 2])
+        self.assertFalse(any(name.endswith("_small") for name in self.evaluator.VISIBLE))
+        probe = (CODE / "conductor/probe.go").read_text()
+        volume = probe[probe.index("for total := g.Count + uint64(len(plan));"):]
+        self.assertIn("total < target", volume)
+        self.assertIn("s.issued[x] || s.consumed[x/s.p.ChunkSize] >= s.perGroup", volume)
+        self.assertIn("plan = append(plan, probeQuery{X: x, Volume: true})", volume)
+        conductor = (CODE / "conductor/conductor.go").read_text()
+        self.assertIn("planProbe(generator, issued, settings.ProbeSeed, int(settings.Threads), params.PlannedQueries())",
+                      conductor)
+        self.assertIn("(!query.Volume && generator.Last.HitSetId != query.Hit)", conductor)
+        planned = self.gate.parameters(67108864)["planned_queries"]
+        self.assertEqual(planned, 147634)
+        record = self.result(size=67108864)
+        self.assertEqual(1000 + record["probe_queries"], planned)
+        self.gate.check_result(record, size=67108864)
+        for volume in (0, record["probe_volume_queries"] - 1):
+            with self.assertRaises(ValueError):
+                self.gate.check_result(self.result(size=67108864, volume=volume), size=67108864)
+        # The full volume phase needs more time: one deadline everywhere, and every train
+        # call can still reserve it.
+        policy = json.loads((TASK / "policy.json").read_text())["quota"]
+        limit = self.evaluator.LIMIT
+        self.assertEqual(policy["eval_timeout_seconds"], limit)
+        self.assertEqual(policy["max_train_wall_seconds"], policy["max_train_calls"] * limit)
+        self.assertLess(self.evaluator.RUN_LIMIT, limit)
+        guide = (TASK / "agent-base/frontier/task/README.md").read_text()
+        self.assertIn(f"independent {limit:,}-second timeout", guide)
+        self.assertIn(f"cumulative {policy['max_train_wall_seconds']:,}-second verification allowance", guide)
+        for statement in ((TASK / "judge/readme").read_text(),
+                          (TASK / "agent-base/frontier/task/repo/README.md").read_text()):
+            self.assertIn(f"{limit:,}-second evaluation deadline", statement)
+            self.assertIn("67,108,864 database entries", statement)
+            self.assertNotIn("65,536 entries", statement)
+            for internal in ("forced", "garbage collection", "drawn at random", "five measured",
+                             "STORAGE_JITTER", "probe_seed", "2.23 MB", "85.5 MB", "fraction", "eighth"):
+                self.assertNotIn(internal, statement)
 
     def test_seeds_are_fresh_private_and_never_constant(self):
         first, second = self.evaluator.fresh_seeds(), self.evaluator.fresh_seeds()
@@ -331,11 +437,12 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         for path in ("easypir/safeaes", "easypir/refwire", "example.com/util"):
             self.assertIsNotNone(allowed[path])
         self.assertEqual(allowed["easypir/safeaes"], {"RoundKeys", "ExpandKey", "MMO", "Encrypt", "Xor16"})
+        # The statement lists the import paths and points at the tool for the permitted names.
         statement = (TASK / "judge/readme").read_text()
-        safe_api = statement[statement.index("**Safe API.**"):statement.index("Seeds are fresh and private")]
-        for path in ("easypir/safeaes", "easypir/refwire", "example.com/util"):
-            for name in allowed[path]:
-                self.assertRegex(safe_api, rf"\b{name}\b")
+        rule = statement[statement.index("**Source policy.**"):statement.index("**Goroutines must settle")]
+        for path in allowed:
+            self.assertIn(f"`{path}`", rule)
+        self.assertIn("`policy/policy.go`", rule)
 
     def test_no_slice_or_raw_pointer_can_reach_assembly_from_the_editable_package(self):
         allowed = self.policy_allowlist()

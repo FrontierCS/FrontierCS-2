@@ -12,6 +12,10 @@
    "attack": "Hides a forbidden import behind a build constraint.",
    "expect": "source_policy"
   },
+  "negative/capped_promoted_hints.patch": {
+   "attack": "Keeps promoted hints in one global table sized for half of the planned query budget; once it is full, consumed hints are no longer refreshed. The measured queries and the depth probe stay far below that capacity; the volume phase of the additional queries, up to the planned budget, goes past it.",
+   "expect": "coverage_probe"
+  },
   "negative/crypto_aes_import.patch": {
    "attack": "Imports crypto/aes, which is no longer on the allowlist: the trusted typed AES package is the only route to assembly.",
    "expect": "source_policy"
@@ -167,6 +171,10 @@
   "positive/reference_unchanged.patch": {
    "attack": "The reference itself: valid, and by strictness it does not beat itself (communication is equal).",
    "expect": "valid_not_beating"
+  },
+  "positive/release_state_before_storage_reading.patch": {
+   "attack": "Builds a 64 MiB table in NewClient, releases it at the end of ExportHints, before the storage reading after the export, and rebuilds it in the first Query. Valid, but client storage is the peak over the online phase, so the table is counted and the storage comparison fails at both sizes.",
+   "expect": "valid_over_storage"
   },
   "positive/server_joined_parallel_workers.patch": {
    "attack": "Honest parallelism: the handler splits the superblocks over four goroutines and joins them before it returns. Valid, same messages; the completion boundary costs it nothing.",

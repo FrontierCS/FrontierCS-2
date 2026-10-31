@@ -23,7 +23,7 @@ SCORE_WEIGHTS = {'communication': 1 / 2, 'server': 1 / 6, 'preprocessing': 1 / 6
 INT_FIELDS = ('db_size', 'actual_queries', 'planned_queries', 'threads',
               'offline_elapsed_ns', 'online_elapsed_ns', 'client_storage_bytes',
               'client_peak_rss_bytes', 'hint_export_bytes', 'offline_communication_bytes',
-              'probe_queries', 'probe_answered', 'audit_hints')
+              'probe_queries', 'probe_answered', 'probe_volume_queries', 'audit_hints')
 # Checks a coverage-probe query can fail, as the trusted conductor names them.
 PROBE_FAILURES = frozenset((
     'client_crashed_or_protocol', 'request_not_reduction', 'reduction_nondeterministic', 'reducer_crashed',
@@ -118,19 +118,25 @@ def check_result(result, *, size, queries=1000, threads=4):
         value = result.get(key)
         if not isinstance(value, str) or len(value) != 64:
             raise ValueError('missing digest')
-    # Coverage probe: either every planned query was answered, or the record
-    # names the check that the first unanswered one failed.
-    failure = result.get('probe_failure')
-    if result['probe_queries'] <= 0 or result['actual_queries'] + result['probe_queries'] > result['planned_queries']:
-        raise ValueError('coverage probe is empty or exceeds the planned query budget')
+    # Coverage probe: a depth part, the primary-hint audit, then a volume part
+    # up to the planned query budget, which the paired reference run skips.
+    # Either every query asked was answered or the record names the check that
+    # the first unanswered one failed.
+    failure, skipped = result.get('probe_failure'), result.get('probe_volume_skipped')
+    depth = result['probe_queries'] - result['probe_volume_queries']
+    if (depth <= 0 or result['actual_queries'] + result['probe_queries'] > result['planned_queries']
+            or result['probe_volume_queries'] != max(0, result['planned_queries'] - result['actual_queries'] - depth)
+            or type(skipped) is not bool or (skipped and (failure != '' or result.get('audit_failure') != ''))):
+        raise ValueError('coverage probe is empty, exceeds or misses the planned budget, or skipped wrongly')
     if failure == '':
-        if result['probe_answered'] != result['probe_queries']:
+        asked = depth if skipped or result.get('audit_failure') != '' else result['probe_queries']
+        if result['probe_answered'] != asked:
             raise ValueError('coverage probe is incomplete without a failure')
     elif failure not in PROBE_FAILURES or result['probe_answered'] >= result['probe_queries']:
         raise ValueError('coverage probe failure is malformed')
-    # Primary-hint audit: run exactly when the probe completed.
+    # Primary-hint audit: run exactly when the depth part completed.
     mismatched, digest = result.get('audit_mismatched'), result.get('audit_sha256')
-    if failure != '':
+    if result['probe_answered'] < depth:
         if result['audit_hints'] != 0 or mismatched != [] or result.get('audit_failure') != '':
             raise ValueError('primary-hint audit ran after a failed probe')
     elif (result['audit_hints'] <= 0 or not isinstance(digest, str) or len(digest) != 64
@@ -146,8 +152,9 @@ def check_result(result, *, size, queries=1000, threads=4):
 def audit_failure(candidate, reference):
     """Paired primary-hint audit verdict; None when the candidate passes.
 
-    After the online phase both runs are asked for the canonical record (tag,
-    set parity) of the same sample of primary hints that no query consumed.
+    After the depth part of the probe both runs are asked for the canonical
+    record (tag, set parity) of the same sample of primary hints that no query
+    has consumed.
     A record counts against the candidate only when the reference client
     produced the canonical one for that hint.
     """
@@ -168,15 +175,20 @@ def audit_failure(candidate, reference):
 def probe_failure(candidate, reference):
     """Paired coverage-probe verdict; None when the candidate passes.
 
-    Both runs are asked the identical untimed query sequence after the
+    Both runs are planned the identical untimed query sequence after the
     measured queries. The candidate fails when it fails a query the reference
     answered. A query the reference itself failed, and everything after it,
-    does not count against the candidate.
+    does not count against the candidate. The reference run skips the volume
+    part, which it serves: no volume query lies in an exhausted chunk.
     """
+    skips = (reference['probe_failure'] == '' and reference['audit_failure'] == ''
+             and reference['probe_volume_queries'] > 0)
     if (candidate['probe_queries'] != reference['probe_queries']
-            or candidate['probe_sha256'] != reference['probe_sha256']):
+            or candidate['probe_sha256'] != reference['probe_sha256']
+            or candidate['probe_volume_skipped'] or reference['probe_volume_skipped'] != skips):
         raise ValueError('candidate/reference probe sequences differ')
-    if candidate['probe_failure'] != '' and candidate['probe_answered'] < reference['probe_answered']:
+    answered = reference['probe_queries'] if reference['probe_volume_skipped'] else reference['probe_answered']
+    if candidate['probe_failure'] != '' and candidate['probe_answered'] < answered:
         return candidate['probe_failure']
     return None
 

@@ -14,14 +14,14 @@
         "media_type": "application/x-tar",
         "path": "datasets/eval.tar",
         "source": "task",
-        "version": "sha256:4b228fa1f53de6737d43c7143da0fa51cd50f27b2a07ed9aaaf2aad59f53da47"
+        "version": "sha256:b5a37bb0d841b3307e5a021c7cb3de20d3785653863ee183ee8eb71635596d8a"
       },
       "train": {
         "bytes": 10240,
         "media_type": "application/x-tar",
         "path": "datasets/train.tar",
         "source": "task",
-        "version": "sha256:db136595dbe8308c69d7c00d43bf40666288dfb94ef8a24f4b1de0627d6fcc2e"
+        "version": "sha256:a273f5d4e65d4a9242092ada89a0e40cbf35ae73f1a6710189ef36e3aff7c704"
       }
     },
     "evaluation": {
@@ -29,11 +29,8 @@
       "solver_visible_metrics": [
         "candidate_public_server_compute_time_ns_median",
         "candidate_public_online_time_ms_median",
-        "candidate_public_preprocessing_seconds_small",
         "candidate_public_preprocessing_seconds_large",
-        "candidate_public_online_communication_bytes_small",
         "candidate_public_online_communication_bytes_large",
-        "candidate_public_client_storage_bytes_small",
         "candidate_public_client_storage_bytes_large",
         "candidate_public_validity_code"
       ],
@@ -68,9 +65,9 @@
   },
   "problem_id": "quarter_pir",
   "quota": {
-    "eval_timeout_seconds": 1800,
+    "eval_timeout_seconds": 6000,
     "max_train_calls": 8,
-    "max_train_wall_seconds": 14400,
+    "max_train_wall_seconds": 48000,
     "wall_time_seconds": 18000
   },
   "schema_version": "frontier.frontiersmith-task-policy/v1",

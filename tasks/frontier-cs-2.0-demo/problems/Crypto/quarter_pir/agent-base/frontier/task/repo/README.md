@@ -2,29 +2,20 @@
 
 ## Problem
 
-QuarterPIR is a preprocessing private-information-retrieval system. A client first streams the whole database once and keeps a compact table of hints. Afterwards it retrieves single entries with one short request each, without the server learning which entry it wanted, and refreshes the hint it consumed. The repository contains a complete provided implementation of the client and of the protocol around it, called the reference below; the body of its server request handler is left for you to write (its contract is specified below).
+QuarterPIR is a preprocessing private-information-retrieval system. A client streams the whole database once and keeps a compact table of hints; afterwards it retrieves single entries with one short request each, without the server learning which entry it wanted, and refreshes the consumed hint. The repository contains a complete provided implementation, called the reference below, except for the body of the server request handler, which you write.
 
-**The goal is strictly fewer bytes on the wire per online query than the provided implementation sends.** You may rewrite all of the computation to get there: client preprocessing, online request generation, answer reconstruction, hint refresh, the server handler, and the format of the messages between them. Four other quantities are compared with the provided implementation at the same time:
+**The goal is strictly fewer bytes on the wire per online query than the provided implementation sends.** You may rewrite all client and server computation and the message formats. Server compute time per query, client preprocessing time and end-to-end online time must each be strictly below the provided implementation's, and client storage must not exceed the provided implementation's.
 
-- server compute time per query, client preprocessing time and end-to-end online time must each be strictly below the provided implementation's;
-- client storage must not exceed the provided implementation's.
-
-Two rules shape what a shorter protocol can look like.
-
-- **The request is a deterministic public function of the provided implementation's request.** You supply that function (`ReduceRequest`). The server only ever receives its output, so it can learn nothing the provided implementation's server could not learn: that is the privacy rule, and it is checked mechanically instead of by a proof.
-- **The response is free.** It is computed from the database and the request alone, so it has no privacy content, and you may redesign it completely. It only has to let your client retrieve the right entry.
+- **The request is a deterministic public function of the provided implementation's request.** You supply that function (`ReduceRequest`); the server only receives its output, so it learns nothing the reference server could not.
+- **The response is free.** It is computed from the database and the request alone; it only has to let your client retrieve the right entry.
 
 ## What you may change
 
-Everything you may change is the package directory `quarter_pir/code/pir/`. You may edit `client.go`, `reduce.go` and `server.go` there and add further `.go` files to that directory.
+Only the package directory `quarter_pir/code/pir/` (edit its files or add `.go` files). Everything else is trusted and locked and must stay byte-identical; the trusted side holds the seeds, issues the queries, carries every message, runs every clock and checks every value.
 
-Everything else is trusted and locked. Every file outside the package must stay byte-identical: the client driver (`ec24/ec24_client.go`), the reduction process (`reducer/reducer.go`), the server entrypoint with its clock and replay (`server/`), the experiment conductor (`conductor/`), the source-policy tool (`policy/`), the reference wire definition (`refwire/`), the AES primitive (`safeaes/`), the completion boundary (`settle/`), the transports (`rawrpc/`, `frame/`), the utilities (`util/`), the protobuf sources and the module files. The editable package contains Go source only: all assembly lives in trusted packages. The evaluator builds the conductor and the policy tool from its own copy. The trusted side holds the seeds, issues the queries, carries every message, runs every clock and checks every retrieved value; nothing is read from output your code can write.
-
-`frontier-run.sh [entries]` in the repository root runs one complete local experiment the way the evaluator does (fresh random seeds, all validity checks of a single run including the additional untimed queries, then the server-time replay) and prints the conductor's result record. It cannot compare against the provided implementation's hint export or storage; run the unmodified tree yourself for that.
+`frontier-run.sh [entries]` in the repository root runs one local experiment with fresh seeds and prints its result record; it does not compare against the reference.
 
 ## Interface
-
-The trusted processes call exactly these entry points of package `pir`; their signatures are fixed by the callers.
 
 ```go
 func NewClient(p refwire.Params, coinSeed int64) *Client
@@ -39,130 +30,64 @@ func ReduceRequest(p refwire.Params, referenceRequest []byte) []byte
 func HandleQuery(db []uint64, p refwire.Params, request []byte) []byte
 ```
 
-`NewClient` may return any type that has the five methods. One experiment runs as follows.
+`NewClient` may return any type with these methods.
 
-1. **Preprocessing.** The client process receives a coin seed, calls `NewClient`, then `Preprocess`. `next` returns the database chunks in order (`ChunkSize` entries, two `uint64` words per entry) and `nil` after the last one; it stops working when `Preprocess` returns. Directly afterwards the harness calls `ExportHints` once (see Validity).
-2. **Online queries.** The harness hands the client one database index `x` at a time, never repeated, and only after the previous query has finished. The first 1,000 queries are the measured ones; more follow (see Planned query budget under Validity), and the client is not told where the measured ones end. `Query(x)` returns the request bytes. The harness sends request bytes to the server, the server process answers with `HandleQuery(db, p, request)`, and `Reconstruct(response)` must return entry `x` and leave the client ready for the next query.
+1. **Preprocessing.** The client calls `NewClient`, then `Preprocess`; `next` returns the database chunks in order (`ChunkSize` entries, two `uint64` words each) and `nil` after the last; it stops working when `Preprocess` returns. Directly afterwards the harness calls `ExportHints` once.
+2. **Online queries.** The harness hands the client distinct indices `x`, one at a time. The first 1,000 are measured; more follow, and the client is not told where the measured ones end. `Query(x)` returns the request bytes, the server answers with `HandleQuery(db, p, request)` (`db` is read-only), and `Reconstruct(response)` must return entry `x` and leave the client ready for the next query.
+3. **Audit.** Between two queries after the measured ones, the harness may call `PrimaryHint(j)` (see Validity).
 
-`db` is the resident database, two words per entry; it is read-only.
-
-`refwire.Params` carries `DBSize`, `ChunkSize`, `SetSize`, `SBSize`, `SBSizeLog2`, `SBNum`, `Threads` (4) and `OnlineQueries`. `OnlineQueries` is the planned query budget of one preprocessing, `floor(sqrt(N)*ln(N))` (2,839 and 147,634 at the two sizes); it is not the number of queries a run issues. `util.DBEntry` is `[2]uint64`.
+`refwire.Params` carries `DBSize`, `ChunkSize`, `SetSize`, `SBSize`, `SBSizeLog2`, `SBNum`, `Threads` (4) and `OnlineQueries`. `OnlineQueries` is the planned query budget of one preprocessing, `floor(sqrt(N)*ln(N))` = 147,634. `util.DBEntry` is `[2]uint64`.
 
 ## The reference protocol
 
-`refwire/refwire.go` is the exact definition of what the reference client sends, and `pir/client.go` is the reference client built on it. Read both; the summary here is not a substitute.
+`refwire/refwire.go` defines exactly what the reference client sends; `pir/client.go` is the reference client. The database is split into `SetSize` chunks of `ChunkSize` entries, grouped into `SBNum` superblocks of `SBSize` chunks; a hint with tag `t` holds the entry at offset `refwire.SetOffset(longKey, t, i, p)` of every chunk `i`. A request is `SBNum` 16-byte superblock keys followed by `SBSize` explicit chunk offsets. Key `k` defines the offset `refwire.Eval(refwire.NewLongKey(&k), j) & (ChunkSize-1)` in the `j`-th chunk of its superblock.
 
-The database is split into `SetSize` chunks of `ChunkSize` entries, grouped into `SBNum` superblocks of `SBSize` chunks. A hint with tag `t` is a set holding one entry of every chunk: its offset in chunk `i` is `refwire.SetOffset(longKey, t, i, p)` (with `longKey` the expanded master key), a PRF of a per-superblock subkey derived from the client's master key. The client stores, for `LocalSetNum()` primary hints and `BackupPerGroup()` backup hints per chunk, the XOR parity of the hint's entries (backup hints also store the parity inside their own superblock and the entry in their own chunk), plus `BackupPerGroup()` random replacement entries per chunk.
+The reference response is two arrays of `SBNum` entries: entry `c` of the first is the parity of the set that uses the explicit offsets in superblock `c` and the key-defined offsets everywhere else; entry `b` of the second is the parity of the key-defined entries of superblock `b` alone.
 
-To query `x`, the reference client takes the first primary hint, in index order, that contains `x` (skipping a hint whose earlier promoted point lies in the same chunk), and sends `SBNum` 16-byte superblock keys followed by `SBSize` chunk offsets:
-
-- the keys are the hint's subkeys, with the key of `x`'s superblock replaced by fresh random bytes;
-- the offsets are the hint's offsets inside `x`'s superblock, with the offset in `x`'s chunk replaced by a stored replacement offset;
-- a hint that was already refreshed once has an extra programmed point `y`: if `y` lies in `x`'s superblock its offset is written into the offset list, otherwise the key of `y`'s superblock is replaced by a rejection-sampled key that still contains `y` and avoids the constraints of later queries.
-
-The reference server returns two arrays of `SBNum` entries. Entry `c` of the first is the parity of the set that uses the explicit offsets in superblock `c` and the key-defined offsets everywhere else; entry `b` of the second is the parity of the key-defined entries of superblock `b` alone. The client XORs its stored parity, one or two response entries and the replacement entry to obtain entry `x`, then replaces the consumed hint with a backup hint of `x`'s chunk, programmed to contain `x`.
-
-Reference messages are counted at an information-tight encoding (`refwire.EncodeRequest`, `refwire.EncodeResponse`): keys as 16 raw bytes, offsets bit-packed at exactly `log2(ChunkSize)` bits, parities as 16 raw bytes.
-
-| Database entries | `ChunkSize` | `SBSize` | `SBNum` | Request bytes | Response bytes | Total |
-|---|---|---|---|---|---|---|
-| 65,536 | 512 | 32 | 4 | 100 | 128 | 228 |
-| 67,108,864 | 16,384 | 128 | 32 | 736 | 1,024 | 1,760 |
-
-Worked example of the reference handler contract: take `N=65536`, four all-zero 16-byte keys and 32 zero offsets, and for this example only let every database entry be `[0,0]` except entry 0, which is `[7,11]`. The reference response decodes to candidate parities `[7,11, 0,0, 0,0, 0,0]` and key parities `[0,0, 0,0, 0,0, 0,0]`: only candidate 0 selects the nonzero entry, because the zero key's PRF offset in chunk 0 is not zero.
+Reference messages are counted at their information-tight encoding (`refwire.EncodeRequest`, `refwire.EncodeResponse`): 736 request plus 1,024 response bytes, 1,760 in total.
 
 ## Validity
 
-A submission is valid only if every check below holds; any failure scores zero.
+Any failed check in any experiment scores zero.
 
-**Query privacy by reduction.** You do not get to choose freely what the server sees. For every query the harness computes the reference request itself, from the same coin seed and the same query sequence, with its own trusted copy of the reference generator. It applies your `ReduceRequest` to those bytes in a separate process that receives nothing else: no index, no client state, no coins, no database. It then requires the bytes returned by your `Client.Query` to equal that result exactly, and it sends the reduction, not the client's bytes, to the server. So whatever your server sees is a deterministic function of what the reference server would have seen, and reveals no more. `ReduceRequest` is called twice per request and must return the same bytes.
+- **Request reduction.** The harness computes the reference request for every query and runs your `ReduceRequest` on it, twice, in a process that receives nothing else; both results must agree. `Client.Query` must return exactly those bytes, which are what the server receives. Your client must therefore reproduce the reference's choices, including the hint used and the coin stream of `math/rand.NewSource(coinSeed)`.
+- **Correct retrieval.** Every value `Reconstruct` returns must be the database entry.
+- **Complete preprocessing.** The bytes `ExportHints` emits must equal the reference's for the same seeds:
 
-Consequences: your client must reproduce the reference's choices (which hint is used, and the coin stream of `math/rand.NewSource(coinSeed)` in the reference's order), and `ReduceRequest` may drop, re-encode or recombine parts of the reference request but cannot add information about `x`. The response format is entirely yours: the response is computed from the database and the request alone, so it carries no privacy content.
+  ```text
+  for each primary hint j, in index order:        tag (uint32), set parity
+  for each backup hint (chunk g, slot k):         tag (uint32), set parity,
+                                                  block parity, programmed-point value
+  for each replacement (chunk g, slot k):         database index (uint64), entry
+  ```
 
-**Correct retrieval.** Every value returned by `Reconstruct` is compared with the database by the harness, for the measured queries and for the additional ones. The client never receives the database seed and has no network.
+  Integers are little-endian; a parity or entry is two `uint64` words. Primary hint `j` has tag `j`; backup hint `(g,k)` has tag `LocalSetNum + g*BackupPerGroup + k`.
+- **Planned query budget.** Your client must serve any sequence of distinct queries, up to the planned budget, that the reference serves. After the measured queries the harness issues additional queries, chosen by the harness, possibly adversarially, within what the provided implementation answers. They are untimed and checked like measured queries, and neither message may be longer than your longest measured one in that direction. Failing one that the reference answers is invalid.
+- **Primary-hint audit.** `PrimaryHint(j)` must return the canonical record (tag, set parity) of any primary hint no query has consumed so far. Nothing is asked about backup hints or about hints a query has consumed.
+- **Memory.** The client process must stay below 4 GiB resident.
+- **Server.** On replay `HandleQuery` must return exactly the response the client verified, leave its inputs unchanged, and follow the database.
+- **Source policy.** `pir/` may import only `bytes`, `encoding/binary`, `math`, `math/bits`, `math/rand`, `sort`, `sync`, `sync/atomic`, `easypir/safeaes`, `easypir/refwire` and `example.com/util`, and from the last four only the names listed in `policy/policy.go`. No dot or blank imports, package-level variables, `init` functions, bodyless functions, cgo, assembly or non-Go files, test files, subdirectories, build constraints, or compiler directives other than `//go:noinline` and `//go:noescape`.
+- **Goroutines must settle before an entry point returns.** Anything left running stays on that entry point's clock, and a goroutine still alive ten seconds later fails the run, in the client, in the server and in `ReduceRequest` alike.
 
-**Complete preprocessing.** Immediately after `Preprocess`, inside the preprocessing clock, the harness calls `ExportHints` and compares the SHA-256 of the emitted bytes with the reference's for the same seeds. The export is defined in terms of the reference hints, independent of how you store them:
-
-```text
-for each primary hint j, in index order:        tag (uint32), set parity
-for each backup hint (chunk g, slot k):         tag (uint32), set parity,
-                                                block parity, programmed-point value
-for each replacement (chunk g, slot k):         database index (uint64), entry
-```
-
-Integers are little-endian; a parity or entry is two `uint64` words. Primary hint `j` has tag `j`; backup hint `(g,k)` has tag `LocalSetNum + g*BackupPerGroup + k`. You may keep more, or differently arranged, state, but you must be able to produce this export from it before the clock stops. Hints for the full planned query budget are required, not only those 1,000 queries happen to use.
-
-**Planned query budget.** Your client must be able to serve any sequence of distinct queries, up to the planned budget `floor(sqrt(N)*ln(N))`, that the provided implementation serves, and with the provided implementation's correctness. State that is only likely to be enough for the measured queries is not enough, and client storage (see Metrics) is the storage of a client that can do this. After the 1,000 measured queries the harness therefore issues additional queries, chosen by the harness, possibly adversarially, within what the provided implementation answers. They are untimed and enter no metric. Each is checked like a measured query (the request equals the reduction of the reference request, the retrieved value is correct), and neither of its messages may be longer than the longest measured message in the same direction. The paired run of the provided implementation is asked the identical sequence. A wrong value, a crash or any other failed check on an additional query that the provided implementation answers invalidates the experiment.
-
-**Primary-hint audit.** Until the harness releases the client, the client's state must be able to reproduce the canonical record of every primary hint that no query has consumed: its tag and set parity, exactly as in the export above (such a hint still has tag `j`). After the online phase the harness audits a sample: it calls `PrimaryHint(j)` for primary hints of its choice, drawn only then and only among unconsumed ones, and compares each returned record with the canonical one. The calls are untimed and enter no metric; goroutines must settle as for every entry point. A wrong record, or a crash, for a hint whose record the provided implementation returns invalidates the experiment. The client has no database access after preprocessing unless it retained the database in its measured storage, so a hint whose information was discarded cannot be answered. Nothing is asked about backup hints or about hints a query has consumed; how you keep those is free.
-
-**Client process memory.** The resident memory of the client process must stay below 4 GiB at all times. This is an incidental safety limit, several times what the provided implementation uses; client storage itself is a compared metric (see Metrics).
-
-**Server.** The server time replay (see Metrics) requires the handler to return, for every recorded request, exactly the response the client verified in the experiment; to leave the database and the request unchanged; and to follow the resident database (responses must change when an entry addressed by the request's explicit offsets is changed).
-
-**Source policy.** Checked on the syntax tree of every file in `pir/` and on the compiled package's import list:
-
-- imports only from this allowlist: `bytes`, `encoding/binary`, `math`, `math/bits`, `math/rand`, `sort`, `sync`, `sync/atomic`, and the three repository packages `easypir/safeaes`, `easypir/refwire`, `example.com/util`; no dot or blank imports;
-- from `math/rand` only `New`, `NewSource`, `Rand`, `Source`, `Source64` (no shared package-level generator);
-- from the three repository packages only the names listed under Safe API below;
-- no package-level variables and no `init` functions: all state lives in values reachable from your `Client`, and the server handler and `ReduceRequest` are stateless;
-- no function without a body, no cgo, no assembly or other non-Go files, no test files, no subdirectories, no build constraints;
-- no compiler directives except `//go:noinline` and `//go:noescape`.
-
-Goroutines, channels and `sync` primitives are allowed in every phase; all processes of one experiment share four CPUs. **Goroutines must settle before an entry point returns.** Every goroutine you start must have exited when the entry point that started it returns. This holds for every entry point in every process: the trusted caller waits for it directly after the call, before the clock stops and before the result is used, so anything a call leaves running is still on the clock (the preprocessing or online clock for the client, the server clock and the round trip for `HandleQuery`). A goroutine that is still alive ten seconds later fails the run, in the client, in the server and in `ReduceRequest` alike. Goroutines that you start and join inside the call are unaffected. Persistent worker pools are therefore not possible; start and join workers inside each call.
-
-**Safe API.** These are all the names of the repository's trusted packages that your package may use. Nothing in this list lets a slice or a raw pointer reach assembly: every buffer that assembly touches is a pointer to a fixed-size array or is allocated by trusted code. None of them has package-level state or reads a clock, a file, the network or an unseeded random source.
-
-```text
-easypir/safeaes    RoundKeys                              type [44]uint32: an expanded AES-128 key
-                   ExpandKey(key *[16]byte, rk *RoundKeys)
-                   MMO(rk *RoundKeys, dst, src *[16]byte)      dst = AES(src) xor src, the PRF's block function
-                   Encrypt(rk *RoundKeys, dst, src *[16]byte)
-                   Xor16(dst, a, b *[16]byte)
-
-easypir/refwire    Params, NoLabel, FailureProbLog2
-                   EncodeRequest, DecodeRequest, EncodeResponse, DecodeResponse
-                   LongKey                                 type [44]uint32: the reference's expanded PRF key
-                   NewLongKey(key *[16]byte) *LongKey
-                   Eval(k *LongKey, x uint64) uint64       the reference PRF
-                   SubKey(k *LongKey, tag uint32, x uint64) [16]byte
-                   SetOffset(k *LongKey, tag uint32, chunkId uint64, p Params) uint64
-                   Generator, NewGenerator, LastQuery      the reference request generator and its methods
-                                                           (its HistoryHit and HistoryQueries hold the queries
-                                                           issued so far and grow with them)
-
-example.com/util   DBEntry, DBEntryLength, DBEntrySize, KeyByteLength, PrfKey, PrfKey128
-                   ZeroEntry, DBEntryXor, DBEntryXorFromRaw, DBEntryFromSlice, EntryIsEqual, RandKey
-```
-
-`safeaes` is allocation-free. For a 16-byte key `k`, `refwire.Eval(refwire.NewLongKey(&k), x)` equals the first eight bytes, little-endian, of `MMO` under `ExpandKey(&k)` applied to the block whose first eight bytes are `x` little-endian and whose rest is zero; `refwire.SubKey(k, tag, i)` is the full 16-byte `MMO` output for input `(tag << 35) + i`. The `refwire` PRF helpers are the reference's own, allocating, implementation.
-
-Seeds are fresh and private in every evaluation, for development submissions too. Nothing can be precomputed for a known database, coin seed or query sequence. This benchmark checks honest-execution behaviour on the evaluated seeds; it is not a security proof of your protocol.
+Seeds are fresh and private in every evaluation.
 
 ## Workload
 
-The two database sizes are 65,536 entries (challenge constant, not from materials) and 67,108,864 entries (the retained configuration's default), with 16-byte entries generated by the trusted server from a private seed. Each experiment performs the real full-database preprocessing followed by 1,000 measured online queries at uniformly random distinct indices and then by the additional untimed queries described under Validity, with four threads' worth of CPU. Development evaluation runs one experiment per size; the graded evaluation runs two independent experiments per size. All of them draw fresh seeds, so the graded suite follows the same distribution as the feedback suite and shares no data with it.
-
-The evaluator builds with Go 1.19.13 using `-trimpath -mod=readonly -buildvcs=false`, `CGO_ENABLED=0`, `GOMAXPROCS=4`, and `GOGC=100`.
+Grading uses only 67,108,864 database entries of 16 bytes (`frontier-run.sh` defaults to 65,536 for quick local correctness checks). Each experiment runs the full preprocessing, 1,000 measured queries at uniformly random distinct indices, and the additional queries. Development evaluation runs one experiment; the graded evaluation runs two. Builds use Go 1.19.13, `-trimpath -mod=readonly -buildvcs=false`, `CGO_ENABLED=0`, `GOMAXPROCS=4`, `GOGC=100`.
 
 ## Metrics
 
-Each experiment is run twice with identical seeds, once with your package and once with the reference, and compared pairwise.
+Each experiment runs once with your package and once with the reference on identical seeds.
 
-- **Online communication bytes** (per query). Counted by the trusted transport on the bytes it actually carries: the length of the request blob plus the length of the response blob. The reference is counted at its tight encoding (table above).
-- **Server compute time** (per query). The trusted server clock starts before `HandleQuery` receives the request bytes and stops when the complete response bytes exist and every goroutine the handler started has exited, so decoding the request, encoding the response and anything the handler left running are inside it. After the experiment, each implementation's own 1,000 recorded requests are replayed in process against the same database: one unmeasured warm-up pass and five measured passes in original order; a query's time is the median of its five observations.
-- **Preprocessing client time** (per experiment). From the moment the client process receives the coin seed until the hint export is complete: `NewClient`, `Preprocess` including receiving the stream, and `ExportHints`.
-- **End-to-end online time** (per experiment, reported per query). The sum over the 1,000 measured queries of three intervals: `Query`, the server round trip of the request, and `Reconstruct`. The harness's own reference-request generation and reduction check run between these intervals and are not counted.
-
-- **Client storage** (per experiment). Directly after preprocessing and the hint export, when no goroutine of yours exists, the client driver forces two complete garbage collections and reads the live Go heap, minus the same reading taken before `NewClient`. With no package variables, cgo or `unsafe`, the heap is the only place your client can keep state. The provided implementation's value is about 2.15 MB at 65,536 entries and 85.3 MB at 67,108,864 entries; temporary memory that is garbage when `ExportHints` returns does not count. What is measured must be the state of a client that can serve the planned query budget (see Planned query budget under Validity): the additional untimed queries and the primary-hint audit are answered from it.
-
-Amortized offline time (preprocessing time divided by the planned query count `floor(sqrt(N)*ln(N))`) and preprocessing communication are reported but not compared: the first has the same numerator as preprocessing time.
-
-Clocks are held by a harness process that contains none of your code. Nothing is read from output your code can write.
+- **Online communication bytes** (per query): request plus response bytes carried by the transport.
+- **Server compute time** (per query): from `HandleQuery` receiving the request until the response exists and its goroutines have exited, measured by replaying your recorded requests.
+- **Preprocessing client time** (per experiment): `NewClient`, `Preprocess` including receiving the stream, and `ExportHints`.
+- **End-to-end online time** (per experiment, reported per query): `Query`, server round trip and `Reconstruct`, summed over the measured queries.
+- **Client storage** (per experiment): The peak live state of your client over the online phase, as live Go heap; garbage does not count. State released before a reading and rebuilt afterwards does count, and so do caches. It must be the state of a client that serves the planned budget and the audit.
 
 ## Scoring
 
-Maximize a continuous score between 0 and 100, computed from your own measurements only. Each measured value `v` contributes a term `c/(c+v)` with a fixed scale `c`; lower values always score higher and no finite value reaches the ceiling. The score is the weighted geometric mean of four term averages, with online communication as the primary term:
+The score (0 to 100) uses only your own measurements:
 
 ```text
 score = 100 * exp( 1/2 * mean_w log(cB/(cB+B_w))      online bytes of query w
@@ -171,37 +96,20 @@ score = 100 * exp( 1/2 * mean_w log(cB/(cB+B_w))      online bytes of query w
                  + 1/6 * mean_e log(cO/(cO+O_e)) )    online ns per query of experiment e
 ```
 
-The scales depend only on the database size: `cB` is the provided implementation's byte count (228 or 1,760); `cS = 50 ns * SetSize`; `cP = 5 ns * SetSize * (LocalSetNum + SetSize*BackupPerGroup)`; `cO = 50 ns * (ChunkSize + SetSize)`. The weights and scales are challenge constants (not from materials). Validity is a gate, not a partially satisfied target: an invalid submission scores zero. Client storage does not enter the score. The comparison below never changes an otherwise valid score.
+with `cB = 1,760`, `cS = 50 ns * SetSize`, `cP = 5 ns * SetSize * (LocalSetNum + SetSize*BackupPerGroup)`, `cO = 50 ns * (ChunkSize + SetSize)`. Client storage does not enter the score.
 
-## Calibration
-
-The beats_reference gate is the conjunction of five comparisons against the paired run of the provided implementation on the same seeds, with no compensation between metrics or workloads:
-
-- strictly fewer online communication bytes on every query;
-- strictly lower server compute time on every query;
-- strictly lower preprocessing client time in every experiment;
-- strictly lower end-to-end online time in every experiment;
-- client storage not above the provided implementation's in every experiment.
-
-Equality fails for the four strict comparisons and there is no allowance on them. The storage comparison allows exactly 32,768 bytes, which is the measurement jitter of the heap reading (the provided implementation's own reading spreads over at most 19,344 bytes across repeated runs); it is not room for extra state.
-
-The provided implementation is the original algorithm and code, unoptimized, behind the interface above. With its handler filled in unchanged it scored about 28 on the authors' development host; the value depends on the hardware. Individual nanosecond timings are not deterministic, so use repeated development measurements to separate real changes from run-to-run variation.
+The beats_reference gate separately requires strictly fewer bytes and strictly lower server time on every query, strictly lower preprocessing and online time in every experiment, and client storage at most the reference's plus 32,768 bytes of measurement jitter. The provided implementation scored about 28 on the authors' development host; the value depends on the hardware.
 
 ## Feedback and grading
 
-The judge returns a score after each development submission. At most 8 development submissions are allowed; this budget is a challenge constant (not from materials).
+At most 8 development submissions. Feedback, for your submission only:
 
-Development feedback contains, for your submission only:
-
-- `candidate_public_server_compute_time_ns_median`: median of the per-query server-time medians over both experiments;
-- `candidate_public_online_time_ms_median`: median of the two experiments' end-to-end online times per query;
-- `candidate_public_preprocessing_seconds_small`, `candidate_public_preprocessing_seconds_large`: preprocessing client time at 65,536 and 67,108,864 entries;
-- `candidate_public_online_communication_bytes_small`, `candidate_public_online_communication_bytes_large`: mean request-plus-response bytes per query at each size;
-- `candidate_public_client_storage_bytes_small`, `candidate_public_client_storage_bytes_large`: client storage at each size;
+- `candidate_public_server_compute_time_ns_median`, `candidate_public_online_time_ms_median` (per query);
+- `candidate_public_preprocessing_seconds_large`, `candidate_public_online_communication_bytes_large` (mean per query), `candidate_public_client_storage_bytes_large`;
 - `candidate_public_validity_code`: 0 valid; 1 patch or scope; 2 source policy; 3 build; 4 client crashed, broke the harness protocol or timed out; 5 hint export differs; 6 request is not the reduction of the reference request; 7 wrong retrieved value or failed server call; 8 client process memory limit; 9 server replay check; 10 evaluation time limit; 11 failed an additional untimed query; 12 primary-hint audit failed.
 
-Timing values are `-1` when no complete valid measurement exists. The judge also supplies per-metric pass/fail counts and percentages in `beat_spec_progress`: 2,000 per-query comparisons for each of the two per-query metrics (4,000 in the graded evaluation) and two experiment comparisons for each of the three per-experiment metrics (four in the graded evaluation). No reference measurement, seed or workload identity is development feedback.
+Values are `-1` when unavailable. `beat_spec_progress` counts gate passes: 1,000 per-query comparisons (2,000 graded) and one per-experiment comparison (two graded) per metric.
 
 ## Resources
 
-The shared verifier envelope is 4 vCPUs, 8,192 MiB RAM, and 8,192 MiB writable storage, with a 1,800-second complete evaluation deadline and a 600-second deadline per build step. These are challenge constants (not from materials), covering your experiment, the paired reference experiment, the replays and all helper processes together. An unchanged-speed submission uses roughly 500 seconds in development and 1,000 seconds in the graded evaluation. No GPU is used.
+4 vCPUs, 8,192 MiB RAM and 8,192 MiB storage shared by both runs and all helpers; 6,000-second evaluation deadline, 600 seconds per build step. No GPU.

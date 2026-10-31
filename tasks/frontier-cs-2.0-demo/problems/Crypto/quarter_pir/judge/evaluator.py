@@ -29,12 +29,13 @@ TASK = Path(__file__).resolve().parent
 CONFIG = yaml.safe_load((TASK / 'config.yaml').read_text())
 CODE = Path('quarter_pir/code')
 EDITABLE = CODE / 'pir'
-SIZES = (65536, 67108864)
+SIZES = (67108864,)
 QUERY_COUNT = 1000
 THREADS = 4
 PLAN_SCHEMA = 'quarter-pir.fresh-seed-plan/v1'
 VISIBLE = CONFIG['evaluation']['solver_visible_metrics']
 LIMIT = CONFIG['runtime']['timeout_seconds']
+RUN_LIMIT = 3000  # one conductor run, the volume phase of the probe included
 # Explicit import allowlist of the editable package, checked on the compiled
 # package's import graph here and on every file's syntax tree by the trusted policy tool.
 ALLOWED_IMPORTS = frozenset((
@@ -215,7 +216,8 @@ def fresh_seeds() -> dict:
             'probe_seed': secrets.randbelow(2**63)}
 
 
-def integration(binary: Path, size: int, seeds: dict, target: Path, deadline: float) -> dict:
+def integration(binary: Path, size: int, seeds: dict, target: Path, deadline: float, *,
+                skip_volume: bool = False) -> dict:
     """One complete trusted-conductor experiment; returns its result record."""
     target.mkdir(parents=True, exist_ok=True)
     (target / 'config.txt').write_text(f'{size} {seeds["db_seed"]}\n')
@@ -224,6 +226,7 @@ def integration(binary: Path, size: int, seeds: dict, target: Path, deadline: fl
         'upstream': f'127.0.0.1:{server_port}', 'client': str(binary / 'client'),
         'reducer': str(binary / 'reducer'), 'size': size, 'queries': QUERY_COUNT, 'threads': THREADS,
         'transcript': str(target / 'transcript.json'), 'result': str(target / 'result.json'), **seeds,
+        'skip_volume': skip_volume,
     }
     (target / 'conductor.json').write_text(json.dumps(settings))
     processes = []
@@ -238,7 +241,7 @@ def integration(binary: Path, size: int, seeds: dict, target: Path, deadline: fl
                                          start_new_session=True)
             processes.append(conductor)
             try:
-                conductor.wait(timeout=remaining(deadline, 900))
+                conductor.wait(timeout=remaining(deadline, RUN_LIMIT))
             except subprocess.TimeoutExpired as error:
                 raise Rejected('client experiment timed out', 'time_limit') from error
             if conductor.returncode != 0 or not (target / 'result.json').is_file():
@@ -398,7 +401,8 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             for implementation in order:
                 try:
                     results[implementation] = integration(binaries[implementation], size, seeds,
-                                                          directory / implementation, deadline)
+                                                          directory / implementation, deadline,
+                                                          skip_volume=implementation == 'reference')
                 except Rejected as error:
                     if implementation == 'reference' and error.category != 'time_limit':
                         raise TaskConfigurationError('paired reference experiment failed') from error
@@ -500,7 +504,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                 'transcript_identical': results['candidate']['transcript_sha256'] == results['reference']['transcript_sha256'],
                 **summary})
             if ordinal < len(SIZES):
-                label = 'small' if size == SIZES[0] else 'large'
+                label = 'large'
                 public['online_ms'].append(summary['candidate']['values']['end_to_end_online_time_ms'])
                 public['preprocessing_s'][label] = results['candidate']['offline_elapsed_ns'] / 1e9
                 public['communication'][label] = (summary['candidate']['upload_bytes_per_query']
@@ -525,11 +529,8 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             metrics.update({
                 'candidate_public_server_compute_time_ns_median': statistics.median(candidate_times),
                 'candidate_public_online_time_ms_median': statistics.median(public['online_ms']),
-                'candidate_public_preprocessing_seconds_small': public['preprocessing_s']['small'],
                 'candidate_public_preprocessing_seconds_large': public['preprocessing_s']['large'],
-                'candidate_public_online_communication_bytes_small': public['communication']['small'],
                 'candidate_public_online_communication_bytes_large': public['communication']['large'],
-                'candidate_public_client_storage_bytes_small': public['storage']['small'],
                 'candidate_public_client_storage_bytes_large': public['storage']['large'],
                 'candidate_public_validity_code': VALIDITY_CODES['valid'],
             })
