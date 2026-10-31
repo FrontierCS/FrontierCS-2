@@ -96,11 +96,11 @@ no slower than the reference's median time. Reference medians come from several
 seeded reference runs on the same hardware; there is no further margin. A
 method that matches the reference does not pass.
 
-The continuous score is the mean over articles of 100·ln(S)/(ln 10 + ln S),
-where S is your improvement ratio on the mode's axis (reference median seconds
-over yours, or reference bytes over yours), and 0 for an article whose accuracy
-or other-axis condition fails or where S <= 1. It is 50 at a 10x improvement and
-stays below 100.
+The continuous score is 100 times the mean over articles of
+(qa_correct / questions) · (0.75 + 0.25·e), with e = clip(0.5 + log10(r) / 6, 0, 1).
+r is your improvement ratio on the mode's axis (reference median seconds over
+yours in time mode, reference bytes over yours in bytes mode), multiplied by
+min(1, the same ratio on the other axis); e = 0.5 at parity.
 
 A development submission grades the 12 public articles with **one** timed
 repetition per article (after one untimed warmup, one QA pass), so its timings
