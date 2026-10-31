@@ -18,6 +18,22 @@
       "tolerance": "none"
     },
     {
+      "name": "ordinary_quantized_png_lpips",
+      "means": "the arithmetic mean of the 64 per-image LPIPS distances (v0.1, VGG16 backbone, the task's offline lpips/vgg.pth and torchvision vgg16 weights) between the validation targets and the ordinary model's reconstructed images after both are represented with the task's specified uint8 PNG quantization",
+      "source": "judge/evaluator.py::lpips_values on the same saved ordinary-pass PNGs and targets as ordinary_quantized_png_psnr_db (upstream/utils/losses.py::LPIPS definition, computed by the trusted parent process)",
+      "better": "lower",
+      "clears_when": "candidate.ordinary_quantized_png_lpips < reference.ordinary_quantized_png_lpips",
+      "tolerance": "none"
+    },
+    {
+      "name": "ema_quantized_png_lpips",
+      "means": "the arithmetic mean of the 64 per-image LPIPS distances (v0.1, VGG16 backbone, the task's offline lpips/vgg.pth and torchvision vgg16 weights) between the validation targets and the EMA model's reconstructed images after both are represented with the task's specified uint8 PNG quantization",
+      "source": "judge/evaluator.py::lpips_values on the same saved EMA-pass PNGs and targets as ema_quantized_png_psnr_db (upstream/utils/losses.py::LPIPS definition, computed by the trusted parent process)",
+      "better": "lower",
+      "clears_when": "candidate.ema_quantized_png_lpips < reference.ema_quantized_png_lpips",
+      "tolerance": "none"
+    },
+    {
       "name": "method_process_wall_seconds",
       "means": "elapsed wall-clock seconds for the evaluator-controlled complete method process for that workload, including the 16-update training path and both final ordinary and EMA reconstruction evaluations",
       "source": "upstream/main_reconstruction.py::main (training start_time, elapsed_t, total_time, and both final evaluate_tokenizer calls) together with upstream/utils/train_utils.py::evaluate_tokenizer (eval_start_time through completion)",
@@ -26,7 +42,7 @@
       "tolerance": "none"
     }
   ],
-  "beats_reference": "For every hidden final workload w: candidate[w].ordinary_quantized_png_psnr_db > reference[w].ordinary_quantized_png_psnr_db AND candidate[w].ema_quantized_png_psnr_db > reference[w].ema_quantized_png_psnr_db AND candidate[w].method_process_wall_seconds < reference[w].method_process_wall_seconds. beats_reference is 1 if and only if this conjunction is true for every w; otherwise it is 0.",
+  "beats_reference": "For every hidden final workload w: candidate[w].ordinary_quantized_png_psnr_db > reference[w].ordinary_quantized_png_psnr_db AND candidate[w].ema_quantized_png_psnr_db > reference[w].ema_quantized_png_psnr_db AND candidate[w].ordinary_quantized_png_lpips < reference[w].ordinary_quantized_png_lpips AND candidate[w].ema_quantized_png_lpips < reference[w].ema_quantized_png_lpips AND candidate[w].method_process_wall_seconds < reference[w].method_process_wall_seconds. beats_reference is 1 if and only if this conjunction is true for every w; otherwise it is 0.",
   "solver_feedback": [
     {
       "name": "development_mean_ordinary_quantized_png_psnr_db",
@@ -39,6 +55,16 @@
       "reveals_reference": "no — it aggregates only the candidate's absolute development measurements and contains no reference value, ratio, margin, workload identifier, or ordered workload row"
     },
     {
+      "name": "development_mean_ordinary_quantized_png_lpips",
+      "means": "one scalar arithmetic mean of the candidate's own ordinary-model quantized-PNG LPIPS measurements across all development workloads",
+      "reveals_reference": "no — it aggregates only the candidate's absolute development measurements and contains no reference value, ratio, margin, workload identifier, or ordered workload row"
+    },
+    {
+      "name": "development_mean_ema_quantized_png_lpips",
+      "means": "one scalar arithmetic mean of the candidate's own EMA-model quantized-PNG LPIPS measurements across all development workloads",
+      "reveals_reference": "no — it aggregates only the candidate's absolute development measurements and contains no reference value, ratio, margin, workload identifier, or ordered workload row"
+    },
+    {
       "name": "development_mean_method_process_wall_seconds",
       "means": "one scalar arithmetic mean of the candidate's own complete method-process wall times across all development workloads",
       "reveals_reference": "no — it aggregates only the candidate's absolute development measurements and contains no reference value, ratio, margin, workload identifier, or ordered workload row"
@@ -47,13 +73,17 @@
   "withheld": [
     "ordinary_quantized_png_psnr_db",
     "ema_quantized_png_psnr_db",
+    "ordinary_quantized_png_lpips",
+    "ema_quantized_png_lpips",
     "method_process_wall_seconds",
     "final_mean_ordinary_quantized_png_psnr_db",
     "final_mean_ema_quantized_png_psnr_db",
+    "final_mean_ordinary_quantized_png_lpips",
+    "final_mean_ema_quantized_png_lpips",
     "final_mean_method_process_wall_seconds",
     "fid",
     "inception_score"
   ],
-  "statement_sentences": "A separate, stricter beats-reference criterion is evaluated on hidden workloads in addition to the continuous score. On every workload, your ordinary-model quantized-PNG reconstruction PSNR and EMA-model quantized-PNG reconstruction PSNR must each be strictly higher than the reference's corresponding value, and your complete method-process wall time must be strictly lower than the reference's corresponding time. The criterion passes only if all three comparisons hold on every hidden workload; reference values, margins, final measurements, and per-workload rows are never disclosed.",
+  "statement_sentences": "A separate, stricter beats-reference criterion is evaluated on hidden workloads in addition to the continuous score. On every workload, your ordinary-model and EMA-model quantized-PNG reconstruction PSNR must each be strictly higher than the reference's corresponding value, your ordinary-model and EMA-model quantized-PNG LPIPS must each be strictly lower than the reference's corresponding value, and your complete method-process wall time must be strictly lower than the reference's corresponding time. The criterion passes only if all five comparisons hold on every hidden workload; reference values, margins, final measurements, and per-workload rows are never disclosed.",
   "comments": "Checked reproduction.json, ARTIFACT_PLAN.json, evidence/contribution.md, upstream/main_reconstruction.py, and upstream/utils/train_utils.py. The workload must execute the submitted implementation on the binding NVIDIA GPU and retain the fixed 64-train/64-validation, batch-4, 16-update protocol with independent seeds. Ordinary and EMA PSNR are distinct because main_reconstruction.py evaluates both use_ema=False and use_ema=True; FID and Inception Score are retained only as unscored diagnostics. No repeat-run timing or PSNR dispersion measurement is available, so no tolerance is justified and none may be introduced merely for reachability. Important artifact conflict: current upstream evaluate_tokenizer computes PSNR from the float reconstruction before converting/saving it as uint8 PNG, whereas the selected task semantics require quantized-PNG PSNR; the author must make the authoritative evaluator compute both target and reconstruction PSNR from the specified quantized representation (preferably by reloading the saved PNG bytes) without changing the reconstruction path. method_process_wall_seconds must be measured by the trusted parent around the entire method process, not accepted from candidate output and not replaced by upstream's integer-rounded training-only total_time or phase/child timing. Keep all per-workload values and all final metrics private; only the three unordered scalar development summaries above may be returned, alongside the pipeline-provided pass/fail counts and percentages that contain no identities or reference values. Reject invalid runs, nonfinite values, missing updates, RNG mismatch, detached gradients, missing noise/masking, incorrect restoration, and attempts to forge measurements or access private checker/reference data before applying the conjunction."
 }

@@ -117,7 +117,7 @@ wall-time cap must not be interpreted as an additional answer-time allowance.
 {
   "agent": {
     "allowed_types": [
-      "L4"
+      "A100-80GB"
     ],
     "max_gpu_seconds": 5400,
     "max_instance_seconds": 5400,

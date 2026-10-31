@@ -34,18 +34,20 @@ The authoritative invocation is the retained `main_reconstruction.py` through `f
 
 ## Validity
 
-Patch-policy failure, source-lock failure, import/build failure, missing or duplicate inputs, timeout, crash, nonfinite output, absent noise or masking, incorrect restoration, RNG mismatch, detached gradients, missing optimizer updates, changed public parameter names, or attempts to access or forge private measurements score zero before performance is considered. The submission is limited to 262,144 bytes and 20 changed files. Evaluation requires one NVIDIA L4 and has a 5,400-second process limit.
+Patch-policy failure, source-lock failure, import/build failure, missing or duplicate inputs, timeout, crash, nonfinite output, absent noise or masking, incorrect restoration, RNG mismatch, detached gradients, missing optimizer updates, changed public parameter names, or attempts to access or forge private measurements score zero before performance is considered. The submission is limited to 262,144 bytes and 20 changed files. Evaluation requires one NVIDIA A100 80GB and has a 5,400-second process limit.
 
 ## Scoring
 
-Maximize the returned score. For candidate workload means `O` and `E` (ordinary and EMA quantized-PNG PSNR in dB) and paired reference/candidate complete-process times `T_r,T_c`, the provisional continuous score is
+Maximize the returned score. On each workload, `dO` and `dE` are your ordinary and EMA quantized-PNG PSNR minus the reference's (dB); `LO_r,LO_c` and `LE_r,LE_c` are the reference's and your ordinary and EMA quantized-PNG LPIPS (v0.1, VGG16 backbone, mean over the validation images, lower is better); and `T_r,T_c` are the reference's and your complete method-process wall times. The score is the mean over workloads of
 
 ```
-score_unbounded = 70 * ((O + E) / 80) + 30 * mean(T_r / T_c)
-score = clamp(score_unbounded, 0, 100)
+g = [dO / 1.25, dE / 1.25, log2(LO_r / LO_c) / 0.25, log2(LE_r / LE_c) / 0.25]
+speed = 15 * tanh(log2(T_r / T_c) / 0.5)
+if speed > 0: speed *= clamp((0.096 + min(g)) / 0.08, 0, 1)
+score_w = 50 + 8.75 * (tanh(g[0]) + tanh(g[1]) + tanh(g[2]) + tanh(g[3])) + speed
 ```
 
-The weights and 40 dB normalization are challenge constants (not from materials). A separate hidden criterion requires strictly higher ordinary PSNR, strictly higher EMA PSNR, and strictly lower complete method-process wall time than the paired reference on every workload. Only the candidate's allowed aggregate development measurements and anonymous pass/fail progress counts are returned.
+The reference scores 50; the score lies between 0 and 100. The constants are challenge constants (not from materials). A separate hidden criterion requires strictly higher ordinary and EMA PSNR, strictly lower ordinary and EMA LPIPS, and strictly lower complete method-process wall time than the paired reference on every workload. Only the candidate's allowed aggregate development measurements and anonymous pass/fail progress counts are returned.
 
 ## Calibration
 
@@ -61,4 +63,4 @@ Run `git add -A`, then create `/app/solution.patch` with `git diff --cached`. Bo
 
 ## Resources
 
-Development and grading run through the FrontierCS2 Driver on a single NVIDIA L4; there is no CPU fallback. `frontier-gpu` may be used for GPU debugging. The GPU runner has no outbound network, so implementations must use the packages and public assets already present. FID and Inception Score still run as unscored diagnostics.
+Development and grading run through the FrontierCS2 Driver on a single NVIDIA A100 80GB; there is no CPU fallback. `frontier-gpu` may be used for GPU debugging. The GPU runner has no outbound network, so implementations must use the packages and public assets already present. FID and Inception Score still run as unscored diagnostics.
