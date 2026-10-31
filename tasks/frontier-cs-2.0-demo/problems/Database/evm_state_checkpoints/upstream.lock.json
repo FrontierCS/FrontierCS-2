@@ -49,9 +49,9 @@
       "sha256": "sha256:47a7b328cb36eb46da28dd59a74ee9876a5aa58e1f0e34d9fc927a6d6fb38a4c"
     },
     {
-      "bytes": 19105,
+      "bytes": 19084,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:1c3fea70ee1506f3070d684792192461ce63ae1b31983ff6f8a0bde38c5087ba"
+      "sha256": "sha256:5b9b2577509a1a9ed7a5a6db5fa3ae8a299bf7c07059ceeb8e1ae558973ca216"
     },
     {
       "bytes": 5533,
@@ -594,9 +594,9 @@
       "sha256": "sha256:4dfd0f390e3a616974d3bfb16ba3cda79cd0a2429e6c304564b8fab6dbcd6fb6"
     },
     {
-      "bytes": 22785,
+      "bytes": 24978,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:1bb600ba1977abaa37c036b19155044b374032204adfc5581bd20b90cf0d2023"
+      "sha256": "sha256:78fb0c93715e4335a7c8cc54d450c72cc976120910fdbeb60f5959755a172238"
     },
     {
       "bytes": 39967,
@@ -664,9 +664,9 @@
       "sha256": "sha256:412a919e4de56163bad896164fc024e1c0ca39f8d7e3a60854545a32bb5ea164"
     },
     {
-      "bytes": 22105,
+      "bytes": 22084,
       "path": "judge/readme",
-      "sha256": "sha256:623683d863bebb5f82343e3bf5c238527560ecb969acd8881efceca0a5c213f6"
+      "sha256": "sha256:899dfc6b8a581844717067106aa0e1ff3b86c6de2f89c92e49c8f816af5d2550"
     },
     {
       "bytes": 3571,
@@ -714,8 +714,8 @@
   "source": {
     "beat_spec_migration": "2026-09-11: formal per-workload contract and private-feedback audit",
     "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
-    "evaluator_sha256": "sha256:1bb600ba1977abaa37c036b19155044b374032204adfc5581bd20b90cf0d2023",
-    "statement_sha256": "sha256:623683d863bebb5f82343e3bf5c238527560ecb969acd8881efceca0a5c213f6",
+    "evaluator_sha256": "sha256:78fb0c93715e4335a7c8cc54d450c72cc976120910fdbeb60f5959755a172238",
+    "statement_sha256": "sha256:899dfc6b8a581844717067106aa0e1ff3b86c6de2f89c92e49c8f816af5d2550",
     "task_dir": "evm_state_checkpoints"
   }
 }

@@ -335,15 +335,14 @@ if not (Q_C > 0 and Q_B > 0):
 else:
     unbounded = 100 * log10(Q_C / Q_B)
 
-score = max(0, min(100, unbounded))
+score = 100 * tanh(max(0, unbounded) / 136)
 ```
 
-The evaluator returns `score` as the bounded score and `unbounded` as the
-unbounded score; the two differ once `unbounded` leaves `[0, 100]`. Matching the
-shipped backend's composite quality is worth exactly 0, a tenfold composite
-quality is worth 100, and between those two points the score increases strictly
-with `Q_C`. A quality below the shipped backend reports a negative unbounded
-value and a bounded score of 0.
+The evaluator returns `score` and `unbounded`. Matching the shipped backend's
+composite quality is worth exactly 0; above it the score increases strictly with
+`Q_C` and stays below 100: a twofold composite quality scores 21.8, tenfold
+62.6, and hundredfold 90.0. A quality below the shipped backend reports a
+negative unbounded value and a score of 0.
 
 ## Calibration
 
@@ -356,11 +355,11 @@ from a format, build, or correctness failure by its number; the judge message
 does distinguish them, reporting a scored submission as a valid checkpoint
 backend with its score and a gate failure as the specific violation.
 
-Differences on this scale are quality ratios: `S` points is a factor of
-`10^(S/100)` in composite quality, so 2 points is 4.7% and 10 points is 26%.
-These are one-second CPU measurements. Treat changes smaller than 4 score points
-as timing noise unless they repeat; a repeatable change of at least 4 score
-points is a material improvement. That band is the previously recorded
+Differences in `unbounded` are quality ratios: `U` points is a factor of
+`10^(U/100)` in composite quality, so 2 points is 4.7% and 10 points is 26%.
+These are one-second CPU measurements. Treat changes smaller than 4 unbounded
+points (about 10% composite quality) as timing noise unless they repeat; a
+repeatable change of at least 4 unbounded points is a material improvement. That band is the previously recorded
 sub-two-point variance carried onto this scale rather than a fresh measurement,
 so it is a guide and not a guarantee.
 
