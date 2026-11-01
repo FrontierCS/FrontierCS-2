@@ -29,13 +29,9 @@ CAPACITIES = (100, 200, 400, 800)
 # Final additionally measures these heap capacities. They are neither in the
 # statement nor in any development feedback, and their workload names are
 # opaque, so the values exist only in this judge-side file. They sit between
-# and slightly beyond the disclosed capacities (geometric midpoints).
+# and slightly beyond the disclosed capacities (geometric midpoints). Every
+# metric is measured, compared and scored there exactly as on the disclosed grid.
 FINAL_ONLY_CAPACITIES = (140, 280, 560, 1120)
-# On those capacities PASS uses the deterministic comparisons only. Query time
-# is still measured and recorded there, but its strict comparison is applied
-# on the disclosed grid alone.
-FINAL_ONLY_METRICS = (
-    "recall_at_50", "last_result_inner_product_ratio", "verified_candidate_count")
 RUN_TIMEOUT = 180
 BUILD_TIMEOUT = 120
 HASH_SEED = 314159
@@ -111,13 +107,9 @@ def _invalid(reason: str):
     workload_passes = [
         {
             "workload": _workload_name({"c": c, "capacity": capacity}),
-            "metrics": {
-                name: False
-                for name in (
-                    "mean_query_time", "recall_at_50",
-                    "last_result_inner_product_ratio", "verified_candidate_count")
-                if capacity in CAPACITIES or name in FINAL_ONLY_METRICS
-            },
+            "metrics": dict.fromkeys((
+                "mean_query_time", "recall_at_50",
+                "last_result_inner_product_ratio", "verified_candidate_count"), False),
         }
         for c, capacity in _expected_pairs() + (
             _expected_pairs(FINAL_ONLY_CAPACITIES) if _is_final() else [])
@@ -285,8 +277,6 @@ def _reference_verdict(candidate: list[dict], reference: list[dict]) -> tuple[in
             "last_result_inner_product_ratio": candidate_row["kratio"] >= reference_row["kratio"],
             "verified_candidate_count": candidate_row["cost"] <= reference_row["cost"],
         }
-        if candidate_row["capacity"] in FINAL_ONLY_CAPACITIES:
-            decisions = {name: decisions[name] for name in FINAL_ONLY_METRICS}
         rows.append({
             "workload": _workload_name(candidate_row),
             "metrics": decisions,
@@ -298,13 +288,11 @@ def _reference_verdict(candidate: list[dict], reference: list[dict]) -> tuple[in
 
 def _paired_scores(patch: Path, splits: tuple[int, ...]) -> tuple[float, float, dict]:
     candidate_suites, reference_suites, naive_suites = [], [], []
-    extra_candidate_suites, extra_reference_suites = [], []
+    extra_candidate_suites, extra_reference_suites, extra_naive_suites = [], [], []
     same_as_reference = patch.read_bytes() == (TASK_DIR / "reference.patch").read_bytes()
     # Train measures the disclosed grid only. Final also measures the
     # undisclosed capacities, in a separate workload process per policy so the
     # disclosed measurement and its process timeout are exactly as in train.
-    # The fixed baseline is not run there: it feeds only the continuous score,
-    # which stays defined over the disclosed grid.
     final_only = FINAL_ONLY_CAPACITIES if tuple(splits) == FINAL_SUITE else ()
     for suite_index, split in enumerate(splits, start=1):
         trial = Path(tempfile.mkdtemp(prefix="fargo_pair_"))
@@ -329,6 +317,10 @@ def _paired_scores(patch: Path, splits: tuple[int, ...]) -> tuple[float, float, 
                     reference_app, trial / "reference_case", split,
                     process_role="reference", suite_index=suite_index)
             if final_only:
+                extra_naive_suites.append(_build_and_run(
+                    naive_app, trial / "naive_final_only_case", split,
+                    process_role="fixed_baseline", suite_index=suite_index,
+                    capacities=final_only))
                 extra_candidate = _build_and_run(
                     candidate_app, trial / "candidate_final_only_case", split,
                     process_role="candidate", suite_index=suite_index,
@@ -349,15 +341,13 @@ def _paired_scores(patch: Path, splits: tuple[int, ...]) -> tuple[float, float, 
     candidate = _combine_suite_rows(candidate_suites)
     reference = _combine_suite_rows(reference_suites)
     naive = _combine_suite_rows(naive_suites)
-    # PASS covers every measured workload (four comparisons on the disclosed
-    # grid, the three deterministic ones on the final-only grid); score and
-    # aggregate diagnostics below keep their definition over the disclosed grid.
+    # PASS, score and aggregate diagnostics cover every measured workload with
+    # the same four metrics: the disclosed grid, then in final the final-only grid.
     if final_only:
-        verdict, workload_passes = _reference_verdict(
-            candidate + _combine_suite_rows(extra_candidate_suites, final_only),
-            reference + _combine_suite_rows(extra_reference_suites, final_only))
-    else:
-        verdict, workload_passes = _reference_verdict(candidate, reference)
+        candidate += _combine_suite_rows(extra_candidate_suites, final_only)
+        reference += _combine_suite_rows(extra_reference_suites, final_only)
+        naive += _combine_suite_rows(extra_naive_suites, final_only)
+    verdict, workload_passes = _reference_verdict(candidate, reference)
     diagnostics = {
         "mean_recall": sum(r["recall"] for r in candidate) / len(candidate),
         "mean_kratio": sum(r["kratio"] for r in candidate) / len(candidate),

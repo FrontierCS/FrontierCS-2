@@ -1,12 +1,12 @@
 {
   "conversion": {
-    "evaluator_sha256": "sha256:b2a60cc3c423a8c830ad141ca1dda4c688c01ee501548c98fa4622e8d4c4f978",
+    "evaluator_sha256": "sha256:5263485ddbbb0e6aa7b9ab07c034aedf2c6a426bdbcf391fdb3cf3cb268b901e",
     "scope": "T40 preservation plus independent scoring, 12-workload by 4-metric conjunction, and T35 public-plus-hidden final",
     "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
     "source_lock_sha256": "sha256:8ecde190477a0dc1f508194aedbe992aa39fb9a875aa369a1d9ada5aa1fe2a5e",
     "source_path": "2.0/fcs2/problems/approximate_mips_query_stopping",
     "source_repository": "private authoring repository",
-    "statement_sha256": "sha256:c9850b6d022a8e8b1a7594349727c281addd100dda7139c101d0abb90c2fd37c",
+    "statement_sha256": "sha256:2757fc22dcccf34296abbd5002c84ac76f2d4818d8b43d235730ab53594bcecf",
     "statement_source": "agent-base/frontier/task/repo/README.md"
   },
   "datasets": {
@@ -69,9 +69,9 @@
       "sha256": "sha256:4bb6f8b4c4ae7bf047b72d29cede67e5c3c38c1b9639cea697515291b8d3e710"
     },
     {
-      "bytes": 15910,
+      "bytes": 15804,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:c9850b6d022a8e8b1a7594349727c281addd100dda7139c101d0abb90c2fd37c"
+      "sha256": "sha256:2757fc22dcccf34296abbd5002c84ac76f2d4818d8b43d235730ab53594bcecf"
     },
     {
       "bytes": 3919,
@@ -174,9 +174,9 @@
       "sha256": "sha256:f6b71ec17f9c450ed21e06ae05030d92941645fea801d74927b276d3cb117f6e"
     },
     {
-      "bytes": 6056,
+      "bytes": 5970,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:629fc389f7dd57816e30c8c914a38ed58b32572251898280f523a0783ec4ee04"
+      "sha256": "sha256:86e1f2b7a964ee45cf8c6748666f859638240464d57c154debf4d1d91a62884a"
     },
     {
       "bytes": 623,
@@ -189,9 +189,9 @@
       "sha256": "sha256:9ac7d2505377964d058ec02a4ce4f1479ca8fa265eae65ab6d8dac569a99c9b6"
     },
     {
-      "bytes": 18438,
+      "bytes": 18025,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:b2a60cc3c423a8c830ad141ca1dda4c688c01ee501548c98fa4622e8d4c4f978"
+      "sha256": "sha256:5263485ddbbb0e6aa7b9ab07c034aedf2c6a426bdbcf391fdb3cf3cb268b901e"
     },
     {
       "bytes": 7547112,
@@ -214,9 +214,9 @@
       "sha256": "sha256:23cf4bbec7061c93424b0c616b164c480f4c8a4902afc2c6cfc13fea6c427f8e"
     },
     {
-      "bytes": 15753,
+      "bytes": 15969,
       "path": "judge/readme",
-      "sha256": "sha256:7983e08505209350c263a2f1db7cae92da410b84eb4ac3d4c125743518b3bf50"
+      "sha256": "sha256:85b334725cb46eda5744af95ecbbbec702589d434cc811091c4ef51d5597cb9f"
     },
     {
       "bytes": 2295,
