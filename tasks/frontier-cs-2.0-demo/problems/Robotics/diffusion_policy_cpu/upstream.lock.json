@@ -1,13 +1,29 @@
 {
   "current_source_recalibration": {
-    "fresh_collection_result_sha256": "0e04d42d63de3f9a2b4d55dd38586b09b411818da19d022a635acd1324f0de68",
-    "fresh_seal_sha256": "9d535e8d041e1a6695b2066bb2d1190acbddd212eb5caafaa08b7b3ff32569ae",
-    "judge_inventory_sha256": "d702f1d40b43757e8fc254cb9bdfcd4616eebfa6c45063cf8a79765f72db8334",
-    "native_reference_train_final_required": true,
-    "official_collector": "judge/author_calibration.py",
+    "constants_carried_over_from": {
+      "fresh_collection_result_sha256": "0e04d42d63de3f9a2b4d55dd38586b09b411818da19d022a635acd1324f0de68",
+      "judge_inventory_sha256": "d702f1d40b43757e8fc254cb9bdfcd4616eebfa6c45063cf8a79765f72db8334",
+      "seal_sha256": "9d535e8d041e1a6695b2066bb2d1190acbddd212eb5caafaa08b7b3ff32569ae"
+    },
+    "hardware_admission": "judge/hardware_admission.py",
+    "issue": 639,
+    "judge_inventory_sha256": "a68875eb50ad7a4a85c45b42ea151c82e9d92d773089adfd4dd93de9bb2454c7",
+    "measured_hardware_identity": {
+      "affinity": [
+        0,
+        1
+      ],
+      "architecture": "x86_64",
+      "cpu_models": [
+        "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz"
+      ],
+      "kernel": "6.12.110-135.201.amzn2023.x86_64"
+    },
+    "new_measurements": false,
     "official_dataset_packager": "judge/native_data.py:package_dataset",
-    "old_measurements_reused": false,
-    "status": "fresh_author_collection_packaged_native_qualification_pending"
+    "old_measurements_reused": true,
+    "seal_sha256": "2be8daa81d15d216630633df6a800dc946416c210794129f3df5b8efbb04870d",
+    "status": "constants_carried_over_admission_relaxed_to_hardware_class"
   },
   "datasets": {
     "eval": {
@@ -15,22 +31,22 @@
       "media_type": "application/json",
       "path": "datasets/eval.json",
       "source": "task",
-      "version": "sha256:bdcb2536b8a06fa872d57f678eaa97c578dffb7600a1f03b7c10d246ef65b25a"
+      "version": "sha256:a8fb92402cfa0354ea833e1ef42922507e54e6e91c648d82ca7cce4fcee27562"
     },
     "train": {
       "bytes": 41170,
       "media_type": "application/json",
       "path": "datasets/train.json",
       "source": "task",
-      "version": "sha256:42297b269ae7cae996b493b69fe6c1cb8624205fe416c04a6b8e73b62e6240bc"
+      "version": "sha256:08049f21b131c3fb94930c2d9607655205c65861083136373ed5f12755048db8"
     }
   },
-  "file_count": 103,
+  "file_count": 104,
   "files": [
     {
-      "bytes": 2063,
+      "bytes": 10105,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:4d810dc5bfef488488b67faf7b791dec9675049451d03c64ba097c2d1896d5d6"
+      "sha256": "sha256:697800297d6ded4e477a7f034b2e4c8b0569ac782773ae01253b7557e3a50360"
     },
     {
       "bytes": 5041,
@@ -190,22 +206,22 @@
     {
       "bytes": 41169,
       "path": "datasets/eval.json",
-      "sha256": "sha256:bdcb2536b8a06fa872d57f678eaa97c578dffb7600a1f03b7c10d246ef65b25a"
+      "sha256": "sha256:a8fb92402cfa0354ea833e1ef42922507e54e6e91c648d82ca7cce4fcee27562"
     },
     {
       "bytes": 30720,
       "path": "datasets/eval.tar",
-      "sha256": "sha256:823bc2f9c5662f5786fc6b63b45f54d6c02a2231506466cc3b598c9ecfb9c71f"
+      "sha256": "sha256:29f1693850b8c54e323d8e2527c394339c96396f05b72a1491e7ae4d0f750246"
     },
     {
       "bytes": 41170,
       "path": "datasets/train.json",
-      "sha256": "sha256:42297b269ae7cae996b493b69fe6c1cb8624205fe416c04a6b8e73b62e6240bc"
+      "sha256": "sha256:08049f21b131c3fb94930c2d9607655205c65861083136373ed5f12755048db8"
     },
     {
       "bytes": 30720,
       "path": "datasets/train.tar",
-      "sha256": "sha256:10a1b05d7e47aaf3501ad19a2c5cf965ca79bc2023c8f04e2d3f56b5f7ab37e7"
+      "sha256": "sha256:060ea0b185049810498bb277a8767f9c3b564d0c8ed6b1c17188327156ea3e90"
     },
     {
       "bytes": 2464,
@@ -388,6 +404,11 @@
       "sha256": "sha256:d6d2a5820f236940c1566d2117d84c556e008475542ea0e4a0bb0b650c14fb2d"
     },
     {
+      "bytes": 1968,
+      "path": "judge/hardware_admission.py",
+      "sha256": "sha256:52bc4aec2309fc294716471920677fe9a8920d29761444afaa926e5e846cf592"
+    },
+    {
       "bytes": 1367,
       "path": "judge/measurement-requirements.txt",
       "sha256": "sha256:eeafecadd01596054275319044d46defc101c5ebc1d746dbdfd571b7b6d69c8c"
@@ -418,9 +439,9 @@
       "sha256": "sha256:e797b0b221d3e4d96e47a94d8b161b4d4c855d7d930e6b32ec1d4037dcdf596c"
     },
     {
-      "bytes": 10913,
+      "bytes": 10993,
       "path": "judge/private_context.py",
-      "sha256": "sha256:9e5347d050e8552a799c3f903e09fdab41d3bb92a5d3571bc2b129572fd710be"
+      "sha256": "sha256:42baacb6b96bbf17929263a585074b56297eddc6bd71187250d52c7fc4969705"
     },
     {
       "bytes": 2803,
@@ -518,9 +539,9 @@
       "sha256": "sha256:df8d294ca2bff9e7cd77e59c4d0404f2aadfb93481bee866f4fa559397c9e33e"
     },
     {
-      "bytes": 10078,
+      "bytes": 10159,
       "path": "policy.json",
-      "sha256": "sha256:0ed98f70b9e8ab4bbff03134536913fd2e5d0dab7916238a167646c17c5a0c24"
+      "sha256": "sha256:dce4ee033ac01284f396a2a9100a914eac58c8c75f8b5ea4c5d17c73a6f03ac2"
     },
     {
       "bytes": 3087,
@@ -585,6 +606,16 @@
       "runtime_closure_sha256": "9564e98a760835802599128306e09858667c74ee9d713b04ccb69ae162837cdc",
       "source_commit": "a17a7f6e327d195b76942d5364fcefe3c3211a28",
       "workloads_scoring_and_scientific_budgets_preserved": true
+    },
+    {
+      "fresh_collection_result_sha256": "0e04d42d63de3f9a2b4d55dd38586b09b411818da19d022a635acd1324f0de68",
+      "fresh_seal_sha256": "9d535e8d041e1a6695b2066bb2d1190acbddd212eb5caafaa08b7b3ff32569ae",
+      "judge_inventory_sha256": "d702f1d40b43757e8fc254cb9bdfcd4616eebfa6c45063cf8a79765f72db8334",
+      "native_reference_train_final_required": true,
+      "official_collector": "judge/author_calibration.py",
+      "official_dataset_packager": "judge/native_data.py:package_dataset",
+      "old_measurements_reused": false,
+      "status": "fresh_author_collection_packaged_native_qualification_pending"
     }
   ],
   "preview_answering_window_sync": {

@@ -10,6 +10,7 @@ import stat
 import subprocess
 import sys
 
+from hardware_admission import admits
 from measurement_contract import load_private_suite, schedule, validate_final_extension
 from option_b import canonical_sha256, load_calibration
 from task_guards import TaskIntegrityError
@@ -145,7 +146,8 @@ def load_context(*, root=None, mode=None, verify_runtime=True):
                 == seal["suites"][name]["schedule_sha256"], "Measurement schedule changed")
     if verify_runtime:
         require(canonical_sha256(runtime_identity(seal["runtime"]["prefix"])) == seal["runtime"]["identity_sha256"], "Runtime identity changed")
-        require(hardware_identity() == seal["hardware_policy"]["identity"], "Hardware identity changed")
+        require(admits(seal["hardware_policy"]["identity"], hardware_identity()),
+                "Hardware is outside the sealed hardware class")
         verify_cgroup(seal["hardware_policy"])
     return {"seal": seal, "seal_sha256": file_sha256(root / "seal.json"), "suites": suites,
             "root": str(root), "mode": mode, "native_dataset": mode is not None}
