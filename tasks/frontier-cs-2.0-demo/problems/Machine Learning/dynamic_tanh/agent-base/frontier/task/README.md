@@ -111,7 +111,7 @@ CPU work or submission; GPU seconds, train calls and evidence bytes remain limit
 
 ```bash
 frontier-gpu quota
-frontier-gpu create --type L4 --count 1 --seconds 300
+frontier-gpu create --type A100-80GB --count 1 --seconds 300
 # Use the returned runner_id below; status must report ready before SSH.
 frontier-gpu status gpurunner_...
 frontier-gpu push gpurunner_... /workspace/repo /workspace
@@ -134,7 +134,7 @@ on the Agent runner. Choose commands, remote working paths and output paths
 freely within the task's contract. Pull needed outputs below `/workspace` with
 `frontier-gpu pull` before packaging and using `frontier-submit train`.
 
-GPU budget: 1 runner at a time on L4, 900s each and 1,800s in total for the whole run. Reuse a runner while useful, then delete it and confirm
+GPU budget: 1 runner at a time on A100-80GB, 900s each and 1,800s in total for the whole run. Reuse a runner while useful, then delete it and confirm
 termination. A timeout or lost create reply is not proof that allocation failed:
 use list/status and the same printed idempotency key before retrying.
 
@@ -151,6 +151,6 @@ and the existing policy limits.
 ## Preview answering window
 
 The answering window is **5 hours (18,000 seconds)**. Independent final evaluation
-starts after the answering window and has its own **900-second** limit.
+starts after the answering window and has its own **1800-second** limit.
 The existing train limits remain **3 calls** and **2700 cumulative seconds**.
 Saving a final selection does not extend the answering window or change these limits.

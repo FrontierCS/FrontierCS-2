@@ -919,14 +919,14 @@
     },
     {
       "agent_gpu_image": {
-        "digest": "sha256:4e00813ed568f8499e9f220e7f2452949a3f2d56ceb6bee1b6cac7b0d919dee3",
+        "digest": "sha256:167bb3047ad02c73f6514e061abad7d1e42e862533b11f6971b7a480e9cb527d",
         "repository": "docker.io/joyemang33/fcs2-task-dynamic_tanh-agent-gpu",
-        "tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
+        "tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
       },
       "agent_image": {
-        "digest": "sha256:a02815f42c94ea71058b2689842ea7942def8bc73474e4294d8fb833f4d75dee",
+        "digest": "sha256:880df6230f6dfa983d595cdbf5890b62965bc2ba3dac71f67cc94b775f4b191a",
         "repository": "docker.io/joyemang33/fcs2-task-dynamic_tanh-agent",
-        "tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
+        "tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -936,23 +936,29 @@
       "dataset_image": {
         "digest": "sha256:9133c66862f7d790a4756ce8c454f7179245f284c6f87c5e619c908fb275896e",
         "repository": "docker.io/joyemang33/fcs2-task-dynamic_tanh-datasets",
-        "tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
+        "tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
       },
       "datasets": {
         "eval_sha256": "sha256:718531453fa54c5453349df0815f67dea61551810a7dceafb2f94fb12a367cf4",
         "train_sha256": "sha256:b50da37ba5b87391ca738abbd9d51fc769048be0849f31b861cf205c69a06080"
       },
       "name": "dynamic_tanh",
-      "reference": null,
+      "reference": {
+        "digest": "sha256:444ce26ba997a7da172c122e52c82f1e4208251387b72df959779d86540b1769",
+        "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
+        "payload_sha256": "sha256:2da4be0b556d65bf7ad472de3709c6a5cc467ea2e762a23f9ab4e6b6898af2ad",
+        "repository": "docker.io/joyemang33/fcs2-task-dynamic_tanh-reference",
+        "tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
+      },
       "verifier_gpu_image": {
-        "digest": "sha256:f884cc1befcf4d70efb1920086ab17dbd089cb4a1ae97fb693ef68ff6c180d90",
+        "digest": "sha256:da53f9d90bae9a5c79f1ea297aacd52d603181c7b07da23fd3b682b3b2a15a93",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-dynamic_tanh-gpu",
-        "tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
+        "tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
       },
       "verifier_image": {
-        "digest": "sha256:162b851f606ef4f035a6fc26f04265dd2609645d2d517b6880f840a4212afaa8",
+        "digest": "sha256:c2cc701a8f626aca70b99fcad64efc081d7227963d2c01bc168d49b334da32ab",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-dynamic_tanh",
-        "tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
+        "tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
       }
     },
     {

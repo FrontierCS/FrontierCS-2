@@ -21,6 +21,15 @@ RUN apt-get update \
 
 RUN install -d -o 10001 -g 10001 /workspace
 
+# The public flower_photos archive named in the statement, extracted (ImageFolder
+# layout) for local runs; the GPU runner has no network access.
+RUN python3 -c "import urllib.request; urllib.request.urlretrieve('https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz', '/tmp/flower_photos.tgz')" \
+    && echo "4c54ace7911aaffe13a365c34f650e71dd5bf1be0a58b464e5a7183e3e595d9c  /tmp/flower_photos.tgz" | sha256sum -c - \
+    && install -d /opt/frontier/public \
+    && tar -xzf /tmp/flower_photos.tgz -C /opt/frontier/public --no-same-owner \
+    && rm /tmp/flower_photos.tgz \
+    && chmod -R a+rX,a-w /opt/frontier/public/flower_photos
+
 
 # Keep the immutable version label from invalidating reusable dependency/model
 # layers when a task source fingerprint changes.

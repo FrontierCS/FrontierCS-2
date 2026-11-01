@@ -204,10 +204,10 @@ summarizes the range; the per-task values are in [TASKS.md](TASKS.md) and
 | | CPU-only tasks (32) | GPU tasks (16) |
 | --- | --- | --- |
 | Agent CPU / memory | 1–8 cores, 2–32 GiB | 3–8 cores, 4–32 GiB |
-| Agent GPU | – | none, or 1× L4, A100-80GB or H100 for 0.25–15 GPU-hours |
-| Verifier GPU | – | 1–8× L4, A100-80GB or H100, a budget of 0.5–364 GPU-hours |
+| Agent GPU | – | none, or 1× A100-80GB or H100 for 0.25–15 GPU-hours |
+| Verifier GPU | – | 1–8× A100-80GB or H100, a budget of 0.5–364 GPU-hours |
 | Train calls | 3–100 | 3–100 |
-| Final evaluation timeout | 2 min – 3 h | 15 min – 30 h |
+| Final evaluation timeout | 2 min – 3 h | 30 min – 30 h |
 
 The Agent calls its model through its Candidate. One task also needs model keys
 of its own: `progent_privilege_control` gets LiteLLM keys on the

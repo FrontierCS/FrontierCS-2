@@ -21,6 +21,7 @@ QUANTITIES = {
     "gradient_scale": "gradient of the replacement sites' weight (scale)",
     "gradient_shift": "gradient of the replacement sites' bias (shift)",
     "shape": "missing or wrong-shape result",
+    "overwritten_gradient": "a gradient overwritten after its step",
     "nonfinite": "nonfinite values that do not match",
 }
 

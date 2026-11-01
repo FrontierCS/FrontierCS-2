@@ -1,7 +1,7 @@
 """GPU evaluator for the model-wide LayerNorm replacement task."""
 from __future__ import annotations
 
-import hashlib, importlib.util, json, math, os, re, shutil, statistics, subprocess, sys, tempfile, types
+import contextlib, hashlib, importlib.util, io, itertools, json, math, os, re, shutil, statistics, subprocess, sys, tempfile, types
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -15,21 +15,42 @@ ASSET_ROOT = TASK_DIR / "judge_assets" / "flower_photos"
 MANIFEST_PATH = ASSET_ROOT / "manifest.json"
 CLASSES = ("daisy", "dandelion", "roses", "sunflowers", "tulips")
 EPOCHS, WARMUP_BLOCKS, TIMED_BLOCKS, SUBPROCESS_TIMEOUT = 2, 3, 11, 180
+# Batches per timed block: one block runs this many consecutive steps, so a block
+# is long enough that launch and scheduling jitter averages out (A100: one ViT-Base
+# step of batch 4-8 is about 20-28 ms and paired single-step blocks varied by ~5-10%).
+TIMED_BATCHES = 16
+# Each step of a timed training block is a real training step: forward, cross-entropy,
+# backward, an in-place step of the task's own optimizer (the retained
+# optim_factory.create_optimizer with the training command's settings) and zero_grad.
+# Every training block starts from the trained parameters with a fresh optimizer
+# state, restored outside the timing window, so parameters change at every step and
+# no block drifts away from the trained model. The learning rate is about where the
+# training run's cosine schedule ends (1e-4 after 10 steps from 0.004): at the
+# command's starting rate (0.004) sixteen fresh-state AdamW steps on random targets
+# reach states whose fp16 gradients are unstable (A100 calibration, 2026-11-01).
+TIMED_OPTIMIZER = {"opt": "adamw", "lr": 1e-4, "weight_decay": 0.05, "opt_eps": 1e-8, "opt_betas": None, "momentum": 0.9}
 # Timed-path validation. Every warmup and timed repeat of both paired protocols
 # uses new input values, the same for candidate and reference within a repeat,
 # and every candidate call is compared with a trusted oracle (the reference
 # implementation holding the candidate's trained state) run through the same
-# block function on that repeat's values.
+# block function on that repeat's values. A training block is validated step by
+# step on the candidate's own trajectory (teacher forcing): the oracle starts from
+# the candidate's trained parameters, supplies at every step the outputs, loss and
+# gradient yardsticks at the candidate's parameters of that step, and is then
+# advanced by the same optimizer step on the candidate's gradients; after the last
+# step the oracle's parameters must be the candidate's (no other change to the
+# parameters). Trajectories of two honest fp16 arrangements separate within a few
+# steps, so the comparison is made on one trajectory rather than between two.
 # Tolerance for outputs and loss computed under fp16 autocast, as (rtol, atol)
 # per tensor: ||got - want||_2 <= rtol * ||want||_2 + atol * sqrt(numel).
 TIMED_OUTPUT_TOLERANCE = (1e-2, 1e-4)
 # Gradients are not required to be close to the reference's own fp16 rounding:
 # on the trained states the fp16 backward signal is near half-precision
 # resolution and two honest arrangements can differ by tens of percent. Each
-# repeat instead yields four trusted gradients of the same state and inputs:
-# the reference under autocast, the reference with every replacement site in
-# fp16 in two forms (separate operations and one fused multiply-add), and an
-# fp32 gradient. The candidate must be near one of them, as near as they are
+# training step instead yields four trusted gradients of the same state and
+# inputs: the reference under autocast, the reference with every replacement
+# site in fp16 in two forms (separate operations and one fused multiply-add),
+# and an fp32 gradient. The candidate must be near one of them, as near as they are
 # to each other:
 #   distance(candidate) <= floor + TIMED_GRADIENT_FACTOR * spread,
 # where distance is the smallest ||candidate - trusted||_2 and spread the
@@ -42,11 +63,25 @@ TIMED_OUTPUT_TOLERANCE = (1e-2, 1e-4)
 # decision record: docs/task-authoring/dynamic_tanh/timed-path-validation.md.
 TIMED_GRADIENT_FACTOR = 3.0
 TIMED_GRADIENT_FLOORS = {"joint": 0.02, "other": 0.02, "alpha": 0.10, "scale": 0.05, "shift": 0.05}
-# A repeat has detection power when its joint bound stays below this distance:
+# A step has detection power when its joint bound stays below this distance:
 # a zeroed gradient is about 1 away, a halved one 0.5.
 TIMED_GRADIENT_POWER_BOUND = 0.5
-# The trusted fp16 gradients of one repeat, by their key in the oracle's result.
+# The trusted fp16 gradients of one step, by their key in the oracle's result.
 TIMED_TRUSTED_FP16 = ("gradients", "half_gradients", "fused_gradients")
+# A training block is compared at every one of its steps: sixteen draws per block from
+# a heavy-tailed fp16 error, and the trajectory occasionally passes a step where fp16
+# outputs and gradients are ill-conditioned. One step of a block may therefore fail
+# its output, loss or gradient comparison: on the A100 (six trained workloads, 14
+# blocks each, seven honest formulations, five calibration runs) no honest block had
+# more than one step above its bound and the second-worst step stayed below 0.42 of
+# it, while every attack exceeded the bound on at least 9 of 16 steps (second-worst
+# step at least 1.9 times the bound). Missing or misshapen results and nonfinite
+# values get no allowance. The allowance is per TIMED_BATCHES steps (a shorter block
+# gets none).
+TIMED_STEP_ALLOWANCE = 1
+# The parameters after a training block may differ from the oracle's replay of the
+# same optimizer steps by at most this fraction of the block's update, jointly.
+TIMED_REPLAY_TOLERANCE = 1e-3
 REFERENCE_PATCH_SHA256 = "2da4be0b556d65bf7ad472de3709c6a5cc467ea2e762a23f9ab4e6b6898af2ad"
 REFERENCE_DYNAMIC_SHA256 = "609a1f4412d1d570c74d4deb725436fda3322a3bbb05c1d2c6a0de6b7b6c5039"
 RETAINED_SHA256 = {
@@ -151,6 +186,38 @@ def _candidate_execution():
         raise
     except Exception as error:
         raise CandidateError(CANDIDATE_FAILURE_MESSAGE) from error
+    _check_cuda_context()
+
+# Recorded by evaluate() before any submission code runs; None outside an evaluation.
+_CUDA_SENTINEL = None
+
+@_trusted_execution("trusted CUDA sentinel setup failed")
+def _cuda_sentinel():
+    """A trusted one-kernel CUDA graph and the current stream, recorded before any submission code runs."""
+    import torch
+    value, graph = torch.zeros(1, device="cuda"), torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph): value.add_(1)
+    sentinel = {"graph": graph, "value": value, "stream": torch.cuda.current_stream(), "replays": 0}
+    _replay_sentinel(sentinel)
+    return sentinel
+
+def _replay_sentinel(sentinel):
+    import torch
+    sentinel["graph"].replay(); torch.cuda.synchronize(); sentinel["replays"] += 1
+    if int(sentinel["value"].item()) != sentinel["replays"]: raise RuntimeError("CUDA sentinel graph did not replay")
+
+def _check_cuda_context():
+    """After submission code: no capture open on the current stream, the same current stream, and a
+    trusted graph that still replays. A failed capture can otherwise break the reference's graphs."""
+    sentinel = _CUDA_SENTINEL
+    if sentinel is None: return
+    import torch
+    try:
+        usable = not torch.cuda.is_current_stream_capturing() and torch.cuda.current_stream() == sentinel["stream"]
+        if usable: _replay_sentinel(sentinel)
+    except Exception as error:
+        raise CandidateError(CANDIDATE_FAILURE_MESSAGE) from error
+    if not usable: raise CandidateError(CANDIDATE_FAILURE_MESSAGE)
 
 def _invalid(reason: str):
     return 0.0, 0.0, reason[:180], {}
@@ -255,8 +322,12 @@ def _candidate_imports(repo: Path):
                 sys.modules.pop(name, None)
         sys.modules.update(prior_modules)
 
+_CONVERTER_LOADS = itertools.count()
+
 def _converter(repo: Path, label: str):
-    spec = importlib.util.spec_from_file_location(f"frontier_mapping_{label}", repo / "dynamic_tanh.py")
+    # Each load executes the module afresh under its own name, so no state survives
+    # between loads and code compiled against an earlier load keeps that module.
+    spec = importlib.util.spec_from_file_location(f"frontier_mapping_{label}_{next(_CONVERTER_LOADS)}", repo / "dynamic_tanh.py")
     if spec is None or spec.loader is None: raise RuntimeError("replacement module cannot be imported")
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -401,24 +472,65 @@ def _load_trained_model(repo, checkpoint, workload, label):
     if not changed: raise RuntimeError("training did not update learned replacement parameters")
     return model.cuda()
 
-def _timed_block(model, batches):
+_OPTIMIZER_FACTORIES = {}
+
+def _task_optimizer(reference_repo):
+    """The task's own optimizer factory: the retained optim_factory.create_optimizer of the trusted tree."""
+    key = str(Path(reference_repo).resolve())
+    if key not in _OPTIMIZER_FACTORIES:
+        spec = importlib.util.spec_from_file_location("frontier_trusted_optim_factory", Path(reference_repo) / "optim_factory.py")
+        if spec is None or spec.loader is None: raise RuntimeError("trusted optimizer factory cannot be imported")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        settings = types.SimpleNamespace(**TIMED_OPTIMIZER)
+        def factory(model):
+            # create_optimizer prints its parameter groups; keep them out of the logs.
+            with contextlib.redirect_stdout(io.StringIO()): return module.create_optimizer(settings, model)
+        _OPTIMIZER_FACTORIES[key] = factory
+    return _OPTIMIZER_FACTORIES[key]
+
+def _training_state(model, factory):
+    """A model's optimizer for the timed training blocks and a copy of its trained parameters."""
+    import torch
+    named = list(model.named_parameters())
+    with torch.no_grad(): start = [parameter.detach().clone() for _, parameter in named]
+    return {"optimizer": factory(model), "named": named, "start": start}
+
+def _restore(state):
+    """Trained parameters, no gradients and a fresh optimizer state: the start of every training block."""
+    import torch
+    with torch.no_grad():
+        for (_, parameter), value in zip(state["named"], state["start"]):
+            parameter.copy_(value); parameter.grad = None
+        for slots in state["optimizer"].state.values():
+            for value in slots.values():
+                if torch.is_tensor(value): value.zero_()
+
+def _timed_block(model, batches, state):
+    """TIMED_BATCHES real training steps from the trained state: forward, cross-entropy, backward, optimizer step, zero_grad."""
     import torch
     import torch.nn.functional as functional
-    outputs, losses = [], []
-    model.zero_grad(set_to_none=True); torch.cuda.synchronize()
+    optimizer, parameters = state["optimizer"], [parameter for _, parameter in state["named"]]
+    outputs, losses, gradients = [], [], []
+    _restore(state); torch.cuda.synchronize()
     start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True); start.record()
     for images, targets in batches:
         with torch.autocast(device_type="cuda", dtype=torch.float16): logits = model(images); loss = functional.cross_entropy(logits, targets)
         loss.backward()
-        # Keeping the two handles launches no GPU work inside the window.
+        # Keeping handles launches no GPU work inside the window; zero_grad
+        # leaves each step's gradients to these handles only.
+        gradients.append([parameter.grad for parameter in parameters])
+        optimizer.step(); optimizer.zero_grad(set_to_none=True)
         outputs.append(logits); losses.append(loss)
     end.record(); torch.cuda.synchronize(); value = float(start.elapsed_time(end))
     if not math.isfinite(value) or value <= 0: raise RuntimeError("CUDA timing is invalid")
+    names = [name for name, _ in state["named"]]
+    with torch.no_grad(): final = {name: parameter.detach().clone() for name, parameter in zip(names, parameters)}
     observed = {"outputs": [x.detach() for x in outputs], "losses": [x.detach() for x in losses],
-                "gradients": {name: parameter.grad for name, parameter in model.named_parameters()}}
+                "gradients": [dict(zip(names, step)) for step in gradients], "parameters": final}
     return value, observed
 
-def _inference_block(model, batches):
+def _inference_block(model, batches, state=None):
     """Beat spec v3: forward-only inference latency (the paper's Table 7 axis)."""
     import torch
     outputs = []
@@ -494,24 +606,129 @@ def _half_precision_sites(model, forward=_half_site_forward):
     finally:
         for module in sites: vars(module).pop("forward", None)
 
-def _truth_gradients(model, batches):
-    """fp32 gradients of the trusted model, without autocast: the reference point for fp16 error."""
+def _trusted_step(model, images, targets, autocast=True):
+    """Logits, loss and gradients of one training step of the trusted model, without the optimizer step."""
+    import torch
     import torch.nn.functional as functional
     model.zero_grad(set_to_none=True)
-    for images, targets in batches: functional.cross_entropy(model(images), targets).backward()
-    return {name: parameter.grad for name, parameter in model.named_parameters()}
+    with (torch.autocast(device_type="cuda", dtype=torch.float16) if autocast else contextlib.nullcontext()):
+        logits = model(images.clone()); loss = functional.cross_entropy(logits, targets.clone())
+    loss.backward()
+    gradients = {name: parameter.grad for name, parameter in model.named_parameters()}
+    model.zero_grad(set_to_none=True)
+    return logits.detach(), loss.detach(), gradients
 
-def _oracle_block(block, oracle, data):
-    """What the trusted implementation produces for one repeat, with the gradient yardsticks."""
-    def clones(): return [(images.clone(), targets.clone()) for images, targets in data]
-    expected = block(oracle, clones())[1]
-    if expected["gradients"]:
-        with _half_precision_sites(oracle): expected["half_gradients"] = block(oracle, clones())[1]["gradients"]
-        with _half_precision_sites(oracle, _fused_half_site_forward):
-            expected["fused_gradients"] = block(oracle, clones())[1]["gradients"]
-        expected["truth_gradients"] = _truth_gradients(oracle, clones())
-        oracle.zero_grad(set_to_none=True)
+def _oracle_step(oracle, images, targets):
+    """What the trusted implementation produces for one step at the oracle's current parameters.
+
+    The gradient yardsticks: under autocast, with all-fp16 sites in two forms,
+    and in fp32 without autocast (the reference point for fp16 error).
+    """
+    logits, loss, gradients = _trusted_step(oracle, images, targets)
+    expected = {"outputs": [logits], "losses": [loss], "gradients": gradients}
+    with _half_precision_sites(oracle): expected["half_gradients"] = _trusted_step(oracle, images, targets)[2]
+    with _half_precision_sites(oracle, _fused_half_site_forward):
+        expected["fused_gradients"] = _trusted_step(oracle, images, targets)[2]
+    expected["truth_gradients"] = _trusted_step(oracle, images, targets, autocast=False)[2]
     return expected
+
+def _oracle_block(block, oracle, data, state=None):
+    """What the trusted implementation produces for one inference repeat."""
+    def clones(): return [(images.clone(), targets.clone()) for images, targets in data]
+    return block(oracle, clones(), state)[1]
+
+def _distinct_gradients(observed):
+    """Every step's gradients must be separate tensors: a gradient overwritten after its step cannot be validated."""
+    import torch
+    steps = observed.get("gradients")
+    if not isinstance(steps, list) or not all(isinstance(step, dict) for step in steps):
+        raise TimedPathRejection("shape", "timed-path result is incomplete")
+    seen = set()
+    for step in steps:
+        for value in step.values():
+            if value is None: continue
+            if not torch.is_tensor(value): raise TimedPathRejection("shape", "timed-path result is missing or has the wrong shape")
+            if value.numel() == 0: continue
+            key = (value.device, value.data_ptr())
+            if key in seen: raise TimedPathRejection("overwritten_gradient", "a gradient was overwritten after its step")
+            seen.add(key)
+
+def _replay_deviation(observed, oracle_state):
+    """The candidate's parameters after the block against the oracle's replay of the same steps, relative to the update."""
+    import torch
+    got, start = observed.get("parameters"), dict(zip((name for name, _ in oracle_state["named"]), oracle_state["start"]))
+    if not isinstance(got, dict): raise TimedPathRejection("shape", "timed-path result is incomplete")
+    difference = update = None
+    for name, parameter in oracle_state["named"]:
+        value = got.get(name)
+        if not torch.is_tensor(value) or tuple(value.shape) != tuple(parameter.shape):
+            raise TimedPathRejection("shape", "timed-path result is missing or has the wrong shape")
+        a = (value.detach().double() - parameter.detach().double()).square().sum()
+        b = (parameter.detach().double() - start[name].double()).square().sum()
+        difference, update = (a, b) if difference is None else (difference + a, update + b)
+    if difference is None: return 0.0
+    difference, update = float(difference.sqrt()), float(update.sqrt())
+    if difference == 0.0: return 0.0
+    return difference / (TIMED_REPLAY_TOLERANCE * update) if update > 0 and math.isfinite(update) else math.inf
+
+def _advance(oracle_state, gradients, phase):
+    """One step of the oracle's optimizer on the candidate's (already validated) gradients of that step."""
+    import torch
+    for name, parameter in oracle_state["named"]:
+        value = gradients.get(name)
+        if value is not None and (not torch.is_tensor(value) or tuple(value.shape) != tuple(parameter.shape)):
+            raise TimedPathRejection("shape", "timed-path result is missing or has the wrong shape")
+    with _trusted_execution(phase):
+        for name, parameter in oracle_state["named"]:
+            value = gradients.get(name)
+            parameter.grad = None if value is None else value.detach().to(device=parameter.device, dtype=parameter.dtype).clone()
+        oracle_state["optimizer"].step(); oracle_state["optimizer"].zero_grad(set_to_none=True)
+
+def _validate_training(observed, oracle, oracle_state, data, phase):
+    """Teacher-forced validation of one training block on the candidate's own trajectory.
+
+    At every step the trusted implementation at the candidate's parameters of
+    that step supplies the outputs, loss and trusted gradients, which the
+    candidate's results of that step are compared with; the oracle then takes
+    the same optimizer step on the candidate's gradients. After the block the
+    candidate's parameters must be the oracle's replay. Returns the per-repeat
+    evidence and the oracle's outputs (for the replay separation); the first
+    failing comparison raises TimedPathRejection.
+    """
+    if len(observed.get("outputs", ())) != len(data) or len(observed.get("losses", ())) != len(data):
+        raise TimedPathRejection("shape", "timed-path result is incomplete")
+    _distinct_gradients(observed)
+    if len(observed["gradients"]) != len(data): raise TimedPathRejection("shape", "timed-path result is incomplete")
+    with _trusted_execution(phase): _restore(oracle_state)
+    worst = {"output": 0.0, "gradient": 0.0, "group_gradient": 0.0, "gradient_power": 0, "replay": 0.0, "exceeded": 0}
+    outputs, exceeded = [], []
+    allowance = TIMED_STEP_ALLOWANCE * len(data) // TIMED_BATCHES
+    for index, (images, targets) in enumerate(data):
+        with _trusted_execution(phase): expected = _oracle_step(oracle, images, targets)
+        step = {"outputs": [observed["outputs"][index]], "losses": [observed["losses"][index]],
+                "gradients": observed["gradients"][index]}
+        try:
+            deviation = _timed_path_deviation(step, expected)
+        except TimedPathRejection as rejection:
+            # A finite output, loss or gradient comparison above its bound may be
+            # tolerated on one step; a missing, misshapen or nonfinite result fails at once.
+            if rejection.quantity in ("shape", "nonfinite"): raise
+            exceeded.append(rejection)
+            if len(exceeded) > allowance: raise exceeded[-1]
+            deviation = None
+        if deviation is not None:
+            for key in ("output", "gradient", "group_gradient"): worst[key] = max(worst[key], deviation[key])
+            worst["gradient_power"] += deviation["gradient_power"]
+        outputs.append(expected["outputs"][0])
+        del expected
+        _advance(oracle_state, observed["gradients"][index], phase)
+    worst["exceeded"] = len(exceeded)
+    worst["replay"] = _replay_deviation(observed, oracle_state)
+    if not worst["replay"] <= 1.0:
+        raise TimedPathRejection("gradient_joint" if math.isfinite(worst["replay"]) else "nonfinite",
+                                 "parameter update under the timed conditions does not match the reference")
+    with _trusted_execution(phase): _restore(oracle_state)
+    return worst, outputs
 
 def _gradient_group(name, names):
     """alpha, scale and shift of the replacement sites; every other parameter is 'other'."""
@@ -630,49 +847,66 @@ def _fresh_batch(pool, count, generator):
 
 @_trusted_execution("trusted timed inputs failed")
 def _repeat_batches(workload, protocols=2):
-    """Per protocol, one batch for every warmup and timed repeat, drawn before any timing."""
+    """Per protocol, TIMED_BATCHES new batches for every warmup and timed repeat, drawn before any timing."""
     import torch
     pool, _ = _real_batch(workload, 2 * len(CLASSES))
     # Seeded from the operating system for every workload: not reproducible by a submission.
     generator = torch.Generator(device=pool.device); generator.manual_seed(int.from_bytes(os.urandom(7), "big"))
     count = int(workload["batch_size"])
-    return [[_fresh_batch(pool, count, generator) for _ in range(WARMUP_BLOCKS + TIMED_BLOCKS)] for _ in range(protocols)]
+    return [[[batch for _ in range(TIMED_BATCHES) for batch in _fresh_batch(pool, count, generator)]
+             for _ in range(WARMUP_BLOCKS + TIMED_BLOCKS)] for _ in range(protocols)]
 
-def _paired_protocol(block, candidate, reference, oracle, repeats, phase, protocol):
+def _paired_protocol(block, candidate, reference, oracle, repeats, phase, protocol, states=None):
     """Paired timing in which every candidate call is also a validated call.
 
-    `repeats` holds one batch per warmup and timed repeat. Within a repeat the
+    `repeats` holds the batches of every warmup and timed repeat. Within a repeat the
     candidate and the reference receive their own clones of the same values,
     in alternating order; no later call sees those values again. After both
     windows have closed the oracle runs the same block on that batch and the
     results the candidate produced inside its window are compared with it;
     for a block with gradients the oracle also supplies two all-fp16-site
     runs and an fp32 run, against which the candidate's gradients are judged.
+    A training block is validated step by step on the candidate's trajectory
+    (_validate_training); `states` holds the training state (optimizer and
+    trained parameters) of the candidate, the reference and the oracle.
     """
+    states = states or {}
     if len(repeats) != WARMUP_BLOCKS + TIMED_BLOCKS: raise InfrastructureError("timed input schedule is incomplete")
     # Flat scalars only: the verifier bounds the nesting depth of private metrics.
-    worst = {"output": 0.0, "gradient": 0.0, "group_gradient": 0.0, "gradient_power_blocks": 0, "validated_blocks": 0,
-             "replay_output_separation": 1e9}
+    worst = {"output": 0.0, "gradient": 0.0, "group_gradient": 0.0, "parameter_replay": 0.0, "exceeded_steps": 0,
+             "gradient_power_steps": 0, "validated_blocks": 0, "replay_output_separation": 1e9}
     def call(model, data):
         data = [(images.clone(), targets.clone()) for images, targets in data]
         with (_candidate_execution() if model is candidate else _trusted_execution(phase)):
-            return block(model, data)
+            value, observed = block(model, data, states.get("candidate" if model is candidate else "reference"))
+        if model is not candidate and block is _timed_block:
+            # The reference keeps the fresh-gradient rule too (outside the timing window).
+            with _trusted_execution(phase): _distinct_gradients(observed)
+        # Only the candidate's results are validated; free the reference's at once.
+        return value, (observed if model is candidate else None)
     ct, rt, previous = [], [], None
     for index, data in enumerate(repeats):
         repeat = index if index < WARMUP_BLOCKS else index - WARMUP_BLOCKS
         results = {}
         for model in ((reference, candidate) if repeat % 2 == 0 else (candidate, reference)):
             results[model is candidate] = call(model, data)
-        with _trusted_execution(phase):
-            expected = _oracle_block(block, oracle, data)
         with _candidate_execution():
             try:
-                deviation = _timed_path_deviation(results[True][1], expected)
+                if "oracle" in states:
+                    deviation, oracle_outputs = _validate_training(results[True][1], oracle, states["oracle"], data, phase)
+                    expected = {"outputs": oracle_outputs}
+                else:
+                    with _trusted_execution(phase):
+                        expected = _oracle_block(block, oracle, data)
+                    deviation = _timed_path_deviation(results[True][1], expected)
             except TimedPathRejection as rejection:
                 rejection.protocol = protocol
                 raise
+        results[True] = (results[True][0], None)
         for key in ("output", "gradient", "group_gradient"): worst[key] = max(worst[key], deviation[key])
-        worst["gradient_power_blocks"] += deviation["gradient_power"]
+        worst["parameter_replay"] = max(worst["parameter_replay"], deviation.get("replay", 0.0))
+        worst["exceeded_steps"] += deviation.get("exceeded", 0)
+        worst["gradient_power_steps"] += deviation["gradient_power"]
         worst["validated_blocks"] += 1
         if previous is not None:
             with _trusted_execution(phase):
@@ -688,12 +922,21 @@ def _paired_inference_latency(candidate, reference, oracle, repeats):
         candidate.eval()
     return _paired_protocol(_inference_block, candidate, reference, oracle, repeats, "reference inference timing failed", "inference")
 
-def _paired_latency(candidate, reference, oracle, repeats):
+def _paired_latency(candidate, reference, oracle, repeats, factory):
+    """Paired training blocks; afterwards every model holds its trained parameters again."""
+    states = {}
     with _trusted_execution("reference timing setup failed"):
         reference.train(); oracle.train()
+        states["reference"], states["oracle"] = _training_state(reference, factory), _training_state(oracle, factory)
     with _candidate_execution():
-        candidate.train()
-    return _paired_protocol(_timed_block, candidate, reference, oracle, repeats, "reference timing failed", "training")
+        candidate.train(); states["candidate"] = _training_state(candidate, factory)
+    result = _paired_protocol(_timed_block, candidate, reference, oracle, repeats, "reference timing failed", "training", states)
+    with _trusted_execution("reference timing setup failed"):
+        _restore(states["reference"]); _restore(states["oracle"])
+    with _candidate_execution():
+        _restore(states["candidate"])
+    states.clear()
+    return result
 
 def _oracle_model(reference, candidate):
     """The trusted implementation holding the candidate's trained state."""
@@ -704,18 +947,100 @@ def _oracle_model(reference, candidate):
         oracle.load_state_dict(candidate.state_dict(), strict=True)
     return oracle
 
+def _graph_reference(model, training_input=None, inference_input=None):
+    """The timed reference: the trusted model with its whole forward pass, and in training its
+    backward pass, replayed as CUDA graphs captured on its live parameters.
+
+    Without graphs the reference is bound by host-side kernel launches, so T* and I* follow the
+    host CPU while a graph-replaying candidate does not. Each input signature (shape, dtype,
+    requires_grad, mode, grad mode, autocast) gets its own capture, made on the first call of a
+    warm-up block. The replays run the same kernels on the same parameters as the eager model.
+    Every backward returns new gradient tensors, so a step's gradients are never overwritten by
+    a later replay (the rule _distinct_gradients applies to the candidate). The oracle is a copy
+    made before this and stays eager. Given the timed inputs, the training and inference
+    captures are made here, before the submission's model of the workload is loaded.
+    """
+    import torch
+    eager = types.MethodType(type(model).forward, model)
+    graphs = {}
+
+    class Replay(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, entry, values, *parameters):
+            ctx.entry = entry
+            entry["values"].copy_(values); entry["forward"].replay()
+            return entry["output"].clone()
+
+        @staticmethod
+        def backward(ctx, grad_output):
+            entry = ctx.entry
+            entry["grad_output"].copy_(grad_output); entry["backward"].replay()
+            used = [gradient for gradient in entry["gradients"] if gradient is not None]
+            pieces = iter(torch.cat([gradient.reshape(-1) for gradient in used]).split([g.numel() for g in used]))
+            return (None, None, *(None if gradient is None else next(pieces).view(gradient.shape)
+                                  for gradient in entry["gradients"]))
+
+    def capture(x, training, autocast, dtype):
+        parameters = tuple(model.parameters())
+        entry = {"values": x.detach().clone(), "parameters": parameters, "forward": torch.cuda.CUDAGraph()}
+        def region():
+            return torch.autocast(device_type="cuda", dtype=dtype, enabled=autocast, cache_enabled=False)
+        stream = torch.cuda.Stream(device=x.device)
+        stream.wait_stream(torch.cuda.current_stream(x.device))
+        with torch.cuda.stream(stream), torch.set_grad_enabled(training), region():
+            for _ in range(3):
+                output = eager(entry["values"])
+                if training: torch.autograd.grad(output, parameters, torch.ones_like(output), allow_unused=True)
+        torch.cuda.current_stream(x.device).wait_stream(stream)
+        torch.cuda.synchronize(x.device)
+        with torch.set_grad_enabled(training), region():
+            with torch.cuda.graph(entry["forward"]): entry["output"] = eager(entry["values"])
+        if training:
+            entry["grad_output"], entry["backward"] = torch.empty_like(entry["output"]), torch.cuda.CUDAGraph()
+            with torch.cuda.graph(entry["backward"], pool=entry["forward"].pool()):
+                entry["gradients"] = torch.autograd.grad(entry["output"], parameters, entry["grad_output"], allow_unused=True)
+        torch.cuda.synchronize(x.device)
+        return entry
+
+    def forward(x):
+        if not (torch.is_tensor(x) and x.is_cuda) or torch.cuda.is_current_stream_capturing(): return eager(x)
+        training, autocast, dtype = torch.is_grad_enabled(), torch.is_autocast_enabled(), torch.get_autocast_dtype("cuda")
+        key = (tuple(x.shape), x.dtype, x.device, x.requires_grad, model.training, training, autocast, dtype)
+        if key not in graphs: graphs[key] = capture(x, training, autocast, dtype)
+        entry = graphs[key]
+        if training: return Replay.apply(entry, x, *entry["parameters"])
+        entry["values"].copy_(x); entry["forward"].replay()
+        return entry["output"].clone()
+
+    model.forward = forward
+    mode = model.training
+    for x, training in ((training_input, True), (inference_input, False)):
+        if x is None: continue
+        model.train(training)
+        with torch.set_grad_enabled(training), torch.autocast(device_type="cuda", dtype=torch.float16): model(x.clone())
+    model.train(mode)
+    return model
+
 def _run_workload(candidate_repo, reference_repo, root, workload):
+    import copy
     with _trusted_execution("trusted reference training failed"):
         ra, rl, rc = _train(reference_repo, workload, root / "reference_output")
     with _candidate_execution():
         ca, cl, cc = _train(candidate_repo, workload, root / "candidate_output")
     with _trusted_execution("trusted reference checkpoint failed"):
         reference = _load_trained_model(reference_repo, rc, workload, "ref_trained")
+    with _trusted_execution("trusted oracle construction failed"):
+        eager = copy.deepcopy(reference)
+    training_repeats, inference_repeats = _repeat_batches(workload)
+    # The reference's graphs are captured before the submission's model is loaded.
+    with _trusted_execution("trusted reference graph setup failed"):
+        reference = _graph_reference(reference, training_repeats[0][0][0], inference_repeats[0][0][0])
     with _candidate_execution():
         candidate = _load_trained_model(candidate_repo, cc, workload, "cand_trained")
-    oracle = _oracle_model(reference, candidate)
-    training_repeats, inference_repeats = _repeat_batches(workload)
-    ct, rt, cs, rs, tv = _paired_latency(candidate, reference, oracle, training_repeats)
+    oracle = _oracle_model(eager, candidate); del eager
+    with _trusted_execution("trusted optimizer construction failed"):
+        factory = _task_optimizer(reference_repo)
+    ct, rt, cs, rs, tv = _paired_latency(candidate, reference, oracle, training_repeats, factory)
     ci, ri, cis, ris, iv = _paired_inference_latency(candidate, reference, oracle, inference_repeats)
     return {"training_path_validation": tv, "inference_path_validation": iv,
             "candidate_accuracy": ca, "reference_accuracy": ra, "candidate_latency": ct, "reference_latency": rt,
@@ -723,12 +1048,14 @@ def _run_workload(candidate_repo, reference_repo, root, workload):
             "candidate_inference_latency": ci, "reference_inference_latency": ri,
             "candidate_inference_samples": cis, "reference_inference_samples": ris}
 
+# Continuous score: per workload 100 / (1 + (T / T*)^LATENCY_EXPONENT), the
+# mean over workloads. Equal latency scores 50 and there is no hard cap. Accuracy is not
+# scored: on the 10-image validation shards it sits at chance and differs between
+# numerically equivalent implementations; non-regression stays in the strict criterion.
+LATENCY_EXPONENT = 4.0
+
 def _score_rows(rows):
-    values = []
-    for row in rows:
-        quality = min(100., max(0., 50. + 2. * (row["candidate_accuracy"] - row["reference_accuracy"])))
-        latency = min(100., max(0., 50. + 200. * math.log2(row["reference_latency"] / row["candidate_latency"])))
-        values.append(.6 * quality + .4 * latency)
+    values = [100. / (1. + (row["candidate_latency"] / row["reference_latency"]) ** LATENCY_EXPONENT) for row in rows]
     return min(100., max(0., statistics.fmean(values)))
 
 def _format_result(rows, suite, guards):
@@ -770,6 +1097,7 @@ def _runtime_receipt(torch):
             "cuda_runtime": str(torch.version.cuda)[:64]}
 
 def evaluate(solution_path: str):
+    global _CUDA_SENTINEL
     runtime = None
     candidate_stage = "unknown"
     try:
@@ -792,6 +1120,7 @@ def evaluate(solution_path: str):
             if not torch.cuda.is_available():
                 raise InfrastructureError("Verifier NVIDIA GPU is required")
             runtime = _runtime_receipt(torch)
+            _CUDA_SENTINEL = _cuda_sentinel()
             parent = Path(os.environ.get("FRONTIER_EVAL_SCRATCH", "/workspace")); parent.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(prefix="dyt-eval-", dir=parent) as temporary, _candidate_imports(candidate):
                 root = Path(temporary); reference = _reference_tree(root)
@@ -804,6 +1133,7 @@ def evaluate(solution_path: str):
                     with _training_argv(_train_command(candidate, x, root / x["id"] / "candidate_output")):
                         rows.append(_run_workload(candidate, reference, root / x["id"], x))
         finally:
+            _CUDA_SENTINEL = None
             shutil.rmtree(candidate.parent, ignore_errors=True)
         result = _format_result(rows, suite, guards)
         result[3]["all_final_metrics"]["runtime"] = runtime
