@@ -43,3 +43,17 @@ USER 10001:10001
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
 WORKDIR /workspace
+
+# Pinned GitHub dependencies of CMakeLists.txt, fetched and built at image build
+# time; the Agent sandbox has no network access. They are configured at the
+# default workspace path, and prepare_workspace.sh copies them into
+# <repo>/build/_deps, where the GitHub() helper reuses them.
+USER 0:0
+RUN cp -a /frontier/task/repo /workspace/repo \
+    && chmod -R u+w /workspace/repo \
+    && cmake -S /workspace/repo -B /workspace/repo/build -DNDEBUG=ON >/dev/null \
+    && install -d /opt/frontier \
+    && mv /workspace/repo/build/_deps /opt/frontier/spectrum-deps \
+    && rm -rf /workspace/repo /workspace/.cmake /workspace/.hunter /root/.hunter \
+    && chmod -R a+rX,a-w /opt/frontier/spectrum-deps
+USER 10001:10001
