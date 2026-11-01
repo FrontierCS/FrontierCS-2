@@ -165,9 +165,12 @@ UDP/TCP 53 plus public TCP 443, excluding private, loopback, carrier-grade NAT,
 and link-local IPv4 ranges. Labs using this internal-beta posture configure
 the model endpoint and key
 through private Candidate execution settings; credentials never belong in
-images, Git or `site.json`. When `false`, the controller does not
-create or update this policy. It does not delete a previously created policy;
-Run namespace deletion removes it.
+images, Git or `site.json`. When `false` (the example default), the controller
+deletes `frontier-agent-external-egress` from every Run namespace, including
+Runs created while the flag was `true`, and never creates it. Agents then reach
+only the Driver (model proxy and API) and, for Claude subscription Runs, the
+pinned Anthropic `/32` addresses in Management's frozen policy. The controller
+ClusterRole needs `delete` on `networkpolicies` for this.
 
 ## Feature contract
 

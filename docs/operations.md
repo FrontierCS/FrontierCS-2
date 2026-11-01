@@ -397,7 +397,11 @@ query Runs or check that the site is idle. It replaces the controller image and 
 environment value through guarded patches and full Deployment readback. The
 controller permits the configured registry Service IPv4 `/32` on TCP 5000 for
 the exact Run/attempt Driver before exposing its object-store PVC. It leaves
-the upstream Run policies and Agent egress policy intact.
+the upstream Run policies intact and does not change
+`FRONTIER_AGENT_EXTERNAL_EGRESS`. A controller running with that value `false`
+deletes `frontier-agent-external-egress` from every Run namespace and needs
+`delete` on `networkpolicies` in its ClusterRole, which this command does not
+patch.
 
 ## Reference parity acceptance gate
 

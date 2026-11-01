@@ -29,7 +29,7 @@
     }
   },
   "execution": {
-    "agent_external_egress": true,
+    "agent_external_egress": false,
     "max_active_drivers": 1,
     "object_store_gib": 20,
     "registry_storage_gib": 20,

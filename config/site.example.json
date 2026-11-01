@@ -95,7 +95,7 @@
     "object_store_gib": 20,
     "registry_storage_gib": 20,
     "max_active_drivers": 1,
-    "agent_external_egress": true,
+    "agent_external_egress": false,
     "smoke": {
       "enabled": true,
       "timeout_seconds": 900

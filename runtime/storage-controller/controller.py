@@ -291,6 +291,18 @@ def create_or_replace_network_policy(namespace: str, desired: dict) -> None:
     validate_network_policy(actual, desired)
 
 
+def remove_agent_external_egress_policy(namespace: str) -> bool:
+    policy_path = (
+        f"/apis/networking.k8s.io/v1/namespaces/{namespace}"
+        f"/networkpolicies/{NETWORK_POLICY_NAME}"
+    )
+    if api("GET", policy_path, absent_ok=True) is None:
+        return False
+    api("DELETE", policy_path, absent_ok=True)
+    print(f"storage-controller removed {NETWORK_POLICY_NAME} from {namespace}", flush=True)
+    return True
+
+
 def reconcile_namespace(namespace: dict) -> None:
     if namespace.get("metadata", {}).get("deletionTimestamp"):
         return
@@ -299,6 +311,8 @@ def reconcile_namespace(namespace: dict) -> None:
         return
     name = namespace["metadata"]["name"]
     run_id, attempt_id = identity
+    if not AGENT_EXTERNAL_EGRESS:
+        remove_agent_external_egress_policy(name)
     # EKS can enforce the pre-DNAT Service address. The upstream frozen policy
     # already allows registry Pods; add only the configured local Service /32.
     # Reconcile before making the Driver's object-store PVC available.
