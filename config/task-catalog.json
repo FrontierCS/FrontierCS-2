@@ -571,9 +571,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:dfcf6109c2926e28e53a54821b5ba1fa4881f6cd6c11bfd26d5bd54478a573ce",
+        "digest": "sha256:623bc37249509d77b7b2da24954556be97caea5e303fd8db939341c5b45e43ca",
         "repository": "docker.io/joyemang33/fcs2-task-polar_express-agent",
-        "tag": "source-ba575bbcebf6779c2f8440feaa467458083be2a33d32d734a9b8b2718cab821f"
+        "tag": "source-b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -583,7 +583,7 @@
       "dataset_image": {
         "digest": "sha256:9d759baabfd7fee7e9db6df0172a1af30561fa3e42bc41e5598c32833eef6b1b",
         "repository": "docker.io/joyemang33/fcs2-task-polar_express-datasets",
-        "tag": "source-ba575bbcebf6779c2f8440feaa467458083be2a33d32d734a9b8b2718cab821f"
+        "tag": "source-b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6"
       },
       "datasets": {
         "eval_sha256": "sha256:8a29b425c35c3f197d3cdf71f58f243ce938e4882af55a1333b21c55af6ca5e7",
@@ -595,12 +595,12 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:f61e36f974081e642b41364bc8f142e3e60ab0d17e19c5621e9e121809d3c593",
         "repository": "docker.io/joyemang33/fcs2-task-polar_express-reference",
-        "tag": "source-ba575bbcebf6779c2f8440feaa467458083be2a33d32d734a9b8b2718cab821f"
+        "tag": "source-b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6"
       },
       "verifier_image": {
-        "digest": "sha256:7d7f09f230c3b9f17ab5aa15444ad25a8e06e96a2271c62ac2ade989fa762a4e",
+        "digest": "sha256:3f08c15ac014884d2f0f0b095a3470e69853083fda925fc984977c1bc6d0bb81",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-polar_express",
-        "tag": "source-ba575bbcebf6779c2f8440feaa467458083be2a33d32d734a9b8b2718cab821f"
+        "tag": "source-b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6"
       }
     },
     {

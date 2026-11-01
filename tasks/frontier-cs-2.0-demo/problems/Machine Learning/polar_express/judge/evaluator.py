@@ -36,6 +36,7 @@ CONFIG: dict[str, Any] = {
 }
 
 # Both suites have the same two-cases-per-shape stratification and disjoint seeds.
+# Each seed draws new orthonormal factors and new singular spectra for every member.
 DEV_SEED = 847_221
 FINAL_SEED = 3_914_087
 WORKLOADS = (
@@ -66,9 +67,10 @@ PAPER_WORKLOADS = (
 SUITE = WORKLOADS + PAPER_WORKLOADS
 SCORED_IDS = tuple(spec["id"] for spec in WORKLOADS)
 PAPER_IDS = tuple(spec["id"] for spec in PAPER_WORKLOADS)
-# Independent generator stream for the paper stratum keeps the original six
-# matrices byte-identical for each seed.
+# Independent generator streams: the paper stratum, and the spectra of the six
+# original members (their orthonormal factors keep the main stream).
 PAPER_STREAM = 20261007
+ORIGINAL_SPECTRUM_STREAM = 20261031
 # Figure 10 ignores singular values below gamma * sigma_max.
 TOP_SUBSPACE_GAMMA = 1e-3
 BEAT_METRICS = (
@@ -407,6 +409,17 @@ def _paper_spectrum(rng: np.random.Generator, k: int) -> np.ndarray:
     return singular * 10.0 ** float(rng.uniform(-2.0, 2.0))
 
 
+def _original_spectrum(rng: np.random.Generator, l: float, k: int) -> np.ndarray:
+    """Singular values of one original member, drawn per seed.
+
+    Log-spaced as in the artifact's experiment, with sigma_min/sigma_max within a
+    factor of two of the record's scalar l and an arbitrary global scale, so the
+    shape, step count and norm do not identify the spectrum.
+    """
+    ratio = l * 2.0 ** float(rng.uniform(-1.0, 1.0))
+    return np.geomspace(ratio, 1.0, k) * 10.0 ** float(rng.uniform(-2.0, 2.0))
+
+
 def _oracle(matrix: np.ndarray) -> dict[str, np.ndarray]:
     u, singular, vh = np.linalg.svd(matrix.astype(np.float64), full_matrices=False)
     keep = singular >= TOP_SUBSPACE_GAMMA * singular[0]
@@ -416,6 +429,7 @@ def _oracle(matrix: np.ndarray) -> dict[str, np.ndarray]:
 def _suite(seed: int) -> tuple[list[str], list[dict[str, np.ndarray]]]:
     """Create candidate inputs and private float64 oracles in the judge process."""
     rng = np.random.default_rng(seed)
+    spectrum_rng = np.random.default_rng([seed, ORIGINAL_SPECTRUM_STREAM])
     encoded: list[str] = []
     oracles: list[dict[str, np.ndarray]] = []
     for spec in WORKLOADS:
@@ -423,7 +437,7 @@ def _suite(seed: int) -> tuple[list[str], list[dict[str, np.ndarray]]]:
         k = min(m, n)
         left, _ = np.linalg.qr(rng.standard_normal((m, k)))
         right, _ = np.linalg.qr(rng.standard_normal((n, k)))
-        singular = np.geomspace(float(spec["l"]), 1.0, k)
+        singular = _original_spectrum(spectrum_rng, float(spec["l"]), k)
         matrix = ((left * singular) @ right.T).astype(np.float32)
         encoded.append(base64.b64encode(matrix.tobytes()).decode("ascii"))
         oracles.append(_oracle(matrix))
@@ -549,12 +563,48 @@ def _score(rows: list[dict[str, Any]]) -> float:
     return 100.0 * (sum(scalar_quality) / len(rows) + sum(polar_quality) / len(rows)) / 2.0
 
 
-# Implementation 1 casts to bfloat16 "for speed" on a GPU. The paper-regime
-# bar is also measured with the same upstream source run in the input's float32
-# precision (Section 3.5: the online stage *can* use bfloat16). This is the only
-# edit, applied to the disposable reference copy and checked to occur once.
+# Implementation 1 casts to bfloat16 "for speed" on a GPU and applies one fixed
+# schedule (l = 1e-3, ten steps) to every matrix. The bar is the stricter, per
+# workload and metric, of four valid runs of the same upstream source on the same
+# inputs. Each variant edits only the disposable reference copy:
+#   published     unchanged (bfloat16 online stage, fixed schedule);
+#   matched       the speed cast replaced by the input's float32 precision;
+#   per_workload  float32, and each member's matrix schedule is
+#                 optimal_composition(l, steps, 5, safety, cushion) of its record;
+#   unguarded     as per_workload, with the schedule built without the safety
+#                 factor and cushion and the 1.01 normalisation margin removed.
+# The scalar sequences returned to the runner are the record's own
+# optimal_composition output in every variant.
 PUBLISHED_CAST = "X = G.bfloat16()  # for speed"
 MATCHED_CAST = "X = G.float()  # precision-matched float32 online stage"
+FIXED_SCHEDULE = "coeffs_list = optimal_composition(l=1e-3, num_iters=10, degree=5, safety_factor_eps=1e-2, cushion=0.02)"
+FIXED_STEPS = """    hs = coeffs_list[:steps] + list( 
+        repeat(coeffs_list[-1], steps - len(coeffs_list)))"""
+PUBLISHED_NORMALISATION = "X = X / (X.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-7)"
+UNGUARDED_NORMALISATION = "X = X / (X.norm(dim=(-2, -1), keepdim=True) + 1e-7)"
+PER_WORKLOAD_SCHEDULE = """
+
+# Judge-side reference variant: the runner calls optimal_composition once per
+# record, in suite order, before the matrix calls; each pair of calls supplies
+# the per-member schedules of the next PolarExpress batch.
+workload_schedules = []
+batch_schedules = []
+batch_calls = [0]
+upstream_composition = optimal_composition
+
+def optimal_composition(l, num_iters, degree=5, safety_factor_eps=0, cushion=0):
+    seq = upstream_composition(l, num_iters, degree, safety_factor_eps, cushion)
+    matrix_seq = SCHEDULE_ARGUMENTS
+    workload_schedules.append([[float(c) for c in step] for step in matrix_seq])
+    if len(workload_schedules) % 2 == 0:
+        first, second = workload_schedules[-2], workload_schedules[-1]
+        batch_schedules.append([tuple(torch.tensor([first[t][i], second[t][i]], dtype=torch.float32).view(2, 1, 1)
+                                      for i in range(3)) for t in range(min(len(first), len(second)))])
+    return seq
+"""
+PER_WORKLOAD_STEPS = """    hs = batch_schedules[batch_calls[0]]
+    batch_calls[0] = batch_calls[0] + 1"""
+REFERENCE_VARIANTS = ("published", "matched", "per_workload", "unguarded")
 LOWER_IS_BETTER = ("scalar", "polar", "spectral", "top")
 
 
@@ -567,64 +617,79 @@ class ReferenceFailure(RuntimeError):
 HIGHER_IS_BETTER = ("cosine",)
 
 
-def _reference_tree(*, precision_matched: bool = False) -> Path:
+def _variant_source(source: str, variant: str) -> str:
+    edits = [(PUBLISHED_CAST, MATCHED_CAST)]
+    if variant in ("per_workload", "unguarded"):
+        arguments = ("seq" if variant == "per_workload"
+                     else "upstream_composition(l, num_iters, degree, 0, 0)")
+        edits += [(FIXED_SCHEDULE, FIXED_SCHEDULE + PER_WORKLOAD_SCHEDULE.replace("SCHEDULE_ARGUMENTS", arguments)),
+                  (FIXED_STEPS, PER_WORKLOAD_STEPS)]
+    if variant == "unguarded":
+        edits.append((PUBLISHED_NORMALISATION, UNGUARDED_NORMALISATION))
+    for old, new in edits:
+        if source.count(old) != 1:
+            raise RuntimeError("reference variant edit is not the reviewed upstream line")
+        source = source.replace(old, new)
+    return source
+
+
+def _reference_tree(variant: str = "published") -> Path:
     # Reference replay needs the same writable disposable copy as a submission.
+    if variant not in REFERENCE_VARIANTS:
+        raise ValueError("unknown reference variant")
     applied = apply_submission_patch(REFERENCE_PATCH, TASK_DIR, CONFIG)
     if not applied.ok:
         raise RuntimeError("reference patch could not be applied: " + applied.message)
     repo = Path(applied.workdir)
-    if precision_matched:
+    if variant != "published":
         module = repo / "polar_express.py"
-        source = module.read_text()
-        if source.count(PUBLISHED_CAST) != 1:
+        try:
+            module.write_text(_variant_source(module.read_text(), variant))
+        except Exception:
             shutil.rmtree(repo.parent, ignore_errors=True)
-            raise RuntimeError("reference precision cast is not the reviewed upstream line")
-        module.write_text(source.replace(PUBLISHED_CAST, MATCHED_CAST))
+            raise
     return repo
 
 
-def _measure_reference(seed: int, *, precision_matched: bool) -> list[dict[str, Any]]:
-    repo = _reference_tree(precision_matched=precision_matched)
+def _measure_reference(seed: int, variant: str) -> list[dict[str, Any]]:
+    repo = _reference_tree(variant)
     try:
         return _run_tree(repo, seed, authentic=False)
     finally:
         shutil.rmtree(repo.parent, ignore_errors=True)
 
 
-def _stricter_bar(published: list[dict[str, Any]], matched: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Per workload and metric, the better of the two valid reference runs."""
+def _stricter_bar(*runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Per workload and metric, the best value over the valid reference runs."""
     bar = []
-    for first, second in zip(published, matched, strict=True):
-        if first["id"] != second["id"]:
+    for rows in zip(*runs, strict=True):
+        if len({row["id"] for row in rows}) != 1:
             raise RuntimeError("reference runs disagree on the graded suite")
-        row = {"id": first["id"]}
+        row = {"id": rows[0]["id"]}
         for key in LOWER_IS_BETTER:
-            row[key] = min(float(first[key]), float(second[key]))
+            row[key] = min(float(r[key]) for r in rows)
         for key in HIGHER_IS_BETTER:
-            row[key] = max(float(first[key]), float(second[key]))
+            row[key] = max(float(r[key]) for r in rows)
         bar.append(row)
     return bar
 
 
 def _reference_rows(seed: int) -> dict[str, list[dict[str, Any]]]:
-    """Measure the paired upstream method once per deterministic suite.
+    """Measure the reference variants once per deterministic suite.
 
-    ``published`` is the unchanged reference patch (bfloat16 online stage) and
-    defines the reference continuous score. ``bar`` is the beat-spec comparator:
-    for every workload and metric, the better of the published run and the
-    precision-matched float32 run, so no comparison is easier than before.
-    Both runs must complete; a failed reference is an evaluator error.
+    ``per_workload`` defines the reference continuous score; ``bar`` is the
+    beat-spec comparator, the stricter of all four variants per workload and
+    metric. Every run must complete; a failed reference is an evaluator error.
     """
     fast = bool(os.environ.get("FCS_EVALUATOR_TEST_FAST"))
     key = (seed, fast)
     if key not in _REFERENCE_CACHE:
         try:
-            published = _measure_reference(seed, precision_matched=False)
-            matched = _measure_reference(seed, precision_matched=True)
-            bar = _stricter_bar(published, matched)
+            runs = {variant: _measure_reference(seed, variant) for variant in REFERENCE_VARIANTS}
+            bar = _stricter_bar(*runs.values())
         except Exception as error:
             raise ReferenceFailure(f"reference measurement failed: {type(error).__name__}") from error
-        _REFERENCE_CACHE[key] = {"published": published, "bar": bar}
+        _REFERENCE_CACHE[key] = {"runs": runs, "bar": bar}
     # JSON round-tripping gives callers an isolated copy of this tiny structure.
     return json.loads(json.dumps(_REFERENCE_CACHE[key]))
 
@@ -646,7 +711,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
         reference = reference_runs["bar"]
 
         score = _score(candidate)
-        reference_score = _score(reference_runs["published"])
+        reference_score = _score(reference_runs["runs"]["per_workload"])
         rows = []
         for cand, ref in zip(candidate, reference):
             if cand["id"] != ref["id"]:
