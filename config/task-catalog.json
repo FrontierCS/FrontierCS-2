@@ -1071,14 +1071,14 @@
     },
     {
       "agent_gpu_image": {
-        "digest": "sha256:bdea740568f7cfa0a395072c0510b14141c3936ea12f228b28f09120608dde8e",
+        "digest": "sha256:64b693ab998349eb9da7a0cb386499a1f99b09fda969fb1327050f9f3148de60",
         "repository": "docker.io/joyemang33/fcs2-task-detok_latent_denoising-agent-gpu",
-        "tag": "source-f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc"
+        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
       },
       "agent_image": {
-        "digest": "sha256:2f8b9451187e847918a7f7439e1876585617b3fda916709c2b79277fed0ba3c6",
+        "digest": "sha256:86ac997332dcd6d9aa20e224cf196a7a9fd6964337a0c8b7e04ba231beb77874",
         "repository": "docker.io/joyemang33/fcs2-task-detok_latent_denoising-agent",
-        "tag": "source-f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc"
+        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -1088,7 +1088,7 @@
       "dataset_image": {
         "digest": "sha256:e16821df21bcb1037614d6126fd8fdf737ba9bc7fa561cd7ea8cd33b58f9d06f",
         "repository": "docker.io/joyemang33/fcs2-task-detok_latent_denoising-datasets",
-        "tag": "source-f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc"
+        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
       },
       "datasets": {
         "eval_sha256": "sha256:31469270d87e7c0543fc9705aa1059f2a8ee5f9bf7bbe640f4d54189f3563e24",
@@ -1097,14 +1097,14 @@
       "name": "detok_latent_denoising",
       "reference": null,
       "verifier_gpu_image": {
-        "digest": "sha256:31a7da0ecf23d630f750367735a2fb7f0656d26aef76187ce7bd6598aa1f5c08",
+        "digest": "sha256:bc3fd1645592c2cb693c6fb95772d31cc65f159d019b8d87b6961819f86a4e03",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-detok_latent_denoising-gpu",
-        "tag": "source-f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc"
+        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
       },
       "verifier_image": {
-        "digest": "sha256:01983f08c74164a2a4269324be6a80692d56e8f84869c67d757a0f0b8df8278d",
+        "digest": "sha256:ffc0f6297ad1e55117b1b1549de0b7efac637d98a6aafa005d172a0e7dbc761f",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-detok_latent_denoising",
-        "tag": "source-f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc"
+        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
       }
     },
     {

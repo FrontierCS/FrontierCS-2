@@ -1270,7 +1270,7 @@
     "gpu": {
       "agent": {
         "allowed_types": [
-          "L4"
+          "A100-80GB"
         ],
         "max_gpu_seconds": 5400,
         "max_instance_seconds": 5400,
@@ -1281,13 +1281,13 @@
         "max_gpu_seconds": 5400
       }
     },
-    "image_tag": "source-f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc",
+    "image_tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
         "agent_sandbox": true,
         "allowed_types": [
-          "L4"
+          "A100-80GB"
         ],
         "credential_reaches_agent": false,
         "provider": "driver-managed",
@@ -1310,6 +1310,8 @@
         "solver_visible_metrics": [
           "development_mean_ordinary_quantized_png_psnr_db",
           "development_mean_ema_quantized_png_psnr_db",
+          "development_mean_ordinary_quantized_png_lpips",
+          "development_mean_ema_quantized_png_lpips",
           "development_mean_method_process_wall_seconds"
         ],
         "suite_relation": "same_distribution"
@@ -1357,7 +1359,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f1c858897a345aa08cf5d970bdeadca28873e51666168539bdd41bb95cd82fcc"
+      "source_set_sha256": "sha256:20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

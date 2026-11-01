@@ -20,11 +20,100 @@ TASK_DIR = Path(__file__).resolve().parent
 CONFIG = TASK_DIR / "config.yaml"
 AUTHENTIC_ENTRYPOINT = "main_reconstruction.py"
 OFFLINE_MODEL_ROOT = Path(os.environ.get("FRONTIER_MODEL_ROOT", "/opt/frontier/models"))
-SPEC_METRICS = (
-    "ordinary_quantized_png_psnr_db",
-    "ema_quantized_png_psnr_db",
-    "method_process_wall_seconds",
-)
+PSNR_O = "ordinary_quantized_png_psnr_db"
+PSNR_E = "ema_quantized_png_psnr_db"
+LPIPS_O = "ordinary_quantized_png_lpips"
+LPIPS_E = "ema_quantized_png_lpips"
+TIME = "method_process_wall_seconds"
+SPEC_METRICS = (PSNR_O, PSNR_E, LPIPS_O, LPIPS_E, TIME)
+HIGHER_IS_BETTER = {PSNR_O: True, PSNR_E: True, LPIPS_O: False, LPIPS_E: False, TIME: False}
+REFERENCE_SCORE = 50.0
+QUALITY_POINTS = 8.75        # per quality metric: 4 metrics x (+/-8.75) span the 70-point quality share
+PSNR_SCALE_DB = 1.25
+LPIPS_SCALE_LOG2 = 0.25
+SPEED_POINTS = 15.0
+SPEED_SCALE_DOUBLINGS = 0.5
+# Positive speed credit fades once any quality metric is worse than the reference by more than
+# GATE_START of its scale (0.02 dB PSNR, ~0.28 % LPIPS) and is gone GATE_WIDTH scales later.
+GATE_START = 0.016
+GATE_WIDTH = 0.08
+LPIPS_FLOOR = 1e-6
+
+
+def workload_score(cand: dict[str, float], ref: dict[str, float]) -> float:
+    """Score one workload against its paired reference run; the reference itself scores 50."""
+    values = [cand[k] for k in SPEC_METRICS] + [ref[k] for k in SPEC_METRICS]
+    if not all(math.isfinite(v) for v in values) or min(cand[TIME], ref[TIME], cand[LPIPS_O], cand[LPIPS_E],
+                                                         ref[LPIPS_O], ref[LPIPS_E]) < 0 or min(cand[TIME], ref[TIME]) <= 0:
+        raise RuntimeError("nonfinite measurement")
+    # Normalised quality changes: positive is better, one unit = one metric scale.
+    gains = [
+        (cand[PSNR_O] - ref[PSNR_O]) / PSNR_SCALE_DB,
+        (cand[PSNR_E] - ref[PSNR_E]) / PSNR_SCALE_DB,
+        math.log2(max(ref[LPIPS_O], LPIPS_FLOOR) / max(cand[LPIPS_O], LPIPS_FLOOR)) / LPIPS_SCALE_LOG2,
+        math.log2(max(ref[LPIPS_E], LPIPS_FLOOR) / max(cand[LPIPS_E], LPIPS_FLOOR)) / LPIPS_SCALE_LOG2,
+    ]
+    quality = QUALITY_POINTS * sum(math.tanh(g) for g in gains)
+    speed = SPEED_POINTS * math.tanh(math.log2(ref[TIME] / cand[TIME]) / SPEED_SCALE_DOUBLINGS)
+    if speed > 0:
+        speed *= min(1.0, max(0.0, (GATE_START + GATE_WIDTH + min(gains)) / GATE_WIDTH))
+    return REFERENCE_SCORE + quality + speed
+
+
+def continuous_score(candidates: list[dict[str, float]], references: list[dict[str, float]]) -> float:
+    if not candidates or len(candidates) != len(references):
+        raise RuntimeError("incomplete paired measurements")
+    return sum(workload_score(c, r) for c, r in zip(candidates, references)) / len(candidates)
+
+
+_LPIPS_NET = None
+
+
+def _lpips_net():
+    """LPIPS v0.1 (VGG16 backbone) from the offline assets; trusted judge code, never candidate code."""
+    global _LPIPS_NET
+    if _LPIPS_NET is None:
+        import torch
+        import torchvision
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.allow_tf32 = False
+        torch.backends.cuda.matmul.allow_tf32 = False
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        vgg = torchvision.models.vgg16()
+        vgg.load_state_dict(torch.load(OFFLINE_MODEL_ROOT / "torch/hub/checkpoints/vgg16-397923af.pth",
+                                       map_location="cpu", weights_only=True))
+        features = vgg.features[:30].to(device).eval()
+        lin = torch.load(OFFLINE_MODEL_ROOT / "lpips/vgg.pth", map_location="cpu", weights_only=True)
+        weights = [lin[f"lin{i}.model.1.weight"].to(device) for i in range(5)]
+        shift = torch.tensor([-0.030, -0.088, -0.188], device=device).view(1, 3, 1, 1)
+        scale = torch.tensor([0.458, 0.448, 0.450], device=device).view(1, 3, 1, 1)
+        _LPIPS_NET = (torch, device, features, weights, shift, scale)
+    return _LPIPS_NET
+
+
+def lpips_values(targets, reconstructions) -> list[float]:
+    """Per-image LPIPS between uint8 HxWx3 targets and reconstructions."""
+    torch, device, features, weights, shift, scale = _lpips_net()
+    taps = (3, 8, 15, 22, 29)  # relu1_2, relu2_2, relu3_3, relu4_3, relu5_3
+    out = []
+    with torch.no_grad():
+        for i in range(0, len(targets), 16):
+            pair = []
+            for batch in (targets[i:i + 16], reconstructions[i:i + 16]):
+                x = torch.stack([torch.from_numpy(a.copy()) for a in batch]).to(device)
+                x = x.permute(0, 3, 1, 2).float() / 127.5 - 1.0
+                h, feats = (x - shift) / scale, []
+                for index, layer in enumerate(features):
+                    h = layer(h)
+                    if index in taps:
+                        feats.append(h / (torch.sqrt(torch.sum(h * h, dim=1, keepdim=True)) + 1e-10))
+                pair.append(feats)
+            total = 0
+            for fa, fb, w in zip(pair[0], pair[1], weights):
+                total = total + torch.nn.functional.conv2d((fa - fb) ** 2, w).mean(dim=(1, 2, 3))
+            out.extend(float(v) for v in total.cpu())
+    return out
 
 
 def _zero(reason: str):
@@ -105,28 +194,37 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
     names = [line.split()[0] for line in (workload / "val.txt").read_text().splitlines() if line.strip()]
     eval_dirs = {"ordinary": list(output.rglob("epoch_001_use_ema=False")),
                  "ema": list(output.rglob("epoch_001_use_ema=True"))}
-    q = {}
+    targets = []
+    for name in names:
+        gt = Image.open(workload / "val" / name).convert("RGB")
+        while min(gt.size) >= 512:
+            gt = gt.resize(tuple(x // 2 for x in gt.size), Image.Resampling.BOX)
+        scale = 256 / min(gt.size)
+        gt = gt.resize(tuple(round(x * scale) for x in gt.size), Image.Resampling.BICUBIC)
+        a = np.asarray(gt, dtype=np.uint8)
+        y, x = (a.shape[0] - 256) // 2, (a.shape[1] - 256) // 2
+        targets.append(np.ascontiguousarray(a[y:y + 256, x:x + 256]))
+    q, lp = {}, {}
     for kind, matches in eval_dirs.items():
         if len(matches) != 1:
             raise RuntimeError("reconstruction PNG directory is missing")
-        values = []
-        for idx, name in enumerate(names):
-            gt = Image.open(workload / "val" / name).convert("RGB")
-            while min(gt.size) >= 512:
-                gt = gt.resize(tuple(x // 2 for x in gt.size), Image.Resampling.BOX)
-            scale = 256 / min(gt.size)
-            gt = gt.resize(tuple(round(x * scale) for x in gt.size), Image.Resampling.BICUBIC)
-            a = np.asarray(gt, dtype=np.uint8)
-            y, x = (a.shape[0] - 256) // 2, (a.shape[1] - 256) // 2
-            a = a[y:y + 256, x:x + 256].astype(np.float64)
-            b = np.asarray(Image.open(matches[0] / f"{idx:06d}.png").convert("RGB"), dtype=np.float64)
-            mse = float(np.mean((a - b) ** 2))
+        recons, values = [], []
+        for idx, target in enumerate(targets):
+            b = np.asarray(Image.open(matches[0] / f"{idx:06d}.png").convert("RGB"), dtype=np.uint8)
+            if b.shape != target.shape:
+                raise RuntimeError("reconstruction PNG has the wrong shape")
+            recons.append(b)
+            mse = float(np.mean((target.astype(np.float64) - b.astype(np.float64)) ** 2))
             values.append(float("inf") if mse == 0 else 10.0 * math.log10(255.0 * 255.0 / mse))
         q[kind] = sum(values) / len(values)
+        per_image = lpips_values(targets, recons)
+        lp[kind] = sum(per_image) / len(per_image)
     result = {
-        "ordinary_quantized_png_psnr_db": float(q["ordinary"]),
-        "ema_quantized_png_psnr_db": float(q["ema"]),
-        "method_process_wall_seconds": elapsed,
+        PSNR_O: float(q["ordinary"]),
+        PSNR_E: float(q["ema"]),
+        LPIPS_O: float(lp["ordinary"]),
+        LPIPS_E: float(lp["ema"]),
+        TIME: elapsed,
     }
     if not all(math.isfinite(v) for v in result.values()):
         raise RuntimeError("nonfinite measurement")
@@ -175,28 +273,24 @@ def evaluate(solution_path: str):
                 references.append(_run(ref_tree, workload, ref_tree / "reference-output"))
         passes = []
         for i, (cand, ref) in enumerate(zip(candidates, references)):
-            decisions = {
-                SPEC_METRICS[0]: cand[SPEC_METRICS[0]] > ref[SPEC_METRICS[0]],
-                SPEC_METRICS[1]: cand[SPEC_METRICS[1]] > ref[SPEC_METRICS[1]],
-                SPEC_METRICS[2]: cand[SPEC_METRICS[2]] < ref[SPEC_METRICS[2]],
-            }
+            decisions = {k: (cand[k] > ref[k]) if HIGHER_IS_BETTER[k] else (cand[k] < ref[k]) for k in SPEC_METRICS}
             passes.append({"workload": f"workload-{i}", "metrics": decisions})
         beats = int(all(v for row in passes for v in row["metrics"].values()))
-        quality = sum(c[SPEC_METRICS[0]] + c[SPEC_METRICS[1]] for c in candidates) / (6 * 40.0)
-        speed = sum(r[SPEC_METRICS[2]] / c[SPEC_METRICS[2]] for c, r in zip(candidates, references)) / 3
-        unbounded = 70.0 * quality + 30.0 * speed
-        cand_mean = {k: sum(x[k] for x in candidates) / 3 for k in SPEC_METRICS}
-        ref_score = sum(70.0 * ((r[SPEC_METRICS[0]] + r[SPEC_METRICS[1]]) / 80.0) + 30.0 for r in references) / 3
+        score = continuous_score(candidates, references)
         metrics = {
             "beat_spec_workload_passes": passes,
             "beats_reference": beats,
-            "reference_score": ref_score,
-            "margin": unbounded - ref_score,
-            "development_mean_ordinary_quantized_png_psnr_db": cand_mean[SPEC_METRICS[0]],
-            "development_mean_ema_quantized_png_psnr_db": cand_mean[SPEC_METRICS[1]],
-            "development_mean_method_process_wall_seconds": cand_mean[SPEC_METRICS[2]],
+            "reference_score": REFERENCE_SCORE,
+            "margin": score - REFERENCE_SCORE,
+            **{f"development_mean_{k}": sum(x[k] for x in candidates) / len(candidates) for k in SPEC_METRICS},
+            # Operator evidence only (never solver-visible): paired per-workload measurements.
+            "per_workload_measurements": [
+                {"workload": f"workload-{i}", "candidate": dict(c), "reference": dict(r),
+                 "score": workload_score(c, r)}
+                for i, (c, r) in enumerate(zip(candidates, references))
+            ],
         }
-        return min(100.0, max(0.0, unbounded)), unbounded, "evaluation completed", metrics
+        return min(100.0, max(0.0, score)), score, "evaluation completed", metrics
     finally:
         if applied is not None and hasattr(applied, "cleanup"):
             applied.cleanup()

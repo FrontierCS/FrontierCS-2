@@ -17,17 +17,19 @@ For example, an input `x` of shape `[2, 256, 768]` with a policy retaining 77 to
 The authoritative invocation is the retained `main_reconstruction.py` through `frontier-bench.sh`, with `--epochs 1 --batch_size 4 --eval_bsz 4 --model detok_BB --img_size 256 --patch_size 16 --token_channels 16 --gamma 3 --mask_ratio 0.7 --lr 1e-6 --discriminator_start_epoch 100 --num_workers 4 --num_images 64 --save_freq 1 --vis_freq 100 --eval_freq 100`, plus private data, checkpoint, seed, FID-statistics, and output paths.
 
 ## Validity
-Patch-policy failure, source-lock failure, import/build failure, missing or duplicate inputs, timeout, crash, nonfinite output, absent noise or masking, incorrect restoration, RNG mismatch, detached gradients, missing optimizer updates, changed public parameter names, or attempts to access or forge private measurements score zero before performance is considered. The submission is limited to 262,144 bytes and 20 changed files. Evaluation requires one NVIDIA L4 and has a 5,400-second process limit.
+Patch-policy failure, source-lock failure, import/build failure, missing or duplicate inputs, timeout, crash, nonfinite output, absent noise or masking, incorrect restoration, RNG mismatch, detached gradients, missing optimizer updates, changed public parameter names, or attempts to access or forge private measurements score zero before performance is considered. The submission is limited to 262,144 bytes and 20 changed files. Evaluation requires one NVIDIA A100 80GB and has a 5,400-second process limit.
 
 ## Scoring
-Maximize the returned score. For candidate workload means `O` and `E` (ordinary and EMA quantized-PNG PSNR in dB) and paired reference/candidate complete-process times `T_r,T_c`, the provisional continuous score is
+Maximize the returned score. On each workload, `dO` and `dE` are your ordinary and EMA quantized-PNG PSNR minus the reference's (dB); `LO_r,LO_c` and `LE_r,LE_c` are the reference's and your ordinary and EMA quantized-PNG LPIPS (v0.1, VGG16 backbone, mean over the validation images, lower is better); and `T_r,T_c` are the reference's and your complete method-process wall times. The score is the mean over workloads of
 
 ```
-score_unbounded = 70 * ((O + E) / 80) + 30 * mean(T_r / T_c)
-score = clamp(score_unbounded, 0, 100)
+g = [dO / 1.25, dE / 1.25, log2(LO_r / LO_c) / 0.25, log2(LE_r / LE_c) / 0.25]
+speed = 15 * tanh(log2(T_r / T_c) / 0.5)
+if speed > 0: speed *= clamp((0.096 + min(g)) / 0.08, 0, 1)
+score_w = 50 + 8.75 * (tanh(g[0]) + tanh(g[1]) + tanh(g[2]) + tanh(g[3])) + speed
 ```
 
-The weights and 40 dB normalization are challenge constants (not from materials). A separate hidden criterion requires strictly higher ordinary PSNR, strictly higher EMA PSNR, and strictly lower complete method-process wall time than the paired reference on every workload. Only the candidate's allowed aggregate development measurements and anonymous pass/fail progress counts are returned.
+The reference scores 50; the score lies between 0 and 100. The constants are challenge constants (not from materials). A separate hidden criterion requires strictly higher ordinary and EMA PSNR, strictly lower ordinary and EMA LPIPS, and strictly lower complete method-process wall time than the paired reference on every workload. Only the candidate's allowed aggregate development measurements and anonymous pass/fail progress counts are returned.
 
 ## Calibration
 The stripped starter reaches the preserved call sites but raises `NotImplementedError`, so it is an invalid zero-score submission. Variants that bypass latent corruption or bypass token removal are also invalid even if their clean reconstructions are numerically plausible, because the assigned behavior is part of the correctness contract. An accepted upstream feasibility run used 8 training images, 16 validation images, two optimizer updates, and one NVIDIA L4; it completed with finite losses, gradients, ordinary reconstruction, EMA reconstruction, checkpoint save, and checkpoint reload. That smaller run is evidence that the authentic path operates, not calibration for the frozen 64/64 workloads. One untimed warm-up process (the reference on the first workload, result discarded) runs before any timed process, so the first timed measurement is not the evaluation's cold first process. No repeated full-workload measurements are available yet, so no timing noise floor or minimum meaningful score change is claimed. The absence of such a number is explicit uncalibrated authoring evidence and must be resolved by GPU preflight before promotion, rather than filled with an invented threshold.
@@ -36,4 +38,4 @@ The stripped starter reaches the preserved call sites but raises `NotImplemented
 The judge returns a score after every training call. At most 6 training calls are available before the final call. The graded suite is not the suite you receive feedback on, and neither its membership nor its seeds are disclosed. The suites share no item and are stratified so they carry the same distribution.
 
 ## Resources
-Development and grading run through the FrontierCS2 Driver on a single NVIDIA L4; there is no CPU fallback. `frontier-gpu` may be used for GPU debugging. The GPU runner has no outbound network, so implementations must use the packages and public assets already present. FID and Inception Score still run as unscored diagnostics.
+Development and grading run through the FrontierCS2 Driver on a single NVIDIA A100 80GB; there is no CPU fallback. `frontier-gpu` may be used for GPU debugging. The GPU runner has no outbound network, so implementations must use the packages and public assets already present. FID and Inception Score still run as unscored diagnostics.

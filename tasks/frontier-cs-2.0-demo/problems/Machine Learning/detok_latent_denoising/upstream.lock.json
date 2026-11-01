@@ -19,19 +19,19 @@
       "sha256": "sha256:040730953b083b7f4527c2b449d5f919773e58b6c4ad8b26a515c29d4d8d3012"
     },
     {
-      "bytes": 2279,
+      "bytes": 2286,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:6e26e8be6eef9ea4f6c856490a1605c5d512c9003648abcf056a9df56e2fa811"
+      "sha256": "sha256:69ab2f471bef863125e9836cba629c77a3ca1a35bb75fe13b0274f9d281b21bc"
     },
     {
-      "bytes": 7647,
+      "bytes": 7851,
       "path": "agent-base/frontier/task/README.md",
-      "sha256": "sha256:2763b14d89727cc9544ea002cf6e7a5d0e84a47004e9de2c0ebce9ae49f30b6a"
+      "sha256": "sha256:5d96e84a247ed8be3feb27c104803d583fbc7a104b3a966b4c5e42d6b0e90cab"
     },
     {
-      "bytes": 4093,
+      "bytes": 4100,
       "path": "agent-base/frontier/task/bin/README.md",
-      "sha256": "sha256:ecf4de4292a7819df0c44f24b458f39250c3c75c78a73b2a0eaf533909dcf284"
+      "sha256": "sha256:bdcd380fb2cdd327765caa96db82ecf6875aa7d38c0d85cc7f9d99b84db30734"
     },
     {
       "bytes": 1051,
@@ -49,9 +49,9 @@
       "sha256": "sha256:d663136ebe203772bd9d63b1347459c770c9867563d642e73e4187dfe155b1fe"
     },
     {
-      "bytes": 7075,
+      "bytes": 7515,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:427737d864c2cd8660748c990e2a7d78f1836ad04ee4a9c4e999747d75dc149a"
+      "sha256": "sha256:2000b10a321b53c4b2151edc12878cf5e45fc095cbbfc9848f8bee10f8429eed"
     },
     {
       "bytes": 1962,
@@ -294,14 +294,14 @@
       "sha256": "sha256:d4c099e8b66cddca83d00bdb9312cc215b210b2101f8995704cee7ba773c4718"
     },
     {
-      "bytes": 6729,
+      "bytes": 9446,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:b4ea351fa373c1ae77cd92596a724c601bbd13bee26eea234a7f444635805e47"
+      "sha256": "sha256:08b0161ad6667cb594ba1c3490f54a4d0317a63cd624ed4957ff3b52b8fcd7c8"
     },
     {
-      "bytes": 3025,
+      "bytes": 3134,
       "path": "judge/config.yaml",
-      "sha256": "sha256:1e4d1d96e8616b9b2d4d59b5240017f40019fb70bb47d192e55af6185dad2324"
+      "sha256": "sha256:fd01763e82cd758531e90b619f28b08ee77e533fe2088fb6624401e9496b1f7a"
     },
     {
       "bytes": 106,
@@ -309,9 +309,9 @@
       "sha256": "sha256:e8a75bf2b3b2f675151af84756be310996c2b743d0d1a59803993d7be00cab4b"
     },
     {
-      "bytes": 10424,
+      "bytes": 15113,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:d2f3a5c1479cf324d88de24bbbc959b3c4c0c5ee2b89b8b845d6279e216e5460"
+      "sha256": "sha256:a42f42847e53e34522481345e9a1ce3ae47ad05cb789e86d606078f437f00e2a"
     },
     {
       "bytes": 126357,
@@ -4284,9 +4284,9 @@
       "sha256": "sha256:c6c3e76eca5833b5ab39ee2f3e04ffd77a2f0266a3d88ce3eeff2867d324e0e9"
     },
     {
-      "bytes": 8456,
+      "bytes": 8896,
       "path": "judge/readme",
-      "sha256": "sha256:d8bc0d1ef33a45e802086af7e6693157791cd339b6aac41c57300f0786d0c6ea"
+      "sha256": "sha256:b691c15da5f927697741b95ca15b468c175c9915a862147a8a3d2ef6bbafec33"
     },
     {
       "bytes": 4511,
@@ -4304,14 +4304,14 @@
       "sha256": "sha256:449cba81673c611fc8fadb146997bd1bd5e7d39007e00cf90ba3ae019287eaf3"
     },
     {
-      "bytes": 2911,
+      "bytes": 3034,
       "path": "policy.json",
-      "sha256": "sha256:5879daca456c0a1a040df3838d71e6f9ab27e2447a502e3275a0153ccc525509"
+      "sha256": "sha256:c3cce95d308eecb453707430f9e6349cdefcd9ac587b8a34a05c400ec21cbd71"
     },
     {
-      "bytes": 1419,
+      "bytes": 1426,
       "path": "verifier/Dockerfile",
-      "sha256": "sha256:b29ef25670d8657b425103c1bcea234607ece2df9fa498c5d2b6fd12386992d8"
+      "sha256": "sha256:aa512942d6f82a9de35fba4594d5b971fffcb92b9325f20c83ee368dbf3b904f"
     },
     {
       "bytes": 13321,
@@ -4334,9 +4334,9 @@
       "sha256": "sha256:3fb4608016e1696e027735c09dffa93837b8002f6ecbe32d82702f52bc3c9b6f"
     },
     {
-      "bytes": 7957,
+      "bytes": 7964,
       "path": "verifier-gpu/Dockerfile",
-      "sha256": "sha256:3c95ac70e3af1a6ed1756fd6973cebec592b74c86e5a7a5922d7c4ace55ac26e"
+      "sha256": "sha256:f52b3c360f1ec3d6276525719a2bad977a8efd427d43171e5ca8e887ffa44e72"
     }
   ],
   "preview_answering_window_sync": {

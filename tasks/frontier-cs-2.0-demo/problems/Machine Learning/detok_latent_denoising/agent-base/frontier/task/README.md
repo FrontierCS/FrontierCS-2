@@ -52,9 +52,12 @@ private reference measurements.
 
 The development metrics are `development_mean_ordinary_quantized_png_psnr_db`
 and `development_mean_ema_quantized_png_psnr_db` (your mean reconstruction
-quality in dB), and `development_mean_method_process_wall_seconds` (your mean
-complete-process time in seconds). `beat_spec_progress` contains one entry for
-each of `ordinary_quantized_png_psnr_db`, `ema_quantized_png_psnr_db`, and
+quality in dB), `development_mean_ordinary_quantized_png_lpips` and
+`development_mean_ema_quantized_png_lpips` (your mean LPIPS, lower is better),
+and `development_mean_method_process_wall_seconds` (your mean complete-process
+time in seconds). `beat_spec_progress` contains one entry for each of
+`ordinary_quantized_png_psnr_db`, `ema_quantized_png_psnr_db`,
+`ordinary_quantized_png_lpips`, `ema_quantized_png_lpips`, and
 `method_process_wall_seconds`. Each entry reports `passed`, `failed`, `total`,
 `pass_percent`, and `fail_percent` across the development workloads. These are
 aggregate counts and percentages; workload identities and reference values
@@ -109,7 +112,7 @@ CPU work or submission; GPU seconds, train calls and evidence bytes remain limit
 
 ```bash
 frontier-gpu quota
-frontier-gpu create --type L4 --count 1 --seconds 300
+frontier-gpu create --type A100-80GB --count 1 --seconds 300
 # Use the returned runner_id below; status must report ready before SSH.
 frontier-gpu status gpurunner_...
 frontier-gpu push gpurunner_... /workspace/repo /workspace
@@ -132,7 +135,7 @@ on the Agent runner. Choose commands, remote working paths and output paths
 freely within the task's contract. Pull needed outputs below `/workspace` with
 `frontier-gpu pull` before packaging and using `frontier-submit train`.
 
-GPU budget: 1 runner at a time on L4, 5,400s each and 5,400s in total for the whole run. Reuse a runner while useful, then delete it and confirm
+GPU budget: 1 runner at a time on A100-80GB, 5,400s each and 5,400s in total for the whole run. Reuse a runner while useful, then delete it and confirm
 termination. A timeout or lost create reply is not proof that allocation failed:
 use list/status and the same printed idempotency key before retrying.
 

@@ -2,13 +2,13 @@ tag: vision
 runtime:
   language: python
   timeout_seconds: 5400
-  environment: Python 3.10, PyTorch 2.6/CUDA 12.4; GPU execution on one NVIDIA L4
+  environment: Python 3.10, PyTorch 2.6/CUDA 12.4; GPU execution on one NVIDIA A100 80GB
   docker:
     image: ubuntu:24.04
   accelerator:
     provider: modal
     gpu_types:
-    - L4
+    - A100-80GB
     agent:
       instances: 1
       max_instance_seconds: 5400
@@ -118,4 +118,6 @@ evaluation:
   solver_visible_metrics:
   - development_mean_ordinary_quantized_png_psnr_db
   - development_mean_ema_quantized_png_psnr_db
+  - development_mean_ordinary_quantized_png_lpips
+  - development_mean_ema_quantized_png_lpips
   - development_mean_method_process_wall_seconds
