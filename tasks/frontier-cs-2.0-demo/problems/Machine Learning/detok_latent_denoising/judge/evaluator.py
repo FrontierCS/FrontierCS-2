@@ -19,6 +19,7 @@ from submission_patch import apply_submission_patch
 TASK_DIR = Path(__file__).resolve().parent
 CONFIG = TASK_DIR / "config.yaml"
 AUTHENTIC_ENTRYPOINT = "main_reconstruction.py"
+FINAL_LAUNCHER = TASK_DIR / "final_launcher.py"
 OFFLINE_MODEL_ROOT = Path(os.environ.get("FRONTIER_MODEL_ROOT", "/opt/frontier/models"))
 PSNR_O = "ordinary_quantized_png_psnr_db"
 PSNR_E = "ema_quantized_png_psnr_db"
@@ -120,11 +121,35 @@ def _zero(reason: str):
     return 0.0, 0.0, reason[:240], {}
 
 
+def _targets(images: Path, data_list: Path) -> list:
+    """Center-cropped uint8 targets in list order, as the retained validation loader prepares them."""
+    import numpy as np
+    from PIL import Image
+    targets = []
+    for line in data_list.read_text().splitlines():
+        if not line.strip():
+            continue
+        gt = Image.open(images / line.split()[0]).convert("RGB")
+        while min(gt.size) >= 512:
+            gt = gt.resize(tuple(x // 2 for x in gt.size), Image.Resampling.BOX)
+        scale = 256 / min(gt.size)
+        gt = gt.resize(tuple(round(x * scale) for x in gt.size), Image.Resampling.BICUBIC)
+        a = np.asarray(gt, dtype=np.uint8)
+        y, x = (a.shape[0] - 256) // 2, (a.shape[1] - 256) // 2
+        targets.append(np.ascontiguousarray(a[y:y + 256, x:x + 256]))
+    return targets
+
+
 def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
-    """Run the retained entrypoint; private data supplies lists, images and assets."""
+    """Run the retained entrypoint; private data supplies lists, images and assets.
+
+    In the graded suite the EMA evaluation reconstructs the workload's second held-out set
+    (``val_ema``) instead of repeating the ordinary evaluation's images."""
+    ema_set = _final()
     if not shutil.which("nvidia-smi") and not os.environ.get("CUDA_VISIBLE_DEVICES"):
         raise RuntimeError("the authoritative workload requires an NVIDIA GPU")
-    for name in ("train", "val", "train.txt", "val.txt", "fid_stats.npz", "seed.txt"):
+    required = ("train", "val", "train.txt", "val.txt", "fid_stats.npz", "seed.txt")
+    for name in required + (("val_ema", "val_ema.txt") if ema_set else ()):
         if not (workload / name).exists():
             raise RuntimeError("private workload is incomplete")
     checkpoint = workload / "checkpoint.pth"
@@ -158,8 +183,9 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
     entrypoint = tree / AUTHENTIC_ENTRYPOINT
     if not entrypoint.is_file():
         raise RuntimeError("authentic reconstruction entrypoint is missing")
+    launcher = [str(FINAL_LAUNCHER), str(workload / "val_ema"), str(workload / "val_ema.txt")] if ema_set else []
     command = [
-        sys.executable, str(entrypoint),
+        sys.executable, *launcher, str(entrypoint),
         "--epochs", "1", "--batch_size", "4", "--eval_bsz", "4",
         "--model", "detok_BB", "--img_size", "256", "--patch_size", "16",
         "--token_channels", "16", "--gamma", "3", "--mask_ratio", "0.7",
@@ -191,21 +217,14 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
     # intentionally independent of candidate log output.
     import numpy as np
     from PIL import Image
-    names = [line.split()[0] for line in (workload / "val.txt").read_text().splitlines() if line.strip()]
     eval_dirs = {"ordinary": list(output.rglob("epoch_001_use_ema=False")),
                  "ema": list(output.rglob("epoch_001_use_ema=True"))}
-    targets = []
-    for name in names:
-        gt = Image.open(workload / "val" / name).convert("RGB")
-        while min(gt.size) >= 512:
-            gt = gt.resize(tuple(x // 2 for x in gt.size), Image.Resampling.BOX)
-        scale = 256 / min(gt.size)
-        gt = gt.resize(tuple(round(x * scale) for x in gt.size), Image.Resampling.BICUBIC)
-        a = np.asarray(gt, dtype=np.uint8)
-        y, x = (a.shape[0] - 256) // 2, (a.shape[1] - 256) // 2
-        targets.append(np.ascontiguousarray(a[y:y + 256, x:x + 256]))
+    ordinary_targets = _targets(workload / "val", workload / "val.txt")
+    target_sets = {"ordinary": ordinary_targets,
+                   "ema": _targets(workload / "val_ema", workload / "val_ema.txt") if ema_set else ordinary_targets}
     q, lp = {}, {}
     for kind, matches in eval_dirs.items():
+        targets = target_sets[kind]
         if len(matches) != 1:
             raise RuntimeError("reconstruction PNG directory is missing")
         recons, values = [], []
@@ -232,9 +251,12 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
 
 
 def _suite_root() -> Path:
-    final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
     root = os.environ.get("FRONTIER_DETOK_PRIVATE_ROOT", str(TASK_DIR / "judge_data/private"))
-    return Path(root) / ("final" if final else "development")
+    return Path(root) / ("final" if _final() else "development")
+
+
+def _final() -> bool:
+    return os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
 
 
 def evaluate(solution_path: str):
