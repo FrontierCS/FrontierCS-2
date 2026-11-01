@@ -75,7 +75,7 @@ def _metrics(candidate: float, reference: float, extra: dict | None = None,
 
 def _gate_metrics(final: bool, extra: dict | None = None) -> dict:
     """A failed gate retains all fixed workload rows, with every metric false."""
-    return _metrics(0.0, _REFERENCE_ANCHOR.get(final, 0.0), extra, final=final)
+    return _metrics(0.0, _bounded_score(_REFERENCE_ANCHOR.get(final, 0.0)), extra, final=final)
 
 
 def _cache_root() -> Path:
@@ -316,15 +316,48 @@ def _qualities(binaries: dict[str, Path], source: Path,
     for name in names:
         # One composite per workload over the uniform metric set, then the
         # geometric mean over every Spectrum and checkpoint-micro workload.
-        observations = []
-        for case, seed in suite:
-            runs = samples[name][case]
-            observations.append({field: statistics.median(run[field] for run in runs)
-                                 for field in ("throughput", "create_ns", "restore_ns", "retained_bytes")})
-            observations.append(profiles[name]["per_seed"][seed][0])
-        logs = [math.log(_workload_quality(observation)) for observation in observations]
+        observations = _observations(name, suite, samples, profiles)
+        logs = [math.log(_workload_quality(observation)) for observation in observations.values()]
         quality[name] = math.exp(sum(logs) / len(logs))
     return quality, samples
+
+
+OBSERVED_FIELDS = ("throughput", "create_ns", "restore_ns", "retained_bytes")
+
+
+def _observations(name: str, suite: tuple[tuple[str, int], ...], samples: dict,
+                  profiles: dict[str, dict]) -> dict[str, dict[str, float]]:
+    """The values each workload contributes to the composite, by workload id."""
+    observations = {}
+    for case, seed in suite:
+        runs = samples[name][case]
+        observations[_workload_id(case, seed)] = {
+            field: statistics.median(run[field] for run in runs) for field in OBSERVED_FIELDS}
+        observations[_workload_id(MICRO_WORKLOAD, seed)] = {
+            field: profiles[name]["per_seed"][seed][0][field] for field in OBSERVED_FIELDS}
+    return observations
+
+
+def _workload_values(suite: tuple[tuple[str, int], ...], samples: dict,
+                     profiles: dict[str, dict]) -> dict[str, dict]:
+    """Per-workload values of every compared variant (evidence only, never feedback).
+
+    For each workload and variant: the values that enter the composite, that
+    workload's quality, and every observation behind them, so a later change of
+    the score mapping or composite can be recomputed exactly from the evidence.
+    """
+    values: dict[str, dict] = {}
+    for name in samples:
+        observed = _observations(name, suite, samples, profiles)
+        for case, seed in suite:
+            for workload, runs in ((_workload_id(case, seed), samples[name][case]),
+                                   (_workload_id(MICRO_WORKLOAD, seed), profiles[name]["per_seed"][seed])):
+                values.setdefault(workload, {})[name] = {
+                    **observed[workload],
+                    "quality": _workload_quality(observed[workload]),
+                    "observations": {field: [run[field] for run in runs] for field in OBSERVED_FIELDS},
+                }
+    return values
 
 
 def _workload_quality(observation: dict[str, float]) -> float:
@@ -333,16 +366,24 @@ def _workload_quality(observation: dict[str, float]) -> float:
     return observation["throughput"] / (checkpoint_cost ** (1.0 / 3.0))
 
 
-# 100 points is SCORE_DECADES orders of magnitude of composite quality over the
-# checkpoint backend the task ships. One decade: the withheld implementation is
-# worth well under that, and the trials reached 0.75x of it, so the ceiling stays
-# far above anything measured here.
-SCORE_DECADES = 1.0
+# The score is 100 * tanh(decades / SCORE_SCALE_DECADES), where decades is
+# log10 of composite quality over the checkpoint backend the task ships.
+# A linear one-decade scale clipped at 100 and recorded finals reached 12x. The
+# scale puts the withheld implementation (about 5.6x on the platform) at 50 and
+# keeps every larger quality strictly higher without reaching 100.
+SCORE_SCALE_DECADES = 1.36
 _REFERENCE_ANCHOR: dict[bool, float] = {}
 
 
+def _bounded_score(unbounded: float) -> float:
+    """Map the unbounded log-ratio score (100 per decade) onto [0, 100)."""
+    if not (math.isfinite(unbounded) and unbounded > 0):
+        return 0.0
+    return 100.0 * math.tanh(unbounded / 100.0 / SCORE_SCALE_DECADES)
+
+
 def _score(quality: float, baseline: float) -> float:
-    """Zero is the shipped backend; every 10x of composite quality is the scale.
+    """Unbounded score: 100 * log10 of composite quality over the shipped backend.
 
     It was `100 * r / (1 + r)` against the *reference*, which pays exactly 50 of
     100 for reproducing the withheld implementation's own quality and asymptotes
@@ -359,7 +400,7 @@ def _score(quality: float, baseline: float) -> float:
     """
     if not (quality > 0 and baseline > 0):
         return 0.0
-    return (100.0 / SCORE_DECADES) * math.log10(quality / baseline)
+    return 100.0 * math.log10(quality / baseline)
 
 
 def _forbidden_patch(patch: Path) -> str | None:
@@ -425,8 +466,8 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                 unbounded = reference_unbounded
             else:
                 unbounded = _score(qualities["candidate"], qualities["naive"])
-            score = max(0.0, min(100.0, unbounded))
-            reference_score = max(0.0, min(100.0, reference_unbounded))
+            score = _bounded_score(unbounded)
+            reference_score = _bounded_score(reference_unbounded)
             decisions = _beat_decisions(suite, samples, profiles)
             metrics = _metrics(score, reference_score, result.metrics, final=final, decisions=decisions)
             candidate_profile = profiles["candidate"]
@@ -440,7 +481,10 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                             "shipped_backend_quality": round(qualities["naive"], 6),
                             "quality_over_shipped": round(
                                 qualities["candidate"] / max(qualities["naive"], 1e-12), 4),
-                            "workload_cases": 2 * len(suite)})
+                            "workload_cases": 2 * len(suite),
+                            "reference_quality": round(qualities["reference"], 6),
+                            "reference_score_unbounded": reference_unbounded,
+                            "workload_values": _workload_values(suite, samples, profiles)})
             return score, unbounded, f"valid Spectrum checkpoint backend; score {score:.3f}", metrics
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         return 0.0, 0.0, str(exc)[:160], _gate_metrics(final)
