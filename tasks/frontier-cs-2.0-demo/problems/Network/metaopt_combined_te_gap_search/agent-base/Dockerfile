@@ -10,3 +10,8 @@ COPY agent-base/frontier/task /frontier/task
 RUN chmod -R a+rX,a-w /frontier/task /opt/frontier/nuget
 USER frontier
 WORKDIR /workspace
+
+# The NuGet vulnerability audit queries api.nuget.org, and the repository treats
+# its warning as an error. The Agent sandbox has no network access; packages
+# restore from the baked cache above.
+ENV NuGetAudit=false

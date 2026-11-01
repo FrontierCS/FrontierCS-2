@@ -13,9 +13,9 @@
       "sha256": "sha256:b139db4c5121e7e008c457ae7196f6e5ed7b702f408754912270e3c5a85c2498"
     },
     {
-      "bytes": 1352,
+      "bytes": 1624,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:604a6c30742ae819932006a67229105b00b7f4f1b355380ac6dda73d0b391be5"
+      "sha256": "sha256:b5a8c953efa76c2fc966e365ad09ba51782f8608f011686af77b833d7f2df8b8"
     },
     {
       "bytes": 2527,

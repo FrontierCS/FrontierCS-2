@@ -43,3 +43,18 @@ USER 10001:10001
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
 WORKDIR /workspace
+
+# Go module cache for the repository's pinned modules. The Agent sandbox has no
+# network access, so `go build` and `go test` resolve modules from this cache;
+# GOPROXY serves the same cache, so a build with another GOMODCACHE also works.
+USER 0:0
+RUN cp -a /frontier/task/repo /tmp/modules \
+    && cd /tmp/modules \
+    && GOMODCACHE=/opt/frontier/go-mod GOFLAGS=-modcacherw go mod download \
+    && GOMODCACHE=/opt/frontier/go-mod GOPROXY=off GOCACHE=/tmp/go-build go build ./... \
+    && GOMODCACHE=/opt/frontier/go-mod GOPROXY=off GOCACHE=/tmp/go-build go vet ./core/vm \
+    && rm -rf /tmp/modules /tmp/go-build \
+    && chmod -R a-w,a+rX /opt/frontier/go-mod
+
+USER 10001:10001
+ENV GOMODCACHE=/opt/frontier/go-mod GOPROXY=file:///opt/frontier/go-mod/cache/download GOSUMDB=off GOTOOLCHAIN=local

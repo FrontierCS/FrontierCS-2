@@ -14,8 +14,8 @@
       "train": "e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
     },
     "identity_algorithm": "preview-source-identity/v1",
-    "image_tag": "source-71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328",
-    "source_set_sha256": "sha256:71a991a0748db400524010797292cb695af0939d695e2b1f2b785c3dbbd84328"
+    "image_tag": "source-49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275",
+    "source_set_sha256": "sha256:49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275"
   },
   "evm_state_checkpoints": {
     "datasets": {
