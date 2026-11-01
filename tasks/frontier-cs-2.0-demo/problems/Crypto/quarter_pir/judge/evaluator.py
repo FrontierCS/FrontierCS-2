@@ -20,9 +20,9 @@ from pathlib import Path
 import yaml
 
 from submission_patch import apply_submission_patch
-from table2_metrics import (GATED_EXPERIMENT_METRICS, RPC_METRICS, check_result, compare_experiment,
-                            compare_rpc, continuous_score, audit_failure, probe_failure, reference_message_bytes,
-                            timing_values, validity_failure)
+from table2_metrics import (GATED_METRICS, check_result, compare_experiment, continuous_score, audit_failure,
+                            probe_failure, reference_message_bytes, reference_volume_storage, score_online,
+                            storage_peak, timing_values, validity_failure)
 
 
 TASK = Path(__file__).resolve().parent
@@ -360,10 +360,7 @@ def failure_metrics(final: bool):
         'beats_reference': 0, 'reference_score': 0.0, 'margin': 0.0,
         'beat_spec_suite_role': 'final' if final else 'train',
         'beat_spec_workload_passes': [
-            {'workload': f'w{index:05d}', 'group': 'rpc', 'metrics': {name: False for name in RPC_METRICS}}
-            for index in range(QUERY_COUNT * experiments)] + [
-            {'workload': f'e{index:05d}', 'group': 'experiment',
-             'metrics': {name: False for name in GATED_EXPERIMENT_METRICS}}
+            {'workload': f'e{index:05d}', 'metrics': {name: False for name in GATED_METRICS}}
             for index in range(experiments)],
         **{name: -1 for name in VISIBLE},
     }
@@ -423,14 +420,14 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             if failure is not None:
                 raise Rejected('paired validity check failed: ' + failure,
                                'hint_export' if failure == 'hint_export_mismatch' else 'process_memory')
-            # Coverage probe: the untimed queries after the measured ones, identical
+            # Coverage probe: the additional queries after the measured ones, identical
             # in both runs. It is a validity condition and enters no metric.
             try:
                 failure = probe_failure(results['candidate'], results['reference'])
             except ValueError as error:
                 raise TaskConfigurationError('paired coverage probes differ') from error
             if failure is not None:
-                raise Rejected('additional untimed query failed', 'coverage_probe', details={
+                raise Rejected('additional query failed', 'coverage_probe', details={
                     'workload': f'e{ordinal:05d}', 'size': size, 'check': failure,
                     'probe_queries': results['candidate']['probe_queries'],
                     'candidate_answered': results['candidate']['probe_answered'],
@@ -466,10 +463,8 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                 reference_ns = measurements['reference']['median_ns'][index]
                 candidate_bytes = results['candidate']['upload_bytes'][index] + results['candidate']['download_bytes'][index]
                 reference_bytes = results['reference']['upload_bytes'][index] + results['reference']['download_bytes'][index]
-                rows.append({'workload': f'w{len(candidate_times):05d}', 'group': 'rpc',
-                             'metrics': compare_rpc(candidate_ns, reference_ns, candidate_bytes, reference_bytes)})
                 private_measurements.append({
-                    'workload': rows[-1]['workload'],
+                    'workload': f'w{len(candidate_times):05d}',
                     'candidate_ns': measurements['candidate']['times'][index],
                     'reference_ns': measurements['reference']['times'][index],
                     'naive_ns': measurements['naive']['times'][index],
@@ -481,16 +476,22 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             for implementation in score_rows:
                 # The expansion baseline only replaces the server handler.
                 source = 'candidate' if implementation == 'candidate' else 'reference'
+                online_ns, online_queries = score_online(results[source])
+                storage = (storage_peak(results['candidate']) if source == 'candidate' else
+                           max(results['reference']['client_storage_bytes'],
+                               reference_volume_storage(results['reference'])))
                 score_rows[implementation].append({
-                    'db_size': size, 'queries': QUERY_COUNT,
+                    'db_size': size, 'queries': online_queries,
                     'bytes': [up + down for up, down in zip(results[source]['upload_bytes'],
                                                             results[source]['download_bytes'])],
                     'server_ns': measurements[implementation]['median_ns'],
                     'offline_ns': results[source]['offline_elapsed_ns'],
-                    'online_ns': results[source]['online_elapsed_ns']})
+                    'online_ns': online_ns, 'storage': storage})
             experiment_id = f'e{ordinal:05d}'
-            rows.append({'workload': experiment_id, 'group': 'experiment',
-                         'metrics': compare_experiment(results['candidate'], results['reference'])})
+            rows.append({'workload': experiment_id,
+                         'metrics': compare_experiment(results['candidate'], results['reference'],
+                                                       measurements['candidate']['median_ns'],
+                                                       measurements['reference']['median_ns'])})
             summary = {}
             for implementation in ('candidate', 'reference'):
                 record = {key: value for key, value in results[implementation].items()
@@ -509,7 +510,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                 public['preprocessing_s'][label] = results['candidate']['offline_elapsed_ns'] / 1e9
                 public['communication'][label] = (summary['candidate']['upload_bytes_per_query']
                                                   + summary['candidate']['download_bytes_per_query'])
-                public['storage'][label] = results['candidate']['client_storage_bytes']
+                public['storage'][label] = storage_peak(results['candidate'])
             shutil.rmtree(directory, ignore_errors=True)
         try:
             score = continuous_score(score_rows['candidate'])

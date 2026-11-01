@@ -1617,9 +1617,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:9cc43d70c3c739e1c9e7304641a5b200d77453edd04bf8b9ae01645b3ab50563",
+        "digest": "sha256:a299e34ab92d053b165928b41cbfd58b48dd22390a4a7d7eb9ca629bcb6808b8",
         "repository": "docker.io/joyemang33/fcs2-task-quarter_pir-agent",
-        "tag": "source-09e7636ec168243ea7d5c9eb492f9ef19ad97c9f9e2b196c3606b14d85f9ed12"
+        "tag": "source-972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -1629,7 +1629,7 @@
       "dataset_image": {
         "digest": "sha256:fb2c307cda39c64bb08bbe3fb74a031a36f70729fcce557793c3b7726b6c6375",
         "repository": "docker.io/joyemang33/fcs2-task-quarter_pir-datasets",
-        "tag": "source-09e7636ec168243ea7d5c9eb492f9ef19ad97c9f9e2b196c3606b14d85f9ed12"
+        "tag": "source-972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0"
       },
       "datasets": {
         "eval_sha256": "sha256:b5a37bb0d841b3307e5a021c7cb3de20d3785653863ee183ee8eb71635596d8a",
@@ -1641,12 +1641,12 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:aaf613f1150c4366a95a0b3a60ef601e1d9fcef3eb544d11f196c2d5fc481e15",
         "repository": "docker.io/joyemang33/fcs2-task-quarter_pir-reference",
-        "tag": "source-09e7636ec168243ea7d5c9eb492f9ef19ad97c9f9e2b196c3606b14d85f9ed12"
+        "tag": "source-972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0"
       },
       "verifier_image": {
-        "digest": "sha256:94b21482dbd3fe6f4f254d5dfecbc3bc44755e5c7ad871db4af734b4422050c6",
+        "digest": "sha256:ad348724d7099ad5af2cb02fc091d3a4bf8a71b26e70faf5a8d45f47a3705f5a",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-quarter_pir",
-        "tag": "source-09e7636ec168243ea7d5c9eb492f9ef19ad97c9f9e2b196c3606b14d85f9ed12"
+        "tag": "source-972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0"
       }
     },
     {

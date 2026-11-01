@@ -1,4 +1,4 @@
-// Coverage probe: the additional untimed queries the conductor issues after
+// Coverage probe: the additional queries the conductor issues after
 // the measured ones. They are chosen from the trusted generator's own
 // bookkeeping (tags, labels, consumption counters), never from anything the
 // client reports, so the candidate and the paired reference run are asked the

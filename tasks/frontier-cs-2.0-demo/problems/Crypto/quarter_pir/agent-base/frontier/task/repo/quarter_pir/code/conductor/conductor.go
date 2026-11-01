@@ -75,8 +75,9 @@ type result struct {
 	UploadBytes         []int  `json:"upload_bytes"`
 	DownloadBytes       []int  `json:"download_bytes"`
 	OfflineCommBytes    uint64 `json:"offline_communication_bytes"`
-	// Coverage probe: the untimed queries after the measured ones. They enter
-	// no clock, no byte count and no transcript. ProbeAnswered is the number of
+	// Coverage probe: the additional queries after the measured ones. They
+	// enter no measured-query clock, no byte count and no transcript; their
+	// own clocks are below. ProbeAnswered is the number of
 	// leading probe queries that passed every check; ProbeFailure names the
 	// check the next one failed, or is empty when all passed.
 	ProbeQueries      uint64 `json:"probe_queries"`
@@ -90,10 +91,19 @@ type result struct {
 	ProbePlanNs       int64  `json:"probe_plan_ns"`
 	ProbeNs           int64  `json:"probe_elapsed_ns"`
 	ProbeVolumeNs     int64  `json:"probe_volume_elapsed_ns"`
+	// Online time of the answered probe queries, clocked like a measured
+	// query's (client Query, server round trip, client Reconstruct): the depth
+	// part and the volume part separately.
+	ProbeOnlineNs       int64 `json:"probe_online_ns"`
+	ProbeVolumeOnlineNs int64 `json:"probe_volume_online_ns"`
 	// The paired reference run is not asked the volume phase: it serves every
 	// volume query, since no volume query lies in a chunk whose allotment is
 	// used up.
 	ProbeVolumeSkipped bool `json:"probe_volume_skipped"`
+	// Largest client-storage reading of the volume phase, taken after one of
+	// its queries drawn at random and after its second-to-last query, while a
+	// query is still to come. Zero when the volume phase reached no reading.
+	StorageVolumeBytes uint64 `json:"client_storage_volume_bytes"`
 	// Primary-hint audit after the depth part of the probe (only when it passed).
 	// AuditMismatched lists the positions of the asked hints whose record was
 	// not the canonical one; AuditFailure is set when the client did not answer.
@@ -358,8 +368,8 @@ func main() {
 	}
 
 	// readStorage takes one client-storage reading between two queries,
-	// outside every clock.
-	readStorage := func() {
+	// outside every clock, and keeps the largest in *peak.
+	readStorage := func(peak *uint64) {
 		if frame.Write(toClient, 'M', nil) != nil {
 			finish("client_crashed_or_protocol")
 		}
@@ -367,8 +377,8 @@ func main() {
 		if len(reading) != 8 {
 			finish("client_crashed_or_protocol")
 		}
-		if live := binary.LittleEndian.Uint64(reading); live > outcome.StorageBytes {
-			outcome.StorageBytes = live
+		if live := binary.LittleEndian.Uint64(reading); live > *peak {
+			*peak = live
 		}
 	}
 
@@ -376,8 +386,8 @@ func main() {
 	// included. Among the measured queries the client driver reads the live
 	// heap only after the first, after one drawn at random and after the last,
 	// because each reading's forced collections slow the queries that follow
-	// it; after every additional untimed query before the volume phase, which
-	// no clock measures.
+	// it; after every additional query before the volume phase, whose clocks
+	// exclude the readings. The volume phase has its own readings (below).
 	storageQuery := 1 + uint64(rand.New(rand.NewSource(settings.ProbeSeed^0x73746f72)).Int63())%(settings.Queries-2)
 	transcript := make([]record, 0, settings.Queries)
 	digest := sha256.New()
@@ -405,7 +415,7 @@ func main() {
 		}
 		transcript = append(transcript, entry)
 		if q == 0 || q == storageQuery || q+1 == settings.Queries {
-			readStorage()
+			readStorage(&outcome.StorageBytes)
 		}
 		for _, part := range [][]byte{entry.Request, entry.Response} {
 			binary.LittleEndian.PutUint64(word[:], uint64(len(part)))
@@ -416,8 +426,9 @@ func main() {
 	outcome.OnlineNs = outcome.OnlineQueryNs + outcome.OnlineTransportNs + outcome.OnlineReconstructNs
 	outcome.TranscriptSHA256 = hex.EncodeToString(digest.Sum(nil))
 
-	// Coverage probe. Every clock, byte count and the transcript are complete
-	// at this point; nothing below changes a measured quantity. A probe query
+	// Coverage probe. The byte counts and the transcript are complete at this
+	// point; probe queries are clocked separately (ProbeOnlineNs,
+	// ProbeVolumeOnlineNs) and change no measured-query quantity. A probe query
 	// is checked exactly like a measured one and, in addition, neither of its
 	// messages may be longer than the longest measured message of its
 	// direction. The probe stops at the first failed check and the record
@@ -443,12 +454,20 @@ func main() {
 		}
 	}
 	outcome.ProbeSHA256 = hex.EncodeToString(planDigest.Sum(nil))
+	// The volume phase is read after one of its queries drawn at random and
+	// after its second-to-last query: per-query state grown up to the planned
+	// budget, while the client must still be able to serve a query.
+	volumeQuery := ^uint64(0)
+	if outcome.ProbeVolume >= 2 {
+		volumeQuery = uint64(rand.New(rand.NewSource(settings.ProbeSeed^0x766f6c75)).Int63()) % (outcome.ProbeVolume - 1)
+	}
 	probe := func(volume bool) {
+		position := uint64(0)
 		for _, query := range plan {
 			if query.Volume != volume {
 				continue
 			}
-			failure, entry, _ := exchange(query.X)
+			failure, entry, intervals := exchange(query.X)
 			if generator.Last.X != query.X || (!query.Volume && generator.Last.HitSetId != query.Hit) {
 				outcome.ProbeMispredicted++
 			}
@@ -461,8 +480,15 @@ func main() {
 			}
 			outcome.ProbeAnswered++
 			if !volume {
-				readStorage()
+				outcome.ProbeOnlineNs += intervals[0] + intervals[1] + intervals[2]
+				readStorage(&outcome.StorageBytes)
+				continue
 			}
+			outcome.ProbeVolumeOnlineNs += intervals[0] + intervals[1] + intervals[2]
+			if position == volumeQuery || position+2 == outcome.ProbeVolume {
+				readStorage(&outcome.StorageVolumeBytes)
+			}
+			position++
 		}
 	}
 	probe(false)

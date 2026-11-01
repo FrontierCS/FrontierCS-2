@@ -18,9 +18,9 @@
   "file_count": 91,
   "files": [
     {
-      "bytes": 1331,
+      "bytes": 1570,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:3316c57920d945827b139a1584b2eb0a5da75a3e96c5a7057eceaeb8eae1e632"
+      "sha256": "sha256:425575c389062bf32e0e33428508435bc3dbd3ebcfc61db4e5de78c2e432591c"
     },
     {
       "bytes": 4304,
@@ -53,9 +53,9 @@
       "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
     },
     {
-      "bytes": 10805,
+      "bytes": 11306,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:2495edf432fd2510322f1ad3acec81d55ce1c3d852ececed9707ac5b1217069b"
+      "sha256": "sha256:28793324f44ac3285b9b229c85c73b82d4faab1ef641c89c700b90f8eb5cc07b"
     },
     {
       "bytes": 808,
@@ -78,14 +78,14 @@
       "sha256": "sha256:da84ca109834a9fe37b96a6a1c8eec47a0a54b55c7c18a90609c14fabdc12293"
     },
     {
-      "bytes": 18183,
+      "bytes": 19714,
       "path": "agent-base/frontier/task/repo/quarter_pir/code/conductor/conductor.go",
-      "sha256": "sha256:393a02db62aad5c27fbb9f646b02fe327bfab903c67dd3994196c898c65d6044"
+      "sha256": "sha256:c4ec2d7898488eb391b6dd53a53036aef0d89d798922726b9a0766f14cbf7a49"
     },
     {
-      "bytes": 9930,
+      "bytes": 9922,
       "path": "agent-base/frontier/task/repo/quarter_pir/code/conductor/probe.go",
-      "sha256": "sha256:f01e055c6482f5e7e7a98e954776cfe73d88e2e8c8bd73e68b79b0e168a8ca41"
+      "sha256": "sha256:b033f3d0370a5c378b3e0ea5283b73b153a3787ddb19058dff5fcbf6d7c7cf3e"
     },
     {
       "bytes": 144,
@@ -238,9 +238,9 @@
       "sha256": "sha256:070b606c209b0ce4b275a1cde1f8e444af43db7e3f38b59b54edeb86b026063c"
     },
     {
-      "bytes": 14147,
+      "bytes": 15400,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:762bdcd733d4848c4edc3cd11c750cb007175b19e7bf25111a64b681209103d9"
+      "sha256": "sha256:d24b58678625bcdab465df3aa917d83ba163a792612dd217831b9363933c0c79"
     },
     {
       "bytes": 1593,
@@ -258,9 +258,9 @@
       "sha256": "sha256:d4afdc83b37da4c0cb4c1be57d79405cb045bb100558eab2310dca244c9271bd"
     },
     {
-      "bytes": 29018,
+      "bytes": 29093,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:ed1b9b612afcc6ab8b63e12e7ccb1f05d5996fc3e4d18a8a3c08ef890337b8e5"
+      "sha256": "sha256:ea41b54d859fcb1a0fb9c43b6b2f7bbc0344a2a6f7a0df483420ecfc877624e0"
     },
     {
       "bytes": 808,
@@ -283,14 +283,14 @@
       "sha256": "sha256:da84ca109834a9fe37b96a6a1c8eec47a0a54b55c7c18a90609c14fabdc12293"
     },
     {
-      "bytes": 18183,
+      "bytes": 19714,
       "path": "judge/harbor/app/quarter_pir/code/conductor/conductor.go",
-      "sha256": "sha256:393a02db62aad5c27fbb9f646b02fe327bfab903c67dd3994196c898c65d6044"
+      "sha256": "sha256:c4ec2d7898488eb391b6dd53a53036aef0d89d798922726b9a0766f14cbf7a49"
     },
     {
-      "bytes": 9930,
+      "bytes": 9922,
       "path": "judge/harbor/app/quarter_pir/code/conductor/probe.go",
-      "sha256": "sha256:f01e055c6482f5e7e7a98e954776cfe73d88e2e8c8bd73e68b79b0e168a8ca41"
+      "sha256": "sha256:b033f3d0370a5c378b3e0ea5283b73b153a3787ddb19058dff5fcbf6d7c7cf3e"
     },
     {
       "bytes": 144,
@@ -428,9 +428,9 @@
       "sha256": "sha256:a49388a346e012b82c7f34b225af5e8349f45040a9a37f24247d1a6397384a8d"
     },
     {
-      "bytes": 11141,
+      "bytes": 11642,
       "path": "judge/readme",
-      "sha256": "sha256:b2a87133502101e1c33452458285d9bd059a51460658b50ecdddf48c0ecf1629"
+      "sha256": "sha256:0e64fbaa861d8930c6b3d0bb09e0ff780ecc5777b6f22956b1fb64b8ed910481"
     },
     {
       "bytes": 2430,
@@ -443,9 +443,9 @@
       "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
     },
     {
-      "bytes": 12712,
+      "bytes": 17721,
       "path": "judge/table2_metrics.py",
-      "sha256": "sha256:55bc07f8c791e7881bd68fca4e4efa8969948954f32583968c8e68398ef71f07"
+      "sha256": "sha256:bbf6b9dcc610c8825d61bc5afcbf9c8ea15fd2782d822dd9fd39f6e85fe8dbdd"
     },
     {
       "bytes": 2587,
@@ -476,8 +476,8 @@
   "problem_id": "quarter_pir",
   "schema_version": "frontier.frontiersmith-task-lock/v1",
   "source": {
-    "evaluator_sha256": "sha256:ed1b9b612afcc6ab8b63e12e7ccb1f05d5996fc3e4d18a8a3c08ef890337b8e5",
-    "statement_sha256": "sha256:b2a87133502101e1c33452458285d9bd059a51460658b50ecdddf48c0ecf1629",
+    "evaluator_sha256": "sha256:ea41b54d859fcb1a0fb9c43b6b2f7bbc0344a2a6f7a0df483420ecfc877624e0",
+    "statement_sha256": "sha256:0e64fbaa861d8930c6b3d0bb09e0ff780ecc5777b6f22956b1fb64b8ed910481",
     "task_dir": "task"
   }
 }
