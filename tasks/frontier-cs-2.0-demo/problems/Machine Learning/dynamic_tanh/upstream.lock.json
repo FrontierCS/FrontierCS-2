@@ -14,19 +14,19 @@
   "file_count": 224,
   "files": [
     {
-      "bytes": 2087,
+      "bytes": 2094,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:8cd0f593c6db0f788665568429d08a1d85d0624a39676f988da364570422c6f1"
+      "sha256": "sha256:d59f60d4c7f2d84d09a574ada84d73cb92e0ab46d00d0ced78fca3c838178489"
     },
     {
-      "bytes": 8155,
+      "bytes": 8170,
       "path": "agent-base/frontier/task/README.md",
-      "sha256": "sha256:8bf5250b893d32b0f66540791017740937a6e3403abe8db6105336cb0db35035"
+      "sha256": "sha256:b31865881c90e27a03db3a64baf36ef8b7fb23dd6dfa7e73bf5a2b02a7dfdd93"
     },
     {
-      "bytes": 3857,
+      "bytes": 3865,
       "path": "agent-base/frontier/task/bin/README.md",
-      "sha256": "sha256:3dda08613a0e9e8b8d813f820654d31d1d6908d35c51f20a1d940a41ba2087b0"
+      "sha256": "sha256:392057c54772b10bb319a058d9e4b74aafe0a7b4fad656d70403848ba84953c9"
     },
     {
       "bytes": 4701,
@@ -59,9 +59,9 @@
       "sha256": "sha256:34d9a272b432fb249335af2439b3b533a8e335bd88e6b6e2e0bec82181c95b8a"
     },
     {
-      "bytes": 12954,
+      "bytes": 10415,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:e08a53c517b4c25e0691e59ffd2517f5093a52b6db3873543f72149ed84b57d8"
+      "sha256": "sha256:d111d1201c9f5689da5d0b7ce25f0436bcfd610e792361ea1edd1c1b92c638b2"
     },
     {
       "bytes": 3515,
@@ -114,9 +114,9 @@
       "sha256": "sha256:4b189315f67e25f612b9e7a6df6fb20111f96ca4a3ac989b6eeb1ab4264c40c9"
     },
     {
-      "bytes": 2408,
+      "bytes": 3080,
       "path": "agent-gpu/Dockerfile",
-      "sha256": "sha256:b6e38773535e92c81aaa85cb130dad7428eb7958c5aba1038ff90dcbe7da39d8"
+      "sha256": "sha256:b33a1f2218a2cfbcd575912407b9e043ffe5613671a0e2300859a0fb1df03dac"
     },
     {
       "bytes": 806,
@@ -139,24 +139,24 @@
       "sha256": "sha256:19295a2b0f0881e0559ca53c100857cf5bae3420f08653b2c1d34ead4dc1d6a3"
     },
     {
-      "bytes": 11154,
+      "bytes": 13418,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:4c085dad78470874287fe8ead55b81a34b1a91bc9191680cdd307c2acfacf914"
+      "sha256": "sha256:11563227da6fc438cf65ae7112899626d20e038ad8920da3db8a0b58b7d8e66a"
     },
     {
       "bytes": 202,
       "path": "judge/candidate-diagnostic.json",
-      "sha256": "sha256:8ed8d4e94a4d419f3967ab2143c60f4c055e55693fa7585104d2e4a60dc83bed"
+      "sha256": "sha256:5789336265bb8b2d646425eb7c6fa61d5e0a3264cd3df25d5118e743f7c9cac1"
     },
     {
-      "bytes": 3079,
+      "bytes": 3148,
       "path": "judge/candidate_failure.py",
-      "sha256": "sha256:e4c097088689cd59c115b9af7bf98facd4e1b777cedb6858c16105a0080cd4fc"
+      "sha256": "sha256:a0fded44ed7a87a89a1313ebf2f4d68e118af55bc650ef8d5cec7001d1fb3ef8"
     },
     {
-      "bytes": 1387,
+      "bytes": 1403,
       "path": "judge/config.yaml",
-      "sha256": "sha256:53bee9242b9d0bf61e502c54df541914427678bc369f70f90b22eda719e7567c"
+      "sha256": "sha256:0f418cb06a38ac1d71eece2c3e08ddf2903d99aa9e7c87a3fbab5e13a4c31444"
     },
     {
       "bytes": 82,
@@ -164,9 +164,9 @@
       "sha256": "sha256:beba2a56de2ddbdd730f0499a376968f95fceaabe3636534f4e436a5a84af5d1"
     },
     {
-      "bytes": 49006,
+      "bytes": 69250,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:7f59fd8b4c07dcfd0dfbb8cce73e404bb2980842b5599dbf2b8ba82666aed3f7"
+      "sha256": "sha256:8a3f9d2c798b7bc9c4719451e4159d6264ab7a026f85889b82955f4d8093d0f6"
     },
     {
       "bytes": 418049,
@@ -1084,9 +1084,9 @@
       "sha256": "sha256:7251051bc22e1c122daae53680e8eb86479103a335ec508f82d9ef013e0c637a"
     },
     {
-      "bytes": 13080,
+      "bytes": 10415,
       "path": "judge/readme",
-      "sha256": "sha256:2888cd5c6b120afdd8163ab394a470f715003b0e38f610612b5c98d46574dcc5"
+      "sha256": "sha256:d111d1201c9f5689da5d0b7ce25f0436bcfd610e792361ea1edd1c1b92c638b2"
     },
     {
       "bytes": 1847,
@@ -1099,14 +1099,14 @@
       "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
     },
     {
-      "bytes": 2897,
+      "bytes": 2912,
       "path": "policy.json",
-      "sha256": "sha256:bf934a997f6fdea903d3a42b938f15c6f0f650c46c26a516bab19ce7e5efffd7"
+      "sha256": "sha256:a566a20e96b040f99b52de9323525e1109432a499a798d1243346edac7b3967d"
     },
     {
-      "bytes": 1502,
+      "bytes": 1510,
       "path": "verifier/Dockerfile",
-      "sha256": "sha256:e288cae614e8c139536bf40a32832604955f2b7e8ea017854d1f77059e2ce059"
+      "sha256": "sha256:73a25a044d55709aad4a1b0fbb44c8d38ee09303d6a7c192b8d4e8012ffc2698"
     },
     {
       "bytes": 13321,
@@ -1129,9 +1129,9 @@
       "sha256": "sha256:60409ebe904e3a4370cb59cd87abe0cefa819b727bf0eea59248655776f8a53f"
     },
     {
-      "bytes": 3565,
+      "bytes": 3573,
       "path": "verifier-gpu/Dockerfile",
-      "sha256": "sha256:325773104d1a22a20c445e122f22a7f199e0e31555512e40fc953e7ddd453837"
+      "sha256": "sha256:d2132e1df3c4bb42201298295894b730f81f24903468ecf63cde9eff309859cb"
     }
   ],
   "preview_answering_window_sync": {
@@ -1146,7 +1146,7 @@
   "source": {
     "completion_parent_lock_sha256": "sha256:5b592604cb2a4ac2eccf442b4a28e95eb6f7cfe2e681cc6f8118a76ae547e16e",
     "completion_parent_tree_sha256": "sha256:3187246a03eab647105784dd97cb7e48b51284210f25ec4d0cf84280f1525889",
-    "evaluator_sha256": "sha256:7f59fd8b4c07dcfd0dfbb8cce73e404bb2980842b5599dbf2b8ba82666aed3f7",
+    "evaluator_sha256": "sha256:8a3f9d2c798b7bc9c4719451e4159d6264ab7a026f85889b82955f4d8093d0f6",
     "export_parent_lock_sha256": "sha256:ebb0df2e6c4e9c5a5b58350961041c506e17ba8b0f7dabdcbb65ff41d84d61c9",
     "export_parent_tree_sha256": "sha256:cb8246d2b910d4ed9324f434c63f9f4b0290db2c71114f77365f804f707495ee",
     "frozen_parent_lock_sha256": "sha256:9dce2981508ee529074a3079315c0b767519537ee6354e68b54c6c602924bead",
@@ -1155,7 +1155,7 @@
     "measured_source_binding_file_sha256": "sha256:4a1520bfc21929929613bed127f3fcb38b91468ab780531c27f8c58d571f4f66",
     "measured_task_version_id": "taskver-redacted-2878d408",
     "packaging_scope": "Stable problem/dataset identity, operational feedback definitions, native-checkout regression coverage, PASS-first instruction clarification, and descriptive judge metadata only; evaluator, reference, workload assets, runtime recipes, and policy limits unchanged. Historical image/source identities and measurements are not rebound.",
-    "statement_sha256": "sha256:2888cd5c6b120afdd8163ab394a470f715003b0e38f610612b5c98d46574dcc5",
+    "statement_sha256": "sha256:d111d1201c9f5689da5d0b7ce25f0436bcfd610e792361ea1edd1c1b92c638b2",
     "task_dir": "prospective-task"
   },
   "preview_beat_spec_v3_refresh": {

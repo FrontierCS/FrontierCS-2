@@ -1,5 +1,5 @@
 {
   "diagnostic_schema": "dyt.candidate-diagnostic/v1",
-  "helper_sha256": "e4c097088689cd59c115b9af7bf98facd4e1b777cedb6858c16105a0080cd4fc",
+  "helper_sha256": "a0fded44ed7a87a89a1313ebf2f4d68e118af55bc650ef8d5cec7001d1fb3ef8",
   "schema": "frontier.candidate-diagnostic-validator/v1"
 }

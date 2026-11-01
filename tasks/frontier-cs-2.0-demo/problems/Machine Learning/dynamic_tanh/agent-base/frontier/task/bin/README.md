@@ -58,7 +58,7 @@ wall-time cap must not be interpreted as an additional answer-time allowance.
 
 ```json
 {
-  "eval_timeout_seconds": 900,
+  "eval_timeout_seconds": 1800,
   "max_train_calls": 3,
   "max_train_wall_seconds": 2700,
   "wall_time_seconds": 18000
@@ -114,7 +114,7 @@ wall-time cap must not be interpreted as an additional answer-time allowance.
 {
   "agent": {
     "allowed_types": [
-      "L4"
+      "A100-80GB"
     ],
     "max_gpu_seconds": 1800,
     "max_instance_seconds": 900,
@@ -122,7 +122,7 @@ wall-time cap must not be interpreted as an additional answer-time allowance.
   },
   "verifier": {
     "max_gpu_instances": 1,
-    "max_gpu_seconds": 3600
+    "max_gpu_seconds": 4500
   }
 }
 ```
