@@ -4759,7 +4759,7 @@
     },
     "display_name": "Private Set List Decoding",
     "family": "frontier-cs-2.0/cryptography",
-    "image_tag": "source-09e7636ec168243ea7d5c9eb492f9ef19ad97c9f9e2b196c3606b14d85f9ed12",
+    "image_tag": "source-972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4826,7 +4826,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:09e7636ec168243ea7d5c9eb492f9ef19ad97c9f9e2b196c3606b14d85f9ed12"
+      "source_set_sha256": "sha256:972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
