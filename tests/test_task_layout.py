@@ -19,6 +19,8 @@ import validate_task_layout as layout
 
 class TaskLayoutTests(unittest.TestCase):
     def test_grouped_feedback_probe_uses_declared_roles_and_rejects_incomplete_rows(self):
+        # No catalog task declares workload groups any more (quarter_pir judges one workload per
+        # experiment); the grouped feedback path is exercised on a copy of its spec with two groups.
         task = ROOT / "tasks/frontier-cs-2.0-demo/problems/Crypto/quarter_pir"
         spec = json.loads((task / "judge/beat_spec.json").read_text())
         names = [row["name"] for row in spec["metrics"]]
@@ -27,33 +29,39 @@ class TaskLayoutTests(unittest.TestCase):
         helper = task / "verifier/beat_spec_feedback.py"
         namespace = {"__name__": "grouped_feedback_test", "__file__": str(helper)}
         exec(compile(helper.read_text(), str(helper), "exec"), namespace)
-        for role in ("train", "final"):
-            values = {"beats_reference": 1, "beat_spec_suite_role": role,
-                      "beat_spec_workload_passes": []}
-            for group, record in spec["workload_groups"].items():
-                values["beat_spec_workload_passes"].extend(
-                    {"workload": f"{group}-{i}", "group": group,
-                     "metrics": {name: True for name in record["metrics"]}}
-                    for i in range(record["counts"][role]))
-            actual = namespace["public_metrics"](
-                values, beat_spec_path=task / "judge/beat_spec.json",
-                configured_visible=visible)
-            for record in spec["workload_groups"].values():
-                for name in record["metrics"]:
-                    self.assertEqual(actual["beat_spec_progress"][name]["total"],
-                                     record["counts"][role])
-            for mutation in ("role", "row", "group"):
-                invalid = copy.deepcopy(values)
-                if mutation == "role":
-                    invalid.pop("beat_spec_suite_role")
-                elif mutation == "row":
-                    invalid["beat_spec_workload_passes"].pop()
-                else:
-                    invalid["beat_spec_workload_passes"][0]["group"] = "unknown"
-                with self.assertRaises(ValueError):
-                    namespace["public_metrics"](
-                        invalid, beat_spec_path=task / "judge/beat_spec.json",
-                        configured_visible=visible)
+        grouped = copy.deepcopy(spec)
+        grouped["workload_groups"] = {
+            "rpc": {"metrics": names[:2], "counts": {"train": 1000, "final": 2000}},
+            "experiment": {"metrics": names[2:], "counts": {"train": 1, "final": 2}},
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            spec_path = Path(temporary) / "beat_spec.json"
+            spec_path.write_text(json.dumps(grouped))
+            for role in ("train", "final"):
+                values = {"beats_reference": 1, "beat_spec_suite_role": role,
+                          "beat_spec_workload_passes": []}
+                for group, record in grouped["workload_groups"].items():
+                    values["beat_spec_workload_passes"].extend(
+                        {"workload": f"{group}-{i}", "group": group,
+                         "metrics": {name: True for name in record["metrics"]}}
+                        for i in range(record["counts"][role]))
+                actual = namespace["public_metrics"](
+                    values, beat_spec_path=spec_path, configured_visible=visible)
+                for record in grouped["workload_groups"].values():
+                    for name in record["metrics"]:
+                        self.assertEqual(actual["beat_spec_progress"][name]["total"],
+                                         record["counts"][role])
+                for mutation in ("role", "row", "group"):
+                    invalid = copy.deepcopy(values)
+                    if mutation == "role":
+                        invalid.pop("beat_spec_suite_role")
+                    elif mutation == "row":
+                        invalid["beat_spec_workload_passes"].pop()
+                    else:
+                        invalid["beat_spec_workload_passes"][0]["group"] = "unknown"
+                    with self.assertRaises(ValueError):
+                        namespace["public_metrics"](
+                            invalid, beat_spec_path=spec_path, configured_visible=visible)
 
     def test_every_catalog_task_has_a_complete_native_source_lock(self):
         names = json.loads((ROOT / "config/task-definitions.json").read_text())

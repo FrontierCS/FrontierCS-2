@@ -168,6 +168,10 @@
    "attack": "Prints a forged timing record with the println builtin (stderr). Nothing reads submission-writable output, so the run is valid and its metrics are those of the conductor; it must not beat the reference.",
    "expect": "valid_not_beating"
   },
+  "positive/grow_state_in_volume_phase.patch": {
+   "attack": "The reference with a 32 MiB table that appears only after 4,096 queries, in the volume phase of the additional queries, and is kept. Valid, but client storage is the peak over the online phase up to the planned budget, so the storage comparison fails.",
+   "expect": "valid_over_storage"
+  },
   "positive/reference_unchanged.patch": {
    "attack": "The reference itself: valid, and by strictness it does not beat itself (communication is equal).",
    "expect": "valid_not_beating"

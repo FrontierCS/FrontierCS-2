@@ -38,7 +38,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
 
     def result(self, *, size=65536, offline=1_000_000_000, online=400_000_000, storage=2_000_000,
                hint="a" * 64, up=100, down=128, rss=700_000_000, depth=492, volume=None, answered=None,
-               skipped=False,
+               skipped=False, storage_volume=None, probe_online=None, probe_volume_online=None,
                probe_failure="", probe_digest="d" * 64, audit=512, mismatched=(), audit_failure="",
                audit_digest="f" * 64):
         import math
@@ -50,10 +50,17 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
             answered = depth if skipped else probe
         if probe_failure and answered < depth:  # no audit after a failed depth part
             audit, audit_digest = 0, ""
+        if storage_volume is None:  # no volume-phase reading when the phase is skipped
+            storage_volume = 0 if skipped else storage
+        if probe_online is None:  # every answered probe query is clocked
+            probe_online = 7 * min(answered, depth)
+        if probe_volume_online is None:
+            probe_volume_online = 5 * max(0, answered - depth)
         return {"valid": True, "failure": "", "db_size": size, "actual_queries": 1000,
                 "planned_queries": int(math.sqrt(size) * math.log(size)), "threads": 4,
                 "offline_elapsed_ns": offline, "online_elapsed_ns": online,
-                "client_storage_bytes": storage, "client_peak_rss_bytes": rss,
+                "client_storage_bytes": storage, "client_storage_volume_bytes": storage_volume,
+                "client_peak_rss_bytes": rss,
                 "hint_export_bytes": 1040384,
                 "hint_export_sha256": hint, "transcript_sha256": "b" * 64,
                 "upload_bytes": [up] * 1000, "download_bytes": [down] * 1000,
@@ -61,8 +68,13 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                 "probe_queries": probe, "probe_answered": answered,
                 "probe_failure": probe_failure, "probe_sha256": probe_digest, "probe_volume_queries": volume,
                 "probe_volume_skipped": skipped,
+                "probe_online_ns": probe_online, "probe_volume_online_ns": probe_volume_online,
                 "audit_hints": audit, "audit_mismatched": list(mismatched), "audit_failure": audit_failure,
                 "audit_sha256": audit_digest}
+
+    def compare(self, candidate, reference, candidate_server=None, reference_server=None):
+        return self.gate.compare_experiment(candidate, reference, candidate_server or [10] * 1000,
+                                            reference_server or [11] * 1000)
 
     def test_reference_messages_are_counted_at_the_tight_encoding(self):
         # Packed offsets: 32 offsets of 9 bits and 128 offsets of 14 bits.
@@ -72,24 +84,30 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("(int(p.SBSize)*int(p.OffsetBits())+7)/8", source)
 
     def test_every_comparison_is_strict_without_allowance(self):
+        # One workload per experiment, judged on all five metrics.
+        self.assertEqual(self.gate.GATED_METRICS, tuple(row["name"] for row in self.spec["metrics"]))
         reference = self.result()
-        equal = self.gate.compare_experiment(self.result(), reference)
-        self.assertEqual(equal, {"preprocessing_client_time_minutes": False,
+        equal = self.compare(self.result(), reference, [11] * 1000, [11] * 1000)
+        self.assertEqual(equal, {"online_communication_bytes": False, "server_compute_time_ns": False,
+                                 "preprocessing_client_time_minutes": False,
                                  "end_to_end_online_time_ms": False,
                                  "client_storage_bytes": True})
-        better = self.gate.compare_experiment(
-            self.result(offline=reference["offline_elapsed_ns"] - 1,
+        better = self.compare(
+            self.result(offline=reference["offline_elapsed_ns"] - 1, up=99,
                         online=reference["online_elapsed_ns"] - 1), reference)
         self.assertEqual(set(better.values()), {True})
-        worse = self.gate.compare_experiment(
-            self.result(offline=reference["offline_elapsed_ns"] + 1), reference)
+        self.assertEqual(list(better), list(self.gate.GATED_METRICS))
+        worse = self.compare(self.result(offline=reference["offline_elapsed_ns"] + 1), reference)
         self.assertFalse(worse["preprocessing_client_time_minutes"])
-        self.assertEqual(self.gate.compare_rpc(10, 11, 227, 228),
-                         {"online_communication_bytes": True, "server_compute_time_ns": True})
-        self.assertFalse(self.gate.compare_rpc(10, 11, 228, 228)["online_communication_bytes"])
-        self.assertFalse(self.gate.compare_rpc(11, 11, 227, 228)["server_compute_time_ns"])
-        self.assertFalse(self.gate.compare_rpc(0, 11, 0, 228)["online_communication_bytes"])
-        for name in ("preprocessing_allowance", "compare_table2", "parse_table2"):
+        # The per-query metrics pass an experiment only on every one of its queries.
+        one_byte_more = self.result(up=99)
+        one_byte_more["upload_bytes"][500] = 101
+        self.assertFalse(self.compare(one_byte_more, reference)["online_communication_bytes"])
+        self.assertFalse(self.compare(self.result(up=99), reference, [10] * 999 + [11])["server_compute_time_ns"])
+        self.assertFalse(self.compare(self.result(up=99), reference, [0] * 1000)["server_compute_time_ns"])
+        with self.assertRaises(ValueError):
+            self.compare(self.result(), reference, [10] * 999)
+        for name in ("preprocessing_allowance", "compare_table2", "parse_table2", "compare_rpc", "RPC_METRICS"):
             self.assertFalse(hasattr(self.gate, name))
 
     def test_client_storage_is_gated_as_non_inferiority_with_the_measured_jitter_only(self):
@@ -98,14 +116,49 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         # Next power of two above the largest measured reference spread (19,344 bytes).
         self.assertEqual(jitter, 32768)
         key = "client_storage_bytes"
-        self.assertTrue(self.gate.compare_experiment(self.result(storage=2_000_000 + jitter), reference)[key])
-        self.assertFalse(self.gate.compare_experiment(self.result(storage=2_000_001 + jitter), reference)[key])
-        self.assertTrue(self.gate.compare_experiment(self.result(storage=1), reference)[key])
+        self.assertTrue(self.compare(self.result(storage=2_000_000 + jitter), reference)[key])
+        self.assertFalse(self.compare(self.result(storage=2_000_001 + jitter), reference)[key])
+        self.assertTrue(self.compare(self.result(storage=1), reference)[key])
         # One dropped superblock key costs far more than the jitter at either size.
         for size in (65536, 67108864):
             p = self.gate.parameters(size)
             self.assertGreater(16 * (p["primary_hints"] + p["backup_hints"]), 10 * jitter)
         self.assertFalse(hasattr(self.gate, "storage_cap"))
+
+    def test_client_storage_includes_the_volume_phase_against_the_reference_growth(self):
+        # State that grows with every query is read up to the planned budget. The paired reference
+        # run skips the volume phase; its storage there is its last reading before the phase plus the
+        # reference client's own measured growth over the phase. Both points are compared.
+        jitter, key = self.gate.STORAGE_JITTER_BYTES, "client_storage_bytes"
+        for size in (65536, 67108864):
+            growth = self.gate.REFERENCE_VOLUME_GROWTH_BYTES[size]
+            self.assertGreater(growth, jitter)
+            reference = self.gate.check_result(self.result(size=size, skipped=True), size=size)
+            self.assertEqual(reference["client_storage_volume_bytes"], 0)
+            self.assertEqual(self.gate.reference_volume_storage(reference), 2_000_000 + growth)
+            for depth, volume, within in ((2_000_000, 2_000_000 + growth + jitter, True),
+                                          (2_000_000 + jitter, 2_000_000 + growth + jitter, True),
+                                          (2_000_000, 2_000_001 + growth + jitter, False),
+                                          (2_000_001 + jitter, 2_000_000, False),
+                                          (2_000_000 + growth, 2_000_000 + growth, False),
+                                          (1, 2, True)):
+                candidate = self.gate.check_result(self.result(size=size, storage=depth, storage_volume=volume),
+                                                   size=size)
+                self.assertEqual(self.gate.storage_peak(candidate), max(depth, volume))
+                self.assertEqual(self.compare(candidate, reference)[key], within)
+            # A reference run that did read the volume phase is taken as measured.
+            measured = self.result(size=size, storage_volume=2_000_000 + growth // 2)
+            self.assertEqual(self.gate.reference_volume_storage(measured), 2_000_000 + growth // 2)
+        # A skipped volume phase has no reading; a completed one has one.
+        with self.assertRaises(ValueError):
+            self.gate.check_result(self.result(skipped=True, storage_volume=1), size=65536)
+        with self.assertRaises(ValueError):
+            self.gate.check_result(self.result(storage_volume=0), size=65536)
+        self.gate.check_result(self.result(answered=300, probe_failure="wrong_value", storage_volume=0), size=65536)
+        evaluator = (TASK / "judge/evaluator.py").read_text()
+        self.assertIn("public['storage'][label] = storage_peak(results['candidate'])", evaluator)
+        expected = json.loads((ROOT / "tests/maintenance/quarter_pir/fixtures/expected.json").read_text())["fixtures"]
+        self.assertEqual(expected["positive/grow_state_in_volume_phase.patch"]["expect"], "valid_over_storage")
 
     def test_paired_validity_requires_the_hint_export_and_the_process_memory_guard(self):
         reference = self.result()
@@ -128,18 +181,26 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                           large["primary_hints"], large["backup_hints"]), (16384, 4096, 32, 671744, 442368))
 
     def test_score_is_led_by_communication_and_uses_only_candidate_measurements(self):
-        def rows(small_bytes=228, large_bytes=1760, speed=1.0):
+        def rows(small_bytes=228, large_bytes=1760, speed=1.0, storage=1.0):
             return [{"db_size": 65536, "queries": 1000, "bytes": [small_bytes] * 1000,
                      "server_ns": [11000 / speed] * 1000, "offline_ns": 0.16e9 / speed,
-                     "online_ns": 0.32e9 / speed},
+                     "online_ns": 0.32e9 / speed, "storage": 2.2e6 * storage},
                     {"db_size": 67108864, "queries": 1000, "bytes": [large_bytes] * 1000,
                      "server_ns": [480000 / speed] * 1000, "offline_ns": 120e9 / speed,
-                     "online_ns": 4.1e9 / speed}]
+                     "online_ns": 4.1e9 / speed, "storage": 85.5e6 * storage}]
         base = self.gate.continuous_score(rows())
         self.assertTrue(20 < base < 40)
         self.assertGreater(self.gate.continuous_score(rows(small_bytes=196, large_bytes=1696)), base)
         self.assertLess(self.gate.continuous_score(rows(small_bytes=320, large_bytes=2048)), base)
         self.assertGreater(self.gate.continuous_score(rows(speed=2.0)), base)
+        # Client storage, gated, is scored too, with a fixed public scale (the hint export length).
+        self.assertGreater(self.gate.continuous_score(rows(storage=0.8)), base)
+        self.assertLess(self.gate.continuous_score(rows(storage=1.2)), base)
+        self.assertEqual(self.gate.score_scales(67108864)["storage"], 47054848.0)
+        self.assertEqual(set(weights := self.gate.SCORE_WEIGHTS),
+                         {"communication", "server", "preprocessing", "online", "storage"})
+        self.assertEqual(weights["communication"], 1 / 2)
+        self.assertTrue(all(weights[name] == 1 / 8 for name in weights if name != "communication"))
         self.assertLess(self.gate.continuous_score(rows(speed=1e9, small_bytes=1, large_bytes=1)), 100.0)
         weights = self.gate.SCORE_WEIGHTS
         self.assertAlmostEqual(sum(weights.values()), 1.0)
@@ -165,7 +226,9 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                        {"probe_answered": 10, "probe_failure": "skipped"}, {"probe_answered": -1},
                        {"audit_hints": 0}, {"audit_sha256": ""}, {"audit_mismatched": [512]},
                        {"audit_mismatched": [3, 3]}, {"audit_failure": "other"},
-                       {"audit_failure": "client_crashed_or_protocol", "audit_mismatched": [1]}):
+                       {"audit_failure": "client_crashed_or_protocol", "audit_mismatched": [1]},
+                       {"client_storage_volume_bytes": 0}, {"client_storage_volume_bytes": -1},
+                       {"client_storage_volume_bytes": 1.5}):
             record = self.result()
             record.update(change)
             with self.subTest(change=change), self.assertRaises(ValueError):
@@ -176,21 +239,23 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
     def test_amortized_offline_time_is_reported_but_not_gated(self):
         values = self.gate.timing_values(self.result())
         self.assertIn("amortized_offline_time_ms", values)
-        self.assertNotIn("amortized_offline_time_ms", self.gate.GATED_EXPERIMENT_METRICS)
+        self.assertNotIn("amortized_offline_time_ms", self.gate.GATED_METRICS)
         gated = [row["name"] for row in self.spec["metrics"]]
         self.assertEqual(gated, ["online_communication_bytes", "server_compute_time_ns",
                                  "preprocessing_client_time_minutes", "end_to_end_online_time_ms",
                                  "client_storage_bytes"])
         self.assertEqual(self.spec["beats_reference_aggregation"], {"kind": "conjunction"})
 
-    def test_failure_rows_cover_every_gated_metric_at_its_declared_granularity(self):
-        for final, role in ((False, "train"), (True, "final")):
+    def test_failure_rows_cover_every_gated_metric_once_per_experiment(self):
+        # One workload per experiment, each judged on every metric; no workload groups.
+        self.assertNotIn("workload_groups", self.spec)
+        names = [row["name"] for row in self.spec["metrics"]]
+        for final, experiments in ((False, 1), (True, 2)):
             rows = self.evaluator.failure_metrics(final)["beat_spec_workload_passes"]
-            for group, record in self.spec["workload_groups"].items():
-                selected = [row for row in rows if row["group"] == group]
-                self.assertEqual(len(selected), record["counts"][role])
-                self.assertTrue(all(list(row["metrics"]) == record["metrics"] for row in selected))
-                self.assertFalse(any(value for row in selected for value in row["metrics"].values()))
+            self.assertEqual([row["workload"] for row in rows], [f"e{i:05d}" for i in range(experiments)])
+            self.assertTrue(all(list(row["metrics"]) == names and set(row) == {"workload", "metrics"}
+                                for row in rows))
+            self.assertFalse(any(value for row in rows for value in row["metrics"].values()))
 
     def test_visible_feedback_is_declared_consistently(self):
         visible = [row["name"] for row in self.spec["solver_feedback"]]
@@ -216,8 +281,8 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertEqual(self.evaluator.VALIDITY_CODES["hint_audit"], 12)
         self.assertIn("12 primary-hint audit failed", statement)
         self.assertEqual(self.evaluator.VALIDITY_CODES["coverage_probe"], 11)
-        self.assertIn("11 failed an additional untimed query", statement)
-        self.assertIn("11 failed an additional untimed query", json.dumps(self.spec))
+        self.assertIn("11 failed an additional query", statement)
+        self.assertIn("11 failed an additional query", json.dumps(self.spec))
 
     def test_coverage_probe_is_a_paired_validity_condition_outside_every_metric(self):
         # The paired reference run skips the volume part, which it serves.
@@ -254,9 +319,19 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertEqual(self.gate.audit_failure(stopped, reference), "client_crashed_or_protocol")
         evaluator = (TASK / "judge/evaluator.py").read_text()
         self.assertIn("skip_volume=implementation == 'reference'", evaluator)
-        # The probe changes no gate decision and no score input.
-        decisions = self.gate.compare_experiment(self.result(answered=0, probe_failure="wrong_value"), reference)
-        self.assertEqual(decisions, self.gate.compare_experiment(self.result(), reference))
+        # Probe queries are clocked like measured ones. The depth part, which both runs answer, enters the
+        # paired online comparison; after a failed depth part only the measured queries are compared.
+        slow_depth = self.result(probe_online=10 ** 12)
+        self.assertFalse(self.compare(slow_depth, reference)["end_to_end_online_time_ms"])
+        self.assertEqual(self.gate.paired_online_ns(slow_depth, reference),
+                         (400_000_000 + 10 ** 12, 400_000_000 + 7 * 492))
+        stopped_early = self.result(answered=0, probe_failure="wrong_value")
+        self.assertEqual(self.gate.paired_online_ns(stopped_early, reference), (400_000_000, 400_000_000))
+        # The volume part, which the paired reference run skips, enters the score with the measured queries.
+        slow_volume = self.result(probe_volume_online=10 ** 12)
+        self.assertEqual(self.compare(slow_volume, reference), self.compare(self.result(), reference))
+        self.assertEqual(self.gate.score_online(slow_volume), (400_000_000 + 10 ** 12, 1000 + 1347))
+        self.assertEqual(self.gate.score_online(reference), (400_000_000, 1000))
         conductor = (CODE / "conductor/conductor.go").read_text()
         probe = conductor.index("planProbe(generator, issued, settings.ProbeSeed")
         for measured in ("outcome.OnlineQueryNs +=", "outcome.UploadBytes = append", "transcript = append",
@@ -265,7 +340,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
             self.assertLess(conductor.index(measured), probe)
         self.assertIn('failure = "message_longer_than_measured"', conductor)
         evaluator = (TASK / "judge/evaluator.py").read_text()
-        self.assertIn("raise Rejected('additional untimed query failed', 'coverage_probe'", evaluator)
+        self.assertIn("raise Rejected('additional query failed', 'coverage_probe'", evaluator)
         self.assertIn("raise TaskConfigurationError('paired coverage probes differ')", evaluator)
 
     def test_primary_hint_audit_is_paired_and_asks_only_for_unconsumed_primary_hints(self):
@@ -305,28 +380,38 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("frame.Write(out, 'm',", reading)
         self.assertNotIn("online +=", reading)
         conductor = (CODE / "conductor/conductor.go").read_text()
-        take = conductor[conductor.index("readStorage := func()"):conductor.index("transcript := make(")]
-        self.assertIn("live > outcome.StorageBytes", take)
-        self.assertIn("outcome.StorageBytes = live", take)
+        take = conductor[conductor.index("readStorage := func(peak *uint64)"):conductor.index("transcript := make(")]
+        self.assertIn("live > *peak", take)
+        self.assertIn("*peak = live", take)
         self.assertEqual(conductor.count("outcome.StorageBytes = binary.LittleEndian.Uint64(report[40:])"), 1)
         # Readings lie between queries, after each query's clocked intervals; the probe is sampled too.
         measured = conductor[conductor.index("for q := uint64(0); q < settings.Queries; q++"):
                              conductor.index("outcome.OnlineNs =")]
-        self.assertLess(measured.index("outcome.OnlineReconstructNs +="), measured.index("readStorage()"))
+        self.assertLess(measured.index("outcome.OnlineReconstructNs +="), measured.index("readStorage(&outcome.StorageBytes)"))
         self.assertIn("q == 0 || q == storageQuery || q+1 == settings.Queries", measured)
-        self.assertEqual(measured.count("readStorage()"), 1)
+        self.assertEqual(measured.count("readStorage("), 1)
         # The random reading is drawn from the private probe seed, never shown to the client.
         self.assertIn("storageQuery := 1 + uint64(rand.New(rand.NewSource(settings.ProbeSeed", conductor)
         probe = conductor[conductor.index("probe := func(volume bool) {"):conductor.index("outcome.ProbeNs =")]
-        self.assertEqual(probe.count("readStorage()"), 1)
-        self.assertLess(probe.index("outcome.ProbeAnswered++"), probe.index("readStorage()"))
-        # No reading during the volume phase that completes the planned budget.
-        self.assertIn("if !volume {\n\t\t\t\treadStorage()", probe)
+        self.assertEqual(probe.count("readStorage(&outcome.StorageBytes)"), 1)
+        self.assertLess(probe.index("outcome.ProbeAnswered++"), probe.index("readStorage(&outcome.StorageBytes)"))
+        self.assertIn("if !volume {\n\t\t\t\toutcome.ProbeOnlineNs += intervals[0] + intervals[1] + intervals[2]\n"
+                      "\t\t\t\treadStorage(&outcome.StorageBytes)", probe)
+        # Every answered probe query is clocked, the depth and volume parts apart.
+        self.assertIn("outcome.ProbeVolumeOnlineNs += intervals[0] + intervals[1] + intervals[2]", probe)
+        self.assertIn("failure, entry, intervals := exchange(query.X)", probe)
+        # The volume phase is read too, after a query drawn from the private probe seed and after its
+        # second-to-last query, while a query is still to come; its readings are kept apart.
+        self.assertEqual(probe.count("readStorage(&outcome.StorageVolumeBytes)"), 1)
+        self.assertLess(probe.index("outcome.ProbeAnswered++"), probe.index("readStorage(&outcome.StorageVolumeBytes)"))
+        self.assertIn("if position == volumeQuery || position+2 == outcome.ProbeVolume {", probe)
+        self.assertIn("volumeQuery = uint64(rand.New(rand.NewSource(settings.ProbeSeed^", conductor)
+        self.assertEqual(conductor.count("readStorage("), 3)
         # Depth part, audit, then volume part (skipped by the paired reference run).
         self.assertLess(probe.index("probe(false)"), probe.index("planAudit(generator"))
         self.assertLess(probe.index("planAudit(generator"), probe.index("probe(true)"))
         self.assertIn("if settings.SkipVolume {", probe)
-        exchange = conductor[conductor.index("exchange := func("):conductor.index("readStorage := func()")]
+        exchange = conductor[conductor.index("exchange := func("):conductor.index("readStorage := func(")]
         self.assertNotIn("'M'", exchange)
         for statement in ((TASK / "judge/readme").read_text(),
                           (TASK / "agent-base/frontier/task/repo/README.md").read_text()):
@@ -355,6 +440,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("`OnlineQueries` is the planned query budget of one preprocessing", statement)
         self.assertIn("chosen by the harness, possibly adversarially, within what the provided implementation answers",
                       statement)
+        self.assertIn("A client that would fail on such a query is invalid even if the harness never issues it", statement)
         self.assertNotIn("`OnlineQueries` (1,000)", statement)
         self.assertNotIn("For each of 1,000 queries", statement)
         for fixture in sorted((ROOT / "tests/maintenance/quarter_pir/fixtures").rglob("*.patch")) + [TASK / "judge/reference.patch"]:

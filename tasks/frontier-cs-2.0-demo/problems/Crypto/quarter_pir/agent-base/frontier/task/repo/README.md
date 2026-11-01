@@ -62,7 +62,7 @@ Any failed check in any experiment scores zero.
   ```
 
   Integers are little-endian; a parity or entry is two `uint64` words. Primary hint `j` has tag `j`; backup hint `(g,k)` has tag `LocalSetNum + g*BackupPerGroup + k`.
-- **Planned query budget.** Your client must serve any sequence of distinct queries, up to the planned budget, that the reference serves. After the measured queries the harness issues additional queries, chosen by the harness, possibly adversarially, within what the provided implementation answers. They are untimed and checked like measured queries, and neither message may be longer than your longest measured one in that direction. Failing one that the reference answers is invalid.
+- **Planned query budget.** Your client must serve any sequence of distinct queries, up to the planned budget, that the reference serves. A client that would fail on such a query is invalid even if the harness never issues it, for example one that keeps the state a query needs for only part of its hints. After the measured queries the harness issues additional queries, chosen by the harness, possibly adversarially, within what the provided implementation answers. They are clocked and checked like measured queries, and neither message may be longer than your longest measured one in that direction. Failing one that the reference answers is invalid.
 - **Primary-hint audit.** `PrimaryHint(j)` must return the canonical record (tag, set parity) of any primary hint no query has consumed so far. Nothing is asked about backup hints or about hints a query has consumed.
 - **Memory.** The client process must stay below 4 GiB resident.
 - **Server.** On replay `HandleQuery` must return exactly the response the client verified, leave its inputs unchanged, and follow the database.
@@ -82,7 +82,7 @@ Each experiment runs once with your package and once with the reference on ident
 - **Online communication bytes** (per query): request plus response bytes carried by the transport.
 - **Server compute time** (per query): from `HandleQuery` receiving the request until the response exists and its goroutines have exited, measured by replaying your recorded requests.
 - **Preprocessing client time** (per experiment): `NewClient`, `Preprocess` including receiving the stream, and `ExportHints`.
-- **End-to-end online time** (per experiment, reported per query): `Query`, server round trip and `Reconstruct`, summed over the measured queries.
+- **End-to-end online time** (per experiment, reported per query): `Query`, server round trip and `Reconstruct`, summed over the measured queries. The additional queries are clocked the same way.
 - **Client storage** (per experiment): The peak live state of your client over the online phase, as live Go heap; garbage does not count. State released before a reading and rebuilt afterwards does count, and so do caches. It must be the state of a client that serves the planned budget and the audit.
 
 ## Scoring
@@ -91,14 +91,15 @@ The score (0 to 100) uses only your own measurements:
 
 ```text
 score = 100 * exp( 1/2 * mean_w log(cB/(cB+B_w))      online bytes of query w
-                 + 1/6 * mean_w log(cS/(cS+S_w))      server compute ns of query w
-                 + 1/6 * mean_e log(cP/(cP+P_e))      preprocessing ns of experiment e
-                 + 1/6 * mean_e log(cO/(cO+O_e)) )    online ns per query of experiment e
+                 + 1/8 * mean_w log(cS/(cS+S_w))      server compute ns of query w
+                 + 1/8 * mean_e log(cP/(cP+P_e))      preprocessing ns of experiment e
+                 + 1/8 * mean_e log(cO/(cO+O_e))      online ns per query of experiment e
+                 + 1/8 * mean_e log(cM/(cM+M_e)) )    client storage bytes of experiment e
 ```
 
-with `cB = 1,760`, `cS = 50 ns * SetSize`, `cP = 5 ns * SetSize * (LocalSetNum + SetSize*BackupPerGroup)`, `cO = 50 ns * (ChunkSize + SetSize)`. Client storage does not enter the score.
+with `cB = 1,760`, `cS = 50 ns * SetSize`, `cP = 5 ns * SetSize * (LocalSetNum + SetSize*BackupPerGroup)`, `cO = 50 ns * (ChunkSize + SetSize)`, `cM = 47,054,848` bytes (the length of the canonical hint export). `O_e` is taken over the measured queries and the additional uniformly random queries of experiment `e`.
 
-The beats_reference gate separately requires strictly fewer bytes and strictly lower server time on every query, strictly lower preprocessing and online time in every experiment, and client storage at most the reference's plus 32,768 bytes of measurement jitter. The provided implementation scored about 28 on the authors' development host; the value depends on the hardware.
+The beats_reference gate separately requires strictly fewer bytes and strictly lower server time on every query, strictly lower preprocessing and online time in every experiment, and client storage at no point of the online phase above the reference's at that point plus 32,768 bytes of measurement jitter. The provided implementation scored about 28 on the authors' development host; the value depends on the hardware.
 
 ## Feedback and grading
 
@@ -106,9 +107,9 @@ At most 8 development submissions. Feedback, for your submission only:
 
 - `candidate_public_server_compute_time_ns_median`, `candidate_public_online_time_ms_median` (per query);
 - `candidate_public_preprocessing_seconds_large`, `candidate_public_online_communication_bytes_large` (mean per query), `candidate_public_client_storage_bytes_large`;
-- `candidate_public_validity_code`: 0 valid; 1 patch or scope; 2 source policy; 3 build; 4 client crashed, broke the harness protocol or timed out; 5 hint export differs; 6 request is not the reduction of the reference request; 7 wrong retrieved value or failed server call; 8 client process memory limit; 9 server replay check; 10 evaluation time limit; 11 failed an additional untimed query; 12 primary-hint audit failed.
+- `candidate_public_validity_code`: 0 valid; 1 patch or scope; 2 source policy; 3 build; 4 client crashed, broke the harness protocol or timed out; 5 hint export differs; 6 request is not the reduction of the reference request; 7 wrong retrieved value or failed server call; 8 client process memory limit; 9 server replay check; 10 evaluation time limit; 11 failed an additional query; 12 primary-hint audit failed.
 
-Values are `-1` when unavailable. `beat_spec_progress` counts gate passes: 1,000 per-query comparisons (2,000 graded) and one per-experiment comparison (two graded) per metric.
+Values are `-1` when unavailable. `beat_spec_progress` counts gate passes: one comparison per experiment (two graded) per metric; a per-query metric passes an experiment only if it passes on every query.
 
 ## Resources
 

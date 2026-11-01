@@ -15,6 +15,10 @@ ENV PATH="/usr/local/go/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/
 ENV GOLANG_VERSION="1.19.13"
 ENV GOPATH="/go"
 ENV GOMODCACHE="/opt/frontier/go-mod"
+# The Agent sandbox has no network access: serve the baked module cache as the
+# module proxy, so a build with another GOMODCACHE also resolves the pinned modules.
+ENV GOPROXY="file:///opt/frontier/go-mod/cache/download"
+ENV GOSUMDB="off"
 ENV HOME="/workspace"
 ENV TMPDIR="/workspace"
 ENV PYTHONDONTWRITEBYTECODE="1"
