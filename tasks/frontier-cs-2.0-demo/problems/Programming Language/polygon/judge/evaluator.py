@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import math
 import os
@@ -25,13 +26,14 @@ AUTHENTIC_ENTRYPOINT = "evaluation/leetcode/online.py"
 RUNNER = "frontier_runner.py"
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 CASE_TIMEOUT_SECONDS = 2
-SUBPROCESS_TIMEOUT_SECONDS = 8
+SUBPROCESS_TIMEOUT_SECONDS = 14
+SUBPROCESS_MARGIN_SECONDS = 12
 ORIGINAL_STRATUM = "original"
 HARD_STRATUM = "paper_hard"
 HARD_TIME_RATIO = 0.5
-HARD_SUBPROCESS_MARGIN_SECONDS = 10
+HARD_SUBPROCESS_MARGIN_SECONDS = 14
 REFERENCE_BUDGET_EXTRA_SECONDS = 10
-TIME_SCORE_QUANTUM_SECONDS = 0.5
+TIME_SCORE_QUANTUM_SECONDS = 0.05
 TIME_SCORE_SCALE_SECONDS = 0.25
 TIME_COMPARISON_ABS_TOLERANCE = 0.03
 TIME_COMPARISON_REL_TOLERANCE = 0.20
@@ -97,6 +99,8 @@ EDIT_REGIONS = {
 
 FORBIDDEN_ADDITIONS = (
     "__import__",
+    "__main__",
+    "atexit",
     "builtins",
     "compile(",
     "eval(",
@@ -115,6 +119,12 @@ FORBIDDEN_ADDITIONS = (
     "/proc",
     "/sys",
 )
+# Modules no submitted file may import, in any import form or alias.
+FORBIDDEN_IMPORTS = frozenset({
+    "__main__", "_io", "atexit", "builtins", "ctypes", "gc", "importlib",
+    "inspect", "io", "marshal", "mmap", "os", "pickle", "posix", "resource",
+    "socket", "subprocess", "sys",
+})
 
 
 @dataclass(frozen=True)
@@ -243,6 +253,33 @@ def _policy_ok(patch: Path) -> tuple[bool, str]:
         lowered = line[1:].lower()
         if any(token in lowered for token in FORBIDDEN_ADDITIONS):
             return False, "environment, file, process, or harness introspection is not allowed"
+    return True, ""
+
+
+def _imports_ok(root: Path) -> tuple[bool, str]:
+    """Reject submitted Python files that import a forbidden module.
+
+    The substring policy only sees added lines; this check parses every
+    editable file as applied, so aliases and multi-line imports are covered.
+    """
+    paths = [root / relative for relative in EDIT_REGIONS]
+    extensions = root / "sql_testing/smt/search_extensions"
+    if extensions.is_dir():
+        paths.extend(sorted(extensions.rglob("*.py")))
+    for path in paths:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, SyntaxError, ValueError):
+            continue  # the build check rejects unreadable or invalid source
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and not node.level:
+                names = [node.module or ""]
+            else:
+                continue
+            if any(name.split(".")[0] in FORBIDDEN_IMPORTS for name in names):
+                return False, "environment, file, process, or harness introspection is not allowed"
     return True, ""
 
 
@@ -623,6 +660,20 @@ def _worker_oom_priority() -> None:
         os.close(descriptor)
 
 
+def _kill_session(session: int) -> None:
+    """Kill every process left in the case's session, whatever its process group."""
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat = (entry / "stat").read_text()
+            fields = stat[stat.rindex(")") + 2:].split()
+            if int(fields[3]) == session:
+                os.kill(int(entry.name), signal.SIGKILL)
+        except (OSError, ValueError, IndexError):
+            pass
+
+
 def _stderr_tail(handle) -> str:
     try:
         handle.flush()
@@ -690,7 +741,7 @@ def _run_case(
         try:
             stdout, _ = proc.communicate(
                 json.dumps(payload),
-                timeout=max(SUBPROCESS_TIMEOUT_SECONDS, budget + (HARD_SUBPROCESS_MARGIN_SECONDS if workload.stratum == HARD_STRATUM else 6)),
+                timeout=max(SUBPROCESS_TIMEOUT_SECONDS, budget + (HARD_SUBPROCESS_MARGIN_SECONDS if workload.stratum == HARD_STRATUM else SUBPROCESS_MARGIN_SECONDS)),
             )
         except subprocess.TimeoutExpired:
             record["timed_out"] = True
@@ -701,12 +752,15 @@ def _run_case(
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
+            _kill_session(proc.pid)
             proc.wait()
             record["returncode"] = proc.returncode
             for stream in (proc.stdin, proc.stdout):
                 if stream is not None:
                     stream.close()
         lines = [line for line in stdout.splitlines() if line.startswith("{")]
+        if len(lines) > 1:
+            raise ValueError("worker printed more than one result")
         if proc.returncode or not lines:
             if lines:
                 try:
@@ -719,6 +773,9 @@ def _run_case(
         result = json.loads(lines[-1])
         if result.get("ok") is not True:
             raise ValueError("worker rejected the result")
+        # time_seconds is measured by the fixed adapter; the submission's own
+        # duration is private telemetry only.
+        record["reported_time_seconds"] = result.get("reported_time_seconds")
         elapsed = float(result["time_seconds"])
         iterations = int(result["iterations"])
         backtracks = int(result["backtracks"])
@@ -893,6 +950,9 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
         is_reference = patch.read_bytes() == REFERENCE_PATCH.read_bytes()
         if not is_reference:
             ok, reason = _scaffold_ok(candidate_root)
+            if not ok:
+                return _invalid(reason, workloads)
+            ok, reason = _imports_ok(candidate_root)
             if not ok:
                 return _invalid(reason, workloads)
 

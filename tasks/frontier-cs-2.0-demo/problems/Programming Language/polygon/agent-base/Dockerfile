@@ -44,3 +44,9 @@ USER 10001:10001
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
 WORKDIR /workspace
+
+# The rest of the repository's requirements.txt, so `pip install -r requirements.txt`
+# is satisfied locally; the Agent sandbox has no network access.
+USER 0:0
+RUN PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install --no-cache-dir PySMT==0.9.6 iteration-utilities==0.13.0 matplotlib==3.11.2 psycopg2-binary==2.9.13
+USER 10001:10001
