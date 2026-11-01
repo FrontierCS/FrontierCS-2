@@ -1495,7 +1495,7 @@
     "gpu": {
       "agent": {
         "allowed_types": [
-          "L4"
+          "A100-80GB"
         ],
         "max_gpu_seconds": 1800,
         "max_instance_seconds": 900,
@@ -1503,16 +1503,16 @@
       },
       "verifier": {
         "max_gpu_instances": 1,
-        "max_gpu_seconds": 3600
+        "max_gpu_seconds": 4500
       }
     },
-    "image_tag": "source-d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25",
+    "image_tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
         "agent_sandbox": true,
         "allowed_types": [
-          "L4"
+          "A100-80GB"
         ],
         "credential_reaches_agent": false,
         "provider": "driver-managed",
@@ -1575,14 +1575,14 @@
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
     "quota": {
-      "eval_timeout_seconds": 900,
+      "eval_timeout_seconds": 1800,
       "max_train_calls": 3,
       "max_train_wall_seconds": 2700,
       "wall_time_seconds": 18000
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d495e23ec50a3dfd810567d74c6e82c3e09f3d81a82926f37a5531cdcce8da25"
+      "source_set_sha256": "sha256:306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
