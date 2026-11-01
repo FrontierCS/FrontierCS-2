@@ -14,9 +14,9 @@
   "file_count": 313,
   "files": [
     {
-      "bytes": 2086,
+      "bytes": 2262,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:faa559ede897be82b2454385e0630ef7d1b4ec321caf2292fa80b4c8d079d264"
+      "sha256": "sha256:969936bcb13e37e2088415b7bdca0435c75cfc36f53707219e5cd971acad238c"
     },
     {
       "bytes": 8524,

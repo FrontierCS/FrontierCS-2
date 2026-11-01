@@ -15,8 +15,8 @@
   "files": [
     {
       "path": "agent-base/Dockerfile",
-      "bytes": 2231,
-      "sha256": "sha256:db4a54fbf91b46c84fc33eeea18ad62f9d97b7a409b6537cb348405955e1bc7a"
+      "bytes": 2407,
+      "sha256": "sha256:e55eefa6a4ebed5834f51c04c2c62324fa1802cef70397a9a0f27b6e8897136f"
     },
     {
       "path": "agent-base/frontier/task/README.md",

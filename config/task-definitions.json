@@ -3696,7 +3696,7 @@
         "max_gpu_seconds": 30600
       }
     },
-    "image_tag": "source-3a4556131b29d5d274843fb5d7cb469abcb16f0390a5b82540772013afddcd93",
+    "image_tag": "source-cea4213dc8b933d2897034560e39197e27f5e711c0e56b7106e36e4915343ab7",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3783,7 +3783,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:3a4556131b29d5d274843fb5d7cb469abcb16f0390a5b82540772013afddcd93"
+      "source_set_sha256": "sha256:cea4213dc8b933d2897034560e39197e27f5e711c0e56b7106e36e4915343ab7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4990,7 +4990,7 @@
         "max_gpu_seconds": 32400
       }
     },
-    "image_tag": "source-d7f3046f32baa1a03ca2440f887bb7964f4f75100e83e314d0c34228bd7af65a",
+    "image_tag": "source-3f9779e21e6e8b50375aef6603524592e101c9476176d302f6bbaeeee241bf1b",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -5074,7 +5074,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d7f3046f32baa1a03ca2440f887bb7964f4f75100e83e314d0c34228bd7af65a"
+      "source_set_sha256": "sha256:3f9779e21e6e8b50375aef6603524592e101c9476176d302f6bbaeeee241bf1b"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

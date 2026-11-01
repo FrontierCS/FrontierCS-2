@@ -36,6 +36,10 @@ RUN chmod 0555 /frontier/task/bin/*.sh \
     && find /frontier/task -type f -name '*.sh' -exec chmod 0555 {} + \
     && chmod 0444 /frontier/task/README.md
 
+RUN printf 'agent:x:1000:1000::/home/agent:/bin/bash\n' >> /etc/passwd \
+    && printf 'agent:x:1000:\n' >> /etc/group \
+    && install -d -m 0750 -o 1000 -g 1000 /home/agent
+
 USER 10001:10001
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 ENV FRONTIER_GPU_TYPE=A100-80GB FRONTIER_GPU_SECONDS=7200
