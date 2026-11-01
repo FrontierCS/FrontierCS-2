@@ -121,7 +121,7 @@
     },
     "display_name": "Approximate-MIPS Query Stopping",
     "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-85c3ca1608319981f9c8f0a2c97377b053ea3042d65fa6fba9f418092189d840",
+    "image_tag": "source-5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba",
     "metadata": {
       "accelerator": null,
       "conversion": {
@@ -211,7 +211,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:85c3ca1608319981f9c8f0a2c97377b053ea3042d65fa6fba9f418092189d840"
+      "source_set_sha256": "sha256:5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

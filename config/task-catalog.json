@@ -857,9 +857,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:24a878c6da86e465d0c803711a1cb08863ee716d5444e524002f394a46c37d15",
+        "digest": "sha256:7e7efe48df4ba4eaef8213fc74adeaca99ca77cb2a7477055b5ac9991332bd02",
         "repository": "docker.io/joyemang33/fcs2-task-approximate_mips_query_stopping-agent",
-        "tag": "source-85c3ca1608319981f9c8f0a2c97377b053ea3042d65fa6fba9f418092189d840"
+        "tag": "source-5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -881,12 +881,12 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:ebb166e27d530c44dbb6fe090556db5c8a41819631a2d7459831c0c41add88db",
         "repository": "docker.io/joyemang33/fcs2-task-approximate_mips_query_stopping-reference",
-        "tag": "source-85c3ca1608319981f9c8f0a2c97377b053ea3042d65fa6fba9f418092189d840"
+        "tag": "source-5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba"
       },
       "verifier_image": {
-        "digest": "sha256:b837e291f58e867eda71b7c4eb07f5d7f98506924d367bf8cab9f11cf17edd29",
+        "digest": "sha256:9114e4410ebde3291d7ac6aa5f7d5e83ffc27884eb5ee64319fa4aad6383aff1",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-approximate_mips_query_stopping",
-        "tag": "source-85c3ca1608319981f9c8f0a2c97377b053ea3042d65fa6fba9f418092189d840"
+        "tag": "source-5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba"
       }
     },
     {
