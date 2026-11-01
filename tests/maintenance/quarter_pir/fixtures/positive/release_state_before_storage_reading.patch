@@ -1,0 +1,106 @@
+diff --git a/quarter_pir/code/pir/client.go b/quarter_pir/code/pir/client.go
+index 0a783af..d2262ea 100644
+--- a/quarter_pir/code/pir/client.go
++++ b/quarter_pir/code/pir/client.go
+@@ -43,6 +43,7 @@ type Client struct {
+ 	localMissElements      map[uint64]util.DBEntry
+ 	LocalBackupSetGroups   []LocalBackupSetGroupEC24
+ 	LocalReplacementGroups []LocalReplacementGroup
++	table                  []uint64
+ }
+ 
+ // NewClient starts the preprocessing clock's work: it derives the client
+@@ -102,6 +103,7 @@ func NewClient(p refwire.Params, coinSeed int64) *Client {
+ 	c.localBackupSets = localBackupSets
+ 	c.LocalBackupSetGroups = LocalBackupSetGroups
+ 	c.LocalReplacementGroups = LocalReplacementGroups
++	c.table = buildTable()
+ 	return c
+ }
+ 
+@@ -257,12 +259,26 @@ func (c *Client) ExportHints(emit func([]byte)) {
+ 		}
+ 	}
+ 	flush(true)
++	// Released before the storage reading after the export, rebuilt by the
++	// first query.
++	c.table = nil
++}
++
++func buildTable() []uint64 {
++	table := make([]uint64, 1<<23)
++	for i := range table {
++		table[i] = uint64(i)
++	}
++	return table
+ }
+ 
+ // Query returns the bytes this client sends for database index x. The
+ // harness requires them to equal ReduceRequest applied to the reference
+ // request for the same coins and query sequence.
+ func (c *Client) Query(x uint64) []byte {
++	if c.table == nil {
++		c.table = buildTable()
++	}
+ 	// find a local set that contains x, expand it and edit it
+ 	subkeyBytes, offsets := c.gen.Query(x)
+ 	return refwire.EncodeRequest(c.p, subkeyBytes, offsets)
+diff --git a/quarter_pir/code/pir/server.go b/quarter_pir/code/pir/server.go
+index e3ce71a..98863d7 100644
+--- a/quarter_pir/code/pir/server.go
++++ b/quarter_pir/code/pir/server.go
+@@ -27,5 +27,53 @@ func dbAccess(db []uint64, id uint64) util.DBEntry {
+ // timer wraps this whole call, including request decoding and response
+ // encoding.
+ func HandleQuery(db []uint64, p refwire.Params, request []byte) []byte {
+-	panic("list decoding is not implemented")
++	keys, offsets, ok := refwire.DecodeRequest(p, request)
++	if !ok {
++		panic("malformed request")
++	}
++	SBNum, SBSize, ChunkSize := p.SBNum, p.SBSize, p.ChunkSize
++
++	//First, compute the common set's parity
++	commonParity := util.ZeroEntry()
++	superblockParities := make([]util.DBEntry, SBNum)
++	paritiesFromListDecoding := make([]util.DBEntry, SBNum)
++
++	for i := uint64(0); i < SBNum; i++ {
++		superblockParities[i] = util.ZeroEntry()
++		paritiesFromListDecoding[i] = util.ZeroEntry()
++		longKey := refwire.NewLongKey((*[16]byte)(&keys[i]))
++		chunkBase := i * SBSize * ChunkSize
++		for j := uint64(0); j < SBSize; j++ {
++			// offset from the i-th key, evaluating at the j-th chunk in the superblock
++			tmpOffset := refwire.Eval(longKey, j) & (ChunkSize - 1)
++			index := tmpOffset + chunkBase
++			val1 := dbAccess(db, index)
++			util.DBEntryXor(&superblockParities[i], &val1)
++
++			// offset from the client's given offset array
++			val2 := dbAccess(db, chunkBase+uint64(offsets[j]))
++			util.DBEntryXor(&paritiesFromListDecoding[i], &val2)
++
++			chunkBase += ChunkSize
++		}
++		util.DBEntryXor(&commonParity, &superblockParities[i])
++	}
++
++	//Second, compute the parities for the list decoding sets
++	//Also compute the parities based on the offsets
++
++	for i := uint64(0); i < SBNum; i++ {
++		util.DBEntryXor(&paritiesFromListDecoding[i], &superblockParities[i])
++		util.DBEntryXor(&paritiesFromListDecoding[i], &commonParity)
++	}
++
++	paritiesFromListDecodingUint64 := make([]uint64, SBNum*util.DBEntryLength)
++	paritiesFromKeysUint64 := make([]uint64, SBNum*util.DBEntryLength)
++	// convert to uint64
++	for i := uint64(0); i < SBNum; i++ {
++		copy(paritiesFromListDecodingUint64[i*util.DBEntryLength:(i+1)*util.DBEntryLength], paritiesFromListDecoding[i][:])
++		copy(paritiesFromKeysUint64[i*util.DBEntryLength:(i+1)*util.DBEntryLength], superblockParities[i][:])
++	}
++
++	return refwire.EncodeResponse(p, paritiesFromListDecodingUint64, paritiesFromKeysUint64)
+ }

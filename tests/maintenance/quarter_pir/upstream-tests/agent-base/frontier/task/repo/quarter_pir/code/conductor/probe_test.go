@@ -65,21 +65,21 @@ func checkPlan(t *testing.T, size uint64, coinSeed, querySeed, probeSeed int64) 
 	generator, issued := measured(size, coinSeed, querySeed, 1000)
 	params := generator.P
 	before := generator.Count
-	plan := planProbe(generator, issued, probeSeed, 4)
+	plan := planProbe(generator, issued, probeSeed, 4, params.PlannedQueries())
 	if generator.Count != before || len(issued) != 1000 {
 		t.Fatal("planning modified the generator or the issued set")
 	}
-	if again := planProbe(generator, issued, probeSeed, 2); !reflect.DeepEqual(plan, again) {
+	if again := planProbe(generator, issued, probeSeed, 2, params.PlannedQueries()); !reflect.DeepEqual(plan, again) {
 		t.Fatal("the plan is not a deterministic function of the state and the seed")
 	}
-	if other := planProbe(generator, issued, probeSeed+1, 4); reflect.DeepEqual(plan, other) {
+	if other := planProbe(generator, issued, probeSeed+1, 4, params.PlannedQueries()); reflect.DeepEqual(plan, other) {
 		t.Fatal("the plan does not depend on the probe seed")
 	}
-	if uint64(1000+len(plan)) > params.PlannedQueries() {
-		t.Fatalf("%d queries exceed the planned budget %d", 1000+len(plan), params.PlannedQueries())
+	if uint64(1000+len(plan)) != params.PlannedQueries() {
+		t.Fatalf("%d queries in total, want the planned budget %d", 1000+len(plan), params.PlannedQueries())
 	}
 
-	primary, deepest := 0, uint64(0)
+	primary, volume, deepest := 0, 0, uint64(0)
 	runs := map[uint64]bool{}
 	for index, query := range plan {
 		if issued[query.X] {
@@ -89,6 +89,18 @@ func checkPlan(t *testing.T, size uint64, coinSeed, querySeed, probeSeed int64) 
 		chunk := query.X / params.ChunkSize
 		if generator.BackupConsumed[chunk] >= generator.BackupPerGroup {
 			t.Fatalf("probe query %d exceeds the allotment of chunk %d", index, chunk)
+		}
+		if query.Volume {
+			// Random distinct indices after the depth probe; the hit hint is not planned.
+			volume++
+			generator.Query(query.X) // panics if the reference could not serve it
+			if generator.Last.X != query.X || !generator.Last.ReplUsed {
+				t.Fatalf("volume query %d was not served with a replacement", index)
+			}
+			continue
+		}
+		if volume != 0 {
+			t.Fatal("volume queries must follow the depth probe")
 		}
 		if want := firstHit(generator, query.X); want != query.Hit {
 			t.Fatalf("probe query %d: planned hint %d, reference rule gives %d", index, query.Hit, want)
@@ -116,6 +128,9 @@ func checkPlan(t *testing.T, size uint64, coinSeed, querySeed, probeSeed int64) 
 	if len(runs) != probeBackupChunks {
 		t.Fatalf("%d allotment runs, want %d", len(runs), probeBackupChunks)
 	}
+	if volume == 0 || primary+len(runs) == 0 {
+		t.Fatal("the plan needs both the depth probe and the volume phase")
+	}
 	for chunk := range runs {
 		// Exactly the whole allotment: the last backup hint and the last
 		// replacement of the chunk are used, and nothing beyond them is asked.
@@ -130,6 +145,23 @@ func checkPlan(t *testing.T, size uint64, coinSeed, querySeed, probeSeed int64) 
 	}
 	if uint64(len(generator.HistoryHit)) != generator.Count || generator.Count != uint64(1000+len(plan)) {
 		t.Fatal("generator history does not cover every issued query")
+	}
+}
+
+// The volume phase stops at the target it is given (the conductor gives the
+// planned budget), and there is none when the depth probe alone reaches it.
+func TestVolumeTargetIsGiven(t *testing.T) {
+	generator, issued := measured(65536, 21, 22, 1000)
+	depth := planProbe(generator, issued, 23, 4, 0)
+	for _, query := range depth {
+		if query.Volume {
+			t.Fatal("volume queries beyond the target")
+		}
+	}
+	target := uint64(1000+len(depth)) + 100
+	plan := planProbe(generator, issued, 23, 4, target)
+	if uint64(1000+len(plan)) != target || !reflect.DeepEqual(plan[:len(depth)], depth) {
+		t.Fatalf("%d queries in total, want the target %d after the same depth probe", 1000+len(plan), target)
 	}
 }
 
@@ -164,7 +196,7 @@ func TestGeneratorHistoryReservation(t *testing.T) {
 // hints that no query has consumed.
 func TestAuditSampleIsUnconsumedPrimaryHints(t *testing.T) {
 	generator, issued := measured(65536, 5, 6, 1000)
-	for _, query := range planProbe(generator, issued, 7, 4) {
+	for _, query := range planProbe(generator, issued, 7, 4, generator.P.PlannedQueries()) {
 		generator.Query(query.X)
 	}
 	hints := planAudit(generator, 7)

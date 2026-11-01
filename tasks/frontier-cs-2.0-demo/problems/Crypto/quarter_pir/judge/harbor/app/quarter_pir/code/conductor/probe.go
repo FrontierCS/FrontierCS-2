@@ -4,7 +4,7 @@
 // client reports, so the candidate and the paired reference run are asked the
 // identical sequence for identical seeds.
 //
-// Two kinds of queries are planned, in this order.
+// Three kinds of queries are planned, in this order.
 //
 //   - Primary hints. A hint index is drawn uniformly from all primary hints
 //     and the query is a database index whose first containing hint, under
@@ -16,6 +16,9 @@
 //     whole per-chunk allotment (BackupPerGroup) is consumed, which is exactly
 //     as far as the reference serves a chunk; inside a chunk the indices with
 //     the deepest first containing hints are taken first.
+//   - Volume. Uniformly random distinct indices, outside the chunks whose
+//     allotment is used up, until the queries issued in total reach the
+//     target, the planned query budget. Their hit hint is not planned.
 //
 // The plan is computed on a private copy of the bookkeeping. The conductor
 // then issues it through the real generator and counts every query whose hit
@@ -50,6 +53,7 @@ type probeQuery struct {
 	X      uint64
 	Hit    uint64 // primary hint the reference uses for X at that moment
 	Backup bool   // part of a chunk's allotment run
+	Volume bool   // part of the volume phase; Hit is not planned
 }
 
 // prober is the private copy of the generator's bookkeeping plus the tables
@@ -227,7 +231,7 @@ func planAudit(g *refwire.Generator, seed int64) []uint64 {
 
 // planProbe returns the probe queries for the generator's current state.
 // It does not modify the generator or the issued set.
-func planProbe(g *refwire.Generator, issued map[uint64]bool, seed int64, workers int) []probeQuery {
+func planProbe(g *refwire.Generator, issued map[uint64]bool, seed int64, workers int, target uint64) []probeQuery {
 	rng := rand.New(rand.NewSource(seed))
 	s := newProber(g, issued, rng, workers)
 	var plan []probeQuery
@@ -273,6 +277,16 @@ func planProbe(g *refwire.Generator, issued map[uint64]bool, seed int64, workers
 			s.consume(x, hint)
 			plan = append(plan, probeQuery{X: x, Hit: hint, Backup: true})
 		}
+	}
+
+	for total := g.Count + uint64(len(plan)); total < target; total++ {
+		x := rng.Uint64() % s.p.DBSize
+		for s.issued[x] || s.consumed[x/s.p.ChunkSize] >= s.perGroup {
+			x = rng.Uint64() % s.p.DBSize
+		}
+		s.issued[x] = true
+		s.consumed[x/s.p.ChunkSize]++
+		plan = append(plan, probeQuery{X: x, Volume: true})
 	}
 	return plan
 }

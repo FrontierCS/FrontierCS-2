@@ -40,6 +40,7 @@ type config struct {
 	CoinSeed   int64  `json:"coin_seed"`
 	QuerySeed  int64  `json:"query_seed"`
 	ProbeSeed  int64  `json:"probe_seed"`
+	SkipVolume bool   `json:"skip_volume"`
 	Queries    uint64 `json:"queries"`
 	Threads    uint64 `json:"threads"`
 	Transcript string `json:"transcript"`
@@ -83,11 +84,17 @@ type result struct {
 	ProbeFailure      string `json:"probe_failure"`
 	ProbeSHA256       string `json:"probe_sha256"`
 	ProbeBackup       uint64 `json:"probe_backup_queries"`
+	ProbeVolume       uint64 `json:"probe_volume_queries"`
 	ProbeDeepestHint  uint64 `json:"probe_deepest_hint"`
 	ProbeMispredicted uint64 `json:"probe_mispredicted"`
 	ProbePlanNs       int64  `json:"probe_plan_ns"`
 	ProbeNs           int64  `json:"probe_elapsed_ns"`
-	// Primary-hint audit after the online phase (only when the probe passed).
+	ProbeVolumeNs     int64  `json:"probe_volume_elapsed_ns"`
+	// The paired reference run is not asked the volume phase: it serves every
+	// volume query, since no volume query lies in a chunk whose allotment is
+	// used up.
+	ProbeVolumeSkipped bool `json:"probe_volume_skipped"`
+	// Primary-hint audit after the depth part of the probe (only when it passed).
 	// AuditMismatched lists the positions of the asked hints whose record was
 	// not the canonical one; AuditFailure is set when the client did not answer.
 	AuditHints      uint64 `json:"audit_hints"`
@@ -350,6 +357,28 @@ func main() {
 		return "", record{Request: reduced, Response: response, RefRequest: reference}, intervals
 	}
 
+	// readStorage takes one client-storage reading between two queries,
+	// outside every clock.
+	readStorage := func() {
+		if frame.Write(toClient, 'M', nil) != nil {
+			finish("client_crashed_or_protocol")
+		}
+		reading := expect('m', 8)
+		if len(reading) != 8 {
+			finish("client_crashed_or_protocol")
+		}
+		if live := binary.LittleEndian.Uint64(reading); live > outcome.StorageBytes {
+			outcome.StorageBytes = live
+		}
+	}
+
+	// Client storage is the largest reading, the one after the hint export
+	// included. Among the measured queries the client driver reads the live
+	// heap only after the first, after one drawn at random and after the last,
+	// because each reading's forced collections slow the queries that follow
+	// it; after every additional untimed query before the volume phase, which
+	// no clock measures.
+	storageQuery := 1 + uint64(rand.New(rand.NewSource(settings.ProbeSeed^0x73746f72)).Int63())%(settings.Queries-2)
 	transcript := make([]record, 0, settings.Queries)
 	digest := sha256.New()
 	longestRequest, longestResponse := 0, 0
@@ -375,6 +404,9 @@ func main() {
 			longestResponse = len(entry.Response)
 		}
 		transcript = append(transcript, entry)
+		if q == 0 || q == storageQuery || q+1 == settings.Queries {
+			readStorage()
+		}
 		for _, part := range [][]byte{entry.Request, entry.Response} {
 			binary.LittleEndian.PutUint64(word[:], uint64(len(part)))
 			digest.Write(word[:])
@@ -390,9 +422,11 @@ func main() {
 	// messages may be longer than the longest measured message of its
 	// direction. The probe stops at the first failed check and the record
 	// stays a completed run: the evaluator decides, against the paired
-	// reference run on the same sequence, whether that query counts.
+	// reference run on the same sequence, whether that query counts. The
+	// depth part comes first, then the primary-hint audit, then the volume
+	// part up to the planned query budget.
 	probeStart := time.Now()
-	plan := planProbe(generator, issued, settings.ProbeSeed, int(settings.Threads))
+	plan := planProbe(generator, issued, settings.ProbeSeed, int(settings.Threads), params.PlannedQueries())
 	outcome.ProbePlanNs = time.Since(probeStart).Nanoseconds()
 	outcome.ProbeQueries = uint64(len(plan))
 	planDigest := sha256.New()
@@ -402,26 +436,36 @@ func main() {
 		if query.Backup {
 			outcome.ProbeBackup++
 		}
-		if query.Hit > outcome.ProbeDeepestHint {
+		if query.Volume {
+			outcome.ProbeVolume++
+		} else if query.Hit > outcome.ProbeDeepestHint {
 			outcome.ProbeDeepestHint = query.Hit
 		}
 	}
 	outcome.ProbeSHA256 = hex.EncodeToString(planDigest.Sum(nil))
-	for _, query := range plan {
-		failure, entry, _ := exchange(query.X)
-		if generator.Last.X != query.X || generator.Last.HitSetId != query.Hit {
-			outcome.ProbeMispredicted++
+	probe := func(volume bool) {
+		for _, query := range plan {
+			if query.Volume != volume {
+				continue
+			}
+			failure, entry, _ := exchange(query.X)
+			if generator.Last.X != query.X || (!query.Volume && generator.Last.HitSetId != query.Hit) {
+				outcome.ProbeMispredicted++
+			}
+			if failure == "" && (len(entry.Request) > longestRequest || len(entry.Response) > longestResponse) {
+				failure = "message_longer_than_measured"
+			}
+			if failure != "" {
+				outcome.ProbeFailure = failure
+				return
+			}
+			outcome.ProbeAnswered++
+			if !volume {
+				readStorage()
+			}
 		}
-		if failure == "" && (len(entry.Request) > longestRequest || len(entry.Response) > longestResponse) {
-			failure = "message_longer_than_measured"
-		}
-		if failure != "" {
-			outcome.ProbeFailure = failure
-			break
-		}
-		outcome.ProbeAnswered++
 	}
-	outcome.ProbeNs = time.Since(probeStart).Nanoseconds()
+	probe(false)
 
 	// Primary-hint audit, untimed. The client driver compares each record
 	// with the canonical hint export it holds; the evaluator pairs the result
@@ -453,6 +497,16 @@ func main() {
 		}
 		outcome.AuditNs = time.Since(auditStart).Nanoseconds()
 	}
+	if outcome.ProbeFailure == "" && outcome.AuditFailure == "" && outcome.ProbeVolume > 0 {
+		if settings.SkipVolume {
+			outcome.ProbeVolumeSkipped = true
+		} else {
+			volumeStart := time.Now()
+			probe(true)
+			outcome.ProbeVolumeNs = time.Since(volumeStart).Nanoseconds()
+		}
+	}
+	outcome.ProbeNs = time.Since(probeStart).Nanoseconds()
 
 	if outcome.ProbeFailure == "" && outcome.AuditFailure == "" {
 		if frame.Write(toClient, 'E', nil) != nil {

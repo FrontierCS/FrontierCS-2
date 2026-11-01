@@ -1,7 +1,7 @@
 tag: cryptography
 runtime:
   language: go
-  timeout_seconds: 1800
+  timeout_seconds: 6000
   verifier_metrics_limit_bytes: 3145728
   environment: Go 1.19.13, Python 3.11.16, Linux amd64 AES-NI; offline Go module cache required
   docker:
@@ -31,11 +31,8 @@ evaluation:
   solver_visible_metrics:
     - candidate_public_server_compute_time_ns_median
     - candidate_public_online_time_ms_median
-    - candidate_public_preprocessing_seconds_small
     - candidate_public_preprocessing_seconds_large
-    - candidate_public_online_communication_bytes_small
     - candidate_public_online_communication_bytes_large
-    - candidate_public_client_storage_bytes_small
     - candidate_public_client_storage_bytes_large
     - candidate_public_validity_code
   dataset_files:

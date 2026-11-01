@@ -22,8 +22,8 @@ defines the problem, the workload, and how you are scored. This file covers only
 where things are and how to submit.
 
 The answering window is 18,000 seconds, including development evaluations.
-There are 8 train calls with a cumulative 14,400-second verification allowance.
-Final verification has its own independent 1,800-second timeout. Agent and
+There are 8 train calls with a cumulative 48,000-second verification allowance.
+Final verification has its own independent 6,000-second timeout. Agent and
 Verifier each have 4 CPUs and 8 GiB of memory.
 
 ## Train and final tar format

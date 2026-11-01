@@ -185,6 +185,19 @@ func main() {
 		if tag == 'E' {
 			break
 		}
+		if tag == 'M' {
+			// Client-storage reading between two queries, outside every clock.
+			live := liveBytes()
+			if live < baseline {
+				live = baseline
+			}
+			var storage [8]byte
+			binary.LittleEndian.PutUint64(storage[:], live-baseline)
+			if frame.Write(out, 'm', storage[:]) != nil {
+				fail(3)
+			}
+			continue
+		}
 		if tag == 'U' {
 			// Primary-hint audit, outside every clock: the client is asked for
 			// the canonical record of harness-chosen primary hints that no query

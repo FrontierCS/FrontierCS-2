@@ -1,9 +1,9 @@
 {
-  "unit": "Two workload groups. RPC group: one online query of one paired experiment, i.e. the candidate's request and response and the reference's request and response for the same database, coin seed and query index; 1000 queries per experiment. Experiment group: one complete client experiment (real full-database preprocessing followed by 1000 measured online queries with retrieval and hint refresh, then by the conductor's additional untimed queries, which are a validity condition and enter no metric) at one database size, run once with the candidate package and once with the reference on identical fresh private database, coin, query and probe seeds. Development evaluation has one experiment at each of N=65536 and N=67108864 (2 experiments, 2000 RPC workloads); the graded evaluation has two independent experiments per size (4 experiments, 4000 RPC workloads). All entries are 16 bytes. Seeds are drawn inside each evaluation and are never public, fixed or stored in a dataset.",
+  "unit": "Two workload groups. RPC group: one online query of one paired experiment, i.e. the candidate's request and response and the reference's request and response for the same database, coin seed and query index; 1000 queries per experiment. Experiment group: one complete client experiment (real full-database preprocessing followed by 1000 measured online queries with retrieval and hint refresh, then by the conductor's additional untimed queries (a depth probe, the primary-hint audit, then random distinct queries until the issued queries reach the planned query budget floor(sqrt(N)*ln(N)); the paired reference run is not asked this volume part, which it always serves), which are a validity condition and enter no metric) at N=67108864, run once with the candidate package and once with the reference on identical fresh private database, coin, query and probe seeds. Development evaluation has one experiment (1000 RPC workloads); the graded evaluation has two independent experiments (2000 RPC workloads). All entries are 16 bytes. Seeds are drawn inside each evaluation and are never public, fixed or stored in a dataset.",
   "metrics": [
     {
       "name": "online_communication_bytes",
-      "means": "Bytes the trusted transport actually carries for this query: len(request blob) + len(response blob), where the request blob is ReduceRequest(reference request) as sent by the conductor and the response blob is the server handler's return value. The reference is counted at the information-tight encoding of its own messages (16-byte keys, offsets bit-packed at log2(ChunkSize) bits, 16-byte parities): 100+128=228 bytes at N=65536 and 736+1024=1760 bytes at N=67108864.",
+      "means": "Bytes the trusted transport actually carries for this query: len(request blob) + len(response blob), where the request blob is ReduceRequest(reference request) as sent by the conductor and the response blob is the server handler's return value. The reference is counted at the information-tight encoding of its own messages (16-byte keys, offsets bit-packed at log2(ChunkSize) bits, 16-byte parities): 736+1024=1760 bytes at N=67108864.",
       "source": "judge/harbor/app/quarter_pir/code/conductor/conductor.go (UploadBytes/DownloadBytes appended per query from the blobs passed to and returned by rawrpc.Call); cross-checked against judge/harbor/app/quarter_pir/code/server/replay.go upload/download in judge/evaluator.py; reference sizes from judge/harbor/app/quarter_pir/code/refwire/refwire.go RequestBytes/ResponseBytes and judge/table2_metrics.py reference_message_bytes. Paper: IACR ePrint 2023/1574 Section 6.1 Table 2, Online Communication.",
       "better": "lower",
       "clears_when": "For workload w: exact positive integer byte counts and candidate_bytes[w] < reference_bytes[w]. Equality fails.",
@@ -35,53 +35,38 @@
     },
     {
       "name": "client_storage_bytes",
-      "means": "Client storage of one experiment: the live Go heap of the client process after two forced garbage collections directly after preprocessing and hint export, minus the same measure taken before NewClient. The state measured must serve the planned query budget: the additional untimed queries after the measured ones are answered from it. It is taken when no submission goroutine exists; without package variables, cgo or unsafe the heap is the only place client state can live. Measured by the trusted client driver and reported over the harness channel.",
+      "means": "Client storage of one experiment: the peak live state of the client over the online phase, i.e. the largest of the readings taken directly after preprocessing and hint export and, between queries, after the first, one randomly drawn and the last of the measured queries and after every additional untimed query of the depth probe, none during the volume phase (few readings among the measured queries because a reading's forced collections slow the queries that follow it). A reading is the live Go heap of the client process after two forced garbage collections, minus the same measure taken before NewClient; state released before a reading and rebuilt afterwards counts. The state measured must serve the planned query budget: the additional untimed queries after the measured ones are answered from it. Each reading is taken outside every clock, when no submission goroutine exists; without package variables, cgo or unsafe the heap is the only place client state can live. Measured by the trusted client driver and reported over the harness channel.",
       "source": "judge/harbor/app/quarter_pir/code/ec24/ec24_client.go liveBytes and settle; judge/harbor/app/quarter_pir/code/conductor/conductor.go StorageBytes; judge/table2_metrics.py compare_experiment and STORAGE_JITTER_BYTES. Paper: IACR ePrint 2023/1574 Section 6.1 Table 2, client storage.",
       "better": "lower",
       "clears_when": "For experiment e: candidate client_storage_bytes <= paired reference client_storage_bytes + STORAGE_JITTER_BYTES. Non-inferiority: equality passes.",
-      "tolerance": "Measurement jitter only: STORAGE_JITTER_BYTES = 32768, the next power of two above the largest spread of the reference's own measure over repeated runs (19,344 bytes over 14 runs at N=65536; 10,232 bytes over 6 runs at N=67108864). It is not an allowance for additional retained state: one dropped superblock key costs 442,368 bytes of hint parities at N=65536 and 17,825,792 bytes at N=67108864."
+      "tolerance": "Measurement jitter only: STORAGE_JITTER_BYTES = 32768, the next power of two above the largest spread of the reference's own measure over repeated runs (19,344 bytes over 14 runs at N=65536; 10,232 bytes over 6 runs at N=67108864). It is not an allowance for additional retained state: one dropped superblock key costs 17,825,792 bytes of hint parities at N=67108864."
     }
   ],
-  "beats_reference": "Let W contain every RPC workload and E every experiment of the evaluation. beats_reference = 1 iff the submission passes the patch boundary (only quarter_pir/code/pir/), the source policy, the build, and every validity check of every experiment (each request the client returns equals ReduceRequest of the trusted reference request; every one of the 1000 retrieved values is correct; every additional untimed query that the paired reference run answers is answered by the candidate under the same checks, with no message longer than its longest measured message in that direction; after the online phase the client returns the canonical record (tag, set parity) of every audited unconsumed primary hint for which the reference client does; the in-clock hint export hash equals the paired reference's; the client process stays under the incidental 4 GiB resident-memory limit; the server replay returns the client-verified responses, follows the resident database and leaves it unchanged), AND every w in W has candidate_online_communication_bytes[w] < reference_online_communication_bytes[w] and 0 < candidate_server_compute_time_ns[w] < reference_server_compute_time_ns[w], AND every e in E has candidate offline_elapsed_ns < reference offline_elapsed_ns, candidate online_elapsed_ns < reference online_elapsed_ns, and candidate client_storage_bytes <= reference client_storage_bytes + STORAGE_JITTER_BYTES. Equality fails for the four strict metrics and passes for client storage. Missing, invalid, timed-out or incomplete measurements fail. No averaging across workloads, compensation between metrics, tolerance or easier-baseline substitution. The continuous 0-100 score is computed from the candidate's own measurements and is independent of this gate.",
+  "beats_reference": "Let W contain every RPC workload and E every experiment of the evaluation. beats_reference = 1 iff the submission passes the patch boundary (only quarter_pir/code/pir/), the source policy, the build, and every validity check of every experiment (each request the client returns equals ReduceRequest of the trusted reference request; every one of the 1000 retrieved values is correct; every additional untimed query (up to the planned query budget in total) that the paired reference run answers is answered by the candidate under the same checks, with no message longer than its longest measured message in that direction; after the depth part of the probe the client returns the canonical record (tag, set parity) of every audited unconsumed primary hint for which the reference client does; the in-clock hint export hash equals the paired reference's; the client process stays under the incidental 4 GiB resident-memory limit; the server replay returns the client-verified responses, follows the resident database and leaves it unchanged), AND every w in W has candidate_online_communication_bytes[w] < reference_online_communication_bytes[w] and 0 < candidate_server_compute_time_ns[w] < reference_server_compute_time_ns[w], AND every e in E has candidate offline_elapsed_ns < reference offline_elapsed_ns, candidate online_elapsed_ns < reference online_elapsed_ns, and candidate client_storage_bytes <= reference client_storage_bytes + STORAGE_JITTER_BYTES. Equality fails for the four strict metrics and passes for client storage. Missing, invalid, timed-out or incomplete measurements fail. No averaging across workloads, compensation between metrics, tolerance or easier-baseline substitution. The continuous 0-100 score is computed from the candidate's own measurements and is independent of this gate.",
   "solver_feedback": [
     {
       "name": "candidate_public_server_compute_time_ns_median",
-      "means": "On a valid development submission, the median of T_candidate(w) over the 2000 development RPC workloads, in nanoseconds. -1 when no complete valid measurement exists.",
+      "means": "On a valid development submission, the median of T_candidate(w) over the 1000 development RPC workloads, in nanoseconds. -1 when no complete valid measurement exists.",
       "reveals_reference": "no - candidate durations only."
     },
     {
       "name": "candidate_public_online_time_ms_median",
-      "means": "Median (midpoint) of the candidate's two development experiments' end-to-end online times in milliseconds per query. -1 when unavailable.",
+      "means": "The candidate's end-to-end online time of the development experiment in milliseconds per query (the median of a single value). -1 when unavailable.",
       "reveals_reference": "no - candidate durations only."
     },
     {
-      "name": "candidate_public_preprocessing_seconds_small",
-      "means": "Candidate preprocessing client time in seconds in the development experiment at N=65536. -1 when unavailable.",
-      "reveals_reference": "no - candidate duration only."
-    },
-    {
       "name": "candidate_public_preprocessing_seconds_large",
-      "means": "Candidate preprocessing client time in seconds in the development experiment at N=67108864. -1 when unavailable.",
+      "means": "Candidate preprocessing client time in seconds in the development experiment. -1 when unavailable.",
       "reveals_reference": "no - candidate duration only."
-    },
-    {
-      "name": "candidate_public_online_communication_bytes_small",
-      "means": "Mean request-plus-response bytes per query of the candidate in the development experiment at N=65536. -1 when unavailable.",
-      "reveals_reference": "no - candidate byte counts only; the reference's counts are public constants in the statement."
     },
     {
       "name": "candidate_public_online_communication_bytes_large",
-      "means": "Mean request-plus-response bytes per query of the candidate in the development experiment at N=67108864. -1 when unavailable.",
+      "means": "Mean request-plus-response bytes per query of the candidate in the development experiment. -1 when unavailable.",
       "reveals_reference": "no - candidate byte counts only; the reference's counts are public constants in the statement."
     },
     {
-      "name": "candidate_public_client_storage_bytes_small",
-      "means": "Candidate client_storage_bytes in the development experiment at N=65536. -1 when unavailable.",
-      "reveals_reference": "no - candidate measurement only."
-    },
-    {
       "name": "candidate_public_client_storage_bytes_large",
-      "means": "Candidate client_storage_bytes in the development experiment at N=67108864. -1 when unavailable.",
+      "means": "Candidate client_storage_bytes in the development experiment. -1 when unavailable.",
       "reveals_reference": "no - candidate measurement only."
     },
     {
@@ -104,7 +89,7 @@
     "private_rejection",
     "reference_client_storage_bytes"
   ],
-  "statement_sentences": "The beats_reference gate is the conjunction of five comparisons against the paired reference run: strictly fewer online communication bytes on every query, strictly lower server compute time on every query, strictly lower preprocessing client time in every experiment, strictly lower end-to-end online time in every experiment, and client storage not above the reference's in every experiment (up to a fixed measurement-jitter bound). Equality fails for the four strict comparisons. Request reduction, correct retrieval of all values, the complete in-clock hint export, the additional untimed queries within the planned query budget, the primary-hint audit after the online phase, the server replay checks and the source policy are validity conditions. Amortized offline time and preprocessing communication are reported, not compared.",
+  "statement_sentences": "The beats_reference gate is the conjunction of five comparisons against the paired reference run: strictly fewer online communication bytes on every query, strictly lower server compute time on every query, strictly lower preprocessing client time in every experiment, strictly lower end-to-end online time in every experiment, and client storage not above the reference's in every experiment (up to a fixed measurement-jitter bound). Equality fails for the four strict comparisons. Request reduction, correct retrieval of all values, the complete in-clock hint export, the additional untimed queries within the planned query budget, the primary-hint audit after the measured queries, the server replay checks and the source policy are validity conditions. Amortized offline time and preprocessing communication are reported, not compared.",
   "comments": "Source provenance: wuwuz/QuarterPIR commit 87b3bb85f5fd388044a6162794f7d6defdf7254b; IACR ePrint 2023/1574, Section 6.1 Table 2. Scope: all computation in package pir (client preprocessing, request generation, reconstruction, hint refresh, server handler, message formats); the trusted harness owns seeds, query issuance, transport, clocks, the value oracle and reporting. Client storage is gated as non-inferiority because online communication can otherwise be bought with client storage. Amortized offline time is reported but not gated because it has the same numerator and denominator relation as preprocessing client time and would always decide identically. The reference is the unoptimized upstream algorithm behind the new interface (judge/reference.patch). CPU/memory limits and train/final budgets are specified by policy.json.",
   "workload_groups": {
     "rpc": {
@@ -113,8 +98,8 @@
         "server_compute_time_ns"
       ],
       "counts": {
-        "train": 2000,
-        "final": 4000
+        "train": 1000,
+        "final": 2000
       }
     },
     "experiment": {
@@ -124,8 +109,8 @@
         "client_storage_bytes"
       ],
       "counts": {
-        "train": 2,
-        "final": 4
+        "train": 1,
+        "final": 2
       }
     }
   },
