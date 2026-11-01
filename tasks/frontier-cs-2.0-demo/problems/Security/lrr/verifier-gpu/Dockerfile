@@ -3,7 +3,7 @@
 # server built for CUDA + Qwen3-8B Q4_K_M GGUF), ReDoSHunter under OpenJDK 25,
 # the judge Python closure, the pristine public tree and the judge (frozen
 # workloads, reference patch, beat spec). The CPU controller
-# (verifier/Dockerfile) brokers one Driver-owned L4 runner from this image;
+# (verifier/Dockerfile) brokers one Driver-owned A100 runner from this image;
 # task code never receives a Modal, AWS or Kubernetes credential.
 #
 # Build context is this task's own root directory:
@@ -16,7 +16,7 @@ FROM eclipse-temurin@sha256:dbb43d81099eec91e0800226ed2296d03146ee7857165b951123
 
 # llama.cpp b10868 (commit 304665fe7ac957df95e3ff8c8c4ffdf92dd6ffa3), the same
 # revision as the author's ghcr.io server-cuda runtime, built here from source
-# for the L4 (sm_89). nvidia/cuda:12.8.1-devel-ubuntu24.04, linux/amd64 manifest
+# for the A100 (sm_80). nvidia/cuda:12.8.1-devel-ubuntu24.04, linux/amd64 manifest
 # (the same base Fast KV uses).
 FROM nvidia/cuda@sha256:4b9ed5fa8361736996499f64ecebf25d4ec37ff56e4d11323ccde10aa36e0c43 AS llama_build
 ARG DEBIAN_FRONTEND=noninteractive
@@ -28,11 +28,11 @@ RUN git init /src/llama.cpp \
     && git -C /src/llama.cpp checkout --quiet FETCH_HEAD \
     && test "$(git -C /src/llama.cpp rev-parse HEAD)" = 304665fe7ac957df95e3ff8c8c4ffdf92dd6ffa3
 # Same CMake configuration as upstream .devops/cuda.Dockerfile (dynamic CPU
-# backend variants, CUDA backend), with the CUDA architecture limited to sm_89.
+# backend variants, CUDA backend), with the CUDA architecture limited to sm_80.
 RUN cd /src/llama.cpp \
     && cmake -B build -DCMAKE_BUILD_TYPE=Release \
        -DGGML_NATIVE=OFF -DGGML_CUDA=ON -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON \
-       -DCMAKE_CUDA_ARCHITECTURES=89 -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+       -DCMAKE_CUDA_ARCHITECTURES=80 -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
        -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_OPENSSL=OFF \
        -DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined \
     && cmake --build build --config Release --target llama-server -j"$(nproc)" \
@@ -119,5 +119,5 @@ RUN chown root:root /opt/frontier/bin/frontier-gpu-sshd-bootstrap \
     && chmod 0555 /opt/frontier/bin/frontier-gpu-sshd-bootstrap
 
 USER root
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 FRONTIER_VERIFIER_GPU_TYPE=L4 FRONTIER_VERIFIER_GPU_SECONDS=3600 FRONTIER_VERIFIER_GPU_COUNT=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_SECONDS=3600 FRONTIER_VERIFIER_GPU_COUNT=1
 WORKDIR /frontier

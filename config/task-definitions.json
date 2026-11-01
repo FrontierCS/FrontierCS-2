@@ -3307,7 +3307,7 @@
     "gpu": {
       "agent": {
         "allowed_types": [
-          "L4"
+          "A100-80GB"
         ],
         "max_gpu_seconds": 0,
         "max_instance_seconds": 0,
@@ -3318,12 +3318,12 @@
         "max_gpu_seconds": 7200
       }
     },
-    "image_tag": "source-76965e39ff11b5c165bf5008d67cc7991942ded56695bf38e94cc6dcbb0696fc",
+    "image_tag": "source-588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf",
     "metadata": {
       "accelerator": {
         "agent_sandbox": false,
         "allowed_types": [
-          "L4"
+          "A100-80GB"
         ],
         "credential_reaches_agent": false,
         "provider": "driver-managed",
@@ -3408,7 +3408,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:76965e39ff11b5c165bf5008d67cc7991942ded56695bf38e94cc6dcbb0696fc"
+      "source_set_sha256": "sha256:588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
