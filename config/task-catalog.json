@@ -1033,14 +1033,14 @@
     },
     {
       "agent_gpu_image": {
-        "digest": "sha256:a1b9aea2eb3752ef7133446153c9df02a935ca143630a137cfbed6a8c5e5ce6d",
+        "digest": "sha256:ca8fc9865c6fcf77d30f41ce3feffd2c94c79375a48a6a12fd046a97abffe970",
         "repository": "docker.io/joyemang33/fcs2-task-nano_world_model-agent-gpu",
-        "tag": "source-a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255"
+        "tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
       },
       "agent_image": {
-        "digest": "sha256:6aec22d31db38a86115b61f3042f56ac990baad69ad5664eeefd37e3e0435407",
+        "digest": "sha256:dbdb7f13335996ac08d8c71217341c33f43ed18304fa9cd836b25e4a0d8879f8",
         "repository": "docker.io/joyemang33/fcs2-task-nano_world_model-agent",
-        "tag": "source-a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255"
+        "tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -1050,7 +1050,7 @@
       "dataset_image": {
         "digest": "sha256:4c4761b0b710135d362439df115f6a9f6df454c45f7a520080267e2a62099159",
         "repository": "docker.io/joyemang33/fcs2-task-nano_world_model-datasets",
-        "tag": "source-a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255"
+        "tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
       },
       "datasets": {
         "eval_sha256": "sha256:27a2c9daf8083bd8c3d288961689bc5e1c13d2b0eda900b6130f150d5ef0dae3",
@@ -1059,14 +1059,14 @@
       "name": "nano_world_model",
       "reference": null,
       "verifier_gpu_image": {
-        "digest": "sha256:c594ab8cc044a400e672f70075567252a9be9828a6f837a44dccb216c4baddbc",
+        "digest": "sha256:e19ee45c3d0c89472eb8e4133b95098386b9d48bb1f8ce62bbffbae7d4db60e5",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-nano_world_model-gpu",
-        "tag": "source-a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255"
+        "tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
       },
       "verifier_image": {
-        "digest": "sha256:0878847d21ded5d7a09a7eda192479d30874ae8deb4c4887cb93170e9545cf06",
+        "digest": "sha256:7b855c515e6fd3d45dfb911663ab96d8918e0f271f32eec89e4695e18d807174",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-nano_world_model",
-        "tag": "source-a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255"
+        "tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
       }
     },
     {

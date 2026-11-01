@@ -3817,7 +3817,7 @@
     "gpu": {
       "agent": {
         "allowed_types": [
-          "A10G"
+          "A100-80GB"
         ],
         "max_gpu_seconds": 1800,
         "max_instance_seconds": 1800,
@@ -3828,13 +3828,13 @@
         "max_gpu_seconds": 20400
       }
     },
-    "image_tag": "source-a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255",
+    "image_tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
         "agent_sandbox": true,
         "allowed_types": [
-          "A10G"
+          "A100-80GB"
         ],
         "credential_reaches_agent": false,
         "provider": "driver-managed",
@@ -3905,7 +3905,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a4b2228ef259b594504df609c5bd55ba3df7098c8278e07a9ddec8abc9fae255"
+      "source_set_sha256": "sha256:c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

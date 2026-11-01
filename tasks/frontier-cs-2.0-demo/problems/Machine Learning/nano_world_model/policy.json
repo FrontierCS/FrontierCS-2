@@ -9,7 +9,7 @@
   "gpu": {
     "agent": {
       "allowed_types": [
-        "A10G"
+        "A100-80GB"
       ],
       "max_gpu_seconds": 1800,
       "max_instance_seconds": 1800,
@@ -25,7 +25,7 @@
       "agent_gpu_interface": "frontier.gpu-helper/v3",
       "agent_sandbox": true,
       "allowed_types": [
-        "A10G"
+        "A100-80GB"
       ],
       "credential_reaches_agent": false,
       "provider": "driver-managed",
