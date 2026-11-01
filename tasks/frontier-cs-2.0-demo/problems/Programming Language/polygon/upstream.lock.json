@@ -14,9 +14,9 @@
   "file_count": 133,
   "files": [
     {
-      "bytes": 2414,
+      "bytes": 2736,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:ffafe7024a6b7f1f56dee8597b042e4a71c01da2e1b6f6886266a6f85651db20"
+      "sha256": "sha256:4b35f142a628d5356fcbb514031d1c643dfef876b96b274cf16349b3cb4a6d54"
     },
     {
       "bytes": 4352,
@@ -59,9 +59,9 @@
       "sha256": "sha256:d5bc143b19c4428a058517e56672f60b0bfb8d8286aefb8f773b627f974ca147"
     },
     {
-      "bytes": 15772,
+      "bytes": 15918,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:a8c685537044ac7ea55c96bc6759ed16687aefa6712a86121071a03f357d9d92"
+      "sha256": "sha256:8a9462dae7aaf9cdb35dca7153f5ff0df0e9b9536c04f38c62067aa687cd9848"
     },
     {
       "bytes": 129,
@@ -309,9 +309,9 @@
       "sha256": "sha256:83c309407d85f2108c306e310a870efc6ebe40c97b1317817bc48d7a539cc2a9"
     },
     {
-      "bytes": 5540,
+      "bytes": 18540,
       "path": "agent-base/frontier/task/repo/frontier_runner.py",
-      "sha256": "sha256:4b211f431e79e7a0401260e0fe330ad37b835c6feafe41545b39b23a9f70427d"
+      "sha256": "sha256:98069cec9fdeb79b91ecb48d2ec96a6176433133185f3c242c6f738d5c4c97c7"
     },
     {
       "bytes": 622,
@@ -604,9 +604,9 @@
       "sha256": "sha256:49d766fe25084053595cf9304deea2a33ee7942d23da62d9af9a7d33d8d53300"
     },
     {
-      "bytes": 7682,
+      "bytes": 8238,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:af75bb9d264c416036f927a499fdb515915d4e504e4a7abc173c2d3987ab57b6"
+      "sha256": "sha256:ae6de6145d60798030d1d760254f51ab27da2b3882f1bfaa973124452cba84b7"
     },
     {
       "bytes": 1312,
@@ -619,14 +619,14 @@
       "sha256": "sha256:9fa6bb898efa8bb9cec6a75a976972aae3b6b59586a4ec0462a4fbe16016a9c7"
     },
     {
-      "bytes": 35500,
+      "bytes": 38079,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:896ac4d1f8404b1f661e6ed35824cc66ad7e856c2e10a0d99091dd70536d9659"
+      "sha256": "sha256:4c780fc50d03ec8de42568f07d7ed55b3f956e92f80a581db730416ce4f95710"
     },
     {
-      "bytes": 17193,
+      "bytes": 17338,
       "path": "judge/readme",
-      "sha256": "sha256:c5b8dba81987736f0d829a5b9d26ce8710c09fb957bc80c327b6b4364993d904"
+      "sha256": "sha256:2334677fc3e81ae5be248cfe347fb7e2d0a7621259811efb8c9a35bf72eed0f3"
     },
     {
       "bytes": 31415,

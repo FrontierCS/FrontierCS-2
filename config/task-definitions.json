@@ -4469,7 +4469,7 @@
     },
     "display_name": "SQL Counterexample Search",
     "family": "frontier-cs-2.0/algorithms",
-    "image_tag": "source-6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345",
+    "image_tag": "source-a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4544,7 +4544,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345"
+      "source_set_sha256": "sha256:a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

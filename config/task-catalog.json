@@ -1361,9 +1361,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:f46c7a1ec86af66267b1d00b302268179bcf0f8228bc081382a70ba086f0f8ed",
+        "digest": "sha256:273734a8c65a7abeafb599f1366f2de57386d58b3a199c055b83e4ab2a15cf29",
         "repository": "docker.io/joyemang33/fcs2-task-polygon-agent",
-        "tag": "source-6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345"
+        "tag": "source-a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8"
       },
       "baseline": {
         "agreement_rule": {
@@ -1378,7 +1378,7 @@
           "eval": "sha256:ba22fe3c8c873468455b9b78ffa024c2540c1d0c79b0e0ebb7a5c6a6b589e47d",
           "train": "sha256:6a30793ee174e8cad96bfe9959061dd4d5b40a07205e38a05c288fb8aabe477b"
         },
-        "evaluator_sha256": "sha256:896ac4d1f8404b1f661e6ed35824cc66ad7e856c2e10a0d99091dd70536d9659",
+        "evaluator_sha256": "sha256:4c780fc50d03ec8de42568f07d7ed55b3f956e92f80a581db730416ce4f95710",
         "historical_mean": 95.49344120734904,
         "historical_scores": [
           95.49344120734904
@@ -1387,13 +1387,13 @@
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:89a1233f7717a86ccbe1cd604b838bfc6ab7f76ed4c6330a43080f12fe3510ca",
         "result_json_source": "judge/result.json",
-        "source_set_sha256": "sha256:6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345",
+        "source_set_sha256": "sha256:a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8",
         "verifier_adapter_sha256": "sha256:8a65d96e7bbf23012e20d3558ab9858374f4c55bc50d9b8f41470d87bd91abf5"
       },
       "dataset_image": {
         "digest": "sha256:75532a79b70f17d2049fde00df2963952906cfe11977c4d76312b9851274326a",
         "repository": "docker.io/joyemang33/fcs2-task-polygon-datasets",
-        "tag": "source-6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345"
+        "tag": "source-a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8"
       },
       "datasets": {
         "eval_sha256": "sha256:ba22fe3c8c873468455b9b78ffa024c2540c1d0c79b0e0ebb7a5c6a6b589e47d",
@@ -1405,12 +1405,12 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:89a1233f7717a86ccbe1cd604b838bfc6ab7f76ed4c6330a43080f12fe3510ca",
         "repository": "docker.io/joyemang33/fcs2-task-polygon-reference",
-        "tag": "source-6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345"
+        "tag": "source-a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8"
       },
       "verifier_image": {
-        "digest": "sha256:b915c0a1c7f33ffdfd0e4aa04a015a0db79cb08ea99d8cfe9236872d32d5abc1",
+        "digest": "sha256:19a41b507db5a897e1eca857016492c63603a54f5ed17c44f6eb970d4fa6fb51",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-polygon",
-        "tag": "source-6ec18a01f3a37c113041adf3f6c79a39372025f3ad6aa7b3ab75f571fd19b345"
+        "tag": "source-a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8"
       }
     },
     {

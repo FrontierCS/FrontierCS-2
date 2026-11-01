@@ -187,13 +187,27 @@ The fixed adapter writes exactly one JSON object to standard output. One
 successful output for the public record has this shape:
 
 ```json
-{"backtracks": 1, "iterations": 3, "ok": true, "refuted": true, "time_seconds": 0.092906}
+{"backtracks": 1, "iterations": 3, "ok": true, "refuted": true, "reported_time_seconds": 0.091873, "time_seconds": 0.092906}
 ```
 
-`ok` means the retained worker exited successfully and wrote one parseable CSV
-row. `refuted` means MariaDB accepted the decoded database as distinguishing the
-query pair or evenly disambiguating the query set. `time_seconds` is the worker's elapsed time around
-`Environment.check`, bounded to the case budget. `iterations` and `backtracks`
+The adapter runs the submitted search in a separate search process and never
+imports submitted code itself. That process loads the third-party libraries and
+builds the SQL parser's grammar, then imports the patched modules and runs the
+retained worker until the outermost `Environment.check` returns
+(`Environment.disambiguate` for a disambiguation record). The returned
+counterexample is copied at that moment, so it must be a `dict` of lists holding
+plain values (`None`, `bool`, `int`, `float`, `str`, `bytes`, `Decimal`, or
+`datetime` values), and the search process then ends. It has no database access.
+The adapter validates the counterexample with MariaDB afterwards.
+
+`ok` means the adapter completed the case. `refuted` means MariaDB accepted the
+decoded database as distinguishing the query pair or evenly disambiguating the
+query set. `time_seconds` is wall time measured by the adapter from the import of
+the patched modules until it receives the returned result, so it includes module
+import and `Environment` construction. A result that does not arrive within the
+case budget, or a call that returns no decision, is charged the full budget. The
+duration returned by the submitted code is echoed as `reported_time_seconds` and
+is not scored. `iterations` and `backtracks`
 are the submitted search's counters. The numeric values vary between runs. A
 runner failure instead prints an object with `ok: false` and exits nonzero.
 
@@ -256,6 +270,8 @@ substrings:
 
 ```text
 __import__
+__main__
+atexit
 builtins
 compile(
 eval(
@@ -274,6 +290,11 @@ sys.
 /proc
 /sys
 ```
+
+No Python file in the editable surface, as applied, may import any of these
+modules, in any import form or under any alias: `__main__`, `_io`, `atexit`,
+`builtins`, `ctypes`, `gc`, `importlib`, `inspect`, `io`, `marshal`, `mmap`,
+`os`, `pickle`, `posix`, `resource`, `socket`, `subprocess`, `sys`.
 
 A patch-policy failure, patch-application failure, immutable-scaffold change,
 or build failure makes the whole submission invalid and returns score zero
@@ -295,45 +316,25 @@ patch failures; they remain in the 19-case score exactly as specified below.
 
 The goal is to maximize the returned score on the 0--100 scale. Let `W` be the
 19 non-hard workloads in the selected suite (16 pairs and three disambiguation cases; the two additional hard pairs affect PASS only), let `r_w` be 1 when workload `w` is
-validated as refuted and 0 otherwise, let `t_w` be its reported time, and let
+validated as refuted and 0 otherwise, let `t_w` be its measured `time_seconds`, and let
 `b_w` be its budget. Define normalized time `u_w = 2 * min(b_w, max(0, t_w)) / b_w`.
 A failed case has `r_w = 0` and `u_w = 2`. The evaluator computes exactly:
 
 ```text
 R = sum_{w in W} r_w
-T = 0.5 * ceil((sum_{w in W} u_w) / 0.5)
+T = 0.05 * ceil((sum_{w in W} u_w) / 0.05)
 E = exp(-T / (|W| * 0.25))
 score = max(0.0, min(100.0, 100 * (R + E) / (|W| + 1)))
 ```
 
-The 0.5 normalized-time quantum and 0.25 time scale are challenge constants
+The 0.05 normalized-time quantum and 0.25 time scale are challenge constants
 (not from materials). With `|W| = 19`, each additional validated refutation adds
 5 points for fixed `E`; `0 < E <= 1` supplies the quantized total-time term.
 
-## Historical calibration
-The following values describe the earlier 19-case corpus. They do not attest the combined 21-case release or its strict hard-pair comparisons.
-
-
-A contract-valid baseline restores the outer discovery path but uses exhaustive
-under-approximation enumeration instead of conflict-driven search. It is
-included as `baseline_naive.patch` for calibration and is deliberately exposed
-to bounds 2--5 rather than only the former bound-2 sample. In clean verifier
-replays it refuted 2/19 development workloads for score `10.0028391621` and
-1/19 final workloads for score `5.0025554947`. The exact upstream reference
-refuted all 19 for scores `95.4934412073` and `95.6090680692`.
-
-The genuine solver-trial patch that previously used one complete Z3 call and
-scored `98.6988` on the 16-pair suite still refutes all 16 pair workloads, but
-fails all three differential disambiguation workloads in both roles. It now
-scores `81.1453997491` and has `beats_reference = 0`. A patch that passes patch
-and build checks but fails every case remains a valid scored submission with a
-near-zero efficiency term rather than receiving a global invalid-submission
-zero.
-
-The score's time component changes only when the sum of normalized case times
-crosses a 0.5-second boundary. Crossing such a boundary or obtaining another
-MariaDB-validated refutation is therefore a measurable scoring change; smaller
-aggregate timing changes within one bucket do not change the score.
+A patch that passes patch and build checks but fails every case remains a valid
+scored submission with a near-zero efficiency term rather than receiving a
+global invalid-submission zero. The score's time component changes when the sum
+of normalized case times crosses a 0.05 boundary.
 
 ## Feedback and grading
 
@@ -351,7 +352,7 @@ to the paired measurement. For the 19 non-hard workloads, a wall-time outcome pa
 candidate_time <= paired_time + max(0.03, 0.20 * paired_time)
 ```
 
-The two retained paper-scale hard pairs instead require `candidate_time < 0.5 * paired_time`, with no allowance. They each have a 20-second symbolic budget and 30-second process ceiling. Both metrics must pass on all 21 workloads.
+The two retained paper-scale hard pairs instead require `candidate_time < 0.5 * paired_time`, with no allowance. They each have a 20-second symbolic budget and 34-second process ceiling. Both metrics must pass on all 21 workloads.
 These budgets are the submission's. The paired measurement is the bar, not a contestant, so it runs with a
 larger budget of `max(2 * budget, budget + 10)` seconds per workload and cannot time out at the submission's limit.
 
@@ -391,7 +392,7 @@ using a local socket, disabled networking, and case-insensitive table names.
 The configured workspace build timeout is 120 seconds. Within evaluation, the
 fixed source/runtime build check has a 30-second limit. Pair checks have a
 two-second budget; disambiguation stress checks have 5--12 seconds. Each
-`frontier_runner.py` process receives six seconds of cleanup headroom beyond its
-case budget. MariaDB initialization has a 60-second subprocess limit and a
+`frontier_runner.py` process receives twelve seconds of setup, validation and
+cleanup headroom beyond its case budget. MariaDB initialization has a 60-second subprocess limit and a
 twenty-second readiness window. One complete evaluator call has a 330-second outer
 timeout.
