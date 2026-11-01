@@ -77,6 +77,42 @@ INFRA_EXIT_CODE = 75
 MAX_HARNESS_LOG_BYTES = 64 * 1024
 
 SPEC_METRICS = ("qa_correct", "compaction_seconds", "compact_cache_bytes")
+
+# Continuous score (absolute): per article, accuracy x (0.75 + 0.25 e), mean x 100.
+ACCURACY_WEIGHT = 0.75
+EFFICIENCY_WEIGHT = 0.25
+
+
+def efficiency(mode: str, candidate: dict, target: dict) -> float:
+    """e = clip(0.5 + log10(r) / 6, 0, 1): 0.5 at parity, 1 at 1000x, 0 at 1/1000x.
+
+    r is the ratio target/candidate on the mode's axis (seconds in time mode,
+    bytes in bytes mode), multiplied by min(1, the same ratio on the other axis).
+    """
+    if mode == gate.TIME_MODE:
+        ratio = (target["seconds"] / candidate["seconds"]) * min(1.0, target["bytes"] / candidate["bytes"])
+    elif mode == gate.BYTES_MODE:
+        ratio = (target["bytes"] / candidate["bytes"]) * min(1.0, target["seconds"] / candidate["seconds"])
+    else:
+        raise ValueError("unknown comparison mode")
+    if not ratio > 0:
+        return 0.0
+    return min(1.0, max(0.0, 0.5 + math.log10(ratio) / 6))
+
+
+def absolute_score(mode: str, workloads, rows, targets: dict) -> float:
+    """100 x mean over articles of (correct / questions) x (0.75 + 0.25 e)."""
+    values = [row["correct"] / row["questions"]
+              * (ACCURACY_WEIGHT + EFFICIENCY_WEIGHT * efficiency(mode, row, targets[workload]))
+              for workload, row in zip(workloads, rows, strict=True)]
+    return 100 * sum(values) / len(values)
+
+
+def reference_absolute_score(workloads, targets: dict) -> float:
+    """The same score for the reference itself (r = 1, e = 0.5) at its median correct counts."""
+    values = [targets[workload]["correct"] / targets[workload]["questions"]
+              * (ACCURACY_WEIGHT + EFFICIENCY_WEIGHT * 0.5) for workload in workloads]
+    return 100 * sum(values) / len(values)
 assert SPEC_METRICS == gate.METRICS
 VISIBLE_METRICS = ("dev_qa_accuracy", "dev_compaction_seconds", "dev_compact_cache_bytes")
 
@@ -269,6 +305,7 @@ def shard_run(index: int, instances: int, role: str, payload: Path, output: Path
 
 
 def _complete_metrics(mode, workloads, rows, targets, score) -> dict[str, Any]:
+    reference = reference_absolute_score(workloads, targets)
     passes, paired = [], []
     correct = questions = 0
     seconds, footprints = [], []
@@ -283,8 +320,8 @@ def _complete_metrics(mode, workloads, rows, targets, score) -> dict[str, Any]:
     return {
         "beat_spec_workload_passes": passes,
         "beats_reference": int(all(value for row in passes for value in row["metrics"].values())),
-        "reference_score": 0.0,
-        "margin": float(score),
+        "reference_score": reference,
+        "margin": float(score) - reference,
         "_operator_mode": mode,
         "_operator_paired_workload_metrics": paired,
         "dev_qa_accuracy": float(correct / questions),
@@ -316,10 +353,12 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                                     engines, expected_engine)
         targets = gate.scale_targets(targets, ratios)
         rows = [dict(gate.candidate_row(row), workload=row["workload"]) for row in result["rows"]]
-        scores = [gate.article_score(mode, row, targets[workload])
-                  for workload, row in zip(workloads, rows, strict=True)]
-        score = max(0.0, min(100.0, sum(scores) / len(scores)))
+        relative = [gate.article_score(mode, row, targets[workload])
+                    for workload, row in zip(workloads, rows, strict=True)]
+        score = absolute_score(mode, workloads, rows, targets)
         metrics = _complete_metrics(mode, workloads, rows, targets, score)
+        # The earlier reference-relative score, kept for operators only.
+        metrics["reference_relative_score"] = max(0.0, min(100.0, sum(relative) / len(relative)))
         metrics["_operator_anchor_diagnostics"] = {
             workload: {"ratio": ratio, "deviation": ratio - 1.0,
                        "exceeds_diagnostic_band": abs(ratio - 1.0) > gate.MAX_ANCHOR_DEVIATION}
