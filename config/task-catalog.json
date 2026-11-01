@@ -1073,12 +1073,12 @@
       "agent_gpu_image": {
         "digest": "sha256:64b693ab998349eb9da7a0cb386499a1f99b09fda969fb1327050f9f3148de60",
         "repository": "docker.io/joyemang33/fcs2-task-detok_latent_denoising-agent-gpu",
-        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
+        "tag": "source-2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0"
       },
       "agent_image": {
         "digest": "sha256:86ac997332dcd6d9aa20e224cf196a7a9fd6964337a0c8b7e04ba231beb77874",
         "repository": "docker.io/joyemang33/fcs2-task-detok_latent_denoising-agent",
-        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
+        "tag": "source-2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0"
       },
       "baseline": {
         "comparability_note": "no judge/result.json in the export",
@@ -1088,7 +1088,7 @@
       "dataset_image": {
         "digest": "sha256:e16821df21bcb1037614d6126fd8fdf737ba9bc7fa561cd7ea8cd33b58f9d06f",
         "repository": "docker.io/joyemang33/fcs2-task-detok_latent_denoising-datasets",
-        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
+        "tag": "source-2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0"
       },
       "datasets": {
         "eval_sha256": "sha256:31469270d87e7c0543fc9705aa1059f2a8ee5f9bf7bbe640f4d54189f3563e24",
@@ -1097,14 +1097,14 @@
       "name": "detok_latent_denoising",
       "reference": null,
       "verifier_gpu_image": {
-        "digest": "sha256:bc3fd1645592c2cb693c6fb95772d31cc65f159d019b8d87b6961819f86a4e03",
+        "digest": "sha256:3926365342cf55a7ffe37a5cb3a6805e214778dc2e2d877d0ebfee45fda5b88a",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-detok_latent_denoising-gpu",
-        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
+        "tag": "source-2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0"
       },
       "verifier_image": {
         "digest": "sha256:ffc0f6297ad1e55117b1b1549de0b7efac637d98a6aafa005d172a0e7dbc761f",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-detok_latent_denoising",
-        "tag": "source-20d830a4a99789f29e478626a2b5c712a71d60ef1310e2a6adacc6e6d7d31f47"
+        "tag": "source-2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0"
       }
     },
     {
