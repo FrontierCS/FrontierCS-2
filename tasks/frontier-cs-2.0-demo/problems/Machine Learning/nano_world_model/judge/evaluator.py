@@ -6,6 +6,7 @@ import json
 import ast
 import math
 import os
+import statistics
 import shutil
 import subprocess
 import sys
@@ -29,13 +30,25 @@ CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text(encoding="utf-8"))
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 MODEL_REVISION = "b84303b7151cbd1836841c3a87bf095e1015b150"
 VAE_REVISION = "31f26fdeee1355a5c34592e401dd41e45d25a493"
-# Beat spec v3: the clip count comes from each suite manifest (dev 4, final 6);
-# slices flagged strict_only enter the per-clip comparison but not the score.
+# Beat spec v3: the clip count comes from each suite manifest (dev 4, final 6).
+# Every clip enters both the strict per-clip comparison and the continuous score
+# (the manifests' strict_only flag is historical and no longer used).
 # Release refresh 2026-10-11: 825 s per graded clip as before (1650 s covered two clips).
 RUN_TIMEOUT_SECONDS = 4950
 # The immutable entrypoint declared by ARTIFACT_PLAN.json/artifact_manifest.json.
 AUTHENTIC_ENTRYPOINT = "src/main.py"
 _REFERENCE_CACHE: dict[str, list[dict[str, float]]] = {}
+
+# Continuous score: reference-relative, 50 for the trusted reference measured
+# in the same verification, bounded to (0, 100).  Each metric is first averaged
+# over every clip of the suite; the strict per-clip comparison is separate.
+REFERENCE_SCORE = 50.0
+PSNR_SCALE_DB = 2.5        # mean PSNR difference, dB
+SSIM_SCALE_LOG2 = 0.3      # log2 ratio of mean (1 - SSIM), reference / candidate
+LPIPS_SCALE_LOG2 = 0.4     # log2 ratio of mean LPIPS, reference / candidate
+GATE_FULL = -0.01          # gains count fully while every normalised gain >= this
+GATE_ZERO = -0.06          # ... and not at all once any normalised gain <= this
+_ERROR_FLOOR = 1e-6        # keeps the log ratios finite for perfect predictions
 
 
 class CandidateExecutionError(Exception):
@@ -285,19 +298,29 @@ def _measure_saved_predictions(run_root: Path, subset_path: Path) -> list[dict[s
     return rows
 
 
-def _score(rows: list[dict[str, float]], suite: str | None = None) -> float:
-    """Absolute quality scale; all bounds are disclosed challenge constants.
+def _suite_means(rows: list[dict[str, float]]) -> dict[str, float]:
+    return {name: statistics.fmean(row[name] for row in rows) for name in ("psnr", "ssim", "lpips")}
 
-    With a suite, only its original (non-strict_only) clips are scored."""
-    if suite is not None:
-        rows = [row for row, spec in zip(rows, _suite_slices(suite)) if not spec.get("strict_only")]
-    values = []
-    for row in rows:
-        p = min(1.0, max(0.0, (row["psnr"] - 20.0) / 30.0))
-        s = min(1.0, max(0.0, (row["ssim"] - 0.80) / 0.20))
-        l = min(1.0, max(0.0, (0.25 - row["lpips"]) / 0.25))
-        values.append(100.0 * (p + s + l) / 3.0)
-    return sum(values) / len(values)
+
+def metric_gains(candidate: list[dict[str, float]], reference: list[dict[str, float]]) -> tuple[float, float, float]:
+    """Normalised PSNR, SSIM and LPIPS gains of the suite means over the reference (0 = equal)."""
+    if not candidate or len(candidate) != len(reference):
+        raise ValueError("candidate and reference must cover the same clips")
+    c, r = _suite_means(candidate), _suite_means(reference)
+    return (
+        (c["psnr"] - r["psnr"]) / PSNR_SCALE_DB,
+        math.log2(max(1.0 - r["ssim"], _ERROR_FLOOR) / max(1.0 - c["ssim"], _ERROR_FLOOR)) / SSIM_SCALE_LOG2,
+        math.log2(max(r["lpips"], _ERROR_FLOOR) / max(c["lpips"], _ERROR_FLOOR)) / LPIPS_SCALE_LOG2,
+    )
+
+
+def continuous_score(candidate: list[dict[str, float]], reference: list[dict[str, float]]) -> float:
+    """Reference-relative quality score; the reference scores exactly 50."""
+    gains = metric_gains(candidate, reference)
+    # A metric that is worse than the reference withdraws the credit for the others.
+    gate = min(1.0, max(0.0, (min(gains) - GATE_ZERO) / (GATE_FULL - GATE_ZERO)))
+    terms = [math.tanh(value) for value in gains]
+    return REFERENCE_SCORE + (50.0 / 3.0) * sum(gate * t if t > 0 else t for t in terms)
 
 
 def _reference_rows(suite: str) -> list[dict[str, float]]:
@@ -367,8 +390,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
             _validate_rows(candidate, suite)
         except CandidateExecutionError:
             return _rejected("candidate evaluation failed")
-        candidate_score = _score(candidate, suite)
-        reference_score = _score(reference, suite)
+        candidate_score = continuous_score(candidate, reference)
         ids = [f"clip-{i + 1:02d}" for i in range(_expected_workloads(suite))]
         passes = []
         for workload, cand, ref in zip(ids, candidate, reference):
@@ -387,8 +409,13 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
             "lpips": sum(row["lpips"] for row in candidate) / len(candidate),
             "beat_spec_workload_passes": passes,
             "beats_reference": beats_reference,
-            "reference_score": reference_score,
-            "margin": candidate_score - reference_score,
+            "reference_score": REFERENCE_SCORE,
+            "margin": candidate_score - REFERENCE_SCORE,
+            # Operator evidence only: not in beat_spec solver_feedback.
+            "per_workload_measurements": [
+                {"workload": workload, "candidate": dict(cand), "reference": dict(ref)}
+                for workload, cand, ref in zip(ids, candidate, reference)
+            ],
         }
         if not math.isfinite(candidate_score):
             raise RuntimeError("non-finite quality score")

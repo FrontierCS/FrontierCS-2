@@ -2,7 +2,7 @@
 
 ## Problem
 
-NanoWM is an open-source research system for video world models: learned simulators that predict what an environment will look like after a sequence of actions. Such predictions support video generation and planning, where an agent needs to anticipate the consequences of its actions. The supplied code comes from NanoWM's evaluation pipeline and uses a fixed NanoWM-B/2 neural network with an SD-VAE image encoder and decoder; a latent is the encoder's numerical representation of an RGB frame. This task uses recorded DINO-WM Point Maze trajectories, consisting of rendered views of a simulated two-dimensional maze, two-component control actions, and simulator states. The bundled subset is about 67 MiB, with action and state metadata for 2,000 trajectories and four stored 100-frame episodes; the development suite selects four four-frame clips and the graded suite six. For each clip, the sampler receives the encoded first frame and actions and must return a finite float32 latent tensor of shape `(1, 4, 4, 32, 32)` on the supplied CUDA device, in batch, frame, channel, height, width order. The retained decoder and writer produce an RGB video, and only its three future frames, at indices 1, 2, and 3, are compared with the corresponding recorded frames. Correctness requires the specified tensor and complete output records; prediction quality is measured continuously rather than by exact pixel equality. The objective is to maximize the mean quality score derived from PSNR, SSIM, and LPIPS over the suite's two original clips; the clips added by beat spec v3 enter only the per-clip comparison.
+NanoWM is an open-source research system for video world models: learned simulators that predict what an environment will look like after a sequence of actions. Such predictions support video generation and planning, where an agent needs to anticipate the consequences of its actions. The supplied code comes from NanoWM's evaluation pipeline and uses a fixed NanoWM-B/2 neural network with an SD-VAE image encoder and decoder; a latent is the encoder's numerical representation of an RGB frame. This task uses recorded DINO-WM Point Maze trajectories, consisting of rendered views of a simulated two-dimensional maze, two-component control actions, and simulator states. The bundled subset is about 67 MiB, with action and state metadata for 2,000 trajectories and four stored 100-frame episodes; the development suite selects four four-frame clips and the graded suite six. For each clip, the sampler receives the encoded first frame and actions and must return a finite float32 latent tensor of shape `(1, 4, 4, 32, 32)` on the supplied CUDA device, in batch, frame, channel, height, width order. The retained decoder and writer produce an RGB video, and only its three future frames, at indices 1, 2, and 3, are compared with the corresponding recorded frames. Correctness requires the specified tensor and complete output records; prediction quality is measured continuously rather than by exact pixel equality. The objective is to maximize a quality score derived from PSNR, SSIM, and LPIPS averaged over all clips of the suite and compared with a hidden reference implementation.
 
 The latent-video sampler, its schedule utilities, the ordinary DDIM transition, and the Gaussian and Flow Matching sampling hooks have been removed and must be supplied.
 
@@ -147,28 +147,25 @@ The goal is to maximize the score on a 0–100 scale.
 
 PSNR (peak signal-to-noise ratio) measures pixel fidelity in decibels. SSIM (structural similarity) compares local image structure, and LPIPS (learned perceptual image patch similarity) measures distance between learned image features.
 
-For clip `i`, let `P_i` be the arithmetic mean of per-frame PSNR in dB, `S_i` the arithmetic mean of per-frame SSIM, and `L_i` the arithmetic mean of per-frame LPIPS over its three future frames. PSNR is computed on `[0,1]` RGB values with value range `1.0` and epsilon `10^-8`; SSIM uses an 11×11 window, sigma `1.5`, and three channels; LPIPS uses the VGG network after mapping RGB values from `[0,1]` to `[-1,1]`. Define
+For clip `i`, let `P_i` be the arithmetic mean of per-frame PSNR in dB, `S_i` the arithmetic mean of per-frame SSIM, and `L_i` the arithmetic mean of per-frame LPIPS over its three future frames. PSNR is computed on `[0,1]` RGB values with value range `1.0` and epsilon `10^-8`; SSIM uses an 11×11 window, sigma `1.5`, and three channels; LPIPS uses the VGG network after mapping RGB values from `[0,1]` to `[-1,1]`. Each metric is first averaged over all `n` clips of the suite (four in development, six graded): `P = (P_1 + ... + P_n) / n`, and likewise `S` and `L`. Let `P*`, `S*`, and `L*` be the same means for the hidden reference implementation, measured on the same clips in the same verification. Define
 
 ```text
-C(x) = min(1, max(0, x))
+g_P = (P - P*) / 2.5
+g_S = log2((1 - S*) / (1 - S)) / 0.3
+g_L = log2(L* / L) / 0.4
+G   = min(1, max(0, (min(g_P, g_S, g_L) + 0.06) / 0.05))
 
-Q_i = 100.0 * (
-        C((P_i - 20.0) / 30.0)
-      + C((S_i - 0.80) / 0.20)
-      + C((0.25 - L_i) / 0.25)
-      ) / 3.0
-
-candidate_score = (Q_1 + Q_2) / 2      # the suite's two original clips
-score = min(100.0, max(0.0, candidate_score))
+t_m = tanh(g_m)                    for m in P, S, L
+score = 50 + (50 / 3) * (sum of G * t_m over positive t_m + sum of t_m over negative t_m)
 ```
 
-The constants `20.0`, `30.0`, `0.80`, `0.20`, and `0.25` are challenge constants (not from materials). Higher PSNR and SSIM increase the score; lower LPIPS increases it. Each metric is clipped separately for each clip before the clip scores are averaged. The score is not computed by applying this formula to the suite-wide metric summaries. Passing the separate comparison criterion is not a multiplier or gate on this numerical score.
+`1 - S`, `1 - S*`, `L`, and `L*` are floored at `10^-6` inside the logarithms. The constants `2.5` (dB), `0.3`, `0.4`, `0.05`, and `0.06` are challenge constants (not from materials). A submission whose three means equal the reference scores exactly 50; the score lies strictly between 0 and 100. Higher PSNR, higher SSIM, and lower LPIPS never lower the score. Gains count in full only while every `g_m` is at least `-0.01`, and not at all once any `g_m` is `-0.06` or lower (for mean PSNR: 0.025 dB and 0.15 dB below the reference), so an improvement in one metric cannot pay for a clear loss in another. `G` acts only on these metric terms; the separate comparison criterion below is not a multiplier or gate on this numerical score.
 
 ## Calibration
 
-The shipped sampler reaches `NotImplementedError`, produces no valid prediction, and scores zero. The task has no measured A10G quality result for a functioning naive implementation and no empirical run-to-run noise floor or significance threshold. Fixed clips and seed 3407 define the evaluation protocol, but there is no measured repeatability bound from which to declare a small score change significant. The separate per-clip comparison has no tolerance: equality on a metric does not pass its strict comparison.
+The shipped sampler reaches `NotImplementedError`, produces no valid prediction, and scores zero. The hidden reference implementation scores 50 by construction. Fixed clips and seed 3407 define the evaluation protocol. The separate per-clip comparison has no tolerance: equality on a metric does not pass its strict comparison.
 
-For an arithmetic calibration of the score scale, if both original clips had `PSNR=30.0`, `SSIM=0.90`, and `LPIPS=0.125`, each would contribute normalized terms `1/3`, `1/2`, and `1/2`, giving a score of approximately `44.4444`. This is a hypothetical metric record, not a measured sampler result. While the clipping bounds are inactive, a 1 dB PSNR increase on one of the two original clips changes the suite score by `100 / (3 * 30 * 2)`, approximately `0.5556` points. These numbers explain the score's units; they are not quality targets or experimental evidence. There is no designated stopping threshold below the maximum score.
+For an arithmetic calibration of the score scale, with the other two means equal to the reference: a mean PSNR 1 dB higher scores about `56.33`; a mean `1 - SSIM` 10% lower scores about `57.79`; a mean LPIPS 10% lower scores about `56.05`. All three together score about `70.17`. A mean PSNR 1 dB higher combined with a mean LPIPS 2% higher scores about `48.81`, below the reference. These numbers explain the score's units; they are not quality targets or experimental evidence. There is no designated stopping threshold below the maximum score.
 
 ## Feedback and grading
 
@@ -200,8 +197,8 @@ The configured limits are:
 | Workspace storage | 10,240 MiB |
 | Build timeout | 600 seconds |
 | Runtime timeout | 10,200 seconds |
-| Agent accelerator | One NVIDIA A10G instance; at most 1,800 instance-seconds and 1,800 GPU-seconds |
-| Verifier accelerator | One NVIDIA A10G instance; at most 10,200 instance-seconds per evaluation and 20,400 GPU-seconds in total |
+| Agent accelerator | One NVIDIA A100 80GB instance; at most 1,800 instance-seconds and 1,800 GPU-seconds |
+| Verifier accelerator | One NVIDIA A100 80GB instance; at most 10,200 instance-seconds per evaluation and 20,400 GPU-seconds in total |
 | Each native evaluation invocation | 4,950 seconds, including its isolated sampler calls (all clips of the suite) |
 | Each isolated worker | 1,650 CPU-seconds, additionally subject to the caller's remaining wall-clock deadline |
 

@@ -2,7 +2,7 @@ tag: world_models
 runtime:
   language: python
   timeout_seconds: 10200
-  environment: "Python 3.11 with PyTorch 2.4.1 and one NVIDIA A10G; authentic NanoWM Point Maze checkpoint evaluation"
+  environment: "Python 3.11 with PyTorch 2.4.1 and one NVIDIA A100 80GB; authentic NanoWM Point Maze checkpoint evaluation"
   apt_packages: [bash, git, python3]
   judge_apt_packages: [bash, git, python3, libseccomp2]
   pip_packages: &python_packages
@@ -45,7 +45,7 @@ runtime:
     gpu_image: pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime@sha256:0a3b9fedefe1f61ac4d5a9de9015c0863db27ca0fde2d4e37e6268147980b726
   accelerator:
     provider: modal
-    gpu_types: [A10G]
+    gpu_types: [A100-80GB]
     agent:
       instances: 1
       max_instance_seconds: 1800

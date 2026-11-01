@@ -14,19 +14,19 @@
   "file_count": 154,
   "files": [
     {
-      "bytes": 2030,
+      "bytes": 2035,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:abbcb8fcb0421f3488e2b0bb0ee9aaef53d66689a8a66802f736ca51b5e6e1ce"
+      "sha256": "sha256:838df764a307577db2cfe1e5c471ea6b41e289d50babb748670dc78788e6d758"
     },
     {
-      "bytes": 6921,
+      "bytes": 6931,
       "path": "agent-base/frontier/task/README.md",
-      "sha256": "sha256:f0c938557442195a827e9f228021085eb77ed71ae5fa5a6698d6b764b931b19b"
+      "sha256": "sha256:8505800bbd638f71597281d7e3f781078ec18362c3ac9ca88933e9208660d28f"
     },
     {
-      "bytes": 4097,
+      "bytes": 4102,
       "path": "agent-base/frontier/task/bin/README.md",
-      "sha256": "sha256:e2b301a9910bda860b9b0d845521aed74d8fbb8a516aab04af612e553ddd3ce5"
+      "sha256": "sha256:edcc54f0e739fd669d427f617e0877889cbc18f16eda1f86d1a3ec3ddeadbc8b"
     },
     {
       "bytes": 4701,
@@ -59,9 +59,9 @@
       "sha256": "sha256:d3e3e7b9385594f24f0651fc08a563872d3a27dd5e2d62ab25b8dc8f64dc3921"
     },
     {
-      "bytes": 24033,
+      "bytes": 24349,
       "path": "agent-base/frontier/task/repo/README.md",
-      "sha256": "sha256:6354ce6a69b1824108fb8bd5cc0a63c71839b0e97b4ba4deea0a64cf3935d4a6"
+      "sha256": "sha256:9ecf17b5e86e5c3b42a4c122af108e2c92dfd4074a53b54a55c42ed48fb149f0"
     },
     {
       "bytes": 925,
@@ -364,9 +364,9 @@
       "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
     },
     {
-      "bytes": 2354,
+      "bytes": 2364,
       "path": "judge/config.yaml",
-      "sha256": "sha256:3779edcfe9c321a384b1b22e0bf5b55da7455a0097cecb0bdf04cd2cc2b3b369"
+      "sha256": "sha256:33befadb0e5ba930de1ecfa85b3a4b8a93934013cd61cf0466f0dcb0d4d72eae"
     },
     {
       "bytes": 119,
@@ -374,9 +374,9 @@
       "sha256": "sha256:9fa6bb898efa8bb9cec6a75a976972aae3b6b59586a4ec0462a4fbe16016a9c7"
     },
     {
-      "bytes": 18459,
+      "bytes": 20256,
       "path": "judge/evaluator.py",
-      "sha256": "sha256:0cda48f45754ee6e0a9f88772ad04a0d7a45863c04c768c0e4265fbff8b2743f"
+      "sha256": "sha256:a457e398a724aa1f9b3535ec4b59f6a2d47dfb0b6351c1d59b548cdbe58852e1"
     },
     {
       "bytes": 1071,
@@ -729,9 +729,9 @@
       "sha256": "sha256:ff8767875e22980e2cd0d7beafe56d5a6a8cd5b8a34869b42e398b4c81ef9c78"
     },
     {
-      "bytes": 25292,
+      "bytes": 25607,
       "path": "judge/readme",
-      "sha256": "sha256:f7dc0bd43984824f5c5322e461aa271427eabda94e5dd49354b9f6bd62ef6c3a"
+      "sha256": "sha256:49cf9b1eb3689402882c1f2192136799dd38a7a47c3abdd232717ade2ba1ab6f"
     },
     {
       "bytes": 29241,
@@ -749,14 +749,14 @@
       "sha256": "sha256:8697cfb6f6daae4d1219961ed437f2248678811118cfd60f647dfee16d6e098d"
     },
     {
-      "bytes": 3242,
+      "bytes": 3252,
       "path": "policy.json",
-      "sha256": "sha256:06967b03bf4ed60c43ade02857434184fa85747adb5e4d93fc5fc2f0a1a4a1b8"
+      "sha256": "sha256:d05444961f524dbe675f64072836f4c0d24ef98df02bbd67b30d0494ed0d7d91"
     },
     {
-      "bytes": 1578,
+      "bytes": 1583,
       "path": "verifier/Dockerfile",
-      "sha256": "sha256:20daff16f20e10c537689eefbe8351e5bb775f2fcf5e407c6054266c2bf0cd5f"
+      "sha256": "sha256:a31e55d2b041e1ce800bd8243783b9d3cb4dbffd3fd941db8f6e318b4a22df67"
     },
     {
       "bytes": 13321,
@@ -779,16 +779,16 @@
       "sha256": "sha256:b35b6bb0abdde70bc46a58efe5aa98dc7841d49f9b726bdc2aff2a9b5bab3c71"
     },
     {
-      "bytes": 7343,
+      "bytes": 7348,
       "path": "verifier-gpu/Dockerfile",
-      "sha256": "sha256:ca4a6b588e77bfc8c6f24ae6f032ec841f08cbeef5b40e6497e9bdce9c240bc4"
+      "sha256": "sha256:cb683118a321ce1f84bad29e2ab5c46a4a204d774bb3c8897a3f4f889fb75b46"
     }
   ],
   "problem_id": "nano_world_model",
   "schema_version": "frontier.frontiersmith-task-lock/v1",
   "source": {
-    "evaluator_sha256": "sha256:0cda48f45754ee6e0a9f88772ad04a0d7a45863c04c768c0e4265fbff8b2743f",
-    "statement_sha256": "sha256:f7dc0bd43984824f5c5322e461aa271427eabda94e5dd49354b9f6bd62ef6c3a",
+    "evaluator_sha256": "sha256:a457e398a724aa1f9b3535ec4b59f6a2d47dfb0b6351c1d59b548cdbe58852e1",
+    "statement_sha256": "sha256:49cf9b1eb3689402882c1f2192136799dd38a7a47c3abdd232717ade2ba1ab6f",
     "task_dir": "source-r3"
   },
   "preview_beat_spec_v3_refresh": {
