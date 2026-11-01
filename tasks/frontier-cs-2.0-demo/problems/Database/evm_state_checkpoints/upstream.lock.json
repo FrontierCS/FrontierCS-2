@@ -14,9 +14,9 @@
   "file_count": 139,
   "files": [
     {
-      "bytes": 2148,
+      "bytes": 2867,
       "path": "agent-base/Dockerfile",
-      "sha256": "sha256:c9233b9fb1c5c779d207e17f438bec966c62d7559714afe30460e79aa65056da"
+      "sha256": "sha256:21439efad9d9015876829fa8c13d1f53522c178d4a6c7eeb81fd1433577425f8"
     },
     {
       "bytes": 5488,
@@ -29,9 +29,9 @@
       "sha256": "sha256:3ba0303336503cf8cd7ead8a60635d8e7413122f47b5d7a06e96aeff52130a10"
     },
     {
-      "bytes": 788,
+      "bytes": 995,
       "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
-      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+      "sha256": "sha256:2c2009bafeaf4c8338690be9fc08a06b591688a1c76923a98cabf9866455fc34"
     },
     {
       "bytes": 118,

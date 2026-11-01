@@ -127,9 +127,9 @@
     },
     {
       "agent_image": {
-        "digest": "sha256:e711be388824aed39ccb80e7b07ebf4d3bff67d14ebcfa8aa112d85d2d3637e7",
+        "digest": "sha256:312aa46b2081068227c88589d7b2a149620495731905b71f9e4d0addd80f614e",
         "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-agent",
-        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
+        "tag": "source-ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0"
       },
       "baseline": {
         "agreement_rule": {
@@ -157,13 +157,13 @@
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
         "result_json_source": "judge/result.json",
-        "source_set_sha256": "sha256:227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747",
+        "source_set_sha256": "sha256:ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0",
         "verifier_adapter_sha256": "sha256:e278eb9db3817ddc011c88b1af885c433b6c34f5d7a29d2eb93bd316013581a3"
       },
       "dataset_image": {
         "digest": "sha256:b9299829fccc21858e35dc297e9250d2e9451ac23e22a0d1229286e26d19dec7",
         "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-datasets",
-        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
+        "tag": "source-ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0"
       },
       "datasets": {
         "eval_sha256": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
@@ -175,12 +175,12 @@
         "launcher_sha256": "sha256:ce7234cdc7cd3a274df81e5d23cc6c96e38c2e10c5418511940928e98aa3e9ec",
         "payload_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
         "repository": "docker.io/joyemang33/fcs2-task-evm_state_checkpoints-reference",
-        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
+        "tag": "source-ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0"
       },
       "verifier_image": {
         "digest": "sha256:c42688c024cae2dc1295e903eb6db4761215d0e154bf28bbc0104d9e78d24d98",
         "repository": "docker.io/joyemang33/fcs2-task-verifier-evm_state_checkpoints",
-        "tag": "source-227c2feb2fd455853ab6d31364b0a584a3515740f9851b04ae71bef978a4a747"
+        "tag": "source-ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0"
       }
     },
     {

@@ -20,5 +20,9 @@ git -C "$destination" config user.name frontier-task-baseline
 git -C "$destination" config user.email frontier-task-baseline@invalid
 git -C "$destination" add --all
 git -C "$destination" commit --quiet --message baseline
+# Pre-built pinned dependencies (untracked; the sandbox has no network access).
+mkdir -p "$destination/build"
+cp -a /opt/frontier/spectrum-deps "$destination/build/_deps"
+chmod -R u+rwX "$destination/build"
 install -d -m 0700 /workspace/payload
 printf '%s\n' "$destination"
