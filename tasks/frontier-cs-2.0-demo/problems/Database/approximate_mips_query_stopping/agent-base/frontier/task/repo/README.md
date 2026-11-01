@@ -179,12 +179,12 @@ t_j     = max(0.25, T_j^fixed / max(10^-9, T_j))
 w_j     = max(0.25, C_j^fixed / max(1, C_j))
 E_j     = t_j^0.25 * w_j^0.75
 point_j = 100 * Q_j * E_j / (1 + E_j)
-score   = clip((1/12) * sum(point_j for j in J), 0, 100)
+score   = clip((1/|J|) * sum(point_j for j in J), 0, 100)
 ```
 
 The capacities, lower gain floors, exponent weights, arithmetic mean, and final clipping are challenge constants (not from the paper materials). Both elapsed time and verified-candidate count contribute to every capacity's point.
 
-PASS is separate from this continuous score. For every one of the 12 \(c, capacity\) workloads, all four comparisons must hold against the reference policy measured over the same active evaluation set: mean query time must be strictly lower, recall at 50 must be greater than or equal, mean last-result inner-product ratio must be greater than or equal, and mean distinct verified-candidate count must be less than or equal. Final recomputes each metric from the public-plus-hidden observations before comparison. PASS is the conjunction of all 48 comparisons, with no tolerance and no compensation across workloads or metrics. Final evaluation also includes heap capacities not shown in train: at each of them, for every `c`, the recall, last-result ratio and verified-candidate comparisons against the reference must also hold for PASS (the query-time comparison is not applied there), while the score formula above stays over the 12 listed pairs.
+PASS is separate from this continuous score. For every one of the 12 \(c, capacity\) workloads, all four comparisons must hold against the reference policy measured over the same active evaluation set: mean query time must be strictly lower, recall at 50 must be greater than or equal, mean last-result inner-product ratio must be greater than or equal, and mean distinct verified-candidate count must be less than or equal. Final recomputes each metric from the public-plus-hidden observations before comparison. PASS is the conjunction of all 48 comparisons, with no tolerance and no compensation across workloads or metrics. Final evaluation also includes heap capacities not shown in train: at each of them, for every `c`, all four comparisons against the reference must also hold for PASS, and final adds these pairs to `J` in the score.
 
 ## Calibration
 The supplied fixed-candidate-budget starter policy scores approximately `49.15` on the feedback suite. Independent paired measurements vary by less than 2 score points, so a repeatable change of at least 2 points is the calibration for a genuine improvement. Measurements identical to the starter give `t_j=w_j=E_j=1` and `point_j=50*Q_j`; its measured aggregate is below 50 because `Q_j` is below one at some operating points. After each development submission, the judge also reports mean recall, mean last-result ratio, query milliseconds, and verified-candidate count.

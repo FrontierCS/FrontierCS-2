@@ -81,6 +81,7 @@
     }
   ],
   "final_only_metrics": [
+    "mean_query_time",
     "recall_at_50",
     "last_result_inner_product_ratio",
     "verified_candidate_count"
@@ -145,12 +146,12 @@
       "reveals_reference": "No: an aggregate candidate-only measurement without reference values or private workload identities."
     }
   ],
-  "unit": "One approximation-ratio/result-capacity workload, with metrics averaged over 150 public queries in train or 300 freshly measured public-plus-hidden queries in final. Final adds final_only_workloads, whose heap capacities are not disclosed to the solver and on which only final_only_metrics are compared.",
-  "beats_reference": "All four comparisons must pass on all 12 disclosed workloads (48 comparisons). Final additionally requires the three final_only_metrics comparisons (recall, last-result ratio, verified-candidate count; not query time) on the 12 final-only workloads (36 comparisons, 84 in total); no tolerance or compensation across workloads or metrics.",
+  "unit": "One approximation-ratio/result-capacity workload, with metrics averaged over 150 public queries in train or 300 freshly measured public-plus-hidden queries in final. Final adds final_only_workloads, whose heap capacities are not disclosed to the solver; every metric is compared and scored on them as on the disclosed workloads.",
+  "beats_reference": "All four comparisons must pass on all 12 disclosed workloads (48 comparisons). Final additionally requires all four comparisons on the 12 final-only workloads (48 comparisons, 96 in total); no tolerance or compensation across workloads or metrics.",
   "beats_reference_aggregation": {
     "kind": "conjunction"
   },
-  "statement_sentences": "PASS requires strictly lower mean query time, no lower recall at 50 and last-result inner-product ratio, and no higher verified-candidate count than the paired reference on every workload. Final pools freshly measured public and hidden queries before comparison. Final evaluation also includes heap capacities not shown in train, where the recall, last-result ratio and verified-candidate comparisons apply and the query-time comparison does not.",
+  "statement_sentences": "PASS requires strictly lower mean query time, no lower recall at 50 and last-result inner-product ratio, and no higher verified-candidate count than the paired reference on every workload. Final pools freshly measured public and hidden queries before comparison. Final evaluation also includes heap capacities not shown in train, where all four comparisons apply and whose points enter the final score.",
   "withheld": [
     "beats_reference",
     "reference_score",
