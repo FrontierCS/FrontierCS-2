@@ -1166,7 +1166,7 @@ def render_runtime_manifest(
                     {
                         "apiGroups": ["networking.k8s.io"],
                         "resources": ["networkpolicies"],
-                        "verbs": ["create", "get", "update"],
+                        "verbs": ["create", "delete", "get", "update"],
                     },
                 ],
             },

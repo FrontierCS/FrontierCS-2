@@ -4,7 +4,7 @@
     "repository": "https://github.com/FrontierCS/FrontierCS-2.git",
     "require_source": false,
     "runtime_source_commits": {
-      "driver": "f162aaa73ad86ab6542df74a40d2e1648dead2b1",
+      "driver": "936501d45df2ff991408322509c1354cfc31e289",
       "management": "492ceb9aaae62ebf06fd477070baa4ea225b4520"
     }
   },
@@ -29,7 +29,7 @@
     }
   },
   "execution": {
-    "agent_external_egress": true,
+    "agent_external_egress": false,
     "max_active_drivers": 1,
     "object_store_gib": 20,
     "registry_storage_gib": 20,
@@ -48,10 +48,10 @@
   },
   "images": {
     "driver": {
-      "digest": "sha256:3e18d7fe90e21b6c6a5c524b9221c3315f8e5efefe0b087ff5e38941c18ab23f",
-      "reference": "docker.io/joyemang33/fcs2-driver@sha256:3e18d7fe90e21b6c6a5c524b9221c3315f8e5efefe0b087ff5e38941c18ab23f",
+      "digest": "sha256:972a512a31dba8b9f3c605ebcf5a1c8039bfb3902077b7751c8e2c164a575938",
+      "reference": "docker.io/joyemang33/fcs2-driver@sha256:972a512a31dba8b9f3c605ebcf5a1c8039bfb3902077b7751c8e2c164a575938",
       "repository": "docker.io/joyemang33/fcs2-driver",
-      "tag": "sha-f162aaa73ad86ab6542df74a40d2e1648dead2b1"
+      "tag": "sha-936501d45df2ff991408322509c1354cfc31e289"
     },
     "litellm": {
       "digest": "sha256:0aa398456068b6a91d05eb0ae0004d3ca5cec7c7608a901c73d3cdc6833be974",

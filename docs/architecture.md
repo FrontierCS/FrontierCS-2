@@ -177,7 +177,8 @@ named `frontier-agent-external-egress`. That policy selects
 `frontier.dev/network-role=agent` and permits only CoreDNS plus public TCP 443;
 it does not alter or imitate Management's frozen six-policy Run contract. This
 is an internal-beta escape hatch for lab-owned model endpoints and credentials,
-not the production isolation boundary.
+not the production isolation boundary. With the flag `false` the controller
+deletes the policy from every Run namespace.
 
 With GPU disabled, the controller cannot read Secrets. With GPU enabled, it
 mounts the named site Modal Secret read-only, can get that exact Secret name,

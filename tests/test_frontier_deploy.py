@@ -190,7 +190,7 @@ class ConfigTests(unittest.TestCase):
              "task_model_aliases": ["progent-agent-gpt-4o-mini"]},
         )
         self.assertTrue(config["litellm"]["store_model_in_db"])
-        self.assertIs(config["execution"]["agent_external_egress"], True)
+        self.assertIs(config["execution"]["agent_external_egress"], False)
         self.assertGreaterEqual(config["compute"]["cpu"]["desired_size"], 1)
         for name in ("registry", "management", "driver", "litellm", "postgres"):
             self.assertRegex(
@@ -669,6 +669,7 @@ class RenderTests(unittest.TestCase):
 
     def test_storage_controller_renders_agent_egress_env_and_narrow_rbac(self) -> None:
         self.config["features"]["modal_gpu"] = True
+        self.config["execution"]["agent_external_egress"] = True
         encoded = frontier_deploy.render_runtime_manifest(
             self.config, self.outputs, self.images, ["172.20.0.1/32", "10.42.1.20/32"]
         )
@@ -721,7 +722,7 @@ class RenderTests(unittest.TestCase):
                 {
                     "apiGroups": ["networking.k8s.io"],
                     "resources": ["networkpolicies"],
-                    "verbs": ["create", "get", "update"],
+                    "verbs": ["create", "delete", "get", "update"],
                 }
             ],
         )
@@ -1278,6 +1279,80 @@ class StorageControllerTests(unittest.TestCase):
         controller = load_storage_controller(enabled=False)
         self.assertFalse(controller.AGENT_EXTERNAL_EGRESS)
         self.assertIsNone(controller.DNS_CIDR)
+
+    def test_disabled_controller_deletes_an_existing_agent_external_egress_policy(
+        self,
+    ) -> None:
+        controller = load_storage_controller(enabled=False)
+        namespace = "frontier-run-01arz3ndektsv4rrffq69g5fav"
+        existing = self.controller.network_policy_document(namespace, "172.20.0.10/32")
+        policy_path = (
+            "/apis/networking.k8s.io/v1/namespaces/"
+            f"{namespace}/networkpolicies/frontier-agent-external-egress"
+        )
+        with (
+            mock.patch.object(controller, "api", side_effect=[existing, {}]) as api,
+            mock.patch("builtins.print"),
+        ):
+            self.assertTrue(controller.remove_agent_external_egress_policy(namespace))
+        self.assertEqual(
+            api.call_args_list,
+            [
+                mock.call("GET", policy_path, absent_ok=True),
+                mock.call("DELETE", policy_path, absent_ok=True),
+            ],
+        )
+
+        with mock.patch.object(controller, "api", return_value=None) as api:
+            self.assertFalse(controller.remove_agent_external_egress_policy(namespace))
+        api.assert_called_once_with("GET", policy_path, absent_ok=True)
+
+    def test_disabled_controller_withdraws_egress_before_storage_reconcile(
+        self,
+    ) -> None:
+        controller = load_storage_controller(enabled=False)
+        namespace = {
+            "metadata": {
+                "name": "frontier-run-01arz3ndektsv4rrffq69g5fav",
+                "labels": {
+                    "frontier.dev/owner": "management",
+                    "frontier.dev/resource-kind": "run-namespace",
+                    "frontier.dev/run-id": "run_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                    "frontier.dev/attempt-id": "attempt_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                },
+            }
+        }
+        with (
+            mock.patch.object(
+                controller, "remove_agent_external_egress_policy"
+            ) as remove,
+            mock.patch.object(controller, "api", side_effect=RuntimeError("PV 403")),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "PV 403"):
+                controller.reconcile_namespace(namespace)
+        remove.assert_called_once_with("frontier-run-01arz3ndektsv4rrffq69g5fav")
+
+    def test_enabled_controller_never_deletes_agent_external_egress(self) -> None:
+        with mock.patch.object(
+            self.controller, "remove_agent_external_egress_policy"
+        ) as remove, mock.patch.object(
+            self.controller, "api", side_effect=RuntimeError("PV 403")
+        ):
+            with self.assertRaises(RuntimeError):
+                self.controller.reconcile_namespace(
+                    {
+                        "metadata": {
+                            "name": "frontier-run-01arz3ndektsv4rrffq69g5fav",
+                            "labels": {
+                                "frontier.dev/owner": "management",
+                                "frontier.dev/resource-kind": "run-namespace",
+                                "frontier.dev/run-id": "run_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                                "frontier.dev/attempt-id": "attempt_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                            },
+                        }
+                    }
+                )
+        remove.assert_not_called()
 
 
 if __name__ == "__main__":

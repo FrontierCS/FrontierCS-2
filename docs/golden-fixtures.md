@@ -1,5 +1,13 @@
 # Golden behaviour fixtures
 
+The Agent egress closure updates ten CPU/Modal fixtures. The example
+site sets `execution.agent_external_egress` to `false`, so each bundle
+`config.json`, its `release.json` checksum and `bundle.sha256` change, and the
+four runtime manifests render `FRONTIER_AGENT_EXTERNAL_EGRESS=false`. The
+storage-controller ClusterRole gains `delete` on `networkpolicies`, so the
+controller can remove `frontier-agent-external-egress` while the flag is false.
+No other fixture bytes change.
+
 The official Codex 0.162.1 overlay update changes the catalog Candidate image
 pin. Golden Candidate documents use a synthetic digest and remain unchanged;
 live registration derives a new identity from the actual mirrored digest.
