@@ -47,12 +47,10 @@ def load(path, name):
 
 class DeadlineEnvelopeTests(unittest.TestCase):
     def test_all_published_adapters_inventory(self):
-        # Every forked GPU adapter still in the tree belongs to a policy.json task; a task.toml
+        # Every public task is a task.toml task: it uses the shared adapter (gpu-tools); a task.toml
         # task uses the shared adapter (gpu-tools) and must not carry one.
         forked = sorted(PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py"))
-        self.assertTrue(forked)
-        for path in forked:
-            self.assertFalse((path.parent.parent / "task.toml").is_file(), path)
+        self.assertEqual(forked, [])
         for index, path in enumerate(ADAPTERS):
             adapter = load(path, f"deadline_adapter_{index}")
             with self.subTest(task=path.parent.parent.name):

@@ -249,6 +249,8 @@ class RendererTests(unittest.TestCase):
         expected["metadata"]["evaluation"]["beat_spec_sha256"] = (
             "sha256:19bb12002bd89b264f142f9e38a570133d98dee964051c032c2e5050135dff5d"
         )
+        # Internal repository URL replaced in the public release tree.
+        expected["metadata"]["conversion"]["source_repo"] = "private authoring repository"
         # The task.toml migration moved the metadata the platform does not read to
         # docs/task-authoring/sparse_video_attention_policy/provenance/policy-metadata.json;
         # runtime.language is no longer emitted for task.toml tasks.

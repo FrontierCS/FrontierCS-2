@@ -295,7 +295,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                        "32,768 bytes",
                        "scored about 28 on the authors' development host (the value depends on the hardware)"):
             self.assertIn(phrase, statement)
-        for stale in ("", "issue ", "predecessor", "calibrated", "64 MiB", "@", "between 26 and 28"):
+        for stale in ("issue ", "predecessor", "calibrated", "64 MiB", "@", "between 26 and 28"):
             self.assertNotIn(stale, statement)
         # The validity codes are train feedback, documented with the metric (task.toml [feedback]).
         feedback = (TASK / "task.toml").read_text()

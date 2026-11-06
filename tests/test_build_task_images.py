@@ -671,7 +671,6 @@ with mock.patch.object(Path, 'open', checked_open):
                     required_bases.update(build_task_images.dockerfile_bases(recipe))
         self.assertTrue((required_bases - {"scratch"}).issubset(bases))
         self.assertTrue(any(key.startswith("pytorch/") for key in bases))
-        self.assertIn("${FRONTIER_GPU_SSH_BASE_IMAGE}", bases)
         builds = [c for c in commands if c[:2] == ["docker", "build"]]
         self.assertEqual(
             len(builds),
@@ -824,10 +823,15 @@ with mock.patch.object(Path, 'open', checked_open):
                         build_task_images.verify_dataset_image(archive, expected)
 
     def test_native_sources_are_unchanged_and_gpu_argument_is_required(self):
-        # A legacy (policy.json) GPU recipe that still takes the SSH base argument.
-        path = (
-            renderer.problem_directory(build_task_images.TASK_ROOT / "problems", "wanda")
-            / "verifier-gpu/Dockerfile"
+        # A legacy (policy.json) GPU recipe that still takes the SSH base argument; no public
+        # task has one, so the recipe is written here.
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        path = Path(directory.name) / "Dockerfile"
+        path.write_text(
+            "ARG FRONTIER_GPU_SSH_BASE_IMAGE\n"
+            "FROM ${FRONTIER_GPU_SSH_BASE_IMAGE} AS frontier_gpu_ssh\n"
+            "FROM python:3.9-slim-bookworm@sha256:" + "b" * 64 + " AS runtime\n"
         )
         before = path.read_bytes()
         for value in (None, "", "ubuntu:24.04"):
