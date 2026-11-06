@@ -1,0 +1,47 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "vllm_llm_serving_optimization",
+  "domain": "systems",
+  "promotion": {},
+  "generated_at": null,
+  "generator": {
+    "pipeline": null,
+    "commit": null,
+    "run_id": null,
+    "candidate_id": null,
+    "config_sha256": null
+  },
+  "paper": {
+    "paper_id": null,
+    "title": null,
+    "authors": [],
+    "year": null,
+    "venue": null,
+    "pdf_url": null,
+    "doi": null
+  },
+  "rank": {
+    "rank": null,
+    "overall_score": null,
+    "recommendation": null,
+    "scores": {},
+    "risks": []
+  },
+  "artifact": {
+    "repo_url": "https://github.com/vllm-project/vllm",
+    "commit": "b8b302cde434df8c9289a2b465406b47ebab1c2d",
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": "GPU vLLM Serving Optimization",
+    "summary": "Optimize vLLM serving and scheduling for frozen Qwen3-Coder-30B-A3B inference on one H100 across SWE-bench and BFCL conversations, preserving correctness while improving end-to-end latency.",
+    "paper_location": null,
+    "code_location": [
+      "vllm/"
+    ],
+    "metric": "quality_penalized_workload_weighted_log_speedup"
+  },
+  "host": null,
+  "provenance_note": "Manual native-format transfer of a legacy public benchmark; not Smith-generated, ranked or promoted. The artifact identifies the separately pinned vLLM research-code checkout, not the benchmark repository. Legacy benchmark source: https://github.com/FrontierCS/Frontier-CS at 1bccbadc6bead714d25c546cf954a37bb0791fd6, path 2.0/problems/vllm_llm_serving_optimization. No task-specific paper provenance, artifact clone timestamp, census or Smith history was established. Actual runtime and model acceptance evidence is recorded separately; this metadata does not claim completed calibration or staging acceptance."
+}
