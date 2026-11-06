@@ -1,0 +1,47 @@
+{
+  "artifact": {
+    "census": {},
+    "cloned_at": null,
+    "commit": null,
+    "repo_url": null
+  },
+  "contribution": {
+    "code_location": [
+      "2.0/problems/knn_gpu_kernel_optimization"
+    ],
+    "metric": "geometric_mean_speedup_over_naive",
+    "paper_location": null,
+    "summary": "Optimize bf16 brute-force KNN on real SIFT/GIST descriptors with four public train and eight final workloads (six scored public-plus-hidden workloads plus two hidden PASS-only shapes from beat spec v3).",
+    "title": "GPU Brute-Force k-NN Kernel Optimization"
+  },
+  "domain": "systems",
+  "generated_at": null,
+  "generator": {
+    "candidate_id": null,
+    "commit": null,
+    "config_sha256": null,
+    "pipeline": null,
+    "run_id": null
+  },
+  "host": null,
+  "paper": {
+    "authors": [],
+    "doi": null,
+    "paper_id": null,
+    "pdf_url": null,
+    "title": null,
+    "venue": null,
+    "year": null
+  },
+  "promotion": {},
+  "provenance_note": "Manual native-format transfer of a legacy public task; not Smith-generated, ranked or promoted. No separate research-code artifact or paper was identified. Benchmark source is recorded in policy metadata and upstream.lock.json. Runtime measurements belong to trial evidence and are not inferred here.",
+  "rank": {
+    "overall_score": null,
+    "rank": null,
+    "recommendation": null,
+    "risks": [],
+    "scores": {}
+  },
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "knn_gpu_kernel_optimization"
+}

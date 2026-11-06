@@ -1,0 +1,270 @@
+{
+  "adaptations": [
+    "Move the pristine kmeanslib source into the native Agent-visible /frontier/task/repo tree.",
+    "Use Candidate-owned frontier.gpu-helper/v3 for Agent GPU debugging; no provider credential enters Agent or task code.",
+    "Run the task evaluator inside a Driver-owned Verifier H100 instead of calling Modal from task code.",
+    "Package the textual Git diff as payload/solution.patch and require an explicit final submission.",
+    "Use 25 accepted train calls, the confirmed default for GPU tasks.",
+    "Use unchanged original w0-w3 for train and all six w0-w5 for final score and PASS; final public w0-w3 reuse the train seed domain, hidden w4-w5 retain an independent seed domain, and final freshly measures every workload.",
+    "Map geometric-mean speedup S over the naive starter to 0 for S<=1 and otherwise 100*log(S)/(log(10)+log(S)); 10x=50, no finite upper saturation; preserve raw speedup separately.",
+    "Measure the frozen optimized reference separately for all-workload/all-metric binary comparison.",
+    "Freeze the reviewed binary rules: on every workload latency must be strictly lower than reference, inertia may be at most 5% higher, and mismatch may be at most 0.002 higher.",
+    "Use the native /opt/frontier/task/repo runtime path; retain legacy harbor/app names only in source provenance and per-file mappings.",
+    "Preserve Smith metadata fields with explicit null/empty values where no generation, rank, artifact or promotion history exists.",
+    "Use one bounded Verifier GPU input upload without automatic retry; accepted failed or interrupted SSH execs consume quota. Preserve two-operation successful verification and existing train/final pools.",
+    "Allow solver-authored local test_*.py modules under kmeanslib consistently with the published new-Python-module contract; preserve reserved refkmeans.py/conftest.py, trusted outside paths and existing static safety checks. Official helper rejects reserved filenames explicitly without filtering payload files. No scientific measurements, scoring, workloads, reference, datasets or resource budgets change."
+  ],
+  "adapter_source": {
+    "commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
+    "path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy/verifier",
+    "repository": "private authoring repository"
+  },
+  "commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
+  "commit_date": "2026-07-23T11:50:44+08:00",
+  "conversion_source": {
+    "checked_out_commit": "ae69c52ce978968918f6f04d4e6ba99d31ddd3be",
+    "path": "2.0/problems/kmeans_gpu_kernel_optimization",
+    "repository": "https://github.com/FrontierCS/Frontier-CS",
+    "unchanged_since": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5"
+  },
+  "file_count": 29,
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 69,
+      "sha256": "sha256:b45472a014b1263dd9060dffe420fa794666f69d89adb5364baf224b3728a78d"
+    },
+    {
+      "path": "LICENSE.frontier-cs",
+      "bytes": 1072,
+      "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+    },
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 1110,
+      "sha256": "sha256:3b577552fff73073731fb2dbc6f28b0cdef793826b6610cbb217be27f6350a66"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 4691,
+      "sha256": "sha256:282c9787321231a9e4afa99437c12275fad93666e7dcaf1921f53457a9365211"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/README.md",
+      "bytes": 5397,
+      "sha256": "sha256:b5b0ba007acd74787973befe7002f759c575b5df3228ca5fb177854062365c6a"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "bytes": 1155,
+      "sha256": "sha256:251e209246456f7bf6e17bec91024b95eef6e2118e8ac8fa28eae4adea0cf634"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "bytes": 655,
+      "sha256": "sha256:10cc6895ab48c3a8ab038a0a02c852a122615bbc49fb1d6c95ae5ef294a5ccbe"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/README.md",
+      "bytes": 4900,
+      "sha256": "sha256:5f8161b80955f46eb3f4cad17a9ec933dc0fce5503e04662a08c5def5c681a8d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "bytes": 670,
+      "sha256": "sha256:273a604b9dc8f64a89249137c1b5e05d4301ce2687bb52319222808cd20fbaba"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "bytes": 116,
+      "sha256": "sha256:7ccfe89954cac7cceab937b7ccae7a01c51eece1a98653cd67c47f75fa7364cb"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/kmeanslib/__init__.py",
+      "bytes": 684,
+      "sha256": "sha256:ac33038ef4870fda887ccabf86db7c7d0a507a4ec3186a5ae9a61e20e9e18eed"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/kmeanslib/kmeans.py",
+      "bytes": 3373,
+      "sha256": "sha256:6740ed031b45d21cf130fd83ad54b51dc41022dd6af33d7547201b95c58799b1"
+    },
+    {
+      "path": "agent-gpu/Dockerfile",
+      "bytes": 1847,
+      "sha256": "sha256:f273e2fb5ad824e68a94d9460f12e4d56fe75cfaaad1641dd0dad55ca7541043"
+    },
+    {
+      "path": "agent-gpu/task_runtime.py",
+      "bytes": 806,
+      "sha256": "sha256:5e07a7cc8146e977755287b06f6ebb188a0d6730753f27ff4cde409277e87912"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 411,
+      "sha256": "sha256:fa1fd567442bc1c22cdaa24c8bd939cfcb6d179e1eafe067ff4a3829e92e4ebb"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 339,
+      "sha256": "sha256:3a50c16262f1a3a77033140280b6248e9724ebeff77adfcee68ceeccb4745261"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 3880,
+      "sha256": "sha256:b04da49c533997ae82fb6e3af009346f7433c6790c9ba63a7f3fb41239ab2ba9"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 22085,
+      "sha256": "sha256:3060c7b34aad0b4b872be1843067acc75ff14cde631c9e403744e7830f1a5b43"
+    },
+    {
+      "path": "judge/metadata.json",
+      "bytes": 1389,
+      "sha256": "sha256:1978b93dd89987850719431657f33f5251c914e90dadf0708650d71e41af15bd"
+    },
+    {
+      "path": "judge/reference.patch",
+      "bytes": 95405,
+      "sha256": "sha256:31f8d1c229247e53686974b6b4a171fdf8e0ed7a213f5a132b6d59bea31e103d"
+    },
+    {
+      "path": "judge/refkmeans.py",
+      "bytes": 1813,
+      "sha256": "sha256:a332b6adaab088b64f7998b597042ba69b6a2daa5e95b6618014d7ae33006054"
+    },
+    {
+      "path": "judge/scoring_config.json",
+      "bytes": 2060,
+      "sha256": "sha256:919b4c4ca50ae19d8b34c14de75bec1b70347b6865727a0eb9544881bae2ccd4"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 4323,
+      "sha256": "sha256:7e6a609a58de281527c4caad465120367bed750b53d8435b3dc8201dbe4a9a4c"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 1297,
+      "sha256": "sha256:b912d42b9aac02ca4af811ab9bd7d80888c356a2f3a6673d66b73015947eacf5"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 11879,
+      "sha256": "sha256:ec1633d9810f1dba330d6ab49d9f1eb69d4c121250b9fcabe50752185c811e4c"
+    },
+    {
+      "path": "verifier/fcs2_verifier.py",
+      "bytes": 24147,
+      "sha256": "sha256:9c424456dcb391986580999124fbf01336b90927110c7ea94b475e0f6786e5fc"
+    },
+    {
+      "path": "verifier/fcs2_verifier_gpu.py",
+      "bytes": 27815,
+      "sha256": "sha256:8437b11124d4ea4b0482f8a7f8fc7ec61a54161fce2ef4517b16b39b521b8159"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 234,
+      "sha256": "sha256:42837299dd185bd37024f9e5a4d6c18078661f83aaa70f6418452ae2e19646f5"
+    },
+    {
+      "path": "verifier-gpu/Dockerfile",
+      "bytes": 2098,
+      "sha256": "sha256:0c597729943caf4a6a24a1dbcf99f31c6f657b3c24bc43d879adb9fee74e3bff"
+    }
+  ],
+  "license": {
+    "copied_to": "LICENSE.frontier-cs",
+    "path": "LICENSE",
+    "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+  },
+  "path": "2.0/problems/kmeans_gpu_kernel_optimization",
+  "problem_id": "kmeans_gpu_kernel_optimization",
+  "repository": "https://github.com/FrontierCS/Frontier-CS",
+  "schema_version": "frontier.kmeans-gpu-kernel-upstream-lock/v1",
+  "source_files": [
+    {
+      "path": "DESIGN.md",
+      "sha256": "sha256:3b9f3e69efd896b1e4b611c8607a78557a5cc111f18264204e0935cebbe7b7bb"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "sha256:d9a6eabae3640120fbaff923e608c1e6e90f6384fd9d17023917bf41fb07ffae"
+    },
+    {
+      "path": "docker/README.md",
+      "sha256": "sha256:d142eaaea20a5864df1e7a8f60805125ba39ad4759feb86d331925ecb219eb94"
+    },
+    {
+      "path": "docker/agent/Dockerfile",
+      "sha256": "sha256:5142268287e7c95200fff7c5c872a26a1d96ad9763cb2946e60ca680d8245759"
+    },
+    {
+      "path": "docker/build_images.sh",
+      "sha256": "sha256:7773823e33cec7501398ba7b70556cada900d5d286db1999995b74cbd74ac583"
+    },
+    {
+      "path": "docker/judge/Dockerfile",
+      "sha256": "sha256:80f8d6865e12eae6324c7702070105ea47f788dc3593df1c8ff9baac0c579fba"
+    },
+    {
+      "path": "docker/smoke_images.sh",
+      "sha256": "sha256:dedb55257e51a0c53ae162bf09189294471b3768a2250de05976e3aecd54e684"
+    },
+    {
+      "path": "evaluate.sh",
+      "sha256": "sha256:7ca47bdee7ae4f8031f015c31eab49f77512c243d5412cc2bf7570e93a2a41b9"
+    },
+    {
+      "path": "evaluator.py",
+      "sha256": "sha256:65f19a32a5b8e85941dbdb5a4352a58ac19062dc6444d69198c4808b8bb03f7e"
+    },
+    {
+      "path": "flash_gpu.py",
+      "sha256": "sha256:a95e3373f75d1964bd4a765559ed2034b6601b07fd10faeea8aeb21811989cba"
+    },
+    {
+      "path": "harbor/app/README.md",
+      "sha256": "sha256:8943b63e565bd4a683d8013aae905228038714a97306692887e5d1ec1882d29c"
+    },
+    {
+      "path": "harbor/app/make_submission.sh",
+      "sha256": "sha256:861437d09befc21b6555f0a2fbb147a7cfc53fc82e88302b49e6cbdc2d9c6698"
+    },
+    {
+      "path": "harbor/app/public_test.py",
+      "sha256": "sha256:d7b0f125449b1399b429873bd87a527ee6e8c5d58d037992accf663556ce9836"
+    },
+    {
+      "path": "harbor/app/public_test.sh",
+      "sha256": "sha256:f579722140ee54ccac2966e01960102694e20724da68341213a91d929b2a5da1"
+    },
+    {
+      "path": "harbor/app/solution.patch",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "judge/refkmeans.py",
+      "sha256": "sha256:a332b6adaab088b64f7998b597042ba69b6a2daa5e95b6618014d7ae33006054"
+    },
+    {
+      "path": "kmeanslib/__init__.py",
+      "sha256": "sha256:ac33038ef4870fda887ccabf86db7c7d0a507a4ec3186a5ae9a61e20e9e18eed"
+    },
+    {
+      "path": "kmeanslib/kmeans.py",
+      "sha256": "sha256:6740ed031b45d21cf130fd83ad54b51dc41022dd6af33d7547201b95c58799b1"
+    },
+    {
+      "path": "readme",
+      "sha256": "sha256:5c35dd895777bf722b4c871fece19ad14179cd778207b1e3b7c902513b7a8b36"
+    },
+    {
+      "path": "reference.patch",
+      "sha256": "sha256:31f8d1c229247e53686974b6b4a171fdf8e0ed7a213f5a132b6d59bea31e103d"
+    }
+  ],
+  "tree": "800025aa4269e7d5c6f05b29a4d9ae0705e5de4b"
+}

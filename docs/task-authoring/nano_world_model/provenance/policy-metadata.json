@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "evaluation": {
+      "suite_relation": "same_distribution; beat spec v3 (2026-10-08): development 4 clips, graded 6 clips (two original per suite plus non-overlapping clips from the same suite episodes; continuous score over the original two); release refresh 2026-10-11: per-invocation limit 4950 s, final 10200 s and Verifier GPU 20400 s, sized from unmeasured estimates and not GPU-validated"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_orld-model"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {}
+  },
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform."
+}

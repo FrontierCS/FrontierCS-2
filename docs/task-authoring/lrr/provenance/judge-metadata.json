@@ -1,0 +1,28 @@
+{
+  "generator": {
+    "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+    "run_id": "lrr_native_v3_20261017",
+    "candidate_id": "cand_000"
+  },
+  "paper": {
+    "arxiv_id": "2510.09037",
+    "title": "Repairing Regex Vulnerabilities via Localization-Guided Instructions",
+    "repository": "https://github.com/cdltlehf/LRR",
+    "repository_commit": "99fde1327e389b9564615ecc7a51b89e6188494f"
+  },
+  "status": "reconstructed_100_subset_qualified_gpu_runtime_pending_unpublished",
+  "qualification": {
+    "dataset_records": 100,
+    "development_records": 20,
+    "native_constructor_inputs_passed": 100,
+    "source_patterns_native_compilable": 100,
+    "reference_complete": false,
+    "genuine_solver_started": false,
+    "published": false
+  },
+  "workloads_sha256": "e945574d216d2b1263b3ed872daf7cf888ef288bc7224c2585d0568157b92456",
+  "subset_provenance": {
+    "parent_workloads_sha256": "b7c69475232ffb744d6567642df24a4f0b631682dfffab0ca5c5d62a2eec835c",
+    "selection": "first 10 development and 40 heldout records per stratum, in previously frozen order"
+  }
+}

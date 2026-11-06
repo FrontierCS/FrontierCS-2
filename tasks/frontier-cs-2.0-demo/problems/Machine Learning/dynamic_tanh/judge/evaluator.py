@@ -1,4 +1,4 @@
-"""Judge of dynamic_tanh: the model-wide LayerNorm -> DyT mapping, on one GPU (#757 scoring note).
+"""Judge of dynamic_tanh: the model-wide LayerNorm -> DyT mapping, on one GPU.
 
 Score (raw_score = score_unbounded, 0..100): per workload w, latency_w = 100 / (1 + (T_w / T*_w)^4)
 with T_w / T*_w the median training-block time of the submission / the authors' reference; the
@@ -108,7 +108,7 @@ TIMED_STEP_ALLOWANCE = 1
 # same optimizer steps by at most this fraction of the block's update, jointly.
 TIMED_REPLAY_TOLERANCE = 1e-3
 
-# Process and harness introspection (Preview issue #647) is screened by the shared verifier:
+# Process and harness introspection is screened by the shared verifier:
 # task.toml [submission] forbidden_content, over every changed file, comments included. The
 # training process runs under the shared isolate launcher (_train), but the fresh-model checks and the
 # timed blocks run the submitted module in this process, beside the reference, the oracle and

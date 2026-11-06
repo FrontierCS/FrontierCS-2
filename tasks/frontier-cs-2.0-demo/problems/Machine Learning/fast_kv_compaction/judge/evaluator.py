@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Evaluator for fast_kv_compaction (Attention Matching KV compaction, QuALITY + Qwen3-4B).
 
-Shared verifier (#757), trusted command test sandbox (task.toml [test_sandboxes.shard]): on the
+Shared verifier, trusted command test sandbox (task.toml [test_sandboxes.shard]): on the
 CPU control image the shared verifier applies the patch (edit scope, forbidden_added) and calls
 evaluate(tree); evaluate() sends each shard of the suite (3 articles) with the applied tree and
 this judge to its own single-H100 runner of the verifier-gpu image through the shared adapter's

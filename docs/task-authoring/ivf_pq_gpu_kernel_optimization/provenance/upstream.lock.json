@@ -1,0 +1,310 @@
+{
+  "adaptations": [
+    "Native patch workspace and helper-v3 Agent/Verifier roles; existing Smith pipeline stays read-only.",
+    "Preserve authentic naive package, frozen builder/search oracle and optimized GEMM reference patch.",
+    "Public first four original workloads; hidden last two; final freshly measures all six, no added shapes.",
+    "Hidden seed independently governs index construction and query draws; public seeds are the same in train and final.",
+    "Preserve original two warmups/seven paired timed calls, median-of-ratios per workload and geometric mean.",
+    "Independent log10 asymptotic score with S<=1 zero floor; no finite upper clipping.",
+    "All-workload strict latency improvement and worst-recall non-regression against optimized reference.",
+    "Original 0.99 per-timed-call naive recall gate; reject duplicate valid IDs and preserve -1/+inf padding.",
+    "Float32 residual ADC consistency: rtol1e-6, atol0 after six-workload H100 calibration; zero oracle requires exact0 and legal padding is separate.",
+    "Empty patch retains the original valid naive starter submission meaning.",
+    "Stage/diff only package Python files including new/empty modules, exclude bytecode, reject every unsafe header/binary marker and unsupported rename/copy operation; candidate apply rejection preserves private final FAIL without inventing reference measurements.",
+    "Replaceable store-final; formal answer18000 seconds and independent final5400 seconds; Verifier GPU16200 = train10800 + final5400, with short trials external only.",
+    "Require explicit SIFT artifact checksum; missing data/configuration cannot produce a smoke score.",
+    "Preserve metadata fields with truthful null/empty missing Smith history.",
+    "Use one bounded Verifier GPU input upload without automatic retry; accepted failed or interrupted SSH execs consume quota. Preserve two-operation successful verification and existing train/final pools.",
+    "Allow solver-authored local test_*.py modules under ivfpqlib consistently with the published new-Python-module contract; preserve reserved refivfpq.py/conftest.py, trusted outside paths and existing static safety checks. Official helper rejects reserved filenames explicitly without filtering payload files. No scientific measurements, scoring, workloads, reference, datasets or resource budgets change.",
+    "Beat spec v3 (2026-10-08): add nn_recall (recall@k against exact nearest neighbours, worst of seven, >= reference) and two final-only hidden strict shapes (sift_q10k_np32, sift_q1k_np128_k1024); continuous score keeps the original six.",
+    "Beat spec v3 release refresh (2026-10-11): reconciled with the local test-module contract; independent final limit 5400 -> 14400 s and Verifier GPU quota 16200 -> 25200 s ; statements updated; no workload, metric or scoring change. The new hidden shapes were measured once on one Modal H100 on 2026-10-11 (reference valid on both; see judge/beat_spec.json comments); not a platform reference qualification."
+  ],
+  "adapter_source": {
+    "commit": "850f9633c70024be105d4502033ba882c45da509",
+    "path": "converted_problems/kmeans_gpu_kernel_optimization/verifier",
+    "repository": "private authoring repository"
+  },
+  "commit": "1bccbadc6bead714d25c546cf954a37bb0791fd6",
+  "conversion_source": {
+    "checked_out_commit": "1bccbadc6bead714d25c546cf954a37bb0791fd6",
+    "path": "2.0/problems/ivf_pq_gpu_kernel_optimization",
+    "repository": "https://github.com/FrontierCS/Frontier-CS"
+  },
+  "file_count": 36,
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 69,
+      "sha256": "sha256:b45472a014b1263dd9060dffe420fa794666f69d89adb5364baf224b3728a78d"
+    },
+    {
+      "path": "LICENSE.frontier-cs",
+      "bytes": 1072,
+      "sha256": "sha256:9e0d05103e731d0c83223f9fa4a1518dda5ac5cb34ae118d794814e90c08c767"
+    },
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 1185,
+      "sha256": "sha256:34a50c848b8845d6441881506d117bfb5d28cf14d2a0cbff4c037f2a725c9008"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 5352,
+      "sha256": "sha256:6d0853972df11f7ecb8bea716bfa10be820a7766edd5c0b46615d40435cbe3e1"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/README.md",
+      "bytes": 5443,
+      "sha256": "sha256:4eda1f2dbbc15b4a7586daaa5507893cdb39a4e772c6704545102fb91946766d"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "bytes": 1048,
+      "sha256": "sha256:fcd46592f80c8cf00079fe8c7e5875055697d376d4accf66fd5848970a2af24f"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "bytes": 655,
+      "sha256": "sha256:10cc6895ab48c3a8ab038a0a02c852a122615bbc49fb1d6c95ae5ef294a5ccbe"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/README.md",
+      "bytes": 6944,
+      "sha256": "sha256:3f58ffbcb175474e79c359624c8dec5fa2c6a82ecd1fcbd51b794d35b3a561f2"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/benchmark/ivfpq_worker.py",
+      "bytes": 14533,
+      "sha256": "sha256:3749ac17af738f9a7e44ca9d1dc8548581ae4788815fdcb8760185d30fe2a9a5"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/benchmark/refivfpq.py",
+      "bytes": 14069,
+      "sha256": "sha256:50ca6013a2a028d776005cc89dd58594d98ede3aed80cf9283285b2327743d20"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/development_config.json",
+      "bytes": 1481,
+      "sha256": "sha256:ef60f77ab92cb5d6af021062dec72e49c2be48f2195f0d8b20cd6e847ea67b71"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-bench.py",
+      "bytes": 667,
+      "sha256": "sha256:9b4de11be3ae1023c4acde1f2415e30f4220ce06443d84505eee5671dcb254a4"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "bytes": 75,
+      "sha256": "sha256:dec591020ec237f58f7f165437216b9ff2d5d789cfd329bfe6ba883458bfc357"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "bytes": 143,
+      "sha256": "sha256:3c0dafaba8c1bd509711a7d5393e348b89ac4874ffd24602a37a2196e36fd3a0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/ivfpqlib/__init__.py",
+      "bytes": 345,
+      "sha256": "sha256:0fe2e2c4e93817d5b299bff34b26220a35bb5eee78b730f7d166d3bd70b345cb"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/ivfpqlib/build.py",
+      "bytes": 8606,
+      "sha256": "sha256:edc870630058c5afbc8c7992e1a690bfe571f2353fbec6c3f1d0eafc4d5a1aa6"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/ivfpqlib/index.py",
+      "bytes": 3556,
+      "sha256": "sha256:4f9a60fa9523f9bbd610bd221d9098bd0656ef0476169df6ce20df6f1ab9359d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/ivfpqlib/search.py",
+      "bytes": 3357,
+      "sha256": "sha256:06643db8c2b474cb062a912272c1f67f7fdf3196c505e90bea536f32a7a50cc1"
+    },
+    {
+      "path": "agent-gpu/Dockerfile",
+      "bytes": 2251,
+      "sha256": "sha256:229476797ac23ff89bba9ab1cf2334e34d0660b72a95d2317481121c49cb5bad"
+    },
+    {
+      "path": "agent-gpu/task_runtime.py",
+      "bytes": 806,
+      "sha256": "sha256:5e07a7cc8146e977755287b06f6ebb188a0d6730753f27ff4cde409277e87912"
+    },
+    {
+      "path": "data/sift_manifest.json",
+      "bytes": 860,
+      "sha256": "sha256:ed9a6cf34588df66c73a906267d2b906c1838cd85d421977b3829e8b9156302a"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 410,
+      "sha256": "sha256:6e6a9183dc7130f5b19c8733712f3721eab2fc2335dbf3a290e6c6868b3ff68d"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 338,
+      "sha256": "sha256:d9464a59daf7d7a5510605fd1cd25876ff0fb9454496251b01fcd4bb74690048"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 5432,
+      "sha256": "sha256:51dad6059bf4c24d5a4db13e7ba36c6973edb508562cdcc7275870d177f8e59e"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 17357,
+      "sha256": "sha256:7ed69542bd30f7b38c00d15d08d4dc099503684675783472ae1686a71da6918a"
+    },
+    {
+      "path": "judge/metadata.json",
+      "bytes": 1657,
+      "sha256": "sha256:5bf58f406e675f62b9ebe84d8b280d1fdc6124f391a45026042f1ad10c95dff1"
+    },
+    {
+      "path": "judge/reference.patch",
+      "bytes": 65919,
+      "sha256": "sha256:d9bdfdaf8f27b9ca7d67d698eedcb782155383f9ecfc94173ea3ffc9bbf8c343"
+    },
+    {
+      "path": "judge/refivfpq.py",
+      "bytes": 14069,
+      "sha256": "sha256:50ca6013a2a028d776005cc89dd58594d98ede3aed80cf9283285b2327743d20"
+    },
+    {
+      "path": "judge/scoring_config.json",
+      "bytes": 3652,
+      "sha256": "sha256:82f0d24971c681a89b587bc6983b1e9d3fb8ef7ea1b50f9abb49b0aaa5c83944"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 5389,
+      "sha256": "sha256:553a8d5e9468a8e329a9a4377762892fbfc2d5cf0fdaca171e7ab4d2ecf53850"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 1298,
+      "sha256": "sha256:427f1e04974f46ddf92fab9180bc9d4150751096c5887e0f42042102d1159286"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 11879,
+      "sha256": "sha256:ec1633d9810f1dba330d6ab49d9f1eb69d4c121250b9fcabe50752185c811e4c"
+    },
+    {
+      "path": "verifier/fcs2_verifier.py",
+      "bytes": 24188,
+      "sha256": "sha256:f4e101dd1ea2dbd6eca2464ff5692898f58af855aace0910a33058ac13a7bbc9"
+    },
+    {
+      "path": "verifier/fcs2_verifier_gpu.py",
+      "bytes": 27815,
+      "sha256": "sha256:8437b11124d4ea4b0482f8a7f8fc7ec61a54161fce2ef4517b16b39b521b8159"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 234,
+      "sha256": "sha256:42837299dd185bd37024f9e5a4d6c18078661f83aaa70f6418452ae2e19646f5"
+    },
+    {
+      "path": "verifier-gpu/Dockerfile",
+      "bytes": 2436,
+      "sha256": "sha256:42dcc922d7cfbcafec3663805a59ba49b8b5246745435195bb750db5ef5cd777"
+    }
+  ],
+  "problem_id": "ivf_pq_gpu_kernel_optimization",
+  "repository": "https://github.com/FrontierCS/Frontier-CS",
+  "schema_version": "frontier.ivfpq-gpu-kernel-upstream-lock/v1",
+  "source_files": [
+    {
+      "path": "DESIGN.md",
+      "sha256": "sha256:fdcc56957b6a1350fb0fcc6e86664557a546ed8ba499174fef1079d198849ac9"
+    },
+    {
+      "path": "config.yaml",
+      "sha256": "sha256:2d8f0b796745d2b6ac27c5db7b73ed3879b3653d12ccebcc5c3297480f7358f4"
+    },
+    {
+      "path": "docker/README.md",
+      "sha256": "sha256:4fd1578c72cab60bc2008ffdb5a69fe6246a53f02f625f039476f92b1babea51"
+    },
+    {
+      "path": "docker/agent/Dockerfile",
+      "sha256": "sha256:fb93e8b9118a3835846d9ce094a1a6a10801ca12ca0915a0e01bbba5e58f67f8"
+    },
+    {
+      "path": "docker/build_images.sh",
+      "sha256": "sha256:bb3f2919335e84a1b906af7838b436266d537ac430bba40f646f989d56465452"
+    },
+    {
+      "path": "docker/judge/Dockerfile",
+      "sha256": "sha256:0de81df5a7eae0f8ae5774073e6b59fc07b3eaa52d12bc2806810e4d606d5f78"
+    },
+    {
+      "path": "docker/smoke_images.sh",
+      "sha256": "sha256:1e7b5a402f2f1315c06f9643951a76ace91edf8f6e80bcec03f7b76dd3530edf"
+    },
+    {
+      "path": "evaluate.sh",
+      "sha256": "sha256:a37ecb2552587f6471f43c2ed34942803c774900ca9c2860ad810e6348e57001"
+    },
+    {
+      "path": "evaluator.py",
+      "sha256": "sha256:7a627c18fccea091a7fed629e98476b25a3580018e6264e65607cadebf3bcbd3"
+    },
+    {
+      "path": "flash_gpu.py",
+      "sha256": "sha256:aab47d545b11a03a08a5e5c1744d3d5963157660d2ae33e861c43a62e6011b08"
+    },
+    {
+      "path": "harbor/app/README.md",
+      "sha256": "sha256:5d1cbbfb942a29bd9e1c87f0c049b6fd9ec4385b50ec98997c150c58fb9cfd86"
+    },
+    {
+      "path": "harbor/app/make_submission.sh",
+      "sha256": "sha256:77d79187124e8728a9f4d47cce0dc7ef58feb0b10ebd0aa99e8e61811afe5c0a"
+    },
+    {
+      "path": "harbor/app/public_test.py",
+      "sha256": "sha256:8940315458567406053daff75fa52abaca4f155890e9d4e2346f5ace8be62844"
+    },
+    {
+      "path": "harbor/app/public_test.sh",
+      "sha256": "sha256:d9dc07638e11985838c946b1eb6d16f57b6355e87079e57173b9b9454e6ce765"
+    },
+    {
+      "path": "harbor/app/solution.patch",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "ivfpqlib/__init__.py",
+      "sha256": "sha256:0fe2e2c4e93817d5b299bff34b26220a35bb5eee78b730f7d166d3bd70b345cb"
+    },
+    {
+      "path": "ivfpqlib/build.py",
+      "sha256": "sha256:edc870630058c5afbc8c7992e1a690bfe571f2353fbec6c3f1d0eafc4d5a1aa6"
+    },
+    {
+      "path": "ivfpqlib/index.py",
+      "sha256": "sha256:4f9a60fa9523f9bbd610bd221d9098bd0656ef0476169df6ce20df6f1ab9359d"
+    },
+    {
+      "path": "ivfpqlib/search.py",
+      "sha256": "sha256:06643db8c2b474cb062a912272c1f67f7fdf3196c505e90bea536f32a7a50cc1"
+    },
+    {
+      "path": "judge/refivfpq.py",
+      "sha256": "sha256:50ca6013a2a028d776005cc89dd58594d98ede3aed80cf9283285b2327743d20"
+    },
+    {
+      "path": "readme",
+      "sha256": "sha256:a5c6b7d98d8727ed096f7834e666b06a9bc6cf6ab756e46b3126ebe45bb4116d"
+    },
+    {
+      "path": "reference.patch",
+      "sha256": "sha256:d9bdfdaf8f27b9ca7d67d698eedcb782155383f9ecfc94173ea3ffc9bbf8c343"
+    }
+  ],
+  "tree": "dd8778453958eb046d5067c3e1e4e982aedb12de"
+}

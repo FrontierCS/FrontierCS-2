@@ -1,0 +1,1584 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 428,
+      "path": "datasets/eval.json",
+      "version": "sha256:519689cd46ab7a3d93dbc0ba6589ca072e8bc2ac4a328b367ca24a8cedd0fba1"
+    },
+    "train": {
+      "bytes": 435,
+      "path": "datasets/train.json",
+      "version": "sha256:0b0d3dd1368337365a1049983182c5f40b4242bef5ede58122cd4377f9b60c7c"
+    }
+  },
+  "file_count": 312,
+  "files": [
+    {
+      "bytes": 2002,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:cd3da4e3a850f9b94775def44598f02e4096e1cad1e460d86a84824710987f6b"
+    },
+    {
+      "bytes": 7217,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:856846b4b898f03c451288fbdd1a11c914fb64ddf50d986c5cf118196799559e"
+    },
+    {
+      "bytes": 4106,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:32f2eb561d8a3a70141bc89913ff9543e340dde0cf32bcc3488078cb56b6a30b"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 5308,
+      "path": "agent-base/frontier/task/bin/model_asset_stager.py",
+      "sha256": "sha256:8935e573cfdb451351d8900b3d5daee784108ac4b738c89c7ed67e832aa00427"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 180,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:655425ffd096a5fefe289afa075af8dd142dd2779091760bb89a9203a5a28dd8"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 1057,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:973dec305c0eb86967ce86199cbb04044a18279188e28b00b6f6fded38442702"
+    },
+    {
+      "bytes": 15216,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:6bf7069394c9db74377ac9ff6fccb569e06e91150e202424152aaac1e230a09f"
+    },
+    {
+      "bytes": 64,
+      "path": "agent-base/frontier/task/repo/config/_2_sokoban.yaml",
+      "sha256": "sha256:202ea6a21eb518397b4077eb5a3ffe2498b2830f6bbab8da7df3e9f76c0ab339"
+    },
+    {
+      "bytes": 4907,
+      "path": "agent-base/frontier/task/repo/config/base.yaml",
+      "sha256": "sha256:79a4738c7d66f5bef609e328c627e3f8356274d9fbaf0f6e87be588ffa02c09b"
+    },
+    {
+      "bytes": 11481,
+      "path": "agent-base/frontier/task/repo/config/envs.yaml",
+      "sha256": "sha256:79c809fc1352cf17d9e6efa2bc1e952aeccca116da685b0bc580c9c54c3085f1"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/config/evaluation/llama-30b.yaml",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 7630,
+      "path": "agent-base/frontier/task/repo/config/ppo_trainer.yaml",
+      "sha256": "sha256:d02b1ac2e9df82dd58a598e5d3f92fcedde69030ff440d3e779621fc15dba7d1"
+    },
+    {
+      "bytes": 1093,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:a55c7972c5605229f4580b85dfaa81d00080c05bbc7705aa621fbff33bf95133"
+    },
+    {
+      "bytes": 340,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:7ecd4ae855353a35776459713dcf067f1bad5ad07226be26218d466539406361"
+    },
+    {
+      "bytes": 434,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:d984554d723c6ebdc09473584e1ba2001916a005519b757773fdf7a03c898b4e"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/ragen/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1199,
+      "path": "agent-base/frontier/task/repo/ragen/env/__init__.py",
+      "sha256": "sha256:4f4e738b2b80ec3fe6fe351f9e135293ec230463bc5e09073ca7ef239d14c4e9"
+    },
+    {
+      "bytes": 7717,
+      "path": "agent-base/frontier/task/repo/ragen/env/alfworld_old/alfworld_config.yaml",
+      "sha256": "sha256:a75c12c19d21534ca60800f2ea6091f0847a923dcb6ac7818dc4571f098e08fd"
+    },
+    {
+      "bytes": 906,
+      "path": "agent-base/frontier/task/repo/ragen/env/alfworld_old/config.py",
+      "sha256": "sha256:96322cd28a9a306ae5d967c54193bfe10df631d794567eb06be87474f0adf2c5"
+    },
+    {
+      "bytes": 7163,
+      "path": "agent-base/frontier/task/repo/ragen/env/alfworld_old/env.py",
+      "sha256": "sha256:896fe5489d1b1eebc155b23d4335421449bcb9d92d4b51d36e13091c89ad42a7"
+    },
+    {
+      "bytes": 1768,
+      "path": "agent-base/frontier/task/repo/ragen/env/alfworld_old/utils.py",
+      "sha256": "sha256:efcae1b0f6465d52d38bdabd0c4c0b38f9c964fbf9d700f30f59d15bc545376f"
+    },
+    {
+      "bytes": 107,
+      "path": "agent-base/frontier/task/repo/ragen/env/bandit/__init__.py",
+      "sha256": "sha256:22a4c8208d77ecc433dd1c73fa5f607affec202aaa0dd990a8dc7cad2d993718"
+    },
+    {
+      "bytes": 412,
+      "path": "agent-base/frontier/task/repo/ragen/env/bandit/config.py",
+      "sha256": "sha256:432b00c27a572a297469bd18050ccd7eae34b1a58b3d0cfcd23c15dc56528d3f"
+    },
+    {
+      "bytes": 4103,
+      "path": "agent-base/frontier/task/repo/ragen/env/bandit/env.py",
+      "sha256": "sha256:d35bb3a6a93e25f54b23b2922334aff8716f07a51194516cafcd10d5573bc85d"
+    },
+    {
+      "bytes": 2856,
+      "path": "agent-base/frontier/task/repo/ragen/env/base.py",
+      "sha256": "sha256:52b40f9044bb05b738dc1754eed383a1ed7550aa25079f2228fd9616a6b3ee72"
+    },
+    {
+      "bytes": 270,
+      "path": "agent-base/frontier/task/repo/ragen/env/countdown/__init__.py",
+      "sha256": "sha256:5668b3cff9ce577ba480e7681cb282425b0a8ac9ef8882276632e44dc999da4d"
+    },
+    {
+      "bytes": 264,
+      "path": "agent-base/frontier/task/repo/ragen/env/countdown/config.py",
+      "sha256": "sha256:24666b14352ffbbd0a1f43f0d0c1e1a6e148d21ab49d6eb2abc0ba81a1b34c2f"
+    },
+    {
+      "bytes": 3284,
+      "path": "agent-base/frontier/task/repo/ragen/env/countdown/env.py",
+      "sha256": "sha256:117c6ead5ddc45d99412dd0b77bfead212781506acf12edabf117d28467b438c"
+    },
+    {
+      "bytes": 1122,
+      "path": "agent-base/frontier/task/repo/ragen/env/frozen_lake/__init__.py",
+      "sha256": "sha256:c056901423db6a041370c78ff4296e43d550d87a4a2dbf4b5fb602b4bdf30eba"
+    },
+    {
+      "bytes": 1027,
+      "path": "agent-base/frontier/task/repo/ragen/env/frozen_lake/config.py",
+      "sha256": "sha256:a68ae61d8aae9067250712dce8e7d27c4304935359fc75fa4ec030dc23e99298"
+    },
+    {
+      "bytes": 3657,
+      "path": "agent-base/frontier/task/repo/ragen/env/frozen_lake/env.py",
+      "sha256": "sha256:63c314b1a39dd829d8873670bbb9a3155d5733b1ad3e0378972c66a4de01291d"
+    },
+    {
+      "bytes": 1694,
+      "path": "agent-base/frontier/task/repo/ragen/env/frozen_lake/utils.py",
+      "sha256": "sha256:93b4d027a2f475526bd6d0ef6f3f7ef13c1b976323c455aaedccbf5180ac0069"
+    },
+    {
+      "bytes": 185,
+      "path": "agent-base/frontier/task/repo/ragen/env/metamathqa/__init__.py",
+      "sha256": "sha256:079796b196af6b76b3e92e0fb0aabf908772cffb1634de2bdc0aa105ebed1079"
+    },
+    {
+      "bytes": 334,
+      "path": "agent-base/frontier/task/repo/ragen/env/metamathqa/config.py",
+      "sha256": "sha256:4cf500823bfdcc8b812131ceb5288c636bbdf99170571f6ea165c35650ffa8f1"
+    },
+    {
+      "bytes": 3795,
+      "path": "agent-base/frontier/task/repo/ragen/env/metamathqa/env.py",
+      "sha256": "sha256:e7a107d8464d5871539dd18bceab2a62d7f3b1536f8b34f19ee45e6b9b8c7934"
+    },
+    {
+      "bytes": 173,
+      "path": "agent-base/frontier/task/repo/ragen/env/sokoban/__init__.py",
+      "sha256": "sha256:3e4eefd7538bda85b717a2267ec1c9d55da55a4812d0f9fef540447eab444048"
+    },
+    {
+      "bytes": 987,
+      "path": "agent-base/frontier/task/repo/ragen/env/sokoban/config.py",
+      "sha256": "sha256:f7569abd9e175999fb51db1a22ad03cd5bb151806b1f6d0555ecadc25abc945d"
+    },
+    {
+      "bytes": 3610,
+      "path": "agent-base/frontier/task/repo/ragen/env/sokoban/env.py",
+      "sha256": "sha256:19bbcb4df814ad647cc0bb8aed5eb6efb64dd181300eaa7d3696bb6b5ede1ce7"
+    },
+    {
+      "bytes": 20507,
+      "path": "agent-base/frontier/task/repo/ragen/env/sokoban/utils.py",
+      "sha256": "sha256:4693dbc555d9268c1faee8ad1cc34317c8137a366b37c553edcbb12c34b5b3cd"
+    },
+    {
+      "bytes": 364,
+      "path": "agent-base/frontier/task/repo/ragen/env/static/config.py",
+      "sha256": "sha256:88e4dc8a3efb37a260eab5a839d9082bbf7d76eaf659975f87c3ea859e996b62"
+    },
+    {
+      "bytes": 3986,
+      "path": "agent-base/frontier/task/repo/ragen/env/static/env.py",
+      "sha256": "sha256:acefe8215ff9c4d13b6cb7690976bb8037e65c25acc217e8778d57efea63c538"
+    },
+    {
+      "bytes": 5874,
+      "path": "agent-base/frontier/task/repo/ragen/env/static/utils.py",
+      "sha256": "sha256:ef35c915017449d16d93b29cc90e34b574897d9fa75f3deb712090bc32dd6dbc"
+    },
+    {
+      "bytes": 1381,
+      "path": "agent-base/frontier/task/repo/ragen/env/webshop/config.py",
+      "sha256": "sha256:36111432c2e2c23b4f6306898a1b49a6580096026cee95eaeaf3af14c87ffcf3"
+    },
+    {
+      "bytes": 4303,
+      "path": "agent-base/frontier/task/repo/ragen/env/webshop/env.py",
+      "sha256": "sha256:4001da99d1160dca42be18c472dbdff6b0cfb5281a8730021a9f4939b8ab2f2f"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/ragen/llm_agent/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 9022,
+      "path": "agent-base/frontier/task/repo/ragen/llm_agent/agent_proxy.py",
+      "sha256": "sha256:7d1abec3132376b0410f1fc39968daa11bcd7a8558c8145cfc7639470bd304f5"
+    },
+    {
+      "bytes": 10059,
+      "path": "agent-base/frontier/task/repo/ragen/llm_agent/base_llm.py",
+      "sha256": "sha256:62303b7b563b0a001479e9bd4073ffc0e3d60597e40293f7d809699b6a69cceb"
+    },
+    {
+      "bytes": 5214,
+      "path": "agent-base/frontier/task/repo/ragen/llm_agent/ctx_manager.py",
+      "sha256": "sha256:fdef0898ee3b0165aa9a393e9438df51952b0df6cca2bd5c761a18276744bb74"
+    },
+    {
+      "bytes": 14365,
+      "path": "agent-base/frontier/task/repo/ragen/llm_agent/es_manager.py",
+      "sha256": "sha256:3311781016443f00fd29feca5bc43c4bc1f9539492cef4304b3b3f2bf5e68b48"
+    },
+    {
+      "bytes": 11320,
+      "path": "agent-base/frontier/task/repo/ragen/llm_agent/rollout_contract.py",
+      "sha256": "sha256:17e0825587868900046e6c126dfee7d6b24854a9d3f72755fa02cf95e8df9815"
+    },
+    {
+      "bytes": 30129,
+      "path": "agent-base/frontier/task/repo/ragen/trainer/agent_trainer.py",
+      "sha256": "sha256:b90a8fea40cbf5a51896511eab5dc1633cfc1bdf04b1cc936b95688bbb608440"
+    },
+    {
+      "bytes": 2648,
+      "path": "agent-base/frontier/task/repo/ragen/utils.py",
+      "sha256": "sha256:c85e216f6c253122caddc7c1da357f74a9fa1bff605550f35bf04c5b466fac10"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/ragen/workers/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 42,
+      "path": "agent-base/frontier/task/repo/ragen/workers/actor/__init__.py",
+      "sha256": "sha256:144f7348a1a1ffc14a8a76625a5c72ac0fec781b4b7084b2740e488fbb29cbae"
+    },
+    {
+      "bytes": 18281,
+      "path": "agent-base/frontier/task/repo/ragen/workers/actor/dp_actor.py",
+      "sha256": "sha256:17737a7b222aa8b529670f0f0efe684cc8ea4b3c77e84ba772820478fd3fa456"
+    },
+    {
+      "bytes": 44,
+      "path": "agent-base/frontier/task/repo/ragen/workers/critic/__init__.py",
+      "sha256": "sha256:7234578753e7d6d70da1208222434cb9f18d9b8c081c8772aaa1b99649e500ab"
+    },
+    {
+      "bytes": 12844,
+      "path": "agent-base/frontier/task/repo/ragen/workers/critic/dp_critic.py",
+      "sha256": "sha256:ae72cfce57c04a764a1af7e3a8b8291bb606c738c10843db7009695c89e7642c"
+    },
+    {
+      "bytes": 68351,
+      "path": "agent-base/frontier/task/repo/ragen/workers/fsdp_workers.py",
+      "sha256": "sha256:2dbefbfd81742b521798424df16b82040fcda8526944ea77bdc6bfa57f4eb932"
+    },
+    {
+      "bytes": 14998,
+      "path": "agent-base/frontier/task/repo/ragen/workers/rollout/vllm_rollout/vllm_rollout_spmd.py",
+      "sha256": "sha256:a79ea16e651b2237b7bf5fbce1c68966c8deda850c29def2427e5b054f9b1ff0"
+    },
+    {
+      "bytes": 982,
+      "path": "agent-base/frontier/task/repo/ragen/workers/sharding_manager/base.py",
+      "sha256": "sha256:d249884ee73ed51563443388163d57caaff198af11f60da44c70b85568c5127f"
+    },
+    {
+      "bytes": 7946,
+      "path": "agent-base/frontier/task/repo/ragen/workers/sharding_manager/fsdp_vllm.py",
+      "sha256": "sha256:febc38e0dd5f9c51ef3c27b8ef2f170dce2dfaed0428c5ca94d0768a625387d9"
+    },
+    {
+      "bytes": 417,
+      "path": "agent-base/frontier/task/repo/requirements.txt",
+      "sha256": "sha256:9ef287190851bfed0e9668f2f5e01559dc42f15ce3edb0e3ee150f23d0d4e6d5"
+    },
+    {
+      "bytes": 457,
+      "path": "agent-base/frontier/task/repo/setup.py",
+      "sha256": "sha256:71c30f5280c4d50a90b95e07c4f0935e93eeab48b8f27eb8d88e859d1b65eeb2"
+    },
+    {
+      "bytes": 11722,
+      "path": "agent-base/frontier/task/repo/train.py",
+      "sha256": "sha256:6b95a53066107304d6474ce72673d486bc4837f0368d59a991a6bf4e2e9e1218"
+    },
+    {
+      "bytes": 1378,
+      "path": "agent-base/frontier/task/repo/verl/.gitignore",
+      "sha256": "sha256:6e2a78efcd464a41e49c76583c830c653fe75e0b5ee48b7d511bc4a6c7d05472"
+    },
+    {
+      "bytes": 333,
+      "path": "agent-base/frontier/task/repo/verl/.readthedocs.yaml",
+      "sha256": "sha256:2af885534db6e46e2fe429a44f44a20844954a5835277c0a7fcb8fa0e2a7713b"
+    },
+    {
+      "bytes": 111,
+      "path": "agent-base/frontier/task/repo/verl/.style.yapf",
+      "sha256": "sha256:adac0165702f08670fc26d4230eea39971b9d548fe6d16a1100af99cfaa60955"
+    },
+    {
+      "bytes": 11358,
+      "path": "agent-base/frontier/task/repo/verl/LICENSE",
+      "sha256": "sha256:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "bytes": 57,
+      "path": "agent-base/frontier/task/repo/verl/Notice.txt",
+      "sha256": "sha256:f40ed94400d2b9636afb1f8019ab817255b19892d426c40eebe0c60d4850a1c9"
+    },
+    {
+      "bytes": 14719,
+      "path": "agent-base/frontier/task/repo/verl/README.md",
+      "sha256": "sha256:27dffc5dff95549b36b1b7f96b90b31b6f038c990da577315de137a7c27e9a44"
+    },
+    {
+      "bytes": 4739,
+      "path": "agent-base/frontier/task/repo/verl/pyproject.toml",
+      "sha256": "sha256:8d65e41261033244f132a0dec53dacc715bff82a10b3a74dd5b30a653ecdb186"
+    },
+    {
+      "bytes": 291,
+      "path": "agent-base/frontier/task/repo/verl/requirements.txt",
+      "sha256": "sha256:16e87930d0396847133c450ab7e9a921991658fa4e876de671d706b331824533"
+    },
+    {
+      "bytes": 2514,
+      "path": "agent-base/frontier/task/repo/verl/setup.py",
+      "sha256": "sha256:167d6e0c0e40f47ee90aaf7a4d8897243a0adf7e004d4c3d86f57d0406d392c2"
+    },
+    {
+      "bytes": 1393,
+      "path": "agent-base/frontier/task/repo/verl/verl/__init__.py",
+      "sha256": "sha256:a8c0cc4eba61e4f20ca6f70e891a53602b0ee41e4242d5c244a56025da07c317"
+    },
+    {
+      "bytes": 1744,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/README.md",
+      "sha256": "sha256:5e3bd067a590fca3a0d571b639ac466e1c6a5ad68abc18fcb6a3a176fb5ab476"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 944,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/__init__.py",
+      "sha256": "sha256:bacfa32a69412dc2a3d55134a1a5a287288d2179c76700b72eed4bc42ed94d53"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/checkpoint_utils/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 20081,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/checkpoint_utils/llama_loader.py",
+      "sha256": "sha256:a5ddddd926f39a3b5050ba0fcc401bd90fda629ffcb4ab7f7bd100fcfa777bbf"
+    },
+    {
+      "bytes": 18349,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/checkpoint_utils/llama_saver.py",
+      "sha256": "sha256:6fa223bbc45e5b6bf786f1a91cb8953afd5f4c4040dc4715556b8ec030480eb0"
+    },
+    {
+      "bytes": 838,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/layers/__init__.py",
+      "sha256": "sha256:164f9b46a38b7c500c99f5a1f11a6b6d0a3160bda61296f8062d20c2720d5743"
+    },
+    {
+      "bytes": 22495,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/layers/parallel_attention.py",
+      "sha256": "sha256:a6d113ceeec6b98c0a7821319894a232871bc94b44aa1c863a994088be7f5a53"
+    },
+    {
+      "bytes": 6242,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/layers/parallel_decoder.py",
+      "sha256": "sha256:aaf2f4cbb9ca900fc064e5497f0a8891989f7cdb03a8774636dcf0426ffc8166"
+    },
+    {
+      "bytes": 2787,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/layers/parallel_linear.py",
+      "sha256": "sha256:abea6cdb51b6321ee3bf4ba9f043c32c4ec2dbfad64ebf0981f5beb30293bb11"
+    },
+    {
+      "bytes": 3394,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/layers/parallel_mlp.py",
+      "sha256": "sha256:752d7674c3746007caa5a111ae15f47d30fb769cf30721ede17fca4c2c5e3bab"
+    },
+    {
+      "bytes": 1860,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/layers/parallel_rmsnorm.py",
+      "sha256": "sha256:fd9c0692745aae1afab37e9730178f19ea0c2388f08cdb67646e3a371a3c1deb"
+    },
+    {
+      "bytes": 30413,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/llama/megatron/modeling_llama_megatron.py",
+      "sha256": "sha256:4d2b81571d6f8f41267554a003bd6810187adde72ebd54c96e596ce88a9b5c16"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 944,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/__init__.py",
+      "sha256": "sha256:e0b2356fd7251c1424b8baef5b939c33e9f043ace729e05230741112bc81769e"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/checkpoint_utils/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 21148,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/checkpoint_utils/qwen2_loader.py",
+      "sha256": "sha256:a1d3dc4a5df04a000513e0ba83f22205031440e931505ccb5ded0e8be441ee56"
+    },
+    {
+      "bytes": 18649,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/checkpoint_utils/qwen2_saver.py",
+      "sha256": "sha256:e28ddbf45d8d244bb6f48d249c8391ef9ee5eede3be3bb76948d91f48580ebf3"
+    },
+    {
+      "bytes": 838,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/layers/__init__.py",
+      "sha256": "sha256:4b1f9e91c6049c31efa241f1b38d411b98a4c0ecc4797578d6ea16b0ff32da38"
+    },
+    {
+      "bytes": 18750,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/layers/parallel_attention.py",
+      "sha256": "sha256:fa6143fa0f1549bdafbb83b1474ed6ed7ad0611613efa7f30529a4e02715c89f"
+    },
+    {
+      "bytes": 6242,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/layers/parallel_decoder.py",
+      "sha256": "sha256:5f026aa68deb74d92df5c768b5aa06b19463b9217e8931e30cab4775bce3c3f1"
+    },
+    {
+      "bytes": 2787,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/layers/parallel_linear.py",
+      "sha256": "sha256:abea6cdb51b6321ee3bf4ba9f043c32c4ec2dbfad64ebf0981f5beb30293bb11"
+    },
+    {
+      "bytes": 3394,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/layers/parallel_mlp.py",
+      "sha256": "sha256:8284b8883a0bdb4bb189c63457e62094e2a4bbf6a56bc3df19a78d1a9d63960f"
+    },
+    {
+      "bytes": 1860,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/layers/parallel_rmsnorm.py",
+      "sha256": "sha256:5176f070202865302e04102b9b54ae3b4a353c2775b11802f2579478e31f1f0b"
+    },
+    {
+      "bytes": 32943,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/qwen2/megatron/modeling_qwen2_megatron.py",
+      "sha256": "sha256:76dcff71b072e03b0efbabfdb627b354bb8fc336974de6787f9417ac8d2037f8"
+    },
+    {
+      "bytes": 1967,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/registry.py",
+      "sha256": "sha256:642c07c4f7461b9a24d8967444efdba52c1fbba78a6542bd666dc6ce2e8b8ff2"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/transformers/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 10393,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/transformers/llama.py",
+      "sha256": "sha256:17858505081b202b2b377010bea7c12a282c3efb379316a782ee3813640eeb01"
+    },
+    {
+      "bytes": 5566,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/transformers/monkey_patch.py",
+      "sha256": "sha256:f05303f66fb55ab6f7e0cd8620679c8995c36b34b6cbff6c842f876e79a5a002"
+    },
+    {
+      "bytes": 10284,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/transformers/qwen2.py",
+      "sha256": "sha256:54dedff9340471fc23196eb417ecf4a33cbc2553032084eb401ca393c4a15690"
+    },
+    {
+      "bytes": 13162,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/transformers/qwen2_vl.py",
+      "sha256": "sha256:88d834d32d2aeb5fab9979da27f5c633851770e992ed8b0d0a4e3dea1ad5bcb6"
+    },
+    {
+      "bytes": 2017,
+      "path": "agent-base/frontier/task/repo/verl/verl/models/weight_loader_registry.py",
+      "sha256": "sha256:50b8b127a2bdc39a178847fa8f6f7dd88815767ade902d0277f2ef83b6a1eae9"
+    },
+    {
+      "bytes": 25735,
+      "path": "agent-base/frontier/task/repo/verl/verl/protocol.py",
+      "sha256": "sha256:fc3041d3860377c9af0696b66458704f868689dd63ccb300d7d107f5c3076c5a"
+    },
+    {
+      "bytes": 939,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/__init__.py",
+      "sha256": "sha256:d4cb82038873740c5f8a48ee569d386b545e215b2c859b24df904cbf90d0c6a6"
+    },
+    {
+      "bytes": 772,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/__init__.py",
+      "sha256": "sha256:16b0e0dd56f861250bab3548d4ca3aaa29c8d2e5d33adcec5d836b04a36452ef"
+    },
+    {
+      "bytes": 15531,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/decorator.py",
+      "sha256": "sha256:b6e4cd3c8ad3c4fa2eea07df3ef45344bb5dc2e1e8357c0b94a9d19a6bd4daac"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/megatron/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 1551,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/megatron/worker.py",
+      "sha256": "sha256:c38e8f7c0fb89baa2a2a16abff389615cc475a57cefbabf51f2eadb6be81f7b6"
+    },
+    {
+      "bytes": 2080,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/megatron/worker_group.py",
+      "sha256": "sha256:73362d1f9a2c162dcad2470c3ae93cb0867273a5fa236b135357e76807fa987f"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/register_center/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 939,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/register_center/ray.py",
+      "sha256": "sha256:453fb6557bd4dde011730d92d96b8004e280c2dd75bb60f4d3eff9b8947ae702"
+    },
+    {
+      "bytes": 7196,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/worker.py",
+      "sha256": "sha256:338dd39d7a4d07b0e3532625bab7d4a9cf1376ad6dff897c36765abf32a672be"
+    },
+    {
+      "bytes": 7559,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/base/worker_group.py",
+      "sha256": "sha256:be16a708f25795fadc3f02d7e180dc3c1c349eb3c7d605957b326af18c15637a"
+    },
+    {
+      "bytes": 701,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/ray/__init__.py",
+      "sha256": "sha256:1fb16f4db639ff031e1a09b42fcc862c1ff6c960a845f262d60b5c85120d5787"
+    },
+    {
+      "bytes": 20344,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/ray/base.py",
+      "sha256": "sha256:03465fa4003ffd8589e29e25cf11cc47e2b0835e689971fbfec7e200c422680b"
+    },
+    {
+      "bytes": 3036,
+      "path": "agent-base/frontier/task/repo/verl/verl/single_controller/ray/megatron.py",
+      "sha256": "sha256:094e2cc2fc7e62e81334c718f8a2a308f0bfdc4fc04dd53339c17b28e765de32"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 1258,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/sglang/__init__.py",
+      "sha256": "sha256:20e83536586f160aceb89d3c4ab12e8ebb947348cbfac8c8186501f4e24a0575"
+    },
+    {
+      "bytes": 14127,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/sglang/parallel_state.py",
+      "sha256": "sha256:adf51626b7c02a16922d5fe0f875a3e86e32f21f25d5f8ac028ad0d767685def"
+    },
+    {
+      "bytes": 2378,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/__init__.py",
+      "sha256": "sha256:75ef2e86b4dcbd2a40bb61930f0fd5b94db06dd7d7c52a68cd3f73655f6fc6d6"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 11957,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/arg_utils.py",
+      "sha256": "sha256:241d3e47e1bf283647237be71099df7ff857e11ce24c1f6082f9225929a7d4be"
+    },
+    {
+      "bytes": 25666,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/config.py",
+      "sha256": "sha256:868aa707443c67986ef8b2c5437b617d640f4d47a53026f7e378ddde22ce7965"
+    },
+    {
+      "bytes": 13604,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/llm.py",
+      "sha256": "sha256:bb5dd8a628d2d58b9daf33fe97fd471778b11e07212f5a7ac75c47a48273dca7"
+    },
+    {
+      "bytes": 35525,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/llm_engine_sp.py",
+      "sha256": "sha256:ae76e88278e330c7a82b9ed149e76022e1e9522b5199a48f272ea514ed80b6cd"
+    },
+    {
+      "bytes": 12265,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/model_loader.py",
+      "sha256": "sha256:9178cfe4c30b03a55856a0a59bdd2cf14856181185050814502fe9012cfcde10"
+    },
+    {
+      "bytes": 13381,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/model_runner.py",
+      "sha256": "sha256:3ea4154e940f51a1d1f4770240c905b46ed9b923e32f9aa399a715b9ac9c5ff7"
+    },
+    {
+      "bytes": 6075,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/parallel_state.py",
+      "sha256": "sha256:7129fc091140197f245ef083b829dafb7b68341f5f7e83959a31e0cbc063b76d"
+    },
+    {
+      "bytes": 3047,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/tokenizer.py",
+      "sha256": "sha256:557315a3db0e6e7d6cf5bd1dae035e15d69c5d0fb707ee395b629f2f9443e7f1"
+    },
+    {
+      "bytes": 4215,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/weight_loaders.py",
+      "sha256": "sha256:5f5e0fe0298bb98c6b8c453f5d8b403c14786b95ccfaa2e02c83db5f91a2f6df"
+    },
+    {
+      "bytes": 13214,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_3_1/worker.py",
+      "sha256": "sha256:20cdda355891836b9c8e80e1ba6c8af30634ec5a8f345259d4cc2463b3c04d13"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 16002,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/arg_utils.py",
+      "sha256": "sha256:072ff25d639aac9716f353a7f9573db9296e6f2cdbde8c905b0966f193c5570c"
+    },
+    {
+      "bytes": 9527,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/config.py",
+      "sha256": "sha256:fafdec45f81c2def3798ca7ea86d00cfda7b3ee790c9ba4cc5f00a842ff9a181"
+    },
+    {
+      "bytes": 12378,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/dtensor_weight_loaders.py",
+      "sha256": "sha256:8567b6e6a43a709cad9f2ba6d7d3fc34d19c24ba3c9d8c5866d506207aaf64b0"
+    },
+    {
+      "bytes": 4032,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/hf_weight_loader.py",
+      "sha256": "sha256:05fb8e715913bd4e0ac7384bf4e116610639a25700e46c6aafb2fc5df4c81bdc"
+    },
+    {
+      "bytes": 15147,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/llm.py",
+      "sha256": "sha256:8ad6dfe89c1178ebcb764d2cfd9b888d2de1df3ec4a3124935ea6c5bb7a7c4ce"
+    },
+    {
+      "bytes": 12403,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/llm_engine_sp.py",
+      "sha256": "sha256:daf7e56923a73e6075ce7e45a648b7d9f2957e26e7c4476be9dec3efb7625556"
+    },
+    {
+      "bytes": 15726,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/megatron_weight_loaders.py",
+      "sha256": "sha256:8031edaf38d3e80ec53b872b3dae963254d54d49bcbd060db61f2b4037461181"
+    },
+    {
+      "bytes": 13600,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/model_loader.py",
+      "sha256": "sha256:ec29dcd0785c71e44a3e755ca0d649afc27a98929128f9b76eaa078d76051f13"
+    },
+    {
+      "bytes": 12581,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/model_runner.py",
+      "sha256": "sha256:9a7a637e14192a5253c708ba86584995a4f6fecc9a0ec6935c60957f6ca94750"
+    },
+    {
+      "bytes": 12798,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/parallel_state.py",
+      "sha256": "sha256:cc50df68dca62edfce15e46ae0ec07cd5ae819a5f4e03b47f05a86a43aa24f1c"
+    },
+    {
+      "bytes": 8647,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/spmd_gpu_executor.py",
+      "sha256": "sha256:29254e03f754ed706f1265f7ab839dd9c465cd48cbd8549ad6cdf8a4db702a63"
+    },
+    {
+      "bytes": 3310,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/tokenizer.py",
+      "sha256": "sha256:497a401f78f5c164308c4d48df0144e8b0c7a47bd4dfb3212681c8d511fe98bb"
+    },
+    {
+      "bytes": 13310,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_4_2/worker.py",
+      "sha256": "sha256:5de27b2ac756955564514b6e0e097b2e7d1c98c93f6a495ffd5ae29a240865a1"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 23746,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/arg_utils.py",
+      "sha256": "sha256:f4fe86d839cefc374e4606f13ce53a7f224e13c2221bca80d775eabb6c03990c"
+    },
+    {
+      "bytes": 11948,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/config.py",
+      "sha256": "sha256:5dac246763fa9ba0331f36ee72bbb43fae1a702bb354adc156e08cbaa6f0fa5e"
+    },
+    {
+      "bytes": 15827,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/dtensor_weight_loaders.py",
+      "sha256": "sha256:3f71614c586d78588d8ee69d66e1533896c51e985e0cb8719cb8bd124e35c3f3"
+    },
+    {
+      "bytes": 1895,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/hf_weight_loader.py",
+      "sha256": "sha256:8c819582f3ad7b23df842087cdf4a1992392e931cd419bcdc19879742ee828fe"
+    },
+    {
+      "bytes": 12271,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/llm.py",
+      "sha256": "sha256:47be604307df31d16239191df3051ded9a7a0d7d7a69f3ee88539686556c2f30"
+    },
+    {
+      "bytes": 14689,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/llm_engine_sp.py",
+      "sha256": "sha256:85fe01207028cd8b23f86be73179e2795eb7f45420a7f48db0d27835c9dcd1d1"
+    },
+    {
+      "bytes": 13939,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/megatron_weight_loaders.py",
+      "sha256": "sha256:08dccb70b440541f1f3c68e5f519c1c419bce66360885af1084c4fee2b972079"
+    },
+    {
+      "bytes": 14974,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/model_loader.py",
+      "sha256": "sha256:0e43f762258581069c1d20717591a6cbeb42288c033fa2aabc92c77f536768f4"
+    },
+    {
+      "bytes": 6857,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/model_runner.py",
+      "sha256": "sha256:5f3ed36a09a9ae7c3ce2036c77f955a6c1b5ed1999dcf7e4df65a2b3ce606c1d"
+    },
+    {
+      "bytes": 13091,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/parallel_state.py",
+      "sha256": "sha256:f6ee10da1649890e720155630a6979b4b2aa1ed195f700f34d94cccfdff23b53"
+    },
+    {
+      "bytes": 10184,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/spmd_gpu_executor.py",
+      "sha256": "sha256:3ce0cddfb329f0898287fcef40209e88cd8d8f6e4dc1e7ad78e31ac2bacfce7f"
+    },
+    {
+      "bytes": 3310,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/tokenizer.py",
+      "sha256": "sha256:497a401f78f5c164308c4d48df0144e8b0c7a47bd4dfb3212681c8d511fe98bb"
+    },
+    {
+      "bytes": 15305,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_5_4/worker.py",
+      "sha256": "sha256:4235c9a8d985c1c4c4b6db086b3515c38681517a11f77004a488c6790383897c"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 3142,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/arg_utils.py",
+      "sha256": "sha256:fa211803d2705904fa27b4af7c4db629e60623046cc675bc04f5786a20675efc"
+    },
+    {
+      "bytes": 4167,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/config.py",
+      "sha256": "sha256:9380fdc1024ef0ec327c75c35195a009edfdcf39a4e92f53a45149fe246cec6d"
+    },
+    {
+      "bytes": 17356,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/dtensor_weight_loaders.py",
+      "sha256": "sha256:280ba6eacd660cb208f6e0fe1b427cd634c67927121328d6b3bc1226d59d0280"
+    },
+    {
+      "bytes": 1773,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/hf_weight_loader.py",
+      "sha256": "sha256:01e371e44c45c0a4ecc2a757f3244a7220f6baa31c52a57d3b6c58f07a367752"
+    },
+    {
+      "bytes": 10236,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/llm.py",
+      "sha256": "sha256:5bc262b93ac5e938c82cc51f0e48b22a33cf13d0f5966f02afa15b60445203ff"
+    },
+    {
+      "bytes": 17823,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/llm_engine_sp.py",
+      "sha256": "sha256:618c464b9b80f595863c9c831c65a53a854f695012cc506f63c691073bf86e53"
+    },
+    {
+      "bytes": 14484,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/megatron_weight_loaders.py",
+      "sha256": "sha256:e80e58eae9125693894dea02991f2ea91ae06d93d2dc5ae2a694dc3a08519366"
+    },
+    {
+      "bytes": 14439,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/model_loader.py",
+      "sha256": "sha256:3f033175550ad920a7398e36a7f0b4e16859b692c4098eeb3a5eca7b97219945"
+    },
+    {
+      "bytes": 7587,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/model_runner.py",
+      "sha256": "sha256:a30b7696071da0d9a08f30a0b42335cce3acd5331abbfdc0bc64fa3ef56a21ac"
+    },
+    {
+      "bytes": 12915,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/parallel_state.py",
+      "sha256": "sha256:c63e53effe7be48e3291d790bd02a7c95795692594655c39922a49381d93b56b"
+    },
+    {
+      "bytes": 10115,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/spmd_gpu_executor.py",
+      "sha256": "sha256:0dd0c264240aeaac9f3bdd86054f1493334194143833de54a8636cfc200d27ae"
+    },
+    {
+      "bytes": 1649,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/tokenizer.py",
+      "sha256": "sha256:f6f2517ebbac01f4cfb234ec71776d54e15a088cd883d48014f6c120d73a8da2"
+    },
+    {
+      "bytes": 15138,
+      "path": "agent-base/frontier/task/repo/verl/verl/third_party/vllm/vllm_v_0_6_3/worker.py",
+      "sha256": "sha256:d63fc21f39c9a730c9ddd1e776a98f554a7adc7dc9de96ae895d63b476e0577a"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 160,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/config/evaluation.yaml",
+      "sha256": "sha256:106cd5daf5846e03aa5866897c7f7c13096e2859cd87a9cb2b73417143aa50ec"
+    },
+    {
+      "bytes": 1184,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/config/generation.yaml",
+      "sha256": "sha256:6a35436cea40efdfc9738f09fabe065c1a2b5c9b33cfddc6160fb9ecd7efbaf3"
+    },
+    {
+      "bytes": 6942,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/config/ppo_megatron_trainer.yaml",
+      "sha256": "sha256:dc05569f0c891b6fdec2e535e80f222dc562c42bd638c60f6c7d2e6428f870a1"
+    },
+    {
+      "bytes": 7630,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/config/ppo_trainer.yaml",
+      "sha256": "sha256:d02b1ac2e9df82dd58a598e5d3f92fcedde69030ff440d3e779621fc15dba7d1"
+    },
+    {
+      "bytes": 1269,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/config/sft_trainer.yaml",
+      "sha256": "sha256:1f0f3922f886f750c293b8315b27844c76cc3ecc55f1479684118571c50705cc"
+    },
+    {
+      "bytes": 26622,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/fsdp_sft_trainer.py",
+      "sha256": "sha256:79c6258542f6618f137f347e5d5be580cf3e75e87153954e86814f4908d92512"
+    },
+    {
+      "bytes": 2180,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/main_eval.py",
+      "sha256": "sha256:c23c01eaa70ee79aa25b1e2fa859e93b3917b0b9d0476378e739a7275f3d639c"
+    },
+    {
+      "bytes": 6270,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/main_generation.py",
+      "sha256": "sha256:cc9324a95122fd702e5f05ac17fff72513fbf8a9dec3fa592af30f7eb4f38ccb"
+    },
+    {
+      "bytes": 7060,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/main_ppo.py",
+      "sha256": "sha256:77e43e2c6c734ffee102c26d8f06965edf308ba36ea9c27f521d3e308b412b35"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/ppo/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 13841,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/ppo/core_algos.py",
+      "sha256": "sha256:74d680b9186690a7788157679725bc351a5436b6419ff8c7a2b570bc4cbf13ee"
+    },
+    {
+      "bytes": 6389,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/ppo/metric_utils.py",
+      "sha256": "sha256:ad131ef0f1d1c08be2b58bb8b8f0449cd0fef6dc79f4c3c05cd6d027dcb866ba"
+    },
+    {
+      "bytes": 48110,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/ppo/ray_trainer.py",
+      "sha256": "sha256:f2a0f7668fabebd34252e45e76dc786bdfe05bc7e36d89f4b90b4d7f3b5c8374"
+    },
+    {
+      "bytes": 122,
+      "path": "agent-base/frontier/task/repo/verl/verl/trainer/runtime_env.yaml",
+      "sha256": "sha256:4b48b9246dcaa5df082844675c32e6095abd198e347eb928fc8c7d931c13e4d6"
+    },
+    {
+      "bytes": 703,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/__init__.py",
+      "sha256": "sha256:d7d26ffc06c512f63e6c1feb1d7808a9dfca903c32a36add16824074b51cb0a8"
+    },
+    {
+      "bytes": 599,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/checkpoint/__init__.py",
+      "sha256": "sha256:c0240b4d2ee7fe3fa82b4785c7e278e4b346f5179f04bf7716811f612a25a7d0"
+    },
+    {
+      "bytes": 5167,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/checkpoint/checkpoint_manager.py",
+      "sha256": "sha256:c65322a4de431fe3b80ab7092f435c9abc7d16e878e6e4a36a06cfea746b3ba4"
+    },
+    {
+      "bytes": 8223,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py",
+      "sha256": "sha256:f3381b3f4aa04c6389ad31dc666db14f4b8aa4c9a377374e1734d7d07dd04ae7"
+    },
+    {
+      "bytes": 13529,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/checkpoint/megatron_checkpoint_manager.py",
+      "sha256": "sha256:93d1de6129c90463226510e5434de0dca2ed33cb9014b71795befc290a24807e"
+    },
+    {
+      "bytes": 839,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/config.py",
+      "sha256": "sha256:b59763b8653abf6a011abf5304c2679b9e68690d2acc33a9a05fd6cfe0aab542"
+    },
+    {
+      "bytes": 797,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/dataset/README.md",
+      "sha256": "sha256:de346fc1a883566c1b8f1f22c0ba4563efadfdb7b53d5935796401ad18d56f57"
+    },
+    {
+      "bytes": 707,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/dataset/__init__.py",
+      "sha256": "sha256:a09f7eb8b95104f78fd0b155a90551bdd834f384e8fa547cff5c7f80904c0065"
+    },
+    {
+      "bytes": 9465,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/dataset/rl_dataset.py",
+      "sha256": "sha256:ab58b4a2aa6a0f6932e4c6b82ab1b6b1c2bdaa81e91d58faf83737e9afb72a5e"
+    },
+    {
+      "bytes": 5492,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/dataset/rm_dataset.py",
+      "sha256": "sha256:cb8a482fb97e75f89d3cf0baf7d569668af049895fb7e5b07ab1aecb3e5cc1f1"
+    },
+    {
+      "bytes": 6893,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/dataset/sft_dataset.py",
+      "sha256": "sha256:c687213032e83d3be3fd1ecf7edff4935f5620c21cd40eb1b2eef71aafe6c1ad"
+    },
+    {
+      "bytes": 646,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/debug/__init__.py",
+      "sha256": "sha256:7c2e66dafef4ae2d091deec16c763299acc927bc7486268190239d9290c0b77c"
+    },
+    {
+      "bytes": 1214,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/debug/performance.py",
+      "sha256": "sha256:a27524298cce8e7c5b0dc060a9d58f4c79d5a63a2da36293dee491dbb927a211"
+    },
+    {
+      "bytes": 3174,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/debug/trajectory_tracker.py",
+      "sha256": "sha256:f47db3824fe10b827c62110cb49151e075ae3e8bc9ea95905bb5dd915d60b897"
+    },
+    {
+      "bytes": 1124,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/distributed.py",
+      "sha256": "sha256:ee90007c15948b647338f404dd865cc5a0e2586903b8790ce6331d1cf01d2244"
+    },
+    {
+      "bytes": 7612,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/flops_counter.py",
+      "sha256": "sha256:d8e4eb060627ab05cf4ad9b303e05ba5080cb6f655bb5f3b47386c845733a855"
+    },
+    {
+      "bytes": 3140,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/fs.py",
+      "sha256": "sha256:c3ba5375648e7368abab3a03e06fb9a169ad7e2bceb401dbad185b6f6632ae28"
+    },
+    {
+      "bytes": 13789,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/fsdp_utils.py",
+      "sha256": "sha256:a39727b58dfa4847ff459d8e3f7560565098386e1e57dd06b6d846e0262caa14"
+    },
+    {
+      "bytes": 4562,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/hdfs_io.py",
+      "sha256": "sha256:3f006815223e1798ee829b325aa942453cdb6131731f056b07fd8de957d0bcf7"
+    },
+    {
+      "bytes": 1483,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/import_utils.py",
+      "sha256": "sha256:c2e2eb4dbda83255b2e5fda572e4ed9be9350970aa4a57b83ccaceb6dcd32dea"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/logger/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 1400,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/logger/aggregate_logger.py",
+      "sha256": "sha256:9fcaf99c0e6bacb838c7d1e40f1a51dcab6b4fe633b9320d97f5434f032fee9d"
+    },
+    {
+      "bytes": 1050,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/logging_utils.py",
+      "sha256": "sha256:9c9c37a6cacc9ed779e133c38ab08a73d4a5e042eafd20546af340190fb86585"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 1534,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron/memory.py",
+      "sha256": "sha256:422a9340d8aae030664b5e425bb89bffc5d428b34057d091905b84a5033291e1"
+    },
+    {
+      "bytes": 1569,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron/optimizer.py",
+      "sha256": "sha256:257d9c2070f419e3a52b6e996d7c71127f6c276c500537d062016c428eed1909"
+    },
+    {
+      "bytes": 2119,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron/pipeline_parallel.py",
+      "sha256": "sha256:322d879dbfd3ae6219944ec328b2b6c0fb19091a45bb4a2257402b4934f1dd46"
+    },
+    {
+      "bytes": 1810,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron/sequence_parallel.py",
+      "sha256": "sha256:5291153114babd5010d809c671c17fe14a7ac06c2ea4d997844bf3b6f1f4154e"
+    },
+    {
+      "bytes": 7667,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron/tensor_parallel.py",
+      "sha256": "sha256:b9b0be00bd03b96f906166ae211ee5a5b9796db7a7f15f1b8cd3f8d2f7d2d18c"
+    },
+    {
+      "bytes": 12709,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/megatron_utils.py",
+      "sha256": "sha256:6d77d571c9dc017bd69038f94acef54a60c45ef07c471b99d699d2acc6f9ba0f"
+    },
+    {
+      "bytes": 8093,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/memory_buffer.py",
+      "sha256": "sha256:5c7d202002ed638cf7e6760594f5d18a055cc3b0c16cf7c64de47767369141a0"
+    },
+    {
+      "bytes": 14456,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/model.py",
+      "sha256": "sha256:72d66f4c59f5996c770ef04802beae8f80ef99c755cae4ea3c30f3825e4f6d71"
+    },
+    {
+      "bytes": 1656,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/py_functional.py",
+      "sha256": "sha256:2b7cb3329422c6d5efef8e922eabf4f0942dfc330c04728d6d99159e953a3e6f"
+    },
+    {
+      "bytes": 1401,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/ray_utils.py",
+      "sha256": "sha256:77ef654419c1c1de59a6ec2b32b457eca7dd8cc73fe74a0d98278a3255835b58"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/rendezvous/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 2720,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/rendezvous/ray_backend.py",
+      "sha256": "sha256:902cda6fef0dd91061454e2f2461e3766eaa6b3227d4f7a9e829ab96b3e0b63d"
+    },
+    {
+      "bytes": 2253,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/__init__.py",
+      "sha256": "sha256:65ca39e2419dee1e696db14e0e862663d7570e3ccf3b1392601056855d943d34"
+    },
+    {
+      "bytes": 1224,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/geo3k.py",
+      "sha256": "sha256:676b484dc8550ba30cdff4211f7a8c13e3af25df2b8cb85ce3b20712881eac09"
+    },
+    {
+      "bytes": 2385,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/gsm8k.py",
+      "sha256": "sha256:ad8c22fa6becda86f429a9cac622aa9a2e9178758ecde00e3a02a55e09b93b6e"
+    },
+    {
+      "bytes": 6717,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/math.py",
+      "sha256": "sha256:fd0eb6f4702e249e3386e91ac03964214bd3deafa5a0b3d9f9a05849930735c7"
+    },
+    {
+      "bytes": 1377,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/math_verify.py",
+      "sha256": "sha256:1458b0124efc3adb3733d439da548547acf702069280a77943a460213364a1ce"
+    },
+    {
+      "bytes": 3151,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/prime_code/__init__.py",
+      "sha256": "sha256:904617ab9607fb306000fc2de423747ef642c4ea8d20a71533c2a900c5552d47"
+    },
+    {
+      "bytes": 28052,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/prime_code/testing_util.py",
+      "sha256": "sha256:d70ae8183c55adac2de92a3f1a47076f852c79bbcc3a87613d9060852aef27a6"
+    },
+    {
+      "bytes": 2252,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/prime_code/utils.py",
+      "sha256": "sha256:f718147b689f279171dda0d9c1b9059678e07bf2cee69ae18fb0d6cd504fabcc"
+    },
+    {
+      "bytes": 12976,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/prime_math/__init__.py",
+      "sha256": "sha256:7c303baac3c8e2729765eaffde7cc018c8ea825dc458369dfaf9fd95145ba9bb"
+    },
+    {
+      "bytes": 14508,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/prime_math/grader.py",
+      "sha256": "sha256:54656724a7dea29f643ce5207952fb18250e9c8460ad9c29e38201197f408116"
+    },
+    {
+      "bytes": 6271,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/reward_score/prime_math/math_normalize.py",
+      "sha256": "sha256:23849a0b74900e292dfea35fd8763708377defd1a618b15e53ac2c4876a6f109"
+    },
+    {
+      "bytes": 10327,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/seqlen_balancing.py",
+      "sha256": "sha256:836a381b88a7c2185aea684b8e8c26e7eb0c25c6183e8f2f4d1686c85636fefb"
+    },
+    {
+      "bytes": 3100,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/tokenizer.py",
+      "sha256": "sha256:82f6869eb0b363db6a73b97098c855e54b6c825d03c1c219259c95c94ce39357"
+    },
+    {
+      "bytes": 2263,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/torch_dtypes.py",
+      "sha256": "sha256:78db43b44160363e89091ddb677d02370b3f616a59fac0db0ebe24a26ee4f842"
+    },
+    {
+      "bytes": 19866,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/torch_functional.py",
+      "sha256": "sha256:e2dd02383718c856053f1e70f74311b11b92ece40a034f97645c6f7db7310db6"
+    },
+    {
+      "bytes": 8145,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/tracking.py",
+      "sha256": "sha256:97b19fbd64c2780fe87a2cb0a37b6a431e490763f19c9db98ead93156507f2a4"
+    },
+    {
+      "bytes": 10940,
+      "path": "agent-base/frontier/task/repo/verl/verl/utils/ulysses.py",
+      "sha256": "sha256:af01fdb3ede13248cbb5cca06f63e361b2eea8ec5d3f001dbcccbe7f47b1d9a6"
+    },
+    {
+      "bytes": 10,
+      "path": "agent-base/frontier/task/repo/verl/verl/version/version",
+      "sha256": "sha256:308043c5811b33f87d196ddc5f3634f85f2463df67ff5416857bb6576255b370"
+    },
+    {
+      "bytes": 600,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/__init__.py",
+      "sha256": "sha256:e65abd77db034b4f29eb1268c24867f84919dbce22e28d1997e563ed1d94179c"
+    },
+    {
+      "bytes": 727,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/actor/__init__.py",
+      "sha256": "sha256:3053474474716dc57f7e1b5d80d23b28c7b146d9257f8b6bf3b7878de4eae219"
+    },
+    {
+      "bytes": 2071,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/actor/base.py",
+      "sha256": "sha256:4afcfa27274dd1b58e40cc5484ca352890d5423ce2c162734f1ee6b4fb26890b"
+    },
+    {
+      "bytes": 17535,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/actor/dp_actor.py",
+      "sha256": "sha256:6ac9ee41a3f1bed89d4d3ea14b8cd0d37eb5f8931ce901f4255e083cb6ba9fb2"
+    },
+    {
+      "bytes": 19617,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/actor/megatron_actor.py",
+      "sha256": "sha256:262cb3db95dcac2fb76b8913e109a16ea0ff9b3028b45a6b2a8e431ee1a524be"
+    },
+    {
+      "bytes": 732,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/critic/__init__.py",
+      "sha256": "sha256:a61c624ef2dd6bec59cc59302d88d1ccdc151ea5beb776b9733ac19bcfbe8fb7"
+    },
+    {
+      "bytes": 1094,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/critic/base.py",
+      "sha256": "sha256:9609662cb80dc02afb53a424abb6a9ae93e0448d190a3dd5bc4cd5e0d92ea6a2"
+    },
+    {
+      "bytes": 12743,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/critic/dp_critic.py",
+      "sha256": "sha256:e5e428c8748d885daf92885dbfcf12cacea76828eb678dbea532d73463a0c143"
+    },
+    {
+      "bytes": 10542,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/critic/megatron_critic.py",
+      "sha256": "sha256:017160046a2b1fbbf0b99e0b946dc105473e1a445d3ff35154b97705a79bc98c"
+    },
+    {
+      "bytes": 60942,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/fsdp_workers.py",
+      "sha256": "sha256:a262526bb59af28a47ccca559d274735efa71c4b084bda21a32375b1fbb04486"
+    },
+    {
+      "bytes": 42800,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/megatron_workers.py",
+      "sha256": "sha256:8717cf88919f5993893b9590e048bb845ce4f2a6f4654163f376798f1c914fb6"
+    },
+    {
+      "bytes": 672,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_manager/__init__.py",
+      "sha256": "sha256:a34a9714a42c916580ef27d8b9291caa9e2f1eeb39ca707a3a4b3d448eaaab18"
+    },
+    {
+      "bytes": 4690,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_manager/naive.py",
+      "sha256": "sha256:02bd0104ae30464cab3e6761af7daa706564874c04de630b9e2040256840ca76"
+    },
+    {
+      "bytes": 6741,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_manager/prime.py",
+      "sha256": "sha256:6612ee68820fffced45815e9ce59e2b274ccd940dd7ec902377672519802396d"
+    },
+    {
+      "bytes": 638,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_model/__init__.py",
+      "sha256": "sha256:969b640ba9c36d51ddf12380041963eb2255b094318027e76053c191339bd825"
+    },
+    {
+      "bytes": 1710,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_model/base.py",
+      "sha256": "sha256:7f6e0ccd8edaca5a5edc02e8f545297bef4acaea84d0858b870340a157ed0983"
+    },
+    {
+      "bytes": 647,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_model/megatron/__init__.py",
+      "sha256": "sha256:1a01e19bf170896603577bc8752239de2743685141424dcef64bb685cb2ffd96"
+    },
+    {
+      "bytes": 12739,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/reward_model/megatron/reward_model.py",
+      "sha256": "sha256:c24d7ff3436f08f7972e47e114d21ae4e204379bf3dc70697d06463da0805c2b"
+    },
+    {
+      "bytes": 753,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/__init__.py",
+      "sha256": "sha256:6dc2b3dd28631c76b826f545091bedc233111ad6bab00511a4fe40e6a1e4cf78"
+    },
+    {
+      "bytes": 1141,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/base.py",
+      "sha256": "sha256:480b812f13b681735e18347220dc7462a7ae982fb61a46541dc713d4e2608d12"
+    },
+    {
+      "bytes": 5867,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/hf_rollout.py",
+      "sha256": "sha256:38d84c1bcbe61fa560dc6ab3e5f2acb46a4561c1bb329cf344d6cccc781b1009"
+    },
+    {
+      "bytes": 641,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/naive/__init__.py",
+      "sha256": "sha256:551983cdba422a02f03c8b9cce52face25963b511b9029e09247a16afa3c70fd"
+    },
+    {
+      "bytes": 4937,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/naive/naive_rollout.py",
+      "sha256": "sha256:6a0e5acc633674610ab7b40f6dff49307f644d6254e746511b89681318a241e4"
+    },
+    {
+      "bytes": 610,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/sglang_rollout/__init__.py",
+      "sha256": "sha256:fe9440eb977a57059e8c67ef903b07ecabded02ed042cfcfe1fff2e9ab3e656d"
+    },
+    {
+      "bytes": 12574,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/sglang_rollout/sglang_rollout.py",
+      "sha256": "sha256:333a2d9b890a996f09455d395847a04f8ff4001bd26ecd4453beeae2380aa754"
+    },
+    {
+      "bytes": 5747,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/tokenizer.py",
+      "sha256": "sha256:92fbaf5d1c93e2c0d2ec2e399af83be277ac744005466b3016331516708ed00b"
+    },
+    {
+      "bytes": 1417,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/vllm_rollout/__init__.py",
+      "sha256": "sha256:32f10471d4c50ebe0074cb039a6492b9514a4dd9f731ee1c517081acd3ff7573"
+    },
+    {
+      "bytes": 9957,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/vllm_rollout/fire_vllm_rollout.py",
+      "sha256": "sha256:943c32dd4e6048325b055606a719bc6feb08e84c83d7e25ee8d7867d3034e628"
+    },
+    {
+      "bytes": 11407,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/vllm_rollout/vllm_rollout.py",
+      "sha256": "sha256:ba02e19b551e8c82c031d93382b0d2fe8f5e43ddaf420dee10287470f35d4019"
+    },
+    {
+      "bytes": 13539,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/rollout/vllm_rollout/vllm_rollout_spmd.py",
+      "sha256": "sha256:d44e197c8ce705fa108d6b6eaf0bd570dd050338ab123736cd4192b2b3b6e755"
+    },
+    {
+      "bytes": 1937,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/sharding_manager/__init__.py",
+      "sha256": "sha256:12f5e089786254f758964dd0bd3ea4ee0e92f270e0c2c729c1ed9bce547b046e"
+    },
+    {
+      "bytes": 982,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/sharding_manager/base.py",
+      "sha256": "sha256:d249884ee73ed51563443388163d57caaff198af11f60da44c70b85568c5127f"
+    },
+    {
+      "bytes": 6804,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/sharding_manager/fsdp_sglang.py",
+      "sha256": "sha256:fc63eb30c9f7188470caf4442815053478996eaed128f4a3b77b0492bc20ab71"
+    },
+    {
+      "bytes": 2965,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/sharding_manager/fsdp_ulysses.py",
+      "sha256": "sha256:159a0212d6b0077431136e953f4c5814d85b59c4dd4a8de192b702812ad40739"
+    },
+    {
+      "bytes": 7229,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/sharding_manager/fsdp_vllm.py",
+      "sha256": "sha256:b3aca0ea06fe91401106e9824c0bf4148b7e1ccadaea7edff5224464bcff57ae"
+    },
+    {
+      "bytes": 19583,
+      "path": "agent-base/frontier/task/repo/verl/verl/workers/sharding_manager/megatron_vllm.py",
+      "sha256": "sha256:841d5101c88f7c2fb8ebbddd9dab6e8d8e164d7eb79d7a36691b8a379d6a75de"
+    },
+    {
+      "bytes": 5338,
+      "path": "agent-gpu/Dockerfile",
+      "sha256": "sha256:a3dc752bc2f77d7d1b0d08f1875182f2e4c22219fe2ab62d1e38f7d3ed0e685e"
+    },
+    {
+      "bytes": 806,
+      "path": "agent-gpu/task_runtime.py",
+      "sha256": "sha256:5e07a7cc8146e977755287b06f6ebb188a0d6730753f27ff4cde409277e87912"
+    },
+    {
+      "bytes": 428,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:519689cd46ab7a3d93dbc0ba6589ca072e8bc2ac4a328b367ca24a8cedd0fba1"
+    },
+    {
+      "bytes": 435,
+      "path": "datasets/train.json",
+      "sha256": "sha256:0b0d3dd1368337365a1049983182c5f40b4242bef5ede58122cd4377f9b60c7c"
+    },
+    {
+      "bytes": 15593,
+      "path": "judge/action_provenance.py",
+      "sha256": "sha256:010100ca32ed3d64c4b97bc72c977630ffaa02f7b98fad007c8364da8d2f6722"
+    },
+    {
+      "bytes": 2124,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:306c57f2c377ee05500aa05eb65c0221c3dae61b3fe1741a7d17bf15e4d9822a"
+    },
+    {
+      "bytes": 14664,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:8ef33594c2b646bcf3e47a63f2af1c731fb0585987c8a6e7f68815a5779c464b"
+    },
+    {
+      "bytes": 4595,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:7908a91857225684e25ed22926d43cf734c8147ac6335cad6497d2059286e9f2"
+    },
+    {
+      "bytes": 204,
+      "path": "judge/candidate-diagnostic.json",
+      "sha256": "sha256:186e676a2f85adeb8071bc48ff87fc5064ef18fba733d5a525ffd4e3bcd5c31f"
+    },
+    {
+      "bytes": 16498,
+      "path": "judge/candidate_failure.py",
+      "sha256": "sha256:d06dc67659237abad86efc834eda30152cdbff5a23f017e0a4b3515f0aeb9b03"
+    },
+    {
+      "bytes": 2060,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:f9062b4f513831fdee73e51b0a703f473675ee31638717ba3ee0b5daf1fea434"
+    },
+    {
+      "bytes": 171,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:24b6298e72244759d9da181e01636e22773edabb9a64cc8d25cb0bc249c71ffb"
+    },
+    {
+      "bytes": 26881,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:2638282d39872ff88c91149c4fbbf603cd139a18a57e91208ba2f6d760ed20c8"
+    },
+    {
+      "bytes": 33679,
+      "path": "judge/private_execution.py",
+      "sha256": "sha256:39c26bf1c324ee51e5341303e9248bd020e4f0704f8066bc5cc517c48167832d"
+    },
+    {
+      "bytes": 16006,
+      "path": "judge/readme",
+      "sha256": "sha256:dd72dece4b293c6e0a4703700835ed18ebc3d65865b89ef2d52ae345b353fe43"
+    },
+    {
+      "bytes": 16059,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:0439345fe2ed5b2ffd945fcb7deea186a16b6552a793be38f5aef2648afca5c3"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 1898,
+      "path": "model-assets.json",
+      "sha256": "sha256:2a8ccf35ba6ff93a288e9924901809a77ee9577532fda427a5305e21fe6da3da"
+    },
+    {
+      "bytes": 2874,
+      "path": "policy.json",
+      "sha256": "sha256:d93e1ec69ead04966055956df10d71041afd8b8761ada75ca56f6eae8e7ea68f"
+    },
+    {
+      "bytes": 1417,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:eca9ff68a93ca6dca8ada95dd0312f4034bf76527b7f561defc6cbffb7d0b3ea"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 33741,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:e75004a68945b053861c1f39ca4eba6723806a8c8ec16a65ef47d260b7087da2"
+    },
+    {
+      "bytes": 41130,
+      "path": "verifier/fcs2_verifier_gpu.py",
+      "sha256": "sha256:6fd8a89ec1257e30139d3bc792db9e5b5857398cdd68b8cae35fc0d75bac24ea"
+    },
+    {
+      "bytes": 356,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:9ee4102df58f61fc93a4724aa28e9669bf0055ff0d7f6c48c4ca237d8be20bb2"
+    },
+    {
+      "bytes": 5950,
+      "path": "verifier-gpu/Dockerfile",
+      "sha256": "sha256:907d7a97072d0888a6e461382e3e1a803d397838018a771122a82978d9e9bcb7"
+    }
+  ],
+  "problem_id": "ragen_multi_turn_rl",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:2638282d39872ff88c91149c4fbbf603cd139a18a57e91208ba2f6d760ed20c8",
+    "statement_sha256": "sha256:6bf7069394c9db74377ac9ff6fccb569e06e91150e202424152aaac1e230a09f",
+    "task_dir": "authored"
+  }
+}

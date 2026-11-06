@@ -1,0 +1,70 @@
+{
+  "unit": "One QuALITY article (the official loader merges an article's rows) with all of its multiple-choice questions, Qwen/Qwen3-4B in bf16 on one H100. The submitted compaction/solver_entry.py compact() receives the prefilled KV cache of the article prompt once per measured run and returns per-layer kept keys, values and an optional attention_bias; every question is then answered from that cache by the unchanged upstream decoding path. Development grades the 12 public articles; final grades all 24 (12 public plus 12 hidden). The split was frozen from sorted article ids before any model outcome was seen.",
+  "metrics": [
+    {
+      "name": "qa_correct",
+      "means": "C(w): the minimum, over the 3 repetitions' caches, of the questions answered correctly from that cache (official QuALITY parser; unparseable = wrong; the denominator never shrinks). Every repetition is answered, so none can be cheap. Development answers its single repetition once.",
+      "source": "evaluation/qa_evaluator.py::QAEvaluator.evaluate_compaction_on_article (pristine tree, trusted process) qa_results.correct_answers on the rebuilt cache; evaluation/utils.py::parse_model_choice; judge/harness.py",
+      "better": "higher",
+      "clears_when": "min over repetitions of C(w) >= median over the reference calibration captures of R(w) - max(1, ceil(0.05 * N(w)))",
+      "tolerance": "max(1, ceil(0.05*N(w))) questions below the reference median (ACCURACY_TOLERANCE in judge/gate.py); the standing correctness-noise rule for serving/compaction tasks"
+    },
+    {
+      "name": "compaction_seconds",
+      "means": "T(w): median over 3 repetitions of the wall time, measured by the trusted harness, from sending the article to a freshly started compaction worker process (one per repetition, after a warmup on a fixed non-QuALITY text, each article sent once) to receiving its complete compacted cache. It covers the worker's own prefill of the article, the submission's complete compact() call and the handoff of the cache bytes, identically for every method. Final: median of 3 repetitions after a warmup. Development: one repetition after one untimed warmup (a single, noisier sample) compared with the same frozen targets.",
+      "source": "judge/harness.py::WorkerSession.compact and timing_plan; judge/compaction_worker.py",
+      "better": "lower",
+      "clears_when": "time mode: T_C(w) < r * median T_R(w); bytes mode: T_C(w) <= r * median T_R(w), where r is the machine-speed ratio (geometric mean of the trusted HF-prefill and vLLM-generation anchors relative to calibration), recorded diagnostically without a deviation rejection; GPU model equality is required",
+      "tolerance": "none beyond the reference's own run-to-run noise: the bar is the median of at least three seeded reference captures"
+    },
+    {
+      "name": "compact_cache_bytes",
+      "means": "B(w): stored bytes of the returned cache: per layer the kept keys and values (1, KV heads, t, head_dim) and the optional attention_bias (1, KV heads, t), bf16/fp16/fp32, counted as elements x element size (largest over repetitions); an absent attention_bias costs nothing.",
+      "source": "judge/wire.py::cache_bytes over the frames read by judge/harness.py::rebuild_cache",
+      "better": "lower",
+      "clears_when": "time mode: B_C(w) <= B_R(w); bytes mode: B_C(w) < B_R(w)",
+      "tolerance": "none; the footprint is deterministic for a given method and article"
+    }
+  ],
+  "beats_reference": "Let W be the graded articles and R the private reference (upstream AM-HighestAttnKeys, RMS key scores, NNLS bias with 2 iterations in [e^-3, e^3], least-squares values, on-policy ss-plus-repeat self-study queries, optimized_agnostic Qwen3-4B head budgets, max ratio per head 0.75, target size 0.1). The mode is fixed per submission: bytes mode iff the submission's TARGET_SIZE < 0.1, else time mode. beats_reference = 1 iff the targets are READY and for every w in W all three metrics clear in that mode; otherwise 0. Medians are over the frozen reference captures; there is no other margin and no aggregate can replace a per-article comparison.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "dev_qa_accuracy",
+      "means": "the candidate's own fraction of development questions answered correctly, pooled over the 12 public articles",
+      "reveals_reference": "no - it is the candidate's own absolute accuracy and contains no reference value"
+    },
+    {
+      "name": "dev_compaction_seconds",
+      "means": "the candidate's own per-article compaction times on the public articles, returned as an independently sorted list without article labels",
+      "reveals_reference": "no - candidate durations only, no reference time, ratio or per-article decision"
+    },
+    {
+      "name": "dev_compact_cache_bytes",
+      "means": "the candidate's own per-article compacted-prefix bytes on the public articles, returned as an independently sorted list without article labels",
+      "reveals_reference": "no - candidate footprints only, no reference bytes or per-article decision"
+    }
+  ],
+  "progress_feedback": {
+    "name": "beat_spec_progress",
+    "means": "for each beat-spec metric, the passed and failed article counts, total, pass_percent and fail_percent over the 12 development articles",
+    "granularity": "one article = 1/12",
+    "reveals_reference": "no - article identities, per-article decisions and reference measurements stay private"
+  },
+  "withheld": [
+    "reference_correct",
+    "reference_seconds",
+    "reference_bytes",
+    "uncompressed_correct",
+    "per_workload_decisions",
+    "private workload identities",
+    "beat_spec_workload_passes",
+    "beats_reference",
+    "reference_score",
+    "margin"
+  ],
+  "statement_sentences": "Besides the continuous score, a separate beats_reference criterion compares your method with a private Attention Matching reference on every graded article. Every article must keep QA accuracy within max(1, ceil(5% of its questions)) of the reference's median correct count, and must improve one axis: at TARGET_SIZE = 0.1 (time mode) its compaction must be strictly faster than the reference's median time with no more cache bytes; at TARGET_SIZE below 0.1 (bytes mode) its compacted prefix must use strictly fewer bytes with compaction no slower than the reference's median time. A development submission returns dev_qa_accuracy, dev_compaction_seconds, dev_compact_cache_bytes and beat_spec_progress (passed, failed, total, pass_percent, fail_percent per metric over the 12 public articles); final results are not shown.",
+  "comments": "Design: accuracy and time are judged against the per-article median of >=3 seeded reference calibration captures; accuracy keeps the standing tolerance max(1, ceil(5% N)); bytes are deterministic, strict where they are the improvement axis. Candidate-only evaluation against frozen targets (as in the SVG and vLLM fixed-target tasks). Uncompressed-cache accuracy is recorded per article as an operator diagnostic anchor (loss = A_full - A). NLL is not gated. Calibration selftests and reference self-comparisons are diagnostics only and never block READY. Scope, article subset and metric definitions follow the authoring proposal; LongHealth excluded for its data terms. Trust boundary: submitted code runs only in compaction_worker.py, inside fresh user, mount, network, PID and IPC namespaces (no root or sudo): tmpfs over the judge, the verifier input/output and every scratch path, then a nested user namespace without capabilities so those mounts stay locked; scrubbed environment, private HOME, a read-only tree copy without data/, its own model copy, host memory bounded by the parent's RSS watchdog; the harness (timer, byte count, QA model, result file) never imports it. Machine-speed anchor: the geometric mean of the trusted HF-prefill and vLLM-generation anchor ratios to calibration is recorded as a diagnostic, including deviations beyond 10%; the GPU model must match calibration and the time targets are rescaled by each article's own instance ratio. Development scores are computed against the frozen reference medians, so a development score reveals the aggregate improvement ratio, as in the vLLM fixed-target task. Isolation: worker stderr is a pipe; harness scratch 0700; between repetitions all worker-uid processes are killed, its SysV IPC, POSIX queues and temporary files removed, and free GPU memory overwritten; the worker runs in fresh network (loopback only), PID and mount namespaces, verified by probes before submitted code runs. Accuracy uses the minimum over repetitions; calibration records the anchor-rescaling residual as a diagnostic only (strict median time target, zero margin). Calibration runs one job at a time on one GPU; any review flag keeps the manifest on HOLD. Scope change: the agent tree carries only a neutral interface (setup/compact over the prefilled cache), the fixed model/decoding code and helpers; method-specific code, query generation, budgets, pipeline wrappers and upstream docs were removed and nothing agent-visible names the method. The private reference keeps the full unchanged upstream pipeline in judge/reference_tree with the v1 configuration and call, behind the same interface and the same timed span, so calibration targets are unchanged. The trusted parent imports judge/reference_tree, never the agent tree. Measurement layout: the CPU verifier fans out to single-H100 Verifier GPU instances (development 4, final 8), articles sharded deterministically (article i to instance i mod N), each instance running the single-GPU harness; GPU models must agree across instances (else infrastructure); measured engine-anchor deviations are recorded and do not block calibration or evaluation. Calibration uses the identical final layout (8 instances per job)."
+}

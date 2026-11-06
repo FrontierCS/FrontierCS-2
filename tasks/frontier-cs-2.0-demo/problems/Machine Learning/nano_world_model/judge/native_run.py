@@ -1,4 +1,4 @@
-"""Runner side of the nano_world_model judge (#757; design/sandboxes.md, class 1).
+"""Runner side of the nano_world_model judge (design/sandboxes.md, class 1).
 
 The candidate's machine (Agent GPU image) gets this file, judge_runtime/sitecustomize.py, the
 submitted tree and the public data of the suite (judge/public_inputs.py). There it runs

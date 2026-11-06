@@ -1,0 +1,243 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 429,
+      "path": "datasets/eval.json",
+      "version": "sha256:55967cdec28cfea1a62ea58c6db261293acb2118aee5fde131a0faeebc18e252"
+    },
+    "train": {
+      "bytes": 436,
+      "path": "datasets/train.json",
+      "version": "sha256:f9e63362fc2497f32ab520513f06013995eb6437d35b88d120a58bb42e5d0442"
+    }
+  },
+  "file_count": 43,
+  "files": [
+    {
+      "bytes": 2074,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:04079fc3333390e1935884add4b82325136de9df16d6b8d06663026fc2d692b0"
+    },
+    {
+      "bytes": 3385,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:4dc81009799d5a22a6af2e8333a3ee65167403cb7b70db6dbe5443f89e343187"
+    },
+    {
+      "bytes": 5614,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:e7819dd6af63a14eb00cef62842f533539d1fe8a4dee8eae5747cdb94fbddafc"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:9fc959f77195898353af6476c6262688c5deedae49ee07b9d87af6e9893ae4b4"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 11357,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "bytes": 9022,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:b609e67a7338b5b979f94d5d93c0684b248c14e44f807f654e5bd6f8ce900445"
+    },
+    {
+      "bytes": 116,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:cbf7de4b294cd2a8c2e9a219fa34454485f1dd14677863c8acabe37ccf74d0ef"
+    },
+    {
+      "bytes": 190,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:1549ebedabd192e721c3b8da1ac3c1de47523a9bf269490e13123caaa69048e8"
+    },
+    {
+      "bytes": 344,
+      "path": "agent-base/frontier/task/repo/frontier_harness/__init__.py",
+      "sha256": "sha256:ae1cc1e04e7c6381c851d54999461b3cd20fe0970258c6fab2fa15e08604b440"
+    },
+    {
+      "bytes": 7238,
+      "path": "agent-base/frontier/task/repo/frontier_harness/adapter.py",
+      "sha256": "sha256:1abcaabb01e4b048a81bf6f56df7d2f395f03854abb98efc842ac14821699fae"
+    },
+    {
+      "bytes": 3797,
+      "path": "agent-base/frontier/task/repo/frontier_harness/protocol.hpp",
+      "sha256": "sha256:07badb504abd8109d787da3ae62f2c83c391b59d26ac06f6419ced74be54c29e"
+    },
+    {
+      "bytes": 7217,
+      "path": "agent-base/frontier/task/repo/frontier_harness/protocol.py",
+      "sha256": "sha256:c53955ac9a32eef5733c0b2ed077484257686a6c5960a468e0d31d4248d5be7b"
+    },
+    {
+      "bytes": 2713,
+      "path": "agent-base/frontier/task/repo/frontier_harness/run_debug.py",
+      "sha256": "sha256:2cc8185530c949ed256148dc14fe0a261efa9b9c9120688f15b10b88510a703d"
+    },
+    {
+      "bytes": 16985,
+      "path": "agent-base/frontier/task/repo/frontier_harness/trusted_host.cpp",
+      "sha256": "sha256:073bda1fb79e121ce272b8d08e14c0b0907075d2777669215bf02f301f865ce5"
+    },
+    {
+      "bytes": 260,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:9332a5e14fadfd00d7f28d5698835e3efc4a5306443459d6b1e0aeacea0535d4"
+    },
+    {
+      "bytes": 3082,
+      "path": "agent-base/frontier/task/repo/plots/Figure10/smem_reg_5090.py",
+      "sha256": "sha256:9feb05e26481e8bd9a299b66b261a3a9db03717ef28367580885e19476de7c2b"
+    },
+    {
+      "bytes": 6719,
+      "path": "agent-base/frontier/task/repo/plots/Figure11/lowrank.py",
+      "sha256": "sha256:c2ab422dad4351e15e79b79fcc6f1df975f9dad1ba6108cbce471b1f2f90d08d"
+    },
+    {
+      "bytes": 28690,
+      "path": "agent-base/frontier/task/repo/plots/Figure8/block_level_square.py",
+      "sha256": "sha256:6b0a23b9f73ec6ebfe9ef9a75cf704b48cb0171ad3a4d22199cfeaca32861ee3"
+    },
+    {
+      "bytes": 4306,
+      "path": "agent-base/frontier/task/repo/plots/Figure9/tflops_vs_blocksize.py",
+      "sha256": "sha256:7aaf04809f848200f894b07038eea767a7fa5868e52bdb02b09660b5fc439b81"
+    },
+    {
+      "bytes": 5739,
+      "path": "agent-base/frontier/task/repo/scripts/fp64_block_square_GH200.sh",
+      "sha256": "sha256:4d47e4458357a3cc57323e789757e1d24bcb40fa799cb6824afe9db7bd0b983e"
+    },
+    {
+      "bytes": 4748,
+      "path": "agent-base/frontier/task/repo/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu",
+      "sha256": "sha256:54ca1476848d70bedc469a04e24c85224305bf4a5926bc798ec807b81b7ee08e"
+    },
+    {
+      "bytes": 2540,
+      "path": "agent-gpu/Dockerfile",
+      "sha256": "sha256:c4cc390de971b6558f83bdbb6ab5ac90080557f48b67f5c6868f890e4dc053de"
+    },
+    {
+      "bytes": 429,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:55967cdec28cfea1a62ea58c6db261293acb2118aee5fde131a0faeebc18e252"
+    },
+    {
+      "bytes": 436,
+      "path": "datasets/train.json",
+      "sha256": "sha256:f9e63362fc2497f32ab520513f06013995eb6437d35b88d120a58bb42e5d0442"
+    },
+    {
+      "bytes": 79,
+      "path": "judge/.gitignore",
+      "sha256": "sha256:fbaec649f52d68fd0f8afb65ced6152fa29b50cb9371261f6a3617469e4692bf"
+    },
+    {
+      "bytes": 1145,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:e4c805bc1db48e30c293c72b29c2eaef9694965399ae4abebc355d204e511962"
+    },
+    {
+      "bytes": 6907,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:2acefdc284537e850387d763105b6a8de9203a1a32364872ef628723e006e8a0"
+    },
+    {
+      "bytes": 1183,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:9a6dbabe5c1fd5be8955fceda8a98c9838485fbc4d576ea03952d2f7dd3c84c6"
+    },
+    {
+      "bytes": 105,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:8ca7b85feb8f72e35ce2da71e42e873bfd8f7e8a4358f57efa1aa0eda9c15012"
+    },
+    {
+      "bytes": 21862,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:599776d7c05e569f3139d2fc15b4807e8db09bcb558ea0c62ba97c335b28c2ad"
+    },
+    {
+      "bytes": 9406,
+      "path": "judge/readme",
+      "sha256": "sha256:77b77b13645969c7e610817701d2a14352f9d57c2082164febf557f46e5d4f47"
+    },
+    {
+      "bytes": 8032,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:e104c534ba929b73d0ca1a7104aebdfc6bdb2a0a5a646d7119b14e2859d2228a"
+    },
+    {
+      "bytes": 8412,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:c414332018f410540cd1884daecd65d5c1ea9f4c5a4a7b78801fd2d1330a3d10"
+    },
+    {
+      "bytes": 651,
+      "path": "judge/testdata/host_symbol_attack_device_region.cu.inc",
+      "sha256": "sha256:b8106732a115c66b28c795dc28645b5b8e606c8c673a32f124d4aa09c11c2690"
+    },
+    {
+      "bytes": 702,
+      "path": "judge/testdata/one_block_one_product.patch",
+      "sha256": "sha256:b393098d1c0237d0c4d8ac66beac3551e7ebc09505ce5319b0733823183519a9"
+    },
+    {
+      "bytes": 4416,
+      "path": "policy.json",
+      "sha256": "sha256:39b7bd31917c3b48c9c8a744b7152f87faa149c85395349df212d231ef90d947"
+    },
+    {
+      "bytes": 1364,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:61c50215cc57a857127c99230724cdb7708e74f419af2370413ab5d1c30abb82"
+    },
+    {
+      "bytes": 7319,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:58f14c05c02f4aaa74d3730ea5db624fd3486db052fa97545f7d9bdbfbada969"
+    },
+    {
+      "bytes": 23507,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:2a8f0bd58270bea26764449d8cb2fddb8249d08322836c812c12dd5146c3a9ac"
+    },
+    {
+      "bytes": 27600,
+      "path": "verifier/fcs2_verifier_gpu.py",
+      "sha256": "sha256:5d791f5c18fb0fd7d8a567e1b8677ac6d20966ec66c59ece88f986ca2f751fa4"
+    },
+    {
+      "bytes": 357,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:0219b3b25507d481c3c6d4c11a5f67c6fbb00c899d0e14371a7ef1b82e809746"
+    },
+    {
+      "bytes": 3354,
+      "path": "verifier-gpu/Dockerfile",
+      "sha256": "sha256:05064903783998b30dbfdc415ed57b2a0b4e9e7e90f49d3a0d92875d304a6743"
+    }
+  ],
+  "problem_id": "kami_fp64_block_gemm",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
+    "evaluator_sha256": "sha256:f583cda810330417f97b1092d93f209208245d0894307c2efb7ee958ca423d15",
+    "last_task_commit": "91a8772b9309622910a29a32f9f9241701c367b4",
+    "path": "2.0/fcs2/problems/kami_fp64_block_gemm",
+    "repository": "private authoring repository",
+    "statement_sha256": "sha256:26a75151bd984c74b466f222b50a7312bb1d3abe11673e76794892cb5607f997",
+    "task_dir": "kami_fp64_block_gemm"
+  }
+}

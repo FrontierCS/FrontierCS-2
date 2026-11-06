@@ -1,4 +1,4 @@
-"""Judge of ragen_multi_turn_rl: multi-turn RAGEN PPO trajectory batches (#757 scoring note).
+"""Judge of ragen_multi_turn_rl: multi-turn RAGEN PPO trajectory batches.
 
 Runs on the CPU control image. The PPO runs of the submission and of the exact reference go to
 two [test_sandboxes.candidate] runners (one A100-80GB each, the Agent GPU image) at the same
@@ -541,7 +541,7 @@ def evaluate(tree: str) -> tuple[float, float, str, dict]:
             raise failure from cause
         if candidate_run_failure is not None:
             # The submission's own PPO process crashed or overran its deadline while the exact
-            # reference ran: a scored zero whose message names it (#757).
+            # reference ran: a scored zero whose message names it.
             return 0.0, 0.0, candidate_run_failure, (
                 {"private_execution": private_execution} if _final() else {})
         if candidate_rejection is not None:

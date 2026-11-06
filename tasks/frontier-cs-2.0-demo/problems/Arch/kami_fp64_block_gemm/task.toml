@@ -1,4 +1,4 @@
-# The definition of kami_fp64_block_gemm (schema frontier.task/v1, #757). Only what differs
+# The definition of kami_fp64_block_gemm (schema frontier.task/v1). Only what differs
 # between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
 # rest, and the category is this task's folder.
 #

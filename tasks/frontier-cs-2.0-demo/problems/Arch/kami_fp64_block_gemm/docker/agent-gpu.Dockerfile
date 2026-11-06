@@ -4,7 +4,7 @@
 # credential. It carries the CUDA 12.8 toolchain and the read-only source tree, and no part of
 # either suite. The SSH bootstrap comes from the shared gpu-tools image; zstandard is pinned to
 # the previous release's version. /opt/frontier/task-runtime (gpu/task_runtime.py, new with the
-# #757 migration) runs task commands with the image's toolchain environment, as on the other
+# task.toml migration) runs task commands with the image's toolchain environment, as on the other
 # GPU tasks. Build context: this task's root, with .frontier-generated/ added by the build.
 ARG GPU_TOOLS
 FROM ${GPU_TOOLS} AS frontier_gpu_tools

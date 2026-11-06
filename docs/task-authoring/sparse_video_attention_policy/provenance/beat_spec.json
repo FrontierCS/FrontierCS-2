@@ -1,0 +1,84 @@
+{
+  "unit": "one of four feedback (two Wan2.1, two HunyuanVideo) or twelve graded (eight Wan2.1, four HunyuanVideo) fixed model-prompt-seed clips, each run as an 81-frame, 1280x720, 50-step text-to-video generation with that model on one of four Driver-owned Verifier NVIDIA GPUs",
+  "metrics": [
+    {
+      "name": "e2e_latency_seconds",
+      "means": "wall-clock seconds for the checkpoint-resident WanPipeline or HunyuanVideoPipeline generation call of the workload's model, from a device synchronization immediately before output = pipe(...) through a device synchronization immediately after it; model loading, kernel compilation, attention replacement, MP4 export, and fidelity evaluation are excluded",
+      "source": "upstream/wan_t2v_inference.py and upstream/hyvideo_t2v_inference.py (the output = pipe(...) inference boundaries) and upstream/svg/timer.py::TimeLoggingContext (the artifact's synchronized CUDA timing mechanism)",
+      "better": "lower",
+      "clears_when": "candidate_e2e_latency_seconds(w) <= 0.96 * reference_e2e_latency_seconds(w)",
+      "tolerance": "requires a material latency reduction of at least 4%; equality or a smaller apparent improvement does not clear"
+    },
+    {
+      "name": "psnr_db",
+      "means": "the arithmetic mean over the workload's decoded RGB frames of 10*log10(1/frame_mse), where frame_mse is over all channels and pixels after conversion to [0,1], comparing the generated video with the fixed-seed dense video of the workload's model",
+      "source": "upstream/svg/utils/metric.py::load_video and upstream/svg/utils/metric.py::compute_quantization_error (the MSE and PSNR branches and returned PSNR key)",
+      "better": "higher",
+      "clears_when": "candidate_psnr_db(w) >= reference_psnr_db(w) - 0.25 dB",
+      "tolerance": "0.25 dB non-inferiority band"
+    },
+    {
+      "name": "ssim",
+      "means": "the arithmetic mean of the artifact's per-frame RGB SSIM values against the same fixed-seed dense video of the workload's model, using its 11x11 average-pooling computation with C1=0.01^2 and C2=0.03^2",
+      "source": "upstream/svg/utils/metric.py::compute_quantization_error (calculate_ssim and the returned SSIM key)",
+      "better": "higher",
+      "clears_when": "candidate_ssim(w) >= reference_ssim(w) - 0.01",
+      "tolerance": "0.01 non-inferiority band"
+    },
+    {
+      "name": "lpips",
+      "means": "the arithmetic mean of the artifact's per-frame VGG-LPIPS values against the same fixed-seed dense video of the workload's model, evaluated on the decoded [0,1] RGB tensors exactly as passed by the artifact",
+      "source": "upstream/svg/utils/metric.py (the module-level lpips.LPIPS(net=\"vgg\") model and compute_quantization_error's returned LPIPS key)",
+      "better": "lower",
+      "clears_when": "candidate_lpips(w) <= reference_lpips(w) + 0.005",
+      "tolerance": "0.005 non-inferiority band"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff for every graded workload w, (candidate_e2e_latency_seconds(w) <= 0.96 * reference_e2e_latency_seconds(w)) AND (candidate_psnr_db(w) >= reference_psnr_db(w) - 0.25 dB) AND (candidate_ssim(w) >= reference_ssim(w) - 0.01) AND (candidate_lpips(w) <= reference_lpips(w) + 0.005); otherwise beats_reference = 0.",
+  "solver_feedback": [
+    {
+      "name": "e2e_latency_seconds",
+      "means": "the candidate's own absolute end-to-end inference time for each workload; returned as independently sorted absolute samples, with no workload labels or cross-metric row correspondence",
+      "reveals_reference": "no — it contains only the candidate's measured duration and no SVG-EAR duration, ratio, delta, or per-workload comparison result"
+    },
+    {
+      "name": "psnr_db",
+      "means": "the candidate's own mean framewise PSNR against the dense target of the workload's model for each workload; returned as independently sorted absolute samples, with no workload labels or cross-metric row correspondence; Exact zero-MSE videos have mathematical +infinity PSNR. The absolute PSNR sample is encoded as the JSON string positive_infinity; private fidelity comparisons and continuous scoring use the original mathematical value.",
+      "reveals_reference": "no — it depends on the candidate and the dense correctness target, not on SVG-EAR's PSNR value"
+    },
+    {
+      "name": "ssim",
+      "means": "the candidate's own mean framewise SSIM against the dense target of the workload's model for each workload; returned as independently sorted absolute samples, with no workload labels or cross-metric row correspondence",
+      "reveals_reference": "no — it depends on the candidate and the dense correctness target, not on SVG-EAR's SSIM value"
+    },
+    {
+      "name": "lpips",
+      "means": "the candidate's own mean framewise VGG-LPIPS against the dense target of the workload's model for each workload; returned as independently sorted absolute samples, with no workload labels or cross-metric row correspondence",
+      "reveals_reference": "no — it depends on the candidate and the dense correctness target, not on SVG-EAR's LPIPS value"
+    }
+  ],
+  "progress_feedback": {
+    "name": "beat_spec_progress",
+    "means": "for each beat-spec metric, the passed and failed workload counts, total workload count, pass_percent, and fail_percent across the four development workloads",
+    "granularity": "25 percentage points per workload",
+    "reveals_reference": "no — workload identities, exact per-workload decisions, reference measurements, ratios, and deltas remain private"
+  },
+  "withheld": [
+    "reference_e2e_latency_seconds",
+    "reference_psnr_db",
+    "reference_ssim",
+    "reference_lpips",
+    "per_workload_latency_pass",
+    "per_workload_psnr_pass",
+    "per_workload_ssim_pass",
+    "per_workload_lpips_pass",
+    "per_workload_beats_reference",
+    "private workload identities",
+    "beat_spec_workload_passes",
+    "beats_reference",
+    "reference_score",
+    "margin"
+  ],
+  "statement_sentences": "The evaluator reports a separate beats_reference criterion in addition to continuous criterion progress. The development suite contains four fixed model-prompt-seed workloads (two Wan2.1 and two HunyuanVideo) and the graded suite contains twelve (eight Wan2.1 and four HunyuanVideo); one Driver-owned runner keeps four H100s and executes the graded suite in three four-workload waves. For every graded workload, the submitted implementation must reduce end-to-end GPU generation latency by at least 4% while remaining non-inferior to the SVG-EAR reference within 0.25 dB PSNR, 0.01 SSIM, and 0.005 LPIPS. All four comparisons must hold on all twelve graded workloads, and fidelity is measured against the corresponding fixed-seed dense generation of the same model.",
+  "comments": "I checked reproduction.json first: accelerator_required is nvidia_gpu, and the authentic spine is upstream/scripts/wan/wan_t2v_720p_ear.sh -> upstream/wan_t2v_inference.py -> WanAttn_EARAttn_Processor and the CUDA/FlashInfer EAR routines. The paper's direct fidelity metrics PSNR, SSIM, and LPIPS are all implemented together in upstream/svg/utils/metric.py; its end-to-end efficiency quantity is grounded at the pipeline call and in the artifact's CUDA timing support. The author must execute at most four submitted-implementation workloads concurrently on four Driver-owned Verifier H100/SM90a GPUs, pin the checkpoint/revision, prompts, negative prompt, seeds, 1280x720 dimensions, 81 frames, 50 denoising steps, software stack, LPIPS weights, video codec, and decode path, and use the identical dense video target for candidate and SVG-EAR. The four-workload feedback suite uses one wave; the eight-workload graded suite reuses the same four GPUs for a second wave. Load the model and compile/warm the kernels before timing, synchronize at both timing boundaries, and prepare candidate and reference with the same one-workload-per-GPU process isolation; the reference values must be established and retained privately. The 4% latency threshold is one percentage point beyond the largest 3.01% apparent speedup observed in an unchanged staging reference replay; small absolute fidelity bands prevent decoded-video measurement noise from requiring accidental strict improvement. Return independently sorted absolute development samples for each metric, without workload labels or a shared order across metrics. Aggregate private decisions into metric-level passed/failed counts and percentages for development feedback, but never return reference values, ratios, deltas, margins, workload identities attached to decisions, or workload-level pass bits; do not average across workloads when setting beats_reference. MSE was not added as a second encoding of fidelity because the paper's generation-quality table reports PSNR/SSIM/LPIPS, while VBench, density, and FLOP diagnostics are outside the selected authentic latency-versus-fidelity outcome and are not substitutes for measured end-to-end latency. Exact zero-MSE videos have mathematical +infinity PSNR. The absolute PSNR sample is encoded as the JSON string positive_infinity; private fidelity comparisons and continuous scoring use the original mathematical value. 2026-10-15 HunyuanVideo extension: the same per-workload, per-metric rule now also covers four graded and two development HunyuanVideo clips (upstream/scripts/hyvideo/hyvideo_t2v_720p_ear.sh -> upstream/hyvideo_t2v_inference.py -> Hunyuan_EARAttn_Processor), run at 81 frames (21 latent frames) like Wan rather than upstream's 129. Graded runs in three four-workload waves (Wan, Wan, HunyuanVideo); the evaluator and Driver timeout is 12,600 seconds. HunyuanVideo dense/reference targets and their latency replay calibration are generated with the same one-process-per-GPU, four-concurrent protocol before release; until then the evaluator fails closed."
+}

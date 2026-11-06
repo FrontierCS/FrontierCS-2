@@ -1,4 +1,4 @@
-"""Judge of mujoco_playground_cpu: Go1 joystick policy training, on one H100 (#757 scoring note).
+"""Judge of mujoco_playground_cpu: Go1 joystick policy training, on one H100.
 
 Score (raw_score = score_unbounded, 0..100): r = mean over workloads of the trained policy's
 mean summed episode reward in the pristine environment; score = 100 r / (r + 30) for r > 0,

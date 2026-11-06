@@ -3,7 +3,7 @@
 
 # The authoritative path runs the workload model's retained 720p shell entrypoint for the
 # candidate. Dense and reference videos prepared once through the same path are hash-checked,
-# decoded and scored as the paired target and reference. Unit tests replace only the GPU runner.Judge of sparse_video_attention_policy for the shared verifier (#757): evaluate(tree), check_tree.
+# decoded and scored as the paired target and reference. Unit tests replace only the GPU runner.Judge of sparse_video_attention_policy for the shared verifier: evaluate(tree), check_tree.
 
 Score: per workload, with T the candidate latency, Td the fixed pre-measured dense latency and
 P, S, L the 81-frame means of PSNR, SSIM and VGG-LPIPS against the fixed dense video,

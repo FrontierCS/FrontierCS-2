@@ -1,0 +1,20 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "dynamic_tanh",
+  "domain": "machine_learning_systems",
+  "promotion": {},
+  "generated_at": null,
+  "generator": {"pipeline": "frontiersmith2", "commit": null, "run_id": "r_top01_2503.10622", "candidate_id": "cand_000", "config_sha256": null},
+  "paper": {"paper_id": null, "title": null, "authors": [], "year": null, "venue": null, "pdf_url": null, "doi": null},
+  "rank": {"rank": null, "overall_score": null, "recommendation": null, "scores": {}, "risks": []},
+  "artifact": {"repo_url": null, "commit": null, "cloned_at": null, "census": {}},
+  "contribution": {
+    "title": "Learned transformer layer mapping",
+    "summary": "Optimize the Dynamic Tanh implementation while preserving model accuracy and reducing training latency.",
+    "paper_location": null,
+    "code_location": ["dynamic_tanh.py", "solver_extensions/"],
+    "metric": "top-1 accuracy and training latency"
+  },
+  "host": null,
+  "provenance_note": "Standardized from an existing native task whose source lock records packaging identities but no external repository or source commit. Generator run and candidate identifiers are preserved from policy metadata; paper, ranking, promotion, artifact, and measured-host history were unavailable and remain null or empty."
+}

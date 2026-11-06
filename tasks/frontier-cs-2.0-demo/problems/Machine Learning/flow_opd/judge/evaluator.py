@@ -1,4 +1,4 @@
-"""GPU evaluator for flow_opd on the shared verifier (#757).
+"""GPU evaluator for flow_opd on the shared verifier.
 
 The shared verifier applies the patch with the task's edit-scope rules, runs check_tree (only the
 two computational bodies may change; UTF-8 files) and calls evaluate(tree): the starter (bundle

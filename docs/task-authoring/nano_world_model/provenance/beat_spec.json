@@ -1,0 +1,61 @@
+{
+  "unit": "one fixed held-out Point Maze trajectory clip consisting of one context frame followed by three action-conditioned predicted frames; from beat spec v3 the development suite has four clips and the graded suite six (the two original clips of each suite plus non-overlapping clips from the same suite episodes)",
+  "metrics": [
+    {
+      "name": "psnr",
+      "means": "the arithmetic mean, in dB, of per-frame PSNR over the clip's three decoded predicted frames against the corresponding ground-truth frames; the context frame is excluded",
+      "source": "upstream/src/utils/metrics.py::Evaluator.compute_psnr and Evaluator.evaluate_all (predicted-frame slicing and averaging); reported as PSNR in upstream/docs/evaluation.md",
+      "better": "higher",
+      "clears_when": "candidate_psnr(w) > reference_psnr(w)",
+      "tolerance": "none"
+    },
+    {
+      "name": "ssim",
+      "means": "the arithmetic mean of per-frame SSIM over the clip's three decoded predicted frames against the corresponding ground-truth frames; the context frame is excluded",
+      "source": "upstream/src/utils/metrics.py::Evaluator.compute_ssim and Evaluator.evaluate_all (predicted-frame slicing and averaging); reported as SSIM in upstream/docs/evaluation.md",
+      "better": "higher",
+      "clears_when": "candidate_ssim(w) > reference_ssim(w)",
+      "tolerance": "none"
+    },
+    {
+      "name": "lpips",
+      "means": "the arithmetic mean of per-frame LPIPS perceptual distance over the clip's three decoded predicted frames against the corresponding ground-truth frames; the context frame is excluded",
+      "source": "upstream/src/utils/metrics.py::Evaluator.compute_lpips and Evaluator.evaluate_all (predicted-frame slicing and averaging); reported as LPIPS in upstream/docs/evaluation.md",
+      "better": "lower",
+      "clears_when": "candidate_lpips(w) < reference_lpips(w)",
+      "tolerance": "none"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff for every graded workload w (all six graded clips, including the beat spec v3 clips), (candidate_psnr(w) > reference_psnr(w)) AND (candidate_ssim(w) > reference_ssim(w)) AND (candidate_lpips(w) < reference_lpips(w)); otherwise beats_reference = 0.",
+  "solver_feedback": [
+    {
+      "name": "psnr",
+      "means": "scalar arithmetic mean of the candidate's own absolute psnr measurements across the four development clips; no per-workload rows, identifiers, or final-suite measurements",
+      "reveals_reference": "No, it contains only candidate development measurements aggregated without workload identities. No reference values, ratios, deltas, margins, private rows, or final metrics. Train additionally exposes only beat_spec_progress counts and workload pass/fail percentages per metric."
+    },
+    {
+      "name": "ssim",
+      "means": "scalar arithmetic mean of the candidate's own absolute ssim measurements across the four development clips; no per-workload rows, identifiers, or final-suite measurements",
+      "reveals_reference": "No, it contains only candidate development measurements aggregated without workload identities. No reference values, ratios, deltas, margins, private rows, or final metrics. Train additionally exposes only beat_spec_progress counts and workload pass/fail percentages per metric."
+    },
+    {
+      "name": "lpips",
+      "means": "scalar arithmetic mean of the candidate's own absolute lpips measurements across the four development clips; no per-workload rows, identifiers, or final-suite measurements",
+      "reveals_reference": "No, it contains only candidate development measurements aggregated without workload identities. No reference values, ratios, deltas, margins, private rows, or final metrics. Train additionally exposes only beat_spec_progress counts and workload pass/fail percentages per metric."
+    }
+  ],
+  "withheld": [
+    "reference_psnr",
+    "reference_ssim",
+    "reference_lpips",
+    "per_workload_metric_pass",
+    "workload_ids",
+    "per_workload_metric_rows",
+    "beat_spec_workload_passes",
+    "beats_reference",
+    "reference_ratios_deltas_margins",
+    "final_suite_metrics"
+  ],
+  "statement_sentences": "A separate, stricter beats_reference criterion is evaluated per held-out Point Maze trajectory clip and must hold on every graded clip (six in the graded suite, four in development). For each clip, the three decoded predicted frames after the single context frame are compared with their targets using PSNR, SSIM, and LPIPS. The criterion is satisfied only if, on every clip, PSNR and SSIM are both strictly higher than the hidden reference implementation's values and LPIPS is strictly lower.",
+  "comments": "Checked reproduction.json first: accelerator_required is nvidia_gpu. The author must execute the submitted sampler and native model/VAE decode-and-metric path on the authoritative Driver-owned Verifier NVIDIA GPU runner, using fixed disjoint held-out clips, fixed actions, fixed seeds, one context frame, and exactly three scored future frames. The metric path is upstream/src/callbacks.py::MetricsLogger.on_validation_batch_end -> upstream/src/experiments/train_experiment.py::NanoWMTrainingModule.log_images -> upstream/src/utils/metrics.py::Evaluator.evaluate_all; evaluator inputs are clamped to [-1,1], PSNR/SSIM are rescaled to [0,1], and Point Maze LPIPS uses the artifact's VGG-backed LPIPS selection. FID is deliberately absent because the artifact pools frames across clips to compute it, so it has no like-for-like per-workload value; FVD is skipped for three-frame predictions. No tolerance is specified because reproduction.json says genuine GPU evaluation and tolerance calibration were deferred, so no measured repeatability bound exists. The author must measure candidate and hidden reference with the identical pinned checkpoint, VAE, dependencies, GPU protocol, and deterministic seed, must preserve full precision for comparison, and must not return reference values, candidate/reference ratios or deltas, margins, or workload-identified pass/fail results. Development feedback contains only scalar summaries of candidate absolute metrics plus beat_spec_progress.<metric> counts and workload pass/fail percentages. Workload IDs and rows remain private. Final metrics are never solver-visible. This feedback-only correction leaves every private per-workload comparison and the strict conjunction unchanged. Beat spec v3 (2026-10-08): 3/8 formal model runs (2/3 on the latest version) cleared v2. Each suite had only two clips, so a sampler change that happened to improve PSNR, SSIM and LPIPS on two clips (six strict comparisons) passed; with three train calls the pass/fail signal is also very coarse. v3 keeps the three metrics, their strict rules, the original four clips and the continuous score (still over each suite's two original clips), and adds non-overlapping clips from the same bundled episodes: two development clips (episodes 392 and 791) and four graded clips (episodes 565 and 315), so PASS needs 12 and 18 strict per-clip improvements. FID (pooled across clips) and FVD (three-frame clips) remain out of scope as before. Not GPU-validated: no A10G run of the four- and six-clip suites exists, and whether the data loader accepts the added slices is unconfirmed. Release refresh 2026-10-11: the per-invocation limit is raised from 1,650 s to 4,950 s (the same 825 s per graded clip), the final limit from 3,600 s to 10,200 s and the Verifier GPU quota from 3,600 s to 20,400 s. ESTIMATE of Verifier GPU use per run: about 3,700-4,400 s (basis: two-clip train verifications recorded at 147-646 s from submission to feedback in formal runs, doubled for train and tripled for final). The platform reference qualification must confirm the timings."
+}

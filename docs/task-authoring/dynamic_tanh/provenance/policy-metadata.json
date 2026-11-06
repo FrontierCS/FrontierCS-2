@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "accelerator": {
+      "agent_gpu_interface": "frontier.gpu-helper/v3",
+      "agent_sandbox": true,
+      "allowed_types": [
+        "A100-80GB"
+      ],
+      "credential_reaches_agent": false,
+      "provider": "driver-managed",
+      "verifier_gpu": true
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 3,
+      "solver_visible_metrics": [
+        "top1_accuracy_pct",
+        "training_latency_ms",
+        "inference_latency_ms",
+        "candidate_diagnostic"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2503.10622"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {},
+    "runtime": {
+      "allowed_paths": [
+        "dynamic_tanh.py",
+        "solver_extensions/"
+      ],
+      "language": "python",
+      "submission_kind": "patch"
+    }
+  },
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform."
+}

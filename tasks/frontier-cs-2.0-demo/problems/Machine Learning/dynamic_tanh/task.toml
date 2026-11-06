@@ -1,4 +1,4 @@
-# The definition of dynamic_tanh (schema frontier.task/v1, #757). Only what differs between
+# The definition of dynamic_tanh (schema frontier.task/v1). Only what differs between
 # tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
 # category is this task's folder.
 #
@@ -29,7 +29,7 @@ eval_timeout_seconds = 1800
 max_bytes = 262144
 allowed_paths = ["dynamic_tanh.py", "solver_extensions/"]
 max_changed_files = 32            # as before; the statement tells the Agent the same
-# Process and harness introspection (Preview #647): no file the submission owns may name
+# Process and harness introspection: no file the submission owns may name
 # these, comments included (judge-only; the statement lists them).
 forbidden_content = ['argv|__main__|\binspect\b|_getframe|currentframe|f_back|f_globals|f_locals|f_code|\btraceback\b|getpid|getppid|/proc|environ|getenv|sys\.modules|cmdline|program_invocation']
 ignore_case = true

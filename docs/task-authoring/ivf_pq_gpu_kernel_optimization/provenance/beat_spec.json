@@ -1,0 +1,66 @@
+{
+  "unit": "One original SIFT IVF-PQ workload on one H100; only search is timed over the same fixed index and paired fresh queries. From beat spec v3 final adds two hidden strict-only shapes: the full 10,000-query SIFT test set (nprobe 32) and large-k selection (k = 1024, nprobe 128).",
+  "beats_reference": "Conjunction of all three comparisons on each selected workload, four train or all eight public-plus-hidden final (six original plus two v3 strict-only shapes).",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "metrics": [
+    {
+      "name": "search_latency_ms",
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "means": "Median of seven synchronized search latencies; equality fails.",
+      "source": "judge/evaluator.py and public immutable benchmark/ivfpq_worker.py",
+      "tolerance": "strict comparison; equality fails"
+    },
+    {
+      "name": "iso_recall",
+      "better": "higher",
+      "clears_when": "candidate >= reference",
+      "means": "Worst of seven timed-call iso-result recalls against frozen naive full-nprobe ADC ranking; equality allowed, no added band.",
+      "source": "judge/evaluator.py and public immutable benchmark/ivfpq_worker.py",
+      "tolerance": "equality allowed; zero non-inferiority band"
+    },
+    {
+      "name": "nn_recall",
+      "better": "higher",
+      "clears_when": "candidate >= reference",
+      "means": "Worst of seven timed-call recall@k values in the IVFADC sense: the fraction of queries whose exact nearest neighbor in the uncompressed SIFT base (float32 brute force on the actual bf16-rounded queries, outside timing) is among the k returned vectors; a returned vector at the nearest distance (duplicate) counts, padding never counts.",
+      "source": "public immutable benchmark/ivfpq_worker.py (exact_nearest_distances, nn_recall) and judge/evaluator.py; Jegou, Douze and Schmid, Product Quantization for Nearest Neighbor Search, TPAMI 2011, recall@R; Johnson, Douze and Jegou, Billion-scale similarity search with GPUs, R@k",
+      "tolerance": "equality allowed; zero non-inferiority band"
+    }
+  ],
+  "solver_feedback": [
+    {
+      "name": "geomean_speedup",
+      "reveals_reference": "no - depends on candidate and the public naive oracle, with workload labels removed",
+      "means": "Geometric mean of per-workload median paired speedup over naive."
+    },
+    {
+      "name": "search_latency_ms",
+      "reveals_reference": "no - depends on candidate and the public naive oracle, with workload labels removed",
+      "means": "Independently sorted candidate median search latencies, without workload labels."
+    },
+    {
+      "name": "iso_recall",
+      "reveals_reference": "no - depends on candidate and the public naive oracle, with workload labels removed",
+      "means": "Independently sorted candidate worst timed recalls, without workload labels."
+    },
+    {
+      "name": "nn_recall",
+      "reveals_reference": "no - depends on the candidate and the exact brute-force nearest neighbors, with workload labels removed",
+      "means": "Independently sorted candidate worst timed nearest-neighbor recalls, without workload labels."
+    }
+  ],
+  "withheld": [
+    "reference measurements",
+    "workload identities",
+    "per-workload verdicts",
+    "beats_reference",
+    "reference_score",
+    "margin"
+  ],
+  "validity": "Every timed candidate call has iso-recall >= 0.99; valid neighbor IDs cannot repeat. -1/+inf padding is legal and excluded from hits.",
+  "statement_sentences": "Every selected workload must have strictly faster median search latency, no worse worst-timed iso-recall and no worse worst-timed exact nearest-neighbor recall@k than the optimized reference. Independent continuous score uses only paired speedups over naive on the original six workloads.",
+  "comments": "Beat spec v3 (2026-10-08): 2/6 formal model runs (2/3 on the latest version) cleared v2, and passing and failing runs scored alike (77.25-77.5 PASS, 72.8-78.0 FAIL), so the conjunction was decided by near-ties in latency on six bandwidth-bound k=100 workloads. v3 keeps both metrics, all six workloads, the 0.99 validity gate, the distance gate and the continuous score definition, and adds the IVFADC paper's quality metric (recall@k against exact nearest neighbors of the uncompressed database) and two final-only hidden shapes in paper regimes the v2 suite does not reach: the full 10,000-query SIFT1M test set and k = 1024 selection (the GPU k-selection range of Johnson et al.). Both new shapes enter PASS only; the continuous score keeps the original six. Measured 2026-10-11 on one Modal H100 80 GB (main's published verifier-gpu image with this source's judge and repo laid over it): only the new hidden shapes, one worker each; this is a precheck, not a platform reference qualification. The frozen reference is valid on both: sift_q1k_np128_k1024 iso_recall 0.999999, nn_recall 0.9912, search 1,077 ms against naive 14,959 ms, worker 259 s, peak 39.4 GB; sift_q10k_np32 iso_recall 0.999999, nn_recall 0.9279, search 19.8 ms against naive 37,791 ms, worker 382 s, peak 32.6 GB. The eight-workload final is about 4,140-4,380 s (recorded six-workload finals of 2,857-3,095 s plus two workers per new shape), inside the 14,400 s limit set in this refresh (5,400 s before; Verifier GPU quota 25,200 s, 16,200 s before). A full eight-workload final with a candidate has not been run."
+}

@@ -1,4 +1,4 @@
-"""Judge of representation_frechet_loss: FeatureQueue population statistics, on one GPU (#757 scoring note).
+"""Judge of representation_frechet_loss: FeatureQueue population statistics, on one GPU.
 
 Score (raw_score = score_unbounded): per workload, FDr6 = mean of the six normalized held-out
 Frechet distances below; score = 100 / (1 + mean_w(FDr6)). A failed validity guard, and a failure

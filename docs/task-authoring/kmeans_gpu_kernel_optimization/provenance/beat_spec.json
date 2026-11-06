@@ -1,0 +1,72 @@
+{
+  "beats_reference": "conjunction of every required metric on every workload in the selected suite (four train or all six public and hidden final)",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "calibration_status": "reviewed_bands_pending_modal_validation",
+  "comments": "These reviewed comparison rules are frozen for the pilot. Modal replay validates the implementation and runtime evidence; it does not automatically change the bands. The continuous score remains independent of reference.patch.",
+  "metrics": [
+    {
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "means": "median synchronized H100 wall-clock milliseconds for the judge-owned two-step Lloyd loop after two warmups",
+      "name": "lloyd_loop_latency_ms",
+      "source": "judge/evaluator.py",
+      "tolerance": "strict comparison; equality fails"
+    },
+    {
+      "better": "lower",
+      "clears_when": "candidate <= reference * 1.05",
+      "means": "worst timed repetition of sum_i ||x_i - final_centroids[final_labels_i]||^2 in float32",
+      "name": "labeled_inertia",
+      "source": "judge/evaluator.py",
+      "tolerance": "reviewed 5% relative non-inferiority band"
+    },
+    {
+      "better": "lower",
+      "clears_when": "candidate <= reference + 0.002",
+      "means": "worst timed repetition fraction whose returned final label is strictly farther than the exact float32 nearest centroid supplied to the last step",
+      "name": "label_mismatch_fraction",
+      "source": "judge/evaluator.py",
+      "tolerance": "reviewed 0.002 absolute non-inferiority band"
+    }
+  ],
+  "progress_feedback": {
+    "granularity": "one quarter of the train suite; one sixth of the private final suite",
+    "means": "per-metric passed/failed workload counts and percentages across the selected suite",
+    "name": "beat_spec_progress",
+    "reveals_reference": "no; only aggregate pass/fail counts and percentages are returned, without reference values or per-workload decisions"
+  },
+  "solver_feedback": [
+    {
+      "means": "independent geometric-mean speedup over the naive starter",
+      "name": "geomean_speedup",
+      "reveals_reference": "no; speedup is measured against the naive starter, independently of the optimized reference"
+    },
+    {
+      "means": "independently sorted candidate absolute latency samples, without workload labels",
+      "name": "lloyd_loop_latency_ms",
+      "reveals_reference": "no; only sorted candidate absolute measurements are returned, without workload labels or reference values"
+    },
+    {
+      "means": "independently sorted candidate absolute inertia samples, without workload labels",
+      "name": "labeled_inertia",
+      "reveals_reference": "no; only sorted candidate absolute measurements are returned, without workload labels or reference values"
+    },
+    {
+      "means": "independently sorted candidate absolute mismatch samples, without workload labels",
+      "name": "label_mismatch_fraction",
+      "reveals_reference": "no; only sorted candidate absolute measurements are returned, without workload labels or reference values"
+    }
+  ],
+  "unit": "one deterministic planted-cluster workload on one exact H100; the timed unit is the judge-owned loop of two kmeanslib.step calls",
+  "withheld": [
+    "reference measurements",
+    "workload identities attached to measurements",
+    "per-workload decisions",
+    "beats_reference",
+    "reference_score",
+    "margin"
+  ],
+  "statement_sentences": "Every required comparison on every workload must clear for beats_reference=1; final requires 6/6 for each of the three metrics. Averages cannot compensate. For every workload, candidate latency must be strictly lower than reference latency, candidate labeled inertia must be at most 1.05 * reference, and candidate label mismatch fraction must be at most reference + 0.002."
+}

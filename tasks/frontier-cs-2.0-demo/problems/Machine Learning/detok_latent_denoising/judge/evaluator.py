@@ -1,4 +1,4 @@
-"""Judge of detok_latent_denoising: latent-denoising tokenizer continuation, on one GPU (#757 scoring note).
+"""Judge of detok_latent_denoising: latent-denoising tokenizer continuation, on one GPU.
 
 Score: per workload, with dO, dE the ordinary / EMA quantized-PNG PSNR differences to the
 reference (dB), LO, LE the LPIPS values and T the method-process wall times,
@@ -351,7 +351,7 @@ def evaluate(tree: str):
     workloads = sorted(p for p in suite.iterdir() if p.is_dir())
     if len(workloads) != 3:
         raise RuntimeError("the selected suite must contain three workloads")
-    # One untimed warm-up before any timed process (issue #315): the first
+    # One untimed warm-up before any timed process: the first
     # process of the evaluation pays the cold cost of the first checkpoint
     # read and GPU initialisation, which previously fell only on the
     # candidate at workload-0. Run the reference on the first workload and

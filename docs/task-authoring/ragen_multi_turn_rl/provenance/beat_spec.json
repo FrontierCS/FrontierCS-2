@@ -1,0 +1,46 @@
+{
+  "unit": "one GPU-executed SimpleSokoban rollout group: all trajectories in the group share one fixed procedurally generated initial state (the same environment configuration and seed) and use the workload's fixed generation settings",
+  "metrics": [
+    {
+      "name": "success_rate",
+      "means": "the fraction of trajectories in the rollout group that terminate with every box on a target",
+      "source": "ragen/llm_agent/es_manager.py::EnvStateManager.get_rollout_states emits the per-trajectory SimpleSokoban success value from EnvStatus; ragen/llm_agent/ctx_manager.py::ContextManager.get_lm_inputs carries group_ids and reports the aggregated SimpleSokoban/success rollout metric",
+      "better": "higher",
+      "clears_when": "candidate_success_rate[w] > reference_success_rate[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "average_episodic_reward",
+      "means": "the arithmetic mean, across trajectories in the rollout group, of each trajectory's undiscounted sum of genuine SimpleSokoban environment rewards",
+      "source": "ragen/env/sokoban/env.py::SokobanEnv.step; ragen/llm_agent/es_manager.py::EnvStateManager.step accumulates each turn into EnvStatus.rewards; average the per-trajectory sums of these original rewards, before ContextManager reward normalization.",
+      "better": "higher",
+      "clears_when": "candidate_average_episodic_reward[w] > reference_average_episodic_reward[w]",
+      "tolerance": "none"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 if and only if, for every graded rollout group w, (candidate_success_rate[w] > reference_success_rate[w]) AND (candidate_average_episodic_reward[w] > reference_average_episodic_reward[w]); otherwise beats_reference = 0.",
+  "solver_feedback": [
+    {
+      "name": "success_rate",
+      "means": "a single aggregate candidate-only arithmetic mean of success rates across development rollout groups; no per-group measurements, rows, or identifiers",
+      "reveals_reference": "no - only the candidate aggregate is exposed; no reference values, margins, ratios, private workload identities, or hidden-final metrics"
+    },
+    {
+      "name": "average_episodic_reward",
+      "means": "a single aggregate candidate-only arithmetic mean of average episodic rewards across development rollout groups; no per-group measurements, rows, or identifiers",
+      "reveals_reference": "no - only the candidate aggregate is exposed; no reference values, margins, ratios, private workload identities, or hidden-final metrics"
+    }
+  ],
+  "withheld": [
+    "reference_success_rate",
+    "reference_average_episodic_reward",
+    "workload_ids",
+    "per_workload_metrics",
+    "per_workload_pass_fail",
+    "reference_margins",
+    "reference_ratios",
+    "hidden_final_metrics"
+  ],
+  "statement_sentences": "A separate stricter `beats_reference` criterion is evaluated in addition to the continuous score. On every graded fixed-initial-state SimpleSokoban rollout group, your GPU-executed implementation must achieve both a strictly higher trajectory success rate and a strictly higher average undiscounted episodic reward than the reference implementation on that same group. The criterion passes only if both comparisons hold for every group; reference values and margins are not disclosed.",
+  "comments": "Checked reproduction.json: accelerator_required is nvidia_gpu, so the author must run each submitted ContextManager implementation in the authentic NVIDIA execution path rooted at `python train.py --config-name _2_sokoban`, including real vLLM generation and downstream veRL/FSDP consumption of its DataProto; a CPU-only tensor harness is not an authoritative workload. Checked the reward and success flow through SokobanEnv.step, EnvStateManager.step/get_rollout_states, ContextManager.get_lm_inputs/formulate_rollouts, LLMAgentProxy.rollout, and the trainer validation path. The author must pin and record the environment seed/configuration, rollout group size, model revision, sampling/generation seeds and settings, and action horizon for each workload, preserve same-initial-state group identities, compute reward from original unnormalized environment rewards (not normalized PPO rm_scores), and reject structurally invalid DataProto batches before metric comparison. No empirical repeatability or noise estimate is present in the artifact, so no tolerance is justified. Do not expose reference values, margins, ratios, pass/fail identities, or any relative per-workload quantity; the pipeline's aggregate pass/fail counts and percentages are sufficient criterion feedback."
+}

@@ -1,0 +1,89 @@
+{
+  "unit": "one private NVIDIA H100 workload: a training seed, an evaluation condition (flat = Go1JoystickFlatTerrain default config; push = the same with pert_config.enable = True; rough = Go1JoystickRoughTerrain default config) and an evaluation seed. Candidate and reference procedures are each trained once per training seed in the same verification on the same GPU under the same 720-second wall-clock budget; each resulting deterministic policy is rolled out for 2048 environments x 1000 control steps in the pristine upstream environment with upstream command sampling",
+  "metrics": [
+    {
+      "name": "episode_reward",
+      "means": "per-episode sum of the environment's total step reward state.reward (the quantity whose episode sum Brax reports as eval/episode_reward in learning/train_jax_ppo.py) over an environment's alive steps, mean over the 2048 parallel environments of one 1000-control-step evaluation. An environment is alive at a control step if it has not terminated at or before that step; steps after the first termination contribute nothing. Falling early lowers it.",
+      "source": "evaluated by judge_deps/evaluate_policy.py in the pristine environment at upstream commit 254c38f9c240012518dbe61d1267bc375ff827e4 with the unmodified reward_config.scales; mujoco_playground/_src/locomotion/go1/joystick.py::Joystick.step `reward = jp.clip(sum(rewards.values()) * self.dt, 0.0, 10000.0)` returned as state.reward",
+      "better": "higher",
+      "clears_when": "candidate_episode_reward[w] > reference_episode_reward[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "tracking_lin_vel",
+      "means": "per-episode sum of state.metrics[\"reward/tracking_lin_vel\"], the scaled linear-velocity command tracking reward term over an environment's alive steps, mean over the 2048 parallel environments of one 1000-control-step evaluation. An environment is alive at a control step if it has not terminated at or before that step; steps after the first termination contribute nothing. Falling early lowers it.",
+      "source": "evaluated by judge_deps/evaluate_policy.py in the pristine environment at upstream commit 254c38f9c240012518dbe61d1267bc375ff827e4 with the unmodified reward_config.scales; mujoco_playground/_src/locomotion/go1/joystick.py::Joystick.step `state.metrics[f\"reward/{k}\"] = v` with _reward_tracking_lin_vel and reward_config.scales.tracking_lin_vel = 1.0",
+      "better": "higher",
+      "clears_when": "candidate_tracking_lin_vel[w] > reference_tracking_lin_vel[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "tracking_ang_vel",
+      "means": "per-episode sum of state.metrics[\"reward/tracking_ang_vel\"], the scaled yaw-rate command tracking reward term over an environment's alive steps, mean over the 2048 parallel environments of one 1000-control-step evaluation. An environment is alive at a control step if it has not terminated at or before that step; steps after the first termination contribute nothing. Falling early lowers it.",
+      "source": "evaluated by judge_deps/evaluate_policy.py in the pristine environment at upstream commit 254c38f9c240012518dbe61d1267bc375ff827e4 with the unmodified reward_config.scales; mujoco_playground/_src/locomotion/go1/joystick.py::Joystick.step `state.metrics[f\"reward/{k}\"] = v` with _reward_tracking_ang_vel and reward_config.scales.tracking_ang_vel = 0.5",
+      "better": "higher",
+      "clears_when": "candidate_tracking_ang_vel[w] > reference_tracking_ang_vel[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "energy",
+      "means": "state.metrics[\"reward/energy\"], the scaled mechanical-power penalty (sum over joints of |joint velocity| * |actuator force|, times scale -0.001), summed over all 2048 environments and all of their alive steps of one 1000-control-step evaluation and divided by the total number of alive steps (a per-alive-step mean, not an episode sum). An environment is alive at a control step if it has not terminated at or before that step; steps after the first termination contribute nothing. The upstream value is a penalty already multiplied by its negative scale, so higher (closer to zero) is better; per-step normalisation means a policy is neither credited for falling early nor penalised for surviving longer than the reference.",
+      "source": "evaluated by judge_deps/evaluate_policy.py in the pristine environment at upstream commit 254c38f9c240012518dbe61d1267bc375ff827e4 with the unmodified reward_config.scales; mujoco_playground/_src/locomotion/go1/joystick.py::Joystick.step `state.metrics[f\"reward/{k}\"] = v` with _cost_energy and reward_config.scales.energy = -0.001",
+      "better": "higher",
+      "clears_when": "candidate_energy[w] > reference_energy[w]",
+      "tolerance": "none"
+    },
+    {
+      "name": "action_rate",
+      "means": "state.metrics[\"reward/action_rate\"], the scaled action-smoothness penalty (sum over joints of the squared change between consecutive actions, times scale -0.01), summed over all 2048 environments and all of their alive steps of one 1000-control-step evaluation and divided by the total number of alive steps (a per-alive-step mean, not an episode sum). An environment is alive at a control step if it has not terminated at or before that step; steps after the first termination contribute nothing. The upstream value is a penalty already multiplied by its negative scale, so higher (closer to zero) is better; per-step normalisation means a policy is neither credited for falling early nor penalised for surviving longer than the reference.",
+      "source": "evaluated by judge_deps/evaluate_policy.py in the pristine environment at upstream commit 254c38f9c240012518dbe61d1267bc375ff827e4 with the unmodified reward_config.scales; mujoco_playground/_src/locomotion/go1/joystick.py::Joystick.step `state.metrics[f\"reward/{k}\"] = v` with _cost_action_rate and reward_config.scales.action_rate = -0.01",
+      "better": "higher",
+      "clears_when": "candidate_action_rate[w] > reference_action_rate[w]",
+      "tolerance": "none"
+    }
+  ],
+  "beats_reference": "beats_reference = 1 iff all validity guards pass and, for every graded workload w, candidate_episode_reward[w] > reference_episode_reward[w] AND candidate_tracking_lin_vel[w] > reference_tracking_lin_vel[w] AND candidate_tracking_ang_vel[w] > reference_tracking_ang_vel[w] AND candidate_energy[w] > reference_energy[w] AND candidate_action_rate[w] > reference_action_rate[w]; otherwise beats_reference = 0. Validity requires a patch confined to the editable surface, candidate training that finishes inside the wall-clock budget on the Verifier GPU and returns an exportable policy of the declared observation/action interface, finite actions and measurements, and evaluation of both sides by the same hash-verified pristine environment code, evaluation seed, environment count and step count.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "development_mean_episode_reward",
+      "means": "arithmetic mean over the development workloads of the candidate policy's own absolute episode_reward measurement, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate policy's own rollouts in the pristine environment, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_tracking_lin_vel",
+      "means": "arithmetic mean over the development workloads of the candidate policy's own absolute tracking_lin_vel measurement, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate policy's own rollouts in the pristine environment, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_tracking_ang_vel",
+      "means": "arithmetic mean over the development workloads of the candidate policy's own absolute tracking_ang_vel measurement, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate policy's own rollouts in the pristine environment, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_energy",
+      "means": "arithmetic mean over the development workloads of the candidate policy's own absolute energy measurement, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate policy's own rollouts in the pristine environment, without a reference-relative value or workload identity"
+    },
+    {
+      "name": "development_mean_action_rate",
+      "means": "arithmetic mean over the development workloads of the candidate policy's own absolute action_rate measurement, with no ordered or per-workload values",
+      "reveals_reference": "no — it is computed solely from the candidate policy's own rollouts in the pristine environment, without a reference-relative value or workload identity"
+    }
+  ],
+  "withheld": [
+    "per_workload_episode_reward",
+    "per_workload_tracking_lin_vel",
+    "per_workload_tracking_ang_vel",
+    "per_workload_energy",
+    "per_workload_action_rate",
+    "all_final_workload_metrics",
+    "all_reference_values",
+    "all_candidate_reference_margins",
+    "training_and_evaluation_seeds"
+  ],
+  "statement_sentences": "In addition to the continuous score, a separate stricter beats-reference criterion compares your policy with the reference policy trained in the same verification, under the same budget, on the same hardware, on every graded workload. It is met only if all validity checks pass and, on every workload, your episode_reward, tracking_lin_vel, tracking_ang_vel, energy and action_rate are each strictly higher than the reference's, with no tolerance. Reference values, comparison margins, private workload identities, per-workload rows and all final measurements are not disclosed.",
+  "comments": "Metrics are quantities the upstream artifact itself reports for a trained policy: state.reward (whose episode sum is Brax's eval/episode_reward) and the per-term state.metrics[\"reward/<term>\"] values of the Go1 joystick environment, measured with the pristine reward scales. No composite is gated: the continuous score (100 * r / (r + 30) with r = max(0, mean_w episode_reward); 30 is a reference-independent challenge constant, the half-saturation reward, and the score has no finite ceiling) never enters beats_reference. episode_reward and the two tracking terms are per-episode sums until first termination; energy and action_rate are per-alive-step means, because with sums-until-first-termination a policy that falls earlier accumulates less penalty and would look better, and a candidate that survives longer than the reference (which falls in about 20% of rough-terrain episodes) would be penalised. The reference is the repository's PPO configuration exactly as shipped (200M steps): the strongest faithful reference is the artifact itself, and it removes the trivial lever of raising a shortened step count back to upstream's. Measured reference noise (task author's runs, 2026-10-10, one Modal H100 per run, 1024 evaluation environments, every term as an episode sum until termination, NOT this task's image or evaluator): 200M steps over 4 training seeds, training wall 445-464 s, flat episode_reward 30.86 sd 0.23, push 29.44 sd 0.29, flat tracking_lin_vel 940.9 sd 2.5 and tracking_ang_vel 481.9 sd 0.9. NOT measured at 200M in those runs: rough terrain, and energy/action_rate under the graded per-alive-step definition. One development suite through this evaluator (author, 2026-10-10, Modal H100 80GB, image from verifier-gpu/Dockerfile minus the SSH-bootstrap stage, uid 10001, candidate = comment-only patch, i.e. reference against itself): train 462.2 s (reference) and 480.1 s (candidate), each evaluation of 2048 environments x 1000 steps 39-48 s including JIT, suite 1128 s; flat reference episode_reward 31.02, tracking_lin_vel 944.4, tracking_ang_vel 482.1, energy -0.0908, action_rate -0.00495 against candidate 30.77, 937.8, 479.6, -0.0912, -0.00509; push reference 29.66, 902.4, 476.2, -0.0943, -0.00509 against candidate 29.40, 895.8, 473.5, -0.0947, -0.00522. The identical procedure lost all 10 comparisons to itself. Context only, from a 100M-step variant: flat episode_reward 29.80 sd 0.51; a flat-trained 100M policy falls in about 20% of rough-terrain episodes; the same seed run twice is not bit-reproducible on GPU (29.18 vs 29.92), so seeds are sampled noise, not a pairing of candidate with reference. No tolerance is used because the noise of the per-step metrics is unknown and a measured band could only be something to clear, not slack. Attainability: no witness exists; the argument is that the reference policy is not converged or optimal (reward still rises from 100M to 200M). One final suite through this evaluator (author, same setup, reference against itself, after the alive-masked finite-action fix): 5728 s for 15 workloads (10 trainings 446-453 s, 30 evaluations 36-47 s), candidate mean episode_reward 29.512 against reference 29.536 (scores 49.59 and 49.61 recomputed with the current formula from those means, not re-run; the run itself reported 73.78 and 73.84 under the earlier 100 * r / 40 formula), beats_reference 0; one of five training pairs had the candidate ahead on all 15 comparisons, none had it behind on all 15, four were mixed; the reference at 200M survives about 80% of rough-terrain episodes (0.79-0.82), 97-99% under pushes and above 99% on flat ground. An earlier attempt failed as a verifier error (\"trusted reference policy was rejected\") because the finite-action check also covered already-terminated environments. Noise-level false pass: the final verdict is a conjunction of 75 comparisons (15 workloads x 5 metrics) from 5 independent training pairs; within a pair the comparisons are strongly but not totally correlated; the per-seed chance that a noise-level candidate sweeps a seed was observed at 1 in 5 in the final run and 0 in 1 in the development run, so the false-pass probability is between roughly (1/5)^5 and (1/2)^5 for the final suite on this small sample. Five final training seeds were chosen for that reason. The 10-comparison development suite is feedback only. Keep seeds, per-workload rows, reference rows and margins private."
+}

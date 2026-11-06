@@ -1,4 +1,4 @@
-# The definition of ragen_multi_turn_rl (schema frontier.task/v1, #757). Only what differs
+# The definition of ragen_multi_turn_rl (schema frontier.task/v1). Only what differs
 # between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest,
 # and the category is this task's folder.
 #
@@ -41,7 +41,7 @@ max_instances = 1
 max_gpu_instances = 2
 max_gpu_seconds = 12000           # 2 runners x 1500 s x (3 train calls + 1 final)
 
-# Command test sandbox (design /data/task-format/design/sandboxes.md): one runner per PPO run.
+# Command test sandbox (see tasks/template/TEMPLATE.md): one runner per PPO run.
 # Steps per run: device check 60 s, build 60 s, public imports 120 s, PPO 750 s; with the
 # adapter's per-step grace, upload and collect they need 1490 s of lease.
 [test_sandboxes.candidate]

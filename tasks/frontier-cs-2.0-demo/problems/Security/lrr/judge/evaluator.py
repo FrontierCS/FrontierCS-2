@@ -1,4 +1,4 @@
-"""Native evaluator for localization-guided regex repair (shared verifier, #757).
+"""Native evaluator for localization-guided regex repair (shared verifier).
 
 The shared verifier applies the patch with the task's edit-scope rules and calls evaluate(tree):
 the starter (bundle pristine/) with only the allowed files overlaid. The submitted constructor
