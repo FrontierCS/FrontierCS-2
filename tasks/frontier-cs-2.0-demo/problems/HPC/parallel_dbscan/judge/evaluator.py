@@ -1,4 +1,4 @@
-"""Judge of parallel_dbscan for the shared verifier (#757): check_tree(...) and evaluate(tree).
+"""Judge of parallel_dbscan for the shared verifier: check_tree(...) and evaluate(tree).
 
 `tree` is the starter repo (`pristine/`) with only `code/DBSCAN.C` and `code/frontier_solution/**`
 overlaid; check_tree() rejects a DBSCAN.C changed outside its public reconstruction region. The

@@ -1,4 +1,4 @@
-"""Judge of parbutterfly (#757): evaluate(tree) on the shared verifier.
+"""Judge of parbutterfly: evaluate(tree) on the shared verifier.
 
 `tree` is pristine/ with only the seven butterfly headers and files below
 apps/hyper/solver_extensions/ overlaid; it is copied and built by trusted_build.py (the
@@ -18,7 +18,7 @@ Metrics (one beat_spec_workload_passes row per graph; development: 4, final: 8):
   counting_seconds  judge-side timing of CountTotal; lower; passes if exact and
                     median(reference_i / candidate_i) > 1.05
 beats_reference = 1 iff every graph passes both (equality fails).
-The metric definitions before #757 are archived at docs/task-authoring/parbutterfly/provenance/beat_spec.json.
+The metric definitions before the task.toml migration are kept in the authoring records.
 """
 from __future__ import annotations
 import bisect, itertools, math, os, random, re, shutil, signal, statistics, subprocess, sys, tempfile, time

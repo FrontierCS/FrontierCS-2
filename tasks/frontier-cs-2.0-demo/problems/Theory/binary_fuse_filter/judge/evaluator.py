@@ -1,4 +1,4 @@
-"""Judge of binary_fuse_filter for the shared verifier (#757): evaluate(tree).
+"""Judge of binary_fuse_filter for the shared verifier: evaluate(tree).
 
 `tree` is the starter repo (`pristine/`) with only the submission's `include/` files overlaid;
 the shared edit scope has already enforced the editable surface. The measurement itself is

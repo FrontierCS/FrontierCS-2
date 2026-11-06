@@ -1,0 +1,24 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": null,
+      "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "the graded programs, the reference strategy and the gate are built into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Jacob Burnim",
+        "Koushik Sen"
+      ],
+      "doi": "10.1109/ASE.2008.69",
+      "paper_id": "crest_search_heuristics_ase2008",
+      "pdf_url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-123.pdf",
+      "title": "Heuristics for Scalable Dynamic Test Generation",
+      "venue": "ASE",
+      "year": 2008
+    }
+  }
+}

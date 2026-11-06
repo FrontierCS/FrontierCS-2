@@ -1,4 +1,4 @@
-"""Paired, judge-clock evaluator for the excised egg rebuilding pipeline (#757).
+"""Paired, judge-clock evaluator for the excised egg rebuilding pipeline.
 
 evaluate(tree) on the shared verifier: `tree` is pristine/ with only the editable files overlaid.
 check_tree refuses the content rules that keep the measurement honest (content_policy). The
@@ -19,7 +19,7 @@ Metrics (one beat_spec_workload_passes row per workload; development: 3, final: 
   congruence_seconds  median apply+rebuild seconds from the Runner report; lower;
                       passes if C <= 0.95 * R
 beats_reference = 1 iff every workload passes the guards and both metrics.
-The metric definitions before #757 are archived at docs/task-authoring/egraph_invariant_restoration/provenance/beat_spec.json.
+The metric definitions before the task.toml migration are kept in the authoring records.
 """
 from __future__ import annotations
 

@@ -3,7 +3,7 @@
 Cycles come from the Verilator trace; the clock period comes from the fixed
 synthesis and timing model in frontier_cpu/timing.py of the trusted starter (pristine/).
 The submitted generator runs under the shared isolate launcher (_run).
-The shared verifier (#757) applies the patch to the editable files (bbq_level_lx.py and
+The shared verifier applies the patch to the editable files (bbq_level_lx.py and
 solver_extensions/); evaluate(tree) gets the pristine starter with them overlaid.
 
 Scoring (summarize/efficiency). Per workload w (a trace on one depth/width/capacity/seed):
@@ -45,7 +45,7 @@ _trusted_run = runner.run
 
 def _run(command, cwd, log, timeout=120):
     """runner.run for the judge. The generator (bbq.py importing the editable bbq_level_lx.py
-    and solver_extensions/) is submitted Python, so it runs under the shared isolate launcher (#757)
+    and solver_extensions/) is submitted Python, so it runs under the shared isolate launcher
     on a private copy of its tree: no judge file, no judge environment, no shared /tmp, and
     nothing left running. Its stdout and stderr still go, interleaved, to `log` (the RTL).
     Verilator, the simulation of the boundary-checked RTL and the timing flow are judge tools

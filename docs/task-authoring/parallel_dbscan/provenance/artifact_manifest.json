@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "parallel_dbscan/code",
+  "authentic_execution": {
+    "entrypoint": "code/DBSCANTime.C",
+    "retained_files": ["code/DBSCANTime.C", "code/DBSCAN.h", "code/Makefile", "code/parallelDefs"]
+  },
+  "excision": [{
+    "path": "code/DBSCAN.C",
+    "mode": "stubbed",
+    "symbols": [
+      "ClusterCoreBCPGridParallelBucketingND",
+      "edgeAddableBCPND",
+      "edgeAddableBCPNDWithSort",
+      "edgeAddableBCPNDWithG1Sort",
+      "edgeAddableBCPNDSimple",
+      "GetCorePtsParallel",
+      "edgeAddableBCPNDParallel",
+      "edgeAddableBCPNDSmart"
+    ]
+  }],
+  "solution_surface": {
+    "modify": ["code/DBSCAN.C"],
+    "add_under": ["code/frontier_solution/"],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {"path": "make_submission.sh", "reason": "Task-owned patch packager that stages solver changes without implementing connectivity."}
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": ["code/topologyFromTri.C", "reproducibility/"],
+  "minimality_note": "The retained source closure builds the sole reproduced OpenMP CLI path. Experiment material and dormant exact, approximate, and quadtree connectivity routines are omitted."
+}

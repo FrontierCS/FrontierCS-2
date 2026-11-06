@@ -1,0 +1,86 @@
+{
+  "unit": "one complete dynamic job trace simulated on the fixed homogeneous GPU-cluster specification, throughput table, configuration, and seed",
+  "metrics": [
+    {
+      "name": "makespan_seconds",
+      "means": "The simulated elapsed time in seconds from the trace's start until all jobs selected for completion have finished.",
+      "source": "upstream/scheduler/scripts/drivers/simulate_scheduler_with_trace.py (the value returned by sched.simulate and stored as pickle key makespan)",
+      "better": "lower",
+      "clears_when": "candidate_makespan_seconds < reference_makespan_seconds",
+      "tolerance": "none"
+    },
+    {
+      "name": "average_jct_seconds",
+      "means": "The arithmetic mean, in seconds, of the simulated completion durations of all jobs selected for completion in this trace.",
+      "source": "upstream/scheduler/scheduler.py::Scheduler.get_average_jct; emitted by upstream/scheduler/scripts/drivers/simulate_scheduler_with_trace.py as pickle key avg_jct",
+      "better": "lower",
+      "clears_when": "candidate_average_jct_seconds < reference_average_jct_seconds",
+      "tolerance": "none"
+    },
+    {
+      "name": "worst_finish_time_fairness_rho",
+      "means": "The maximum across jobs in the trace of finish-time-fairness rho, where each job's rho is its completion duration divided by its exclusive running time times max(1, number_of_jobs_in_trace / number_of_gpus).",
+      "source": "upstream/scheduler/scheduler.py::Scheduler.get_finish_time_fairness computes finish_time_fairness_list; upstream/scheduler/reproduce/aggregate_result.py reports worst_ftf as max(finish_time_fairness_list)",
+      "better": "lower",
+      "clears_when": "candidate_worst_finish_time_fairness_rho < reference_worst_finish_time_fairness_rho",
+      "tolerance": "none"
+    },
+    {
+      "name": "unfair_job_fraction_percent",
+      "means": "The percentage of jobs in the trace whose finish-time-fairness rho is greater than the artifact's published fairness threshold 1.05, rounded to two decimal places exactly as in the artifact.",
+      "source": "upstream/scheduler/reproduce/aggregate_result.py (FTF_FAIRNESS_THRESHOLD = 1.05 and unfair_fractions); its input finish_time_fairness_list is produced by upstream/scheduler/scheduler.py::Scheduler.get_finish_time_fairness",
+      "better": "lower",
+      "clears_when": "candidate_unfair_job_fraction_percent < reference_unfair_job_fraction_percent",
+      "tolerance": "none"
+    }
+  ],
+  "continuous_score": {
+    "per_workload_equation": "40*12000/(12000+makespan_seconds) + 40*7000/(7000+average_jct_seconds) + 15*0.55/(worst_finish_time_fairness_rho+0.05) + 5*(1-unfair_job_fraction_percent/100)",
+    "aggregation": "raw binary64 arithmetic mean across the two selected workloads; no evaluator rounding",
+    "direction": "higher",
+    "range": "[0,100] on the trusted measurement domain",
+    "domain": {
+      "makespan_seconds": "[0,+infinity)",
+      "average_jct_seconds": "[0,+infinity)",
+      "worst_finish_time_fairness_rho": "[0.5,+infinity) because original N/G is 8/4 and completion cannot beat exclusive runtime",
+      "unfair_job_fraction_percent": "{0,12.5,25,...,100}"
+    },
+    "reference_independent": true,
+    "upper_bound": "100 only at the natural joint optimum M=0, J=0, rho=0.5, U=0; no finite artificial clipping"
+  },
+  "beats_reference": "Compute the four strict lower-is-better comparisons independently on each of the two graded traces. beats_reference is 1 if and only if all eight workload/metric comparisons pass. Otherwise it is 0. The continuous score remains independent and does not affect this binary verdict.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "makespan_seconds",
+      "means": "The candidate's own makespan in seconds for each workload trace.",
+      "reveals_reference": "no — it is an absolute measurement of only the candidate run and contains no reference-relative term."
+    },
+    {
+      "name": "average_jct_seconds",
+      "means": "The candidate's own average job completion time in seconds for each workload trace.",
+      "reveals_reference": "no — it is an absolute measurement of only the candidate run and contains no reference-relative term."
+    },
+    {
+      "name": "worst_finish_time_fairness_rho",
+      "means": "The candidate's own maximum job-level finish-time-fairness rho for each workload trace.",
+      "reveals_reference": "no — rho uses the trace's fixed isolated-runtime and contention normalization, not the reference scheduler's result."
+    },
+    {
+      "name": "unfair_job_fraction_percent",
+      "means": "The candidate's own percentage of jobs above the published rho threshold 1.05 for each workload trace.",
+      "reveals_reference": "no — it is computed solely from candidate rhos and the artifact's constant 1.05 threshold, without a reference value."
+    }
+  ],
+  "withheld": [
+    "reference_makespan_seconds",
+    "reference_average_jct_seconds",
+    "reference_worst_finish_time_fairness_rho",
+    "reference_unfair_job_fraction_percent",
+    "per_workload_reference_comparison"
+  ],
+  "statement_sentences": "In addition to the continuous score, a separate beats-reference criterion compares your scheduler with a withheld reference on the four declared quantities independently on both graded traces. Every one of the eight trace/metric comparisons must strictly improve. The reference values and trace-specific comparison outcomes are not disclosed.",
+  "comments": "Run candidate and reference with the same original trace, cluster specification, throughput table, Shockwave configuration, time-per-iteration, solver environment, and seed; reject invalid allocations or incomplete runs before metric comparison. Each makespan, average-JCT, worst-rho, and unfair-job-fraction comparison remains strict lower-is-better with no tolerance. Since 2026-09-15, PASS is the conjunction of all eight workload/metric comparisons; a 7/8 result fails. The continuous 40/40/15/5 score uses smooth absolute candidate-only terms, has no artificial upper clipping, preserves raw output, and does not normalize against the reference. Do not expose ratios, differences, margins, reference-normalized scores, workload-specific pass/fail results, or reference values; return only the candidate four absolute per-trace measurements. The unfair-job fraction uses the artifact strict rho > 1.05 test and two-decimal rounding for both candidate and reference."
+}

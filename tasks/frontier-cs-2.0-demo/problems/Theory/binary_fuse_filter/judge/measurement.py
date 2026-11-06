@@ -1,6 +1,6 @@
 """Measurement procedure of binary_fuse_filter (the code the calibration binding covers).
 
-Moved verbatim out of evaluator.py in the task.toml migration (#757) so that the reference-only
+Moved verbatim out of evaluator.py in the task.toml migration so that the reference-only
 statistical calibration and its runtime receipt bind the measurement code itself
 (evaluator.measurement_binding), not the submission glue or the generated config.yaml.
 Nothing here reads the submission patch: measure() receives the judged tree.
@@ -53,7 +53,7 @@ class InvalidReference(Exception):
     pass
 
 def command(args, *, timeout=30, tree=None, inputs=None, outputs=(), read_paths=()):
-    """One bounded command under the shared isolate launcher (#757): every compile and every run of
+    """One bounded command under the shared isolate launcher: every compile and every run of
     candidate or reference code. The instance reads only the system, its inputs and the named
     paths, writes only its own directories, gets a clean environment (plus the variables below)
     and leaves nothing running. Limits as before: 4 GiB memory, 30 CPU seconds, 8 MiB files,

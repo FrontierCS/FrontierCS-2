@@ -1,4 +1,4 @@
-"""Judge of metaopt_combined_te_gap_search for the shared verifier (#757).
+"""Judge of metaopt_combined_te_gap_search for the shared verifier.
 
 evaluate(tree): `tree` is the starter repo (`pristine/`, holding `project/`) with only the
 submission's editable files overlaid (`project/MetaOptimize/TrafficEngineering/

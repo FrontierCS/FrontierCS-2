@@ -4,7 +4,7 @@ The train/eval dataset object is a JSON envelope holding a tar of up to three ha
 private datasets plus a manifest. The one whose sealed hardware identity admits the actual
 machine (hardware_admission.admits) is written to scratch and used; the selection logic is
 unchanged from the release that ran it as an inline verifier command (it moved into the judge
-with the task.toml migration, #757).
+with the task.toml migration).
 """
 import base64
 import hashlib
@@ -97,7 +97,7 @@ def select_dataset(path, mode, identity, scratch, read_dataset):
             and 1 <= len(manifest["datasets"]) <= 3, "Invalid composite manifest")
     require(set(bodies) == {"manifest.json"} | {key + ".tar" for key in manifest["datasets"]},
             "Composite membership differs")
-    from hardware_admission import admits  # sealed judge rule (issue #639)
+    from hardware_admission import admits  # sealed judge rule
     selected = None
     for key, entry in manifest["datasets"].items():
         require(set(entry) == {"identity", "sha256", "size_bytes", "seal_sha256"}

@@ -1,0 +1,42 @@
+{
+  "beats_reference": "Every selected instance gap is at least its same-instance reference gap, with exact ties accepted and no numerical non-inferiority band.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "metrics": [
+    {
+      "name": "gap",
+      "better": "higher",
+      "clears_when": "candidate >= reference",
+      "means": "OPT - max(POP,DP) from independent path-form LP replay",
+      "source": "judge/legacy_engine.py",
+      "tolerance": "No numerical non-inferiority band: candidate >= reference exactly; the separate 1e-7 matrix/flow validity tolerance is unchanged."
+    }
+  ],
+  "solver_feedback": [
+    {
+      "name": "mean_gap",
+      "means": "candidate arithmetic mean gap on the public train suite",
+      "reveals_reference": "no: an absolute candidate mean, without reference values or per-instance identities."
+    },
+    {
+      "name": "instance_count",
+      "means": "number of independently evaluated public train cases",
+      "reveals_reference": "no: only the number of evaluated public train instances, without identities or reference values."
+    }
+  ],
+  "progress_feedback": {
+    "name": "beat_spec_progress",
+    "means": "aggregate passed and failed gap comparison counts",
+    "reveals_reference": "no: aggregate comparison counts and percentages only, without per-instance decisions or reference values."
+  },
+  "withheld": [
+    "hidden seeds and instances",
+    "per-instance gaps and decisions",
+    "reference_score",
+    "margin",
+    "beats_reference"
+  ],
+  "unit": "One selected instance, comparing the independently replayed candidate gap with its same-instance reference gap.",
+  "statement_sentences": "PASS requires candidate gap >= same-instance reference gap for every selected instance. Exact ties pass with no comparison tolerance; train covers the original public15 and final freshly evaluates public15 plus hidden15."
+}

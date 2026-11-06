@@ -1,0 +1,64 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "parallel_dbscan_core_connectivity",
+  "domain": "databases",
+  "promotion": {},
+  "generated_at": "2026-09-14T00:05:33.001597+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "d5cdc38cb11cf1540ce032be6ae68cb170c884a6",
+    "run_id": "r_top02_lel_dbscan",
+    "candidate_id": "cand_000",
+    "config_sha256": "1c2b3d4bd460e37f067f4bdf5d24030ae5a273909b933ce71faccf0cf8324b17"
+  },
+  "paper": {
+    "paper_id": "parallel_dbscan",
+    "title": "Theoretically-Efficient and Practical Parallel DBSCAN",
+    "authors": [
+      "Yiqiu Wang",
+      "Yan Gu",
+      "Julian Shun"
+    ],
+    "year": 2020,
+    "venue": "SIGMOD",
+    "pdf_url": "https://jshun.csail.mit.edu/dbscan.pdf",
+    "doi": "10.1145/3318464.3380582"
+  },
+  "rank": {
+    "rank": 2,
+    "overall_score": 0.0,
+    "recommendation": "human_selected_unranked",
+    "scores": {},
+    "risks": []
+  },
+  "artifact": {
+    "repo_url": "https://github.com/wangyiqiu/dbscan",
+    "commit": null,
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": "Bucketed parallel core-cell connectivity",
+    "summary": "Connect neighboring DBSCAN core cells by bucketing candidate work and merging discovered core-point connections with parallel union-find, reducing redundant distance tests and synchronization while preserving exact DBSCAN connectivity.",
+    "paper_location": "Section 4.4, Algorithm 3; practical higher-dimensional exact implementation in Section 6.2",
+    "code_location": [
+      "code/DBSCAN.C::ClusterCoreBCPGridParallelBucketingND",
+      "code/unionFind.h",
+      "code/Grids.h",
+      "code/Grids.C"
+    ],
+    "metric": "Exact DBSCAN correctness is a hard gate, including core/border/noise status and all memberships of ambiguous border points; the primary metric is paired, repeated elapsed computation time through the preserved CLI at a pinned worker count on bounded SS-style similar/varied-density and uniform-fill workloads in 3D and 7D across multiple epsilon/minPts settings."
+  },
+  "host": {
+    "cpu_count": 8,
+    "ram_gb": 33,
+    "free_disk_gb": 98,
+    "gpus": [],
+    "docker": {
+      "limit_source": "host",
+      "daemon_mem_total_gb": 33
+    },
+    "platform": "Linux-7.0.0-1012-aws-x86_64-with-glibc2.39",
+    "measured_at": "2026-09-13T09:27:09.217771+00:00"
+  }
+}

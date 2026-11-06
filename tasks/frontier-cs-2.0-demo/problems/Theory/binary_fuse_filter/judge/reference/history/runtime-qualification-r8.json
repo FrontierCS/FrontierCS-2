@@ -98,7 +98,7 @@
   },
   "accuracy_guard_failures": 0,
   "scientific_verdict": "valid reference; strict FAIL on the paired performance ties, expected for comparison against itself; both accuracy guards pass on every workload",
-  "private_profile_sha256": "sha256:117cead6399f6a1fd472b42766a4c2e00a6f27eb72d79e5528f779a53b5e4d40",
+  "private_profile_sha256": "sha256:474e095297e8fb4da6cfafa48b156da4bae90a882c46a95db3f3c8c9e7f57d25",
   "calibration_rounds_added": 0,
   "statistical_anchors_changed": false,
   "formal_native_acceptance": false,

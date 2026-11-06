@@ -1,0 +1,24 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "polygon-20260923"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Pinhan Zhao",
+        "Yuepeng Wang",
+        "Xinyu Wang"
+      ],
+      "doi": "10.1145/3729303",
+      "pdf_url": "https://arxiv.org/pdf/2504.06542v1",
+      "title": "Polygon: Symbolic Reasoning for SQL using Conflict-Driven Under-Approximation Search",
+      "venue": "PLDI 2025",
+      "year": 2025
+    }
+  }
+}

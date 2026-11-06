@@ -1,0 +1,399 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 417,
+      "path": "datasets/eval.json",
+      "version": "sha256:fedd71bba0f9005cdc251f0d58be6aa5edc0bacdc4a4aad49d4c8ab600742733"
+    },
+    "train": {
+      "bytes": 424,
+      "path": "datasets/train.json",
+      "version": "sha256:cf428d96ae29243ca1470243b6f02b07baaf91f06acf32b3f4b996f29024c82f"
+    }
+  },
+  "file_count": 75,
+  "files": [
+    {
+      "bytes": 3653,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:36914b52fb2f63f4da3b5517aa03907e88b473375843ff7570e84408e10169ab"
+    },
+    {
+      "bytes": 5212,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:496127533c1eb7b9e4698b13b06672eb817e0921ee300bca61d702fb92d65389"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 899,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:c126195c5c0e2849b5308280c0ddb4b0a63ece7b5244997d495f51eee7e13397"
+    },
+    {
+      "bytes": 182,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:a882648e44004178ecfe821990afbdcf5737c91b2448cb2c2b54ba62d5e7f83b"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 36921,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:78ed69e76cb190d8e589d228f7373d1c2779522a3f9656ce8a74c57dfb7533e9"
+    },
+    {
+      "bytes": 79587,
+      "path": "agent-base/frontier/task/repo/code/Cargo.lock",
+      "sha256": "sha256:d5c2780d7b2ce9984388ec99152f9723adb36b4605a2147ae1ebb4012f3d7b35"
+    },
+    {
+      "bytes": 1251,
+      "path": "agent-base/frontier/task/repo/code/Cargo.toml",
+      "sha256": "sha256:1c5964d21886fbc86b7dfda445e9f9ef609eff0db4eed7056f7fc3af9e5fd7d5"
+    },
+    {
+      "bytes": 172058,
+      "path": "agent-base/frontier/task/repo/code/src/codegen.rs",
+      "sha256": "sha256:b2a51a85a6c8aa87449000ac70e44e12981de83511e9b27bb88830c881625969"
+    },
+    {
+      "bytes": 26379,
+      "path": "agent-base/frontier/task/repo/code/src/extraction/ilp.rs",
+      "sha256": "sha256:4eb6fec898c60aa9405a98268cfa2c7bfc3feafff13de3d9bdf77b3b9acb6b95"
+    },
+    {
+      "bytes": 18797,
+      "path": "agent-base/frontier/task/repo/code/src/extraction/mod.rs",
+      "sha256": "sha256:ba967dcac833073c56de52f6648700bc75f8c61f4d61051040bdfa3067314c50"
+    },
+    {
+      "bytes": 4544,
+      "path": "agent-base/frontier/task/repo/code/src/hw_design_language.rs",
+      "sha256": "sha256:59860655902c0c59bb3486dd91c17ba38fcfd349890daff1a3b186333e20b4fe"
+    },
+    {
+      "bytes": 144955,
+      "path": "agent-base/frontier/task/repo/code/src/language/from_relay/mod.rs",
+      "sha256": "sha256:6f274cc1a9b0141bc76296a451d69def27fa26506963d730ee80b1791a8f2ecb"
+    },
+    {
+      "bytes": 97710,
+      "path": "agent-base/frontier/task/repo/code/src/language/interpreter.rs",
+      "sha256": "sha256:4a28c8aa1aebdcdb271d82caef400a9acc8857a5c78b1e8b6650d27751c7f211"
+    },
+    {
+      "bytes": 51109,
+      "path": "agent-base/frontier/task/repo/code/src/language/language.rs",
+      "sha256": "sha256:2d6af4cebaebfb5227d899938e202ff86910f9a2a0a8850d390f3ea73ea4a212"
+    },
+    {
+      "bytes": 159,
+      "path": "agent-base/frontier/task/repo/code/src/language/mod.rs",
+      "sha256": "sha256:91ff577ef39f58a0ed38cf3487b0584ba4c00c6d7b06e71b00086b73a99ff17a"
+    },
+    {
+      "bytes": 12129,
+      "path": "agent-base/frontier/task/repo/code/src/language/rewrites.rs",
+      "sha256": "sha256:d59fb0baa7ad0b3941da503228eed5f4afba8c6fb30a162b682fdb753a1baf23"
+    },
+    {
+      "bytes": 454,
+      "path": "agent-base/frontier/task/repo/code/src/language/solver_extensions/access_analysis.rs",
+      "sha256": "sha256:efcddb1591345d0123eca65b45c798c3683cf45fca6f8546c6d4e2aa694b5b37"
+    },
+    {
+      "bytes": 591,
+      "path": "agent-base/frontier/task/repo/code/src/lib.rs",
+      "sha256": "sha256:338c470ba8b36f180d0f51bca9e8c6715e729c0a475adbb0f1d8544bc4b7a9a6"
+    },
+    {
+      "bytes": 6102,
+      "path": "agent-base/frontier/task/repo/cpu-feature-gates.patch",
+      "sha256": "sha256:946c8a018ee4db9a25a962ef5286bb9e4a0d218e11e35f43667ae04ea568972e"
+    },
+    {
+      "bytes": 405,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:5a68bc71a2d73521e45748eafea0a292165d528b8840b2931e27b8192bb0299f"
+    },
+    {
+      "bytes": 2295,
+      "path": "agent-base/frontier/task/repo/frontier-build.py",
+      "sha256": "sha256:96c2901f7df2b68cd4133b6f4a19688ace95bbf489544c6101503f566e370c58"
+    },
+    {
+      "bytes": 124,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:cc0045ee11bd47a2d38e01174b01111c5e818032c83549ff769f24d8ce5c494e"
+    },
+    {
+      "bytes": 3514,
+      "path": "agent-base/frontier/task/repo/frontier-example.rs",
+      "sha256": "sha256:12db4d0153c00f06c43bc4ceafc72b12c7fa6b66cac68e49e14af3a3b60b4af2"
+    },
+    {
+      "bytes": 497,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:5309cee717ae7571bce5a6ac8a958d835ad0693bed0b0fa4b7a6b8df8be05038"
+    },
+    {
+      "bytes": 417,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:fedd71bba0f9005cdc251f0d58be6aa5edc0bacdc4a4aad49d4c8ab600742733"
+    },
+    {
+      "bytes": 424,
+      "path": "datasets/train.json",
+      "sha256": "sha256:cf428d96ae29243ca1470243b6f02b07baaf91f06acf32b3f4b996f29024c82f"
+    },
+    {
+      "bytes": 14863,
+      "path": "judge/analysis_contract.rs",
+      "sha256": "sha256:e8842147fcb74ad27fbc93c737642181cda68e480807e98a0be2b0f724959110"
+    },
+    {
+      "bytes": 13515,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:fdd47d347058ea2653f008bbb2719478e57d12cad7894de97d19ec8e7638b4d0"
+    },
+    {
+      "bytes": 349,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:4fc58021dbc97dd6c12e2f75d31794918d9992e92449272654b0ca60b7451142"
+    },
+    {
+      "bytes": 6138,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:8cbdc4b78f666380c410e2bbba596ce757a33b47d4ce4921c1eece409eca3bd4"
+    },
+    {
+      "bytes": 1531,
+      "path": "judge/cargo_target.py",
+      "sha256": "sha256:2cb37cabe68c4322258c4c57e378dc8140284a8372118b3d11618acdcb921141"
+    },
+    {
+      "bytes": 1335,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:d12c8da1caf66239c5381154d4a56c7ace234b8aabd49931dc116ed47ea8758e"
+    },
+    {
+      "bytes": 67,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:c37546a988d650118c0a2c88d506a26220bdaeb053869bab90a3b5c07f8ed48a"
+    },
+    {
+      "bytes": 30253,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:a53fed5218e504ccc0c0b6c3a132d765c29ee2f7d9b6508fd945b43a1ab9af51"
+    },
+    {
+      "bytes": 36921,
+      "path": "judge/harbor/app/README.md",
+      "sha256": "sha256:78ed69e76cb190d8e589d228f7373d1c2779522a3f9656ce8a74c57dfb7533e9"
+    },
+    {
+      "bytes": 79587,
+      "path": "judge/harbor/app/code/Cargo.lock",
+      "sha256": "sha256:d5c2780d7b2ce9984388ec99152f9723adb36b4605a2147ae1ebb4012f3d7b35"
+    },
+    {
+      "bytes": 1251,
+      "path": "judge/harbor/app/code/Cargo.toml",
+      "sha256": "sha256:1c5964d21886fbc86b7dfda445e9f9ef609eff0db4eed7056f7fc3af9e5fd7d5"
+    },
+    {
+      "bytes": 172058,
+      "path": "judge/harbor/app/code/src/codegen.rs",
+      "sha256": "sha256:b2a51a85a6c8aa87449000ac70e44e12981de83511e9b27bb88830c881625969"
+    },
+    {
+      "bytes": 26379,
+      "path": "judge/harbor/app/code/src/extraction/ilp.rs",
+      "sha256": "sha256:4eb6fec898c60aa9405a98268cfa2c7bfc3feafff13de3d9bdf77b3b9acb6b95"
+    },
+    {
+      "bytes": 18797,
+      "path": "judge/harbor/app/code/src/extraction/mod.rs",
+      "sha256": "sha256:ba967dcac833073c56de52f6648700bc75f8c61f4d61051040bdfa3067314c50"
+    },
+    {
+      "bytes": 4544,
+      "path": "judge/harbor/app/code/src/hw_design_language.rs",
+      "sha256": "sha256:59860655902c0c59bb3486dd91c17ba38fcfd349890daff1a3b186333e20b4fe"
+    },
+    {
+      "bytes": 144955,
+      "path": "judge/harbor/app/code/src/language/from_relay/mod.rs",
+      "sha256": "sha256:6f274cc1a9b0141bc76296a451d69def27fa26506963d730ee80b1791a8f2ecb"
+    },
+    {
+      "bytes": 97710,
+      "path": "judge/harbor/app/code/src/language/interpreter.rs",
+      "sha256": "sha256:4a28c8aa1aebdcdb271d82caef400a9acc8857a5c78b1e8b6650d27751c7f211"
+    },
+    {
+      "bytes": 51109,
+      "path": "judge/harbor/app/code/src/language/language.rs",
+      "sha256": "sha256:2d6af4cebaebfb5227d899938e202ff86910f9a2a0a8850d390f3ea73ea4a212"
+    },
+    {
+      "bytes": 159,
+      "path": "judge/harbor/app/code/src/language/mod.rs",
+      "sha256": "sha256:91ff577ef39f58a0ed38cf3487b0584ba4c00c6d7b06e71b00086b73a99ff17a"
+    },
+    {
+      "bytes": 12129,
+      "path": "judge/harbor/app/code/src/language/rewrites.rs",
+      "sha256": "sha256:d59fb0baa7ad0b3941da503228eed5f4afba8c6fb30a162b682fdb753a1baf23"
+    },
+    {
+      "bytes": 454,
+      "path": "judge/harbor/app/code/src/language/solver_extensions/access_analysis.rs",
+      "sha256": "sha256:efcddb1591345d0123eca65b45c798c3683cf45fca6f8546c6d4e2aa694b5b37"
+    },
+    {
+      "bytes": 591,
+      "path": "judge/harbor/app/code/src/lib.rs",
+      "sha256": "sha256:338c470ba8b36f180d0f51bca9e8c6715e729c0a475adbb0f1d8544bc4b7a9a6"
+    },
+    {
+      "bytes": 6102,
+      "path": "judge/harbor/app/cpu-feature-gates.patch",
+      "sha256": "sha256:946c8a018ee4db9a25a962ef5286bb9e4a0d218e11e35f43667ae04ea568972e"
+    },
+    {
+      "bytes": 405,
+      "path": "judge/harbor/app/frontier-bench.sh",
+      "sha256": "sha256:5a68bc71a2d73521e45748eafea0a292165d528b8840b2931e27b8192bb0299f"
+    },
+    {
+      "bytes": 2295,
+      "path": "judge/harbor/app/frontier-build.py",
+      "sha256": "sha256:96c2901f7df2b68cd4133b6f4a19688ace95bbf489544c6101503f566e370c58"
+    },
+    {
+      "bytes": 124,
+      "path": "judge/harbor/app/frontier-build.sh",
+      "sha256": "sha256:cc0045ee11bd47a2d38e01174b01111c5e818032c83549ff769f24d8ce5c494e"
+    },
+    {
+      "bytes": 3514,
+      "path": "judge/harbor/app/frontier-example.rs",
+      "sha256": "sha256:12db4d0153c00f06c43bc4ceafc72b12c7fa6b66cac68e49e14af3a3b60b4af2"
+    },
+    {
+      "bytes": 497,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:5309cee717ae7571bce5a6ac8a958d835ad0693bed0b0fa4b7a6b8df8be05038"
+    },
+    {
+      "bytes": 3198,
+      "path": "judge/isolate_exec.py",
+      "sha256": "sha256:70328f1486fe264a000cf0760ae4a185a12a2a1ed47e10f132c477516894400b"
+    },
+    {
+      "bytes": 3556,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:91d459265268418698f202bf84f55ada3bd7ab0cb133525dd9e367521d2da9f9"
+    },
+    {
+      "bytes": 19226,
+      "path": "judge/probe.rs",
+      "sha256": "sha256:a3ac5796a8705f84d232fc517ef717039b13ee680f50bc1dfd0184c3826f42ad"
+    },
+    {
+      "bytes": 38305,
+      "path": "judge/readme",
+      "sha256": "sha256:3feb117cb6a5b1bc2339e250b44dd2556aabedc0167e02dfd0d13691a37c7b02"
+    },
+    {
+      "bytes": 162281,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:817f2cf4635195c14d0db85f0db0dba8bb1f8462ff236a9d39c75c2ffe384a2b"
+    },
+    {
+      "bytes": 2843,
+      "path": "judge/sandbox.py",
+      "sha256": "sha256:7ec496c8129487ea3cf90331fb34fc57c8774558871e79b05d704677bf257962"
+    },
+    {
+      "bytes": 100582,
+      "path": "judge/source-coverage/access_analysis_tests.rs",
+      "sha256": "sha256:7d440cab9af783c4057d214d6f3386427b87820fa994bc78f278a79f3a0b1c63"
+    },
+    {
+      "bytes": 967,
+      "path": "judge/source-coverage/provenance.json",
+      "sha256": "sha256:5a485457be60c5ec332216fbac96806e4b54196e82e3554fdb0fe36ea1440f81"
+    },
+    {
+      "bytes": 19034,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:5f62ba277e4e93ba7e6be3ff479aad7c91c379b46c0345bda8375ecad4800f49"
+    },
+    {
+      "bytes": 4776,
+      "path": "judge/test_access_analysis.py",
+      "sha256": "sha256:cb9df1fb46dd44f89e9ba939d2d4ebeebcb1dfe2d40548f2885bb55c751f5fb9"
+    },
+    {
+      "bytes": 1285,
+      "path": "judge/test_analysis_contract.py",
+      "sha256": "sha256:911c25af60e27399de093f9971a9769b2eab3252f46786d05b77c642d8fe27ff"
+    },
+    {
+      "bytes": 15316,
+      "path": "judge/test_evaluator.py",
+      "sha256": "sha256:ddb6615f6836042783750f398d0ecee6a06ef4e165514cafb181be3d7308e6cb"
+    },
+    {
+      "bytes": 2583,
+      "path": "judge/test_fixtures.py",
+      "sha256": "sha256:7248e95a5c76541800e9bdb7bb2d89c4001e9231219313ee458a9f62473ea9cd"
+    },
+    {
+      "bytes": 2654,
+      "path": "policy.json",
+      "sha256": "sha256:e47431e50d1564c699cad68448a83b4edde2ba787b1ca87137152da265493aab"
+    },
+    {
+      "bytes": 5722,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:ac53fe5e67149594cf205e0ec3d242f4e2eee89410cbd7aa770a220d4a90f45e"
+    },
+    {
+      "bytes": 14026,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:64e882c0da1b65836ac42d3a215f3cc7ecb55aa6456e0bb1e2ca71ce69394afb"
+    },
+    {
+      "bytes": 34321,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:bb20e3155624a5885ac552b8ee33565e23906812d3fcea412d145b7c66c8c6fb"
+    },
+    {
+      "bytes": 345,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:dd666bda14e6a23facb355e39514c6143d20630e0043d600e9830d6109515852"
+    }
+  ],
+  "problem_id": "glenside",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:a53fed5218e504ccc0c0b6c3a132d765c29ee2f7d9b6508fd945b43a1ab9af51",
+    "statement_sha256": "sha256:3feb117cb6a5b1bc2339e250b44dd2556aabedc0167e02dfd0d13691a37c7b02",
+    "task_dir": "native"
+  }
+}

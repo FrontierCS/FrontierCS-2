@@ -1,0 +1,424 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 441,
+      "path": "datasets/eval.json",
+      "version": "sha256:db6bb59fffdcbda57c172fe8a7351755dd71e78ec02796f054fc7b5e98f0cf8b"
+    },
+    "train": {
+      "bytes": 448,
+      "path": "datasets/train.json",
+      "version": "sha256:2d67310851a238c25bcbdc9be519471ece6615e8d26ebec615b692d9862da419"
+    }
+  },
+  "file_count": 80,
+  "files": [
+    {
+      "bytes": 2649,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:56b687dd2c7a92c74689eb26827fdcad0ef1b8e7390089d4a56533b2f0abddc1"
+    },
+    {
+      "bytes": 4404,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:edeaf2bafb06175aba017e5791a92982e88f70d86d7019891203d5278493c3f7"
+    },
+    {
+      "bytes": 3521,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:a38cd103c563c7155c5b40ea97cc23589b11022199bc8b2726e7c162a4f9d0f3"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:9fc959f77195898353af6476c6262688c5deedae49ee07b9d87af6e9893ae4b4"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 13434,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:bd8996f40f945a9df05d147ea0968844b7289ce7d2a73515ea3f352d4a003f76"
+    },
+    {
+      "bytes": 267,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:f172ba3e85c7fc919d9576157a9468de7452db8f113c90b8ec2e98cf0bb0a883"
+    },
+    {
+      "bytes": 538,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:4c9b74387fc8d82e416e1cad865b5f1fbf6c48c894705c911c7e90402b79d39c"
+    },
+    {
+      "bytes": 479,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:c2be86a64bfd0a58719903e98a591838e36a7049f184ebd4f7a924a2ad03b825"
+    },
+    {
+      "bytes": 13420,
+      "path": "agent-base/frontier/task/repo/scheduler/JobMetaData.py",
+      "sha256": "sha256:61bbaed0bbe03bb1ca15d231e08f0d51bf967b8a0426e95e57112996ec345993"
+    },
+    {
+      "bytes": 851,
+      "path": "agent-base/frontier/task/repo/scheduler/Makefile",
+      "sha256": "sha256:9066d8367c161eb98e9f91290b2ba00c2bf12d8d10a19e5d4963b544f46a0e51"
+    },
+    {
+      "bytes": 436,
+      "path": "agent-base/frontier/task/repo/scheduler/custom_logging.py",
+      "sha256": "sha256:271d6b88291827fc996f36ce53243a2e87088d4451965a8bdf8a5175200c7c09"
+    },
+    {
+      "bytes": 4379,
+      "path": "agent-base/frontier/task/repo/scheduler/job.py",
+      "sha256": "sha256:4b6858086a8d9f3e8460c57d38d245cd3424b6f440949f8e30eeeb660cf1c200"
+    },
+    {
+      "bytes": 2667,
+      "path": "agent-base/frontier/task/repo/scheduler/job_id_pair.py",
+      "sha256": "sha256:1251774fa0682447876ef4740a011b037b9026abc56068b6b829cfeb64e7cf74"
+    },
+    {
+      "bytes": 3879,
+      "path": "agent-base/frontier/task/repo/scheduler/job_table.py",
+      "sha256": "sha256:587e62e30ab62d8473653b1314c39c6bf3ce6bc1a5f114c3143602fd5cd03ea0"
+    },
+    {
+      "bytes": 890,
+      "path": "agent-base/frontier/task/repo/scheduler/job_template.py",
+      "sha256": "sha256:d78afda7ec501ceb1b7e00d2b8e41860059f5de1c8dc39eef03323fa2d2cef59"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 7285,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/allox.py",
+      "sha256": "sha256:29a445b217ef74add5c95caadad8f66600c4aedf43c3f787b8e11dbeb801389d"
+    },
+    {
+      "bytes": 9416,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/fifo.py",
+      "sha256": "sha256:f0e04fca7ac4076ca2033d616f4790a8a1ddcb42067c62b5bbe74ffcbf5eb50b"
+    },
+    {
+      "bytes": 10878,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/finish_time_fairness.py",
+      "sha256": "sha256:0104f0b328b3885bdfdbcc1fbe8ff7c40487e8b282070200569ba0beae0e12ca"
+    },
+    {
+      "bytes": 6639,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/gandiva.py",
+      "sha256": "sha256:c47ee6b4271734c9985f9361615bebbaf1f4bdc1ebece0d9b664303d22c234cb"
+    },
+    {
+      "bytes": 1665,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/gandiva_fair_proportional.py",
+      "sha256": "sha256:3bd9ba8259cdd511afddf31ccbc580462bf10d8d6087225a7f415ecca5d707a1"
+    },
+    {
+      "bytes": 2268,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/isolated.py",
+      "sha256": "sha256:5b131d9c128c14467c76dd03da69127f4dd1a4483696236560eac3fa524ef6bd"
+    },
+    {
+      "bytes": 2275,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/isolated_plus.py",
+      "sha256": "sha256:46caa7ef2b931b03d7fef709887d7a49e1b23b5a80396999d47fd3dac99f53fe"
+    },
+    {
+      "bytes": 2571,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/job_id_pair.py",
+      "sha256": "sha256:701bcbff996c43be453ad53abee7a753d9b2e63b9845e1beef4acca62a896aeb"
+    },
+    {
+      "bytes": 15815,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/max_min_fairness.py",
+      "sha256": "sha256:92fb9fa4d2b19af932b1922109f9963e908e847e2e4b15d10f3527e27131caab"
+    },
+    {
+      "bytes": 5256,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/max_min_fairness_strategy_proof.py",
+      "sha256": "sha256:d59ac31f1f2c1d1e171682572a97a692cde25c52a99088d349400ac4c6371254"
+    },
+    {
+      "bytes": 26958,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/max_min_fairness_water_filling.py",
+      "sha256": "sha256:3bc3b77f8ab3e14ac9566609e7dbd5ae19d1d1ca0a3eb2e9ed22340de9d6d4e1"
+    },
+    {
+      "bytes": 6750,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/max_sum_throughput.py",
+      "sha256": "sha256:25f0a5195aeb43d2936a4bf5fd2a3f35a08b75db0f0e28f2541dc3c909127e0b"
+    },
+    {
+      "bytes": 7859,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/min_total_duration.py",
+      "sha256": "sha256:a9dc9beed61977dbbf141f5a74738002446f69076e70ca451a8984598c691a1b"
+    },
+    {
+      "bytes": 10357,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/policy.py",
+      "sha256": "sha256:f872e4c6ed4320b0feb472833fa7ad25fd696b5066382e158e1b8da2c2c056f3"
+    },
+    {
+      "bytes": 1669,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/proportional.py",
+      "sha256": "sha256:85083abe365246fde0366051f1ad3dcb513cd549bce50aeaf5026fd92804de1d"
+    },
+    {
+      "bytes": 194,
+      "path": "agent-base/frontier/task/repo/scheduler/policies/shockwave.py",
+      "sha256": "sha256:050b724a46ed063c7c0eb9edc0494553eab1a8eb1019c92eadb6ec1843075ce2"
+    },
+    {
+      "bytes": 130,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/__init__.py",
+      "sha256": "sha256:83e34b086886037c9f6ba57882564b244dda4fbafaf2b10ccfbb5e6b031082c1"
+    },
+    {
+      "bytes": 128,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/protobuf/common.proto",
+      "sha256": "sha256:e549c970040c09a37fff2fbb9b7d5507deba77fc4c5790ccdbad68fa230f3c2a"
+    },
+    {
+      "bytes": 209,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/protobuf/enums.proto",
+      "sha256": "sha256:86467ee1a728295393ee140961c8c3dd7a572e1edb96c452e5cdcd4537bad8ea"
+    },
+    {
+      "bytes": 993,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/protobuf/iterator_to_scheduler.proto",
+      "sha256": "sha256:fb007afce627227512a86dd2d35a3f15e6bcd9af0990616ffca9bcb53000bc56"
+    },
+    {
+      "bytes": 888,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/protobuf/scheduler_to_worker.proto",
+      "sha256": "sha256:13da5752835f32ac897b07f6298314fc51c7e299c734ca1b576d3655e926b784"
+    },
+    {
+      "bytes": 970,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/protobuf/worker_to_scheduler.proto",
+      "sha256": "sha256:32881a0bb92b81bd2199333d7762acebb7e20a1bc22dbb0a25404bfbc2183c60"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2556,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc/scheduler_client.py",
+      "sha256": "sha256:306343883bbaa6feb13e8f76e75939b5e49d29dd375146ace9b76c1db9912fea"
+    },
+    {
+      "bytes": 8741,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc/scheduler_server.py",
+      "sha256": "sha256:60cc1342b34d43d16bcdf11bcbb9cb78ad096332dbd5e3b7dc44d51e5d04904e"
+    },
+    {
+      "bytes": 3529,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc/worker_client.py",
+      "sha256": "sha256:c96144c8b3265a24aabc1ac1dac8e83e1e0e0e926139d3d46225795936d1e709"
+    },
+    {
+      "bytes": 2668,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc/worker_server.py",
+      "sha256": "sha256:fc1e1347df6e0407c441bb98cdedb09d4169dc1b186f2555d9cf494dabd995b8"
+    },
+    {
+      "bytes": 45,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc_stubs/README.md",
+      "sha256": "sha256:1d019d4d8a7d7411cb923c636a9cf13184efafddaac27366fe385bb7a0a67045"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc_stubs/__init__.py",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 248,
+      "path": "agent-base/frontier/task/repo/scheduler/runtime/rpc_stubs/protoc.sh",
+      "sha256": "sha256:6f0f88db5c6fb8d8c3873cdfe1d6ff071525b06533ca88b8c92801e505e57c03"
+    },
+    {
+      "bytes": 222734,
+      "path": "agent-base/frontier/task/repo/scheduler/scheduler.py",
+      "sha256": "sha256:df3999717683802edd3dc35344af5aa32c6963ea21e53a1f71841dd83351c4dc"
+    },
+    {
+      "bytes": 8402,
+      "path": "agent-base/frontier/task/repo/scheduler/scripts/drivers/simulate_scheduler_with_trace.py",
+      "sha256": "sha256:cc1b6c11e6104d287a0358a013abf096bf06b362101cf290c96628baf00e523b"
+    },
+    {
+      "bytes": 2136,
+      "path": "agent-base/frontier/task/repo/scheduler/set_queue.py",
+      "sha256": "sha256:96e9ecaab5f658df5d711fc3cd28a2f5a496a829314df49e690c2465a0fce182"
+    },
+    {
+      "bytes": 2446,
+      "path": "agent-base/frontier/task/repo/scheduler/shockwave.py",
+      "sha256": "sha256:0af9527b496a9cc7df3537f3caba7f96cf4add90cb130df34e634cef0edec803"
+    },
+    {
+      "bytes": 8056,
+      "path": "agent-base/frontier/task/repo/scheduler/throughput_estimator.py",
+      "sha256": "sha256:869f7077e2bc916a68846c4fc6b687a8fab9d199619f2e9d758036c7fe63c52a"
+    },
+    {
+      "bytes": 51925,
+      "path": "agent-base/frontier/task/repo/scheduler/utils.py",
+      "sha256": "sha256:204215ff001ba458e714b39c611074e0411554e37d590b90859ca6847753814c"
+    },
+    {
+      "bytes": 441,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:db6bb59fffdcbda57c172fe8a7351755dd71e78ec02796f054fc7b5e98f0cf8b"
+    },
+    {
+      "bytes": 448,
+      "path": "datasets/train.json",
+      "sha256": "sha256:2d67310851a238c25bcbdc9be519471ece6615e8d26ebec615b692d9862da419"
+    },
+    {
+      "bytes": 2039,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:c2bb511ba69213207962a689b94abb0f8ec60cd34c5ea09401c67a500d9f08eb"
+    },
+    {
+      "bytes": 591,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:94bde6a29ed0c80e60324c4979a93b09e63b8f3d61d8910c457547549330ab56"
+    },
+    {
+      "bytes": 6515,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:73bb40ec1268eb621fe3137c04eadec0b836e5877abfdcbcaf7e96e516b0eedc"
+    },
+    {
+      "bytes": 1814,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:1e0a26bae018bf9cee197a84cc00c2f5d0ff09b5aede102ad9aecc273ee6e4ee"
+    },
+    {
+      "bytes": 87,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:d57fcec980dc1061f09a00d53e70a7ed42781c66e2efeee078c388cea5ce8d0b"
+    },
+    {
+      "bytes": 11676,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:2ad8b74a48cf3b34aed14b6ec112b2bcec0a318a8a4c6a00ca5b3c376a7fb090"
+    },
+    {
+      "bytes": 4414,
+      "path": "judge/fixtures/known_beating.patch",
+      "sha256": "sha256:40a90eb6d25aaafaeb600f4ffa238245c74e9e58ed30cfd1eb53270f51cda76d"
+    },
+    {
+      "bytes": 909,
+      "path": "judge/fixtures/strong.patch",
+      "sha256": "sha256:93a4621f1c2c8935336be81a70e01258acb967473e5347db8aacd8b6cd5fd993"
+    },
+    {
+      "bytes": 1213,
+      "path": "judge/judge_data/dev_a.trace",
+      "sha256": "sha256:54591bb35578a3d3d04f18b345afb14cfd871788db37cc45a633920e8f4e82ab"
+    },
+    {
+      "bytes": 1295,
+      "path": "judge/judge_data/dev_b.trace",
+      "sha256": "sha256:67c9528f73e8e4ddd4a17f0edc9e9a9d037be7d91daefae2b130cc9906a8ad13"
+    },
+    {
+      "bytes": 1269,
+      "path": "judge/judge_data/final_a.trace",
+      "sha256": "sha256:2b1aee6400614f0477700fcbefac903c36503edf53301c49dab4513068c43d6e"
+    },
+    {
+      "bytes": 1275,
+      "path": "judge/judge_data/final_b.trace",
+      "sha256": "sha256:ef5a87aa134b250a6e2b87a8a52a985e437247c0f4706336e77551b607a03914"
+    },
+    {
+      "bytes": 247,
+      "path": "judge/judge_data/shockwave_config.json",
+      "sha256": "sha256:477a2d2af19e476cff516fb526cb6ee968ca64c7b8633ef1e55cd30aa0bcad73"
+    },
+    {
+      "bytes": 1239492,
+      "path": "judge/judge_data/tacc_throughputs.json",
+      "sha256": "sha256:6fee2da4f81c8e777e9513987d982fd0a11a155107360e6168b0e8fd593a83ce"
+    },
+    {
+      "bytes": 4081,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:b33e547e735a9fb435e6de57da6185d2abaf250ccbe6749c656af85231f74f53"
+    },
+    {
+      "bytes": 13741,
+      "path": "judge/readme",
+      "sha256": "sha256:d55ba6580e807d5c24b1cf166413718d455615f380c5bd1f0cac6dec6b1cef2d"
+    },
+    {
+      "bytes": 30431,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:fe6a4e5628b9f1e89bc6c52d6d2e3dc4ca8fff5ad6f8be219c0c8b0ee9a450bc"
+    },
+    {
+      "bytes": 11323,
+      "path": "judge/result.json",
+      "sha256": "sha256:354310eb539561febc86e2209a878fd14169e85bff5aa245e2eb6a3b99f19e61"
+    },
+    {
+      "bytes": 8412,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:c414332018f410540cd1884daecd65d5c1ea9f4c5a4a7b78801fd2d1330a3d10"
+    },
+    {
+      "bytes": 3554,
+      "path": "policy.json",
+      "sha256": "sha256:c95d6405b942d1548b5fc85de5169f8c922f9793bedc352f9793c1f63f721d19"
+    },
+    {
+      "bytes": 2417,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:d0ee57fe29daa17c794e5218a955b78cbc378814b1cfd0a8615bb06de958a2ad"
+    },
+    {
+      "bytes": 11943,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "bytes": 20572,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:bdc49ed264649627f83e2c44ab6c0a05e53828c713ea0a0a8826900ae0f61e46"
+    },
+    {
+      "bytes": 1754,
+      "path": "verifier/private_metrics.py",
+      "sha256": "sha256:dfb3ffee47ee5013a3226433be4cd03c4fa3b415ad8e1a2ddcf8c798168eb009"
+    },
+    {
+      "bytes": 369,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:a615f38d09e83f272282559fa48f6fb49184232325e5292ae998c4e2b5f56ce0"
+    }
+  ],
+  "problem_id": "shockwave_dynamic_gpu_allocation",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:e216703d33a7d944b667c3c2bf66711f23ec970fdeebf476da133b4769117a8d",
+    "statement_sha256": "sha256:fa09e0b9a96498a42cef88ad7f18781435caab942b353aa283c43de6117a94aa",
+    "task_dir": "shockwave_dynamic_gpu_allocation"
+  }
+}

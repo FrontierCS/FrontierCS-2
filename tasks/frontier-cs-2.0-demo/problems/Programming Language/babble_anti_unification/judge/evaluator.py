@@ -1,4 +1,4 @@
-"""Judge of babble_anti_unification (#757): evaluate(tree) on the shared verifier.
+"""Judge of babble_anti_unification: evaluate(tree) on the shared verifier.
 
 `tree` is pristine/ with only src/learn.rs, src/dfta.rs and files below src/learn_extensions/
 overlaid; forbidden added substrings are task.toml forbidden_added, and check_tree keeps every
@@ -7,7 +7,7 @@ is exempt, and a submission equal to it reuses its measurement). The Rust 1.64 r
 benchmark runs every corpus three times; the initial AST cost must match the reference's.
 
 The submission's build and every benchmark run (the reference's runs too) execute in the shared
-isolate launcher (#757): a fresh instance that reads only the system, the toolchain and its own
+isolate launcher: a fresh instance that reads only the system, the toolchain and its own
 copy of the sources or the corpus, gets a clean environment and leaves nothing running. The
 reference is built outside it first; its dependency artifacts seed each candidate build.
 
@@ -19,7 +19,7 @@ Metrics (one beat_spec_workload_passes row per corpus; development: 5, final: 10
   compression_ratio  higher; passes if candidate >= reference - 1e-12
   runtime_seconds    median of three runs; lower; passes if candidate < reference
 beats_reference = 1 iff every corpus passes both (runtime equality fails).
-The metric definitions before #757 are archived at docs/task-authoring/babble_anti_unification/provenance/beat_spec.json.
+The metric definitions before the task.toml migration are kept in the authoring records.
 """
 
 from __future__ import annotations

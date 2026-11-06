@@ -1,0 +1,348 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 430,
+      "media_type": "application/json",
+      "path": "datasets/eval.json",
+      "source": "task",
+      "version": "sha256:d7ea29bd1ebff3a012bad3e326cc258fdc4db2b4ef6a1f62c007fbb66eed8739"
+    },
+    "train": {
+      "bytes": 437,
+      "media_type": "application/json",
+      "path": "datasets/train.json",
+      "source": "task",
+      "version": "sha256:0032bbab241f6ccbf837a76ca809d468124f85ba653028d4dfed88954ab753f2"
+    }
+  },
+  "file_count": 64,
+  "files": [
+    {
+      "bytes": 3324,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:e9b979c251beea32c5af17fcd11d1e4bb70cfedcffd9151177a0a6d6c1033f52"
+    },
+    {
+      "bytes": 5330,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:44dc78dc4e11a77e7ec0d03467c9f981593a707c3400fc742d402e44cc25dd11"
+    },
+    {
+      "bytes": 3414,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:7b33d9412cf6289bc0c836e081d8d989bf4e8080e72856822cb252acfdf4d2fc"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 196,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:6d684921a15856b3b9f9450a58b1eb59da04c72c1867bd32ce0c696701b20695"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 1698,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:d205708d13e28aaca65f7022160cb093015cb5d7fcb57ee30fc7e8471110a55a"
+    },
+    {
+      "bytes": 8948,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:2b1ecd1fc0c6870de4553d00f52043da37a0eeaac2a8b4af8f7b3dc076cd6609"
+    },
+    {
+      "bytes": 2803,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/PROVENANCE.md",
+      "sha256": "sha256:0743e452b6f023e31e0ffae4c7cd44196063324efce3c1a3414084babb791477"
+    },
+    {
+      "bytes": 394,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/public_cases.json",
+      "sha256": "sha256:55581d11af7234305dead39940fb936eed234dd9ac4e4b6977de43e09473d11a"
+    },
+    {
+      "bytes": 13967,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/runner.py",
+      "sha256": "sha256:7ff8ca64c098c06263326eb4e11e76340b01da8e780276bbff1abe768821feb8"
+    },
+    {
+      "bytes": 2117,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/simulation_memory.sv",
+      "sha256": "sha256:529f6bf666e7e2e6df3730041c627434d91cb80017e861dae5466913cd9edbfc"
+    },
+    {
+      "bytes": 17069,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/timing.py",
+      "sha256": "sha256:e7081e2ff48e3ff745576b376660db844298ea8a5ba70d591d543d75ea6ecdc5"
+    },
+    {
+      "bytes": 147,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/timing_lut6.abc",
+      "sha256": "sha256:686a1beb7edf8e7ee8bccfcd58bbfbd0aca56cc08d84468b52a218ade8dd4bcd"
+    },
+    {
+      "bytes": 810,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/timing_memory.v",
+      "sha256": "sha256:125ddcf9c5d06ec63ecaee45a89a073ee05e304976bd6b9db50b41d9338a8f97"
+    },
+    {
+      "bytes": 1570,
+      "path": "agent-base/frontier/task/repo/frontier_cpu/trace_tb.sv",
+      "sha256": "sha256:e98e3d2e67ea4f1b221ced3cf5f946f0649c0b58e2bee6b510f7aad36a48782e"
+    },
+    {
+      "bytes": 48419,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/bbq.py",
+      "sha256": "sha256:4d4a9df1fc7251f7662e692c2dcce51553f6f91e353ef540a2633f2501d5b249"
+    },
+    {
+      "bytes": 2068,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/bbq_level.py",
+      "sha256": "sha256:3a9f9ebc45c376a22d6b10a1546418d635ab0d7790dc4cf7edbfe856ae8644f7"
+    },
+    {
+      "bytes": 5988,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/bbq_level_ingress.py",
+      "sha256": "sha256:f5e643424222c0f8c0f10b9ddad532de173dad84497d9a2055b1cc4935eb07d3"
+    },
+    {
+      "bytes": 2269,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/bbq_level_lx.py",
+      "sha256": "sha256:8d0c6804126a65371d534610a7844d5a3d6663df0622a130b961746c381017e0"
+    },
+    {
+      "bytes": 28964,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/bbq_level_pb.py",
+      "sha256": "sha256:7ebab590383c5c49e3a24e63b30f3506e309f541d9d0f9bca84b05e4934ff626"
+    },
+    {
+      "bytes": 7551,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/bbq_level_steering.py",
+      "sha256": "sha256:9b61117ada62fef4878637f862f0402f1a306650c7d807408917d4ae8a00b605"
+    },
+    {
+      "bytes": 9727,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/generator/codegen.py",
+      "sha256": "sha256:05b6ce6e2bbff7de3ea3b32f2da98f3b561de42b7e9dc477eee8dd763234e9ed"
+    },
+    {
+      "bytes": 1525,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/src/ffs.sv",
+      "sha256": "sha256:d423f3a4e9301fca97e475537c10471ee7eb73c38e6e5fce428713e89bff101f"
+    },
+    {
+      "bytes": 139,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/src/heap_ops.sv",
+      "sha256": "sha256:908095767504b6e9408ec20cafe106572fcd746071fe0f74b7adb5a205e2ff63"
+    },
+    {
+      "bytes": 57517,
+      "path": "agent-base/frontier/task/repo/hardware/bbq/tb/bbq/tb_bbq.sv",
+      "sha256": "sha256:4a757af4ab29c7cdd7c52618076de96fbcbd67dd9061390bb0fd76d9ef917a2a"
+    },
+    {
+      "bytes": 959,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:f9488b5ff6147c573fde4db5374222f9bb1a0d879619ee3e4e3e00671580226e"
+    },
+    {
+      "bytes": 430,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:d7ea29bd1ebff3a012bad3e326cc258fdc4db2b4ef6a1f62c007fbb66eed8739"
+    },
+    {
+      "bytes": 437,
+      "path": "datasets/train.json",
+      "sha256": "sha256:0032bbab241f6ccbf837a76ca809d468124f85ba653028d4dfed88954ab753f2"
+    },
+    {
+      "bytes": 4764,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:b7374341f764d24ce20f77959f65443ac60eb462094932104d3255a3a30b9c4a"
+    },
+    {
+      "bytes": 15444,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:88a3c29935a9517c5d42a134d5d5bd5e9eafdd4179a534795544f4d37c877672"
+    },
+    {
+      "bytes": 1725,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:0400e69b9048730338b8a7d0d66e3b1adfcfefcf527c36c0810b31080dc36acd"
+    },
+    {
+      "bytes": 87,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:524ba2808d040bf7b7111a2d4caee492ef2178690762fde4139b935ff09329e3"
+    },
+    {
+      "bytes": 12530,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:cc1ed3321c76b03b6ab7efea18d423a788482ca001991f12bc44edd02145533c"
+    },
+    {
+      "bytes": 1698,
+      "path": "judge/harbor/app/LICENSE",
+      "sha256": "sha256:d205708d13e28aaca65f7022160cb093015cb5d7fcb57ee30fc7e8471110a55a"
+    },
+    {
+      "bytes": 2803,
+      "path": "judge/harbor/app/frontier_cpu/PROVENANCE.md",
+      "sha256": "sha256:0743e452b6f023e31e0ffae4c7cd44196063324efce3c1a3414084babb791477"
+    },
+    {
+      "bytes": 394,
+      "path": "judge/harbor/app/frontier_cpu/public_cases.json",
+      "sha256": "sha256:55581d11af7234305dead39940fb936eed234dd9ac4e4b6977de43e09473d11a"
+    },
+    {
+      "bytes": 13967,
+      "path": "judge/harbor/app/frontier_cpu/runner.py",
+      "sha256": "sha256:7ff8ca64c098c06263326eb4e11e76340b01da8e780276bbff1abe768821feb8"
+    },
+    {
+      "bytes": 2117,
+      "path": "judge/harbor/app/frontier_cpu/simulation_memory.sv",
+      "sha256": "sha256:529f6bf666e7e2e6df3730041c627434d91cb80017e861dae5466913cd9edbfc"
+    },
+    {
+      "bytes": 17069,
+      "path": "judge/harbor/app/frontier_cpu/timing.py",
+      "sha256": "sha256:e7081e2ff48e3ff745576b376660db844298ea8a5ba70d591d543d75ea6ecdc5"
+    },
+    {
+      "bytes": 147,
+      "path": "judge/harbor/app/frontier_cpu/timing_lut6.abc",
+      "sha256": "sha256:686a1beb7edf8e7ee8bccfcd58bbfbd0aca56cc08d84468b52a218ade8dd4bcd"
+    },
+    {
+      "bytes": 810,
+      "path": "judge/harbor/app/frontier_cpu/timing_memory.v",
+      "sha256": "sha256:125ddcf9c5d06ec63ecaee45a89a073ee05e304976bd6b9db50b41d9338a8f97"
+    },
+    {
+      "bytes": 1570,
+      "path": "judge/harbor/app/frontier_cpu/trace_tb.sv",
+      "sha256": "sha256:e98e3d2e67ea4f1b221ced3cf5f946f0649c0b58e2bee6b510f7aad36a48782e"
+    },
+    {
+      "bytes": 48419,
+      "path": "judge/harbor/app/hardware/bbq/generator/bbq.py",
+      "sha256": "sha256:4d4a9df1fc7251f7662e692c2dcce51553f6f91e353ef540a2633f2501d5b249"
+    },
+    {
+      "bytes": 2068,
+      "path": "judge/harbor/app/hardware/bbq/generator/bbq_level.py",
+      "sha256": "sha256:3a9f9ebc45c376a22d6b10a1546418d635ab0d7790dc4cf7edbfe856ae8644f7"
+    },
+    {
+      "bytes": 5988,
+      "path": "judge/harbor/app/hardware/bbq/generator/bbq_level_ingress.py",
+      "sha256": "sha256:f5e643424222c0f8c0f10b9ddad532de173dad84497d9a2055b1cc4935eb07d3"
+    },
+    {
+      "bytes": 2269,
+      "path": "judge/harbor/app/hardware/bbq/generator/bbq_level_lx.py",
+      "sha256": "sha256:8d0c6804126a65371d534610a7844d5a3d6663df0622a130b961746c381017e0"
+    },
+    {
+      "bytes": 28964,
+      "path": "judge/harbor/app/hardware/bbq/generator/bbq_level_pb.py",
+      "sha256": "sha256:7ebab590383c5c49e3a24e63b30f3506e309f541d9d0f9bca84b05e4934ff626"
+    },
+    {
+      "bytes": 7551,
+      "path": "judge/harbor/app/hardware/bbq/generator/bbq_level_steering.py",
+      "sha256": "sha256:9b61117ada62fef4878637f862f0402f1a306650c7d807408917d4ae8a00b605"
+    },
+    {
+      "bytes": 9727,
+      "path": "judge/harbor/app/hardware/bbq/generator/codegen.py",
+      "sha256": "sha256:05b6ce6e2bbff7de3ea3b32f2da98f3b561de42b7e9dc477eee8dd763234e9ed"
+    },
+    {
+      "bytes": 1525,
+      "path": "judge/harbor/app/hardware/bbq/src/ffs.sv",
+      "sha256": "sha256:d423f3a4e9301fca97e475537c10471ee7eb73c38e6e5fce428713e89bff101f"
+    },
+    {
+      "bytes": 139,
+      "path": "judge/harbor/app/hardware/bbq/src/heap_ops.sv",
+      "sha256": "sha256:908095767504b6e9408ec20cafe106572fcd746071fe0f74b7adb5a205e2ff63"
+    },
+    {
+      "bytes": 57517,
+      "path": "judge/harbor/app/hardware/bbq/tb/bbq/tb_bbq.sv",
+      "sha256": "sha256:4a757af4ab29c7cdd7c52618076de96fbcbd67dd9061390bb0fd76d9ef917a2a"
+    },
+    {
+      "bytes": 959,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:f9488b5ff6147c573fde4db5374222f9bb1a0d879619ee3e4e3e00671580226e"
+    },
+    {
+      "bytes": 8904,
+      "path": "judge/readme",
+      "sha256": "sha256:4957e47fb077bbe3e1b646b60ef447e0d82bcfd0fabd55cc7bbf06e9729f64f5"
+    },
+    {
+      "bytes": 52610,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:84d2242585d30c551e6fd2687b2dd0e005e1c74bc750f7687d06e93236bb8ad1"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 2704,
+      "path": "policy.json",
+      "sha256": "sha256:8f1bcdfb523bc25e411b7d025ea3be105e6c0a2b38ac8e1306ac52fd9dc00362"
+    },
+    {
+      "bytes": 4131,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:e6a545909ad8b76bf9eb96a2f9d2563c567b0226e370925f10a4599748632c77"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 32758,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:feb510f305e1b45e21bc36c378f220330d14f319d9fe03768c5c818e499d6029"
+    },
+    {
+      "bytes": 358,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:ca9f2085712f7dbbd5ddc684b23093898b025d353a4fdecd01d292929f8afacb"
+    }
+  ],
+  "problem_id": "bbq_packet_scheduling",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:cc1ed3321c76b03b6ab7efea18d423a788482ca001991f12bc44edd02145533c",
+    "statement_sha256": "sha256:4957e47fb077bbe3e1b646b60ef447e0d82bcfd0fabd55cc7bbf06e9729f64f5",
+    "task_dir": "task"
+  }
+}

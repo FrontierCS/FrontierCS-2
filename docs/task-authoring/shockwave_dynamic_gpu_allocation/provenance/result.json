@@ -1,0 +1,327 @@
+{
+  "schema": "frontiersmith/result@1",
+  "task_id": "shockwave_dynamic_gpu_allocation",
+  "run_id": "r_top01_ave-nsdi23",
+  "candidate_id": "cand_000",
+  "final": {
+    "round": 3,
+    "reference": {
+      "ok": true,
+      "deferred": false,
+      "execution_backend": "Harbor CPU judge, cold solver-path oracle, and fresh exact-dependency audit replay",
+      "samples": 5,
+      "scores": [
+        74.106465,
+        74.106465,
+        74.106465,
+        74.106465,
+        74.106465
+      ],
+      "dev_scores": [
+        71.329724,
+        71.329724,
+        71.329724
+      ],
+      "spread": {
+        "n": 5,
+        "spread": 0.0,
+        "mean": 74.106465,
+        "rel": 0.0
+      },
+      "dev_spread": {
+        "n": 3,
+        "spread": 0.0,
+        "mean": 71.329724,
+        "rel": 0.0
+      },
+      "duration_seconds": 295.7962607090012,
+      "audit_test_duration_seconds": 280.05,
+      "oracle_reward": 0.74106465,
+      "reasons": [],
+      "round": 3
+    },
+    "trials": [
+      {
+        "round": 1,
+        "idx": 0,
+        "trial_name": "frontier-cs-2-0-auto-vensdi23-00__VNKFKJx",
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.73091576,
+        "score": 73.091576,
+        "beats_reference": 0,
+        "reference_score": 74.106465,
+        "margin": -1.0148889999999966,
+        "submissions": 3,
+        "input_tokens": 3815174,
+        "cached_input_tokens": 3703552,
+        "output_tokens": 43455,
+        "steps": 48,
+        "cost": null,
+        "wall_seconds": 978.304838,
+        "status": "scored",
+        "retained_result_sha256": "1027dd399fc37ecccc94ca96bb22c18de02546db7c5d7c13b35ac65a4ef86c56",
+        "retained_submissions_sha256": "d469ca0edcd6e781e50ec0eedf66fba4d5dccae3c567cecc3e0766fc350a96fc",
+        "retained_trajectory_sha256": "e6d16d1383c1d6c936a77aec7b2d61118a9e8bbf47138d88bf6ec67cbd3dc7f9"
+      }
+    ],
+    "best_reward": 0.73091576,
+    "n_beating_reference": 0,
+    "known_witness": {
+      "path": "fixtures/known_beating.patch",
+      "development_score": 78.227849,
+      "final_score": 74.174454,
+      "development_reference_score": 71.329724,
+      "final_reference_score": 74.106465,
+      "development_comparisons": "7/8",
+      "final_comparisons": "5/8",
+      "workload_coverage": true,
+      "metric_coverage": true,
+      "beats_reference": true
+    },
+    "degraded_baseline": {
+      "development_score": 44.535139,
+      "development_reference_score": 71.329724,
+      "development_comparisons": "1/8",
+      "final_score": 33.411491,
+      "final_reference_score": 74.106465,
+      "final_comparisons": "0/8",
+      "beats_reference": false
+    },
+    "reference_self_comparison": {
+      "development_score": 71.329724,
+      "final_score": 74.106465,
+      "margin": 0.0,
+      "comparisons": "0/8 on each suite",
+      "beats_reference": false
+    },
+    "exact_dev_replay": [
+      {
+        "submission_uuid": "9362a9c1-ec79-482e-a8f8-aa1e258aa8cf",
+        "code_sha256": "96f1e1ed16c4803666c000f696b0399aa95213f933c578d3cc95f1ad6c265ab5",
+        "score": 77.585684,
+        "reference_score": 71.329724,
+        "comparisons": "7/8",
+        "beats_reference": true
+      },
+      {
+        "submission_uuid": "826f79ff-d75d-4da9-ae75-133333883f0f",
+        "code_sha256": "87e41f9a13c91ab36a60033f152363f690e8a593e850cf0fd5bfefd3ecb76711",
+        "score": 76.9478,
+        "reference_score": 71.329724,
+        "comparisons": "6/8",
+        "beats_reference": false
+      },
+      {
+        "submission_uuid": "289128e0-ad54-45f1-bfd3-5c325e405a4c",
+        "code_sha256": "7e59ae5159d308e86ca0e2eed537184ed4ff4150f3d087ebd05f05927bcf7f25",
+        "score": 66.82039,
+        "reference_score": 71.329724,
+        "comparisons": "2/8",
+        "beats_reference": false
+      }
+    ],
+    "publication": {
+      "task_version_id": null,
+      "evaluation_id": null,
+      "run_id": null,
+      "mode": "local authoring render only",
+      "reason": "CPU execution was fully validated in Harbor; it was not published from this record."
+    },
+    "cleanup": {
+      "aws_instance_i-09eddbff7be1e00c7": "terminated",
+      "failed_predecessor_i-0c73dadba3ddfd6e6": "previously terminated and no longer returned by EC2",
+      "active_tagged_instances": 0,
+      "cloud_key_pair_frontiersmith-shockwave": "deleted",
+      "local_private_key": "destroyed",
+      "driver_service": "inactive before instance termination",
+      "harbor_containers": 0,
+      "fcs2_task_versions": 0,
+      "fcs2_evaluations": 0,
+      "modal_or_driver_run_ids": 0,
+      "control_tunnel": "absent",
+      "persisted_credential_matches": 0,
+      "live_argv_credential_matches": 0,
+      "credential_rotation_required": true
+    }
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "revise",
+      "scores": {},
+      "trials": 0,
+      "best_reward": null,
+      "note": "The first workload was deterministic but too easy and lacked sufficient GPU-width coverage."
+    },
+    {
+      "round": 2,
+      "verdict": "revise",
+      "scores": {},
+      "trials": 1,
+      "best_reward": 0.73091576,
+      "note": "The redesigned workload passed runtime gates and the genuine model trial; the uncalibrated all-eight beat conjunction remained unreachable."
+    },
+    {
+      "round": 3,
+      "verdict": "supervisor_accept",
+      "scores": {},
+      "trials": 0,
+      "best_reward": null,
+      "note": "Balanced beat rule calibrated, known witness retained, exact preflight/oracle passed, and release artifacts validated."
+    }
+  ],
+  "judge_pre_execution": {
+    "verdict": "accept",
+    "structural_gate": "warning-free",
+    "evaluator_tests": {
+      "passed": 9,
+      "failed": 0,
+      "duration_seconds": 280.05
+    },
+    "source_lock": "upstream commit 8a44f4a27a45760520386809b695d51b665b3679",
+    "fcs2_layout": "PASS patch-workspace",
+    "secret_scan": "zero matches in retained run evidence, task, and FCS2 render",
+    "release_audit": {
+      "audited_at": "2026-09-06T00:00:00Z",
+      "audited_parent_commit": "5f5f4b89f2e4555b78303eb1ee635b57cb169c25",
+      "resolved_defects": [
+        "dev_b reused canonical source record 34 from dev_a after arrival-origin normalization",
+        "the generic beat-spec feedback adapter incorrectly required conjunction semantics for the balanced task",
+        "solver-visible per-metric mappings retained stable private workload identifiers"
+      ],
+      "source_record_sets": {
+        "dev_a": [
+          1,
+          2,
+          4,
+          5,
+          12,
+          23,
+          27,
+          34
+        ],
+        "dev_b": [
+          7,
+          8,
+          10,
+          11,
+          32,
+          35,
+          39,
+          50
+        ],
+        "final_a": [
+          46,
+          47,
+          48,
+          52,
+          54,
+          62,
+          67,
+          81
+        ],
+        "final_b": [
+          83,
+          85,
+          90,
+          92,
+          97,
+          99,
+          104,
+          114
+        ]
+      },
+      "source_records_disjoint": true,
+      "aggregation_contract": {
+        "kind": "score_majority_coverage",
+        "schema": "exact five-key object; omission alone defaults to conjunction",
+        "authoring_structural_runtime_validation": "passed",
+        "focused_tests": "41 passed",
+        "producer_smoke": {
+          "unfiltered": "372 passed; test_a_recovered_task_describes_itself_like_a_promoted_one failed",
+          "untouched_main_baseline": "independently reproduced by the iterator; existing result.json shapes differ only by the pre-existing remeasured key",
+          "shockwave_scoped": "372 passed, 1 deselected in 16.45 seconds",
+          "deselected_test": "tests/test_smoke.py::test_a_recovered_task_describes_itself_like_a_promoted_one",
+          "unrelated_recovered_tasks_edited": false
+        },
+        "shared_helper_sha256": "cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4",
+        "bundled_helper_byte_identical": true
+      },
+      "fcs2_balanced_feedback_validation": {
+        "development": "accepted witness score 78.227849 versus 71.329724, margin 6.898125, 7/8",
+        "final": "accepted witness score 74.174454 versus 74.106465, margin 0.067989, 5/8",
+        "privacy": "no reference, margin, binary reward, workload name, or per-workload decision was public",
+        "layout": "1/1 patch-workspace",
+        "lock_integrity": "82/82 files",
+        "external_contracts": "21 canonical instances validated"
+      }
+    }
+  },
+  "cost_usd": {
+    "total_model_estimate": 20.6415025,
+    "exact_model_cost": 0.0,
+    "infrastructure_estimate": 1.2,
+    "by_stage": {
+      "stage0": 0.369853375,
+      "stage1": 0.30188875,
+      "stage2": 14.906337625,
+      "stage5": 0.496839125,
+      "stage6": 4.566583625
+    },
+    "trial_provider_cost": null
+  },
+  "scientific_override_20260915": {
+    "basis": "decision M084",
+    "scope": "binary PASS aggregation only (M084/M087; later continuous correction recorded separately)",
+    "prior_aggregation": "score_majority_coverage",
+    "current_aggregation": "conjunction",
+    "required_comparisons": "8/8 strict lower-is-better",
+    "continuous_score_changed": false,
+    "workloads_changed": false,
+    "reference_changed": false,
+    "comparators_or_thresholds_changed": false,
+    "historical_staging_run": {
+      "evaluation_id": "eval-redacted-6d2fcf1b",
+      "run_id": "run-redacted-d56e3633",
+      "attempt_id": "attempt-redacted-42fdc837",
+      "task_version_id": "taskver-redacted-26c355b1",
+      "raw_score": 84.029329,
+      "immutable_old_verdict": "PASS",
+      "corrected_rule_verdict": "FAIL",
+      "comparison_progress": {
+        "makespan_seconds": "1/2",
+        "average_jct_seconds": "2/2",
+        "worst_finish_time_fairness_rho": "2/2",
+        "unfair_job_fraction_percent": "2/2"
+      }
+    }
+  },
+  "scientific_design_override_20260915": {
+    "basis": "formula adopted 2026-09-15; canonical criteria commit 794546b966ad8e7216a38515923b2d11de2f9cec",
+    "scope": "continuous score only",
+    "prior_per_trace_formula": "40*min(1,12000/max(M,1e-12)) + 40*min(1,7000/max(J,1e-12)) + 15*min(1,1.05/max(rho,1e-12)) + 5*max(0,1-U/100)",
+    "current_per_trace_formula": "40*12000/(12000+M) + 40*7000/(7000+J) + 15*0.55/(rho+0.05) + 5*(1-U/100)",
+    "aggregation": "raw unrounded binary64 arithmetic mean over the original two traces",
+    "continuous_score_changed": true,
+    "workloads_changed": false,
+    "reference_changed": false,
+    "comparators_or_thresholds_changed": false,
+    "validity_checks_changed": false,
+    "historical_r002_replay": {
+      "task_version_id": "taskver-redacted-c7c5a401",
+      "evaluation_id": "eval-redacted-7cc286c9",
+      "run_id": "run-redacted-a4016c5d",
+      "attempt_id": "attempt-redacted-701c9234",
+      "selected_payload_sha256": "sha256:d87180c159c27ba7b0db25ec20ecce6e1e73d6f50006c115b1fdeb4d8ac01f58",
+      "immutable_old_score": 82.504111,
+      "immutable_old_verdict": "PASS",
+      "reaggregated_score": 46.456427753729344,
+      "accepts_current_revision": false
+    },
+    "current_release_acceptance": {
+      "status": "pending",
+      "reason": "new evaluator requires immutable r003 publication and one source-bound T40 model POC with accepted independent final"
+    }
+  }
+}

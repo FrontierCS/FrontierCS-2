@@ -1,4 +1,4 @@
-"""Judge of parallel_radix_sort for the shared verifier (#757): evaluate(tree).
+"""Judge of parallel_radix_sort for the shared verifier: evaluate(tree).
 
 `tree` is the starter repo (`pristine/`) with only `RadixSort/edgelistgraph.h` and
 `RadixSort/frontier_solution/**` overlaid. The pinned GCC 7.5/Cilk toolchain, the std::sort

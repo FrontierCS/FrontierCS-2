@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "accelerator": null,
+    "datasets": {
+      "eval": {
+        "bytes": 205,
+        "path": "datasets/eval.json",
+        "version": "sha256:4071e78c3e6aaed3b3ca1a94b1166d3e7f5b300154cb947ef09ed6c1e0b9bca5"
+      },
+      "train": {
+        "bytes": 199,
+        "path": "datasets/train.json",
+        "version": "sha256:10f7015599b8e3fa2446e7e3a327e52d4d7eecc3afa8b543475a541e86134757"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "authored_suite_relation": "same_distribution",
+      "solver_visible_metrics": [
+        "candidate_elapsed_seconds_median",
+        "candidate_elapsed_seconds_p90"
+      ],
+      "suite_relation": "public_plus_hidden"
+    },
+    "runtime": {
+      "allowed_paths": [
+        "code/DBSCAN.C",
+        "code/frontier_solution/"
+      ],
+      "language": "cpp",
+      "submission_kind": "patch"
+    },
+    "scientific_alignment": "M004: fresh original public4+hidden4 final, unchanged shapes/seeds, strict per-workload C<R without 5% margin. M010: fixed20ms independent continuous; invalid0. 2026-09-16: Agent/Verifier 8 vCPU and eight OpenMP workers; workloads/timing/scoring/reference/PASS unchanged. Beat spec v3 (2026-10-07): adds two paper-regime 200000-point seed-spreader workloads per partition (5D varden, 7D simden, minPts 10) to the strict C<R verdict; continuous score unchanged over the original workloads; train/final evaluator limits 120/300 -> 240/600 s and train wall 12000 -> 24000 s.",
+    "scoring": {
+      "approval": "decision M010; supersedes source reference-relative capped curve",
+      "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 repeat medians, each of 5 single-round (-r 1) executions",
+      "fixed_anchor_seconds": 0.02,
+      "formula": "100 * 0.020 / (0.020 + C)",
+      "invalid_score": 0,
+      "margin": "score - reference_score",
+      "reference_independent": true,
+      "reference_score": "same fixed formula applied to reference geometric mean R",
+      "timing_unit": "seconds"
+    }
+  }
+}

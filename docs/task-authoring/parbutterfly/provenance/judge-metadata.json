@@ -1,0 +1,20 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "parbutterfly",
+  "domain": "algorithms",
+  "promotion": {},
+  "generated_at": null,
+  "generator": {"pipeline": "manual-transfer", "commit": null, "run_id": null, "candidate_id": null, "config_sha256": null},
+  "paper": {"paper_id": null, "title": null, "authors": [], "year": null, "venue": null, "pdf_url": null, "doi": null},
+  "rank": {"rank": null, "overall_score": null, "recommendation": null, "scores": {}, "risks": []},
+  "artifact": {"repo_url": null, "commit": null, "cloned_at": null, "census": {}},
+  "contribution": {
+    "title": "Exact parallel butterfly counting",
+    "summary": "Optimize exact butterfly counting in the retained ParButterfly OpenMP implementation.",
+    "paper_location": null,
+    "code_location": ["apps/hyper/butterfly_count_total.h", "apps/hyper/butterfly_count.h", "apps/hyper/butterfly_ecount.h", "apps/hyper/butterfly_peel.h", "apps/hyper/butterfly_epeel.h", "apps/hyper/butterfly_putils.h", "apps/hyper/butterfly_utils.h", "apps/hyper/solver_extensions/"],
+    "metric": "exact counts plus per-workload reference speed and independent naive-baseline speedup"
+  },
+  "host": null,
+  "provenance_note": "Manual native-format transfer from the authoring source at b55ddd03f6b726235f03603b15b4f4c489d478bc. The source contains no Smith generator, ranking, promotion, paper, artifact, or measured-host metadata; unavailable fields remain null or empty. Conversion and runtime provenance are recorded in policy metadata and upstream.lock.json."
+}
