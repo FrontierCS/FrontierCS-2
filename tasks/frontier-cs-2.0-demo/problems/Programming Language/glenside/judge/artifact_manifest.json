@@ -248,10 +248,6 @@
       "reason": "Offline build adapter, preserves source bytes and invokes the original src/lib.rs Cargo target."
     },
     {
-      "path": "make_submission.sh",
-      "reason": "Stages tracked and untracked source changes into the declared patch."
-    },
-    {
       "path": "frontier-build.sh",
       "reason": "Deterministic shell entrypoint for the task-owned Rust build adapter."
     },

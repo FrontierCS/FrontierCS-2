@@ -1,19 +1,48 @@
 """Trusted fresh-process measurement orchestration, disabled pending review."""
 
-import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import subprocess
 import time
 
-from measurement_contract import assemble_measurements, load_private_suite, schedule, validate_final_extension
-from task_guards import InvalidSubmission, MAX_PATCH_BYTES, TaskIntegrityError
+from measurement_contract import assemble_measurements, schedule
+from task_guards import CandidateTimeout, InvalidSubmission, TaskIntegrityError
 from trusted_workload import write_json
-from sampler_bridge import _owned_descendants, _process_identity
+import isolate
 
 TASK = Path(__file__).resolve().parent
+
+
+def _process_identity(pid):
+    try:
+        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(") ", 1)[1].split()
+        return fields[19], fields[0]
+    except (OSError, IndexError):
+        return None
+
+
+def _owned_descendants(pid):
+    result = {}
+    pending = [pid]
+    visited = set()
+    while pending:
+        current = pending.pop()
+        if current in visited:
+            continue
+        visited.add(current)
+        try:
+            children = [int(p) for p in Path(f"/proc/{current}/task/{current}/children").read_text().split()]
+        except OSError:
+            continue
+        for child in children:
+            identity = _process_identity(child)
+            if identity is not None:
+                result[child] = identity[0]
+                pending.append(child)
+    return result
 
 
 def bounded_process(command, log, env, timeout):
@@ -67,33 +96,28 @@ def bounded_process(command, log, env, timeout):
 
 
 
-def launch_episode(context, profile, mode, case, output, snapshot=None):
-    from private_context import authorize, load_context, validate_request
-    authorize(context, profile)
-    require_context = load_context(root=context["root"], mode=context["mode"])
-    if require_context["seal_sha256"] != context["seal_sha256"]:
-        raise TaskIntegrityError("Context changed during measurement")
+def launch_episode(context, mode, case, output, snapshot=None):
     runtime = context["seal"]["runtime"]
     index = case["run"]["index"]
     request_path = output / f"request-{index:02d}.json"
     episode_dir = output / f"episode-{index:02d}"
-    request = {"profile": profile, "mode": mode, "case": case,
-               "seal_sha256": context["seal_sha256"],
-               "private_context": context["root"],
+    request = {"mode": mode, "case": case,
                "checkpoint": runtime["checkpoint"], "runtime_prefix": runtime["prefix"],
                "output": str(episode_dir), "submission_path": str(snapshot) if case["side"] == "candidate" else None,
-               "sampler_seconds": 130,
-               "patch_sha256": hashlib.sha256(snapshot.read_bytes()).hexdigest() if snapshot else None}
-    validate_request(context, request)
+               "sampler_seconds": 130}
     write_json(request_path, request)
+    # PYTHONPATH: the episode process starts its sampler worker with the shared isolate.
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", CUDA_VISIBLE_DEVICES="",
-               OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1")
+               OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1",
+               PYTHONPATH=str(Path(isolate.__file__).resolve().parent))
     with (output / f"episode-{index:02d}.log").open("w") as log:
         try:
             returncode, elapsed = bounded_process([str(Path(runtime["prefix"]) / "bin/python"),
                 str(TASK / "episode_worker.py"), str(request_path)], log, env, 150)
         except subprocess.TimeoutExpired as error:
             write_json(output / "failure.json", {"case": case, "reason": "process_timeout"})
+            if case["side"] == "candidate":
+                raise CandidateTimeout("A candidate episode process exceeded 150 s") from error
             raise TaskIntegrityError("A complete measurement process timed out") from error
     write_json(output / f"process-{index:02d}.json", {"case": case, "seconds": elapsed, "returncode": returncode})
     if returncode:
@@ -102,42 +126,36 @@ def launch_episode(context, profile, mode, case, output, snapshot=None):
         failure = json.loads(failure_path.read_text()) if failure_path.is_file() else {}
         if case["side"] == "candidate" and failure.get("category") == "invalid_submission":
             raise InvalidSubmission("Candidate measurement did not complete")
+        if case["side"] == "candidate" and failure.get("category") == "candidate_timeout":
+            raise CandidateTimeout("The candidate sampler exceeded its 130 s lifetime")
         raise TaskIntegrityError("A trusted or unclassified measurement process did not complete")
-    if load_context(root=context["root"], mode=context["mode"])["seal_sha256"] != context["seal_sha256"]:
-        raise TaskIntegrityError("Context changed during a trajectory")
     trajectory = json.loads((episode_dir / "trajectory.json").read_text())
-    if (trajectory["run"] != case["run"] or trajectory["execution_kind"] != case["side"]
-            or trajectory["ema_sha256"] != runtime["ema_sha256"]):
+    if trajectory["run"] != case["run"] or trajectory["execution_kind"] != case["side"]:
         raise TaskIntegrityError("Trajectory provenance mismatch")
     return {"case": case, "trajectory": trajectory, "complete_process_seconds": elapsed}
 
 
 def measure_suite(config, solution_path, output, runtime_prefix, checkpoint, mode, *, context=None):
-    from private_context import authorize, load_context, verify_runtime_files
+    from private_context import load_context
     context = context if context is not None else load_context()
-    authorize(context, "evaluation")
-    verify_runtime_files(context)
     if (runtime_prefix != context["seal"]["runtime"]["prefix"]
             or checkpoint != context["seal"]["runtime"]["checkpoint"] or mode not in context["suites"]):
         raise TaskIntegrityError("Unbound runtime or mode")
     output = Path(output)
     output.mkdir(mode=0o700, exist_ok=False)
-    patch = Path(solution_path)
-    if patch.is_symlink() or not patch.is_file() or not 0 < patch.stat().st_size <= MAX_PATCH_BYTES:
-        raise InvalidSubmission("Provide one bounded regular patch file")
-    snapshot = output / "submitted.patch"
-    snapshot.write_bytes(patch.read_bytes())
-    snapshot.chmod(0o400)
-    from evaluator import prepared_submission
-    with prepared_submission(snapshot, config):
-        pass
+    # A read-only snapshot of the judged tree (the starter with the submission's allowed files),
+    # which every candidate episode loads.
+    snapshot = output / "submitted-tree"
+    shutil.copytree(Path(solution_path), snapshot, symlinks=True)
+    for path in sorted(snapshot.rglob("*"), reverse=True) + [snapshot]:
+        if not path.is_symlink():
+            path.chmod(0o500 if path.is_dir() else 0o400)
     deadline = time.monotonic() + config["evaluation"]["measurement_limits"][mode + "_seconds"]
     rows = []
     for case in schedule(context["suites"][mode]):
         if deadline - time.monotonic() < 155:
-            raise TaskIntegrityError("Insufficient suite time for a complete trajectory")
-        rows.append(launch_episode(context, "evaluation", mode, case, output, snapshot))
+            raise CandidateTimeout("The suite measurement budget ran out")
+        rows.append(launch_episode(context, mode, case, output, snapshot))
     result = assemble_measurements(context["suites"][mode], rows)
-    verify_runtime_files(context)
     write_json(output / "private-result.json", result)
     return result

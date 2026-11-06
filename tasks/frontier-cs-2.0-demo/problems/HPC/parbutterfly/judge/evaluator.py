@@ -1,15 +1,34 @@
+"""Judge of parbutterfly (#757): evaluate(tree) on the shared verifier.
+
+`tree` is pristine/ with only the seven butterfly headers and files below
+apps/hyper/solver_extensions/ overlaid; it is copied and built by trusted_build.py (the
+candidate as a worker library the pristine BipartiteButterflies CLI loads). The library
+compile and every counting run execute in fresh shared isolate instances; counting runs
+use syscalls="no_fork" (threads, no new processes).
+The reference (pristine/ + reference.patch) and the frozen naive baseline
+(pristine/ + baseline_naive.patch) are built the same way; every graph is generated, counted
+exactly (serial oracle) and timed over 31 alternating pairs.
+
+Score: s_i = median(baseline_i / candidate_i) per graph; S = geomean of s_i over the uniform-
+degree graphs; raw_score = score_unbounded = 0 if any count is inexact or S <= 1, else
+100*ln S / (ln 10 + ln S). reference_score is the same formula for the reference.
+
+Metrics (one beat_spec_workload_passes row per graph; development: 4, final: 8):
+  butterfly_count   exact count; passes if candidate and reference equal the oracle
+  counting_seconds  judge-side timing of CountTotal; lower; passes if exact and
+                    median(reference_i / candidate_i) > 1.05
+beats_reference = 1 iff every graph passes both (equality fails).
+The metric definitions before #757 are archived at docs/task-authoring/parbutterfly/provenance/beat_spec.json.
+"""
 from __future__ import annotations
-import bisect, hashlib, itertools, math, os, random, re, shutil, statistics, subprocess, sys, tempfile
-from trusted_build import build, bounded, clean_environment
+import bisect, itertools, math, os, random, re, shutil, signal, statistics, subprocess, sys, tempfile, time
+from trusted_build import PRISTINE, build, clean_environment, make_owner_writable as _make_owner_writable
 from pathlib import Path
-from submission_patch import apply_submission_patch, _make_owner_writable
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 TASK_DIR = Path(__file__).resolve().parent
 AUTHENTIC_ENTRYPOINT = Path("apps/hyper/BipartiteButterflies.C")
 AUTHENTIC_BINARY = Path("apps/hyper/BipartiteButterflies")
-CONFIG = {'submission': {'allow_paths': ['apps/hyper/butterfly_count_total.h', 'apps/hyper/butterfly_count.h', 'apps/hyper/butterfly_ecount.h', 'apps/hyper/butterfly_peel.h', 'apps/hyper/butterfly_epeel.h', 'apps/hyper/butterfly_putils.h', 'apps/hyper/butterfly_utils.h', 'apps/hyper/solver_extensions/'], 'max_patch_bytes': 524288, 'max_changed_files': 20}}
-REFERENCE_HASHES = {'apps/hyper/butterfly_count_total.h': '23b9a2935081c95b054022b9411c556d6b281307773e02e5e0db49061f28f2b7', 'apps/hyper/butterfly_count.h': '322fe6c6b931bd5128b0bac2c365b5fb1da95067b272535d6e05551f8b47f96a', 'apps/hyper/butterfly_ecount.h': 'f376ac752b00f6d84e103a530d73b94fa39ac4b6853a501d3358fce32e867936', 'apps/hyper/butterfly_peel.h': '2deadf7e8bd175d8b2b491878cbc96ae68e7402946f518f9c2e6798256cbe68c', 'apps/hyper/butterfly_epeel.h': 'ff478178626eae5830d3521094d4fdcc8d5c3bd53ab8bce2fa012dcbb03065cd', 'apps/hyper/butterfly_putils.h': '0213e6c55c5504cb72a9bf5b6e88bcef67b2438ad8ee93c455c074ae9c9e9c1f', 'apps/hyper/butterfly_utils.h': '1d4c609f66636e371b81b78e36b5d1dccbaf0c121136026a2c7b81c5807e7ab7'}
-BASELINE_HASHES = {'apps/hyper/butterfly_count_total.h': '5fb914a15dc5ecab49f1a248892839cf4fedcd0269e192ccc7678b4e24622e41', 'apps/hyper/butterfly_count.h': '925e076a8427c35b92aa6c27fb3ac07a281b3edceccde49c5ad1ea18a3e844d8', 'apps/hyper/butterfly_ecount.h': '04e7d391e068dcf4e70eecfb5b60efca433421b382825a54717c7610db676855', 'apps/hyper/butterfly_peel.h': '58c7b0d0bfcb1e3c2d3f867015b83ffaae51af839c1a0645c17bdcd68d637ec9', 'apps/hyper/butterfly_epeel.h': '24f02adbf53cbf355ba077a81d75c9209649c0f40cf4547e1b51b648888898bf', 'apps/hyper/butterfly_putils.h': 'a1f7bd5b8e6c8f5de660932b1bddc0b1129a97a94107b0a8d9c756913985ffa9', 'apps/hyper/butterfly_utils.h': 'd6847c831df3bc40cc0b56e67fac32a843a77e192d68e7502703821f34076eae'}
 MATERIAL_SPEEDUP = 1.05
 
 def paired_speedup(candidate_times, reference_times):
@@ -50,8 +69,8 @@ HIDDEN = [("uniform", 19_000, 21_000, 92, 4409), ("uniform", 21_000, 23_000, 100
           ("uniform", 23_000, 25_000, 108, 6637),
           ("skewed", 21_000, 23_000, 2_000_000, 0.75, 0.85, 9008)]
 FINAL = DEV + HIDDEN
-TIME_RE = re.compile(r"^FS2_TRUSTED_SECONDS=([0-9.eE+-]+)$", re.M)
-COUNT_RE = re.compile(r"number of butterflies:\s*(-?\d+)")
+READY = b"FS2_READY\n"
+COUNT_RE = re.compile(rb"FS2_COUNT=(-?[0-9]+)\n")
 
 class ReferenceFailure(RuntimeError):
     """The source-locked reference or frozen baseline did not count exactly.
@@ -125,19 +144,47 @@ def _write_graph(path: Path, rows, nv: int) -> None:
     path.write_text("\n".join(values)+"\n", encoding="ascii")
 
 def _build(repo: Path):
-    # The retained apps/hyper/BipartiteButterflies.C CLI is the trusted parent.
+    # The retained apps/hyper/BipartiteButterflies.C CLI is the pristine counting program.
     return build(repo)
 
 def _run(program, graph: Path, kind: str) -> tuple[int,float]:
+    # One fresh isolate instance per run, syscalls="no_fork": the pristine CLI reads and
+    # preprocesses the graph, then the candidate worker library counts it in the same process
+    # with threads but no new processes; nothing survives the run. The judge times it from
+    # outside: 'G' on the worker's stdin to the end of its stdout (count written, process gone).
     binary, library = program
-    cmd=[str(binary), "-countType", kind, "-rankType", "ACOCORE", "-per", "TOTAL", "-r", "0", "-m", str(MAX_WEDGES), "-a", str(MAX_ARRAY), str(graph)]
-    env=clean_environment(); env["FS2_WORKER_LIBRARY"]=str(library)
-    p=bounded(cmd, cwd=binary.parent, env=env, timeout=45)
-    if p.returncode: raise RuntimeError("counting executable failed")
-    counts=COUNT_RE.findall(p.stdout); times=TIME_RE.findall(p.stdout)
-    if len(counts)!=1 or len(times)!=1:
+    worker=isolate.start(["{work}/"+binary.name, "-countType", kind, "-rankType", "ACOCORE", "-per", "TOTAL", "-r", "0", "-m", str(MAX_WEDGES), "-a", str(MAX_ARRAY), "{in}/graph.adj"],
+                              tree=str(binary.parent), inputs={"graph.adj": str(graph)},
+                              env=dict(clean_environment(), FS2_WORKER_LIBRARY="{work}/"+library.name),
+                              path="/usr/bin:/bin", timeout_seconds=45, cpu_seconds=180, memory_bytes=8<<30,
+                              syscalls="no_fork")
+    seconds=None; record=b""
+    try:
+        before=b""
+        while READY not in before and len(before) < 1<<20:
+            chunk=worker.stdout.read(1<<16)  # the instance's 45 s limit ends it: never blocks forever
+            if not chunk: break
+            before+=chunk
+        if before.endswith(READY):
+            start=time.perf_counter()
+            worker.stdin.write(b"G")
+            while len(record) < 1<<10:
+                chunk=worker.stdout.read(1<<10)
+                if not chunk:
+                    seconds=time.perf_counter()-start
+                    break
+                record+=chunk
+    except BrokenPipeError:
+        pass
+    finally:
+        result=worker.close()
+    # After the record the worker only calls _exit(0); close() may race that exit with SIGKILL.
+    if seconds is None or result.limit or result.returncode not in (0, -signal.SIGKILL):
+        raise RuntimeError("counting executable failed")
+    match=COUNT_RE.fullmatch(record)
+    if not match:
         raise RuntimeError("counting executable produced invalid output")
-    count=int(counts[0]); seconds=float(times[0])
+    count=int(match.group(1))
     if count < 0 or not math.isfinite(seconds) or seconds <= 0:
         raise RuntimeError("counting executable produced invalid output")
     return count, seconds
@@ -170,30 +217,29 @@ def reference_score(suite, samples):
     """
     return uniform_score(suite, 1.0, [paired_speedup(s["reference"], s["baseline"]) for s in samples])
 
-def evaluate(solution_path: str):
+def evaluate(tree: str):
+    """`tree` is the pristine starter with only the submission's allowed files overlaid (the
+    shared verifier applied and scoped the patch); it is built from a private copy."""
     candidate=None; reference_root=None; baseline_root=None
+    affinity=os.sched_getaffinity(0)
     try:
-        applied=apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not applied.ok: return 0.0,0.0,applied.message,{}
-        candidate=Path(applied.workdir).parent
-        crepo=Path(applied.workdir); cbin=_build(crepo)
+        # Every build and run uses the same four CPUs (inherited by the sandbox instances).
+        os.sched_setaffinity(0, sorted(affinity)[:4])
+        candidate=Path(tempfile.mkdtemp(prefix="butterfly_candidate_"))
+        crepo=candidate/"repo"; shutil.copytree(tree,crepo,symlinks=True)
+        _make_owner_writable(crepo)
+        cbin=_build(crepo)
         reference_root=Path(tempfile.mkdtemp(prefix="butterfly_reference_"))
-        rrepo=reference_root/"repo"; shutil.copytree(TASK_DIR/"harbor"/"app",rrepo)
+        rrepo=reference_root/"repo"; shutil.copytree(PRISTINE,rrepo)
         _make_owner_writable(rrepo)
         ap=subprocess.run(["git","apply",str((TASK_DIR/"reference.patch").resolve())],cwd=rrepo,capture_output=True,text=True,timeout=20,env=dict(clean_environment(), GIT_CEILING_DIRECTORIES=str(reference_root)))
         if ap.returncode: raise RuntimeError("reference restoration failed")
-        for relative, expected in REFERENCE_HASHES.items():
-            if hashlib.sha256((rrepo/relative).read_bytes()).hexdigest() != expected:
-                raise RuntimeError("reference restoration failed")
         rbin=_build(rrepo)
         baseline_root=Path(tempfile.mkdtemp(prefix="butterfly_baseline_"))
-        brepo=baseline_root/"repo"; shutil.copytree(TASK_DIR/"harbor"/"app",brepo)
+        brepo=baseline_root/"repo"; shutil.copytree(PRISTINE,brepo)
         _make_owner_writable(brepo)
         ap=subprocess.run(["git","apply",str((TASK_DIR/"baseline_naive.patch").resolve())],cwd=brepo,capture_output=True,text=True,timeout=20,env=dict(clean_environment(), GIT_CEILING_DIRECTORIES=str(baseline_root)))
         if ap.returncode: raise RuntimeError("baseline restoration failed")
-        for relative, expected in BASELINE_HASHES.items():
-            if hashlib.sha256((brepo/relative).read_bytes()).hexdigest() != expected:
-                raise RuntimeError("baseline restoration failed")
         bbin=_build(brepo)
         suite=FINAL if os.environ.get("FRONTIER_SUBMISSION_ROLE")=="final" else DEV
         work=reference_root/"graphs"; work.mkdir()
@@ -243,11 +289,12 @@ def evaluate(solution_path: str):
                  "private_timing_samples":private_samples,"private_counts_per_workload":private_counts,
                  "oracle_butterfly_count":len(suite),"final_metrics":int(os.environ.get("FRONTIER_SUBMISSION_ROLE")=="final")}
         return score,score,"evaluation completed",metrics
-    except ReferenceFailure:
+    except (ReferenceFailure, isolate.IsolateError):
         raise
     except Exception as exc:
         return 0.0,0.0,str(exc) if str(exc) in {"submission does not build","authentic entrypoint is missing","authentic entrypoint did not build","counting executable failed","counting executable produced invalid output","nondeterministic butterfly count","reference restoration failed"} else "evaluation failed",{}
     finally:
+        os.sched_setaffinity(0, affinity)
         if candidate: shutil.rmtree(candidate,ignore_errors=True)
         if reference_root: shutil.rmtree(reference_root,ignore_errors=True)
         if baseline_root: shutil.rmtree(baseline_root,ignore_errors=True)

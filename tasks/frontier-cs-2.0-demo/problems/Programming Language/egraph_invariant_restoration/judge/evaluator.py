@@ -1,27 +1,43 @@
-"""Paired, judge-clock evaluator for the excised egg rebuilding pipeline."""
+"""Paired, judge-clock evaluator for the excised egg rebuilding pipeline (#757).
+
+evaluate(tree) on the shared verifier: `tree` is pristine/ with only the editable files overlaid.
+check_tree refuses the content rules that keep the measurement honest (content_policy). The
+reference is pristine/ + reference.patch. Every build and every test process of candidate and
+reference runs under the shared isolate launcher (isolate.run: no judge files, clean environment,
+no network, private disk): a build instance returns the three test binaries, a guard instance
+runs one guard, and each timed sample is one instance whose judge-written driver repeats the
+workload process and times each invocation with the judge's wall clock, as before. Both pass
+three invariant guards and simple_tests, then are timed in nine paired samples per workload
+(after one warm-up).
+
+Score: G_C = geomean over the active workloads of the candidate's median wall-clock seconds;
+raw_score = score_unbounded = 100 * S / (S + G_C) with the fixed anchor S = 0.020 s.
+Any build, guard, correctness, deadline or sandbox failure is a scored zero.
+
+Metrics (one beat_spec_workload_passes row per workload; development: 3, final: 6):
+  wall_clock_seconds  median process wall clock; lower; passes if C <= 0.95 * R
+  congruence_seconds  median apply+rebuild seconds from the Runner report; lower;
+                      passes if C <= 0.95 * R
+beats_reference = 1 iff every workload passes the guards and both metrics.
+The metric definitions before #757 are archived at docs/task-authoring/egraph_invariant_restoration/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 
-import ctypes, difflib, hashlib, json, math, os, random, re, shutil, statistics, struct, subprocess, sys, time
+import difflib, json, math, os, random, re, shutil, statistics, subprocess, sys, tempfile, time
 from pathlib import Path
+from types import SimpleNamespace
 TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 AUTHENTIC_ENTRYPOINT = "tests/simple.rs"
-CONFIG = {"submission": {"kind": "patch", "path": "/app/solution.patch",
-    "allow_paths": ["src/egraph.rs", "src/lib.rs", "src/tutorials/_01_background.rs",
-                    "src/tutorials/mod.rs", "src/solver_extensions/"],
-    "max_patch_bytes": 262144, "max_changed_files": 20}}
-REFERENCE_CONFIG = {"submission": {**CONFIG["submission"], "allow_paths":
-    ["src/egraph.rs", "src/lib.rs", "src/tutorials/_01_background.rs", "src/tutorials/mod.rs"]}}
+PRISTINE = TASK_DIR / "pristine"
 
 REPETITIONS, WARMUPS = 9, 1
 BUILD_TIMEOUT, RUN_TIMEOUT, EVALUATION_DEADLINE_SECONDS = 240, 30, 1700
 MIN_SAMPLE_SECONDS, MIN_SAMPLE_RUNS = 4.0, 3
 MATERIAL_SPEEDUP_RATIO = 0.95
-BASELINE_LIB_SHA256 = "5e9f37d68721966322808dec166e7548381aa2fa139c7c8fcdb5053462280ff8"
-UPSTREAM_LIB_SHA256 = "5ed4e29b3533219d05f3e95d0f5f7861503b8419126224fffaf24f3c0a291cf8"
 DEV = [("dev_ematching", "math", "math_ematching_bench", {"EGG_ITER_LIMIT": "6", "EGG_SAMPLES": "20"}),
        ("dev_diff_explanations", "math", "diff_power_harder", {}),
        ("dev_associative", "math", "math_associate_adds", {})]
@@ -29,11 +45,48 @@ FINAL = [("final_integration", "math", "integ_part2", {}),
          ("final_radical", "math", "math_simplify_root", {}),
          ("final_factorization", "math", "math_simplify_factor", {})]
 
-# x86_64 Linux Landlock syscalls and filesystem rights. Candidate processes see
-# only their disposable tree and public runtime, never judge/reference paths.
-CREATE, ADD, RESTRICT, VERSION, PATH_BENEATH, NO_NEW_PRIVS = 444, 445, 446, 1, 1, 38
-EXEC, WRITE, READ, READDIR = 1, 2, 4, 8
-ALL_FS, READ_EXEC = (1 << 15) - 1, EXEC | READ | READDIR
+TARGETS = ("simple", "math", "frontier_correctness")
+# The Rust toolchain lives under /usr/local (readable in every instance); cargo stays offline on
+# the vendored dependencies and writes only inside the instance.
+PATH = "/usr/local/cargo/bin:/usr/local/bin:/usr/bin:/bin"
+ENV = {"CARGO_NET_OFFLINE": "true", "CARGO_BUILD_JOBS": "8",
+       "CARGO_HOME": "/usr/local/cargo", "RUSTUP_HOME": "/usr/local/rustup",
+       "CARGO_TARGET_DIR": "{work}/target", "RUST_TEST_THREADS": "1",
+       "RAYON_NUM_THREADS": "1", "RUSTUP_TOOLCHAIN": "1.94.1-x86_64-unknown-linux-gnu"}
+# Build instance: compile, then hand back the uniquely identified test binaries.
+BUILD_SCRIPT = r'''
+cargo test --release --locked --offline --no-run --test simple --test math --test frontier_correctness >&2 || exit 3
+for target in simple math frontier_correctness; do
+  found=""; count=0
+  for path in target/release/deps/"$target"-*; do
+    if [ -f "$path" ] && [ -x "$path" ]; then found=$path; count=$((count + 1)); fi
+  done
+  [ "$count" = 1 ] || exit 4
+  cp "$found" "$1/$target" || exit 5
+done
+'''
+# Sample driver (judge code, runs inside the instance): repeats the workload process until at
+# least min_runs have run and min_seconds have elapsed, timing each invocation with
+# perf_counter around the whole process exactly as the judge did before; prints one JSON object.
+DRIVER = r'''
+import json, subprocess, sys, time
+spec = json.loads(sys.argv[1])
+command = [spec["binary"], *spec["args"]]
+runs, count = [], 0
+start = time.perf_counter()
+while count < spec["min_runs"] or time.perf_counter() - start < spec["min_seconds"]:
+    try:
+        proc = subprocess.run(command, text=True, capture_output=True, timeout=spec["timeout"])
+    except subprocess.TimeoutExpired:
+        print(json.dumps({"error": "timeout"}))
+        raise SystemExit(0)
+    count += 1
+    runs.append({"returncode": proc.returncode, "stdout": proc.stdout, "stderr": proc.stderr})
+    if proc.returncode:
+        break
+elapsed = (time.perf_counter() - start) / count
+print(json.dumps({"elapsed": elapsed, "count": count, "runs": runs}))
+'''
 
 GUARD_SOURCE = r'''use egg::*;
 define_language! { enum GuardLang { Symbol(Symbol), "f" = F(Id), "+" = Add([Id; 2]), Num(i32), } }
@@ -111,8 +164,12 @@ RUNNER_REPORT_RE = re.compile(
     r"  Egraph size: (\d+) nodes, (\d+) classes, (\d+) memo\n  Rebuilds: (\d+)\n"
     r"  Total time: ([^\s]+)\n    Search:  \([^)\n]*\) ([^\s]+)\n"
     r"    Apply:   \([^)\n]*\) ([^\s]+)\n    Rebuild: \([^)\n]*\) ([^\s]+)$")
-FORBIDDEN = re.compile(r"(?:unsafe\b|std\s*::\s*(?:fs|process|env)|include_(?:str|bytes)!|"
-    r"option_env!|env!|/proc|reference\.patch|evaluator\.py|Command\s*::|process\s*::\s*exit)", re.I)
+# Measurement rules (the sandbox makes judge files, environment and network unreachable, so the
+# old verifier-access tokens are gone): `unsafe` would let solver code patch the in-process Runner
+# timers; files and helper processes would let one timed invocation hand work to the next within
+# a sample; process::exit could end a process after forging its test summary.
+FORBIDDEN = re.compile(r"(?:unsafe\b|std\s*::\s*(?:fs|process)|Command\s*::|process\s*::\s*exit)",
+                       re.I)
 
 
 def _remaining(deadline, wanted):
@@ -122,55 +179,17 @@ def _remaining(deadline, wanted):
     return min(wanted, max(1.0, left - 5))
 
 
-def _env(tree, extra=None):
-    home, tmp = tree / ".frontier-home", tree / ".frontier-tmp"
-    home.mkdir(exist_ok=True); tmp.mkdir(exist_ok=True)
-    env = {"PATH": "/usr/local/cargo/bin:/usr/local/bin:/usr/bin:/bin",
-            "HOME": str(home), "TMPDIR": str(tmp), "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
-            "CARGO_NET_OFFLINE": "true", "CARGO_BUILD_JOBS": "8",
-            "CARGO_HOME": "/usr/local/cargo", "RUSTUP_HOME": "/usr/local/rustup",
-            "CARGO_TARGET_DIR": str(tree / "target"), "RUST_TEST_THREADS": "1",
-            "RAYON_NUM_THREADS": "1", "RUSTUP_TOOLCHAIN": "1.94.1-x86_64-unknown-linux-gnu"}
-    if extra: env.update(extra)
-    return env
+def _instance(argv, deadline, wanted, env=ENV, **kwargs):
+    """One sandboxed instance; an instance cut by the deadline ends the evaluation."""
+    timeout = _remaining(deadline, wanted)
+    result = isolate.run(argv, timeout_seconds=timeout, env=env, path=PATH, **kwargs)
+    if result.timed_out:
+        raise TimeoutError("sandboxed instance exceeded its time limit")
+    return result
 
 
-def _abi():
-    return int(ctypes.CDLL(None, use_errno=True).syscall(CREATE, 0, 0, VERSION))
-
-
-def _sandbox(tree):
-    if _abi() < 3:
-        raise RuntimeError("Landlock ABI 3+ unavailable")
-    writable = tree.parent.resolve()
-    def apply():
-        libc = ctypes.CDLL(None, use_errno=True)
-        attr = struct.pack("Q", ALL_FS)
-        ruleset = libc.syscall(CREATE, attr, len(attr), 0)
-        if ruleset < 0: os._exit(125)
-        for path, access in (("/usr", READ_EXEC), ("/etc", READ_EXEC),
-                             ("/dev", READ_EXEC | WRITE), (str(writable), ALL_FS)):
-            fd = os.open(path, os.O_PATH | os.O_CLOEXEC)
-            rule = struct.pack("Qi4x", access, fd)
-            if libc.syscall(ADD, ruleset, PATH_BENEATH, rule, 0): os._exit(125)
-            os.close(fd)
-        if libc.prctl(NO_NEW_PRIVS, 1, 0, 0, 0) or libc.syscall(RESTRICT, ruleset, 0):
-            os._exit(125)
-        os.close(ruleset)
-    return apply
-
-
-def _run(cmd, tree, timeout, deadline, extra_env=None):
-    return subprocess.run(cmd, cwd=tree, text=True, capture_output=True,
-        timeout=_remaining(deadline, timeout), env=_env(tree, extra_env), preexec_fn=_sandbox(tree))
-
-
-def _validate_source(tree, reference=False):
-    base = TASK_DIR / "harbor" / "app"
-    lib_digest = hashlib.sha256((tree / "src/lib.rs").read_bytes()).hexdigest()
-    expected_lib = UPSTREAM_LIB_SHA256 if reference else BASELINE_LIB_SHA256
-    if lib_digest != expected_lib:
-        raise ValueError("src/lib.rs differs outside the source-locked privacy redaction")
+def _validate_source(tree):
+    base = PRISTINE
     for rel in ("src/egraph.rs", "src/tutorials/_01_background.rs", "src/tutorials/mod.rs"):
         delta = difflib.ndiff((base / rel).read_text(errors="replace").splitlines(),
                              (tree / rel).read_text(errors="replace").splitlines())
@@ -194,31 +213,50 @@ def _require_one_test(proc, name):
         raise ValueError("workload did not execute exactly one expected test")
 
 
-def _invoke(binaries, workload, tree, deadline):
+def _invoke(binaries, workload, deadline, min_runs=1, min_seconds=0.0):
+    """Run one workload process (or a sample of them) in one instance; returns (elapsed, procs)."""
     _, target, name, *rest = workload
-    return _run([str(binaries[target]), "--exact", name, "--nocapture", "--test-threads=1"],
-                tree, RUN_TIMEOUT, deadline, rest[0] if rest else None)
+    extra = rest[0] if rest else {}
+    spec = {"binary": "{work}/" + target, "min_runs": min_runs, "min_seconds": min_seconds,
+            "args": ["--exact", name, "--nocapture", "--test-threads=1"],
+            "timeout": _remaining(deadline, RUN_TIMEOUT)}
+    argv = [sys.executable, "-I", "-S", "-c", DRIVER, json.dumps(spec)]
+    result = _instance(argv, deadline, EVALUATION_DEADLINE_SECONDS, tree=binaries[target],
+                       env={**ENV, **extra}, output_bytes=256 << 20)
+    if result.returncode or result.limit:
+        raise ValueError("workload driver failed")
+    report = json.loads(result.stdout)
+    if "error" in report:
+        raise TimeoutError("workload process exceeded its time limit")
+    procs = [SimpleNamespace(**run) for run in report["runs"]]
+    return report["elapsed"], procs
 
 
-def _prepare_tree(tree, deadline, reference=False):
-    _validate_source(tree, reference=reference)
+def _prepare_tree(tree, deadline):
+    _validate_source(tree)
     (tree / "tests" / "frontier_correctness.rs").write_text(GUARD_SOURCE)
-    build = _run(["cargo", "test", "--release", "--locked", "--offline", "--no-run",
-        "--test", Path(AUTHENTIC_ENTRYPOINT).stem, "--test", "math",
-        "--test", "frontier_correctness"],
-        tree, BUILD_TIMEOUT, deadline)
-    if build.returncode: raise ValueError("release build failed")
-    deps, binaries = tree / "target" / "release" / "deps", {}
-    for target in ("simple", "math", "frontier_correctness"):
-        matches = [p for p in deps.glob(f"{target}-*") if p.is_file() and os.access(p, os.X_OK)]
-        if len(matches) != 1: raise ValueError(f"could not identify {target} test binary")
-        binaries[target] = matches[0]
+    build = _instance(["sh", "-c", BUILD_SCRIPT, "build", "{out}"], deadline, BUILD_TIMEOUT,
+                      tree=tree, outputs=TARGETS, output_bytes=1 << 30)
+    if build.returncode == 4: raise ValueError("could not identify a test binary")
+    if build.returncode or build.limit: raise ValueError("release build failed")
+    binaries = {}
+    for target in TARGETS:
+        data = build.outputs.get(target)
+        if not data: raise ValueError(f"could not identify {target} test binary")
+        # Each binary in a directory of its own: the instance copies only that one.
+        directory = tree.parent / "bin" / target
+        directory.mkdir(parents=True)
+        (directory / target).write_bytes(data)
+        (directory / target).chmod(0o755)
+        binaries[target] = directory
     for name in ("frontier_invariants_and_extraction", "frontier_analysis_propagation",
                  "frontier_explanations"):
         guard = ("guard", "frontier_correctness", name)
-        proc = _invoke(binaries, guard, tree, deadline); _require_one_test(proc, name)
+        _, procs = _invoke(binaries, guard, deadline)
+        _require_one_test(procs[0], name)
     upstream = ("upstream", "simple", "simple_tests")
-    proc = _invoke(binaries, upstream, tree, deadline); _require_one_test(proc, upstream[2])
+    _, procs = _invoke(binaries, upstream, deadline)
+    _require_one_test(procs[0], upstream[2])
     return binaries
 
 
@@ -242,35 +280,32 @@ def _runner_report(proc):
             "iterations": int(match.group(1)), "runner_rebuilds": int(match.group(5))}
 
 
-def _sample(binaries, workload, tree, deadline):
-    start, count, outputs = time.perf_counter(), 0, []
-    while count < MIN_SAMPLE_RUNS or time.perf_counter() - start < MIN_SAMPLE_SECONDS:
-        proc = _invoke(binaries, workload, tree, deadline)
-        _require_one_test(proc, workload[2]); count += 1
-        outputs.append(proc)
-    elapsed = (time.perf_counter() - start) / count
-    # Parsed after the timed loop so the wall-clock measurement is unchanged.
+def _sample(binaries, workload, deadline):
+    elapsed, outputs = _invoke(binaries, workload, deadline, MIN_SAMPLE_RUNS, MIN_SAMPLE_SECONDS)
+    for proc in outputs:
+        _require_one_test(proc, workload[2])
+    count = len(outputs)
     reports = [_runner_report(proc) for proc in outputs]
     congruence = math.fsum(r["congruence_seconds"] for r in reports) / count
     return elapsed, count, congruence, reports[-1]
 
 
-def _measure(candidate, reference, candidate_tree, reference_tree, suite, deadline):
+def _measure(candidate, reference, suite, deadline):
     out_c, out_r, raw, cong_c, cong_r = {}, {}, {}, {}, {}
     rng = random.Random(0xE66)
     for workload in suite:
         key = workload[0]
         for _ in range(WARMUPS):
-            _sample(candidate, workload, candidate_tree, deadline)
-            _sample(reference, workload, reference_tree, deadline)
+            _sample(candidate, workload, deadline)
+            _sample(reference, workload, deadline)
         cv, rv, ccv, rcv, pairs = [], [], [], [], []
         for ref_first in [bool(rng.getrandbits(1)) for _ in range(REPETITIONS)]:
             if ref_first:
-                r, rn, rc, rrep = _sample(reference, workload, reference_tree, deadline)
-                c, cn, cc, crep = _sample(candidate, workload, candidate_tree, deadline)
+                r, rn, rc, rrep = _sample(reference, workload, deadline)
+                c, cn, cc, crep = _sample(candidate, workload, deadline)
             else:
-                c, cn, cc, crep = _sample(candidate, workload, candidate_tree, deadline)
-                r, rn, rc, rrep = _sample(reference, workload, reference_tree, deadline)
+                c, cn, cc, crep = _sample(candidate, workload, deadline)
+                r, rn, rc, rrep = _sample(reference, workload, deadline)
             cv.append(c); rv.append(r); ccv.append(cc); rcv.append(rc)
             pairs.append({"candidate_seconds": c, "reference_seconds": r,
                           "candidate_runs": cn, "reference_runs": rn,
@@ -318,31 +353,56 @@ def _score_timings(candidate_times, reference_times, suite, final=False,
     return score, score, metrics
 
 
-def _is_reference_submission(solution_path):
+class _Tree:
+    """A disposable judge-side copy (plus its built binaries) in its own directory."""
+
+    def __init__(self, source):
+        self.parent = Path(tempfile.mkdtemp(prefix="egraph-"))
+        self.workdir = self.parent / "tree"
+        shutil.copytree(source, self.workdir, symlinks=True)
+        for directory, _names, files in os.walk(self.workdir):
+            for name in [directory, *(os.path.join(directory, f) for f in files)]:
+                if not os.path.islink(name):
+                    os.chmod(name, os.stat(name).st_mode | 0o200)
+
+    def dispose(self):
+        shutil.rmtree(self.parent, ignore_errors=True)
+
+
+def _reference_tree():
+    tree = _Tree(PRISTINE)
+    proc = subprocess.run(["git", "apply", "--whitespace=nowarn", str(TASK_DIR / "reference.patch")],
+                          cwd=tree.workdir, capture_output=True, text=True, timeout=300,
+                          env={**os.environ, "GIT_CEILING_DIRECTORIES": str(tree.parent)})
+    if proc.returncode:
+        tree.dispose()
+        raise RuntimeError("reference unavailable")
+    return tree
+
+
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: the edited sources use no forbidden verifier-access capability."""
     try:
-        submitted_patch = Path(solution_path).read_bytes()
-    except OSError:
-        return False
-    reference_patch = (TASK_DIR / "reference.patch").read_bytes()
-    return hashlib.sha256(submitted_patch).digest() == hashlib.sha256(reference_patch).digest()
+        _validate_source(Path(tree))
+    except ValueError:
+        return "content_policy", sorted(c.path for c in changes if c.status != "D")
+    return None
 
 
-def evaluate(solution_path):
+def evaluate(tree):
     candidate = reference = None
     deadline = time.monotonic() + EVALUATION_DEADLINE_SECONDS
     try:
-        is_reference = _is_reference_submission(solution_path)
-        candidate = apply_submission_patch(solution_path, TASK_DIR,
-                                           REFERENCE_CONFIG if is_reference else CONFIG)
-        if not candidate.ok: return 0.0, 0.0, candidate.message, {}
-        reference = apply_submission_patch(TASK_DIR / "reference.patch", TASK_DIR, REFERENCE_CONFIG)
-        if not reference.ok: return 0.0, 0.0, "reference unavailable", {}
-        cb = _prepare_tree(candidate.workdir, deadline, reference=is_reference)
-        rb = _prepare_tree(reference.workdir, deadline, reference=True)
+        candidate = _Tree(tree)
+        try:
+            reference = _reference_tree()
+        except RuntimeError:
+            return 0.0, 0.0, "reference unavailable", {}
+        cb = _prepare_tree(candidate.workdir, deadline)
+        rb = _prepare_tree(reference.workdir, deadline)
         final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
         suite = DEV + FINAL if final else DEV
-        c, r, private_raw, cc, rc = _measure(
-            cb, rb, candidate.workdir, reference.workdir, suite, deadline)
+        c, r, private_raw, cc, rc = _measure(cb, rb, suite, deadline)
         score, unbounded, metrics = _score_timings(c, r, suite, final, cc, rc)
         metrics["private_timing_evidence"] = {
             key: {"candidate_median_seconds": c[key],
@@ -357,11 +417,13 @@ def evaluate(solution_path):
         metrics["reference_geometric_mean_wall_clock_seconds"] = math.exp(
             statistics.mean(math.log(r[key]) for key, *_ in suite))
         return score, unbounded, "valid; independent guards and workloads passed", metrics
+    except isolate.IsolateError:
+        raise  # the sandbox could not be built: a verification failure, not a score
     except (Exception, subprocess.SubprocessError, OSError, ValueError):
         return 0.0, 0.0, "build, sandbox, deadline, or correctness failure", {}
     finally:
         for result in (candidate, reference):
-            if result and result.workdir: shutil.rmtree(result.workdir.parent, ignore_errors=True)
+            if result: result.dispose()
 
 
 if __name__ == "__main__":

@@ -3,12 +3,13 @@
 import json
 import os
 from pathlib import Path
-import subprocess
 import tempfile
+
+import isolate
 
 from private_context import file_sha256, hardware_identity, runtime_identity, verify_cgroup
 from runtime_layout import validate_layout
-from sampler_bridge import worker_command, worker_environment
+from sampler_bridge import worker_launch
 
 
 def main():
@@ -46,16 +47,15 @@ assert 'QUALIFICATION_PRIVATE_CANARY' not in os.environ
 assert 'FRONTIER_VERIFIER_TOKEN' not in os.environ
 print(json.dumps({'separate_process': True, 'public_cwd': True, 'environment_scrubbed': True}))
 '''.replace("PARENT_PID", str(os.getpid())))
-        command = worker_command(app, worker, task / "bridge_protocol.py", runtime={
+        argv, options = worker_launch(app, worker, task / "bridge_protocol.py", runtime={
             "prefix": declaration["prefix"], "base": identity["base_prefix"], "version": "3.10"})
-        result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=30,
-                                cwd=app, close_fds=True,
-                                env=worker_environment(app, task / "bridge_protocol.py"))
+        result = isolate.run(argv, timeout_seconds=30, **options)
+        assert result.ok, result.stderr[-2000:]
         checks = json.loads(result.stdout)
     import sys
     assert "torch" not in sys.modules
     print(json.dumps({"runtime_identity": identity, "hardware": hardware_identity(), "process": checks,
-                      "execution_policy": "standard_platform_sandbox_with_post_trial_review",
+                      "execution_policy": "shared_isolate",
                       "uid": os.getuid(), "inference": False}, sort_keys=True))
 
 

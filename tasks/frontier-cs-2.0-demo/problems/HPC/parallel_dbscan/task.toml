@@ -1,0 +1,39 @@
+# The definition of parallel_dbscan (schema frontier.task/v1, #757). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+schema = "frontier.task/v1"
+id = "parallel_dbscan"
+display_name = "Exact DBSCAN Connectivity"
+version = "g1-final600-8cpu-r004-beat-spec-v3-shared-verifier"
+
+[agent]
+cpu_millis = 8000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 2147483648      # 2 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 4294967296         # 4 GiB
+max_evidence_bytes = 1048576       # 1 MiB, as the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 24000
+eval_timeout_seconds = 600
+
+[submission]
+max_bytes = 286720                # the archive limit the Agent was told (the patch cap was 262144)
+allowed_paths = ["code/DBSCAN.C", "code/frontier_solution/"]
+max_changed_files = 20            # unchanged by the migration; the statement states it
+allow_executable = true           # the old judge applied new executable files under the editable directory
+
+[feedback]
+candidate_elapsed_seconds_median = "Median over the train workloads (four small, two 200,000-point) of the candidate's workload time, in seconds."
+candidate_elapsed_seconds_p90 = "Nearest-rank 90th percentile of the same six candidate workload times, in seconds (the largest of the six)."
+
+[paper]                           # for readers; the platform never reads it
+title = "Theoretically-Efficient and Practical Parallel DBSCAN"
+venue = "SIGMOD 2020"
+url = "https://doi.org/10.1145/3318464.3380582"
+summary = "Speed up exact parallel DBSCAN cluster connectivity."

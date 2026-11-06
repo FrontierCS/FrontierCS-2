@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-TRUSTED_APP = ROOT / "harbor" / "app"          # pristine upstream tree (reference source)
+TRUSTED_APP = ROOT / "upstream_app"           # pristine upstream tree with every user task (reference source)
 BENCHMARK_VERSION = "v1.1.2"
 ATTACK = "important_instructions"
 

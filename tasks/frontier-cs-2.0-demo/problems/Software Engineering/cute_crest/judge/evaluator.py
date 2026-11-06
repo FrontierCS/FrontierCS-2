@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
-"""Judge of the CREST search-strategy task.
+"""Judge of cute_crest (CREST search strategy) for the shared verifier: evaluate(tree).
 
-The candidate strategy and the private reference strategy (CREST's
-control-flow-directed search) are each run on the same seeds of every graded
-program, interleaved in one pool so that both see the same machine load.
-gate.py turns the per-seed coverage and search-overhead measurements into the
-PASS decision; this file owns the runs, validity and the continuous score.
+Score: per graded program, 100 * max(0, C - B) / (T - B) with C the candidate's mean coverage
+over the 30 seeds, B the program's pinned bounded-DFS (depth 12) mean coverage and T its branch
+count; raw_score = score_unbounded = the mean over the graded programs (development: grep 2.2;
+final: two held-out programs). A source/object rule break is a rejection; a build failure or a
+strategy fault in any run (crash, sandbox kill, API misuse, protocol, exit) scores 0. Early
+ends (caps, Run returned) are valid. A reference or harness failure raises.
+
+Beat-spec metrics (beat_spec_workload_passes, one row per graded program; gate.py, exact
+integer arithmetic, K = 30 seeds, s^2 = (var_c + var_r) / 2 with sample variances):
+- branches_covered, higher is better: passes when mean(cov_c) - mean(cov_r) > 3 s sqrt(2/K).
+- search_overhead_seconds (strategy + solver CPU, whole ms), lower is better: passes when
+  mean(ovh_r) - mean(ovh_c) > 3 s sqrt(2/K).
+beats_reference = 1 iff both metrics pass on every graded program.
+
+Candidate and reference run interleaved on the same seeds and secret relabelling; check_tree
+runs the starter's solution_policy source rules. The strategy is compiled, and its objects are
+listed for the object rules, in a shared isolate instance (no judge files, no network, a
+clean environment); the strategy process seals itself (seccomp) before any solution code runs.
 """
 from __future__ import annotations
 
@@ -13,27 +26,45 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
 TASK = Path(__file__).resolve().parent
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(TASK))
-from submission_patch import apply_submission_patch  # noqa: E402
 import gate  # noqa: E402
+import isolate  # noqa: E402  the shared launcher, beside edit_scope in the Verifier base
 
 # Built once per verifier image by build_benchmarks.py; read-only afterwards.
 # Kept outside the task bundle so a verification does not copy it.
 BUILT = Path(os.environ.get('CREST_TASK_BUILT_ROOT', '/opt/crest-task'))
-CONFIG = {'submission': {'kind': 'patch', 'path': '/app/solution.patch',
-                         'allow_paths': ['src/frontier_solution/'],
-                         'max_changed_files': 32, 'max_patch_bytes': 262144}}
-SPEC = json.loads((TASK / 'beat_spec.json').read_text())
-METRIC_NAMES = [m['name'] for m in SPEC['metrics']]
-assert METRIC_NAMES == ['branches_covered', 'search_overhead_seconds']
+# The starter tree (repo/), copied here by the Verifier image; the reference patch applies to it.
+PRISTINE = TASK / 'pristine'
+SOLUTION = 'src/frontier_solution'
+METRIC_NAMES = ['branches_covered', 'search_overhead_seconds']
 PROGRAMS = json.loads((TASK / 'programs.json').read_text())
 WORKERS = 8
+
+
+# Solution-rule codes (solution_policy.PolicyViolation) -> the shared rejection categories.
+# A layout fault (a file kind, a subdirectory, a missing strategy.cc or MakeStrategy()) is a
+# change outside the editable surface; everything else is content the task forbids.
+REJECTION = {'solution_layout': 'out_of_scope'}
+
+
+def rejection_category(code):
+    return REJECTION.get(code, 'content_policy')
+
+
+class Rejected(Exception):
+    """A solution rule the compiled objects break: a scored zero with a shared category."""
+
+    def __init__(self, category):
+        Exception.__init__(self, category)
+        self.category = category
 
 
 class InvalidCandidate(Exception):
@@ -102,25 +133,113 @@ def load_tools():
     try:
         import crest_runner
         import frontier_build
-        import solution_policy
     finally:
         sys.path.remove(str(tree))
-    return tree, crest_runner, frontier_build, solution_policy
+    return tree, crest_runner, frontier_build
 
 
-def build_candidate(tools, solution_dir, out_dir, env):
-    tree, _, frontier_build, solution_policy = tools
+# The strategy build of the starter's frontier_build.build_strategy (same compiler flags and
+# order), run in one isolate instance: the solution's .cc files are compiled, each object
+# is listed (nm -P, readelf -S -W) for the object rules, then strategy_host.cc is compiled and
+# everything is linked statically.  Exit 10: a solution file does not compile; 11: an object
+# cannot be listed; 20: the host does not compile or the link fails.
+BUILD_SCRIPT = r"""set -u
+src=$1; shift
+cxx="g++ -std=c++17 -O2 -Wall -fno-plt -fno-pic -no-pie"
+for source in "$@"; do
+  timeout -k 5 300 $cxx -I"$src" -I. -c "$source" -o "$OUT/${source%.cc}.solution.o" >>"$OUT/build.log" 2>&1 || exit 10
+done
+for source in "$@"; do
+  object="$OUT/${source%.cc}.solution.o"
+  nm -P "$object" >"$object.nm" 2>>"$OUT/build.log" || exit 11
+  readelf -S -W "$object" >"$object.sections" 2>>"$OUT/build.log" || exit 11
+done
+timeout -k 5 300 $cxx -I"$src" -c "$src/strategy/strategy_host.cc" -o "$TMPDIR/strategy_host.o" >>"$OUT/build.log" 2>&1 || exit 20
+objects=""
+for source in "$@"; do objects="$objects $OUT/${source%.cc}.solution.o"; done
+timeout -k 5 300 $cxx -static "$TMPDIR/strategy_host.o" $objects -o "$OUT/strategy_host" >>"$OUT/build.log" 2>&1 || exit 20
+"""
+
+
+def build_candidate(policy, solution_dir, out_dir):
+    """Checks and compiles a solution directory into out_dir/strategy_host."""
     try:
-        return frontier_build.build_strategy(tree, solution_dir, out_dir, env)
-    except solution_policy.PolicyViolation as error:
-        raise InvalidCandidate(error.code)
-    except frontier_build.BuildError:
+        sources = [p.name for p in policy.check_sources(solution_dir)]
+    except policy.PolicyViolation as error:
+        raise Rejected(rejection_category(error.code))
+    names = []
+    for source in sources:
+        stem = source[:-len('.cc')]
+        names += [stem + '.solution.o.nm', stem + '.solution.o.sections']
+    result = isolate.run(
+        ['/bin/sh', '{in}/build.sh', str(BUILT / 'tree/src'), *sources],
+        tree=solution_dir, inputs={'build.sh': BUILD_SCRIPT.encode()},
+        outputs=['strategy_host', *names], read_paths=[str(BUILT / 'tree/src')],
+        env={'OUT': '{out}', 'LC_ALL': 'C', 'TZ': 'UTC'}, output_bytes=256 << 20,
+        timeout_seconds=300 * (len(sources) + 2) + 60)
+    if result.limit or result.returncode == 10:
         raise InvalidCandidate('build_failed')
+    if result.returncode == 11:
+        raise Rejected(rejection_category('object_audit'))
+    entry = False
+    try:
+        for index in range(0, len(names), 2):
+            nm, sections = (result.outputs[names[index]], result.outputs[names[index + 1]])
+            if nm is None or sections is None:
+                raise policy.PolicyViolation('object_audit', 'cannot inspect compiled object')
+            sections = re.findall(r'\]\s+(\.\S+)', sections.decode('utf-8', 'replace'))
+            entry = policy.check_object_listing(nm.decode('utf-8', 'replace'), sections) or entry
+        if not entry:
+            raise policy.PolicyViolation('solution_layout', 'frontier::MakeStrategy() is not defined')
+    except policy.PolicyViolation as error:
+        raise Rejected(rejection_category(error.code))
+    binary = result.outputs.get('strategy_host')
+    if result.returncode or not binary:
+        raise InvalidCandidate('build_failed')
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / 'strategy_host'
+    path.write_bytes(binary)
+    path.chmod(0o755)
+    return path
+
+
+def load_policy():
+    """The judge's own copy of the solution rules (the starter's solution_policy.py)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('crest_judge_solution_policy',
+                                                  PRISTINE / 'solution_policy.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: the source rules of src/frontier_solution/ (which files, and what
+    their text may contain). Returns (shared category, paths) to reject, or None."""
+    policy = load_policy()
+    try:
+        policy.check_sources(Path(tree) / SOLUTION)
+    except policy.PolicyViolation as error:
+        return rejection_category(error.code), sorted({c.path for c in changes})
+    return None
+
+
+def reference_tree(scratch):
+    """The pristine starter with judge/reference.patch applied (trusted, judge-owned)."""
+    tree = Path(scratch) / 'reference'
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob('*')):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = dict(os.environ, GIT_CEILING_DIRECTORIES=str(Path(scratch).resolve()))
+    subprocess.run(['git', 'apply', '--whitespace=nowarn', str(TASK / 'reference.patch')],
+                   cwd=tree, check=True, capture_output=True, timeout=60, env=env)
+    return tree
 
 
 def measure(tools, programs, hosts, scratch, env):
     """Runs every (program, role, seed).  Returns {(program index, role): [result per seed]}."""
-    tree, crest_runner, _, _ = tools
+    tree, crest_runner, _ = tools
     jobs = []
     for index, program in enumerate(programs):
         spec = crest_runner.ProgramSpec(BUILT / 'bench' / program['directory'], program['argv'],
@@ -138,7 +257,7 @@ def measure(tools, programs, hosts, scratch, env):
 
 
 def grade(tools, programs, measured, final):
-    _, crest_runner, _, _ = tools
+    _, crest_runner, _ = tools
     rows = []
     for index, program in enumerate(programs):
         candidate, reference = measured[(index, 'candidate')], measured[(index, 'reference')]
@@ -206,39 +325,34 @@ def grade(tools, programs, measured, final):
     return score, metrics
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
     final = os.environ.get('FRONTIER_SUBMISSION_ROLE') == 'final'
     cleanup = []
     previous_tempdir = tempfile.tempdir
     try:
-        solution = Path(solution_path).resolve()
+        candidate = Path(tree).resolve()
         scratch = Path(os.environ.get('CREST_TASK_SCRATCH') or TASK / '.judge-cache')
         scratch.mkdir(parents=True, exist_ok=True)
         tempfile.tempdir = str(scratch)
         work = Path(tempfile.mkdtemp(prefix='measure-', dir=scratch))
         cleanup.append(work)
         try:
-            if not solution.is_file():
-                raise InvalidCandidate('missing_submission')
-            candidate = apply_submission_patch(solution, TASK, CONFIG)
-            if not candidate.ok:
-                raise InvalidCandidate('invalid_patch')
-            cleanup.append(candidate.cleanup_root)
             tools = load_tools()
             env, _ = tools[2].environment(tools[0], BUILT / 'build', tmp=work / 'tmp')
-            hosts = {'candidate': build_candidate(tools, candidate.workdir / 'src/frontier_solution',
-                                                  work / 'candidate', env)}
+            policy = load_policy()
+            hosts = {'candidate': build_candidate(policy, candidate / SOLUTION, work / 'candidate')}
+        except Rejected as error:
+            return 0.0, 0.0, 'rejected: ' + error.category, {'rejected': error.category}
         except InvalidCandidate as error:
             return 0.0, 0.0, 'invalid candidate: ' + error.code, empty_metrics(final)
-        reference = apply_submission_patch(TASK / 'reference.patch', TASK, CONFIG)
-        if not reference.ok:
-            raise EvaluatorFailure('the private reference patch does not apply')
-        cleanup.append(reference.cleanup_root)
         try:
-            hosts['reference'] = build_candidate(tools, reference.workdir / 'src/frontier_solution',
-                                                 work / 'reference', env)
-        except InvalidCandidate as error:
-            raise EvaluatorFailure('the private reference does not build: ' + error.code)
+            reference = reference_tree(work)
+        except subprocess.CalledProcessError:
+            raise EvaluatorFailure('the private reference patch does not apply')
+        try:
+            hosts['reference'] = build_candidate(policy, reference / SOLUTION, work / 'reference')
+        except (InvalidCandidate, Rejected) as error:
+            raise EvaluatorFailure('the private reference does not build: ' + str(error))
         programs = suite(final)
         runs = work / 'runs'
         runs.mkdir()

@@ -1,7 +1,20 @@
 """CPU evaluator for the transparent author-corrected BBQ source/reference.
 
 Cycles come from the Verilator trace; the clock period comes from the fixed
-synthesis and timing model in harbor/app/frontier_cpu/timing.py.
+synthesis and timing model in frontier_cpu/timing.py of the trusted starter (pristine/).
+The submitted generator runs under the shared isolate launcher (_run).
+The shared verifier (#757) applies the patch to the editable files (bbq_level_lx.py and
+solver_extensions/); evaluate(tree) gets the pristine starter with them overlaid.
+
+Scoring (summarize/efficiency). Per workload w (a trace on one depth/width/capacity/seed):
+efficiency(w) = 100 * offered_span * 800 ps / (cycles * period_ps), 0 when w is invalid;
+raw_score = score_unbounded = mean over the suite (4 public cases in train; the public cases
+plus held-out cases in final). Metrics per workload: throughput_ops_per_second = count /
+(cycles * period) (higher better; passes when strictly higher than the reference's) and
+latency_seconds = worst latency_cycles * period (lower; passes when no greater), both by exact
+integer cross-multiplication and requiring a valid run with the reference's operation count.
+beats_reference = both pass on every workload. Infrastructure or reference failures return a
+zero without metrics ("Evaluation failed: ...").
 """
 from __future__ import annotations
 import base64
@@ -14,23 +27,55 @@ from pathlib import Path
 import shutil
 import sys
 import tempfile
+import subprocess
 import zlib
-import yaml
-from submission_patch import apply_submission_patch
+
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 sys.dont_write_bytecode = True
 TASK = Path(__file__).resolve().parent
-CONFIG = yaml.safe_load((TASK/'config.yaml').read_text())
-spec = importlib.util.spec_from_file_location('bbq_cpu_runner', TASK/'harbor/app/frontier_cpu/runner.py')
+# The starter repo/, copied by the Verifier Dockerfile; its runner and cases are trusted.
+PRISTINE = TASK/'pristine'
+spec = importlib.util.spec_from_file_location('bbq_cpu_runner', PRISTINE/'frontier_cpu/runner.py')
 runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)
 assert runner.ENTRYPOINT == "hardware/bbq/generator/bbq.py"
-DEV = json.loads((TASK/'harbor/app/frontier_cpu/public_cases.json').read_text())
+_trusted_run = runner.run
+
+
+def _run(command, cwd, log, timeout=120):
+    """runner.run for the judge. The generator (bbq.py importing the editable bbq_level_lx.py
+    and solver_extensions/) is submitted Python, so it runs under the shared isolate launcher (#757)
+    on a private copy of its tree: no judge file, no judge environment, no shared /tmp, and
+    nothing left running. Its stdout and stderr still go, interleaved, to `log` (the RTL).
+    Verilator, the simulation of the boundary-checked RTL and the timing flow are judge tools
+    writing into the judge's build directories; they keep runner.run."""
+    command = list(map(str, command))
+    if command[:3] != [sys.executable, '-B', str(Path(cwd)/runner.ENTRYPOINT)]:
+        return _trusted_run(command, cwd, log, timeout)
+    result = isolate.run(['/bin/sh', '-c', 'exec "$0" "$@" 2>&1', sys.executable, '-B',
+                               runner.ENTRYPOINT, *command[3:]],
+                              timeout_seconds=timeout, tree=str(cwd),
+                              env={'PYTHONDONTWRITEBYTECODE': '1'},
+                              path=os.pathsep.join((str(Path(sys.executable).parent),
+                                                    '/usr/local/bin', '/usr/bin', '/bin')))
+    Path(log).write_bytes(result.stdout)
+    if not result.ok:
+        raise ValueError('build or simulation failed')
+    return result.command_seconds
+
+
+runner.run = _run
+DEV = json.loads((PRISTINE/'frontier_cpu/public_cases.json').read_text())
 # Private held-out seeds and membership. Final always freshly executes DEV as well.
 HELD = [dict(case, id='hidden_'+str(i), seed=seed)
         for i,(case,seed) in enumerate(zip(DEV,[524287,65537,104729,999983]))]
 HELD += [dict(id='hidden_scale',depth=3,width=16,capacity=255,seed=390581)]
 METRICS = ('throughput_ops_per_second','latency_seconds')
+# The train metrics task.toml [feedback] shows the Agent (set by summarize()).
+FEEDBACK = ('dev_min_throughput_ops_per_second', 'dev_max_latency_picoseconds',
+            'dev_max_clock_period_picoseconds', 'dev_min_throughput_ops_per_cycle',
+            'dev_max_latency_cycles', 'dev_valid_fraction')
 # One lookup-table level between registers: the timing model's shortest period.
 FLOOR_PS = runner.timing.REGISTER_PS + runner.timing.LUT_PS
 RESOURCES = ('period_ps','lut_count','register_count','memory_bits')
@@ -185,35 +230,45 @@ def private_evidence(root, failures):
     return evidence
 
 
-def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
-    candidate_patch = reference_patch = None
+def reference_tree(scratch):
+    """The pristine starter with judge/reference.patch applied (trusted, judge-owned)."""
+    tree = Path(scratch)/'reference-tree'
+    shutil.copytree(PRISTINE, tree)
+    for path in (tree, *tree.rglob('*')):
+        if not path.is_symlink(): path.chmod(path.stat().st_mode | 0o200)
+    subprocess.run(['git','apply','--whitespace=nowarn',str(TASK/'reference.patch')], cwd=tree,
+                   check=True, capture_output=True, timeout=60,
+                   env={**os.environ,'GIT_CEILING_DIRECTORIES':str(Path(scratch).resolve())})
+    return tree
+
+
+def evaluate(tree: str) -> tuple[float,float,str,dict]:
+    """`tree` is the pristine starter with the submission's allowed files overlaid."""
     work = None
     try:
-        # Keep every copy/build on disk, including submission_patch's temporary tree.
+        # Keep every copy/build on disk.
         base = Path(os.environ.get('BBQ_SCRATCH', str(TASK/'scratch'))).resolve()
         base.mkdir(parents=True,exist_ok=True)
         tempfile.tempdir = str(base)
         cases = DEV + HELD if os.environ.get('FRONTIER_SUBMISSION_ROLE') == 'final' else DEV
-        candidate_patch = apply_submission_patch(solution_path, TASK, CONFIG)
-        if not candidate_patch.ok:
+        candidate_tree = Path(tree)
+        if not candidate_tree.is_dir():
             return 0.,0.,'Invalid patch submission',{}
-        reference_patch = apply_submission_patch(TASK/'reference.patch', TASK, CONFIG)
-        if not reference_patch.ok:
-            raise RuntimeError('reference unavailable')
         work = Path(tempfile.mkdtemp(prefix='evaluation-',dir=base))
+        reference_root = reference_tree(work)
         # Paired measurements: no hardcoded reference cycles and no persistent cache.
-        reference = runner.suite(reference_patch.workdir, work/'reference', cases)
+        reference = runner.suite(reference_root, work/'reference', cases)
         candidate = {}
         builds, clocks, failures = {}, {}, {}
         try:
-            runner.official(candidate_patch.workdir, work/'candidate'/'official')
+            runner.official(candidate_tree, work/'candidate'/'official')
             for case in cases:
                 key=tuple(case[k] for k in ('depth','width','capacity'))
                 build=work/'candidate'/('build_'+'_'.join(map(str,key)))
                 try:
                     if key not in builds:
                         builds[key]=None
-                        builds[key]=runner.build_trace(candidate_patch.workdir,build,case)
+                        builds[key]=runner.build_trace(candidate_tree,build,case)
                     if builds[key] is None:
                         raise ValueError('no simulation build')
                     if key not in clocks:
@@ -225,9 +280,13 @@ def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
                         raise ValueError('no clock period')
                     candidate[case['id']]=runner.physical(
                         runner.measure(builds[key], work/'candidate'/case['id'],case),clocks[key])
+                except isolate.IsolateError:
+                    raise
                 except Exception as error:
                     failures[case['id']]=_reason(error)
                     candidate[case['id']]={'valid':False}
+        except isolate.IsolateError:
+            raise
         except Exception as error:
             failures['official']=_reason(error)
             candidate={}
@@ -239,12 +298,11 @@ def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
             result[3]['private_evidence'] = {'failures': failures, 'error': _reason(error)}
         # Detailed event streams never enter returned metrics or messages.
         return result
+    except isolate.IsolateError:
+        raise  # the boundary could not be built: a failed verification, not a score
     except Exception:
         return 0.,0.,'Evaluation failed: build, runtime, or reference validation',{}
     finally:
-        for patched in (candidate_patch,reference_patch):
-            if patched and patched.cleanup_root:
-                shutil.rmtree(patched.cleanup_root,ignore_errors=True)
         if work:
             shutil.rmtree(work,ignore_errors=True)
 

@@ -1,0 +1,41 @@
+# The definition of metaopt_combined_te_gap_search (schema frontier.task/v1, #757). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "metaopt_combined_te_gap_search"
+display_name = "MetaOpt Combined-TE Gap Search"
+version = "native-draft.1-patch-submission-shared-verifier"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+max_evidence_bytes = 4194304      # 4 MiB, as the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 18000
+eval_timeout_seconds = 3600
+
+[submission]
+max_bytes = 4194304               # 4 MiB archive; the old adapter's patch cap was 16 KiB below it
+allowed_paths = ["project/MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs",
+                 "project/MetaOptimize/TrafficEngineering/Candidate/"]
+max_changed_files = 96            # the old patch applier's file limit (the project limit)
+max_file_bytes = 2000000          # the old patch applier's per-file limit (the project byte limit)
+allow_empty = true                # an empty patch submits the starter unchanged, as before
+
+[feedback]
+mean_gap = "Arithmetic mean over the train instances of the independently replayed gap OPT(d) - COMBINED(d)."
+instance_count = "Number of train instances evaluated."
+
+[paper]                           # for readers; the platform never reads it
+title = "Finding Adversarial Inputs for Heuristics using Multi-level Optimization"
+venue = "NSDI 2024"
+url = "https://www.usenix.org/system/files/nsdi24-namyar-finding.pdf"
+summary = "Find sparse traffic matrices that expose a large throughput gap between optimal traffic engineering and a combined POP + demand-pinning heuristic."

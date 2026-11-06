@@ -1,13 +1,14 @@
-"""Bounded sampler subprocess and value RPC within the standard Verifier sandbox."""
+"""The sampler worker under the shared isolate launcher and its value RPC (the trusted side)."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
 import selectors
-import signal
-import subprocess
+import sys
 import time
+
+import isolate  # the shared launcher (/opt/frontier/isolate.py in the Verifier base)
 
 from bridge_protocol import (
     MAX_FRAME_BYTES, ProtocolError, decode, encode, exact_fields,
@@ -15,43 +16,17 @@ from bridge_protocol import (
 )
 
 
-def _process_identity(pid):
-    try:
-        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(") ", 1)[1].split()
-        return fields[19], fields[0]
-    except (OSError, IndexError):
-        return None
+def worker_launch(app: Path, worker: Path, protocol: Path, *, runtime=None):
+    """(argv, isolate keyword arguments) of a worker on the source tree `app`.
 
-
-def _owned_descendants(pid):
-    result = {}
-    pending = [pid]
-    visited = set()
-    while pending:
-        current = pending.pop()
-        if current in visited:
-            continue
-        visited.add(current)
-        try:
-            children = [int(p) for p in Path(f"/proc/{current}/task/{current}/children").read_text().split()]
-        except OSError:
-            continue
-        for child in children:
-            identity = _process_identity(child)
-            if identity is not None:
-                result[child] = identity[0]
-                pending.append(child)
-    return result
-
-
-def worker_command(app: Path, worker: Path, protocol: Path, *, runtime=None):
-    """Launch in the standard Verifier sandbox, without a nested OS sandbox."""
+    The instance gets a writable copy of `app` as its working directory, the worker script and
+    the protocol module as read-only inputs, the measurement interpreter, and nothing else of
+    the judge (no private data, no judge environment)."""
     for path in (app, worker, protocol):
         if path.is_symlink() or not path.exists():
             raise ProtocolError("Worker inputs must be ordinary existing paths.")
     if not app.is_dir() or not worker.is_file() or not protocol.is_file():
         raise ProtocolError("Invalid worker input kind.")
-    import sys
     python = sys.executable
     if runtime is not None:
         exact_fields(runtime, {"prefix", "base", "version"})
@@ -63,17 +38,14 @@ def worker_command(app: Path, worker: Path, protocol: Path, *, runtime=None):
                 or not (base / "lib/python3.10").is_dir()):
             raise ProtocolError("The selected Python runtime is incomplete.")
         python = str(prefix / "bin/python")
-    return [python, "-s", "-B", "-u", str(worker.resolve())]
-
-
-def worker_environment(app: Path, protocol: Path):
-    # Pass only the public import paths and numeric runtime settings. Platform
-    # authentication and author/provider variables are never copied to the worker.
-    return {"PATH": "/usr/bin:/bin", "HOME": "/tmp", "TMPDIR": "/tmp",
-            "PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1",
-            "PYTHONPATH": os.pathsep.join((str(app.resolve()), str(protocol.resolve().parent))),
-            "CUDA_VISIBLE_DEVICES": "", "OMP_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
+    argv = [python, "-s", "-B", "-u", "{in}/" + worker.name]
+    options = {"tree": app.resolve(), "cwd": "{work}",
+               "inputs": {worker.name: worker.resolve(), protocol.name: protocol.resolve()},
+               "env": {"PYTHONDONTWRITEBYTECODE": "1", "PYTHONNOUSERSITE": "1",
+                       "PYTHONPATH": "{work}:{in}", "CUDA_VISIBLE_DEVICES": "",
+                       "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
+                       "MKL_NUM_THREADS": "1"}}
+    return argv, options
 
 
 class SamplerBridge:
@@ -87,9 +59,10 @@ class SamplerBridge:
                  max_random_calls, model_forward, random_normal, runtime=None):
         if lifetime_seconds <= 0 or max_model_calls <= 0 or max_random_calls <= 0:
             raise ValueError("Explicit positive protocol limits are required.")
-        self.command = worker_command(Path(app), Path(worker), Path(__file__).with_name("bridge_protocol.py"), runtime=runtime)
-        self.environment = worker_environment(Path(app), Path(__file__).with_name("bridge_protocol.py"))
-        self.cwd = str(Path(app).resolve())
+        self.argv, self.options = worker_launch(Path(app), Path(worker),
+                                                Path(__file__).with_name("bridge_protocol.py"),
+                                                runtime=runtime)
+        self.lifetime_seconds = lifetime_seconds
         self.deadline = time.monotonic() + lifetime_seconds
         self.max_model_calls = max_model_calls
         self.max_random_calls = max_random_calls
@@ -99,16 +72,18 @@ class SamplerBridge:
         self.request_id = 0
         self.sample_id = 0
         self.buffer = b""
-        self.process = None
+        self.worker = None
+        self.worker_terminated = False
         self.started_at = self.finished_at = None
 
     def __enter__(self):
         self.started_at = time.monotonic()
-        self.process = subprocess.Popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=subprocess.DEVNULL, start_new_session=True,
-                                        close_fds=True, env=self.environment, cwd=self.cwd)
-        os.set_blocking(self.process.stdin.fileno(), False)
-        os.set_blocking(self.process.stdout.fileno(), False)
+        # The instance outlives the bridge's own deadline by a margin, so the lifetime is
+        # enforced (and classified) here; close() ends the worker and everything it started.
+        self.worker = isolate.start(self.argv, timeout_seconds=self.lifetime_seconds + 30,
+                                         **self.options)
+        os.set_blocking(self.worker.stdin.fileno(), False)
+        os.set_blocking(self.worker.stdout.fileno(), False)
         return self
 
     def _wait(self, fd, event):
@@ -122,7 +97,7 @@ class SamplerBridge:
 
     def send(self, value):
         data = memoryview(encode(value))
-        fd = self.process.stdin.fileno()
+        fd = self.worker.stdin.fileno()
         while data:
             self._wait(fd, selectors.EVENT_WRITE)
             try:
@@ -134,7 +109,7 @@ class SamplerBridge:
             data = data[written:]
 
     def receive(self):
-        fd = self.process.stdout.fileno()
+        fd = self.worker.stdout.fileno()
         while b"\n" not in self.buffer:
             self._wait(fd, selectors.EVENT_READ)
             try:
@@ -197,41 +172,9 @@ class SamplerBridge:
             self.send({"type": "response", "id": self.request_id, "tensor": result})
 
     def close(self):
-        if self.process is not None:
-            # Reap this process group and observed descendants, including children
-            # with a separate session. The platform owns the outer job lifecycle.
-            descendants = _owned_descendants(self.process.pid)
-            try:
-                os.killpg(self.process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            for pid, birth in descendants.items():
-                try:
-                    fd = os.pidfd_open(pid)
-                except ProcessLookupError:
-                    continue
-                try:
-                    identity = _process_identity(pid)
-                    if identity is not None and identity[0] == birth:
-                        signal.pidfd_send_signal(fd, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                finally:
-                    os.close(fd)
-            self.process.wait(timeout=5)
-            self.process.stdin.close()
-            self.process.stdout.close()
-            cleanup_deadline = time.monotonic() + 5
-            while descendants:
-                descendants = {
-                    pid: birth for pid, birth in descendants.items()
-                    if (identity := _process_identity(pid)) is not None
-                    and identity[0] == birth and identity[1] != "Z"
-                }
-                if descendants and time.monotonic() >= cleanup_deadline:
-                    raise RuntimeError("Owned sampler descendants have not terminated.")
-                if descendants:
-                    time.sleep(0.01)
+        if self.worker is not None and not self.worker_terminated:
+            self.worker.close()
+            self.worker_terminated = True
             self.finished_at = time.monotonic()
 
     def __exit__(self, *_):

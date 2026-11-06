@@ -1,73 +1,65 @@
-"""Trusted side of the sandboxed policy worker (one worker per episode)."""
+"""Trusted side of the policy worker: one worker per episode, under the shared isolate launcher."""
 
-import ctypes
-import os
 from pathlib import Path
+import os
 import selectors
-import signal
-import subprocess
 import sys
 import time
 
+import isolate  # the shared launcher, beside the verifier in the Verifier base
+
 from policy_protocol import MAX_RESPONSE, encode, parse_worker_message
+
+BRIDGE = Path(__file__).resolve().parent
+WORKER_CPU_SECONDS = 20    # the statement's 20 CPU seconds; model waits do not count
+WORKER_OPEN_FILES = 64
+WORKER_LIFETIME_SECONDS = 24 * 3600  # a backstop: the episode's own deadlines end it far earlier
 
 
 class BoundaryFailure(RuntimeError):
     """The worker broke the protocol, crashed or timed out: a candidate-side failure."""
 
 
-def protect_parent():
-    libc = ctypes.CDLL(None, use_errno=True)
-    if libc.prctl(4, 0, 0, 0, 0) != 0 or libc.prctl(3, 0, 0, 0, 0) != 0:
-        raise BoundaryFailure("cannot protect trusted parent memory")
-
-
 class PolicyWorker:
-    """Launch ``sealed_bootstrap.py`` on a candidate tree and exchange framed JSON.
+    """Run ``policy_worker.py`` on a candidate tree in an isolate instance and exchange
+    framed JSON over the instance's stdin and stdout.
 
-    ``call(op, payload, model)`` sends one operation and services the worker's model
-    requests through ``model(system, user, temperature) -> str`` until the worker
-    reports completion. ``model`` raises ``ModelRefused`` to return an error string to
-    the worker instead of content (cap reached); any other exception propagates.
+    The instance (tasks/shared/lib/isolate.py) reads only the system directories, the
+    judge's interpreter, its own copy of the tree and the two bridge modules; it gets an
+    environment built from nothing, no network, one process and thread (syscalls="strict"), no
+    access to the judge process, and private directories deleted with it, so nothing carries
+    over between episodes. ``call(op, payload, model)`` sends one operation and services the
+    worker's model requests through ``model(system, user, temperature) -> str`` until the
+    worker reports completion: the model key and gateway stay in this process. ``model`` raises
+    ``ModelRefused`` to return an error string to the worker instead of content (cap reached);
+    any other exception propagates. A launcher that cannot build the boundary raises
+    ``isolate.IsolateError`` (an evaluator error, never a candidate failure).
     """
 
     def __init__(self, tree, *, op_timeout=900.0, idle_timeout=120.0):
-        protect_parent()
-        # PROGENT_UNSANDBOXED=1 is a local-development switch of the Agent-side copy;
-        # the verifier image never sets it.
-        bootstrap = "plain_bootstrap.py" if os.environ.get("PROGENT_UNSANDBOXED") == "1" else "sealed_bootstrap.py"
         self.op_timeout = op_timeout
         self.idle_timeout = idle_timeout
         self.buffer = bytearray()
         self.closed = False
-        self.process = None
-        bridge = Path(__file__).resolve().parent
-        command = [
-            str(Path(sys.executable).absolute()), "-I", "-B",
-            str(bridge / bootstrap), str(Path(tree).resolve()),
-            str(bridge / "policy_worker.py"), str(bridge / "policy_protocol.py"), str(os.getpid()),
-        ]
-        try:
-            self.process = subprocess.Popen(
-                command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                env={"PATH": "/usr/bin:/bin", "LANG": "C", "PYTHONHASHSEED": "0"},
-                close_fds=True, start_new_session=True, bufsize=0,
-            )
-            os.set_blocking(self.process.stdout.fileno(), False)
-            os.set_blocking(self.process.stdin.fileno(), False)
-        except (OSError, ValueError) as error:
-            self.abort()
-            raise RuntimeError("mandatory policy isolation unavailable") from error
+        self.instance = isolate.start(
+            [sys.executable, "-I", "-B", "{in}/policy_worker.py"],
+            tree=Path(tree).resolve(),
+            inputs={name: BRIDGE / name for name in ("policy_worker.py", "policy_protocol.py")},
+            timeout_seconds=WORKER_LIFETIME_SECONDS, cpu_seconds=WORKER_CPU_SECONDS,
+            open_files=WORKER_OPEN_FILES, syscalls="strict")
+        self.stdin, self.stdout = self.instance.stdin, self.instance.stdout
+        os.set_blocking(self.stdout.fileno(), False)
+        os.set_blocking(self.stdin.fileno(), False)
 
     def _write(self, data, deadline):
         with selectors.DefaultSelector() as selector:
-            selector.register(self.process.stdin, selectors.EVENT_WRITE)
+            selector.register(self.stdin, selectors.EVENT_WRITE)
             while data:
                 remaining = min(deadline - time.monotonic(), self.idle_timeout)
                 if remaining <= 0 or not selector.select(remaining):
                     raise BoundaryFailure("policy worker stopped reading")
                 try:
-                    count = os.write(self.process.stdin.fileno(), data)
+                    count = os.write(self.stdin.fileno(), data)
                 except BlockingIOError:
                     continue
                 except OSError as error:
@@ -76,13 +68,13 @@ class PolicyWorker:
 
     def _line(self, deadline):
         with selectors.DefaultSelector() as selector:
-            selector.register(self.process.stdout, selectors.EVENT_READ)
+            selector.register(self.stdout, selectors.EVENT_READ)
             while b"\n" not in self.buffer:
                 remaining = min(deadline - time.monotonic(), self.idle_timeout)
                 if remaining <= 0 or not selector.select(remaining):
                     raise BoundaryFailure("policy worker timed out")
                 try:
-                    chunk = os.read(self.process.stdout.fileno(), 65536)
+                    chunk = os.read(self.stdout.fileno(), 65536)
                 except BlockingIOError:
                     continue
                 if not chunk:
@@ -126,18 +118,7 @@ class PolicyWorker:
         if self.closed:
             return
         self.closed = True
-        if self.process is not None:
-            try:
-                os.killpg(self.process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                pass
-            for stream in (self.process.stdin, self.process.stdout):
-                if stream and not stream.closed:
-                    stream.close()
+        self.instance.close()
 
 
 class ModelRefused(RuntimeError):

@@ -23,12 +23,19 @@
     {
       "path": "scheduler/shockwave_helper.py",
       "mode": "removed",
-      "symbols": ["MinMaxSumKSubarrays"]
+      "symbols": [
+        "MinMaxSumKSubarrays"
+      ]
     }
   ],
   "solution_surface": {
-    "modify": ["scheduler/shockwave.py", "scheduler/shockwave_helper.py"],
-    "add_under": ["scheduler/solver_extensions/"],
+    "modify": [
+      "scheduler/shockwave.py",
+      "scheduler/shockwave_helper.py"
+    ],
+    "add_under": [
+      "scheduler/solver_extensions/"
+    ],
     "no_new_files_reason": ""
   },
   "task_owned_files": [
@@ -39,10 +46,6 @@
     {
       "path": "frontier-bench.sh",
       "reason": "Task-owned command adapter that invokes the retained upstream trace driver without implementing scheduling."
-    },
-    {
-      "path": "make_submission.sh",
-      "reason": "Task-owned patch packager that stages solver-authored files and enforces the declared editable surface."
     }
   ],
   "retained_alternatives": [],

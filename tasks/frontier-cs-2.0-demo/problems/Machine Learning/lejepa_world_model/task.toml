@@ -1,0 +1,43 @@
+# The definition of lejepa_world_model (schema frontier.task/v1, #757). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "lejepa_world_model"
+display_name = "Latent Objective Recovery"
+version = "r002-preview-5h-beat-spec-v2-r2"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 12884901888        # 12 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 2147483648         # 2 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 8
+max_train_wall_seconds = 3200
+eval_timeout_seconds = 400
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["experiments/lejepa_id/losses.py", "experiments/lejepa_id/frontier_solution/"]
+allowed_suffixes = [".py"]        # the judge always refused non-Python helpers (statement: "Python source only")
+max_changed_files = 20            # unchanged by the migration; the statement states it
+
+# What train returns to the Agent beside beat_spec_progress, one neutral sentence each.
+[feedback]
+r2_zh = "Mean of r2_zh over the three development workloads."
+r2_hz = "Mean of r2_hz over the three development workloads."
+orth_err_normalized = "Mean of orth_err_normalized over the three development workloads."
+epsilon = "Mean of epsilon over the three development workloads."
+delta = "Mean of delta over the three development workloads."
+procrustes_mse = "Mean of procrustes_mse over the three development workloads."
+
+[paper]                           # for readers; the platform never reads it
+title = "When Does LeJEPA Learn a World Model?"
+venue = "arXiv 2026"
+url = "https://arxiv.org/abs/2605.26379"
+summary = "Recover a self-supervised (LeJEPA-style) training objective whose encoder recovers the hidden latent state of a synthetic world."

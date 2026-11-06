@@ -1,16 +1,47 @@
-import json, math, os, pathlib, shutil, statistics, subprocess, sys, tempfile
-_MODULE_DIR = pathlib.Path(__file__).resolve().parent
-if str(_MODULE_DIR) not in sys.path:
-    sys.path.insert(0, str(_MODULE_DIR))
-from submission_patch import apply_submission_patch, _make_owner_writable
+"""Judge of parallel_radix_sort for the shared verifier (#757): evaluate(tree).
 
-TASK_DIR=_MODULE_DIR
-PRISTINE=TASK_DIR.parent / "repo"
-if not PRISTINE.is_dir():
-    PRISTINE=TASK_DIR.parent / "agent-base/frontier/task/repo"
+`tree` is the starter repo (`pristine/`) with only `RadixSort/edgelistgraph.h` and
+`RadixSort/frontier_solution/**` overlaid. The pinned GCC 7.5/Cilk toolchain, the std::sort
+baseline and the reference (`pristine/` + reference.patch) come from the trusted pristine copy.
+
+Score: S = exp(mean over the original shapes (4 train, 8 final) of ln(B_w / C_w)), C_w the
+candidate's and B_w std::sort's median sort-call ns; raw_score = score_unbounded = 0 if S <= 1,
+else 100 * ln(S) / (ln(10) + ln(S)) (zero when any peak auxiliary allocation exceeds 64 MiB).
+Any build, run or correctness failure, or an evaluation over 840 seconds, is a scored zero.
+Every compile and run (candidate, reference and std::sort baseline alike) is a fresh instance of
+the shared isolate launcher (no judge files, clean environment, private TMPDIR, nothing persists);
+sort times are the harness's own in-process timers, so the launcher's fixed cost is not measured.
+
+Beat-spec metrics (beat_spec_workload_passes, one row per timed case, 6 train / 12 final):
+- sort_time_ns, lower is better: passes when C_w < R_w (the reference's median).
+- region_graph_ns, lower is better: passes when the timer build's G_w < Q_w (reference).
+- auxiliary_bytes, lower is better: passes when A_w <= 0.05 * input bytes.
+beats_reference = 1 iff every metric passes on every case. reference_score applies the score
+formula to the reference's sort times; margin = raw_score - reference_score.
+
+The full prior specification is archived at
+docs/task-authoring/parallel_radix_sort/provenance/beat_spec.json.
+"""
+import math, os, pathlib, shutil, signal, statistics, subprocess, tempfile
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+
+TASK_DIR=pathlib.Path(__file__).resolve().parent
+PRISTINE=TASK_DIR / "pristine"
+INVALID_MESSAGE="submission invalid; score zero"  # submitted-code errors may echo hidden identities
 
 class InfrastructureError(RuntimeError): pass
-CONFIG={"submission":{"allow_paths":["RadixSort/edgelistgraph.h","RadixSort/frontier_solution/"],"max_patch_bytes":262144,"max_changed_files":20}}
+
+# The old task adapter ran the evaluator under its own deadline and scored a timeout as a plain
+# zero (status passed). The deadline is kept here, below the platform's 900-second
+# eval_timeout_seconds so the zero is written before the platform stops the Verifier. It derives
+# from BaseException so that no wrapper (the reference/baseline InfrastructureError conversion,
+# the candidate `except Exception`) can turn it into anything else; only evaluate() catches it.
+EVALUATION_DEADLINE_SECONDS = 840
+
+class EvaluationDeadline(BaseException): pass
+
+def _deadline(signum, frame):
+    raise EvaluationDeadline()
 AUX_CAP=64*1024*1024
 DEV=[("d-int-uniform","int","uniform",3000000,12011),("d-pair-zipf","pair","zipf",2600000,12037),("d-int-duplicates","int","duplicates",3200000,12041),("d-pair-almost","pair","almost",2400000,12049)]
 HIDDEN=[("f-int-uniform","int","uniform",3000000,92009),("f-pair-zipf","pair","zipf",2600000,92033),("f-int-duplicates","int","duplicates",3200000,92041),("f-pair-almost","pair","almost",2400000,92051)]
@@ -25,29 +56,47 @@ FINAL_GRADED=FINAL+LARGE_DEV+LARGE_HIDDEN
 AUX_FRACTION=0.05  # paper Section 5: in-place sorts use < 5% auxiliary memory
 GUARDS=[("int","equal",24000,7103),("pair","sorted",19999,7121),("int","duplicates",1,7127)]
 
-def _compiler(): return str(PRISTINE / "frontier-cxx")
+# The pinned GCC 7.5/Cilk toolchain (pristine/frontier-gcc7.tar.xz), unpacked by
+# docker/verifier.Dockerfile below /usr so that sandbox instances can read it. The command line is
+# the pristine frontier-cxx wrapper's: g++-7 with its library directory as rpath and LD_LIBRARY_PATH.
+GCC7_ROOT="/usr/local/lib/frontier-gcc7"  # instances read it (compiler, and libcilkrts via rpath)
+PROGRAM="prog"
+FLAGS=["-DCILKP","-DBITS_HACK","-O3","-flto","-march=native","-fcilkplus"]
+
+def _compile(tree:pathlib.Path,main:str,flags,out:pathlib.Path,inputs=None):
+    """Compile `main` (a tree path or an `{in}/` input) against `tree` in a fresh instance."""
+    usr=pathlib.Path(GCC7_ROOT)/"gcc7/usr"; lib=str(usr/"lib/x86_64-linux-gnu")
+    cmd=[str(usr/"bin/g++-7"),"-Wl,-rpath,"+lib,"-I","{work}/RadixSort","-std=c++14",main,
+         *flags,"-o","{out}/"+PROGRAM]
+    r=isolate.run(cmd,tree=tree,inputs=inputs,outputs=[PROGRAM],timeout_seconds=90,
+                       read_paths=[GCC7_ROOT],env={"LD_LIBRARY_PATH":lib})
+    if not r.ok or not r.outputs.get(PROGRAM):
+        raise RuntimeError("build failed: "+r.stderr[-300:].decode(errors="replace").replace("\n"," "))
+    out.mkdir(); binary=out/PROGRAM; binary.write_bytes(r.outputs[PROGRAM]); binary.chmod(0o755)
+def _execute(binary_dir:pathlib.Path,args,timeout,inputs=None):
+    # One fresh instance per execution (taskset pins it to the source's four CPUs): nothing a run
+    # writes survives it, and it sees neither the judge nor the other builds.
+    return isolate.run(["taskset","-c","0-3","{work}/"+PROGRAM,*args],tree=binary_dir,
+                            inputs=inputs,timeout_seconds=timeout,read_paths=[GCC7_ROOT],
+                            env={"CILK_NWORKERS":"4"},syscalls="no_fork")
 def _build(tree:pathlib.Path,out:pathlib.Path,source="benchmark.cpp",component=False):
-    cc=_compiler()
-    if not cc: raise RuntimeError("GCC 7 toolchain is unavailable")
-    # component=True builds the same harness with the region-graph timer.
+    # component=True builds the same harness with the region-graph timer. The std::sort baseline
+    # #includes benchmark.cpp, so the harness is always staged beside `source`.
     timer=["-DFRONTIER_COMPONENT_TIMER"] if component else []
-    cmd=[cc,"-I",str(tree/"RadixSort"),"-std=c++14",str(TASK_DIR/source),*timer,"-DCILKP","-DBITS_HACK","-O3","-flto","-march=native","-fcilkplus","-Wl,--wrap=malloc","-Wl,--wrap=calloc","-Wl,--wrap=realloc","-Wl,--wrap=free","-lcilkrts","-o",str(out)]
-    p=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,timeout=90)
-    if p.returncode: raise RuntimeError("build failed: "+p.stderr[-300:].replace("\n"," "))
-def _authentic_smoke(tree:pathlib.Path,out:pathlib.Path,td:pathlib.Path):
-    cc=_compiler(); src=tree/"RadixSort"/"example.cpp"
-    cmd=[cc,"-I",str(tree/"RadixSort"),"-std=c++14",str(src),"-DCILKP","-DBITS_HACK","-O3","-flto","-march=native","-fcilkplus","-lcilkrts","-o",str(out)]
-    p=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,timeout=90)
-    if p.returncode: raise RuntimeError("entrypoint build failed")
-    data=td/"entry.seq"; data.write_text("sequenceInt\n"+"\n".join(str((i*2654435761)&1023) for i in range(24000))+"\n")
-    env={**os.environ,"CILK_NWORKERS":"4"}; p=subprocess.run(["taskset","-c","0-3",str(out),"-r","1","-c",str(data)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,timeout=30,env=env)
-    if p.returncode or "array is sorted!" not in p.stdout or "FAIL" in p.stdout: raise RuntimeError("authentic entrypoint failed")
+    inputs={name:TASK_DIR/name for name in {source,"benchmark.cpp"}}
+    _compile(tree,"{in}/"+source,timer+FLAGS+["-Wl,--wrap=malloc","-Wl,--wrap=calloc",
+             "-Wl,--wrap=realloc","-Wl,--wrap=free","-lcilkrts"],out,inputs)
+def _authentic_smoke(tree:pathlib.Path,out:pathlib.Path):
+    _compile(tree,"{work}/RadixSort/example.cpp",FLAGS+["-lcilkrts"],out)
+    data="sequenceInt\n"+"\n".join(str((i*2654435761)&1023) for i in range(24000))+"\n"
+    r=_execute(out,["-r","1","-c","{in}/entry.seq"],30,{"entry.seq":data.encode()})
+    stdout=r.stdout.decode(errors="replace")
+    if not r.ok or "array is sorted!" not in stdout or "FAIL" in stdout: raise RuntimeError("authentic entrypoint failed")
 def _run(binary:pathlib.Path,row,reps=21):
-    wid,typ,dist,n,seed=row; env={**os.environ,"CILK_NWORKERS":"4"}
-    cmd=["taskset","-c","0-3",str(binary),typ,dist,str(n),str(seed),str(reps)]
-    p=subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,timeout=35,env=env)
-    fields=p.stdout.strip().split()
-    if p.returncode or len(fields)!=3 or fields[0]!="OK": raise RuntimeError(f"invalid result on {wid}")
+    wid,typ,dist,n,seed=row
+    r=_execute(binary,[typ,dist,str(n),str(seed),str(reps)],35)
+    fields=r.stdout.decode(errors="replace").strip().split()
+    if not r.ok or len(fields)!=3 or fields[0]!="OK": raise RuntimeError(f"invalid result on {wid}")
     timing,auxiliary=int(fields[1]),int(fields[2])
     if timing<0 or (timing==0 and not wid.startswith("guard-")) or auxiliary<0:
         raise RuntimeError(f"invalid result on {wid}")
@@ -79,20 +128,34 @@ def _input_bytes(row):
 def _aux_ok(aux,row):
     return aux<=AUX_FRACTION*_input_bytes(row)
 
-def _evaluate_patch(solution_path:str):
-    result=apply_submission_patch(solution_path,TASK_DIR,CONFIG,pristine=PRISTINE)
-    if not result.ok: return None,result.message,result.metrics
-    return pathlib.Path(result.workdir),"",{}
-def evaluate(solution_path:str, mode="train"):
-  if mode not in {"train", "eval"}: raise ValueError("invalid mode")
-  tree = None
+def _make_owner_writable(root:pathlib.Path):
+    for path in (root,*root.rglob("*")):
+        if not path.is_symlink(): path.chmod(path.stat().st_mode|0o200)
+
+def preflight():
+    """The trusted environment, checked before any submitted code is classified."""
+    if not {0,1,2,3}.issubset(os.sched_getaffinity(0)):
+        raise InfrastructureError("source CPU affinity 0-3 is unavailable")
+
+def evaluate(tree:str):
+  previous=signal.signal(signal.SIGALRM,_deadline)
+  signal.setitimer(signal.ITIMER_REAL,EVALUATION_DEADLINE_SECONDS)
   try:
-    tree,msg,extra=_evaluate_patch(solution_path)
-    if tree is None:return 0.0,0.0,msg,extra
-    final=mode=="eval"; suite=FINAL if final else DEV
+    return _evaluate(tree)
+  except EvaluationDeadline:
+    return 0.0,0.0,INVALID_MESSAGE,{}
+  finally:
+    signal.setitimer(signal.ITIMER_REAL,0)
+    signal.signal(signal.SIGALRM,previous)
+
+def _evaluate(tree:str):
+  preflight()
+  tree=pathlib.Path(tree)
+  try:
+    final=os.environ.get("FRONTIER_SUBMISSION_ROLE")=="final"; suite=FINAL if final else DEV
     graded=FINAL_GRADED if final else TRAIN_GRADED
     with tempfile.TemporaryDirectory() as td:
-      td=pathlib.Path(td); cb=td/"candidate"; rb=td/"reference"; _build(tree,cb); _authentic_smoke(tree,td/"radixSort",td)
+      td=pathlib.Path(td); cb=td/"candidate"; rb=td/"reference"; _build(tree,cb); _authentic_smoke(tree,td/"radixSort")
       cc=td/"candidate-component"; rc=td/"reference-component"; _build(tree,cc,component=True)
       ref_tree=td/"reference-tree"; shutil.copytree(PRISTINE,ref_tree); _make_owner_writable(ref_tree)
       ap=subprocess.run(["git","apply",str(TASK_DIR/"reference.patch")],cwd=ref_tree,env={**os.environ,"GIT_CEILING_DIRECTORIES":str(ref_tree.parent.resolve())},stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
@@ -136,16 +199,13 @@ def evaluate(solution_path:str, mode="train"):
                         "candidate_region_graph_ns":cg,"reference_region_graph_ns":rg,"input_bytes":_input_bytes(row),
                         **({"baseline_ns":baselines[k],"baseline_aux_bytes":baseline_aux[k]} if k<original else {})}
                        for k,(row,c,r,a,ra,cg,rg) in enumerate(zip(graded,cand,refs,aux,ref_aux,cand_graph,ref_graph))]}
-      if final: metrics.update(final_candidate_median_sort_time_ns=statistics.median(cand),final_candidate_max_auxiliary_bytes=max(aux),
-                               final_candidate_median_region_graph_ns=statistics.median(cand_graph))
-      else: metrics.update(dev_candidate_median_sort_time_ns=statistics.median(cand),dev_candidate_max_auxiliary_bytes=max(aux),
-                           dev_candidate_median_region_graph_ns=statistics.median(cand_graph))
-      return score,score,"scored complete suite",metrics
-  except InfrastructureError: raise
-  except Exception as e:return 0.0,0.0,str(e)[:300],{}
-  finally:
-    if tree is not None:
-      shutil.rmtree(tree.parent, ignore_errors=True)
+      if final: metrics.update({"final_candidate_median_sort_time_ns":statistics.median(cand),"final_candidate_max_auxiliary_bytes":max(aux),
+                                "final_candidate_median_region_graph_ns":statistics.median(cand_graph)})
+      else: metrics.update({"dev_candidate_median_sort_time_ns":statistics.median(cand),"dev_candidate_max_auxiliary_bytes":max(aux),
+                            "dev_candidate_median_region_graph_ns":statistics.median(cand_graph)})
+      return score,score,"submission evaluated",metrics
+  except (InfrastructureError, isolate.IsolateError): raise
+  except Exception:return 0.0,0.0,INVALID_MESSAGE,{}
 
 def _reference_run(binary, row):
     try: return _run(binary, row)
@@ -157,7 +217,3 @@ def _baseline_run(binary, row, reps=21):
         if aux>AUX_CAP: raise RuntimeError("baseline auxiliary cap exceeded")
         return timing,aux
     except Exception as e: raise InfrastructureError("std::sort baseline execution failed") from e
-
-if __name__=="__main__":
- result = evaluate(sys.argv[1], sys.argv[2])
- pathlib.Path(sys.argv[3]).write_text(json.dumps(result, sort_keys=True))
