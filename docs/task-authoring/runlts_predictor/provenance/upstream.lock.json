@@ -1,0 +1,1379 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 425,
+      "path": "datasets/eval.json",
+      "version": "sha256:b9e4307bf6907e42b7880ba5703f829403c361841ed2722f31948d9ea1b8b7b2"
+    },
+    "train": {
+      "bytes": 432,
+      "path": "datasets/train.json",
+      "version": "sha256:247cce0c8eb54638c90cb25b4bdb5cd71c6d80d3d61b98fd893fd3c3604fb9ea"
+    }
+  },
+  "file_count": 271,
+  "files": [
+    {
+      "bytes": 2002,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:4efb42709f10be7cdc3ec7dd6ed895eb523b6c2c54daed20979db5e8927d091b"
+    },
+    {
+      "bytes": 5680,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:3ea7280cde92856b7ac08427aca4f96a6f9dccb777bba1925d141c61f2c9c1d9"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 161,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:19127dbffed1dfc7f83bc125a4177cad2689bb414548a469394e0963d1c42705"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 2309,
+      "path": "agent-base/frontier/task/repo/Makefile",
+      "sha256": "sha256:0d1d9508809e1192a9a4854c5306297237f06dc09e7019ef50ba1ee9e2926f3a"
+    },
+    {
+      "bytes": 22457,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:b5aec17e3359f750d49f2c12429f3bb8d89016df33039bf474f23c57963988c1"
+    },
+    {
+      "bytes": 6045,
+      "path": "agent-base/frontier/task/repo/cbp.h",
+      "sha256": "sha256:bd092e4960651a73b65f32dc117051a2c32b693041356fe16575322d6655d68e"
+    },
+    {
+      "bytes": 8482,
+      "path": "agent-base/frontier/task/repo/cond_branch_predictor_interface.cc",
+      "sha256": "sha256:05035f8ec4004d90374c7438da9f43c287e3a2753a428c5cee58ed4f53208d27"
+    },
+    {
+      "bytes": 2380,
+      "path": "agent-base/frontier/task/repo/lib/Makefile",
+      "sha256": "sha256:ec4f172b05d73b4e8a9608f77dec2878ae50259e7ef420bbcc476fa94d9e3335"
+    },
+    {
+      "bytes": 21435,
+      "path": "agent-base/frontier/task/repo/lib/bp.cc",
+      "sha256": "sha256:890d107d9cef9ae467b1a9c98ef0f0b81e530775f57b5eb0a2a150517fc09249"
+    },
+    {
+      "bytes": 4775,
+      "path": "agent-base/frontier/task/repo/lib/bp.h",
+      "sha256": "sha256:aefdac8ac886e2278178c7ffef0b9b4c8f9226c6839387750e220db464beee81"
+    },
+    {
+      "bytes": 5380,
+      "path": "agent-base/frontier/task/repo/lib/cache.cc",
+      "sha256": "sha256:326ee57e2521b8c585d8471025990ef8632f5db63d7b5218d41c8529bd70104e"
+    },
+    {
+      "bytes": 2782,
+      "path": "agent-base/frontier/task/repo/lib/cache.h",
+      "sha256": "sha256:3e5cbb4d7832b9c23d571bfe775da45c0734f66bd36dd2b139ca99398a4109cf"
+    },
+    {
+      "bytes": 11950,
+      "path": "agent-base/frontier/task/repo/lib/cbp.cc",
+      "sha256": "sha256:0131cbd320788be17c08a761781852078cf5da58f0a7b20c05300af10cbca1e0"
+    },
+    {
+      "bytes": 3368,
+      "path": "agent-base/frontier/task/repo/lib/fifo.h",
+      "sha256": "sha256:65814c11229418f175ef7fbc39ed1396fa9135df7eb434f6ba119ccf2c6e03b6"
+    },
+    {
+      "bytes": 5095,
+      "path": "agent-base/frontier/task/repo/lib/gzstream.cc",
+      "sha256": "sha256:cdcb06fd27aeabb71accc3816349add6df4110e98f05daf82aa80abeb7cd6f8c"
+    },
+    {
+      "bytes": 4603,
+      "path": "agent-base/frontier/task/repo/lib/gzstream.h",
+      "sha256": "sha256:9cbc2a3d6876bd616e4af9b4a1c363a482432a408af53cc19e42c066a9d10690"
+    },
+    {
+      "bytes": 12745,
+      "path": "agent-base/frontier/task/repo/lib/ittage.h",
+      "sha256": "sha256:21487b7f7ecbb283907bc7635fed1b51c81289459abb4458caad3a326ba96d64"
+    },
+    {
+      "bytes": 3146,
+      "path": "agent-base/frontier/task/repo/lib/my_value_predictor.cc",
+      "sha256": "sha256:556eb76ab8bc334b29bc87a4624abf11431c6063efcfa8e604fea11a33ca8511"
+    },
+    {
+      "bytes": 7846,
+      "path": "agent-base/frontier/task/repo/lib/my_value_predictor.h",
+      "sha256": "sha256:59fcc69a5d82339180808feb3abb5286447a318f05a20991081e35e13d83a330"
+    },
+    {
+      "bytes": 3219,
+      "path": "agent-base/frontier/task/repo/lib/parameters.cc",
+      "sha256": "sha256:848bcfa16100e6a97fa7bbe79e168fe375b37034d52ba47a23c13e71e94ed362"
+    },
+    {
+      "bytes": 3186,
+      "path": "agent-base/frontier/task/repo/lib/parameters.h",
+      "sha256": "sha256:2307f58dfd3a145f7d84b08b2c4207204afe095f923cbec5359c4e2af496653f"
+    },
+    {
+      "bytes": 4005,
+      "path": "agent-base/frontier/task/repo/lib/resource_schedule.cc",
+      "sha256": "sha256:7a45447d9724fa327cdaac9788937907c94f221e4c86edba321befabb6614356"
+    },
+    {
+      "bytes": 2247,
+      "path": "agent-base/frontier/task/repo/lib/resource_schedule.h",
+      "sha256": "sha256:3653a7d3aee16832dfa2fd5408f40c86efc06a2343f4c0cbb5f143e8df395bef"
+    },
+    {
+      "bytes": 5647,
+      "path": "agent-base/frontier/task/repo/lib/sim_common_structs.h",
+      "sha256": "sha256:76bbc93faa2488cb322d8e5382fc5e5d8e9d0e8773b791604c7b7d31721e33ad"
+    },
+    {
+      "bytes": 3358,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/async.h",
+      "sha256": "sha256:4b235e1c60c7b42a00fe6148f4d510d7db1144f36c66f47a057cdc59db4ad898"
+    },
+    {
+      "bytes": 2468,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/async_logger-inl.h",
+      "sha256": "sha256:3ca9d6b79009dbc9713e707c56f08e7eb46b12a0fe666c326e1af0e058fab21d"
+    },
+    {
+      "bytes": 2272,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/async_logger.h",
+      "sha256": "sha256:fa23fce098d57c19940ee107480a6c2191dcba72bc6d257ec896ec5491c6183f"
+    },
+    {
+      "bytes": 1229,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/cfg/argv.h",
+      "sha256": "sha256:71836983a61d2ccf1e574535761b9138a9e849e8f6e515798f8196295f93e3b8"
+    },
+    {
+      "bytes": 988,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/cfg/env.h",
+      "sha256": "sha256:d6cc51d0e1da7220cde60d9d13d668162bb7ca0a3ceee8cc964cbaabbd52502c"
+    },
+    {
+      "bytes": 3149,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/cfg/helpers-inl.h",
+      "sha256": "sha256:cc6bd3b278a9cab4473f456e6065fb3ff220dd5c8715d76c0f657492329efe95"
+    },
+    {
+      "bytes": 710,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/cfg/helpers.h",
+      "sha256": "sha256:d8d6351dbab9402d9681c1b85b7fbf3e8b9872a56ce3aa60d2e0e476006496cf"
+    },
+    {
+      "bytes": 1791,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/common-inl.h",
+      "sha256": "sha256:148bc6ba40b0eb6f0d806b037e3d37e75533bd1e827b21302ee48e6430231219"
+    },
+    {
+      "bytes": 7102,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/common.h",
+      "sha256": "sha256:370e72a2b2ae897c1c3a1c81805d273a98a6d39ab9599c8c7dd7fc6a72c6edc6"
+    },
+    {
+      "bytes": 1880,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/backtracer-inl.h",
+      "sha256": "sha256:39aa563e8ae415a4546913181a1a42ea45d5c98f9347b66bb2bd451bdc711942"
+    },
+    {
+      "bytes": 1134,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/backtracer.h",
+      "sha256": "sha256:6ae48ba38276a33449c66e4dc1c90a84f938949476677a7d6ad7816dbe150472"
+    },
+    {
+      "bytes": 3436,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/circular_q.h",
+      "sha256": "sha256:a974cc357ea402e9f8c245298b493d4eee65cde5e97bc7e5f9863b8c35a4b1eb"
+    },
+    {
+      "bytes": 609,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/console_globals.h",
+      "sha256": "sha256:eced1eda8e8abe003fb70b29be5df42e7b706b60d5292c1f3e842f3c888a5d66"
+    },
+    {
+      "bytes": 3360,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/file_helper-inl.h",
+      "sha256": "sha256:22d5ae47b887773ccc194759fcaa82a99ba4a57cf2dcdbdfcd07d152c9121327"
+    },
+    {
+      "bytes": 1625,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/file_helper.h",
+      "sha256": "sha256:607ddb296016983f10facd8ac402ac28b1d6950434a2a6d5d1e11b0386ac070f"
+    },
+    {
+      "bytes": 3081,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/fmt_helper.h",
+      "sha256": "sha256:6f7857f66649ce49ae3a875dc8f83304b9d3496792753b59263036566fc4a2a4"
+    },
+    {
+      "bytes": 1100,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/log_msg-inl.h",
+      "sha256": "sha256:9a9c02830e0af5663d21e3a4407a9f0cd1360d3bad9dea4077d1b32fbc35a282"
+    },
+    {
+      "bytes": 1094,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/log_msg.h",
+      "sha256": "sha256:673cc1ce3e63225992e0bbf2ec09f35a60f5c28b77912de8a1c0eb490c9a7cb3"
+    },
+    {
+      "bytes": 1652,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/log_msg_buffer-inl.h",
+      "sha256": "sha256:72ee70c8aa9e1771a367b5ec3aa4346681f91a3802fc86df3136877787d061db"
+    },
+    {
+      "bytes": 929,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/log_msg_buffer.h",
+      "sha256": "sha256:8ce1e06dd21de72c1f95dee359b99790d55b404ac9369b7643e535c9a20e4aa0"
+    },
+    {
+      "bytes": 3529,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/mpmc_blocking_q.h",
+      "sha256": "sha256:452c827b96d75df1382e4e58d35acd0e7e9fa4cd2a3cf5ed97129b0fb1cdec4b"
+    },
+    {
+      "bytes": 1026,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/null_mutex.h",
+      "sha256": "sha256:934a63cdb046f5fad4783de2689cc1b6f3b7f55f99d03ab81133a694a5a7652b"
+    },
+    {
+      "bytes": 14775,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/os-inl.h",
+      "sha256": "sha256:d5af59e47571d0f2b1c1dbef059b01b2d3094f71f386bd9cac18f36f8581c8f4"
+    },
+    {
+      "bytes": 3456,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/os.h",
+      "sha256": "sha256:c71bd1825c6c264b73255413f96b9ec283bb2da8876ee563047d17e77f5e2b39"
+    },
+    {
+      "bytes": 1230,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/periodic_worker-inl.h",
+      "sha256": "sha256:9267bc331cbb7341ecd24cddb02ca4b53a51abd5f13385ec1e6b2f29294f31b3"
+    },
+    {
+      "bytes": 1129,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/periodic_worker.h",
+      "sha256": "sha256:c18bb5d7975ac89ece91288cb0fbf16fdf847ecb5fe5a3b6317970fe1179788f"
+    },
+    {
+      "bytes": 8635,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/registry-inl.h",
+      "sha256": "sha256:d987fe76ca284d75149c69a1a80e04a458033c1a1ba733388205ed69f484e095"
+    },
+    {
+      "bytes": 3688,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/registry.h",
+      "sha256": "sha256:a0c6d4e64c832231c5679d5539f431a1e0e674cf979582140b681361d389bdac"
+    },
+    {
+      "bytes": 752,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/synchronous_factory.h",
+      "sha256": "sha256:d37fa4819fa5d6b569a2133388a11f59e6e32c32fc0716b29089b7c0a7e3ff82"
+    },
+    {
+      "bytes": 4655,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/tcp_client-windows.h",
+      "sha256": "sha256:1e90d5f68568b27e138dad06c67fb09462fab4d4353bcce6955385884f0512a3"
+    },
+    {
+      "bytes": 3891,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/tcp_client.h",
+      "sha256": "sha256:c8e4c8dcc3584dd79f84a5ba060473a1104571b2d0760d1e44a6270187a4e226"
+    },
+    {
+      "bytes": 3169,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/thread_pool-inl.h",
+      "sha256": "sha256:f91d37e890e82068c9757255fa93bf1a448303103e4f5133cb58a074a6658dbb"
+    },
+    {
+      "bytes": 3238,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/thread_pool.h",
+      "sha256": "sha256:712726fffb9e0aa3ea32c093910f478a52806317fc404592df5319e09599569d"
+    },
+    {
+      "bytes": 179,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/details/windows_include.h",
+      "sha256": "sha256:88918ae35cdd6e232889c7e6795913800611808d423a70092cd4fe4a6442e45b"
+    },
+    {
+      "bytes": 6296,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bin_to_hex.h",
+      "sha256": "sha256:637d7d44453cd9970bd90057fe49b4017d802cf15c2e0d1508a2cd2b2e9f9cc4"
+    },
+    {
+      "bytes": 1408,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/LICENSE.rst",
+      "sha256": "sha256:825c9324e70f8c839c8ba910543dd4a7daee243b86ef960594c11381a19980b8"
+    },
+    {
+      "bytes": 35534,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/chrono.h",
+      "sha256": "sha256:0380508c68d2870fde58e85169ff57fecf2b4cf5b07c7509e6dd4c97ddcc6124"
+    },
+    {
+      "bytes": 22363,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/color.h",
+      "sha256": "sha256:3f1752171bfb6a6121a81c922b2b684029f7fbab478f5ce001e136e1bef102a7"
+    },
+    {
+      "bytes": 22733,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/compile.h",
+      "sha256": "sha256:c21d34fda9f8e8da2e5c2e097696f2d40de41cc1cd0effbde7c5af2c556beb78"
+    },
+    {
+      "bytes": 63518,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/core.h",
+      "sha256": "sha256:db99a5f41d9276f06775adc501a0da267ef4fb3c15fb76ca9a2a1eb7dce3eb74"
+    },
+    {
+      "bytes": 53561,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/format-inl.h",
+      "sha256": "sha256:df0017baf58a6d628202d4bcf32dba021132aef4fd245e9d805c7ccd4398dcf7"
+    },
+    {
+      "bytes": 124248,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/format.h",
+      "sha256": "sha256:134e531615b108beb54371d5d561a564ec3d6debcfc2dc1dc234db06fdbd38e8"
+    },
+    {
+      "bytes": 2824,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/locale.h",
+      "sha256": "sha256:16e52d1fffc4b5c96023d5e702ad74ae91369f1de1f85edc922da6a79833c2a6"
+    },
+    {
+      "bytes": 13011,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/os.h",
+      "sha256": "sha256:02b65c1861d27d15a125283de8efefc5abd85441cff834f13e05f86a49fb623c"
+    },
+    {
+      "bytes": 5521,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/ostream.h",
+      "sha256": "sha256:359aa6ea40f6e62f274c3a529d68fa7473c252ae0195584668e8cb3e21cc1402"
+    },
+    {
+      "bytes": 75,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/posix.h",
+      "sha256": "sha256:80ab4f9723aafdf18672584b14c21184665c92b7a3e4d6941b733ac98d500b24"
+    },
+    {
+      "bytes": 23272,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/printf.h",
+      "sha256": "sha256:7328661881ad420a548245786f79ef9940f6518fc0cc093c7ee75f7f005e5d0c"
+    },
+    {
+      "bytes": 12324,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/bundled/ranges.h",
+      "sha256": "sha256:474b1ac9281a046881239324547ff27ee1a36d8f2718e5b0c76f718bc465038e"
+    },
+    {
+      "bytes": 396,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/chrono.h",
+      "sha256": "sha256:1d5d7815a22b7524ab16c79607ad4d80dae707e39d5c0d72c7e7f3d4ac0a45d1"
+    },
+    {
+      "bytes": 732,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/fmt.h",
+      "sha256": "sha256:2d55981743f4876cee2e843ed730fa4e52b006dbc31841c2bd106e2e2d306538"
+    },
+    {
+      "bytes": 399,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fmt/ostr.h",
+      "sha256": "sha256:43a6077d68397901bcba3a8611e7b27b1148a4e2f1a01d230a003d8fbe0b962b"
+    },
+    {
+      "bytes": 462,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/formatter.h",
+      "sha256": "sha256:48524fd1570012c2199c23a5cbd952d514e80ae76ec7075fee6a78cebb9f928e"
+    },
+    {
+      "bytes": 260,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/fwd.h",
+      "sha256": "sha256:3966ea7c93ece631b495ec6b41a4f196598a0a69fa9ed409711427433019f04b"
+    },
+    {
+      "bytes": 7010,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/logger-inl.h",
+      "sha256": "sha256:9a3b2781ce2ec8bafa4345843b6a4dd55c224d121354e7bf5846e5da318ab28b"
+    },
+    {
+      "bytes": 12034,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/logger.h",
+      "sha256": "sha256:016672880fa9e962c98b2864c212279ca6a14f8ef028782d03eeae41fb2c67ab"
+    },
+    {
+      "bytes": 41431,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/pattern_formatter-inl.h",
+      "sha256": "sha256:5a14c9686cb4d9e23c21cc7517cd925bd827ed35db351b76d58898de01a9782d"
+    },
+    {
+      "bytes": 3507,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/pattern_formatter.h",
+      "sha256": "sha256:7d40931de4a444cf5ffc6ac66e7161201d70fbf7e1ecaee81bdcee8823823e88"
+    },
+    {
+      "bytes": 3380,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/android_sink.h",
+      "sha256": "sha256:8fe59300acc1f7e9dd8d7f0b317762da7e5464f2572ed95a09fd0739a3da5115"
+    },
+    {
+      "bytes": 4500,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/ansicolor_sink-inl.h",
+      "sha256": "sha256:04e7b2af04d168d74f0257c9caae3f00cbad6dceb23ae71d70955912d386154b"
+    },
+    {
+      "bytes": 3950,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/ansicolor_sink.h",
+      "sha256": "sha256:409ae3b75ff9b653dc5fe80e3dc3aab087c3092008a91fe10688c1a297f91d8c"
+    },
+    {
+      "bytes": 1774,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/base_sink-inl.h",
+      "sha256": "sha256:1dd62b8ca7141c19ed96205bb062d3460a1156fff9ac363a40520b498554e8f0"
+    },
+    {
+      "bytes": 1550,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/base_sink.h",
+      "sha256": "sha256:3c2904eb361eae8af2d0fa9d42489332c538ccadf5b2841cfd37fda582605d32"
+    },
+    {
+      "bytes": 1020,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/basic_file_sink-inl.h",
+      "sha256": "sha256:baa408aa02627df58923f6148798da1fe4a6ac6d1c5c18c6c758dc16b7b6a0b4"
+    },
+    {
+      "bytes": 1643,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/basic_file_sink.h",
+      "sha256": "sha256:3bde5725e4d3fd079c79b6e613af6b6dc3d7c40a0722a785141ef737a698acd1"
+    },
+    {
+      "bytes": 6561,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/daily_file_sink.h",
+      "sha256": "sha256:67191971f1cf244705c1daed66e9cbc2d8b4283350a9238dec0fa5112d8e1f9f"
+    },
+    {
+      "bytes": 2410,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/dist_sink.h",
+      "sha256": "sha256:7c899967585b46ff6b99d2f5fde6db02076d27bccab1908e446700a19eae27d3"
+    },
+    {
+      "bytes": 2825,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/dup_filter_sink.h",
+      "sha256": "sha256:12cecada4e03f163ec3c920a7fac07426c35e3fef043ec72a45812e05d1e87da"
+    },
+    {
+      "bytes": 1124,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/msvc_sink.h",
+      "sha256": "sha256:dc1d29d854cdd4fb6400ec5e0b36faf42f28b1f9e65f2400dbb21bfe790c9f1e"
+    },
+    {
+      "bytes": 1229,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/null_sink.h",
+      "sha256": "sha256:4688c997c8aaff5b626be7b05e98ce70399d6a69997002b81a040f3d848c741e"
+    },
+    {
+      "bytes": 1250,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/ostream_sink.h",
+      "sha256": "sha256:f6da7181d286e9ea066a690b574b68354edf6d3009b7b16239a3afb147eab210"
+    },
+    {
+      "bytes": 2104,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/ringbuffer_sink.h",
+      "sha256": "sha256:4c3258464246b5045d497db80d826eaf6447f23599eff94b2b658c184128ad90"
+    },
+    {
+      "bytes": 3990,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/rotating_file_sink-inl.h",
+      "sha256": "sha256:b902ee443ee79c70cbb771da6ba92de87c93a91cf1e154a78472e3ac60926972"
+    },
+    {
+      "bytes": 2444,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/rotating_file_sink.h",
+      "sha256": "sha256:5026ede7963e214bfe26134f65b8f575b3da5edcbdfa364ce72e5f16fde16ed8"
+    },
+    {
+      "bytes": 721,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/sink-inl.h",
+      "sha256": "sha256:565656c11303c94d9428a7103346fd72b2c920160f68d14463a300be355e57e3"
+    },
+    {
+      "bytes": 887,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/sink.h",
+      "sha256": "sha256:6f1a1369b6d8b35c6ea218ee76c8e0521c7c61136cdb3ede9aea19eae1267a40"
+    },
+    {
+      "bytes": 1209,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/stdout_color_sinks-inl.h",
+      "sha256": "sha256:6035758536abd2a2b18d621d6639e4ccaecd9773c6a42e0c636360fbd398b1fd"
+    },
+    {
+      "bytes": 1614,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/stdout_color_sinks.h",
+      "sha256": "sha256:b85ba01612d07d8c288bd1454663fe4f3178d01abed138d59b296adef92fc0de"
+    },
+    {
+      "bytes": 3779,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/stdout_sinks-inl.h",
+      "sha256": "sha256:7a250e596fb4d908a1f90c3c7c213a8dc137e91c0ad3efb61230b2364e7c5989"
+    },
+    {
+      "bytes": 2415,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/stdout_sinks.h",
+      "sha256": "sha256:0a59f13288fa09c3f52ddb5a40a3d7dcbd848fef44248767559f6f845ab3c1bf"
+    },
+    {
+      "bytes": 3727,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/syslog_sink.h",
+      "sha256": "sha256:2c6cdc86700f6bb351cdf57bfe62c640c4350a33340c884804c31c121ed199a5"
+    },
+    {
+      "bytes": 3422,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/systemd_sink.h",
+      "sha256": "sha256:42a6ef9d2fde041744805f637e7a17637ab2dfcf2611e5ef6179bc604ac52321"
+    },
+    {
+      "bytes": 2139,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/tcp_sink.h",
+      "sha256": "sha256:e6a38b1cd107183c0503350aca0d20ba373b9da9e2d04a700ce9b1e7c24eab09"
+    },
+    {
+      "bytes": 8127,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/win_eventlog_sink.h",
+      "sha256": "sha256:eba50a5ce4c91c51b3d986dae34797bff1d85f51c9bbecea57cd75e71509a46c"
+    },
+    {
+      "bytes": 5687,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/wincolor_sink-inl.h",
+      "sha256": "sha256:27e97a60b7dd01fb01918865604b001b82f96b065153859e59bc4c0026547ed6"
+    },
+    {
+      "bytes": 3010,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/sinks/wincolor_sink.h",
+      "sha256": "sha256:10a3a7e8dc663609de1bc168b5bb62480c45607f3dd017a10713fded93be21fa"
+    },
+    {
+      "bytes": 3094,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/spdlog-inl.h",
+      "sha256": "sha256:5d172cbc16ba65e307797b5bbc134ff2d5f28f96477d98d81882a92633918ff7"
+    },
+    {
+      "bytes": 9379,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/spdlog.h",
+      "sha256": "sha256:9ed6cff97b6fe78891f1c22f47c193ce8e1134c201d80d87df863f5be8f09803"
+    },
+    {
+      "bytes": 1654,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/stopwatch.h",
+      "sha256": "sha256:f97d13ed8af9c6a38153379dae7512860ba666fc93c5c0ae054ab118e997a8bf"
+    },
+    {
+      "bytes": 5331,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/tweakme.h",
+      "sha256": "sha256:7daf768bf8a67fa291bc42a988522f91db2d37a925007e2c8b1c28e0903d09a3"
+    },
+    {
+      "bytes": 330,
+      "path": "agent-base/frontier/task/repo/lib/spdlog/version.h",
+      "sha256": "sha256:3f0f3174ec83337d28386ceef899392fd67d3bc45ef5e7ea2e8533ec82f5bacf"
+    },
+    {
+      "bytes": 13347,
+      "path": "agent-base/frontier/task/repo/lib/stride_prefetcher.h",
+      "sha256": "sha256:63a50185de726983eff076d8c7bfcb6796182a9b43c59b9f42ff2f9d31f3ac67"
+    },
+    {
+      "bytes": 32316,
+      "path": "agent-base/frontier/task/repo/lib/trace_reader.h",
+      "sha256": "sha256:a66ebc1f892c67e26b460295e13eafc6bfa7105b99860e3c16c96eb92cfa3b32"
+    },
+    {
+      "bytes": 33733,
+      "path": "agent-base/frontier/task/repo/lib/uarchsim.cc",
+      "sha256": "sha256:d22afb8663b3d7c1ec4b0ef22bd1f5a87789bc22bd6aa670455197f693868037"
+    },
+    {
+      "bytes": 7362,
+      "path": "agent-base/frontier/task/repo/lib/uarchsim.h",
+      "sha256": "sha256:1a593d43f79df3fbcd2cafea67a24a3849f23e88c2f8b4945b3bbf299361cbad"
+    },
+    {
+      "bytes": 8179,
+      "path": "agent-base/frontier/task/repo/lib/value_predictor_interface.h",
+      "sha256": "sha256:aece1732a43bd0ec48dcb03ef5b2d5630ceceae8b5cc37fedeb5a2a9a12376dc"
+    },
+    {
+      "bytes": 1221,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:47e18e074f40a15be1103e6728ca872c7f28f53e5b3df508d3ae33e0342b333a"
+    },
+    {
+      "bytes": 52318,
+      "path": "agent-base/frontier/task/repo/my_cond_branch_predictor.cc",
+      "sha256": "sha256:ce35248019bedb52575c390232f9615b776bd149143589935570296cdeac9bfd"
+    },
+    {
+      "bytes": 793,
+      "path": "agent-base/frontier/task/repo/my_cond_branch_predictor.h",
+      "sha256": "sha256:426c870ff54e8c80ca149a4ad3e49e96eecf4b38e1f938a9bb8c46ccf414c0be"
+    },
+    {
+      "bytes": 425,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:b9e4307bf6907e42b7880ba5703f829403c361841ed2722f31948d9ea1b8b7b2"
+    },
+    {
+      "bytes": 432,
+      "path": "datasets/train.json",
+      "sha256": "sha256:247cce0c8eb54638c90cb25b4bdb5cd71c6d80d3d61b98fd893fd3c3604fb9ea"
+    },
+    {
+      "bytes": 2764,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:0fa0ec6dafa6f2e9bedcee99d56a8d07e98b331d09e967b44a3ca89dea0fe0de"
+    },
+    {
+      "bytes": 339,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:37f5fff2f763671d7b17bbb082800b043220b31c1ece602854fd7b39e77fc3cd"
+    },
+    {
+      "bytes": 19785,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:fe2878c63f62969c0ce64d7dfe999328e704daddd9a995b5037ba44e4429dc39"
+    },
+    {
+      "bytes": 205,
+      "path": "judge/candidate-diagnostic.json",
+      "sha256": "sha256:28ad32b31c13b5acc3d36fbc016707cb185e546132e5c532d237b10d1d545b35"
+    },
+    {
+      "bytes": 4606,
+      "path": "judge/candidate_failure.py",
+      "sha256": "sha256:aa91ba241b8848117da6c47def37c796ab1f52d4c236ad2390775ae54e93931a"
+    },
+    {
+      "bytes": 1365,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:55b438f3b4593cd3a5ad2a34ab941c634dd14e830d9db6c2df46d2b5506238ad"
+    },
+    {
+      "bytes": 67,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:d4afdc83b37da4c0cb4c1be57d79405cb045bb100558eab2310dca244c9271bd"
+    },
+    {
+      "bytes": 38924,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:a9325e88a841f65aac611b73e8e5b665703ffaff9f0f342067d8725b9c6b682a"
+    },
+    {
+      "bytes": 2309,
+      "path": "judge/harbor/app/Makefile",
+      "sha256": "sha256:0d1d9508809e1192a9a4854c5306297237f06dc09e7019ef50ba1ee9e2926f3a"
+    },
+    {
+      "bytes": 6045,
+      "path": "judge/harbor/app/cbp.h",
+      "sha256": "sha256:bd092e4960651a73b65f32dc117051a2c32b693041356fe16575322d6655d68e"
+    },
+    {
+      "bytes": 8482,
+      "path": "judge/harbor/app/cond_branch_predictor_interface.cc",
+      "sha256": "sha256:05035f8ec4004d90374c7438da9f43c287e3a2753a428c5cee58ed4f53208d27"
+    },
+    {
+      "bytes": 2380,
+      "path": "judge/harbor/app/lib/Makefile",
+      "sha256": "sha256:ec4f172b05d73b4e8a9608f77dec2878ae50259e7ef420bbcc476fa94d9e3335"
+    },
+    {
+      "bytes": 21435,
+      "path": "judge/harbor/app/lib/bp.cc",
+      "sha256": "sha256:890d107d9cef9ae467b1a9c98ef0f0b81e530775f57b5eb0a2a150517fc09249"
+    },
+    {
+      "bytes": 4775,
+      "path": "judge/harbor/app/lib/bp.h",
+      "sha256": "sha256:aefdac8ac886e2278178c7ffef0b9b4c8f9226c6839387750e220db464beee81"
+    },
+    {
+      "bytes": 5380,
+      "path": "judge/harbor/app/lib/cache.cc",
+      "sha256": "sha256:326ee57e2521b8c585d8471025990ef8632f5db63d7b5218d41c8529bd70104e"
+    },
+    {
+      "bytes": 2782,
+      "path": "judge/harbor/app/lib/cache.h",
+      "sha256": "sha256:3e5cbb4d7832b9c23d571bfe775da45c0734f66bd36dd2b139ca99398a4109cf"
+    },
+    {
+      "bytes": 11950,
+      "path": "judge/harbor/app/lib/cbp.cc",
+      "sha256": "sha256:0131cbd320788be17c08a761781852078cf5da58f0a7b20c05300af10cbca1e0"
+    },
+    {
+      "bytes": 3368,
+      "path": "judge/harbor/app/lib/fifo.h",
+      "sha256": "sha256:65814c11229418f175ef7fbc39ed1396fa9135df7eb434f6ba119ccf2c6e03b6"
+    },
+    {
+      "bytes": 5095,
+      "path": "judge/harbor/app/lib/gzstream.cc",
+      "sha256": "sha256:cdcb06fd27aeabb71accc3816349add6df4110e98f05daf82aa80abeb7cd6f8c"
+    },
+    {
+      "bytes": 4603,
+      "path": "judge/harbor/app/lib/gzstream.h",
+      "sha256": "sha256:9cbc2a3d6876bd616e4af9b4a1c363a482432a408af53cc19e42c066a9d10690"
+    },
+    {
+      "bytes": 12745,
+      "path": "judge/harbor/app/lib/ittage.h",
+      "sha256": "sha256:21487b7f7ecbb283907bc7635fed1b51c81289459abb4458caad3a326ba96d64"
+    },
+    {
+      "bytes": 3146,
+      "path": "judge/harbor/app/lib/my_value_predictor.cc",
+      "sha256": "sha256:556eb76ab8bc334b29bc87a4624abf11431c6063efcfa8e604fea11a33ca8511"
+    },
+    {
+      "bytes": 7846,
+      "path": "judge/harbor/app/lib/my_value_predictor.h",
+      "sha256": "sha256:59fcc69a5d82339180808feb3abb5286447a318f05a20991081e35e13d83a330"
+    },
+    {
+      "bytes": 3219,
+      "path": "judge/harbor/app/lib/parameters.cc",
+      "sha256": "sha256:848bcfa16100e6a97fa7bbe79e168fe375b37034d52ba47a23c13e71e94ed362"
+    },
+    {
+      "bytes": 3186,
+      "path": "judge/harbor/app/lib/parameters.h",
+      "sha256": "sha256:2307f58dfd3a145f7d84b08b2c4207204afe095f923cbec5359c4e2af496653f"
+    },
+    {
+      "bytes": 4005,
+      "path": "judge/harbor/app/lib/resource_schedule.cc",
+      "sha256": "sha256:7a45447d9724fa327cdaac9788937907c94f221e4c86edba321befabb6614356"
+    },
+    {
+      "bytes": 2247,
+      "path": "judge/harbor/app/lib/resource_schedule.h",
+      "sha256": "sha256:3653a7d3aee16832dfa2fd5408f40c86efc06a2343f4c0cbb5f143e8df395bef"
+    },
+    {
+      "bytes": 5647,
+      "path": "judge/harbor/app/lib/sim_common_structs.h",
+      "sha256": "sha256:76bbc93faa2488cb322d8e5382fc5e5d8e9d0e8773b791604c7b7d31721e33ad"
+    },
+    {
+      "bytes": 3358,
+      "path": "judge/harbor/app/lib/spdlog/async.h",
+      "sha256": "sha256:4b235e1c60c7b42a00fe6148f4d510d7db1144f36c66f47a057cdc59db4ad898"
+    },
+    {
+      "bytes": 2468,
+      "path": "judge/harbor/app/lib/spdlog/async_logger-inl.h",
+      "sha256": "sha256:3ca9d6b79009dbc9713e707c56f08e7eb46b12a0fe666c326e1af0e058fab21d"
+    },
+    {
+      "bytes": 2272,
+      "path": "judge/harbor/app/lib/spdlog/async_logger.h",
+      "sha256": "sha256:fa23fce098d57c19940ee107480a6c2191dcba72bc6d257ec896ec5491c6183f"
+    },
+    {
+      "bytes": 1229,
+      "path": "judge/harbor/app/lib/spdlog/cfg/argv.h",
+      "sha256": "sha256:71836983a61d2ccf1e574535761b9138a9e849e8f6e515798f8196295f93e3b8"
+    },
+    {
+      "bytes": 988,
+      "path": "judge/harbor/app/lib/spdlog/cfg/env.h",
+      "sha256": "sha256:d6cc51d0e1da7220cde60d9d13d668162bb7ca0a3ceee8cc964cbaabbd52502c"
+    },
+    {
+      "bytes": 3149,
+      "path": "judge/harbor/app/lib/spdlog/cfg/helpers-inl.h",
+      "sha256": "sha256:cc6bd3b278a9cab4473f456e6065fb3ff220dd5c8715d76c0f657492329efe95"
+    },
+    {
+      "bytes": 710,
+      "path": "judge/harbor/app/lib/spdlog/cfg/helpers.h",
+      "sha256": "sha256:d8d6351dbab9402d9681c1b85b7fbf3e8b9872a56ce3aa60d2e0e476006496cf"
+    },
+    {
+      "bytes": 1791,
+      "path": "judge/harbor/app/lib/spdlog/common-inl.h",
+      "sha256": "sha256:148bc6ba40b0eb6f0d806b037e3d37e75533bd1e827b21302ee48e6430231219"
+    },
+    {
+      "bytes": 7102,
+      "path": "judge/harbor/app/lib/spdlog/common.h",
+      "sha256": "sha256:370e72a2b2ae897c1c3a1c81805d273a98a6d39ab9599c8c7dd7fc6a72c6edc6"
+    },
+    {
+      "bytes": 1880,
+      "path": "judge/harbor/app/lib/spdlog/details/backtracer-inl.h",
+      "sha256": "sha256:39aa563e8ae415a4546913181a1a42ea45d5c98f9347b66bb2bd451bdc711942"
+    },
+    {
+      "bytes": 1134,
+      "path": "judge/harbor/app/lib/spdlog/details/backtracer.h",
+      "sha256": "sha256:6ae48ba38276a33449c66e4dc1c90a84f938949476677a7d6ad7816dbe150472"
+    },
+    {
+      "bytes": 3436,
+      "path": "judge/harbor/app/lib/spdlog/details/circular_q.h",
+      "sha256": "sha256:a974cc357ea402e9f8c245298b493d4eee65cde5e97bc7e5f9863b8c35a4b1eb"
+    },
+    {
+      "bytes": 609,
+      "path": "judge/harbor/app/lib/spdlog/details/console_globals.h",
+      "sha256": "sha256:eced1eda8e8abe003fb70b29be5df42e7b706b60d5292c1f3e842f3c888a5d66"
+    },
+    {
+      "bytes": 3360,
+      "path": "judge/harbor/app/lib/spdlog/details/file_helper-inl.h",
+      "sha256": "sha256:22d5ae47b887773ccc194759fcaa82a99ba4a57cf2dcdbdfcd07d152c9121327"
+    },
+    {
+      "bytes": 1625,
+      "path": "judge/harbor/app/lib/spdlog/details/file_helper.h",
+      "sha256": "sha256:607ddb296016983f10facd8ac402ac28b1d6950434a2a6d5d1e11b0386ac070f"
+    },
+    {
+      "bytes": 3081,
+      "path": "judge/harbor/app/lib/spdlog/details/fmt_helper.h",
+      "sha256": "sha256:6f7857f66649ce49ae3a875dc8f83304b9d3496792753b59263036566fc4a2a4"
+    },
+    {
+      "bytes": 1100,
+      "path": "judge/harbor/app/lib/spdlog/details/log_msg-inl.h",
+      "sha256": "sha256:9a9c02830e0af5663d21e3a4407a9f0cd1360d3bad9dea4077d1b32fbc35a282"
+    },
+    {
+      "bytes": 1094,
+      "path": "judge/harbor/app/lib/spdlog/details/log_msg.h",
+      "sha256": "sha256:673cc1ce3e63225992e0bbf2ec09f35a60f5c28b77912de8a1c0eb490c9a7cb3"
+    },
+    {
+      "bytes": 1652,
+      "path": "judge/harbor/app/lib/spdlog/details/log_msg_buffer-inl.h",
+      "sha256": "sha256:72ee70c8aa9e1771a367b5ec3aa4346681f91a3802fc86df3136877787d061db"
+    },
+    {
+      "bytes": 929,
+      "path": "judge/harbor/app/lib/spdlog/details/log_msg_buffer.h",
+      "sha256": "sha256:8ce1e06dd21de72c1f95dee359b99790d55b404ac9369b7643e535c9a20e4aa0"
+    },
+    {
+      "bytes": 3529,
+      "path": "judge/harbor/app/lib/spdlog/details/mpmc_blocking_q.h",
+      "sha256": "sha256:452c827b96d75df1382e4e58d35acd0e7e9fa4cd2a3cf5ed97129b0fb1cdec4b"
+    },
+    {
+      "bytes": 1026,
+      "path": "judge/harbor/app/lib/spdlog/details/null_mutex.h",
+      "sha256": "sha256:934a63cdb046f5fad4783de2689cc1b6f3b7f55f99d03ab81133a694a5a7652b"
+    },
+    {
+      "bytes": 14775,
+      "path": "judge/harbor/app/lib/spdlog/details/os-inl.h",
+      "sha256": "sha256:d5af59e47571d0f2b1c1dbef059b01b2d3094f71f386bd9cac18f36f8581c8f4"
+    },
+    {
+      "bytes": 3456,
+      "path": "judge/harbor/app/lib/spdlog/details/os.h",
+      "sha256": "sha256:c71bd1825c6c264b73255413f96b9ec283bb2da8876ee563047d17e77f5e2b39"
+    },
+    {
+      "bytes": 1230,
+      "path": "judge/harbor/app/lib/spdlog/details/periodic_worker-inl.h",
+      "sha256": "sha256:9267bc331cbb7341ecd24cddb02ca4b53a51abd5f13385ec1e6b2f29294f31b3"
+    },
+    {
+      "bytes": 1129,
+      "path": "judge/harbor/app/lib/spdlog/details/periodic_worker.h",
+      "sha256": "sha256:c18bb5d7975ac89ece91288cb0fbf16fdf847ecb5fe5a3b6317970fe1179788f"
+    },
+    {
+      "bytes": 8635,
+      "path": "judge/harbor/app/lib/spdlog/details/registry-inl.h",
+      "sha256": "sha256:d987fe76ca284d75149c69a1a80e04a458033c1a1ba733388205ed69f484e095"
+    },
+    {
+      "bytes": 3688,
+      "path": "judge/harbor/app/lib/spdlog/details/registry.h",
+      "sha256": "sha256:a0c6d4e64c832231c5679d5539f431a1e0e674cf979582140b681361d389bdac"
+    },
+    {
+      "bytes": 752,
+      "path": "judge/harbor/app/lib/spdlog/details/synchronous_factory.h",
+      "sha256": "sha256:d37fa4819fa5d6b569a2133388a11f59e6e32c32fc0716b29089b7c0a7e3ff82"
+    },
+    {
+      "bytes": 4655,
+      "path": "judge/harbor/app/lib/spdlog/details/tcp_client-windows.h",
+      "sha256": "sha256:1e90d5f68568b27e138dad06c67fb09462fab4d4353bcce6955385884f0512a3"
+    },
+    {
+      "bytes": 3891,
+      "path": "judge/harbor/app/lib/spdlog/details/tcp_client.h",
+      "sha256": "sha256:c8e4c8dcc3584dd79f84a5ba060473a1104571b2d0760d1e44a6270187a4e226"
+    },
+    {
+      "bytes": 3169,
+      "path": "judge/harbor/app/lib/spdlog/details/thread_pool-inl.h",
+      "sha256": "sha256:f91d37e890e82068c9757255fa93bf1a448303103e4f5133cb58a074a6658dbb"
+    },
+    {
+      "bytes": 3238,
+      "path": "judge/harbor/app/lib/spdlog/details/thread_pool.h",
+      "sha256": "sha256:712726fffb9e0aa3ea32c093910f478a52806317fc404592df5319e09599569d"
+    },
+    {
+      "bytes": 179,
+      "path": "judge/harbor/app/lib/spdlog/details/windows_include.h",
+      "sha256": "sha256:88918ae35cdd6e232889c7e6795913800611808d423a70092cd4fe4a6442e45b"
+    },
+    {
+      "bytes": 6296,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bin_to_hex.h",
+      "sha256": "sha256:637d7d44453cd9970bd90057fe49b4017d802cf15c2e0d1508a2cd2b2e9f9cc4"
+    },
+    {
+      "bytes": 1408,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/LICENSE.rst",
+      "sha256": "sha256:825c9324e70f8c839c8ba910543dd4a7daee243b86ef960594c11381a19980b8"
+    },
+    {
+      "bytes": 35534,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/chrono.h",
+      "sha256": "sha256:0380508c68d2870fde58e85169ff57fecf2b4cf5b07c7509e6dd4c97ddcc6124"
+    },
+    {
+      "bytes": 22363,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/color.h",
+      "sha256": "sha256:3f1752171bfb6a6121a81c922b2b684029f7fbab478f5ce001e136e1bef102a7"
+    },
+    {
+      "bytes": 22733,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/compile.h",
+      "sha256": "sha256:c21d34fda9f8e8da2e5c2e097696f2d40de41cc1cd0effbde7c5af2c556beb78"
+    },
+    {
+      "bytes": 63518,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/core.h",
+      "sha256": "sha256:db99a5f41d9276f06775adc501a0da267ef4fb3c15fb76ca9a2a1eb7dce3eb74"
+    },
+    {
+      "bytes": 53561,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/format-inl.h",
+      "sha256": "sha256:df0017baf58a6d628202d4bcf32dba021132aef4fd245e9d805c7ccd4398dcf7"
+    },
+    {
+      "bytes": 124248,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/format.h",
+      "sha256": "sha256:134e531615b108beb54371d5d561a564ec3d6debcfc2dc1dc234db06fdbd38e8"
+    },
+    {
+      "bytes": 2824,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/locale.h",
+      "sha256": "sha256:16e52d1fffc4b5c96023d5e702ad74ae91369f1de1f85edc922da6a79833c2a6"
+    },
+    {
+      "bytes": 13011,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/os.h",
+      "sha256": "sha256:02b65c1861d27d15a125283de8efefc5abd85441cff834f13e05f86a49fb623c"
+    },
+    {
+      "bytes": 5521,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/ostream.h",
+      "sha256": "sha256:359aa6ea40f6e62f274c3a529d68fa7473c252ae0195584668e8cb3e21cc1402"
+    },
+    {
+      "bytes": 75,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/posix.h",
+      "sha256": "sha256:80ab4f9723aafdf18672584b14c21184665c92b7a3e4d6941b733ac98d500b24"
+    },
+    {
+      "bytes": 23272,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/printf.h",
+      "sha256": "sha256:7328661881ad420a548245786f79ef9940f6518fc0cc093c7ee75f7f005e5d0c"
+    },
+    {
+      "bytes": 12324,
+      "path": "judge/harbor/app/lib/spdlog/fmt/bundled/ranges.h",
+      "sha256": "sha256:474b1ac9281a046881239324547ff27ee1a36d8f2718e5b0c76f718bc465038e"
+    },
+    {
+      "bytes": 396,
+      "path": "judge/harbor/app/lib/spdlog/fmt/chrono.h",
+      "sha256": "sha256:1d5d7815a22b7524ab16c79607ad4d80dae707e39d5c0d72c7e7f3d4ac0a45d1"
+    },
+    {
+      "bytes": 732,
+      "path": "judge/harbor/app/lib/spdlog/fmt/fmt.h",
+      "sha256": "sha256:2d55981743f4876cee2e843ed730fa4e52b006dbc31841c2bd106e2e2d306538"
+    },
+    {
+      "bytes": 399,
+      "path": "judge/harbor/app/lib/spdlog/fmt/ostr.h",
+      "sha256": "sha256:43a6077d68397901bcba3a8611e7b27b1148a4e2f1a01d230a003d8fbe0b962b"
+    },
+    {
+      "bytes": 462,
+      "path": "judge/harbor/app/lib/spdlog/formatter.h",
+      "sha256": "sha256:48524fd1570012c2199c23a5cbd952d514e80ae76ec7075fee6a78cebb9f928e"
+    },
+    {
+      "bytes": 260,
+      "path": "judge/harbor/app/lib/spdlog/fwd.h",
+      "sha256": "sha256:3966ea7c93ece631b495ec6b41a4f196598a0a69fa9ed409711427433019f04b"
+    },
+    {
+      "bytes": 7010,
+      "path": "judge/harbor/app/lib/spdlog/logger-inl.h",
+      "sha256": "sha256:9a3b2781ce2ec8bafa4345843b6a4dd55c224d121354e7bf5846e5da318ab28b"
+    },
+    {
+      "bytes": 12034,
+      "path": "judge/harbor/app/lib/spdlog/logger.h",
+      "sha256": "sha256:016672880fa9e962c98b2864c212279ca6a14f8ef028782d03eeae41fb2c67ab"
+    },
+    {
+      "bytes": 41431,
+      "path": "judge/harbor/app/lib/spdlog/pattern_formatter-inl.h",
+      "sha256": "sha256:5a14c9686cb4d9e23c21cc7517cd925bd827ed35db351b76d58898de01a9782d"
+    },
+    {
+      "bytes": 3507,
+      "path": "judge/harbor/app/lib/spdlog/pattern_formatter.h",
+      "sha256": "sha256:7d40931de4a444cf5ffc6ac66e7161201d70fbf7e1ecaee81bdcee8823823e88"
+    },
+    {
+      "bytes": 3380,
+      "path": "judge/harbor/app/lib/spdlog/sinks/android_sink.h",
+      "sha256": "sha256:8fe59300acc1f7e9dd8d7f0b317762da7e5464f2572ed95a09fd0739a3da5115"
+    },
+    {
+      "bytes": 4500,
+      "path": "judge/harbor/app/lib/spdlog/sinks/ansicolor_sink-inl.h",
+      "sha256": "sha256:04e7b2af04d168d74f0257c9caae3f00cbad6dceb23ae71d70955912d386154b"
+    },
+    {
+      "bytes": 3950,
+      "path": "judge/harbor/app/lib/spdlog/sinks/ansicolor_sink.h",
+      "sha256": "sha256:409ae3b75ff9b653dc5fe80e3dc3aab087c3092008a91fe10688c1a297f91d8c"
+    },
+    {
+      "bytes": 1774,
+      "path": "judge/harbor/app/lib/spdlog/sinks/base_sink-inl.h",
+      "sha256": "sha256:1dd62b8ca7141c19ed96205bb062d3460a1156fff9ac363a40520b498554e8f0"
+    },
+    {
+      "bytes": 1550,
+      "path": "judge/harbor/app/lib/spdlog/sinks/base_sink.h",
+      "sha256": "sha256:3c2904eb361eae8af2d0fa9d42489332c538ccadf5b2841cfd37fda582605d32"
+    },
+    {
+      "bytes": 1020,
+      "path": "judge/harbor/app/lib/spdlog/sinks/basic_file_sink-inl.h",
+      "sha256": "sha256:baa408aa02627df58923f6148798da1fe4a6ac6d1c5c18c6c758dc16b7b6a0b4"
+    },
+    {
+      "bytes": 1643,
+      "path": "judge/harbor/app/lib/spdlog/sinks/basic_file_sink.h",
+      "sha256": "sha256:3bde5725e4d3fd079c79b6e613af6b6dc3d7c40a0722a785141ef737a698acd1"
+    },
+    {
+      "bytes": 6561,
+      "path": "judge/harbor/app/lib/spdlog/sinks/daily_file_sink.h",
+      "sha256": "sha256:67191971f1cf244705c1daed66e9cbc2d8b4283350a9238dec0fa5112d8e1f9f"
+    },
+    {
+      "bytes": 2410,
+      "path": "judge/harbor/app/lib/spdlog/sinks/dist_sink.h",
+      "sha256": "sha256:7c899967585b46ff6b99d2f5fde6db02076d27bccab1908e446700a19eae27d3"
+    },
+    {
+      "bytes": 2825,
+      "path": "judge/harbor/app/lib/spdlog/sinks/dup_filter_sink.h",
+      "sha256": "sha256:12cecada4e03f163ec3c920a7fac07426c35e3fef043ec72a45812e05d1e87da"
+    },
+    {
+      "bytes": 1124,
+      "path": "judge/harbor/app/lib/spdlog/sinks/msvc_sink.h",
+      "sha256": "sha256:dc1d29d854cdd4fb6400ec5e0b36faf42f28b1f9e65f2400dbb21bfe790c9f1e"
+    },
+    {
+      "bytes": 1229,
+      "path": "judge/harbor/app/lib/spdlog/sinks/null_sink.h",
+      "sha256": "sha256:4688c997c8aaff5b626be7b05e98ce70399d6a69997002b81a040f3d848c741e"
+    },
+    {
+      "bytes": 1250,
+      "path": "judge/harbor/app/lib/spdlog/sinks/ostream_sink.h",
+      "sha256": "sha256:f6da7181d286e9ea066a690b574b68354edf6d3009b7b16239a3afb147eab210"
+    },
+    {
+      "bytes": 2104,
+      "path": "judge/harbor/app/lib/spdlog/sinks/ringbuffer_sink.h",
+      "sha256": "sha256:4c3258464246b5045d497db80d826eaf6447f23599eff94b2b658c184128ad90"
+    },
+    {
+      "bytes": 3990,
+      "path": "judge/harbor/app/lib/spdlog/sinks/rotating_file_sink-inl.h",
+      "sha256": "sha256:b902ee443ee79c70cbb771da6ba92de87c93a91cf1e154a78472e3ac60926972"
+    },
+    {
+      "bytes": 2444,
+      "path": "judge/harbor/app/lib/spdlog/sinks/rotating_file_sink.h",
+      "sha256": "sha256:5026ede7963e214bfe26134f65b8f575b3da5edcbdfa364ce72e5f16fde16ed8"
+    },
+    {
+      "bytes": 721,
+      "path": "judge/harbor/app/lib/spdlog/sinks/sink-inl.h",
+      "sha256": "sha256:565656c11303c94d9428a7103346fd72b2c920160f68d14463a300be355e57e3"
+    },
+    {
+      "bytes": 887,
+      "path": "judge/harbor/app/lib/spdlog/sinks/sink.h",
+      "sha256": "sha256:6f1a1369b6d8b35c6ea218ee76c8e0521c7c61136cdb3ede9aea19eae1267a40"
+    },
+    {
+      "bytes": 1209,
+      "path": "judge/harbor/app/lib/spdlog/sinks/stdout_color_sinks-inl.h",
+      "sha256": "sha256:6035758536abd2a2b18d621d6639e4ccaecd9773c6a42e0c636360fbd398b1fd"
+    },
+    {
+      "bytes": 1614,
+      "path": "judge/harbor/app/lib/spdlog/sinks/stdout_color_sinks.h",
+      "sha256": "sha256:b85ba01612d07d8c288bd1454663fe4f3178d01abed138d59b296adef92fc0de"
+    },
+    {
+      "bytes": 3779,
+      "path": "judge/harbor/app/lib/spdlog/sinks/stdout_sinks-inl.h",
+      "sha256": "sha256:7a250e596fb4d908a1f90c3c7c213a8dc137e91c0ad3efb61230b2364e7c5989"
+    },
+    {
+      "bytes": 2415,
+      "path": "judge/harbor/app/lib/spdlog/sinks/stdout_sinks.h",
+      "sha256": "sha256:0a59f13288fa09c3f52ddb5a40a3d7dcbd848fef44248767559f6f845ab3c1bf"
+    },
+    {
+      "bytes": 3727,
+      "path": "judge/harbor/app/lib/spdlog/sinks/syslog_sink.h",
+      "sha256": "sha256:2c6cdc86700f6bb351cdf57bfe62c640c4350a33340c884804c31c121ed199a5"
+    },
+    {
+      "bytes": 3422,
+      "path": "judge/harbor/app/lib/spdlog/sinks/systemd_sink.h",
+      "sha256": "sha256:42a6ef9d2fde041744805f637e7a17637ab2dfcf2611e5ef6179bc604ac52321"
+    },
+    {
+      "bytes": 2139,
+      "path": "judge/harbor/app/lib/spdlog/sinks/tcp_sink.h",
+      "sha256": "sha256:e6a38b1cd107183c0503350aca0d20ba373b9da9e2d04a700ce9b1e7c24eab09"
+    },
+    {
+      "bytes": 8127,
+      "path": "judge/harbor/app/lib/spdlog/sinks/win_eventlog_sink.h",
+      "sha256": "sha256:eba50a5ce4c91c51b3d986dae34797bff1d85f51c9bbecea57cd75e71509a46c"
+    },
+    {
+      "bytes": 5687,
+      "path": "judge/harbor/app/lib/spdlog/sinks/wincolor_sink-inl.h",
+      "sha256": "sha256:27e97a60b7dd01fb01918865604b001b82f96b065153859e59bc4c0026547ed6"
+    },
+    {
+      "bytes": 3010,
+      "path": "judge/harbor/app/lib/spdlog/sinks/wincolor_sink.h",
+      "sha256": "sha256:10a3a7e8dc663609de1bc168b5bb62480c45607f3dd017a10713fded93be21fa"
+    },
+    {
+      "bytes": 3094,
+      "path": "judge/harbor/app/lib/spdlog/spdlog-inl.h",
+      "sha256": "sha256:5d172cbc16ba65e307797b5bbc134ff2d5f28f96477d98d81882a92633918ff7"
+    },
+    {
+      "bytes": 9379,
+      "path": "judge/harbor/app/lib/spdlog/spdlog.h",
+      "sha256": "sha256:9ed6cff97b6fe78891f1c22f47c193ce8e1134c201d80d87df863f5be8f09803"
+    },
+    {
+      "bytes": 1654,
+      "path": "judge/harbor/app/lib/spdlog/stopwatch.h",
+      "sha256": "sha256:f97d13ed8af9c6a38153379dae7512860ba666fc93c5c0ae054ab118e997a8bf"
+    },
+    {
+      "bytes": 5331,
+      "path": "judge/harbor/app/lib/spdlog/tweakme.h",
+      "sha256": "sha256:7daf768bf8a67fa291bc42a988522f91db2d37a925007e2c8b1c28e0903d09a3"
+    },
+    {
+      "bytes": 330,
+      "path": "judge/harbor/app/lib/spdlog/version.h",
+      "sha256": "sha256:3f0f3174ec83337d28386ceef899392fd67d3bc45ef5e7ea2e8533ec82f5bacf"
+    },
+    {
+      "bytes": 13347,
+      "path": "judge/harbor/app/lib/stride_prefetcher.h",
+      "sha256": "sha256:63a50185de726983eff076d8c7bfcb6796182a9b43c59b9f42ff2f9d31f3ac67"
+    },
+    {
+      "bytes": 32316,
+      "path": "judge/harbor/app/lib/trace_reader.h",
+      "sha256": "sha256:a66ebc1f892c67e26b460295e13eafc6bfa7105b99860e3c16c96eb92cfa3b32"
+    },
+    {
+      "bytes": 33733,
+      "path": "judge/harbor/app/lib/uarchsim.cc",
+      "sha256": "sha256:d22afb8663b3d7c1ec4b0ef22bd1f5a87789bc22bd6aa670455197f693868037"
+    },
+    {
+      "bytes": 7362,
+      "path": "judge/harbor/app/lib/uarchsim.h",
+      "sha256": "sha256:1a593d43f79df3fbcd2cafea67a24a3849f23e88c2f8b4945b3bbf299361cbad"
+    },
+    {
+      "bytes": 8179,
+      "path": "judge/harbor/app/lib/value_predictor_interface.h",
+      "sha256": "sha256:aece1732a43bd0ec48dcb03ef5b2d5630ceceae8b5cc37fedeb5a2a9a12376dc"
+    },
+    {
+      "bytes": 1221,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:47e18e074f40a15be1103e6728ca872c7f28f53e5b3df508d3ae33e0342b333a"
+    },
+    {
+      "bytes": 52318,
+      "path": "judge/harbor/app/my_cond_branch_predictor.cc",
+      "sha256": "sha256:ce35248019bedb52575c390232f9615b776bd149143589935570296cdeac9bfd"
+    },
+    {
+      "bytes": 793,
+      "path": "judge/harbor/app/my_cond_branch_predictor.h",
+      "sha256": "sha256:426c870ff54e8c80ca149a4ad3e49e96eecf4b38e1f938a9bb8c46ccf414c0be"
+    },
+    {
+      "bytes": 11818,
+      "path": "judge/integrity.json",
+      "sha256": "sha256:580146ad41a28e7d8bd685b36547ce61127f1d324270cfe29aa8bbd2164c7e51"
+    },
+    {
+      "bytes": 2608,
+      "path": "judge/partial_example.patch",
+      "sha256": "sha256:8e27101a578c2292ae873fb6644e04ba56404ede24ce8c8bc690095cbdd795fe"
+    },
+    {
+      "bytes": 1572,
+      "path": "judge/provenance.json",
+      "sha256": "sha256:cb5f6b79dbdb55a5a496534a8d71a026d6e1cc74e2df2d70036b95b1310c3901"
+    },
+    {
+      "bytes": 23281,
+      "path": "judge/readme",
+      "sha256": "sha256:bf0ce0bdd5e0c69ec7e04585dd6d6aee2cbd898224896546848c917df375a628"
+    },
+    {
+      "bytes": 12066,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:3a15bb3a556f6b85d23cf71f5bbd082dafe8f3e8068689337d5ccc5e398f52f5"
+    },
+    {
+      "bytes": 45401,
+      "path": "judge/reference_counts.json",
+      "sha256": "sha256:ff6c50e82ea4e78ee193e2a90809a90c6af60aaf0d09da3ab430de9be18ab4f1"
+    },
+    {
+      "bytes": 63824,
+      "path": "judge/source_contract.json",
+      "sha256": "sha256:535d56af24a9bfcd038281198db52752cf4506569f38adc852007b0f47c43dac"
+    },
+    {
+      "bytes": 15006,
+      "path": "judge/source_policy.py",
+      "sha256": "sha256:870d5cc76c58c638d47d04d1fbfe044b8d8f32d30974f869cdb46e7663c66331"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 27371,
+      "path": "judge/training_pins.json",
+      "sha256": "sha256:2e1a5ef8a39077a585c9b1ede6bb1d7f0833c4010fe3dc0329f530352a66fd33"
+    },
+    {
+      "bytes": 11791,
+      "path": "judge/training_sources.json",
+      "sha256": "sha256:8c26300d68ddeeabe80c313547fa4e1cd3461203398ceddedb823c9170ff1916"
+    },
+    {
+      "bytes": 34152,
+      "path": "judge/workload_manifest.json",
+      "sha256": "sha256:aa79106fa01668716f80f2cb88ece2cb53ab62b7645e1edd127b5a1c9a5b2dd2"
+    },
+    {
+      "bytes": 2427,
+      "path": "policy.json",
+      "sha256": "sha256:c1b1b44f64268ca2b767bc34cb1ffb25e6249ac29cf9b8a7c53d3a78e36b1630"
+    },
+    {
+      "bytes": 3604,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:2464f25214a0c40b9793b093bf3329242e93104e8b740f858ae0ca55cf16bdc1"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 37315,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:73078ba541ae2d6017e1f582932b133eb3e16b19962e5b95a6c12c0e5c23ea17"
+    },
+    {
+      "bytes": 353,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:167f791094f624a3559aa1cf6b85ba0a7bf4a0ac35022da755ab902c8b86e984"
+    }
+  ],
+  "problem_id": "runlts_predictor",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:a9325e88a841f65aac611b73e8e5b665703ffaff9f0f342067d8725b9c6b682a",
+    "statement_sha256": "sha256:3ea7280cde92856b7ac08427aca4f96a6f9dccb777bba1925d141c61f2c9c1d9",
+    "task_dir": "task"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "ckks_composable_noise",
+  "domain": "cryptography",
+  "promotion": {},
+  "generated_at": "2026-10-03T13:32:50.230156+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": null,
+    "run_id": "r_top01_able_noise",
+    "candidate_id": "cand_000",
+    "config_sha256": null
+  },
+  "paper": {
+    "title": "Accurate and Composable Noise Estimates for CKKS with Application to Exact HE Computation",
+    "date": "2025-08-11",
+    "pdf_sha256": "4b899574773337e0b7d326b2b9aff7f1dd3a152dfa937b567f31c15be90484b9",
+    "authors": [
+      "Jean-Philippe Bossuat",
+      "Anamaria Costache",
+      "Christian Mouchet",
+      "Lea Nürnberger",
+      "Juan Ramón Troncoso-Pastoriza"
+    ],
+    "submitter": "Boru Chen",
+    "paper_id": "ckks_composable_noise",
+    "year": 2025,
+    "venue": "IACR ePrint 2024/853",
+    "pdf_url": "https://eprint.iacr.org/2024/853.pdf",
+    "doi": null
+  },
+  "rank": {
+    "rank": null,
+    "overall_score": null,
+    "recommendation": "user-assigned contribution",
+    "scores": {},
+    "risks": []
+  },
+  "artifact": {
+    "repo_url": "https://github.com/tuneinsight/ckks-noise-estimator",
+    "commit": "53dd2367a25a0ae45298dd4086ef50ae03aa778a",
+    "cloned_at": "2026-10-03T12:23:15.641319+00:00",
+    "census": {
+      ".go": 37
+    }
+  },
+  "contribution": {
+    "title": "Composable component-wise CKKS noise propagation",
+    "summary": "Complete, cheaper precision estimator: seven original arithmetic and key-switching-noise kernels are removed from the authentic estimator and the whole package except the fixed set may be rewritten.",
+    "paper_location": "Sections 3.1, 3.3–3.5, 4.1–4.3/Table 1",
+    "code_location": [
+      "estimator/operations.go",
+      "estimator/noise.go"
+    ],
+    "metric": [
+      "AVGLog2Prec.L2 absolute discrepancy",
+      "STDLog2Prec.L2 absolute discrepancy",
+      "estimator seconds (trusted in-process clock)"
+    ]
+  },
+  "host": {
+    "measured_at": "initial_generation",
+    "machine": "x86_64",
+    "os": "Linux-7.0.0-1010-aws-x86_64-with-glibc2.43",
+    "available_cpus": 8,
+    "run_cpu_affinity": 1,
+    "run_memory_limit_mib": 4096,
+    "local_go_version": "1.23.12"
+  },
+  "status": "estimator_time_successor_source_only_calibration_pending",
+  "scientific_revision": {
+    "release": "composition-scaled-logn12-configurations-v2",
+    "authorization": "2026-10-12 revision: accuracy not worse and estimator time strictly lower; whole estimator package editable except the fixed set",
+    "calibration": "pending; no predecessor bands or qualification transferred",
+    "development_workloads": 21,
+    "final_workloads": 29,
+    "final_metric_cells": 58,
+    "axis": "noise-estimation accuracy and estimator time",
+    "source_configuration": "workload_configurations.py and judge/workload_manifest.json",
+    "measurement_release": "estimator-time-interleaved-pairs-v1",
+    "interleaved_pairs": 3,
+    "final_time_comparisons": 87
+  },
+  "original_generation_status": "initial_generation_not_frozen",
+  "scientific_revision_history": [
+    {
+      "release": "composition-scaled-logn12-v1",
+      "authorization": "2026-10-05 CKKS revision",
+      "calibration": "pending; no old bands reused"
+    },
+    {
+      "release": "composition-scaled-logn12-configurations-v2",
+      "authorization": "2026-10-07 revision: CKKS accuracy-only exception and feasible missing configurations",
+      "calibration": "frozen for the predecessor source only; not transferable"
+    }
+  ]
+}

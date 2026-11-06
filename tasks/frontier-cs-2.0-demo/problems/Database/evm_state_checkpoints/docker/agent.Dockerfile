@@ -6,7 +6,7 @@ ARG AGENT_BASE
 FROM ${AGENT_BASE}
 
 # The package set of buildpack-deps:noble, which the task's images were built on before
-# (#757), plus cmake and python3: the same compilers, build tools and -dev libraries.
+#, plus cmake and python3: the same compilers, build tools and -dev libraries.
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

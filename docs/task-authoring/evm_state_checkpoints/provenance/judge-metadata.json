@@ -1,0 +1,86 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "evm_state_checkpoints",
+  "domain": "databases",
+  "promotion": {
+    "round": 3,
+    "band": "very_hard",
+    "scores": {
+      "paper_alignment": 76,
+      "difficulty": 90,
+      "stability": 96,
+      "statement_quality": 90
+    },
+    "gate": {
+      "difficulty": 20,
+      "paper_alignment": 70,
+      "stability": 70,
+      "statement_quality": 70
+    },
+    "reviewer_verdict": "accept"
+  },
+  "generated_at": "2026-08-18T09:23:23.658715+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "3676f0c07e03214559968f631baf9752726dd29e",
+    "run_id": "r_top66_fa44bf0664",
+    "candidate_id": "cand_002",
+    "config_sha256": "936ed8ae88535a1b5c642efa430931696a53b48ac5ee5cd1f08085df35a1cd64"
+  },
+  "paper": {
+    "paper_id": "vldb-2024-spectrum-speedy-and-strictly-deterministic-smart-contract-transactions-for-blockchain-ledgers-fa44bf0664",
+    "title": "Spectrum: Speedy and Strictly-Deterministic Smart Contract Transactions for Blockchain Ledgers",
+    "authors": [
+      "Zhihao Chen",
+      "Tianji Yang",
+      "Yixiao Zheng",
+      "Zhao Zhang",
+      "Cheqing Jin",
+      "Aoying Zhou"
+    ],
+    "year": 2024,
+    "venue": "PVLDB 17",
+    "pdf_url": "https://www.vldb.org/pvldb/vol17/p2541-zhang.pdf",
+    "doi": null
+  },
+  "rank": {
+    "rank": 66,
+    "overall_score": 74.0,
+    "recommendation": "candidate",
+    "scores": {
+      "agent_task_fit": 4.5,
+      "artifact_readiness": 2.8,
+      "evaluation_quality": 3.8,
+      "frontier_potential": 3.6
+    },
+    "risks": [
+      "The inspected artifact reached probe level 3 but provided only build commands, not an extracted test, demo, or benchmark invocation.",
+      "The environment is flagged as requiring privileged operation, which may complicate secure sandboxing and reproducible evaluation.",
+      "No GPU or private data is required, but the exact workload packaging, dependencies, and end-to-end runtime are not established by the probe.",
+      "The repository has no visible stars and the recent paper currently has no recorded citations, so external adoption and impact are unproven.",
+      "A benchmark must enforce strict serial-order correctness; otherwise agents could obtain misleading throughput gains by weakening determinism.",
+      "Performance scoring may be hardware-sensitive and will require pinned CPU resources, fixed warm-up rules, and repeated trials."
+    ]
+  },
+  "artifact": {
+    "repo_url": "https://github.com/jacklightChen/spectrum",
+    "commit": null,
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": null,
+    "summary": null,
+    "paper_location": null,
+    "code_location": [],
+    "metric": null
+  },
+  "host": null,
+  "host_note": "stage0/host.json was not synced off the instance; the machine these numbers were measured on is not recoverable, and measuring this one would name hardware that never ran them",
+  "recovered": {
+    "from": "stage9/cand_002/round_3/workspace",
+    "why": "the canonical task directory under stage2/ is not synced off the instance; this was rebuilt from the trace reviewer's copy",
+    "run_state": "COMPLETED",
+    "loop_state": "ACCEPTED"
+  }
+}

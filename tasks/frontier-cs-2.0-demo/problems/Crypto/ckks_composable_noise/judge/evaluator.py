@@ -4,7 +4,7 @@ Every reported number is printed by a trusted derived experiment main. No file
 of package estimator is overlaid, so submitted code cannot emit an observation.
 An uncalibrated release fails closed before launching a submitted program.
 
-The shared verifier (#757) applies the patch and enforces the editable surface
+The shared verifier applies the patch and enforces the editable surface
 (task.toml [submission]: estimator/ only, .go files, no _test.go, the fixed set
 denied); check_tree() runs the judge-owned Go AST policy on the judged tree
 against the pristine starter; evaluate(tree) builds and measures that tree. Every submitted
@@ -110,7 +110,7 @@ def run(args, cwd, deadline):
 def run_measured(args, cwd, deadline):
     """`go run -p=1 [flags] <main>` in `cwd`, split in two: the trusted toolchain builds the
     program (CGO_ENABLED=0 and no generators, so a build runs no submitted code), and the
-    program runs under the shared isolate launcher (#757) under /usr/bin/time: it reads only the
+    program runs under the shared isolate launcher under /usr/bin/time: it reads only the
     system and its binary, writes only its own private directories, gets a clean
     environment with the Go runtime settings, no network, and is bounded by memory_mb, 16 MiB
     files, 1 MiB per output stream and the evaluation deadline."""

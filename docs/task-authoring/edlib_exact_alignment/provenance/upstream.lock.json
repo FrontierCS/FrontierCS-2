@@ -1,0 +1,403 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 430,
+      "path": "datasets/eval.json",
+      "version": "sha256:6a327445ebd20b8e199c52aa2ec18fa8fc7fccd6cf4f1143e00b58cdb147dce7"
+    },
+    "train": {
+      "bytes": 437,
+      "path": "datasets/train.json",
+      "version": "sha256:f3df2a74ba93059c8704122c3aee732b0cce35545fb204c57f230a3f87e8b345"
+    }
+  },
+  "file_count": 66,
+  "files": [
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 2007,
+      "sha256": "sha256:68606f2627834b62859156fc2f83d2f5397e7f7ff9158d38f194e95b5f555051"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 5043,
+      "sha256": "sha256:fcf03cc905924c44f1574fcc55cd6f3c31c303dcb0027409c420889ce4c966e7"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "bytes": 4701,
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "bytes": 74,
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "bytes": 788,
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "bytes": 126,
+      "sha256": "sha256:2368569422184996f1cc44c48fa9e7e701fd9857db49f0905ebc329a6fc6a07a"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "bytes": 18365,
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/CMakeLists.txt",
+      "bytes": 5062,
+      "sha256": "sha256:f492422532c191256c0773b4b8464935e76d2734a7e7fa9bd6a4887ec5051138"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "bytes": 1082,
+      "sha256": "sha256:93d50a42c22dccf797a893353e5eec5a691a767a6d117e9e046d4496cb38003a"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/README.md",
+      "bytes": 14691,
+      "sha256": "sha256:d4710cbbb6b405fd94c73672ed7649203d85051d168633ab83b858f9dbe0cd61"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/apps/aligner/aligner.cpp",
+      "bytes": 14632,
+      "sha256": "sha256:e8a94111309f0fc60ea0a5a75c36ac35c5e6905199b6da8ec9ed663f30b38009"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/apps/aligner/test_data/query.fasta",
+      "bytes": 112,
+      "sha256": "sha256:e7355f3a9ce62946f544d465ba04aeec868c17dceda951b7059e6ed39cf1e704"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/apps/aligner/test_data/target.fasta",
+      "bytes": 111,
+      "sha256": "sha256:ec0edad2e3ddab971aece4955bc8534e0198dacbfdcee2735f42c97f38a8ecaf"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/apps/hello-world/helloWorld.c",
+      "bytes": 258,
+      "sha256": "sha256:7ff9f400abf6094b31af18807a5b80bc71ee08ff9a44dd87c6f1a39998e7a1b0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/challenge_data/generate.py",
+      "bytes": 1937,
+      "sha256": "sha256:b28bebbbd9d56c2e24c6e516b2d62ff8967a11a4f3ba563359111ef08011da7f"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/challenge_data/public_workloads.json",
+      "bytes": 12720,
+      "sha256": "sha256:54ade7685dae27f2a72864d1402864d97ac6d0aeefb66f81bb79697e5be11b9e"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/edlib/include/edlib.h",
+      "bytes": 11042,
+      "sha256": "sha256:62d0529a87aa6e701c767fb9ce3786c759068f454c129641b2be38da6237ccb5"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/edlib/src/edlib.cpp",
+      "bytes": 59084,
+      "sha256": "sha256:aecbdb62a5270645f89a4e711856b660b22e9e6411505fa21e29551d9e6b6d3d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/edlib-config.cmake.in",
+      "bytes": 112,
+      "sha256": "sha256:e374301f4df17bd7cf137a2c2189d91d04784e866c7cd65a52a817dfe56571b2"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/edlib.pc.in",
+      "bytes": 281,
+      "sha256": "sha256:6b9a21acdfbdaf57f47cade67929e483e1b7d3891ef83a7446cc3ec58d4c7c7e"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/test/SimpleEditDistance.h",
+      "bytes": 3133,
+      "sha256": "sha256:2093b8c79dcb8f400eb5bedb59cf79c272cc224f6cdc9be27d97578111f20e2c"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/test/runTests.cpp",
+      "bytes": 29478,
+      "sha256": "sha256:dea4fd2932f1d5b8835f019abf4122bfea43d37fbfdf2f6ce38ad0f2f21e9e2f"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 430,
+      "sha256": "sha256:6a327445ebd20b8e199c52aa2ec18fa8fc7fccd6cf4f1143e00b58cdb147dce7"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 437,
+      "sha256": "sha256:f3df2a74ba93059c8704122c3aee732b0cce35545fb204c57f230a3f87e8b345"
+    },
+    {
+      "path": "judge/artifact_manifest.json",
+      "bytes": 2603,
+      "sha256": "sha256:2bf3bba4e75b8b0da991a0ff647a1994a74e9afd43ceccd8d855ffae72fa0343"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 24121,
+      "sha256": "sha256:4824d06ebab5385a34f0821eddf9d4548254d695b83dd201447bd5200ac2f91b"
+    },
+    {
+      "path": "judge/candidate-diagnostic.json",
+      "bytes": 204,
+      "sha256": "sha256:da4966d4f326b27a5d43f9e684ff72671e20ee7a7c988e8da20dac19667ccbed"
+    },
+    {
+      "path": "judge/candidate_failure.py",
+      "bytes": 2091,
+      "sha256": "sha256:e3bd4389e2a4282b0edcc2a24f4d87162fa47f49195d1568800d995811efd35f"
+    },
+    {
+      "path": "judge/cmake_entrypoint.py",
+      "bytes": 4498,
+      "sha256": "sha256:d0fa4161f087bb0a802d511f196cdb2423361d06801e4a74be2acb91b99da761"
+    },
+    {
+      "path": "judge/config.yaml",
+      "bytes": 747,
+      "sha256": "sha256:bcc0283e4a075e28aa8af2b6520628d3b4519cf504b465bd9cc22c856c96966d"
+    },
+    {
+      "path": "judge/core_measurement.py",
+      "bytes": 3811,
+      "sha256": "sha256:3a65cc6ac1aecd6c22e2bbfff6b2b82d76770d70ed500ade9205a6c41fccff90"
+    },
+    {
+      "path": "judge/elf_surface.py",
+      "bytes": 5487,
+      "sha256": "sha256:de1f9d9cabe389d5efa072976bbd5b8ee339f0483acd1c7f801f8a56d1d0dd15"
+    },
+    {
+      "path": "judge/evaluate.sh",
+      "bytes": 67,
+      "sha256": "sha256:c37546a988d650118c0a2c88d506a26220bdaeb053869bab90a3b5c07f8ed48a"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 33609,
+      "sha256": "sha256:2d0e91859156303ff33065998d9f99a6a339e7e9104d36626ed5c673b12d9fbc"
+    },
+    {
+      "path": "judge/harbor/app/CMakeLists.txt",
+      "bytes": 5062,
+      "sha256": "sha256:f492422532c191256c0773b4b8464935e76d2734a7e7fa9bd6a4887ec5051138"
+    },
+    {
+      "path": "judge/harbor/app/LICENSE",
+      "bytes": 1082,
+      "sha256": "sha256:93d50a42c22dccf797a893353e5eec5a691a767a6d117e9e046d4496cb38003a"
+    },
+    {
+      "path": "judge/harbor/app/apps/aligner/aligner.cpp",
+      "bytes": 14632,
+      "sha256": "sha256:e8a94111309f0fc60ea0a5a75c36ac35c5e6905199b6da8ec9ed663f30b38009"
+    },
+    {
+      "path": "judge/harbor/app/apps/aligner/test_data/query.fasta",
+      "bytes": 112,
+      "sha256": "sha256:e7355f3a9ce62946f544d465ba04aeec868c17dceda951b7059e6ed39cf1e704"
+    },
+    {
+      "path": "judge/harbor/app/apps/aligner/test_data/target.fasta",
+      "bytes": 111,
+      "sha256": "sha256:ec0edad2e3ddab971aece4955bc8534e0198dacbfdcee2735f42c97f38a8ecaf"
+    },
+    {
+      "path": "judge/harbor/app/apps/hello-world/helloWorld.c",
+      "bytes": 258,
+      "sha256": "sha256:7ff9f400abf6094b31af18807a5b80bc71ee08ff9a44dd87c6f1a39998e7a1b0"
+    },
+    {
+      "path": "judge/harbor/app/challenge_data/generate.py",
+      "bytes": 1937,
+      "sha256": "sha256:b28bebbbd9d56c2e24c6e516b2d62ff8967a11a4f3ba563359111ef08011da7f"
+    },
+    {
+      "path": "judge/harbor/app/challenge_data/public_workloads.json",
+      "bytes": 12720,
+      "sha256": "sha256:54ade7685dae27f2a72864d1402864d97ac6d0aeefb66f81bb79697e5be11b9e"
+    },
+    {
+      "path": "judge/harbor/app/edlib/include/edlib.h",
+      "bytes": 11042,
+      "sha256": "sha256:62d0529a87aa6e701c767fb9ce3786c759068f454c129641b2be38da6237ccb5"
+    },
+    {
+      "path": "judge/harbor/app/edlib/src/edlib.cpp",
+      "bytes": 59084,
+      "sha256": "sha256:aecbdb62a5270645f89a4e711856b660b22e9e6411505fa21e29551d9e6b6d3d"
+    },
+    {
+      "path": "judge/harbor/app/edlib-config.cmake.in",
+      "bytes": 112,
+      "sha256": "sha256:e374301f4df17bd7cf137a2c2189d91d04784e866c7cd65a52a817dfe56571b2"
+    },
+    {
+      "path": "judge/harbor/app/edlib.pc.in",
+      "bytes": 281,
+      "sha256": "sha256:6b9a21acdfbdaf57f47cade67929e483e1b7d3891ef83a7446cc3ec58d4c7c7e"
+    },
+    {
+      "path": "judge/harbor/app/test/SimpleEditDistance.h",
+      "bytes": 3133,
+      "sha256": "sha256:2093b8c79dcb8f400eb5bedb59cf79c272cc224f6cdc9be27d97578111f20e2c"
+    },
+    {
+      "path": "judge/harbor/app/test/runTests.cpp",
+      "bytes": 29478,
+      "sha256": "sha256:dea4fd2932f1d5b8835f019abf4122bfea43d37fbfdf2f6ce38ad0f2f21e9e2f"
+    },
+    {
+      "path": "judge/judge/api_probe.cpp",
+      "bytes": 1370,
+      "sha256": "sha256:d820b4c817d6cc2aaf6a9596afa337be6ca372103925e6c0c2040f1fa5e6357f"
+    },
+    {
+      "path": "judge/judge/core_alloc.cpp",
+      "bytes": 7313,
+      "sha256": "sha256:bf744d12b02b6911a234b59c806d6a4aa637800e4937c307e69d1abad845158e"
+    },
+    {
+      "path": "judge/judge/core_alloc.h",
+      "bytes": 269,
+      "sha256": "sha256:7c3ea3e7a2ce3f3dd4e3c2a4e48b6eb95fe1d09006ac0a2bbd28fd62a53a0db7"
+    },
+    {
+      "path": "judge/judge/native_guard.c",
+      "bytes": 1459,
+      "sha256": "sha256:d9001ab459a242453cdb6201783bcc433d9a526a870a06737601e19ad7611dca"
+    },
+    {
+      "path": "judge/judge/native_guard_selftest.c",
+      "bytes": 5584,
+      "sha256": "sha256:8a8706385c083b7d3bccdbf4558d038b7fe72c9b1d2f97947cb6b8e654db1e75"
+    },
+    {
+      "path": "judge/judge/surface.json",
+      "bytes": 60503,
+      "sha256": "sha256:b6178f8cf8062d27977a2eb422b3809df7c8e1cadec0ee91ac13ee7dc03a6934"
+    },
+    {
+      "path": "judge/judge/workload_manifest.json",
+      "bytes": 24888,
+      "sha256": "sha256:9bcf542c47f8817455049986484b114af3b253daa2124c8e5a0f741b7e42dcfb"
+    },
+    {
+      "path": "judge/judge/workloads.py",
+      "bytes": 2547,
+      "sha256": "sha256:205801e463230c2d2ff308bc05dc6e3708abe7ec4fb863008e93188aef9f8903"
+    },
+    {
+      "path": "judge/native_cmake.py",
+      "bytes": 17614,
+      "sha256": "sha256:8617ec0f67a73f57824b447daf70ee888826460699be6dd195131f88feee155e"
+    },
+    {
+      "path": "judge/qualification.json",
+      "bytes": 21634,
+      "sha256": "sha256:88528b850b80ece306ad987e5b0d6029d06139dd49ca51bf265b567f26bf90a2"
+    },
+    {
+      "path": "judge/readme",
+      "bytes": 15938,
+      "sha256": "sha256:33903ead9e643574306f9993c52015196b6e5bfc0fb34b5826e0dee39f24c7df"
+    },
+    {
+      "path": "judge/reference.patch",
+      "bytes": 26023,
+      "sha256": "sha256:dd22af43f703b2c17c9b494e8c029e8256fd84df925ae15c873c63b01358e3f0"
+    },
+    {
+      "path": "judge/submission_patch.py",
+      "bytes": 18365,
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 2277,
+      "sha256": "sha256:620ea9c1d619f3575221c780a4078f2798f9aa1e93248582b46a88f64040e475"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 3095,
+      "sha256": "sha256:f1f655201015dc5adb161f427b5d528ad20bc70ab08f81859930fe38b4d96ebf"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 13321,
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "path": "verifier/fcs2_verifier.py",
+      "bytes": 33930,
+      "sha256": "sha256:8a65d96e7bbf23012e20d3558ab9858374f4c55bc50d9b8f41470d87bd91abf5"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 358,
+      "sha256": "sha256:68a8b0f18caaea4ce73b76464a87b840539d89cb53efbb10ce20d1f6b06c90f9"
+    }
+  ],
+  "problem_id": "edlib_exact_alignment",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:2d0e91859156303ff33065998d9f99a6a339e7e9104d36626ed5c673b12d9fbc",
+    "statement_sha256": "sha256:33903ead9e643574306f9993c52015196b6e5bfc0fb34b5826e0dee39f24c7df",
+    "task_dir": "task",
+    "timing_successor": {
+      "base_commit": "44d5335b6ba1b5526a06b552a8f9d51642db3047",
+      "authorization": "option A",
+      "measurement_api": "clock_gettime(CLOCK_PROCESS_CPUTIME_ID)",
+      "old_results_directly_comparable": false
+    },
+    "elapsed_timing_successor": {
+      "base_commit": "daa951198fd8c837e0e8dab176a77e3ab2a0f7b6",
+      "authorization": "option A",
+      "measurement_api": "clock_gettime(CLOCK_MONOTONIC)",
+      "metric_semantics": "elapsed time, previously process CPU time",
+      "old_results_directly_comparable": false
+    },
+    "parallel_guard_successor": {
+      "base_commit": "4e399a81a8b3cec3f0145380aa352b12083b0ea3",
+      "authorization": "reviewed",
+      "guard": "Linux x86_64 seccomp KILL_PROCESS on affinity change/task creation; reject x32/non-native ABI; no_new_privs; installation fail-closed",
+      "no_cpu_wall_tolerance": true,
+      "formal_runtime_qualification": false
+    },
+    "gate_and_timing_successor": {
+      "date": "2026-10-12",
+      "gate_metrics": [
+        "cpu_time_seconds",
+        "core_peak_live_bytes"
+      ],
+      "peak_rss_bytes": "reported only, not compared",
+      "timed_invocation": "path-printing (-p -f CIG_EXT); every timed sample validated",
+      "native_guard": "seccomp allow-list plus preloaded stage-2 filter; RLIMIT_FSIZE 0; piped output; fixed environment; read-only working directory",
+      "old_results_directly_comparable": false,
+      "formal_runtime_qualification": false,
+      "compared_time": "verifier-measured whole-process elapsed time; self-reported CLI time is a bounded diagnostic"
+    },
+    "stronger_reference_successor": {
+      "date": "2026-10-12",
+      "reference": {
+        "origin": "model submission adopted verbatim",
+        "model": "redacted",
+        "run_id": "run-redacted-472092c0",
+        "patch_sha256": "sha256:dd22af43f703b2c17c9b494e8c029e8256fd84df925ae15c873c63b01358e3f0",
+        "path": "judge/reference.patch",
+        "changes": "none"
+      },
+      "compared_time": "min(path runs) - min(location-only runs), 15 interleaved rounds, verifier-measured",
+      "storage": "heap and mapped + stack high-water + static",
+      "old_results_directly_comparable": false,
+      "formal_runtime_qualification": true,
+      "native_reference_run_id": "run-redacted-b122a5f3"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "unit": "one of the 200 public catalog instances, identically evaluated in train and final",
+  "metrics": [
+    {
+      "name": "valid_witness",
+      "means": "1 when a unique admissible ledger record supplies a secret satisfying every public predicate for this instance, otherwise 0",
+      "source": "public/lwe_challenge/evaluator_core.py and verification.py; judge/evaluator.py",
+      "better": "higher",
+      "clears_when": "candidate_valid_witness(w) > reference_valid_witness(w)",
+      "tolerance": "none; exact discrete comparison of 0 and 1"
+    }
+  ],
+  "beats_reference": "1 iff every one of the 200 public instances has candidate_valid_witness > reference_valid_witness; the frozen empty reference scores 0 on every instance, so all 200 must be solved",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "instance_count",
+      "means": "candidate-only instance count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "solved_count",
+      "means": "candidate-only solved count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "submitted_count",
+      "means": "candidate-only submitted count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "invalid_count",
+      "means": "candidate-only invalid count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "duplicate_count",
+      "means": "candidate-only duplicate count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "conflict_count",
+      "means": "candidate-only conflict count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "unknown_count",
+      "means": "candidate-only unknown count",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    },
+    {
+      "name": "rejection_code_counts",
+      "means": "candidate-only rejection code counts",
+      "reveals_reference": "no - computed solely from the candidate ledger and public catalog"
+    }
+  ],
+  "withheld": [
+    "reference_score",
+    "reference_workload_metrics",
+    "beat_spec_workload_passes",
+    "beats_reference",
+    "margin",
+    "solved_ids",
+    "invalid_examples"
+  ],
+  "statement_sentences": "Pass requires a valid secret for every one of the 200 instances. Continuous score is independently 100 times the solved fraction and remains positive for partial solutions.",
+  "continuous_score": {
+    "formula": "100 * solved_count / instance_count",
+    "range": [
+      0,
+      100
+    ],
+    "reference_dependency": false
+  },
+  "reference": {
+    "path": "judge/reference.json",
+    "sha256": "sha256:8f42cea9ad1d68c3b3a9dff9a5fc50849142d779e7d20bcaa34dabb765fb601d",
+    "kind": "upstream empty ledger; output of reference.py"
+  }
+}

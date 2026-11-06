@@ -1,0 +1,82 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "batch_local_counting",
+  "domain": "databases",
+  "promotion": {
+    "round": 2,
+    "band": "very_hard",
+    "scores": {
+      "paper_alignment": 88,
+      "difficulty": 90,
+      "stability": 99,
+      "statement_quality": 94
+    },
+    "gate": {
+      "difficulty": 60,
+      "paper_alignment": 80,
+      "stability": 80,
+      "statement_quality": 80
+    },
+    "reviewer_verdict": "accept"
+  },
+  "generated_at": "2026-08-18T22:55:22.967468+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
+    "run_id": "r_top78_f094b386ab",
+    "candidate_id": "cand_002",
+    "config_sha256": "c628f48f5f815b1e0582c990a6fcfd8f4be4e82be163a308f3726ea6b1e726e7"
+  },
+  "paper": {
+    "paper_id": "vldb-2024-fast-local-subgraph-counting-f094b386ab",
+    "title": "Fast Local Subgraph Counting",
+    "authors": [
+      "Qiyan Li",
+      "Jeffrey Xu Yu"
+    ],
+    "year": 2024,
+    "venue": "PVLDB 17",
+    "pdf_url": "https://www.vldb.org/pvldb/vol17/p1967-li.pdf",
+    "doi": null
+  },
+  "rank": {
+    "rank": 78,
+    "overall_score": 73.0,
+    "recommendation": "candidate",
+    "scores": {
+      "agent_task_fit": 4.5,
+      "artifact_readiness": 3.0,
+      "evaluation_quality": 4.0,
+      "frontier_potential": 3.4
+    },
+    "risks": [
+      "The artifact probe flags requires_gpu=true, which conflicts with the paper's single-core CPU positioning and must be investigated; a genuine GPU dependency would reduce portability.",
+      "The probe did not execute code, so build success, dataset acquisition, end-to-end commands, determinism, and benchmark duration remain unverified.",
+      "Exact subgraph counting is NP-hard, so adversarial graph-pattern pairs may cause unpredictable or excessive evaluation times unless strict workload bounds and timeouts are used.",
+      "No public-data packaging or ready-made benchmark command is established by the supplied evidence.",
+      "The repository has zero reported stars, and the recent paper has zero reported citations, so adoption and external validation are limited.",
+      "Optimizations may exploit workload-specific structure unless hidden tests deliberately vary graph size, density, degree distribution, pattern topology, and center placement."
+    ]
+  },
+  "artifact": {
+    "repo_url": "https://github.com/magic62442/subgraph-counting",
+    "commit": null,
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": null,
+    "summary": null,
+    "paper_location": null,
+    "code_location": [],
+    "metric": null
+  },
+  "host": null,
+  "host_note": "stage0/host.json was not synced off the instance; the machine these numbers were measured on is not recoverable, and measuring this one would name hardware that never ran them",
+  "recovered": {
+    "from": "stage9/cand_002/round_2/workspace",
+    "why": "the canonical task directory under stage2/ is not synced off the instance; this was rebuilt from the trace reviewer's copy",
+    "run_state": "COMPLETED",
+    "loop_state": "ACCEPTED"
+  }
+}

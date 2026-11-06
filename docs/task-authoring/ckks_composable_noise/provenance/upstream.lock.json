@@ -1,0 +1,574 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 430,
+      "path": "datasets/eval.json",
+      "version": "sha256:6e750c1133ccbefce8500ff4b4b86a52676d2d723a94e1758886c376aacccead"
+    },
+    "train": {
+      "bytes": 437,
+      "path": "datasets/train.json",
+      "version": "sha256:dc6669beb31ba9e137fe2be86fe180343acdde539c0ae5291c17b61c2f041a8b"
+    }
+  },
+  "file_count": 110,
+  "files": [
+    {
+      "path": "agent-base/Dockerfile",
+      "bytes": 266,
+      "sha256": "sha256:e829474cfd350e1c87a44d463200bc7beae4840e2212306c2b7aceaf9fd1e7cc"
+    },
+    {
+      "path": "agent-base/frontier/task/README.md",
+      "bytes": 4774,
+      "sha256": "sha256:9e1181f1794eb32ca01b7c6d11d4d0699003015970928f08f852f64770c99f80"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "bytes": 4701,
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "bytes": 74,
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "bytes": 788,
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "bytes": 118,
+      "sha256": "sha256:0600cb2ce4079a15de31c4bed1eedcda1d42194e912285164305db41960f16af"
+    },
+    {
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "bytes": 18365,
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "path": "agent-base/frontier/task/make_submission.sh",
+      "bytes": 74,
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "path": "agent-base/frontier/task/prepare_workspace.sh",
+      "bytes": 788,
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/.gitignore",
+      "bytes": 34,
+      "sha256": "sha256:d6c1bc3e4936fd5cb10271fde1b0f1beaea6b747c37125fd00c252517e4a0583"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "bytes": 10173,
+      "sha256": "sha256:a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/README.md",
+      "bytes": 13967,
+      "sha256": "sha256:dcb94d4a4c9c91a467612422f67036b69065b5086b0479d4319a4dd37a5a0867"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/bootstrapping/evaluator.go",
+      "bytes": 8307,
+      "sha256": "sha256:736abb8fa28880c1e1e9cdd435c2974bd985259b159c76f9aa213757ebd91350"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/dft.go",
+      "bytes": 4041,
+      "sha256": "sha256:697ff77beff14f23ec1880940cd56d52104d4d9bb969785e4f62384ab9e51b70"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/element.go",
+      "bytes": 2137,
+      "sha256": "sha256:9810688be55e058481dc18ec996ce4c6a173d9508f6be5a204f8c7f4dabbf0dd"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/encoder.go",
+      "bytes": 2925,
+      "sha256": "sha256:ea24f5c88c8e8d50a468805c792ddedbca3962a6adad46d723bbece9e201d4e7"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/estimator.go",
+      "bytes": 4784,
+      "sha256": "sha256:0523eb67a547e641a2634ed2170a89d90c1f1ae85013607c70e167b6b9bdca9d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/bootstrapping/bootstrapping.go",
+      "bytes": 2620,
+      "sha256": "sha256:169149afd2259e2e27419e9a80ab2dcd4b74475fd79faa2e63743e17312441eb"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/coeffs_to_slots/coeffs_to_slots.go",
+      "bytes": 4106,
+      "sha256": "sha256:47e1486d4ffd95969f61ed8105deaf0aae57d47ea058f02375cb7030a724371c"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/goldschmidt/goldschmidt.go",
+      "bytes": 2996,
+      "sha256": "sha256:7bb3da99f41c4348be61e3811117e6ca5bbd086c4cfdbf81af0242a62419a570"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/iterative_step/iterative_step.go",
+      "bytes": 3371,
+      "sha256": "sha256:5addde467ebe3e135f80d3b9d85bd0c70fb41c5ed65996a7a0a6ac52dedfb7f0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/mod1/mod1.go",
+      "bytes": 4682,
+      "sha256": "sha256:42bca00003171c697d89a00fe8a668f8cb67811f1985c77f10227a613060888d"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/mul_relin_rescale/mul_relin_rescale.go",
+      "bytes": 1862,
+      "sha256": "sha256:86baa24a91bddaf9075ae47eb4291dfa1a8689768c7778556ffff24624641f11"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/poly_eval/poly_eval.go",
+      "bytes": 3190,
+      "sha256": "sha256:4246f26414036ae5f6be71771f53aa16bcb4cd25e6d8fbe954d9767fb990f7a4"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/power_basis/power_basis.go",
+      "bytes": 2318,
+      "sha256": "sha256:c8492d8d3a1ed32c0a7bdcbfe3e33e00936a01edce8cc06e40127e6840545584"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/experiments/slots_to_coeffs/slots_to_coeffs.go",
+      "bytes": 3191,
+      "sha256": "sha256:d2c50a8012120ab2e9671f1fa20965a9c95a00e7e365ba94992bf7d1613964ed"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/go.mod",
+      "bytes": 610,
+      "sha256": "sha256:8581d57fd7e4725d730344a4efa817537b3bb563bcbea6f35664a2cc946951f1"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/go.sum",
+      "bytes": 2666,
+      "sha256": "sha256:85e6fbd343907fbbc97bf52ed30fba93b9a616e93613f7f13adad940d4f2171c"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/inverse.go",
+      "bytes": 1529,
+      "sha256": "sha256:a2e672c74aea7c11afdf8964702f0aa9939da9f6eea667935063b7f8eae7f495"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/linear_transformation.go",
+      "bytes": 4206,
+      "sha256": "sha256:d0a6a6320a07a0d5bf12f4cbfed417096ec6d6fd91f90c8e8e0a4af70febeb8b"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/mod1.go",
+      "bytes": 4218,
+      "sha256": "sha256:568422717379e12c428d5c8419767c1ba3136079767848997b12156b17fc2b77"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/noise.go",
+      "bytes": 2706,
+      "sha256": "sha256:85aca55bc92e82501f1809002b80705b60bafc4a7f491d3684a7bede790cde98"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/operations.go",
+      "bytes": 9535,
+      "sha256": "sha256:dc8acd2525ec5d0c625621be6c5fafc229c12a05af8fc17f31fec6a50ce385d0"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/polynomial.go",
+      "bytes": 4408,
+      "sha256": "sha256:e1fdb0c13aa5ddc41c9b8000b32deff11607a5a6948960047be9366682884591"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/polynomial_evaluator.go",
+      "bytes": 10548,
+      "sha256": "sha256:eee464c0bf61deff41ed67c2d0af4c24171f8becae8112256300e1b2f50ec2bc"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/polynomial_evaluator_sim.go",
+      "bytes": 2605,
+      "sha256": "sha256:4ad6aaec8d413172834a7d425914371b9d921593604f993137950edf05de2016"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/stats.go",
+      "bytes": 3835,
+      "sha256": "sha256:b552041533cfddb33caf0ebc141416d3f59140c7868a0774799ae50323db7d74"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/estimator/utils.go",
+      "bytes": 7554,
+      "sha256": "sha256:9083d7a07b45a03c2825875d523df2baf1d5d9baf4347706e380678c97a4b443"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "bytes": 504,
+      "sha256": "sha256:046ab741ef944ff5b3d82d08e093eb28bf7f04d24c3ceea852519923956a62a5"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "bytes": 510,
+      "sha256": "sha256:4829753d8a12111a9ee3c882d0da3b25de0908293991136ce1a812398ba807e6"
+    },
+    {
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "bytes": 716,
+      "sha256": "sha256:03fdee7103d154c5d96fe4adc7639b5f94c0ea1201254e8a356b01b0ad14092a"
+    },
+    {
+      "path": "agent-base/frontier/task/workload_manifest.json",
+      "bytes": 18420,
+      "sha256": "sha256:03be4cf5fb478ff69f4cc86a4e00b02092882fffd68d145e7f01b5a40633857b"
+    },
+    {
+      "path": "datasets/eval.json",
+      "bytes": 430,
+      "sha256": "sha256:6e750c1133ccbefce8500ff4b4b86a52676d2d723a94e1758886c376aacccead"
+    },
+    {
+      "path": "datasets/train.json",
+      "bytes": 437,
+      "sha256": "sha256:dc6669beb31ba9e137fe2be86fe180343acdde539c0ae5291c17b61c2f041a8b"
+    },
+    {
+      "path": "judge/artifact_manifest.json",
+      "bytes": 14911,
+      "sha256": "sha256:e0180689f5d22c7123640bf7c151a0cef82bf04bcff7c9fc58c4d224103231a6"
+    },
+    {
+      "path": "judge/baseline_naive.patch",
+      "bytes": 5130,
+      "sha256": "sha256:a6b96f2f4224ffd54215df6c2e83f066fe5a93c550232964677798af7db39045"
+    },
+    {
+      "path": "judge/beat_spec.json",
+      "bytes": 8608,
+      "sha256": "sha256:7cb9bd40d5957843a0ea1628658113f7038d59ecc603bc967ef98e3923c738a7"
+    },
+    {
+      "path": "judge/calibration.py",
+      "bytes": 8087,
+      "sha256": "sha256:b520403014000dbef1f1182c3686648d491ddc784fa65954b275a7d9117106b6"
+    },
+    {
+      "path": "judge/child_environment.py",
+      "bytes": 771,
+      "sha256": "sha256:b5ba0f18f7e176b6211dc496460f6477e429d96131d816fb872a6b921c9f9ef3"
+    },
+    {
+      "path": "judge/ckks_evidence_transport.py",
+      "bytes": 6077,
+      "sha256": "sha256:ef636d676f2d82b5d3bbc21d4f66cac55d973d34a0422894d76453edbeb870df"
+    },
+    {
+      "path": "judge/config.yaml",
+      "bytes": 2573,
+      "sha256": "sha256:895cc090b6063c7d993e0884512b5fe81caa79f60abaea2fd1fadaa8c8010882"
+    },
+    {
+      "path": "judge/evaluate.sh",
+      "bytes": 67,
+      "sha256": "sha256:d4afdc83b37da4c0cb4c1be57d79405cb045bb100558eab2310dca244c9271bd"
+    },
+    {
+      "path": "judge/evaluator.py",
+      "bytes": 23575,
+      "sha256": "sha256:4358843103a9c39d96177a5d064092d3737e3bc1e21a6771aec6c07c0889362b"
+    },
+    {
+      "path": "judge/fixed_surface.py",
+      "bytes": 1706,
+      "sha256": "sha256:533661801e0cee4a3a81871e9dcf827d483dfc338ab4dc25a03bc39215860acf"
+    },
+    {
+      "path": "judge/formal_scoring.py",
+      "bytes": 4730,
+      "sha256": "sha256:ce868d3236ff336dafdc40dc79c76fb89a3605c0c4e4e5665ab15dd7d14fbcbe"
+    },
+    {
+      "path": "judge/go_entrypoint.py",
+      "bytes": 3085,
+      "sha256": "sha256:720478e746b477563aef354bdd6ddc035dce22589c77db03fd22a56806b21612"
+    },
+    {
+      "path": "judge/harbor/app/.gitignore",
+      "bytes": 34,
+      "sha256": "sha256:d6c1bc3e4936fd5cb10271fde1b0f1beaea6b747c37125fd00c252517e4a0583"
+    },
+    {
+      "path": "judge/harbor/app/LICENSE",
+      "bytes": 10173,
+      "sha256": "sha256:a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+    },
+    {
+      "path": "judge/harbor/app/estimator/bootstrapping/evaluator.go",
+      "bytes": 8307,
+      "sha256": "sha256:736abb8fa28880c1e1e9cdd435c2974bd985259b159c76f9aa213757ebd91350"
+    },
+    {
+      "path": "judge/harbor/app/estimator/dft.go",
+      "bytes": 4041,
+      "sha256": "sha256:697ff77beff14f23ec1880940cd56d52104d4d9bb969785e4f62384ab9e51b70"
+    },
+    {
+      "path": "judge/harbor/app/estimator/element.go",
+      "bytes": 2137,
+      "sha256": "sha256:9810688be55e058481dc18ec996ce4c6a173d9508f6be5a204f8c7f4dabbf0dd"
+    },
+    {
+      "path": "judge/harbor/app/estimator/encoder.go",
+      "bytes": 2925,
+      "sha256": "sha256:ea24f5c88c8e8d50a468805c792ddedbca3962a6adad46d723bbece9e201d4e7"
+    },
+    {
+      "path": "judge/harbor/app/estimator/estimator.go",
+      "bytes": 4784,
+      "sha256": "sha256:0523eb67a547e641a2634ed2170a89d90c1f1ae85013607c70e167b6b9bdca9d"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/bootstrapping/bootstrapping.go",
+      "bytes": 2620,
+      "sha256": "sha256:169149afd2259e2e27419e9a80ab2dcd4b74475fd79faa2e63743e17312441eb"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/coeffs_to_slots/coeffs_to_slots.go",
+      "bytes": 4106,
+      "sha256": "sha256:47e1486d4ffd95969f61ed8105deaf0aae57d47ea058f02375cb7030a724371c"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/goldschmidt/goldschmidt.go",
+      "bytes": 2996,
+      "sha256": "sha256:7bb3da99f41c4348be61e3811117e6ca5bbd086c4cfdbf81af0242a62419a570"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/iterative_step/iterative_step.go",
+      "bytes": 3371,
+      "sha256": "sha256:5addde467ebe3e135f80d3b9d85bd0c70fb41c5ed65996a7a0a6ac52dedfb7f0"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/mod1/mod1.go",
+      "bytes": 4682,
+      "sha256": "sha256:42bca00003171c697d89a00fe8a668f8cb67811f1985c77f10227a613060888d"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/mul_relin_rescale/mul_relin_rescale.go",
+      "bytes": 1862,
+      "sha256": "sha256:86baa24a91bddaf9075ae47eb4291dfa1a8689768c7778556ffff24624641f11"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/poly_eval/poly_eval.go",
+      "bytes": 3190,
+      "sha256": "sha256:4246f26414036ae5f6be71771f53aa16bcb4cd25e6d8fbe954d9767fb990f7a4"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/power_basis/power_basis.go",
+      "bytes": 2318,
+      "sha256": "sha256:c8492d8d3a1ed32c0a7bdcbfe3e33e00936a01edce8cc06e40127e6840545584"
+    },
+    {
+      "path": "judge/harbor/app/estimator/experiments/slots_to_coeffs/slots_to_coeffs.go",
+      "bytes": 3191,
+      "sha256": "sha256:d2c50a8012120ab2e9671f1fa20965a9c95a00e7e365ba94992bf7d1613964ed"
+    },
+    {
+      "path": "judge/harbor/app/estimator/go.mod",
+      "bytes": 610,
+      "sha256": "sha256:8581d57fd7e4725d730344a4efa817537b3bb563bcbea6f35664a2cc946951f1"
+    },
+    {
+      "path": "judge/harbor/app/estimator/go.sum",
+      "bytes": 2666,
+      "sha256": "sha256:85e6fbd343907fbbc97bf52ed30fba93b9a616e93613f7f13adad940d4f2171c"
+    },
+    {
+      "path": "judge/harbor/app/estimator/inverse.go",
+      "bytes": 1529,
+      "sha256": "sha256:a2e672c74aea7c11afdf8964702f0aa9939da9f6eea667935063b7f8eae7f495"
+    },
+    {
+      "path": "judge/harbor/app/estimator/linear_transformation.go",
+      "bytes": 4206,
+      "sha256": "sha256:d0a6a6320a07a0d5bf12f4cbfed417096ec6d6fd91f90c8e8e0a4af70febeb8b"
+    },
+    {
+      "path": "judge/harbor/app/estimator/mod1.go",
+      "bytes": 4218,
+      "sha256": "sha256:568422717379e12c428d5c8419767c1ba3136079767848997b12156b17fc2b77"
+    },
+    {
+      "path": "judge/harbor/app/estimator/noise.go",
+      "bytes": 2706,
+      "sha256": "sha256:85aca55bc92e82501f1809002b80705b60bafc4a7f491d3684a7bede790cde98"
+    },
+    {
+      "path": "judge/harbor/app/estimator/operations.go",
+      "bytes": 9535,
+      "sha256": "sha256:dc8acd2525ec5d0c625621be6c5fafc229c12a05af8fc17f31fec6a50ce385d0"
+    },
+    {
+      "path": "judge/harbor/app/estimator/polynomial.go",
+      "bytes": 4408,
+      "sha256": "sha256:e1fdb0c13aa5ddc41c9b8000b32deff11607a5a6948960047be9366682884591"
+    },
+    {
+      "path": "judge/harbor/app/estimator/polynomial_evaluator.go",
+      "bytes": 10548,
+      "sha256": "sha256:eee464c0bf61deff41ed67c2d0af4c24171f8becae8112256300e1b2f50ec2bc"
+    },
+    {
+      "path": "judge/harbor/app/estimator/polynomial_evaluator_sim.go",
+      "bytes": 2605,
+      "sha256": "sha256:4ad6aaec8d413172834a7d425914371b9d921593604f993137950edf05de2016"
+    },
+    {
+      "path": "judge/harbor/app/estimator/stats.go",
+      "bytes": 3835,
+      "sha256": "sha256:b552041533cfddb33caf0ebc141416d3f59140c7868a0774799ae50323db7d74"
+    },
+    {
+      "path": "judge/harbor/app/estimator/utils.go",
+      "bytes": 7554,
+      "sha256": "sha256:9083d7a07b45a03c2825875d523df2baf1d5d9baf4347706e380678c97a4b443"
+    },
+    {
+      "path": "judge/harbor/app/frontier-bench.sh",
+      "bytes": 504,
+      "sha256": "sha256:046ab741ef944ff5b3d82d08e093eb28bf7f04d24c3ceea852519923956a62a5"
+    },
+    {
+      "path": "judge/harbor/app/frontier-build.sh",
+      "bytes": 510,
+      "sha256": "sha256:4829753d8a12111a9ee3c882d0da3b25de0908293991136ce1a812398ba807e6"
+    },
+    {
+      "path": "judge/harbor/app/make_submission.sh",
+      "bytes": 716,
+      "sha256": "sha256:03fdee7103d154c5d96fe4adc7639b5f94c0ea1201254e8a356b01b0ad14092a"
+    },
+    {
+      "path": "judge/judge/calibration_preregistration.json",
+      "bytes": 11137,
+      "sha256": "sha256:21aa5bfe6694022ff8f02b0206a04c16ff7df2e11429cd44f8f1b6121569835b"
+    },
+    {
+      "path": "judge/judge/configuration_bases.json",
+      "bytes": 2993,
+      "sha256": "sha256:ccf453028974ab088a789bff16070da05a62c21e0c579b4480afca644a1ccc09"
+    },
+    {
+      "path": "judge/judge/contracts.go.txt",
+      "bytes": 2185,
+      "sha256": "sha256:e2ef457fe72918598a21c1571ceb104bc8a74f4efa09f64a7a70e17d9f17d344"
+    },
+    {
+      "path": "judge/judge/evaluation_config.json",
+      "bytes": 2872,
+      "sha256": "sha256:5206acdf7444451bc49f290e7fbf235996c7fc723c4110ca6b5d987776a1be43"
+    },
+    {
+      "path": "judge/judge/formal_calibration.json",
+      "bytes": 18602,
+      "sha256": "sha256:96b6baf86908f9f6c5df20a881218369bfbd66a9ad5edd4754e9f8b57350fadb"
+    },
+    {
+      "path": "judge/judge/release.json",
+      "bytes": 5169,
+      "sha256": "sha256:c1ed8b9e0e5b3020d175f4eb57787db5eeaf7e8c0ae5d366d9d5647bf4b6f251"
+    },
+    {
+      "path": "judge/judge/source_policy.go",
+      "bytes": 6114,
+      "sha256": "sha256:f3a357e67544696770c523d890ea12c3cf2aa065b8382e309debc69983654c4d"
+    },
+    {
+      "path": "judge/judge/timed_main_sha256.json",
+      "bytes": 4739,
+      "sha256": "sha256:6c591090c55b25e65cf5104efbc90b8ecc53c471f01ff624c2f25cb617259d92"
+    },
+    {
+      "path": "judge/judge/transport_binding.json",
+      "bytes": 375,
+      "sha256": "sha256:6224f7b7603d5f01cb6199631304332bbc52ff8bad65773a2f306421d7e29e9f"
+    },
+    {
+      "path": "judge/judge/workload_manifest.json",
+      "bytes": 18420,
+      "sha256": "sha256:03be4cf5fb478ff69f4cc86a4e00b02092882fffd68d145e7f01b5a40633857b"
+    },
+    {
+      "path": "judge/metadata.json",
+      "bytes": 3541,
+      "sha256": "sha256:3774bca60fa9f5f66129b571e89674dd3157b52c247c19767622a04e394cdc0a"
+    },
+    {
+      "path": "judge/private-comment-restoration.patch",
+      "bytes": 11882,
+      "sha256": "sha256:0b2d03735b4d6dbb48c3bca8a00b58297e7807b1677cc9567e8fabbf40e8fb47"
+    },
+    {
+      "path": "judge/readme",
+      "bytes": 1372,
+      "sha256": "sha256:5a0e691bbfe3cde1158dd1fc90011f603bde47c1886ae62c75983608ad1e215e"
+    },
+    {
+      "path": "judge/reference.patch",
+      "bytes": 11926,
+      "sha256": "sha256:e05406624ad27e8d77ccecb3828a53ffa9fb7d8d179eced6b09c2d68608aeff5"
+    },
+    {
+      "path": "judge/source_provenance.json",
+      "bytes": 14870,
+      "sha256": "sha256:eb7da62f00e551d0e767d041a366b69721f1ee0d72412ef7aaf8afea838d9387"
+    },
+    {
+      "path": "judge/submission_patch.py",
+      "bytes": 18365,
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "path": "judge/workload_configurations.py",
+      "bytes": 14329,
+      "sha256": "sha256:f104f77858c3e4ad5d74c5b4b8d9bcca8ef4f765170ee108e46b24782e0b3b12"
+    },
+    {
+      "path": "policy.json",
+      "bytes": 2439,
+      "sha256": "sha256:9255f73841359d5c15ac8b301d3b29fa10effbfddb020760c02611dead5d8229"
+    },
+    {
+      "path": "verifier/Dockerfile",
+      "bytes": 809,
+      "sha256": "sha256:38896d6e9939eb1324895003dee2febb82a2d7012d13468e081fb265443d75a6"
+    },
+    {
+      "path": "verifier/beat_spec_feedback.py",
+      "bytes": 13321,
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "path": "verifier/ckks_evidence_transport.py",
+      "bytes": 6077,
+      "sha256": "sha256:ef636d676f2d82b5d3bbc21d4f66cac55d973d34a0422894d76453edbeb870df"
+    },
+    {
+      "path": "verifier/fcs2_verifier.py",
+      "bytes": 35665,
+      "sha256": "sha256:92cda79539b23d1cf6465963701e20583441304bcd87c9d3f5b0bc80a9b87870"
+    },
+    {
+      "path": "verifier/verify.py",
+      "bytes": 358,
+      "sha256": "sha256:95e4997470b5a87e646f67cd86dea58aebc08eadc039661cd517ba1f90726590"
+    }
+  ],
+  "problem_id": "ckks_composable_noise",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:4358843103a9c39d96177a5d064092d3737e3bc1e21a6771aec6c07c0889362b",
+    "statement_sha256": "sha256:5a0e691bbfe3cde1158dd1fc90011f603bde47c1886ae62c75983608ad1e215e",
+    "task_dir": "judge"
+  }
+}

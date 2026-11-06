@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Judge of hypergraph_core_numbers (#757): evaluate(tree) on the shared verifier.
+"""Judge of hypergraph_core_numbers: evaluate(tree) on the shared verifier.
 
 `tree` is pristine/ with only apps/hyper/HyperKCore-Efficient.C and files below
 apps/hyper/frontier_solution/ overlaid. check_tree keeps the original Compute body and the
@@ -18,7 +18,7 @@ Metrics (one beat_spec_workload_passes row per workload; development: 2, final: 
   sequential_runtime_seconds  one-thread median; lower; passes if C <= 0.97 * R and every
                               one-thread run succeeded with exact cores
 beats_reference = 1 iff all guards and executions are exact and every workload passes both.
-The metric definitions before #757 are archived at docs/task-authoring/hypergraph_core_numbers/provenance/beat_spec.json.
+The metric definitions before the task.toml migration are kept in the authoring records.
 """
 from __future__ import annotations
 import hashlib, heapq, json, math, os, re, shutil, statistics, struct, subprocess, sys, tempfile, time

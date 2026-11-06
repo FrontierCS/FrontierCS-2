@@ -1,4 +1,4 @@
-"""evm_state_checkpoints judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+"""evm_state_checkpoints judge: evaluate(tree) for the shared FrontierCS2 verifier.
 
 Scoring. The shipped backend (pristine/ header, the zero), the reference (pristine/ +
 reference.patch) and the candidate (the judged tree's lib/evmcow/execution_state.hpp) each
@@ -64,7 +64,7 @@ MICRO_WORKLOAD = "checkpoint-micro"
 def _workload_ids(suite: tuple[tuple[str, int], ...]) -> list[str]:
     """Every Spectrum workload and one checkpoint-micro workload per suite seed.
 
-    Each workload reports the same metric set (#646): throughput, checkpoint
+    Each workload reports the same metric set: throughput, checkpoint
     create and restore nanoseconds, retained bytes per checkpoint, correctness.
     """
     return ([_workload_id(workload, seed) for workload, seed in suite]

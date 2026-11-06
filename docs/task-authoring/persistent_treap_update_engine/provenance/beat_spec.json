@@ -1,0 +1,45 @@
+{
+  "unit": "one suite case and server-thread/query-client configuration pair",
+  "metrics": [
+    {
+      "name": "case_throughput_ktps",
+      "means": "the candidate's median transaction throughput for this case/configuration pair",
+      "source": "main.cpp's final transaction-throughput line, paired by evaluator.py",
+      "better": "higher",
+      "clears_when": "candidate_case_throughput_ktps > reference_case_throughput_ktps",
+      "tolerance": "none"
+    },
+    {
+      "name": "peak_memory_mib",
+      "means": "the candidate's median peak resident memory, in MiB, of the five timed main.cpp benchmark processes for this case/configuration pair, with every version retained (paper Section 6.5, Fig. 15 memory peak)",
+      "source": "evaluator.py _measured_process: the trusted parent reaps each fixed main.cpp benchmark process with os.wait4 and records the kernel's ru_maxrss for exactly that process; the same five runs that produce case_throughput_ktps",
+      "better": "lower",
+      "clears_when": "median(candidate five peak_memory_mib samples) < median(reference five peak_memory_mib samples) for the same case/configuration pair; equality fails",
+      "tolerance": "none. No noise band is inferred; equality or a larger candidate median fails."
+    },
+    {
+      "name": "historical_query_us",
+      "means": "the candidate's median average time, in microseconds, of 100,000 single-threaded historical range-sum queries on pseudorandom retained versions after every transaction of the case trace has been processed with this pair's server-thread count (paper Section 6.2, Fig. 11)",
+      "source": "judge/judge/history_bench.cpp (judge-owned, compiled against the candidate's, the reference's and the fixed serial scaffold's editable headers) timed with steady_clock around the query loop only; evaluator.py _history runs it five times per pair for the candidate and the reference in alternating order, and once with the fixed serial scaffold to obtain the expected answer checksum",
+      "better": "lower",
+      "clears_when": "all five candidate answer checksums equal the fixed serial scaffold's checksum for the identical trace and query seed, AND median(candidate five historical_query_us samples) < median(reference five historical_query_us samples) for the same case/configuration pair; equality, a slower median, or any wrong historical answer fails",
+      "tolerance": "none. No noise band is inferred; equality or a larger candidate median fails."
+    }
+  ],
+  "beats_reference": "every suite case/configuration pair clears case_throughput_ktps, peak_memory_mib and historical_query_us",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [],
+  "withheld": [
+    "beat_spec_workload_passes",
+    "case_throughput_ktps",
+    "peak_memory_mib",
+    "historical_query_us",
+    "reference_case_throughput_ktps",
+    "reference_peak_memory_mib",
+    "reference_historical_query_us"
+  ],
+  "statement_sentences": "A separate stricter criterion compares the candidate with the private optimized reference per case and configuration rather than in aggregate. On every pair the candidate must have strictly higher median transaction throughput, strictly lower median peak resident memory of the timed benchmark processes, and strictly lower median average historical range-query time with every historical answer matching the fixed serial scaffold. The reported score remains the optimization objective and is returned even when this criterion is not cleared.",
+  "comments": "Beat spec v2 (2026-10-07): adds the paper's Section 6.5 peak-memory and Section 6.2 historical range-query metrics beside the existing throughput metric; the throughput rule, workloads, configurations and continuous score are unchanged. Peak memory reuses the existing timed runs, measured by the trusted parent with os.wait4. Historical query time uses a judge-owned harness that answers 10^5 queries covering 0-10% of the key domain on uniformly chosen retained versions, as in the paper; every candidate answer checksum must match the deterministic fixed serial scaffold, and every reference checksum must match too: a reference that answers a historical query wrongly is not a valid baseline, so the evaluation fails as a judging error instead of using its samples. A wrong candidate answer fails only this metric for that pair; the continuous score and validity rules are unchanged. Reference/baseline build, run or correctness failures are judging errors, never candidate zeros. The reference patch fixes two scheduler defects found while adding this metric (aggregates estimated before every version of the block committed; a lagging worker could leave a block unestimated), with no measurable throughput, memory or query-time change in local paired runs. Paper Fig. 10 insertion-scheduling time, Fig. 12 insertion/deletion scaling, Fig. 13 skew/batch sweeps, Fig. 14 read/write mix sweeps and the Fig. 16 e-commerce case study remain outside this bounded native suite; the mixed profiles already cover update-heavy, read-heavy and hotspot traces. The reference does not need to beat itself."
+}

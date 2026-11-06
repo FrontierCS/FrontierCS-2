@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "task_id": "ckks_composable_noise",
+  "upstream": {
+    "ok": true,
+    "note": "exact user-specified commit acquired",
+    "tried": [
+      "exact pinned clone"
+    ],
+    "census": {
+      ".go": 37
+    },
+    "commit": "53dd2367a25a0ae45298dd4086ef50ae03aa778a",
+    "remote": "https://github.com/tuneinsight/ckks-noise-estimator",
+    "repo_url": "https://github.com/tuneinsight/ckks-noise-estimator",
+    "cloned_at": "2026-10-03T12:23:15.641319+00:00"
+  },
+  "paper": {
+    "title": "Accurate and Composable Noise Estimates for CKKS with Application to Exact HE Computation",
+    "date": "2025-08-11",
+    "pdf_sha256": "4b899574773337e0b7d326b2b9aff7f1dd3a152dfa937b567f31c15be90484b9",
+    "authors": [
+      "Jean-Philippe Bossuat",
+      "Anamaria Costache",
+      "Christian Mouchet",
+      "Lea Nürnberger",
+      "Juan Ramón Troncoso-Pastoriza"
+    ],
+    "submitter": "Boru Chen"
+  },
+  "retained_sha256": {
+    "estimator/experiments/mul_relin_rescale/mul_relin_rescale.go": "5337049e4d95495c07c43620c805ede86d38857357720c98cf5cd6191c883aef",
+    "estimator/go.mod": "8581d57fd7e4725d730344a4efa817537b3bb563bcbea6f35664a2cc946951f1",
+    "estimator/go.sum": "85e6fbd343907fbbc97bf52ed30fba93b9a616e93613f7f13adad940d4f2171c",
+    "estimator/estimator.go": "f5e284ced3982f527cf22fe31aa7d7b3fcac1bf12a614661168e21d52938ce82",
+    "estimator/element.go": "9810688be55e058481dc18ec996ce4c6a173d9508f6be5a204f8c7f4dabbf0dd",
+    "estimator/encoder.go": "ea24f5c88c8e8d50a468805c792ddedbca3962a6adad46d723bbece9e201d4e7",
+    "estimator/utils.go": "9083d7a07b45a03c2825875d523df2baf1d5d9baf4347706e380678c97a4b443",
+    "estimator/stats.go": "b552041533cfddb33caf0ebc141416d3f59140c7868a0774799ae50323db7d74",
+    "estimator/operations.go": "3ba668582908ed30ef5f31be9bcdef6b481eecdc21884e288d8dc2520f5d916d",
+    "estimator/noise.go": "b9d3300701d4b44703084191b1994c9678dc1f5e52770539c6992e4d117b5d18",
+    "LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+    "estimator/dft.go": "697ff77beff14f23ec1880940cd56d52104d4d9bb969785e4f62384ab9e51b70",
+    "estimator/inverse.go": "a2e672c74aea7c11afdf8964702f0aa9939da9f6eea667935063b7f8eae7f495",
+    "estimator/linear_transformation.go": "d0a6a6320a07a0d5bf12f4cbfed417096ec6d6fd91f90c8e8e0a4af70febeb8b",
+    "estimator/mod1.go": "568422717379e12c428d5c8419767c1ba3136079767848997b12156b17fc2b77",
+    "estimator/polynomial.go": "e1fdb0c13aa5ddc41c9b8000b32deff11607a5a6948960047be9366682884591",
+    "estimator/polynomial_evaluator.go": "eee464c0bf61deff41ed67c2d0af4c24171f8becae8112256300e1b2f50ec2bc",
+    "estimator/polynomial_evaluator_sim.go": "4ad6aaec8d413172834a7d425914371b9d921593604f993137950edf05de2016",
+    "estimator/bootstrapping/evaluator.go": "736abb8fa28880c1e1e9cdd435c2974bd985259b159c76f9aa213757ebd91350",
+    "estimator/experiments/power_basis/power_basis.go": "4c258c5bbf4e11b0e29c5b998d5cbdc3b2a6bc875a270a955b3f7fcf898d8a9f",
+    "estimator/experiments/poly_eval/poly_eval.go": "984b7a65a7bacde5d9210f0c73f858417df96f0fdaa5beffc4431a4326fb0d60",
+    "estimator/experiments/goldschmidt/goldschmidt.go": "6774bea3bd48224aa0409346a738879b7982eeb14cd4e78a40d3fbd77f0cb7f4",
+    "estimator/experiments/coeffs_to_slots/coeffs_to_slots.go": "ae80239a685da616e9d55b31d0da6214988e563848b744b7a4a58c360420f24a",
+    "estimator/experiments/slots_to_coeffs/slots_to_coeffs.go": "0a87670dea366e6446d556ad4ece6c79f9a0a81cf3e9462be4cccc75cf67aeae",
+    "estimator/experiments/iterative_step/iterative_step.go": "058220354a89d10c6ae58e53ebd8f14256a60da9ccc8b8e164ea614517101375",
+    "estimator/experiments/mod1/mod1.go": "f41872660622b96f2c67f3341b1223c813d9dc784d0b918241e8b6c2cc0778e0",
+    "estimator/experiments/bootstrapping/bootstrapping.go": "4535f83eb27c4cca284b9b2710690033e26bd5c82acc7a022f325831c069cb4d"
+  },
+  "stage": "approved_configuration_successor_source_only_uncalibrated",
+  "source_equivalence": {
+    "schema_version": 1,
+    "mode": "comment_only",
+    "entries": [
+      {
+        "path": "estimator/estimator.go",
+        "upstream_sha256": "f5e284ced3982f527cf22fe31aa7d7b3fcac1bf12a614661168e21d52938ce82",
+        "public_sha256": "0523eb67a547e641a2634ed2170a89d90c1f1ae85013607c70e167b6b9bdca9d",
+        "token_sha256": "0e0b604c1c7bb97e1f76daedb03cfaeb2d90a67716906e601b7a954503481ed9",
+        "token_count": 1566
+      },
+      {
+        "path": "estimator/experiments/power_basis/power_basis.go",
+        "upstream_sha256": "06b73622dd2009a7aaf4006a163bd82a93db63f9da4eaa1eac414379c1a06b3d",
+        "public_sha256": "c8492d8d3a1ed32c0a7bdcbfe3e33e00936a01edce8cc06e40127e6840545584",
+        "token_sha256": "98ea8220b53a3d551ff793888552d6d89115e642f3b2886bdd9676563e8823da",
+        "token_count": 627
+      },
+      {
+        "path": "estimator/experiments/poly_eval/poly_eval.go",
+        "upstream_sha256": "40b295e0cecc788237a2217cb5d5d086f2da71b03fe695b475aadac37ff8d454",
+        "public_sha256": "4246f26414036ae5f6be71771f53aa16bcb4cd25e6d8fbe954d9767fb990f7a4",
+        "token_sha256": "2f94d3d11e548900e1bfe673f88d4936d993ba2b43107fd7ce7c0347f2a6a45c",
+        "token_count": 848
+      },
+      {
+        "path": "estimator/experiments/iterative_step/iterative_step.go",
+        "upstream_sha256": "a5f8dc392b6a530049bfe6d8c1286cb1e7a21e3bdf055cdb1deec0743a10d42f",
+        "public_sha256": "5addde467ebe3e135f80d3b9d85bd0c70fb41c5ed65996a7a0a6ac52dedfb7f0",
+        "token_sha256": "2958f770c0e2d84d21cccb45f489da2500d5fa65627ee76c31428cdbb7ced56b",
+        "token_count": 939
+      },
+      {
+        "path": "estimator/experiments/mod1/mod1.go",
+        "upstream_sha256": "ab971dfe6d0291ccd151a296f40f07b85e0d8a01ab3324c54f2dcb7caf3f29f7",
+        "public_sha256": "42bca00003171c697d89a00fe8a668f8cb67811f1985c77f10227a613060888d",
+        "token_sha256": "6d489283d33195f6792b3b67f0932705f9735116429fdc10277fa4f9ceb8b642",
+        "token_count": 1290
+      }
+    ],
+    "forward_patch_sha256": "242b3f11973ec81207f249984d63019c8f4bf27b9eda6874dfb316a747104f85",
+    "restoration_patch_sha256": "0b2d03735b4d6dbb48c3bca8a00b58297e7807b1677cc9567e8fabbf40e8fb47",
+    "binding": "comment equivalence against explicitly derived LogN12 material only; no equivalence or measurement transfer from original parameters"
+  },
+  "authorized_parameter_derivation": {
+    "schema_version": "ckks-authorized-parameter-derivation/v1",
+    "original_commit": "53dd2367a25a0ae45298dd4086ef50ae03aa778a",
+    "new_release": "composition-scaled-logn12-v1",
+    "authorization": "recorded parameter derivation decision, 2026-10-05",
+    "changes": [
+      {
+        "path": "estimator/experiments/bootstrapping/bootstrapping.go",
+        "original_sha256": "4535f83eb27c4cca284b9b2710690033e26bd5c82acc7a022f325831c069cb4d",
+        "scaled_sha256": "169149afd2259e2e27419e9a80ab2dcd4b74475fd79faa2e63743e17312441eb",
+        "old_logN": 14,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/coeffs_to_slots/coeffs_to_slots.go",
+        "original_sha256": "ae80239a685da616e9d55b31d0da6214988e563848b744b7a4a58c360420f24a",
+        "scaled_sha256": "47e1486d4ffd95969f61ed8105deaf0aae57d47ea058f02375cb7030a724371c",
+        "old_logN": 14,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/goldschmidt/goldschmidt.go",
+        "original_sha256": "6774bea3bd48224aa0409346a738879b7982eeb14cd4e78a40d3fbd77f0cb7f4",
+        "scaled_sha256": "7bb3da99f41c4348be61e3811117e6ca5bbd086c4cfdbf81af0242a62419a570",
+        "old_logN": 16,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/iterative_step/iterative_step.go",
+        "original_sha256": "058220354a89d10c6ae58e53ebd8f14256a60da9ccc8b8e164ea614517101375",
+        "scaled_sha256": "a5f8dc392b6a530049bfe6d8c1286cb1e7a21e3bdf055cdb1deec0743a10d42f",
+        "old_logN": 16,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/mod1/mod1.go",
+        "original_sha256": "f41872660622b96f2c67f3341b1223c813d9dc784d0b918241e8b6c2cc0778e0",
+        "scaled_sha256": "ab971dfe6d0291ccd151a296f40f07b85e0d8a01ab3324c54f2dcb7caf3f29f7",
+        "old_logN": 16,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/mul_relin_rescale/mul_relin_rescale.go",
+        "original_sha256": "5337049e4d95495c07c43620c805ede86d38857357720c98cf5cd6191c883aef",
+        "scaled_sha256": "86baa24a91bddaf9075ae47eb4291dfa1a8689768c7778556ffff24624641f11",
+        "old_logN": 14,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/poly_eval/poly_eval.go",
+        "original_sha256": "984b7a65a7bacde5d9210f0c73f858417df96f0fdaa5beffc4431a4326fb0d60",
+        "scaled_sha256": "40b295e0cecc788237a2217cb5d5d086f2da71b03fe695b475aadac37ff8d454",
+        "old_logN": 16,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/power_basis/power_basis.go",
+        "original_sha256": "4c258c5bbf4e11b0e29c5b998d5cbdc3b2a6bc875a270a955b3f7fcf898d8a9f",
+        "scaled_sha256": "06b73622dd2009a7aaf4006a163bd82a93db63f9da4eaa1eac414379c1a06b3d",
+        "old_logN": 16,
+        "new_logN": 12
+      },
+      {
+        "path": "estimator/experiments/slots_to_coeffs/slots_to_coeffs.go",
+        "original_sha256": "0a87670dea366e6446d556ad4ece6c79f9a0a81cf3e9462be4cccc75cf67aeae",
+        "scaled_sha256": "d2c50a8012120ab2e9671f1fa20965a9c95a00e7e365ba94992bf7d1613964ed",
+        "old_logN": 14,
+        "new_logN": 12
+      }
+    ],
+    "files": {
+      "LICENSE": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "estimator/bootstrapping/evaluator.go": "736abb8fa28880c1e1e9cdd435c2974bd985259b159c76f9aa213757ebd91350",
+      "estimator/dft.go": "697ff77beff14f23ec1880940cd56d52104d4d9bb969785e4f62384ab9e51b70",
+      "estimator/element.go": "9810688be55e058481dc18ec996ce4c6a173d9508f6be5a204f8c7f4dabbf0dd",
+      "estimator/encoder.go": "ea24f5c88c8e8d50a468805c792ddedbca3962a6adad46d723bbece9e201d4e7",
+      "estimator/estimator.go": "f5e284ced3982f527cf22fe31aa7d7b3fcac1bf12a614661168e21d52938ce82",
+      "estimator/experiments/bootstrapping/bootstrapping.go": "169149afd2259e2e27419e9a80ab2dcd4b74475fd79faa2e63743e17312441eb",
+      "estimator/experiments/coeffs_to_slots/coeffs_to_slots.go": "47e1486d4ffd95969f61ed8105deaf0aae57d47ea058f02375cb7030a724371c",
+      "estimator/experiments/goldschmidt/goldschmidt.go": "7bb3da99f41c4348be61e3811117e6ca5bbd086c4cfdbf81af0242a62419a570",
+      "estimator/experiments/iterative_step/iterative_step.go": "a5f8dc392b6a530049bfe6d8c1286cb1e7a21e3bdf055cdb1deec0743a10d42f",
+      "estimator/experiments/mod1/mod1.go": "ab971dfe6d0291ccd151a296f40f07b85e0d8a01ab3324c54f2dcb7caf3f29f7",
+      "estimator/experiments/mul_relin_rescale/mul_relin_rescale.go": "86baa24a91bddaf9075ae47eb4291dfa1a8689768c7778556ffff24624641f11",
+      "estimator/experiments/poly_eval/poly_eval.go": "40b295e0cecc788237a2217cb5d5d086f2da71b03fe695b475aadac37ff8d454",
+      "estimator/experiments/power_basis/power_basis.go": "06b73622dd2009a7aaf4006a163bd82a93db63f9da4eaa1eac414379c1a06b3d",
+      "estimator/experiments/slots_to_coeffs/slots_to_coeffs.go": "d2c50a8012120ab2e9671f1fa20965a9c95a00e7e365ba94992bf7d1613964ed",
+      "estimator/go.mod": "8581d57fd7e4725d730344a4efa817537b3bb563bcbea6f35664a2cc946951f1",
+      "estimator/go.sum": "85e6fbd343907fbbc97bf52ed30fba93b9a616e93613f7f13adad940d4f2171c",
+      "estimator/inverse.go": "a2e672c74aea7c11afdf8964702f0aa9939da9f6eea667935063b7f8eae7f495",
+      "estimator/linear_transformation.go": "d0a6a6320a07a0d5bf12f4cbfed417096ec6d6fd91f90c8e8e0a4af70febeb8b",
+      "estimator/mod1.go": "568422717379e12c428d5c8419767c1ba3136079767848997b12156b17fc2b77",
+      "estimator/noise.go": "b9d3300701d4b44703084191b1994c9678dc1f5e52770539c6992e4d117b5d18",
+      "estimator/operations.go": "3ba668582908ed30ef5f31be9bcdef6b481eecdc21884e288d8dc2520f5d916d",
+      "estimator/polynomial.go": "e1fdb0c13aa5ddc41c9b8000b32deff11607a5a6948960047be9366682884591",
+      "estimator/polynomial_evaluator.go": "eee464c0bf61deff41ed67c2d0af4c24171f8becae8112256300e1b2f50ec2bc",
+      "estimator/polynomial_evaluator_sim.go": "4ad6aaec8d413172834a7d425914371b9d921593604f993137950edf05de2016",
+      "estimator/stats.go": "b552041533cfddb33caf0ebc141416d3f59140c7868a0774799ae50323db7d74",
+      "estimator/utils.go": "9083d7a07b45a03c2825875d523df2baf1d5d9baf4347706e380678c97a4b443"
+    },
+    "tree_sha256": "9ab9d3c217549555d823d959e36b38bb93315cfb57550cb884286522e2a51499",
+    "scientifically_equivalent_to_original": false,
+    "old_measurements_reusable": false,
+    "task_owned_corrections": [
+      {
+        "path": "estimator/utils.go",
+        "previous_sha256": "ddc6b50cc39d280a09999384c78a70afa2756bc666b8da67ce78d8492cab1104",
+        "sha256": "9083d7a07b45a03c2825875d523df2baf1d5d9baf4347706e380678c97a4b443",
+        "change": "NewTestVector: when a plaintext truncation is requested, the estimator element is rebuilt from the decoded truncated plaintext, so the estimator starts from the message that is actually encrypted. Task-owned correction of the test vector; no estimator operation is implemented by it.",
+        "old_measurements_reusable": false
+      }
+    ]
+  },
+  "authorized_configuration_successor": {
+    "schema": "ckks-configuration-derivation/v1",
+    "authorization": "recorded configuration decision, 2026-10-07",
+    "predecessor_release": "composition-scaled-logn12-v1",
+    "release": "composition-scaled-logn12-configurations-v2",
+    "retained_base_mains": "all nine byte-identical; prior authorized_parameter_derivation and comment equivalence remain historical base provenance",
+    "runtime_changes": [
+      "initial LogScale 45/55 for sets I-VI",
+      "subsequent rescaling-prime bit lengths follow initial scale; Q0 and chain lengths unchanged",
+      "dense ternary P=2/3 or exact H192; sets VII/VIII scale45 only"
+    ],
+    "unchanged": [
+      "all numerical kernels",
+      "all original rows",
+      "LogN12",
+      "LogP",
+      "algorithms and depths",
+      "AVG and STD discrepancy arithmetic",
+      "all-cell comparison predicate",
+      "18000/3600/100/600 clock and quota"
+    ],
+    "source_files_sha256": {
+      "workload_configurations.py": "549c817a9042444abe7396d2719ef9679221fbb102937e5e0b635f51eb39b563",
+      "judge/configuration_bases.json": "ccf453028974ab088a789bff16070da05a62c21e0c579b4480afca644a1ccc09",
+      "judge/workload_manifest.json": "03be4cf5fb478ff69f4cc86a4e00b02092882fffd68d145e7f01b5a40633857b"
+    },
+    "paper_equivalence": false,
+    "old_bands_reusable": false,
+    "runtime_qualified": false,
+    "publication_binding": "none; existing upstream.lock.json and published images/version are predecessor evidence only; official successor preparation pending"
+  }
+}

@@ -1,0 +1,916 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 438,
+      "path": "datasets/eval.json",
+      "version": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e"
+    },
+    "train": {
+      "bytes": 445,
+      "path": "datasets/train.json",
+      "version": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+    }
+  },
+  "file_count": 178,
+  "files": [
+    {
+      "bytes": 2174,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:42e6ac3a94af66baf969d197451b5dc7fdaab49d66fa0c2df3af709888cbe465"
+    },
+    {
+      "bytes": 3715,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:ce706191dd62cca18163fdfe55b965f2048d92ba142dcd7d31370f73dff2f1cc"
+    },
+    {
+      "bytes": 1049,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:3ba0303336503cf8cd7ead8a60635d8e7413122f47b5d7a06e96aeff52130a10"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 13115,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:a471d192d897b9b4a05da4b2717dee2d00458419fbeae9c55554a8fa9b34dd63"
+    },
+    {
+      "bytes": 270,
+      "path": "agent-base/frontier/task/repo/performance_model/requirements.txt",
+      "sha256": "sha256:e4b57f649581a9e9aef2677f35f23e49b2d45d84de687760fd4d3f99d8201a07"
+    },
+    {
+      "bytes": 461,
+      "path": "agent-base/frontier/task/repo/performance_model/src/data.py",
+      "sha256": "sha256:4c5a5040adff4f38b0a8eab5ab0f29de34e036ce4c7b3cfe78abc764c328e39e"
+    },
+    {
+      "bytes": 1130,
+      "path": "agent-base/frontier/task/repo/performance_model/src/main.py",
+      "sha256": "sha256:4ed893441722c861cf65e30c010fd7092ba481e5d269ca22e5968088f2a0fd8b"
+    },
+    {
+      "bytes": 8361,
+      "path": "agent-base/frontier/task/repo/sansa/include/VertexSet.h",
+      "sha256": "sha256:7d810ec3317684ac5b67ff5f19f1f633a0a8c73575571a4c983218a5620d61ca"
+    },
+    {
+      "bytes": 4868,
+      "path": "agent-base/frontier/task/repo/sansa/include/bitsets.h",
+      "sha256": "sha256:a0acbc7873770a330b8f368319d931baf388b806a30400467e4b4f03c0943ed0"
+    },
+    {
+      "bytes": 1642,
+      "path": "agent-base/frontier/task/repo/sansa/include/cmap.h",
+      "sha256": "sha256:74e535fff278c282207fc49de2e83f310694065ae637c6e3d711bacbe7961b32"
+    },
+    {
+      "bytes": 2221,
+      "path": "agent-base/frontier/task/repo/sansa/include/cmap_gpu.h",
+      "sha256": "sha256:208ca0a2cb8431bfaa1814321025c2d8e5ee67bb4eb2fea1a669cad0dc39db39"
+    },
+    {
+      "bytes": 2165,
+      "path": "agent-base/frontier/task/repo/sansa/include/common.h",
+      "sha256": "sha256:80954644a6a47b333c81702cf7abc310d431d38efeec800e73bdc7f6f6c35f77"
+    },
+    {
+      "bytes": 13663,
+      "path": "agent-base/frontier/task/repo/sansa/include/cuda_launch_config.hpp",
+      "sha256": "sha256:d5209b22f565e9fd704b4ab68bebc6d8fbce78c815f828f8818415e1b26941f1"
+    },
+    {
+      "bytes": 1543,
+      "path": "agent-base/frontier/task/repo/sansa/include/custom_alloc.h",
+      "sha256": "sha256:e6e429035c8f879bd77cd7d03bf3da9ca1c6128a1ccb299c06039ab03fe82dec"
+    },
+    {
+      "bytes": 6343,
+      "path": "agent-base/frontier/task/repo/sansa/include/cutil_subset.h",
+      "sha256": "sha256:63e89d4dd9c2fc0e21a8166fafa78e1d864527e2a55f79767556e29bc9280088"
+    },
+    {
+      "bytes": 992,
+      "path": "agent-base/frontier/task/repo/sansa/include/defines.h",
+      "sha256": "sha256:7abab40227cce7e286a1d8f92473d920a0dbdef0ecba8ba8bc4fedf1a5ef5066"
+    },
+    {
+      "bytes": 1348,
+      "path": "agent-base/frontier/task/repo/sansa/include/edgelist.h",
+      "sha256": "sha256:e0f4d61a4c7b496b9284d18ddce552e086dae35081e9067c34a93ad8911f6aac"
+    },
+    {
+      "bytes": 3298,
+      "path": "agent-base/frontier/task/repo/sansa/include/emb_list.h",
+      "sha256": "sha256:f9fce34cc4292d8c6a2846010f35940223ed5f74ce878d42ae289ab08e1c7aaa"
+    },
+    {
+      "bytes": 1968,
+      "path": "agent-base/frontier/task/repo/sansa/include/fsm_operations.cuh",
+      "sha256": "sha256:b79bb734cd93e58ef7548051b92fe3616c4dc9c894ac71aa328c9b44f2e46a96"
+    },
+    {
+      "bytes": 10296,
+      "path": "agent-base/frontier/task/repo/sansa/include/graph.h",
+      "sha256": "sha256:eb0b9d0089fa5e2943f3fcc58bd125d28a6e570e8d9812ec648159280c15818e"
+    },
+    {
+      "bytes": 14962,
+      "path": "agent-base/frontier/task/repo/sansa/include/graph_gpu.h",
+      "sha256": "sha256:f7787e042dddaf3b07fcbaf5a1cf9e28270d04d996933c3d2906face3a849154"
+    },
+    {
+      "bytes": 2442,
+      "path": "agent-base/frontier/task/repo/sansa/include/graph_partition.h",
+      "sha256": "sha256:b7860842afdd3d36b4ceaff96ed1e7c2cd74caa8e483fdf0e4f7126affa574d0"
+    },
+    {
+      "bytes": 5267,
+      "path": "agent-base/frontier/task/repo/sansa/include/intersect.h",
+      "sha256": "sha256:27424e573a464edfbf462a82fc84e3bd1d5742bbb8bd502f6f8b74d87072108a"
+    },
+    {
+      "bytes": 11181,
+      "path": "agent-base/frontier/task/repo/sansa/include/operations.cuh",
+      "sha256": "sha256:f3c3a56e0680c739e1c68c700aa9fd54104f7eedcb1b865bbe688e8548ccb7b0"
+    },
+    {
+      "bytes": 35147,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/COPYING",
+      "sha256": "sha256:8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    },
+    {
+      "bytes": 7651,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/COPYING.LESSER",
+      "sha256": "sha256:da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "bytes": 30809,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/abgraph.hh",
+      "sha256": "sha256:60caeaccb9f08a11da0afe4afe62aa57607db9192da27352101b447a0881b491"
+    },
+    {
+      "bytes": 2254,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/bignum.hh",
+      "sha256": "sha256:ec60ffedb7716ebe42a4fa22cd1ccd692ebaf670031b2d02990c1a6bbd308c98"
+    },
+    {
+      "bytes": 3407,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/defs.hh",
+      "sha256": "sha256:a7704b4df89c02057b33bfd560fbdfbff7b0fb7187fc2649563b0940c9b67df5"
+    },
+    {
+      "bytes": 39300,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/graph.hh",
+      "sha256": "sha256:5a0fde5376c28142741879bfaaa79420236adbe0518fb65be87efbaed75c4301"
+    },
+    {
+      "bytes": 2294,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/heap.hh",
+      "sha256": "sha256:731b7976ccfa4c33c83f423827cbbe7f074535032514f29c82841b1cc7e25cd5"
+    },
+    {
+      "bytes": 3155,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/kqueue.hh",
+      "sha256": "sha256:5260e678711f5543fca05e0226d48c8ec5a219b0531a30155b86bbdfe166730d"
+    },
+    {
+      "bytes": 2932,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/kstack.hh",
+      "sha256": "sha256:694bd1abae7f01c37cd17bf6e4c08fcd4ccecef757ce5e981191a3cfb0bf6881"
+    },
+    {
+      "bytes": 3281,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/orbit.hh",
+      "sha256": "sha256:96a70731a616073bd9ebaabb089d4e977f7aee692e7e9a820c8e5944ec5811a9"
+    },
+    {
+      "bytes": 32384,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/partition.hh",
+      "sha256": "sha256:3c4a8e1bd22e016c56ec312926b71ebe524fa4fea463062ecb13733fd51be983"
+    },
+    {
+      "bytes": 34110,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/search.h",
+      "sha256": "sha256:9f92d46764280b82083aa571cfa3922e4761edeb5e235c8b56dbc807249f8857"
+    },
+    {
+      "bytes": 4523,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/uintseqhash.hh",
+      "sha256": "sha256:508c37137560d79978982c30c7845533a1ef7bba53e5056f55e45004d74a2631"
+    },
+    {
+      "bytes": 2034,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/bliss/utils.hh",
+      "sha256": "sha256:d96d01f9f577ceec8d8cb9dd20f613ee6da7d2a3fb8777200d4b778021e0878b"
+    },
+    {
+      "bytes": 7689,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/canonical_graph.h",
+      "sha256": "sha256:7f687d1ed215da8adb1209aa4942e4d20330fa3a800a9ab9afe048d06dd99889"
+    },
+    {
+      "bytes": 1966,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/domain_support.h",
+      "sha256": "sha256:09a623045b7efc5d553923f7ddf1c69e44a580cfe9056d69b36e38d49646c52a"
+    },
+    {
+      "bytes": 17987,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/edge_miner.h",
+      "sha256": "sha256:e9b852d627b16fd71efcc67e0dd3bc3ef6d54a8bf7890d5ac29f6e7ab367ab33"
+    },
+    {
+      "bytes": 7007,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/element.h",
+      "sha256": "sha256:d9e4194df53f6d31eb07d3d4f299aa8f297778fda312302d6ca658fa50619dfc"
+    },
+    {
+      "bytes": 10212,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/embedding.h",
+      "sha256": "sha256:0d9f1eee694def27c4bf3087c977d930ad355e6823e229ebe4b5d5f1b3f6f8db"
+    },
+    {
+      "bytes": 1635,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/equivalence.h",
+      "sha256": "sha256:56bb653be86bebde889ea8975bbb7580383896dc1461b9233ef2d875208a198c"
+    },
+    {
+      "bytes": 6120,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/miner.h",
+      "sha256": "sha256:a2f059bbf9688709c288a8cee25171b7ab51e5f53a3dc75b7c0bda06f1ec6308"
+    },
+    {
+      "bytes": 8957,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/quick_pattern.h",
+      "sha256": "sha256:878f17d79d0e4cd10e9fb00b213771386e92685724fd3849b5d6b9ec7738cdb1"
+    },
+    {
+      "bytes": 1723,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/types.h",
+      "sha256": "sha256:276da32aa4f877e497023bafe5bea8e43f855f2f432d0d6dc5b8b88368760d5c"
+    },
+    {
+      "bytes": 12965,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_cpu/vertex_miner.h",
+      "sha256": "sha256:c51f746f75546c2fc279afd04bb4816a322c036695868d0e106af1b982335fc6"
+    },
+    {
+      "bytes": 1214,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_gpu/element.cuh",
+      "sha256": "sha256:dbea2f2935377a694c3736c88bd7c3b0b50ce8015d05ea78838206de9cc46775"
+    },
+    {
+      "bytes": 10074,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_gpu/embedding.cuh",
+      "sha256": "sha256:21d4d4df8a960c797c2415e0f28b33e8f1f944e0049e069ee0fe5e55cd4e1673"
+    },
+    {
+      "bytes": 4165,
+      "path": "agent-base/frontier/task/repo/sansa/include/pangolin_gpu/miner.cuh",
+      "sha256": "sha256:f2e0b9cbba643d9e04062ba51673bc2f5bddda851a8d793b4c3b592c56a94595"
+    },
+    {
+      "bytes": 3625,
+      "path": "agent-base/frontier/task/repo/sansa/include/pattern.hh",
+      "sha256": "sha256:70ee0c5db788e11b36471386e0dd5c1ca3d4945f9e742faeb4bb440c5d5f2c4c"
+    },
+    {
+      "bytes": 1561,
+      "path": "agent-base/frontier/task/repo/sansa/include/scan.h",
+      "sha256": "sha256:4cef0775595cd4cbc82dab276f51752be94e2c642a4133651526f241e358e04b"
+    },
+    {
+      "bytes": 908,
+      "path": "agent-base/frontier/task/repo/sansa/include/scheduler.h",
+      "sha256": "sha256:558ad5b9ee48f7a815dfb97485eafee4c8209fdfec1680f42fbd9b296a9ac728"
+    },
+    {
+      "bytes": 2892,
+      "path": "agent-base/frontier/task/repo/sansa/include/search.cuh",
+      "sha256": "sha256:8bbbe29bc5209b071e6280a6379ba36f7437bb871f0506b7c2ce1fdd947c8ead"
+    },
+    {
+      "bytes": 9020,
+      "path": "agent-base/frontier/task/repo/sansa/include/set_difference.cuh",
+      "sha256": "sha256:f27d4e8f9a666d7770e10d2af52dfcb23e4dfe72becb180b58bc5fff76cff4d3"
+    },
+    {
+      "bytes": 17487,
+      "path": "agent-base/frontier/task/repo/sansa/include/set_intersect.cuh",
+      "sha256": "sha256:29fea267690ee2cf9ef2e6006f7f5e437dd89c8e86366d47a5e5496775297275"
+    },
+    {
+      "bytes": 2853,
+      "path": "agent-base/frontier/task/repo/sansa/include/subgraph.h",
+      "sha256": "sha256:aedd4e5a6854c8b2305e550d30c25435eaa2b59ec388ed2cb9bbc5640dc7722a"
+    },
+    {
+      "bytes": 1512,
+      "path": "agent-base/frontier/task/repo/sansa/include/timer.h",
+      "sha256": "sha256:f1151759537a22f393db44781317e9045694aa46f323016df6c1f57b19bacf21"
+    },
+    {
+      "bytes": 974,
+      "path": "agent-base/frontier/task/repo/sansa/include/utils.h",
+      "sha256": "sha256:9cba98b39fecc5a16ea28887029f720a6afbad688ee57a486bc13452c4e3b663"
+    },
+    {
+      "bytes": 1364,
+      "path": "agent-base/frontier/task/repo/sansa/src/README.md",
+      "sha256": "sha256:ed1cc158e240f2572850491bcffa7d68bdaaae2f3c17457afff2db47e96ff372"
+    },
+    {
+      "bytes": 423,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/Makefile",
+      "sha256": "sha256:7809ff32c76dca48f5cb3293c9cffa9554eb3f8165a42d27be0b30a351ebe10c"
+    },
+    {
+      "bytes": 1040,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/3motif.h",
+      "sha256": "sha256:87d89d36434aa31af9c6fc71c0bde2704fbed4f727e43abe48305801054b365f"
+    },
+    {
+      "bytes": 493,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/4clique.h",
+      "sha256": "sha256:4d0c40d7586bef7d8a0b5c5d771bff97410eb9041ad574f138d38cfe1b5f1338"
+    },
+    {
+      "bytes": 2469,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/4motif.h",
+      "sha256": "sha256:bba1046ded8b8ba768f16bcfd278f850c22040160f8c73d05b378247f6693535"
+    },
+    {
+      "bytes": 564,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/5clique.h",
+      "sha256": "sha256:c97780ccdbd3dda42f7b6bd1d7eacacb6f34758dd8b41b3e7421e2e6488551ef"
+    },
+    {
+      "bytes": 1254,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/5path.h",
+      "sha256": "sha256:ba147dbb6d2a40ed65b5a3bc4b2b1b13fd4ee73ae4e25dbc9865b6ef3db49a29"
+    },
+    {
+      "bytes": 705,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/6clique.h",
+      "sha256": "sha256:98a218874809d6415121aeb876766b913fbac4d9fcea39543822a2e4121bd0f3"
+    },
+    {
+      "bytes": 1028,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/8clique.h",
+      "sha256": "sha256:8d5c34502666408afbe051887d91cc07d196b4ec4c7314ebc2ee82da95911c22"
+    },
+    {
+      "bytes": 1182,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/9clique.h",
+      "sha256": "sha256:ee31ee2a0f6f333fecfd7452d655a725d2e8e13efa1f854dbacb74640fe1334d"
+    },
+    {
+      "bytes": 373,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/diamond.h",
+      "sha256": "sha256:b49d6f180af40f791fc5188af56cb7dcca5294cdaa4119ca12892a38fb938e5d"
+    },
+    {
+      "bytes": 453,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/house.h",
+      "sha256": "sha256:65eda456691156ff86967d6661c6eba4554e6b29db8879983a6952bc1aa44975"
+    },
+    {
+      "bytes": 11031,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/motifs.h",
+      "sha256": "sha256:17d69d271175855a6f76282edc5766351b49bd7a296eecdcc3ccf2e0a43f9842"
+    },
+    {
+      "bytes": 537,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/pentagon.h",
+      "sha256": "sha256:996a5e7e1478e12e81a7c581cb0662d14d873d77441ac68f154df8cd6d6a3bd8"
+    },
+    {
+      "bytes": 319,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/rectangle.h",
+      "sha256": "sha256:d500789a45c61338d3c237d4276c56293c6074073cec48ca826affbe09f98f1b"
+    },
+    {
+      "bytes": 294,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/triangle.h",
+      "sha256": "sha256:db59da7fe41a2936c3fe613856c844596094468dbb818cdaba29dbe45a435d54"
+    },
+    {
+      "bytes": 751,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/exact-counting/triangletriangle.h",
+      "sha256": "sha256:c89439b90ec9c1c59078d6d6df97f00776e05e2d679602748573a0c4a134f583"
+    },
+    {
+      "bytes": 1131,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/main.cc",
+      "sha256": "sha256:a0ffa79d579fed8664802878120b57cbd378b8a1412f3ea2e0ffa4d668ff9b1f"
+    },
+    {
+      "bytes": 2113,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/omp_base.cc",
+      "sha256": "sha256:371da0c3774d3cf020821c2a182b76c36ffd4cc55594685921d7849b09e1f301"
+    },
+    {
+      "bytes": 1414,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/pattern.h",
+      "sha256": "sha256:0fb43a3d710ae55eb454ba21c472aae62505dd779b19fc66aa563e4e41c54859"
+    },
+    {
+      "bytes": 639,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/GS/sampler.h",
+      "sha256": "sha256:e709a12eaca9c94892cb503d187508a0b42092e29a6f548979ee02170d44418b"
+    },
+    {
+      "bytes": 311,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/Makefile",
+      "sha256": "sha256:6c8062e007046ddfba9e9c0d7446056309bd10189110a2fe9858162479c2f619"
+    },
+    {
+      "bytes": 2511,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/Makefile",
+      "sha256": "sha256:9531debf77cc22844e855f0b06272c0969e50933cdf8180740dc65f357779fe6"
+    },
+    {
+      "bytes": 2965,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/asap.hh",
+      "sha256": "sha256:9fecbf51cb1a392cad1a14216f99a35ec42050b85c2cf661a5b48337fd230423"
+    },
+    {
+      "bytes": 9047,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_all.cc",
+      "sha256": "sha256:f4f3d66fc66aa612994005df3591457bef331f0745b4532b5919bf470d842325"
+    },
+    {
+      "bytes": 7768,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_clique.cc",
+      "sha256": "sha256:7513a387a1f3686cb9a74ba04a5ec27ddf761f2a6a032d6a2425fd18e83df070"
+    },
+    {
+      "bytes": 11584,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_clique_gpu.cu",
+      "sha256": "sha256:19e7e538b5d6bcdec20df73e76e9ff4303aa29ab8e5e10950680546fa97f14d2"
+    },
+    {
+      "bytes": 4019,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_cycle.cc",
+      "sha256": "sha256:108d04d7e3e238b3319d7980b3b1b700602b5e0a7ccb8e6e933572d21f495d56"
+    },
+    {
+      "bytes": 2549,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_diamond.cc",
+      "sha256": "sha256:b7c1647715ed4e3bde6d22c313a4c9536afd1418e69330031eb36872f27d40a5"
+    },
+    {
+      "bytes": 2674,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_dumbbell.cc",
+      "sha256": "sha256:c0e7d436a93ce6ac97c6fb7e52d0d1faf875d2cb17f437783c850db6656613cc"
+    },
+    {
+      "bytes": 22386,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_final.cc",
+      "sha256": "sha256:77d65ee0766b691bd6ab1eb4f74995619c90928e77774f41f6ada30b697a654a"
+    },
+    {
+      "bytes": 6594,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_house.cc",
+      "sha256": "sha256:920a59e26a3be227b2a0637a3b4ad9f9e11a273a11b07d0bc73aeadea0cf3442"
+    },
+    {
+      "bytes": 10281,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_house_gpu.cu",
+      "sha256": "sha256:0c313757e3a25acbd799780ac3c363fd16011fa0cbdb2fa3b71d23fb261aa59d"
+    },
+    {
+      "bytes": 12486,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_online.cc",
+      "sha256": "sha256:9f6f9e2686a1dd51c4634105b208b0ec8f1dba0057e999396d261823d9accb13"
+    },
+    {
+      "bytes": 9112,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_online_base.cc",
+      "sha256": "sha256:847e7ca2261641fe3985da38316bb4d58eda00817a38ba9f57fc43868f6ba201"
+    },
+    {
+      "bytes": 16222,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_online_transparent.cc",
+      "sha256": "sha256:308b4178eccbee418186af12b8e25e8ded1832fdf65d83001820baa76c5bedc0"
+    },
+    {
+      "bytes": 10761,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_path.cc",
+      "sha256": "sha256:4dbe783ddacbf11fe8f86ad02eb462c08fe8298f30a292d8ad0b353e86ddbd1e"
+    },
+    {
+      "bytes": 9536,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_path_gpu.cu",
+      "sha256": "sha256:cc380033b702811692b47f24c767f69a87da471a6cccdcd08b75f2343ab2137c"
+    },
+    {
+      "bytes": 13854,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_profile.cc",
+      "sha256": "sha256:53b0e9eb03aed8ec69811cf5404335a578649ad4ad9ec92a6b2b11f91210aaad"
+    },
+    {
+      "bytes": 2288,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_star.cc",
+      "sha256": "sha256:99c7a735a63f51ed4a54fb6ec66c6371db79169b4576068d282763f5c0ee39d0"
+    },
+    {
+      "bytes": 2425,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_tailedtri.cc",
+      "sha256": "sha256:b3c80a5f08c4be0edbaaff983b93d981449e21e2cd05c17c3d9a01b337290c23"
+    },
+    {
+      "bytes": 3726,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/ns_timer.cc",
+      "sha256": "sha256:2df4df5b59e57d431f0a751baf551566cfd9b7363f18dc4b764281b9bee197f4"
+    },
+    {
+      "bytes": 3813,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/path_sampler.cc",
+      "sha256": "sha256:e518fee29a4b8174d7112d3ceb5f202b561a76386eeb4c8b37f6e3a312fc5959"
+    },
+    {
+      "bytes": 1326,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/pattern.h",
+      "sha256": "sha256:5ef7af1fa4cef3c27a32398345712a4b8416db0bd0fba06e62c33fd57ca16d44"
+    },
+    {
+      "bytes": 1630,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/NS/sample.hh",
+      "sha256": "sha256:c12bf6bf057256880a798d76731091e3b687d7838dfdadbf8ad7465620a57941"
+    },
+    {
+      "bytes": 1142,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/README.md",
+      "sha256": "sha256:81b270eabbfaf0b0be2fa6242d184b94e04b5edc3af6b573066417789c4d1094"
+    },
+    {
+      "bytes": 431,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/Makefile",
+      "sha256": "sha256:a93112799eb24f0529283123f4fa0cf1d336afee2e8705d36090d9941904e822"
+    },
+    {
+      "bytes": 493,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/4clique.h",
+      "sha256": "sha256:4d0c40d7586bef7d8a0b5c5d771bff97410eb9041ad574f138d38cfe1b5f1338"
+    },
+    {
+      "bytes": 564,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/5clique.h",
+      "sha256": "sha256:c97780ccdbd3dda42f7b6bd1d7eacacb6f34758dd8b41b3e7421e2e6488551ef"
+    },
+    {
+      "bytes": 1254,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/5path.h",
+      "sha256": "sha256:ba147dbb6d2a40ed65b5a3bc4b2b1b13fd4ee73ae4e25dbc9865b6ef3db49a29"
+    },
+    {
+      "bytes": 705,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/6clique.h",
+      "sha256": "sha256:98a218874809d6415121aeb876766b913fbac4d9fcea39543822a2e4121bd0f3"
+    },
+    {
+      "bytes": 1182,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/9clique.h",
+      "sha256": "sha256:ee31ee2a0f6f333fecfd7452d655a725d2e8e13efa1f854dbacb74640fe1334d"
+    },
+    {
+      "bytes": 373,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/diamond.h",
+      "sha256": "sha256:b49d6f180af40f791fc5188af56cb7dcca5294cdaa4119ca12892a38fb938e5d"
+    },
+    {
+      "bytes": 453,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/house.h",
+      "sha256": "sha256:65eda456691156ff86967d6661c6eba4554e6b29db8879983a6952bc1aa44975"
+    },
+    {
+      "bytes": 11031,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/motifs.h",
+      "sha256": "sha256:17d69d271175855a6f76282edc5766351b49bd7a296eecdcc3ccf2e0a43f9842"
+    },
+    {
+      "bytes": 537,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/pentagon.h",
+      "sha256": "sha256:996a5e7e1478e12e81a7c581cb0662d14d873d77441ac68f154df8cd6d6a3bd8"
+    },
+    {
+      "bytes": 319,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/rectangle.h",
+      "sha256": "sha256:d500789a45c61338d3c237d4276c56293c6074073cec48ca826affbe09f98f1b"
+    },
+    {
+      "bytes": 294,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/exact-counting/triangle.h",
+      "sha256": "sha256:db59da7fe41a2936c3fe613856c844596094468dbb818cdaba29dbe45a435d54"
+    },
+    {
+      "bytes": 1294,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/main.cc",
+      "sha256": "sha256:1e0549addff53c8d47ee2f9f64eb3fb1b520bab18254543e60f51f8e39ffa889"
+    },
+    {
+      "bytes": 4555,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/omp_base.cc",
+      "sha256": "sha256:f86ca54a07f88b78b55216304a5114e3d202171d69ab23a26dbc8c722780cb30"
+    },
+    {
+      "bytes": 1073,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/pattern.h",
+      "sha256": "sha256:76132b4145e5cc277fd74fd11eefa18430b138079cd60d9ff9a47b827dda172b"
+    },
+    {
+      "bytes": 5930,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/elp/sampler.h",
+      "sha256": "sha256:a6b4c8c96fff1b24ef9f069c2f6023e9d8eacd8cc4e818b27897a970c2223cd3"
+    },
+    {
+      "bytes": 371,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/Makefile",
+      "sha256": "sha256:aa449102c9f791fea97273223e846d3bcbd32c9ca68815e19935abffc8c61cb0"
+    },
+    {
+      "bytes": 493,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/4clique.h",
+      "sha256": "sha256:4d0c40d7586bef7d8a0b5c5d771bff97410eb9041ad574f138d38cfe1b5f1338"
+    },
+    {
+      "bytes": 564,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/5clique.h",
+      "sha256": "sha256:c97780ccdbd3dda42f7b6bd1d7eacacb6f34758dd8b41b3e7421e2e6488551ef"
+    },
+    {
+      "bytes": 1254,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/5path.h",
+      "sha256": "sha256:ba147dbb6d2a40ed65b5a3bc4b2b1b13fd4ee73ae4e25dbc9865b6ef3db49a29"
+    },
+    {
+      "bytes": 705,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/6clique.h",
+      "sha256": "sha256:98a218874809d6415121aeb876766b913fbac4d9fcea39543822a2e4121bd0f3"
+    },
+    {
+      "bytes": 1182,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/9clique.h",
+      "sha256": "sha256:ee31ee2a0f6f333fecfd7452d655a725d2e8e13efa1f854dbacb74640fe1334d"
+    },
+    {
+      "bytes": 373,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/diamond.h",
+      "sha256": "sha256:b49d6f180af40f791fc5188af56cb7dcca5294cdaa4119ca12892a38fb938e5d"
+    },
+    {
+      "bytes": 453,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/house.h",
+      "sha256": "sha256:65eda456691156ff86967d6661c6eba4554e6b29db8879983a6952bc1aa44975"
+    },
+    {
+      "bytes": 11031,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/motifs.h",
+      "sha256": "sha256:17d69d271175855a6f76282edc5766351b49bd7a296eecdcc3ccf2e0a43f9842"
+    },
+    {
+      "bytes": 537,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/pentagon.h",
+      "sha256": "sha256:996a5e7e1478e12e81a7c581cb0662d14d873d77441ac68f154df8cd6d6a3bd8"
+    },
+    {
+      "bytes": 319,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/rectangle.h",
+      "sha256": "sha256:d500789a45c61338d3c237d4276c56293c6074073cec48ca826affbe09f98f1b"
+    },
+    {
+      "bytes": 294,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/exact-counting/triangle.h",
+      "sha256": "sha256:db59da7fe41a2936c3fe613856c844596094468dbb818cdaba29dbe45a435d54"
+    },
+    {
+      "bytes": 774,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/gs.h",
+      "sha256": "sha256:c48d769bd4f8cca105d8ac5372281c3503b0a0e592c3c4faec722a9ff9771a18"
+    },
+    {
+      "bytes": 24340,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/ns_fast_profiler.cc",
+      "sha256": "sha256:8ae2ac804d9d3c23241543d3e972eea5272ce20c10e4f0fc753daecccce2972d"
+    },
+    {
+      "bytes": 1326,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/pattern.h",
+      "sha256": "sha256:5ef7af1fa4cef3c27a32398345712a4b8416db0bd0fba06e62c33fd57ca16d44"
+    },
+    {
+      "bytes": 1630,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/sample.hh",
+      "sha256": "sha256:c12bf6bf057256880a798d76731091e3b687d7838dfdadbf8ad7465620a57941"
+    },
+    {
+      "bytes": 6137,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/fast-profiler/sampler.h",
+      "sha256": "sha256:259fd26154132678dfd562b06bd89fa87c6a874e0b5fe4d132971296101a1900"
+    },
+    {
+      "bytes": 886,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/Makefile",
+      "sha256": "sha256:f48830d8ec8e815ad28499c0676131b0b2c704dd8bf67de77618f570a6ac6281"
+    },
+    {
+      "bytes": 2965,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/asap.hh",
+      "sha256": "sha256:9fecbf51cb1a392cad1a14216f99a35ec42050b85c2cf661a5b48337fd230423"
+    },
+    {
+      "bytes": 3529,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/ns_clique.cc",
+      "sha256": "sha256:b8871086b938639d8e5422db20099241009baa2c6842a2c71174948241d92bac"
+    },
+    {
+      "bytes": 2106,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/ns_cycle.cc",
+      "sha256": "sha256:e1bb6d3ca25d30ee989d4b25aa57ac8e43efdd2a86f8ecd9713da6102d117f0a"
+    },
+    {
+      "bytes": 10474,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/ns_elp.cc",
+      "sha256": "sha256:15e11d127dd36bed6ef85269816af4a62e0a08c7cca0c3ee885feb629aa3efab"
+    },
+    {
+      "bytes": 2250,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/ns_house.cc",
+      "sha256": "sha256:d8c95b40607e33e35de118412ed9acf520952719a2220d9b7d5207938f7446ac"
+    },
+    {
+      "bytes": 10701,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/ns_path.cc",
+      "sha256": "sha256:cc32f3d50bdd54cc51bb849f13626a476333129d448fe9a12ceefbcc44bb39ff"
+    },
+    {
+      "bytes": 3726,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/ns_timer.cc",
+      "sha256": "sha256:2df4df5b59e57d431f0a751baf551566cfd9b7363f18dc4b764281b9bee197f4"
+    },
+    {
+      "bytes": 1189,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/pattern.h",
+      "sha256": "sha256:cce469b597755ac8eb382be1a22069c4b14c9d480dd8fc13ac0d2e95d946255a"
+    },
+    {
+      "bytes": 1334,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/sample.hh",
+      "sha256": "sha256:610731e27e36dc3b0cc2f4a6e7fc4d55d4063846fe70e46df86282a968b56450"
+    },
+    {
+      "bytes": 5356,
+      "path": "agent-base/frontier/task/repo/sansa/src/approx/ns-elp/sampler.h",
+      "sha256": "sha256:95f4cfc30f5c7e95d2acd6e878559e4f8176232cdae26293963710c569e82021"
+    },
+    {
+      "bytes": 1146,
+      "path": "agent-base/frontier/task/repo/sansa/src/color.cc",
+      "sha256": "sha256:3c3bf4dc49bc711892838c86ed08792d85f48b4bc1cab61d86a7ad5ba740e6db"
+    },
+    {
+      "bytes": 2598,
+      "path": "agent-base/frontier/task/repo/sansa/src/common/VertexSet.cc",
+      "sha256": "sha256:7d81c9685ebb5fa3b7ff734b1d3403971a2521414912f7e58cf5abc42029a558"
+    },
+    {
+      "bytes": 32804,
+      "path": "agent-base/frontier/task/repo/sansa/src/common/graph.cc",
+      "sha256": "sha256:12cf91f060cc785a7d387392bc0ac9bb3d3d6dafa0a3a1afdb1d0766e1565407"
+    },
+    {
+      "bytes": 17614,
+      "path": "agent-base/frontier/task/repo/sansa/src/common/graph_partition.cc",
+      "sha256": "sha256:1d2fc074543c87306fa52f8642dc1d65cf5c2fccc577267e6563ec2a2ba2a6fd"
+    },
+    {
+      "bytes": 30133,
+      "path": "agent-base/frontier/task/repo/sansa/src/common/intersect.cc",
+      "sha256": "sha256:a0e5122ac9a611f217b9496c4a4e4f557a714be7336e73cdcb09b22aee2f0e56"
+    },
+    {
+      "bytes": 8392,
+      "path": "agent-base/frontier/task/repo/sansa/src/common/pattern.cc",
+      "sha256": "sha256:0576133492cefe7685853213636c47911008f89474a161a4b199989b0e011189"
+    },
+    {
+      "bytes": 7399,
+      "path": "agent-base/frontier/task/repo/sansa/src/common/scheduler.cc",
+      "sha256": "sha256:e2007a51f1d1ec7831dc40598b8e0c28a3b065e44426c469666d8fbdb3644db8"
+    },
+    {
+      "bytes": 1681,
+      "path": "agent-base/frontier/task/repo/sansa/src/common.mk",
+      "sha256": "sha256:554e53b43fa1f548d6c38c9a5546cf0f0f66bbb0244a432bbeeaed981c66e091"
+    },
+    {
+      "bytes": 438,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e"
+    },
+    {
+      "bytes": 445,
+      "path": "datasets/train.json",
+      "sha256": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
+    },
+    {
+      "bytes": 520,
+      "path": "judge/baseline_constant.patch",
+      "sha256": "sha256:c89263ea787fe3bdd984dab7dfc616ed0e568f85f13f14a1b4dfc3f9f4bd40d3"
+    },
+    {
+      "bytes": 817,
+      "path": "judge/baseline_naive.patch",
+      "sha256": "sha256:5332865942ddd992e30f1547b3ee3686eab91f92cf5e9eff45616d8ee79dc048"
+    },
+    {
+      "bytes": 4673,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:1d6415d43978f8e28ae91cb130011fbf02be511fea60795bfc2654bf3254b035"
+    },
+    {
+      "bytes": 843,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:5c8b73cdb65864bbb7c6f6dc46a2c3d5fadd73427c81f1fa602b56b695764508"
+    },
+    {
+      "bytes": 184,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:1b7b49f66da315071030a0211eb84202c8185b2b18b6e4475559d98e7b557eb6"
+    },
+    {
+      "bytes": 11001,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:4a3d6a6c23ba2443d0523fd1ecbaa97667502c7520f38dc99ec89488a53f6eaa"
+    },
+    {
+      "bytes": 78706,
+      "path": "judge/measured_workloads.json",
+      "sha256": "sha256:55da8c6c88cc5efa56e4b5b6dd6478707d30b92e41a9c833cc2cc8124df97a81"
+    },
+    {
+      "bytes": 3173,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:c264705e208d38232acac6e84089248851df0337bf40a55abdb3b8b623e2ae08"
+    },
+    {
+      "bytes": 14317,
+      "path": "judge/readme",
+      "sha256": "sha256:1432fa2be255707d5ab73fb195254d485ba7561dd24a7a3f173c43e8e6ff6d82"
+    },
+    {
+      "bytes": 3730,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:bceb52507a468972db2a0b88a1f626b1a5c005dc3388cd60087c88ba1fe4de20"
+    },
+    {
+      "bytes": 3173,
+      "path": "judge/result.json",
+      "sha256": "sha256:c6058d01ae3016f0b6aefb49060c40d2799c54b208d03ed5c7456b06d62a7b09"
+    },
+    {
+      "bytes": 6752,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:529a22684d822db4359dcc1dfaa2b1d0c66a8b1cbd4376fbb26d55257ee20478"
+    },
+    {
+      "bytes": 2859,
+      "path": "policy.json",
+      "sha256": "sha256:94fc990e7aee88d1a5f4ba5ede31df2eafd088ba0aec17eb0bec43ad3b7183d7"
+    },
+    {
+      "bytes": 2382,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:4e5eb614187b9a51f355fedd10df9103608d65f8779d521cb94950d93daa75f8"
+    },
+    {
+      "bytes": 13460,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:3a9c8e8fc7e3968f47b8f3da76e079bc23f5fbc2c45efb39fda3e1c8937be222"
+    },
+    {
+      "bytes": 22764,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:e278eb9db3817ddc011c88b1af885c433b6c34f5d7a29d2eb93bd316013581a3"
+    },
+    {
+      "bytes": 366,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:4cf3e2cb92da121b792c671e63db1e9d5904bca36e50fd67ec0a259ed472f748"
+    }
+  ],
+  "problem_id": "graph_mining_method_selection",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "beat_spec_migration": "2026-09-11: formal per-workload contract and private-feedback audit",
+    "beat_spec_sha256": "sha256:1d6415d43978f8e28ae91cb130011fbf02be511fea60795bfc2654bf3254b035",
+    "evaluator_sha256": "sha256:4a3d6a6c23ba2443d0523fd1ecbaa97667502c7520f38dc99ec89488a53f6eaa",
+    "statement_sha256": "sha256:1432fa2be255707d5ab73fb195254d485ba7561dd24a7a3f173c43e8e6ff6d82",
+    "task_dir": "graph_mining_method_selection"
+  }
+}

@@ -1,0 +1,413 @@
+{
+  "conversion_adaptations": [
+    "Final independently re-evaluates the two source feedback workloads together with the two source graded workloads to satisfy T35; no workload shape or seed was invented.",
+    "T41 production correction raises formal and short Agent/Verifier resources and the evaluator OpenMP worker count from 2 to 8; workloads, timing boundary, scoring, reference, repeats and PASS relation are unchanged.",
+    "Common runtime-cap repair sets max_model_request_bytes to 67108864 (64 MiB) in formal and short releases; task science and evaluator behavior are unchanged.",
+    "Beat spec v2 (2026-10-07) adds the paper's Table 3 sequential time T1 as a second per-workload beating metric (one-thread runtime, same C <= 0.97R rule) measured in a separate pass after the unchanged eight-thread pass, and routes reference or trusted-workload failures to a failed verification; workloads, eight-thread timing, score and budgets are unchanged."
+  ],
+  "file_count": 68,
+  "files": [
+    {
+      "bytes": 37,
+      "path": ".dockerignore",
+      "sha256": "sha256:b139db4c5121e7e008c457ae7196f6e5ed7b702f408754912270e3c5a85c2498"
+    },
+    {
+      "bytes": 58,
+      "path": ".gitattributes",
+      "sha256": "sha256:d2fdde9af7984b537c7e87e9d923f5dbdb7c824c8fcdb96d7e0d51e69bacaaac"
+    },
+    {
+      "bytes": 1278,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:d5b7d8911fdf36dd8ef4f8e4ff7bd2401abc3fc5f9ae67116838d2fe2c558da9"
+    },
+    {
+      "bytes": 2724,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:492a33c7fae5e7e691ed684f0ca86d8fff0b4e160d8d2d1e899f5c4f8cf8197c"
+    },
+    {
+      "bytes": 2049,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:400e8356a9c5f88f9953a43e87a37bbdef65ccfd49b156213143ec02e1a0d268"
+    },
+    {
+      "bytes": 1051,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:9fc959f77195898353af6476c6262688c5deedae49ee07b9d87af6e9893ae4b4"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 1073,
+      "path": "agent-base/frontier/task/repo/LICENSE",
+      "sha256": "sha256:09247d610f3dba65ed27c14a1bc5b9014b36f3a26ea9ac3a208ab7addbcd70a9"
+    },
+    {
+      "bytes": 15047,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:9ab4b69065d5d4d598b3c1dc26a22155097d759f7593109b313ab8c837418cff"
+    },
+    {
+      "bytes": 895,
+      "path": "agent-base/frontier/task/repo/apps/hyper/HyperKCore-Efficient.C",
+      "sha256": "sha256:77534f2a1926d0351a36aee05abc338fac8f3515e8228f73d0334941ef89ca82"
+    },
+    {
+      "bytes": 1477,
+      "path": "agent-base/frontier/task/repo/apps/hyper/Makefile",
+      "sha256": "sha256:dcec29f23752df95ccb8d6f35de98cd0f5fc389c44dee5e1968dd8254ad7f905"
+    },
+    {
+      "bytes": 15050,
+      "path": "agent-base/frontier/task/repo/ligra/IO.h",
+      "sha256": "sha256:229ff95a5cb2ad7d6619bb810efb4fc0ff7d4d3379505ee70d0ce0f521e2bc32"
+    },
+    {
+      "bytes": 807,
+      "path": "agent-base/frontier/task/repo/ligra/binary_search.h",
+      "sha256": "sha256:ed9f0ad60c5d864f8f671d8588403777e5ff8cbc3ac628a7e4c14be0ed11da62"
+    },
+    {
+      "bytes": 10654,
+      "path": "agent-base/frontier/task/repo/ligra/blockRadixSort.h",
+      "sha256": "sha256:f306b99f375ddb72d5bfeae2e27e44ae85d4e09fcf6c0773980bae0543a160c4"
+    },
+    {
+      "bytes": 11745,
+      "path": "agent-base/frontier/task/repo/ligra/bucket.h",
+      "sha256": "sha256:ab9140a74f07e1ec5169fe4b4851a7237e697b64ec940dcfd9ded44252e9acd0"
+    },
+    {
+      "bytes": 14057,
+      "path": "agent-base/frontier/task/repo/ligra/byte-pd.h",
+      "sha256": "sha256:d9917572f02d03815e32b7ab8dca412625b4cf5497f9b1ddd6d77fffb01904b5"
+    },
+    {
+      "bytes": 12853,
+      "path": "agent-base/frontier/task/repo/ligra/byte.h",
+      "sha256": "sha256:549a389f7c7ff339eadb418190d4d3607ee19349cad133a9ed2892c004d1fe0a"
+    },
+    {
+      "bytes": 28972,
+      "path": "agent-base/frontier/task/repo/ligra/byteRLE-pd.h",
+      "sha256": "sha256:be0ab26db7484ab23355ff77eba41ff9c9c4933e376bf55345e7a55e3701d6e3"
+    },
+    {
+      "bytes": 21859,
+      "path": "agent-base/frontier/task/repo/ligra/byteRLE.h",
+      "sha256": "sha256:b7eed720b203a05297f9974a264c7ce79685bd4fc15cabc5b288b5e29706113f"
+    },
+    {
+      "bytes": 12404,
+      "path": "agent-base/frontier/task/repo/ligra/compressedVertex.h",
+      "sha256": "sha256:6be2ff270dbaf152f2d635aaa287db939a9a860a0bb9f5d79c7832a940929bd3"
+    },
+    {
+      "bytes": 4948,
+      "path": "agent-base/frontier/task/repo/ligra/counting_sort.h",
+      "sha256": "sha256:4e60fef3b0cfc234d80ac6230d6b5bfb634d302069d78854af6bd16a8862a732"
+    },
+    {
+      "bytes": 4267,
+      "path": "agent-base/frontier/task/repo/ligra/decoder.C",
+      "sha256": "sha256:4b2b3ad80d4fa911a5948eb40fe4888f5c7e3b60515a2227f262eb74106e80a0"
+    },
+    {
+      "bytes": 1240,
+      "path": "agent-base/frontier/task/repo/ligra/dyn_arr.h",
+      "sha256": "sha256:a0c9a31c0bd146c4fb3635c887edde88a3ca72006e1c738127d605dc90f6c934"
+    },
+    {
+      "bytes": 3083,
+      "path": "agent-base/frontier/task/repo/ligra/edgeMapReduce.h",
+      "sha256": "sha256:eadfbf42949cc642039f49aeac9549bef23bd8f89b822e9f18867b49c5ed294c"
+    },
+    {
+      "bytes": 4309,
+      "path": "agent-base/frontier/task/repo/ligra/edgeMap_utils.h",
+      "sha256": "sha256:eecc9c31155a015474c12edbf6fafcc5717ad1bb5f7f27acea4fdcceff43fe26"
+    },
+    {
+      "bytes": 16971,
+      "path": "agent-base/frontier/task/repo/ligra/encoder.C",
+      "sha256": "sha256:059aa6b4a347280a7846947af1f1b24f652018e2466256ef046de22852fb9a63"
+    },
+    {
+      "bytes": 3321,
+      "path": "agent-base/frontier/task/repo/ligra/gettime.h",
+      "sha256": "sha256:45a35247cd234259a217c983d7ea979bb172ff20c5a52eb2077bd0d0abfce688"
+    },
+    {
+      "bytes": 3974,
+      "path": "agent-base/frontier/task/repo/ligra/graph.h",
+      "sha256": "sha256:34c4a7e5feff01164867cd0f271e7dfc3efe08be8352f5143b8cfe6ede402140"
+    },
+    {
+      "bytes": 7717,
+      "path": "agent-base/frontier/task/repo/ligra/histogram.h",
+      "sha256": "sha256:80d5c593065591c6746406c1b5003c63086a122c85ea64833bd9d5279ec746d8"
+    },
+    {
+      "bytes": 17283,
+      "path": "agent-base/frontier/task/repo/ligra/hygra.h",
+      "sha256": "sha256:f912915a5d05d886a2e5ffc3f2a43925d7c44a6d285544d4340519bb21bc56c6"
+    },
+    {
+      "bytes": 4849,
+      "path": "agent-base/frontier/task/repo/ligra/hypergraphDecoder.C",
+      "sha256": "sha256:0d692a7a353e8db860f93b446d4b63d197244544a49e18cc4fecc01d723979ac"
+    },
+    {
+      "bytes": 28771,
+      "path": "agent-base/frontier/task/repo/ligra/hypergraphEncoder.C",
+      "sha256": "sha256:47cb10af7c54fb2008231cf2385f802d2b4ccf5d8e1a39d5e84fcc3071f94ada"
+    },
+    {
+      "bytes": 21897,
+      "path": "agent-base/frontier/task/repo/ligra/hypergraphIO.h",
+      "sha256": "sha256:16f94b80d4a688906a6943d5c4786d1606b947df72966df546f3acb93db5a071"
+    },
+    {
+      "bytes": 4658,
+      "path": "agent-base/frontier/task/repo/ligra/index_map.h",
+      "sha256": "sha256:5476d4120d2c782b9395a83081472907e318f83d21e464a6e573fa6d41b597a8"
+    },
+    {
+      "bytes": 17884,
+      "path": "agent-base/frontier/task/repo/ligra/ligra.h",
+      "sha256": "sha256:07a5cf08cb1d577323ef64c93b28ca3638dbe82fd903077b7530ebc0b9ab4656"
+    },
+    {
+      "bytes": 1232,
+      "path": "agent-base/frontier/task/repo/ligra/maybe.h",
+      "sha256": "sha256:f3be32a46670b7351f2f629e2bd2623344eae18ec8ce6c3388942b55edf7b6f7"
+    },
+    {
+      "bytes": 14151,
+      "path": "agent-base/frontier/task/repo/ligra/nibble-pd.h",
+      "sha256": "sha256:437bd53c04efb13a1d0c53c0f31a05570900ad099201bbe9c81963f91ddc1711"
+    },
+    {
+      "bytes": 11694,
+      "path": "agent-base/frontier/task/repo/ligra/nibble.h",
+      "sha256": "sha256:e4c2390609667636f9f2021c02c294539928c7b07ed1228961e14d1dc86da712"
+    },
+    {
+      "bytes": 3914,
+      "path": "agent-base/frontier/task/repo/ligra/parallel.h",
+      "sha256": "sha256:a5bee9af106a8ae6bd320b9b74f0b64d913b9109bc322669ae244236bffbfee9"
+    },
+    {
+      "bytes": 3445,
+      "path": "agent-base/frontier/task/repo/ligra/parseCommandLine.h",
+      "sha256": "sha256:32c79b8a42f1d1a81c8937a6675afc0bbb69c05a665ebc87f1613d49fe3a563f"
+    },
+    {
+      "bytes": 2601,
+      "path": "agent-base/frontier/task/repo/ligra/quickSort.h",
+      "sha256": "sha256:37b848237ed2d776de368d0fb9e08f8952dec4be661fd1f9b4fe379175b08a46"
+    },
+    {
+      "bytes": 10360,
+      "path": "agent-base/frontier/task/repo/ligra/sequence.h",
+      "sha256": "sha256:5962fc8ca465aefc685c53dd8ed50d0267a11c8c600f20d64b06071cf1f01b8b"
+    },
+    {
+      "bytes": 3982,
+      "path": "agent-base/frontier/task/repo/ligra/sequentialHT.h",
+      "sha256": "sha256:4c1052e107996dffb426417452732f7066c90266aea2e14c675859a4cfacca72"
+    },
+    {
+      "bytes": 3705,
+      "path": "agent-base/frontier/task/repo/ligra/transpose.h",
+      "sha256": "sha256:7b5035bcc8eb051941b6fe7a60e89f7f47cbdf9d4a471439d6157d4e683f71fa"
+    },
+    {
+      "bytes": 16096,
+      "path": "agent-base/frontier/task/repo/ligra/utils.h",
+      "sha256": "sha256:afe41ef6d34c5fb4423e0f7dcc912f6d3b9030dd1fbf885e7734dfddba0f848b"
+    },
+    {
+      "bytes": 12168,
+      "path": "agent-base/frontier/task/repo/ligra/vertex.h",
+      "sha256": "sha256:8d30a3c8c743b323215e9712fe1b04d23fad13953f68d17ca4d09d2a4f1c191f"
+    },
+    {
+      "bytes": 6948,
+      "path": "agent-base/frontier/task/repo/ligra/vertexSubset.h",
+      "sha256": "sha256:3f268b6e712f21e6823eff1754ef54dfc6b0b553dbad9c09692a73d984778103"
+    },
+    {
+      "bytes": 309,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:14b70ec7c2dd176a9fa64c1dadcbd37893fc16819a6cc817e592f2ec66863490"
+    },
+    {
+      "bytes": 313,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:a6ff2b61e604f152cf22ef1f7f6888e64d191029b2b40ecedfceaa3ef526210e"
+    },
+    {
+      "bytes": 346,
+      "path": "datasets/train.json",
+      "sha256": "sha256:639b86ebca311ac505235a2727e42381b3f4e95a9863f7519b9e9aaec5eed8e7"
+    },
+    {
+      "bytes": 2168,
+      "path": "judge/artifact_manifest.json",
+      "sha256": "sha256:99b4480ad5d244b36bdffc8d1b33017574a31c444e269829dadda0d33591cdc3"
+    },
+    {
+      "bytes": 9940,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:38b174d196f0789a9449b8d751e132aed51d64d7653bbbd78df177fac9ad8b65"
+    },
+    {
+      "bytes": 773,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:4d8c58a468f20d6ed7d9718f3600d75393a609b2535d8703369266905e85499f"
+    },
+    {
+      "bytes": 153,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:a27564c42a5f53bef5d6eee8636fe091416c71d5d71651a601876207be3dffb0"
+    },
+    {
+      "bytes": 22750,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:cefb6a9a6fb5000f3c755d74cd49e07f2bfc46da1b2ff28e8b99e944b7ed607f"
+    },
+    {
+      "bytes": 2024,
+      "path": "judge/metadata.json",
+      "sha256": "sha256:fc0f8bb9bb351ef3c56f8638556436dbe85e43e05db718e9c8f581a220a3c0d2"
+    },
+    {
+      "bytes": 2510,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:24183d6623fba79c21d494eed44550e382baf18129aa41f2ca6794a768e78825"
+    },
+    {
+      "bytes": 8551,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:0de9ab9e1561d812bad29d0c1da6a092b3611442ed6e67b822339d0e9aeca54b"
+    },
+    {
+      "bytes": 51931544,
+      "path": "judge/workloads/feedback-a.adj",
+      "sha256": "sha256:47b51f021331da95098c8f11faa35c7c2bb617d69c838ed982b79f882e27dcdb"
+    },
+    {
+      "bytes": 96143736,
+      "path": "judge/workloads/feedback-b.adj",
+      "sha256": "sha256:5d97c2500eac5d07f5959d8436b61db3cf420e8e8e12bb09205ca7d4f799b740"
+    },
+    {
+      "bytes": 51294221,
+      "path": "judge/workloads/graded-a.adj",
+      "sha256": "sha256:5d90f176f2e912be3eb2836d0fd0f92b0b77bc367e2237facaa9b2dc0c82ad81"
+    },
+    {
+      "bytes": 97058977,
+      "path": "judge/workloads/graded-b.adj",
+      "sha256": "sha256:5a684b49a471c6d37a6be35a16bdf044453fb01c81b0d9616ea41a3935478c87"
+    },
+    {
+      "bytes": 2928,
+      "path": "policy.json",
+      "sha256": "sha256:4e18736fbc223da0f95321984a95dbd8f681bcc568d46a9c6f239109f4b63ed0"
+    },
+    {
+      "bytes": 1114,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:cb977d2464c167e9be266345a429716f7271563735e52fbf0ec96acde47dc9f7"
+    },
+    {
+      "bytes": 11943,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "bytes": 21123,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:03aa3e190841dcad88088eb577b853df7f8634d7268989a0a489c2f451c648ca"
+    },
+    {
+      "bytes": 1485,
+      "path": "verifier/private_metrics.py",
+      "sha256": "sha256:5eb09437161e22e3641f9d0748ef54e7848349c6d608ec301f40cf4d479fcc91"
+    },
+    {
+      "bytes": 296,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:cea5319479c26dbf48ed0311c8f124f5c6eeb3b48b048a306e61d56ac55314dc"
+    }
+  ],
+  "problem_id": "hypergraph_core_numbers",
+  "profile": "patch-workspace",
+  "schema_version": "frontier.frontiersmith-upstream-lock/v1",
+  "scientific_contract": {
+    "continuous_score": "valid: 100 * exp(-median(per-workload candidate median runtime seconds) / 0.25); invalid: 0",
+    "reference_pass": "all exact core checks pass and, on every selected workload, candidate median eight-thread runtime <= 0.97 * reference median and candidate median one-thread runtime <= 0.97 * reference median (beat spec v2)",
+    "repeats": 7,
+    "threads": 8
+  },
+  "source": {
+    "commit": "52c793d1b7144f66e45cdf30a36c66869a1f07aa",
+    "path": "original_format_problems/hypergraph_core_numbers",
+    "pull_request": null,
+    "repository": "private authoring repository"
+  },
+  "submission": {
+    "allowed_paths": [
+      "apps/hyper/HyperKCore-Efficient.C",
+      "apps/hyper/frontier_solution/"
+    ],
+    "entrypoint": "payload/solution.patch",
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "workloads": [
+    {
+      "bytes": 51931544,
+      "cardinality": 10,
+      "nh": 360000,
+      "nv": 220000,
+      "path": "judge/workloads/feedback-a.adj",
+      "role": "train",
+      "sha256": "47b51f021331da95098c8f11faa35c7c2bb617d69c838ed982b79f882e27dcdb"
+    },
+    {
+      "bytes": 96143736,
+      "cardinality": 14,
+      "nh": 480000,
+      "nv": 300000,
+      "path": "judge/workloads/feedback-b.adj",
+      "role": "train",
+      "sha256": "5d97c2500eac5d07f5959d8436b61db3cf420e8e8e12bb09205ca7d4f799b740"
+    },
+    {
+      "bytes": 51294221,
+      "cardinality": 10,
+      "nh": 355000,
+      "nv": 225000,
+      "path": "judge/workloads/graded-a.adj",
+      "role": "eval-hidden",
+      "sha256": "5d90f176f2e912be3eb2836d0fd0f92b0b77bc367e2237facaa9b2dc0c82ad81"
+    },
+    {
+      "bytes": 97058977,
+      "cardinality": 14,
+      "nh": 485000,
+      "nv": 295000,
+      "path": "judge/workloads/graded-b.adj",
+      "role": "eval-hidden",
+      "sha256": "5a684b49a471c6d37a6be35a16bdf044453fb01c81b0d9616ea41a3935478c87"
+    }
+  ]
+}

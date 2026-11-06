@@ -1,7 +1,7 @@
 {
   "schema": "ckks-workload-configurations/v1",
   "release": "composition-scaled-logn12-configurations-v2",
-  "authority": "USER_DECISIONS_20261006.md:2026-10-07T17:28Z CKKS accuracy-only exception plus configurations",
+  "authority": "2026-10-07 revision: CKKS accuracy-only exception plus configurations",
   "ring_dimension": 4096,
   "complex_slots": 2048,
   "dense_secret_definition": "Ternary P=2/3; random weight, not fixed H=floor(2N/3)",

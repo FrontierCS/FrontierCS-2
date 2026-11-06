@@ -1,6 +1,6 @@
 """Evaluator for restoring per-query stopping to the authors' FARGO source.
 
-Judge for the shared verifier (#757): evaluate(tree). `tree` is the starter repo (`pristine/`)
+Judge for the shared verifier: evaluate(tree). `tree` is the starter repo (`pristine/`)
 with only `src/alg.cpp` overlaid; the shared edit scope has already applied the patch and the
 source-token denylist (task.toml `forbidden_content`). The fixed-budget baseline is `pristine/`
 and the reference is `pristine/` + reference.patch, run on the same suites.
@@ -19,7 +19,7 @@ Beat-spec metrics (beat_spec_workload_passes, one row per workload):
 beats_reference = 1 iff all four pass on every workload; no tolerance. reference_score is the
 reference's own score; margin = raw_score - reference_score.
 
-Process split (#757 isolate): every build and workload run (starter, candidate, reference)
+Process split (isolate): every build and workload run (starter, candidate, reference)
 happens in a fresh shared isolate instance that sees only the tree, the vector file under a
 neutral name, the calibration table and a one-row placeholder ground truth; the judge's data,
 environment and other runs are out of reach. The instance prints, per workload, the harness's

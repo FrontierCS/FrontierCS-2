@@ -1,4 +1,4 @@
-# The definition of clusterwise_spgemm (schema frontier.task/v1, #757). Only what differs
+# The definition of clusterwise_spgemm (schema frontier.task/v1). Only what differs
 # between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
 # rest, and the category is this task's folder.
 schema = "frontier.task/v1"
@@ -23,7 +23,7 @@ eval_timeout_seconds = 7200
 
 [submission]
 # The Agent was told 266,240 bytes (the archive cap, also its pre-check's patch cap); the judge
-# enforced 262,144 on the patch. The told value is kept for both (owner rule, #757).
+# enforced 262,144 on the patch. The told value is kept for both (owner rule).
 max_bytes = 266240
 allowed_paths = [
     "CSR_FlengthCluster.h",

@@ -1,0 +1,74 @@
+{
+  "unit": "one (dataset, approximation ratio, requested k, query split, index seed) operating point",
+  "metrics": [
+    {
+      "name": "recall",
+      "better": "higher",
+      "means": "mean exact top-k recall",
+      "clears_when": "candidate >= reference",
+      "tolerance": "none",
+      "source": "judge/evaluator.py:_paired_scores compares FARGO_METRIC rows recall from the supplied exact top-k harness."
+    },
+    {
+      "name": "overall_ratio",
+      "better": "higher",
+      "means": "mean rankwise inner-product ratio (paper Eq.18)",
+      "clears_when": "candidate >= reference",
+      "tolerance": "none",
+      "source": "judge/evaluator.py:_paired_scores compares FARGO_METRIC rows ratio, the mean rankwise inner-product ratio (paper Eq.18)."
+    },
+    {
+      "name": "query_time_ms",
+      "better": "lower",
+      "means": "mean measured complete query latency in milliseconds",
+      "clears_when": "candidate < reference",
+      "tolerance": "none; raw timing is subject to host noise",
+      "source": "judge/evaluator.py:_paired_scores compares FARGO_METRIC rows time_ms, measured complete query latency."
+    },
+    {
+      "name": "candidates_verified",
+      "better": "lower",
+      "means": "mean number of data points per query whose exact inner product the fixed harness verifies (each point at most once per query)",
+      "clears_when": "candidate <= reference",
+      "tolerance": "none; the count is deterministic for the fixed hash seeds and query sample (two repeated reference runs on every dataset/split gave identical counts), so equality is the only allowance and makes the bar reachable by a decision-identical faster implementation",
+      "source": "judge/evaluator.py:_paired_scores compares FARGO_METRIC rows cost (Performance::cost / queries), incremented only by the fixed verify() lambda in src/mf_alsh.cpp; paper Theorem 1 (query cost O(beta n d) from verifying candidates), Section 6.2.2 (AET verifies fewer candidates) and Section 6.2.3 (GMP vs Multi-Probe at equal candidate counts)."
+    }
+  ],
+  "beats_reference": "PASS iff all four comparisons hold on every evaluated operating point, with no compensation by averages: recall and overall ratio at least the reference's, verified candidates no more than the reference's, and query time strictly lower. Final covers train plus held-out query/index split. Identical reference is not a strict latency improvement. A failed reference run is an evaluator error, never a comparison.",
+  "solver_feedback": [
+    {
+      "name": "mean_recall",
+      "means": "candidate-only aggregate across selected suite",
+      "reveals_reference": "No: only the candidate aggregate across the selected suite is returned; reference measurements, margins and workload identities stay private."
+    },
+    {
+      "name": "mean_ratio",
+      "means": "candidate-only aggregate across selected suite",
+      "reveals_reference": "No: only the candidate aggregate across the selected suite is returned; reference measurements, margins and workload identities stay private."
+    },
+    {
+      "name": "mean_kratio",
+      "means": "candidate-only aggregate across selected suite",
+      "reveals_reference": "No: only the candidate aggregate across the selected suite is returned; reference measurements, margins and workload identities stay private."
+    },
+    {
+      "name": "mean_time_ms",
+      "means": "candidate-only aggregate across selected suite",
+      "reveals_reference": "No: only the candidate aggregate across the selected suite is returned; reference measurements, margins and workload identities stay private."
+    },
+    {
+      "name": "mean_candidates",
+      "means": "candidate-only aggregate across selected suite",
+      "reveals_reference": "No: only the candidate aggregate across the selected suite is returned; reference measurements, margins and workload identities stay private."
+    }
+  ],
+  "withheld": [
+    "reference_score",
+    "margin",
+    "workload_identifiers",
+    "per_workload_comparisons",
+    "hidden_final_metrics"
+  ],
+  "comments": "Continuous score is independent of the pass/fail reference: it uses the frozen numeric-bucket starter as paired work/time anchor. No timing tolerance has been statistically established; do not mistake local reference calibration for acceptance. Beat spec v3 (2026-10-07): 5/6 formal model runs passed v2. The published reference spends most query time in per-probe frontier and stop-rule overhead (measured: the exhaustive starter is faster than the reference at 12/12 Audio points while verifying 1.5-2.1x more candidates), so v2 could be cleared by buying recall with extra verification that faster code hides. v3 adds the paper's machine-independent query-cost axis, verified candidates, as a per-point C <= R metric. Larger paper datasets (Cifar, Trevi, YahooMusic, GIST, Tiny5M/80M; Table 2) are not added: they need new dataset assets and exceed the 4 GiB verifier memory for the larger ones.",
+  "statement_sentences": "The primary success criterion is PASS: on every operating point, recall and\noverall ratio must each be at least the reference's, the mean number of verified\ncandidates per query must be no greater than the reference's, and measured query\nlatency must be strictly lower. Equality passes the candidate comparison but not\nthe latency comparison. All comparisons are conjunctive; aggregate score cannot\ncompensate for a failure. There is no statistically established timing tolerance.\nThe continuous score remains a separate progress measure with no upper speedup clamp."
+}

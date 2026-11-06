@@ -1,0 +1,1516 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 902113280,
+      "media_type": "application/x-tar",
+      "path": "datasets/eval.tar",
+      "source": "task",
+      "version": "sha256:c93be05b1a9299cb21f346cb6e7afb1c05e30d8f43902d0a8ff1a06a459288b5"
+    },
+    "train": {
+      "bytes": 525844480,
+      "media_type": "application/x-tar",
+      "path": "datasets/train.tar",
+      "source": "task",
+      "version": "sha256:e7d56702e8a5050bd473adf789d99813dfe0e9d3ee3b9b7b5388530e4148940e"
+    }
+  },
+  "file_count": 291,
+  "files": [
+    {
+      "bytes": 2012,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:352203d023449e935b8439ebd8ed9bb9454f4b01874b3153914701bf2cefd414"
+    },
+    {
+      "bytes": 4678,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:3b2d12d543795f5dd76ec9395296a9e1ea99ce19a678cf048c51dddaef1b4d3d"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 301,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:18ff55ffeea8c084df20f2eabe43b8d333ef4cb1b09b5fdd562222d6089acc59"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 107,
+      "path": "agent-base/frontier/task/repo/BIN.h",
+      "sha256": "sha256:c4206ba5f215c199a305d7cde72e3375ac328410e4882ba280f263b35aa9b142"
+    },
+    {
+      "bytes": 291,
+      "path": "agent-base/frontier/task/repo/BIN_FlengthCluster.h",
+      "sha256": "sha256:2fc6df923695075d2e18cc23c55f4b8734559e5d435fc0389c12a497f1e22b84"
+    },
+    {
+      "bytes": 19500,
+      "path": "agent-base/frontier/task/repo/CSC.h",
+      "sha256": "sha256:4664ebc6e1df2a535970ff5b424c810de9f19454f58fc7af9c5d44b9b8595276"
+    },
+    {
+      "bytes": 42812,
+      "path": "agent-base/frontier/task/repo/CSR.h",
+      "sha256": "sha256:9c22d78d92fd2ca811f974071b3885649f6819a036881b556e7d60ea320e4804"
+    },
+    {
+      "bytes": 867,
+      "path": "agent-base/frontier/task/repo/CSR_FlengthCluster.h",
+      "sha256": "sha256:8e0dacc8396f2400cb5fc60bde2f073e2817bc5d561b32699d2364d6fbdd3f2b"
+    },
+    {
+      "bytes": 421,
+      "path": "agent-base/frontier/task/repo/CSR_VlengthCluster.h",
+      "sha256": "sha256:9af4bf0872fd355ead9b2521b55e2f0772a65f6a31427c5d7a0c8baa5cf9a4a6"
+    },
+    {
+      "bytes": 685,
+      "path": "agent-base/frontier/task/repo/GTgraph/Makefile",
+      "sha256": "sha256:d91fec196e0c191fcf89b8b9861dbbd03ae273cde5a882b6871915bff1d9ab0a"
+    },
+    {
+      "bytes": 739,
+      "path": "agent-base/frontier/task/repo/GTgraph/Makefile.var",
+      "sha256": "sha256:24e0fe1b6bbf44711b9ac08f57998c12634f1b13e52e09dd6ba343c5837473c2"
+    },
+    {
+      "bytes": 1305,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/COPYRIGHT",
+      "sha256": "sha256:76a662cf9e0c8bdd9e20b68f83186201c71b369a9e993d6882f1feea4d85aa16"
+    },
+    {
+      "bytes": 261,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/Makefile",
+      "sha256": "sha256:a24b7b5539a9860c7d63bf525fffe961b3662c2fef78a34abad2c74ca9fdd9f0"
+    },
+    {
+      "bytes": 260,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/config",
+      "sha256": "sha256:18201dc21b905ad98ae4bc553e5f1f666228bf1fa1ef720cf038f0fa451ea3e4"
+    },
+    {
+      "bytes": 496,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/defs.h",
+      "sha256": "sha256:2805f558431fc3263c98af1d6aa978ae1e357fbea1148f17d8fd1a503d0421cc"
+    },
+    {
+      "bytes": 421,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/drive.c",
+      "sha256": "sha256:0b1026d1495956eb3cdc498f8fce703d95c5c4e5bdb082992952c082521734e8"
+    },
+    {
+      "bytes": 281,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/globals.c",
+      "sha256": "sha256:2db55495a2cbf61829117a217f90c595317c1f1197978dab2357f9bdba842791"
+    },
+    {
+      "bytes": 1098,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/globals.h",
+      "sha256": "sha256:1af058415cf5f1b83ad17ea75a5e103bc8c21596aad9903da186585c086daf6b"
+    },
+    {
+      "bytes": 5642,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/graph.c",
+      "sha256": "sha256:f337940374991d4a15ae62d0de43e007db3c62d1d3c1a96eada383bb9e7f86b4"
+    },
+    {
+      "bytes": 488,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/graph.h",
+      "sha256": "sha256:66d08d50fc2e486d2e596d321daa73ca38fb5ec2d4a4139ab5762ca31ca53d06"
+    },
+    {
+      "bytes": 4973,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/init.c",
+      "sha256": "sha256:31b98ee7d4b89104f039f688a0a7e6f9272fe8a747bbef39705ad56a40e2584f"
+    },
+    {
+      "bytes": 398,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/init.h",
+      "sha256": "sha256:db7adaf5807ffd47e76937382c10b6781b796a6548930b2580c327125cc5797a"
+    },
+    {
+      "bytes": 5040,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/utils.c",
+      "sha256": "sha256:5d7132c0fa613665a5825c7a384d4615518ffdc99d1c349743a1c6f456c2811e"
+    },
+    {
+      "bytes": 716,
+      "path": "agent-base/frontier/task/repo/GTgraph/R-MAT/utils.h",
+      "sha256": "sha256:c562e76e7f5b322c0f8c16bde2e891c74694d46cbb83b03f941baab52d333717"
+    },
+    {
+      "bytes": 5068,
+      "path": "agent-base/frontier/task/repo/GTgraph/README",
+      "sha256": "sha256:66fe077f1c70a6acd98671e2866a19413ae6f0879ac2ac569fe20ca5eff543c5"
+    },
+    {
+      "bytes": 1299,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/COPYRIGHT",
+      "sha256": "sha256:571ead6b2d5a143fccf6cb24238dd47a32d58f9efcd8fe38cb71a26c8eb6fbd1"
+    },
+    {
+      "bytes": 262,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/Makefile",
+      "sha256": "sha256:6a369a030c53552e6b3fff2fb998a8560728607220c1793ff66fae020828ce3a"
+    },
+    {
+      "bytes": 454,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/config",
+      "sha256": "sha256:fee0b0354d813afdd7b277e98ce7c491d2439a375bc478e735b804d5a10be2db"
+    },
+    {
+      "bytes": 496,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/defs.h",
+      "sha256": "sha256:2805f558431fc3263c98af1d6aa978ae1e357fbea1148f17d8fd1a503d0421cc"
+    },
+    {
+      "bytes": 391,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/drive.c",
+      "sha256": "sha256:ea4fd74dedc12fa4647bc2053b28a1579850240ba4496ad1fb7b98d1a6e1d768"
+    },
+    {
+      "bytes": 312,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/globals.c",
+      "sha256": "sha256:ed923efdb5418a91628b2d7771d487bbb5de6b613d7844f560ce3ba2702813eb"
+    },
+    {
+      "bytes": 1928,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/globals.h",
+      "sha256": "sha256:04e89154cc74c8ffc267976f4b9c4d2609f8bf9c7544e66a16abcdc035f61f21"
+    },
+    {
+      "bytes": 8696,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/graph.c",
+      "sha256": "sha256:33fb1f1f4481591019e5c3e4052d104fdb6c446e1b937643ff54f5a1b2b4d15c"
+    },
+    {
+      "bytes": 246,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/graph.h",
+      "sha256": "sha256:d240e577d869a44d0dbf6127356cc9067014c466bbdcc3ad00de2d3663501a19"
+    },
+    {
+      "bytes": 4970,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/init.c",
+      "sha256": "sha256:846737a2e5c4189c90f729dfee3e93ce574361cfe0e3423bf7406fe8768aa2fa"
+    },
+    {
+      "bytes": 304,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/init.h",
+      "sha256": "sha256:e6495104624843571c3f7622fc85f165b4767b0229f01ce129e42ed732e7afdb"
+    },
+    {
+      "bytes": 5009,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/utils.c",
+      "sha256": "sha256:4458bffeb7e493874e472cadc92a7b3792566f6ef87d0308c76761f938761540"
+    },
+    {
+      "bytes": 716,
+      "path": "agent-base/frontier/task/repo/GTgraph/SSCA2/utils.h",
+      "sha256": "sha256:c562e76e7f5b322c0f8c16bde2e891c74694d46cbb83b03f941baab52d333717"
+    },
+    {
+      "bytes": 1266,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/COPYRIGHT",
+      "sha256": "sha256:93e445c9ec8d654878146ed197b593d0310dc3ece4a2e8e81f88d02ade6d09c6"
+    },
+    {
+      "bytes": 263,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/Makefile",
+      "sha256": "sha256:817cd2b3ab8a036d36b20e7b06886044c57fe060e957451f7a1adbebab6a3e6a"
+    },
+    {
+      "bytes": 456,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/config",
+      "sha256": "sha256:23063b9b932e332f6e19906725a7cad854a6f37793354629829cfc5d6adc120a"
+    },
+    {
+      "bytes": 496,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/defs.h",
+      "sha256": "sha256:2805f558431fc3263c98af1d6aa978ae1e357fbea1148f17d8fd1a503d0421cc"
+    },
+    {
+      "bytes": 421,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/drive.c",
+      "sha256": "sha256:0b1026d1495956eb3cdc498f8fce703d95c5c4e5bdb082992952c082521734e8"
+    },
+    {
+      "bytes": 267,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/globals.c",
+      "sha256": "sha256:61b7082983037e280df7b0f1ff3f6ed55fbf07f8605dfa9da2cc11c269cc5b9f"
+    },
+    {
+      "bytes": 1320,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/globals.h",
+      "sha256": "sha256:5efe77772f507527cafa5ba1317711a02f18e411358db83fc777e6dc7231255d"
+    },
+    {
+      "bytes": 5414,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/graph.c",
+      "sha256": "sha256:4b7156eb1088fa3f3d830bbbdc5f3021ba141457ba84134fcc44e1133142a31e"
+    },
+    {
+      "bytes": 275,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/graph.h",
+      "sha256": "sha256:89002eaa47f71ae6e39243336f8d55d5152a61901721590feed07bc738d77bb6"
+    },
+    {
+      "bytes": 6079,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/init.c",
+      "sha256": "sha256:3528d29a16cf39585ef0bbb0d6ddd4b1003fb43db535fcd31c411883fc9c9351"
+    },
+    {
+      "bytes": 304,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/init.h",
+      "sha256": "sha256:e6495104624843571c3f7622fc85f165b4767b0229f01ce129e42ed732e7afdb"
+    },
+    {
+      "bytes": 5485,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/utils.c",
+      "sha256": "sha256:c89584e38ff0f341fd4cda27056f8b8bd04102433fddd27854014a11c903ed57"
+    },
+    {
+      "bytes": 751,
+      "path": "agent-base/frontier/task/repo/GTgraph/random/utils.h",
+      "sha256": "sha256:47de9d852b0b70412d43cc13ad9bb333305cc9ce77b1e1614dac55bc51c425ca"
+    },
+    {
+      "bytes": 131,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/Makefile",
+      "sha256": "sha256:8010c015052e933cf5527a25da604548752a48b75507e9d8d2169c5b4a7860da"
+    },
+    {
+      "bytes": 1547,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/include/interface.h",
+      "sha256": "sha256:ca465d75baa665e19bf5c647bd97d3226e3878690e06e97bc73b86e8f07a1abb"
+    },
+    {
+      "bytes": 2077,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/include/sprng.h",
+      "sha256": "sha256:670ed25d1d32bf05c772bc7dc068aebd3596e33fc52b707b52f21df9313205f9"
+    },
+    {
+      "bytes": 4194,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/include/sprng_f.h",
+      "sha256": "sha256:41651e4ccc9b277fe4737640397f2cd104d640a4738dc02a44017fc4c7f71954"
+    },
+    {
+      "bytes": 30,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/lib/Makefile",
+      "sha256": "sha256:11ebfc583d0cc973e546af877f525f5c19967b28e2e04fd08ec83976bde0c030"
+    },
+    {
+      "bytes": 0,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/.insertlib",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 11843,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/.template.c",
+      "sha256": "sha256:c75f77a8455f1bed8467b32a3b54cec3234ba2012e2b14abe884af5c6a430a16"
+    },
+    {
+      "bytes": 1812,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/Makefile",
+      "sha256": "sha256:c889ed541f2ec7118ea6dd5ba90773dbcf71beb4dca1e7b00db0f6ddcabf3c37"
+    },
+    {
+      "bytes": 1857,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/checkid.c",
+      "sha256": "sha256:24131cc1fd9bdb41bd6e06663919a60be0bcae9523ff52e76bfb97441d33dba0"
+    },
+    {
+      "bytes": 299,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/cmrg/Makefile",
+      "sha256": "sha256:da363377665484ae915cd57074f4d2aa03e2591da614ae5cd08194c9d0ffe500"
+    },
+    {
+      "bytes": 19261,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/cmrg/cmrg.c",
+      "sha256": "sha256:db78fc71c2e9980e524e91865a0699a429680ce89f9c69d371e53af4ff5b1d23"
+    },
+    {
+      "bytes": 21372,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/cmrg/cmrg.data",
+      "sha256": "sha256:f929494c46de4492cc0ce9600166dfb1947fd444ae8260b786abf402abad4322"
+    },
+    {
+      "bytes": 805,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/cmrg/cmrg.h",
+      "sha256": "sha256:9bef334fe42807f38c7e93a3129765beef0c5d648811d4f36e3975929ca0d85d"
+    },
+    {
+      "bytes": 956,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/communicate.c",
+      "sha256": "sha256:e47eafe69ef710bddcc5736186673914083308de0079d13d04d04afd96fdff8a"
+    },
+    {
+      "bytes": 749,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/cputime.c",
+      "sha256": "sha256:5a5f5c05eca1408306ca687ad7f83f2dfb20eb7f90a537c6c487d1768cdb7406"
+    },
+    {
+      "bytes": 76,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/cputime.h",
+      "sha256": "sha256:d7644f58cf529e155426b262c39d328347c2b88b51b892a97298a078800fd682"
+    },
+    {
+      "bytes": 859,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/drand.c",
+      "sha256": "sha256:314145ed0fe18ff17f68fbd67a1b9b88198ac99cbb942546e5de3e8dbbb12d54"
+    },
+    {
+      "bytes": 5024,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/fwrap.h",
+      "sha256": "sha256:8dcbde380bcf425f976e43e57604720710433cae71de2f391412a2905619e7b4"
+    },
+    {
+      "bytes": 7002,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/fwrap_.h",
+      "sha256": "sha256:90818ae111c4e0e8bd3d7c61f9b4f400eb282396cb3bda4d3e4861531cb4c313"
+    },
+    {
+      "bytes": 1992,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/fwrap_mpi.c",
+      "sha256": "sha256:d120091381af1e00acf49ab532f38c996af712705386c1a695321c8d2e3fbbe3"
+    },
+    {
+      "bytes": 1547,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/interface.h",
+      "sha256": "sha256:ca465d75baa665e19bf5c647bd97d3226e3878690e06e97bc73b86e8f07a1abb"
+    },
+    {
+      "bytes": 313,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg/Makefile",
+      "sha256": "sha256:35fafcfc868c62cbf3dd6d9d277e9c066ec2f6b36eb5d48a1537f930494bcbc3"
+    },
+    {
+      "bytes": 176,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg/READMEver2.CHANGES",
+      "sha256": "sha256:e24879116d9b52556f35c963ee3b186656ec1e21bf2066eff6aac913bb23b1d4"
+    },
+    {
+      "bytes": 22533,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg/lcg.c",
+      "sha256": "sha256:2cc927438e2df4fef7758c24c66346b308e3c8aaa40a866927c63f40c760fe14"
+    },
+    {
+      "bytes": 21396,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg/lcg.data",
+      "sha256": "sha256:8b706352cbb368854a96574f4d855d7657e769154197bb9b94f925bf065d35ad"
+    },
+    {
+      "bytes": 796,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg/lcg.h",
+      "sha256": "sha256:650fbe7324d80435715dbacec23b76ff071f8b62a2fedcd54123b1155c0efec1"
+    },
+    {
+      "bytes": 320,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg64/Makefile",
+      "sha256": "sha256:7ba2e199e4fcb955d65c8c015336a2d121e32ab88d4b42a5e9eab784494a2415"
+    },
+    {
+      "bytes": 17130,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg64/lcg64.c",
+      "sha256": "sha256:06dc1e4d01ca1f7ff4722f847d46b0e288d404d0c354cf038caaf038ede1bb0c"
+    },
+    {
+      "bytes": 21378,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg64/lcg64.data",
+      "sha256": "sha256:ce7474255577052ed8b8742fb7326d0901f5c6d5b00b2c4ef7a66aaf6c6b59f6"
+    },
+    {
+      "bytes": 817,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lcg64/lcg64.h",
+      "sha256": "sha256:a5bc6fa01b5f9cecff466ea01f895f3433e5c2c09f1bb375c37cfeffff326721"
+    },
+    {
+      "bytes": 309,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lfg/Makefile",
+      "sha256": "sha256:18d2e8d464f0688acd79ebebe9c218407843185bc3a036a57511dcccbf545d1e"
+    },
+    {
+      "bytes": 29809,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lfg/lfg.c",
+      "sha256": "sha256:680fe87d2b37dcc72f2c068dc1f35e04f86ac1eed8647ecc2fcbdd75ba4e3dda"
+    },
+    {
+      "bytes": 21387,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lfg/lfg.data",
+      "sha256": "sha256:448c36c3b7d7de778b3afb886866403709c57210c69c1666d4b4840318261cb0"
+    },
+    {
+      "bytes": 793,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/lfg/lfg.h",
+      "sha256": "sha256:492fb8a9babf83a7cf9dd2613287ba064abecab266c8b4f7c632dcf583004103"
+    },
+    {
+      "bytes": 676,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/makeseed.c",
+      "sha256": "sha256:2aa7c0164d3df479fcb64792682e9cbf77ebf405b246ffcef3fa4a0a4667061d"
+    },
+    {
+      "bytes": 458,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/memory.c",
+      "sha256": "sha256:d86a258cc4578f270874b33bd904071e1188b21a5a2aae00fb8522ef85bba603"
+    },
+    {
+      "bytes": 235,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/memory.h",
+      "sha256": "sha256:63f240d28033e948edf77717e37b784a96092882af510d7546bd23a32957eaa7"
+    },
+    {
+      "bytes": 675,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/mlfg/Makefile",
+      "sha256": "sha256:40624f2e102f5ec739768ec04eafb9e1768b6624982e24f0fed2fda52a2d2c64"
+    },
+    {
+      "bytes": 3759,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/mlfg/int64.h",
+      "sha256": "sha256:68ce864f6c3fffc17c70d4f63a76b0c7de7ccf67bd835751f479a27ef5a3d6c7"
+    },
+    {
+      "bytes": 20612,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/mlfg/mlfg.c",
+      "sha256": "sha256:78b7999bd61c26d6843dcf0192743d10b143b7b8bcf81bb9f9a45015193ec9f8"
+    },
+    {
+      "bytes": 21394,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/mlfg/mlfg.data",
+      "sha256": "sha256:2e5357929601ef573ce728197bbd3c69bacce82beba3ecaac6423a62cada34ad"
+    },
+    {
+      "bytes": 805,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/mlfg/mlfg.h",
+      "sha256": "sha256:599e450213071199e73aca6d0518f8b06ccb36edd2fc15ae1d2b1dd60a41f012"
+    },
+    {
+      "bytes": 845,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/multiply.h",
+      "sha256": "sha256:e42fe3a26209ba2dec69ec1a1eeeb7a6100f8995ac00724be6ecc452c77aba83"
+    },
+    {
+      "bytes": 17144,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/primelist_32.h",
+      "sha256": "sha256:049cb2c01a5e61697b40c3f55b63c27344479c0a8061b67e10475953c4c357a5"
+    },
+    {
+      "bytes": 197365,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/primelist_64.h",
+      "sha256": "sha256:b8004fab92631624acb60fd47bac75f5338217de7bc28631200cce6c44a8ca8c"
+    },
+    {
+      "bytes": 2871,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/primes_32.c",
+      "sha256": "sha256:ab37ee0950eab393a3b6103c069d81529b09db4ae40b2fa85111f8e972c354b0"
+    },
+    {
+      "bytes": 360,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/primes_32.h",
+      "sha256": "sha256:1c8b82658fb3e7893a618bf54c9ace35e8bb6589ae91503e7663b120eaff8446"
+    },
+    {
+      "bytes": 2901,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/primes_64.c",
+      "sha256": "sha256:7e47a4bb02c1483943aca3fb7408109f86ea931ce8f0a02ac411fbfcfcfb3769"
+    },
+    {
+      "bytes": 430,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/primes_64.h",
+      "sha256": "sha256:689e81b8c21d0b98cb7ec6a3dccaa078c6dbbc0e9db7619bdadf92f1fdb2584a"
+    },
+    {
+      "bytes": 2131,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/simple.c",
+      "sha256": "sha256:3021d8e64285b07304015484683298cbae14d09772eb38f14a9b07339fac9e33"
+    },
+    {
+      "bytes": 2223,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/simple_.h",
+      "sha256": "sha256:192a1eacc8cdfd6bccf3a29d0bdc4669739b814b0d7c9665c113d3bc618859bf"
+    },
+    {
+      "bytes": 3148,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/simple_mpi.c",
+      "sha256": "sha256:2d65925ac4b1a96a02c6666411332eedcbd3654f89d0539631830a8c8cc4dfa6"
+    },
+    {
+      "bytes": 1560,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/sprng/Makefile",
+      "sha256": "sha256:cf151073231f88bcb4cd02a4803d98e00bcdf346d2109b3b37d69e62790e4299"
+    },
+    {
+      "bytes": 423,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/sprng/READMEver2.CHANGES",
+      "sha256": "sha256:0cd9f38a28fd520c7fd0e42e7a7c09ddb08c4f9e3a63f2abdaf77ad503541f00"
+    },
+    {
+      "bytes": 7016,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/sprng/sprng.c",
+      "sha256": "sha256:d54bc7ba9e879176554252b716d9620f054f58be18e33a2491ea2734d88e6cb5"
+    },
+    {
+      "bytes": 2096,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/sprng.h",
+      "sha256": "sha256:d84454ddb21613adcadd2b259037f51fb3b6de8f7345286f9e1b344abd612e40"
+    },
+    {
+      "bytes": 4194,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/sprng_f.h",
+      "sha256": "sha256:41651e4ccc9b277fe4737640397f2cd104d640a4738dc02a44017fc4c7f71954"
+    },
+    {
+      "bytes": 2909,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/store.c",
+      "sha256": "sha256:3339a36b6d7c02279dd541c42128f63a5fcbc99e723fc3277441ab3045683c8f"
+    },
+    {
+      "bytes": 1035,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/store.h",
+      "sha256": "sha256:0795d119859cf6866fab99ae51c75590932de1bcbcdf9cc2fb8cc004dc0b3138"
+    },
+    {
+      "bytes": 1998,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/timing.c",
+      "sha256": "sha256:d56fe6e309495df1d8134763a9a0b0ddd4d6a54f7399ac5e7719fd282129c8b2"
+    },
+    {
+      "bytes": 2316,
+      "path": "agent-base/frontier/task/repo/GTgraph/sprng2.0-lite/src/timingf.f",
+      "sha256": "sha256:95cb4d8e12334db9f6a905a406c1000ecd8be6d7410caf56bdafe8824c13bbf0"
+    },
+    {
+      "bytes": 6086,
+      "path": "agent-base/frontier/task/repo/IO.h",
+      "sha256": "sha256:acb1c39fca40d6ca0ea7fa3b2535723b856b41f1829484ec2404fc309b2f114c"
+    },
+    {
+      "bytes": 1326,
+      "path": "agent-base/frontier/task/repo/LICENSE.md",
+      "sha256": "sha256:e96e53238c75c40cbd0a6e4d04a8873f9e41b77b7d16feb725f5ce6e333aadb1"
+    },
+    {
+      "bytes": 10065,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:00ae002fa960af9248be018aef315622f0a98ec9577409b70f1d9ee05a140f1d"
+    },
+    {
+      "bytes": 622,
+      "path": "agent-base/frontier/task/repo/Triple.h",
+      "sha256": "sha256:d7eddb0ceb16435dc1c51ab63fae29d6ccc02ab7b9827842010b7590ba789054"
+    },
+    {
+      "bytes": 326,
+      "path": "agent-base/frontier/task/repo/cluster_utility.h",
+      "sha256": "sha256:07af499cfac07b64bca04f69cd31d80416491e51aea4006dc8b0d7e936eed330"
+    },
+    {
+      "bytes": 118,
+      "path": "agent-base/frontier/task/repo/frontier-bench.sh",
+      "sha256": "sha256:e509a857c6767a791db881eea6969a490224c8133fb8315be6f0be03696c538d"
+    },
+    {
+      "bytes": 118,
+      "path": "agent-base/frontier/task/repo/frontier-build.sh",
+      "sha256": "sha256:9f995f25965a963f76bbf3c9e03f7e828419eb9d344f37f2c16461e55b3f6aac"
+    },
+    {
+      "bytes": 109,
+      "path": "agent-base/frontier/task/repo/frontier-runtime.json",
+      "sha256": "sha256:5f1fa0dbb5b4d5561b8901873a2a6d3b10be0b7a24880fb70eb3f14520196f44"
+    },
+    {
+      "bytes": 3242,
+      "path": "agent-base/frontier/task/repo/frontier_runtime.py",
+      "sha256": "sha256:17f50e9cdd0c2bbca330254eed226df3133790039dfde5f14cfaf5d08f3e80ce"
+    },
+    {
+      "bytes": 784,
+      "path": "agent-base/frontier/task/repo/hash_mult.h",
+      "sha256": "sha256:2e05152e6c553292c986b1e022d5d7dcd6d012f4a1dfaf4574908ded72b705f6"
+    },
+    {
+      "bytes": 544,
+      "path": "agent-base/frontier/task/repo/hash_mult_flengthcluster.h",
+      "sha256": "sha256:68b2187fa078c9e24e003444979508474c776897f69eb60ea08a16d7e5e95032"
+    },
+    {
+      "bytes": 444,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:8dd5ef6a0befbd2ae5e29b9add2bc8035cc7750e426fabd0400d9d317373bb69"
+    },
+    {
+      "bytes": 1188,
+      "path": "agent-base/frontier/task/repo/makefile",
+      "sha256": "sha256:4b077d8b285a6b91c5aaebe23a4970a803ad4e780f716b654692505aa68bacaa"
+    },
+    {
+      "bytes": 832,
+      "path": "agent-base/frontier/task/repo/multiply.h",
+      "sha256": "sha256:569054e3d1c805ac2092eaab385db558bc261e9d9b955eb77b6935b0d9a16b5b"
+    },
+    {
+      "bytes": 5291,
+      "path": "agent-base/frontier/task/repo/sample/ReorderedFlengthClusterSpGEMM.cpp",
+      "sha256": "sha256:47b3dbe0bd83415d984483e144ed7cdc7f16cec3fd26e0941b708151fb9dbe0e"
+    },
+    {
+      "bytes": 2505,
+      "path": "agent-base/frontier/task/repo/sample/ReorderedFlengthClusterSpGEMM_kernel.cpp",
+      "sha256": "sha256:d0e4a0081c42939913c3aa2293cac87e0ea86f48750ad7c1969760c4228ade8f"
+    },
+    {
+      "bytes": 1690,
+      "path": "agent-base/frontier/task/repo/sample/ReorderedFlengthClusterSpGEMM_kernel.h",
+      "sha256": "sha256:db73e047a59215b37f768cfedd975b17c2ab1e1ff5d727afd034532e50b973ad"
+    },
+    {
+      "bytes": 7054,
+      "path": "agent-base/frontier/task/repo/sample/sample_common.hpp",
+      "sha256": "sha256:7e0747ba79c603117193e428748f338191d5176ba6c07b73cdd04a29802798d0"
+    },
+    {
+      "bytes": 17783,
+      "path": "agent-base/frontier/task/repo/utility.h",
+      "sha256": "sha256:d896a986bc98aecdf2e02876b475698d6f056dec6874bd2306cfae272c44eec6"
+    },
+    {
+      "bytes": 902113280,
+      "path": "datasets/eval.tar",
+      "sha256": "sha256:c93be05b1a9299cb21f346cb6e7afb1c05e30d8f43902d0a8ff1a06a459288b5"
+    },
+    {
+      "bytes": 525844480,
+      "path": "datasets/train.tar",
+      "sha256": "sha256:e7d56702e8a5050bd473adf789d99813dfe0e9d3ee3b9b7b5388530e4148940e"
+    },
+    {
+      "bytes": 3996,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:a790911cb377ec7bc69bd3421e0740f1d0be37cf0b77a0084d6093dcfaab59af"
+    },
+    {
+      "bytes": 11943,
+      "path": "judge/beat_spec_feedback.py",
+      "sha256": "sha256:cb0c20d77ea567b7982f7603314252ca53dc401467ad947079de9a25a0b5d5e4"
+    },
+    {
+      "bytes": 2070,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:cc0dee14758f1e9bd0c25f67519db4b85a5fe0f5061efabd18ac24a0dae769bc"
+    },
+    {
+      "bytes": 4294,
+      "path": "judge/dataset-members.json",
+      "sha256": "sha256:8e3f28dc5d15346c7bb9e748256bcdd7096b2e05a5635b4f3b8c09b767c1a70c"
+    },
+    {
+      "bytes": 2937,
+      "path": "judge/dataset_loader.py",
+      "sha256": "sha256:c57a0078be287d58f50f07fe3b5158095bfe90a9f8789f8ec25fac371aac8d8d"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/datasets/eval.json",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/datasets/train.json",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 87,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:d57fcec980dc1061f09a00d53e70a7ed42781c66e2efeee078c388cea5ce8d0b"
+    },
+    {
+      "bytes": 11829,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:07291b9bcdb0cbde6c3d775d189b3f0775f3480899454ce83c295dca0848f26a"
+    },
+    {
+      "bytes": 107,
+      "path": "judge/harbor/app/BIN.h",
+      "sha256": "sha256:c4206ba5f215c199a305d7cde72e3375ac328410e4882ba280f263b35aa9b142"
+    },
+    {
+      "bytes": 291,
+      "path": "judge/harbor/app/BIN_FlengthCluster.h",
+      "sha256": "sha256:2fc6df923695075d2e18cc23c55f4b8734559e5d435fc0389c12a497f1e22b84"
+    },
+    {
+      "bytes": 19500,
+      "path": "judge/harbor/app/CSC.h",
+      "sha256": "sha256:4664ebc6e1df2a535970ff5b424c810de9f19454f58fc7af9c5d44b9b8595276"
+    },
+    {
+      "bytes": 42812,
+      "path": "judge/harbor/app/CSR.h",
+      "sha256": "sha256:9c22d78d92fd2ca811f974071b3885649f6819a036881b556e7d60ea320e4804"
+    },
+    {
+      "bytes": 867,
+      "path": "judge/harbor/app/CSR_FlengthCluster.h",
+      "sha256": "sha256:8e0dacc8396f2400cb5fc60bde2f073e2817bc5d561b32699d2364d6fbdd3f2b"
+    },
+    {
+      "bytes": 421,
+      "path": "judge/harbor/app/CSR_VlengthCluster.h",
+      "sha256": "sha256:9af4bf0872fd355ead9b2521b55e2f0772a65f6a31427c5d7a0c8baa5cf9a4a6"
+    },
+    {
+      "bytes": 685,
+      "path": "judge/harbor/app/GTgraph/Makefile",
+      "sha256": "sha256:d91fec196e0c191fcf89b8b9861dbbd03ae273cde5a882b6871915bff1d9ab0a"
+    },
+    {
+      "bytes": 739,
+      "path": "judge/harbor/app/GTgraph/Makefile.var",
+      "sha256": "sha256:24e0fe1b6bbf44711b9ac08f57998c12634f1b13e52e09dd6ba343c5837473c2"
+    },
+    {
+      "bytes": 1305,
+      "path": "judge/harbor/app/GTgraph/R-MAT/COPYRIGHT",
+      "sha256": "sha256:76a662cf9e0c8bdd9e20b68f83186201c71b369a9e993d6882f1feea4d85aa16"
+    },
+    {
+      "bytes": 261,
+      "path": "judge/harbor/app/GTgraph/R-MAT/Makefile",
+      "sha256": "sha256:a24b7b5539a9860c7d63bf525fffe961b3662c2fef78a34abad2c74ca9fdd9f0"
+    },
+    {
+      "bytes": 260,
+      "path": "judge/harbor/app/GTgraph/R-MAT/config",
+      "sha256": "sha256:18201dc21b905ad98ae4bc553e5f1f666228bf1fa1ef720cf038f0fa451ea3e4"
+    },
+    {
+      "bytes": 496,
+      "path": "judge/harbor/app/GTgraph/R-MAT/defs.h",
+      "sha256": "sha256:2805f558431fc3263c98af1d6aa978ae1e357fbea1148f17d8fd1a503d0421cc"
+    },
+    {
+      "bytes": 421,
+      "path": "judge/harbor/app/GTgraph/R-MAT/drive.c",
+      "sha256": "sha256:0b1026d1495956eb3cdc498f8fce703d95c5c4e5bdb082992952c082521734e8"
+    },
+    {
+      "bytes": 281,
+      "path": "judge/harbor/app/GTgraph/R-MAT/globals.c",
+      "sha256": "sha256:2db55495a2cbf61829117a217f90c595317c1f1197978dab2357f9bdba842791"
+    },
+    {
+      "bytes": 1098,
+      "path": "judge/harbor/app/GTgraph/R-MAT/globals.h",
+      "sha256": "sha256:1af058415cf5f1b83ad17ea75a5e103bc8c21596aad9903da186585c086daf6b"
+    },
+    {
+      "bytes": 5642,
+      "path": "judge/harbor/app/GTgraph/R-MAT/graph.c",
+      "sha256": "sha256:f337940374991d4a15ae62d0de43e007db3c62d1d3c1a96eada383bb9e7f86b4"
+    },
+    {
+      "bytes": 488,
+      "path": "judge/harbor/app/GTgraph/R-MAT/graph.h",
+      "sha256": "sha256:66d08d50fc2e486d2e596d321daa73ca38fb5ec2d4a4139ab5762ca31ca53d06"
+    },
+    {
+      "bytes": 4973,
+      "path": "judge/harbor/app/GTgraph/R-MAT/init.c",
+      "sha256": "sha256:31b98ee7d4b89104f039f688a0a7e6f9272fe8a747bbef39705ad56a40e2584f"
+    },
+    {
+      "bytes": 398,
+      "path": "judge/harbor/app/GTgraph/R-MAT/init.h",
+      "sha256": "sha256:db7adaf5807ffd47e76937382c10b6781b796a6548930b2580c327125cc5797a"
+    },
+    {
+      "bytes": 5040,
+      "path": "judge/harbor/app/GTgraph/R-MAT/utils.c",
+      "sha256": "sha256:5d7132c0fa613665a5825c7a384d4615518ffdc99d1c349743a1c6f456c2811e"
+    },
+    {
+      "bytes": 716,
+      "path": "judge/harbor/app/GTgraph/R-MAT/utils.h",
+      "sha256": "sha256:c562e76e7f5b322c0f8c16bde2e891c74694d46cbb83b03f941baab52d333717"
+    },
+    {
+      "bytes": 5068,
+      "path": "judge/harbor/app/GTgraph/README",
+      "sha256": "sha256:66fe077f1c70a6acd98671e2866a19413ae6f0879ac2ac569fe20ca5eff543c5"
+    },
+    {
+      "bytes": 1299,
+      "path": "judge/harbor/app/GTgraph/SSCA2/COPYRIGHT",
+      "sha256": "sha256:571ead6b2d5a143fccf6cb24238dd47a32d58f9efcd8fe38cb71a26c8eb6fbd1"
+    },
+    {
+      "bytes": 262,
+      "path": "judge/harbor/app/GTgraph/SSCA2/Makefile",
+      "sha256": "sha256:6a369a030c53552e6b3fff2fb998a8560728607220c1793ff66fae020828ce3a"
+    },
+    {
+      "bytes": 454,
+      "path": "judge/harbor/app/GTgraph/SSCA2/config",
+      "sha256": "sha256:fee0b0354d813afdd7b277e98ce7c491d2439a375bc478e735b804d5a10be2db"
+    },
+    {
+      "bytes": 496,
+      "path": "judge/harbor/app/GTgraph/SSCA2/defs.h",
+      "sha256": "sha256:2805f558431fc3263c98af1d6aa978ae1e357fbea1148f17d8fd1a503d0421cc"
+    },
+    {
+      "bytes": 391,
+      "path": "judge/harbor/app/GTgraph/SSCA2/drive.c",
+      "sha256": "sha256:ea4fd74dedc12fa4647bc2053b28a1579850240ba4496ad1fb7b98d1a6e1d768"
+    },
+    {
+      "bytes": 312,
+      "path": "judge/harbor/app/GTgraph/SSCA2/globals.c",
+      "sha256": "sha256:ed923efdb5418a91628b2d7771d487bbb5de6b613d7844f560ce3ba2702813eb"
+    },
+    {
+      "bytes": 1928,
+      "path": "judge/harbor/app/GTgraph/SSCA2/globals.h",
+      "sha256": "sha256:04e89154cc74c8ffc267976f4b9c4d2609f8bf9c7544e66a16abcdc035f61f21"
+    },
+    {
+      "bytes": 8696,
+      "path": "judge/harbor/app/GTgraph/SSCA2/graph.c",
+      "sha256": "sha256:33fb1f1f4481591019e5c3e4052d104fdb6c446e1b937643ff54f5a1b2b4d15c"
+    },
+    {
+      "bytes": 246,
+      "path": "judge/harbor/app/GTgraph/SSCA2/graph.h",
+      "sha256": "sha256:d240e577d869a44d0dbf6127356cc9067014c466bbdcc3ad00de2d3663501a19"
+    },
+    {
+      "bytes": 4970,
+      "path": "judge/harbor/app/GTgraph/SSCA2/init.c",
+      "sha256": "sha256:846737a2e5c4189c90f729dfee3e93ce574361cfe0e3423bf7406fe8768aa2fa"
+    },
+    {
+      "bytes": 304,
+      "path": "judge/harbor/app/GTgraph/SSCA2/init.h",
+      "sha256": "sha256:e6495104624843571c3f7622fc85f165b4767b0229f01ce129e42ed732e7afdb"
+    },
+    {
+      "bytes": 5009,
+      "path": "judge/harbor/app/GTgraph/SSCA2/utils.c",
+      "sha256": "sha256:4458bffeb7e493874e472cadc92a7b3792566f6ef87d0308c76761f938761540"
+    },
+    {
+      "bytes": 716,
+      "path": "judge/harbor/app/GTgraph/SSCA2/utils.h",
+      "sha256": "sha256:c562e76e7f5b322c0f8c16bde2e891c74694d46cbb83b03f941baab52d333717"
+    },
+    {
+      "bytes": 1266,
+      "path": "judge/harbor/app/GTgraph/random/COPYRIGHT",
+      "sha256": "sha256:93e445c9ec8d654878146ed197b593d0310dc3ece4a2e8e81f88d02ade6d09c6"
+    },
+    {
+      "bytes": 263,
+      "path": "judge/harbor/app/GTgraph/random/Makefile",
+      "sha256": "sha256:817cd2b3ab8a036d36b20e7b06886044c57fe060e957451f7a1adbebab6a3e6a"
+    },
+    {
+      "bytes": 456,
+      "path": "judge/harbor/app/GTgraph/random/config",
+      "sha256": "sha256:23063b9b932e332f6e19906725a7cad854a6f37793354629829cfc5d6adc120a"
+    },
+    {
+      "bytes": 496,
+      "path": "judge/harbor/app/GTgraph/random/defs.h",
+      "sha256": "sha256:2805f558431fc3263c98af1d6aa978ae1e357fbea1148f17d8fd1a503d0421cc"
+    },
+    {
+      "bytes": 421,
+      "path": "judge/harbor/app/GTgraph/random/drive.c",
+      "sha256": "sha256:0b1026d1495956eb3cdc498f8fce703d95c5c4e5bdb082992952c082521734e8"
+    },
+    {
+      "bytes": 267,
+      "path": "judge/harbor/app/GTgraph/random/globals.c",
+      "sha256": "sha256:61b7082983037e280df7b0f1ff3f6ed55fbf07f8605dfa9da2cc11c269cc5b9f"
+    },
+    {
+      "bytes": 1320,
+      "path": "judge/harbor/app/GTgraph/random/globals.h",
+      "sha256": "sha256:5efe77772f507527cafa5ba1317711a02f18e411358db83fc777e6dc7231255d"
+    },
+    {
+      "bytes": 5414,
+      "path": "judge/harbor/app/GTgraph/random/graph.c",
+      "sha256": "sha256:4b7156eb1088fa3f3d830bbbdc5f3021ba141457ba84134fcc44e1133142a31e"
+    },
+    {
+      "bytes": 275,
+      "path": "judge/harbor/app/GTgraph/random/graph.h",
+      "sha256": "sha256:89002eaa47f71ae6e39243336f8d55d5152a61901721590feed07bc738d77bb6"
+    },
+    {
+      "bytes": 6079,
+      "path": "judge/harbor/app/GTgraph/random/init.c",
+      "sha256": "sha256:3528d29a16cf39585ef0bbb0d6ddd4b1003fb43db535fcd31c411883fc9c9351"
+    },
+    {
+      "bytes": 304,
+      "path": "judge/harbor/app/GTgraph/random/init.h",
+      "sha256": "sha256:e6495104624843571c3f7622fc85f165b4767b0229f01ce129e42ed732e7afdb"
+    },
+    {
+      "bytes": 5485,
+      "path": "judge/harbor/app/GTgraph/random/utils.c",
+      "sha256": "sha256:c89584e38ff0f341fd4cda27056f8b8bd04102433fddd27854014a11c903ed57"
+    },
+    {
+      "bytes": 751,
+      "path": "judge/harbor/app/GTgraph/random/utils.h",
+      "sha256": "sha256:47de9d852b0b70412d43cc13ad9bb333305cc9ce77b1e1614dac55bc51c425ca"
+    },
+    {
+      "bytes": 131,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/Makefile",
+      "sha256": "sha256:8010c015052e933cf5527a25da604548752a48b75507e9d8d2169c5b4a7860da"
+    },
+    {
+      "bytes": 1547,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/include/interface.h",
+      "sha256": "sha256:ca465d75baa665e19bf5c647bd97d3226e3878690e06e97bc73b86e8f07a1abb"
+    },
+    {
+      "bytes": 2077,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/include/sprng.h",
+      "sha256": "sha256:670ed25d1d32bf05c772bc7dc068aebd3596e33fc52b707b52f21df9313205f9"
+    },
+    {
+      "bytes": 4194,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/include/sprng_f.h",
+      "sha256": "sha256:41651e4ccc9b277fe4737640397f2cd104d640a4738dc02a44017fc4c7f71954"
+    },
+    {
+      "bytes": 30,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/lib/Makefile",
+      "sha256": "sha256:11ebfc583d0cc973e546af877f525f5c19967b28e2e04fd08ec83976bde0c030"
+    },
+    {
+      "bytes": 0,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/.insertlib",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 11843,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/.template.c",
+      "sha256": "sha256:c75f77a8455f1bed8467b32a3b54cec3234ba2012e2b14abe884af5c6a430a16"
+    },
+    {
+      "bytes": 1812,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/Makefile",
+      "sha256": "sha256:c889ed541f2ec7118ea6dd5ba90773dbcf71beb4dca1e7b00db0f6ddcabf3c37"
+    },
+    {
+      "bytes": 1857,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/checkid.c",
+      "sha256": "sha256:24131cc1fd9bdb41bd6e06663919a60be0bcae9523ff52e76bfb97441d33dba0"
+    },
+    {
+      "bytes": 299,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/cmrg/Makefile",
+      "sha256": "sha256:da363377665484ae915cd57074f4d2aa03e2591da614ae5cd08194c9d0ffe500"
+    },
+    {
+      "bytes": 19261,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/cmrg/cmrg.c",
+      "sha256": "sha256:db78fc71c2e9980e524e91865a0699a429680ce89f9c69d371e53af4ff5b1d23"
+    },
+    {
+      "bytes": 21372,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/cmrg/cmrg.data",
+      "sha256": "sha256:f929494c46de4492cc0ce9600166dfb1947fd444ae8260b786abf402abad4322"
+    },
+    {
+      "bytes": 805,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/cmrg/cmrg.h",
+      "sha256": "sha256:9bef334fe42807f38c7e93a3129765beef0c5d648811d4f36e3975929ca0d85d"
+    },
+    {
+      "bytes": 956,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/communicate.c",
+      "sha256": "sha256:e47eafe69ef710bddcc5736186673914083308de0079d13d04d04afd96fdff8a"
+    },
+    {
+      "bytes": 749,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/cputime.c",
+      "sha256": "sha256:5a5f5c05eca1408306ca687ad7f83f2dfb20eb7f90a537c6c487d1768cdb7406"
+    },
+    {
+      "bytes": 76,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/cputime.h",
+      "sha256": "sha256:d7644f58cf529e155426b262c39d328347c2b88b51b892a97298a078800fd682"
+    },
+    {
+      "bytes": 859,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/drand.c",
+      "sha256": "sha256:314145ed0fe18ff17f68fbd67a1b9b88198ac99cbb942546e5de3e8dbbb12d54"
+    },
+    {
+      "bytes": 5024,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/fwrap.h",
+      "sha256": "sha256:8dcbde380bcf425f976e43e57604720710433cae71de2f391412a2905619e7b4"
+    },
+    {
+      "bytes": 7002,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/fwrap_.h",
+      "sha256": "sha256:90818ae111c4e0e8bd3d7c61f9b4f400eb282396cb3bda4d3e4861531cb4c313"
+    },
+    {
+      "bytes": 1992,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/fwrap_mpi.c",
+      "sha256": "sha256:d120091381af1e00acf49ab532f38c996af712705386c1a695321c8d2e3fbbe3"
+    },
+    {
+      "bytes": 1547,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/interface.h",
+      "sha256": "sha256:ca465d75baa665e19bf5c647bd97d3226e3878690e06e97bc73b86e8f07a1abb"
+    },
+    {
+      "bytes": 313,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg/Makefile",
+      "sha256": "sha256:35fafcfc868c62cbf3dd6d9d277e9c066ec2f6b36eb5d48a1537f930494bcbc3"
+    },
+    {
+      "bytes": 176,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg/READMEver2.CHANGES",
+      "sha256": "sha256:e24879116d9b52556f35c963ee3b186656ec1e21bf2066eff6aac913bb23b1d4"
+    },
+    {
+      "bytes": 22533,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg/lcg.c",
+      "sha256": "sha256:2cc927438e2df4fef7758c24c66346b308e3c8aaa40a866927c63f40c760fe14"
+    },
+    {
+      "bytes": 21396,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg/lcg.data",
+      "sha256": "sha256:8b706352cbb368854a96574f4d855d7657e769154197bb9b94f925bf065d35ad"
+    },
+    {
+      "bytes": 796,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg/lcg.h",
+      "sha256": "sha256:650fbe7324d80435715dbacec23b76ff071f8b62a2fedcd54123b1155c0efec1"
+    },
+    {
+      "bytes": 320,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg64/Makefile",
+      "sha256": "sha256:7ba2e199e4fcb955d65c8c015336a2d121e32ab88d4b42a5e9eab784494a2415"
+    },
+    {
+      "bytes": 17130,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg64/lcg64.c",
+      "sha256": "sha256:06dc1e4d01ca1f7ff4722f847d46b0e288d404d0c354cf038caaf038ede1bb0c"
+    },
+    {
+      "bytes": 21378,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg64/lcg64.data",
+      "sha256": "sha256:ce7474255577052ed8b8742fb7326d0901f5c6d5b00b2c4ef7a66aaf6c6b59f6"
+    },
+    {
+      "bytes": 817,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lcg64/lcg64.h",
+      "sha256": "sha256:a5bc6fa01b5f9cecff466ea01f895f3433e5c2c09f1bb375c37cfeffff326721"
+    },
+    {
+      "bytes": 309,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lfg/Makefile",
+      "sha256": "sha256:18d2e8d464f0688acd79ebebe9c218407843185bc3a036a57511dcccbf545d1e"
+    },
+    {
+      "bytes": 29809,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lfg/lfg.c",
+      "sha256": "sha256:680fe87d2b37dcc72f2c068dc1f35e04f86ac1eed8647ecc2fcbdd75ba4e3dda"
+    },
+    {
+      "bytes": 21387,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lfg/lfg.data",
+      "sha256": "sha256:448c36c3b7d7de778b3afb886866403709c57210c69c1666d4b4840318261cb0"
+    },
+    {
+      "bytes": 793,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/lfg/lfg.h",
+      "sha256": "sha256:492fb8a9babf83a7cf9dd2613287ba064abecab266c8b4f7c632dcf583004103"
+    },
+    {
+      "bytes": 676,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/makeseed.c",
+      "sha256": "sha256:2aa7c0164d3df479fcb64792682e9cbf77ebf405b246ffcef3fa4a0a4667061d"
+    },
+    {
+      "bytes": 458,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/memory.c",
+      "sha256": "sha256:d86a258cc4578f270874b33bd904071e1188b21a5a2aae00fb8522ef85bba603"
+    },
+    {
+      "bytes": 235,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/memory.h",
+      "sha256": "sha256:63f240d28033e948edf77717e37b784a96092882af510d7546bd23a32957eaa7"
+    },
+    {
+      "bytes": 675,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/mlfg/Makefile",
+      "sha256": "sha256:40624f2e102f5ec739768ec04eafb9e1768b6624982e24f0fed2fda52a2d2c64"
+    },
+    {
+      "bytes": 3759,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/mlfg/int64.h",
+      "sha256": "sha256:68ce864f6c3fffc17c70d4f63a76b0c7de7ccf67bd835751f479a27ef5a3d6c7"
+    },
+    {
+      "bytes": 20612,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/mlfg/mlfg.c",
+      "sha256": "sha256:78b7999bd61c26d6843dcf0192743d10b143b7b8bcf81bb9f9a45015193ec9f8"
+    },
+    {
+      "bytes": 21394,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/mlfg/mlfg.data",
+      "sha256": "sha256:2e5357929601ef573ce728197bbd3c69bacce82beba3ecaac6423a62cada34ad"
+    },
+    {
+      "bytes": 805,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/mlfg/mlfg.h",
+      "sha256": "sha256:599e450213071199e73aca6d0518f8b06ccb36edd2fc15ae1d2b1dd60a41f012"
+    },
+    {
+      "bytes": 845,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/multiply.h",
+      "sha256": "sha256:e42fe3a26209ba2dec69ec1a1eeeb7a6100f8995ac00724be6ecc452c77aba83"
+    },
+    {
+      "bytes": 17144,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/primelist_32.h",
+      "sha256": "sha256:049cb2c01a5e61697b40c3f55b63c27344479c0a8061b67e10475953c4c357a5"
+    },
+    {
+      "bytes": 197365,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/primelist_64.h",
+      "sha256": "sha256:b8004fab92631624acb60fd47bac75f5338217de7bc28631200cce6c44a8ca8c"
+    },
+    {
+      "bytes": 2871,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/primes_32.c",
+      "sha256": "sha256:ab37ee0950eab393a3b6103c069d81529b09db4ae40b2fa85111f8e972c354b0"
+    },
+    {
+      "bytes": 360,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/primes_32.h",
+      "sha256": "sha256:1c8b82658fb3e7893a618bf54c9ace35e8bb6589ae91503e7663b120eaff8446"
+    },
+    {
+      "bytes": 2901,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/primes_64.c",
+      "sha256": "sha256:7e47a4bb02c1483943aca3fb7408109f86ea931ce8f0a02ac411fbfcfcfb3769"
+    },
+    {
+      "bytes": 430,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/primes_64.h",
+      "sha256": "sha256:689e81b8c21d0b98cb7ec6a3dccaa078c6dbbc0e9db7619bdadf92f1fdb2584a"
+    },
+    {
+      "bytes": 2131,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/simple.c",
+      "sha256": "sha256:3021d8e64285b07304015484683298cbae14d09772eb38f14a9b07339fac9e33"
+    },
+    {
+      "bytes": 2223,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/simple_.h",
+      "sha256": "sha256:192a1eacc8cdfd6bccf3a29d0bdc4669739b814b0d7c9665c113d3bc618859bf"
+    },
+    {
+      "bytes": 3148,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/simple_mpi.c",
+      "sha256": "sha256:2d65925ac4b1a96a02c6666411332eedcbd3654f89d0539631830a8c8cc4dfa6"
+    },
+    {
+      "bytes": 1560,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/sprng/Makefile",
+      "sha256": "sha256:cf151073231f88bcb4cd02a4803d98e00bcdf346d2109b3b37d69e62790e4299"
+    },
+    {
+      "bytes": 423,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/sprng/READMEver2.CHANGES",
+      "sha256": "sha256:0cd9f38a28fd520c7fd0e42e7a7c09ddb08c4f9e3a63f2abdaf77ad503541f00"
+    },
+    {
+      "bytes": 7016,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/sprng/sprng.c",
+      "sha256": "sha256:d54bc7ba9e879176554252b716d9620f054f58be18e33a2491ea2734d88e6cb5"
+    },
+    {
+      "bytes": 2096,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/sprng.h",
+      "sha256": "sha256:d84454ddb21613adcadd2b259037f51fb3b6de8f7345286f9e1b344abd612e40"
+    },
+    {
+      "bytes": 4194,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/sprng_f.h",
+      "sha256": "sha256:41651e4ccc9b277fe4737640397f2cd104d640a4738dc02a44017fc4c7f71954"
+    },
+    {
+      "bytes": 2909,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/store.c",
+      "sha256": "sha256:3339a36b6d7c02279dd541c42128f63a5fcbc99e723fc3277441ab3045683c8f"
+    },
+    {
+      "bytes": 1035,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/store.h",
+      "sha256": "sha256:0795d119859cf6866fab99ae51c75590932de1bcbcdf9cc2fb8cc004dc0b3138"
+    },
+    {
+      "bytes": 1998,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/timing.c",
+      "sha256": "sha256:d56fe6e309495df1d8134763a9a0b0ddd4d6a54f7399ac5e7719fd282129c8b2"
+    },
+    {
+      "bytes": 2316,
+      "path": "judge/harbor/app/GTgraph/sprng2.0-lite/src/timingf.f",
+      "sha256": "sha256:95cb4d8e12334db9f6a905a406c1000ecd8be6d7410caf56bdafe8824c13bbf0"
+    },
+    {
+      "bytes": 6086,
+      "path": "judge/harbor/app/IO.h",
+      "sha256": "sha256:acb1c39fca40d6ca0ea7fa3b2535723b856b41f1829484ec2404fc309b2f114c"
+    },
+    {
+      "bytes": 1326,
+      "path": "judge/harbor/app/LICENSE.md",
+      "sha256": "sha256:e96e53238c75c40cbd0a6e4d04a8873f9e41b77b7d16feb725f5ce6e333aadb1"
+    },
+    {
+      "bytes": 622,
+      "path": "judge/harbor/app/Triple.h",
+      "sha256": "sha256:d7eddb0ceb16435dc1c51ab63fae29d6ccc02ab7b9827842010b7590ba789054"
+    },
+    {
+      "bytes": 326,
+      "path": "judge/harbor/app/cluster_utility.h",
+      "sha256": "sha256:07af499cfac07b64bca04f69cd31d80416491e51aea4006dc8b0d7e936eed330"
+    },
+    {
+      "bytes": 118,
+      "path": "judge/harbor/app/frontier-bench.sh",
+      "sha256": "sha256:e509a857c6767a791db881eea6969a490224c8133fb8315be6f0be03696c538d"
+    },
+    {
+      "bytes": 118,
+      "path": "judge/harbor/app/frontier-build.sh",
+      "sha256": "sha256:9f995f25965a963f76bbf3c9e03f7e828419eb9d344f37f2c16461e55b3f6aac"
+    },
+    {
+      "bytes": 109,
+      "path": "judge/harbor/app/frontier-runtime.json",
+      "sha256": "sha256:5f1fa0dbb5b4d5561b8901873a2a6d3b10be0b7a24880fb70eb3f14520196f44"
+    },
+    {
+      "bytes": 3242,
+      "path": "judge/harbor/app/frontier_runtime.py",
+      "sha256": "sha256:17f50e9cdd0c2bbca330254eed226df3133790039dfde5f14cfaf5d08f3e80ce"
+    },
+    {
+      "bytes": 784,
+      "path": "judge/harbor/app/hash_mult.h",
+      "sha256": "sha256:2e05152e6c553292c986b1e022d5d7dcd6d012f4a1dfaf4574908ded72b705f6"
+    },
+    {
+      "bytes": 544,
+      "path": "judge/harbor/app/hash_mult_flengthcluster.h",
+      "sha256": "sha256:68b2187fa078c9e24e003444979508474c776897f69eb60ea08a16d7e5e95032"
+    },
+    {
+      "bytes": 444,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:8dd5ef6a0befbd2ae5e29b9add2bc8035cc7750e426fabd0400d9d317373bb69"
+    },
+    {
+      "bytes": 1188,
+      "path": "judge/harbor/app/makefile",
+      "sha256": "sha256:4b077d8b285a6b91c5aaebe23a4970a803ad4e780f716b654692505aa68bacaa"
+    },
+    {
+      "bytes": 832,
+      "path": "judge/harbor/app/multiply.h",
+      "sha256": "sha256:569054e3d1c805ac2092eaab385db558bc261e9d9b955eb77b6935b0d9a16b5b"
+    },
+    {
+      "bytes": 5291,
+      "path": "judge/harbor/app/sample/ReorderedFlengthClusterSpGEMM.cpp",
+      "sha256": "sha256:47b3dbe0bd83415d984483e144ed7cdc7f16cec3fd26e0941b708151fb9dbe0e"
+    },
+    {
+      "bytes": 2505,
+      "path": "judge/harbor/app/sample/ReorderedFlengthClusterSpGEMM_kernel.cpp",
+      "sha256": "sha256:d0e4a0081c42939913c3aa2293cac87e0ea86f48750ad7c1969760c4228ade8f"
+    },
+    {
+      "bytes": 1690,
+      "path": "judge/harbor/app/sample/ReorderedFlengthClusterSpGEMM_kernel.h",
+      "sha256": "sha256:db73e047a59215b37f768cfedd975b17c2ab1e1ff5d727afd034532e50b973ad"
+    },
+    {
+      "bytes": 7054,
+      "path": "judge/harbor/app/sample/sample_common.hpp",
+      "sha256": "sha256:7e0747ba79c603117193e428748f338191d5176ba6c07b73cdd04a29802798d0"
+    },
+    {
+      "bytes": 17783,
+      "path": "judge/harbor/app/utility.h",
+      "sha256": "sha256:d896a986bc98aecdf2e02876b475698d6f056dec6874bd2306cfae272c44eec6"
+    },
+    {
+      "bytes": 13092,
+      "path": "judge/link_guard.py",
+      "sha256": "sha256:45a4cbbb0f7b8026446b46e9277a92768bf7abdde32d65a6b9e7d2f186dbab5f"
+    },
+    {
+      "bytes": 6754,
+      "path": "judge/oracle/ordered_oracle.hpp",
+      "sha256": "sha256:e16bce2ec7ac7fa04f5e0fef0f335f4b45f66e933c268d57f6d872753a14f191"
+    },
+    {
+      "bytes": 3009,
+      "path": "judge/oracle/preprocess.cpp",
+      "sha256": "sha256:da4d8cf9176a0ba0b33d40ad962e982261b914c6f02a0de1bd6203e84f11937c"
+    },
+    {
+      "bytes": 4701,
+      "path": "judge/process_guard.py",
+      "sha256": "sha256:c8256e3d7d0f203280e54f0c21d088d311ad3c045d61765516d0fff4c116487d"
+    },
+    {
+      "bytes": 6832,
+      "path": "judge/product_oracle.py",
+      "sha256": "sha256:e0533d194c4ec99b7f7b5deb45b1495f3d2f44a07d0548746126788560b4d7c6"
+    },
+    {
+      "bytes": 7635,
+      "path": "judge/readme",
+      "sha256": "sha256:2fb95b245397a91e186f6cd4a71cf759da39e849f6bea32db3cd4b4523c3a4f8"
+    },
+    {
+      "bytes": 119737,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:e2fcf74c8c5cfe02efeb4bdc0b3fd93fe6c08de1ec0f0e1465848cb40c37abe0"
+    },
+    {
+      "bytes": 2359,
+      "path": "judge/runtime-config.json",
+      "sha256": "sha256:f5aa7f337644a24e1f7d6cb7b6a34d1489111cf9fdc5d722eda97a53ac9162ef"
+    },
+    {
+      "bytes": 7248,
+      "path": "judge/runtime_context.py",
+      "sha256": "sha256:e4ed1bee3c9d8ce5704f35d795f225284044febfb4996cff70a98b1dc21b3d6a"
+    },
+    {
+      "bytes": 5410,
+      "path": "judge/runtime_contract.py",
+      "sha256": "sha256:787c8e54cf57f6ae3f2542afa4f8b85ecaba25e30a1ade090c0d17dd90fe8ac9"
+    },
+    {
+      "bytes": 18933,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:044afa89bd6459603c29dc6dce02eadab8ee9a3a8c3b144ba674276dba679d60"
+    },
+    {
+      "bytes": 13790,
+      "path": "judge/trusted_runner.py",
+      "sha256": "sha256:31469a37078c8105cc41ee732e91c67b0dc98df3fad800070c2d87c862574987"
+    },
+    {
+      "bytes": 6757,
+      "path": "judge/workloads.json",
+      "sha256": "sha256:e2c916b4e83fda12d3ca1e4c9e049059acabef04e7200e0992425f0c8be1310a"
+    },
+    {
+      "bytes": 3132,
+      "path": "policy.json",
+      "sha256": "sha256:903e76bb42811c9382dc27457fd413147b72d1d034c8becc3caf7434fecef55b"
+    },
+    {
+      "bytes": 3110,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:5650b863dc1aa398710368c873314f6034354587a240845a733491d13f2d3954"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 33930,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:8a65d96e7bbf23012e20d3558ab9858374f4c55bc50d9b8f41470d87bd91abf5"
+    },
+    {
+      "bytes": 355,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:508d5e635352cd9208a0d795bf7288a7b683bc271d51e3e9f9a9caa1ee246481"
+    }
+  ],
+  "native_process_diagnostics": {
+    "datasets_changed": false,
+    "kind": "private_trusted_native_failure_observation",
+    "measurement_clock_changed": false,
+    "observations": [
+      "trusted_candidate_or_reference_side",
+      "actual_process_returncode",
+      "executed_binary_sha256",
+      "cgroup_memory_events_before_and_after",
+      "cgroup_memory_current_and_peak"
+    ],
+    "resource_limits_changed": false,
+    "scientific_scoring_changed": false
+  },
+  "openmp_scan_team_repair": {
+    "actual_omp_team_partitioning": true,
+    "issue": 238,
+    "last_unused_partial_sum_avoids_read_past_input": true,
+    "prefix_sum_mathematics_preserved": true,
+    "resource_limits_workloads_scoring_reference_algorithm_preserved": true,
+    "shared_utility_paths": [
+      "agent-base/frontier/task/repo/utility.h",
+      "judge/harbor/app/utility.h"
+    ]
+  },
+  "oracle_validation_cache_repair": {
+    "changes": [
+      "same-workload complete-byte identity reuse after successful full numeric oracle validation",
+      "distinguish trusted aggregate judge deadline from native child time limit"
+    ],
+    "parent_source_set_sha256": "sha256:3663b58cc9ab1b77acd14b1c9aadef543462acbf781da73dc508e816d336923b",
+    "scientific_workloads_thresholds_timing_and_budgets_unchanged": true
+  },
+  "problem_id": "clusterwise_spgemm",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "evaluator_sha256": "sha256:d9b4776a7212b03c4321ddfb4e68a1eb1e7f55fc1406754fad83cf047df85766",
+    "statement_sha256": "sha256:e7f6e3c145eb499eb517f3da01045c7ebd118287cb697ef60b564ca3cc27a5f4",
+    "task_dir": "clusterwise_spgemm"
+  }
+}

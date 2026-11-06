@@ -1,4 +1,4 @@
-"""QuarterPIR judge (#757 layout).
+"""QuarterPIR judge (layout).
 
 The shared verifier applies the patch (only quarter_pir/code/pir/ may change) and calls
 check_tree(), which builds the trusted tools once per task version and runs the source policy:

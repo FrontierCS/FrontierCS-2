@@ -1,4 +1,4 @@
-"""Judge of lwe_structured_recovery for the shared verifier (#757): evaluate(tree).
+"""Judge of lwe_structured_recovery for the shared verifier: evaluate(tree).
 
 `tree` is the starter repo with the submission's one allowed file, `solution.json` (the
 witness ledger), overlaid. The checker and the 200-instance catalog come from the trusted

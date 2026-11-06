@@ -1,4 +1,4 @@
-"""bounded_evm_path_prediction judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+"""bounded_evm_path_prediction judge: evaluate(tree) for the shared FrontierCS2 verifier.
 
 Scoring. The judged tree (pristine/ + the submitted core/vm/predictor.go), the reference
 (upstream_predictor.go) and the always-taken calibration predictor (baseline_naive.go) are
@@ -17,7 +17,7 @@ beats_reference = 1 iff every metric passes on every row. Train also returns raw
 branch_accuracy, transaction_path_accuracy and observations of the scored epoch.
 
 Every build and replay (candidate, reference and calibration alike) runs in the shared test
-sandbox (#757): a fresh instance that reads only the system and its own copy of the sources or
+sandbox: a fresh instance that reads only the system and its own copy of the sources or
 the snapshot, gets a clean environment and leaves nothing running.
 
 The shared verifier has already applied the patch with the shared edit scope; check_tree

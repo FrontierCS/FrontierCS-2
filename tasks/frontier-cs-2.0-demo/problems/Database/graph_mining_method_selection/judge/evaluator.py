@@ -1,4 +1,4 @@
-"""graph_mining_method_selection judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+"""graph_mining_method_selection judge: evaluate(tree) for the shared FrontierCS2 verifier.
 
 Scoring. The judged tree's `threshold` (pristine/ + the submitted performance_model/src/
 main.py) is called once per case of the suite (112 measured configurations; train and final

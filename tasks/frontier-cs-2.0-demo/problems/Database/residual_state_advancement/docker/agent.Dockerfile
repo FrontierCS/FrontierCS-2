@@ -5,7 +5,7 @@
 ARG AGENT_BASE
 FROM ${AGENT_BASE}
 
-# The packages of the task's previous image (python:3.12-slim-bookworm, #757): the same
+# The packages of the task's previous image (python:3.12-slim-bookworm): the same
 # Python packages, pinned to the versions it had, on the shared base's Python 3.12.
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \

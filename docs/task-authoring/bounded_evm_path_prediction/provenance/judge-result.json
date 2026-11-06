@@ -1,0 +1,137 @@
+{
+  "schema": "frontiersmith/result@1",
+  "task_id": "bounded_evm_path_prediction",
+  "run_id": "r_top75_6e3582446a",
+  "candidate_id": "cand_001",
+  "final": {
+    "round": 3,
+    "reference": {
+      "ok": true,
+      "samples": 5,
+      "scores": [
+        80.44069341508703,
+        80.44069341508703,
+        80.44069341508703,
+        80.44069341508703,
+        80.44069341508703
+      ],
+      "dev_scores": [
+        79.25568065755016,
+        79.25568065755016,
+        79.25568065755016,
+        79.25568065755016,
+        79.25568065755016
+      ],
+      "spread": {
+        "n": 5,
+        "spread": 0.0,
+        "mean": 80.44069341508703,
+        "rel": 0.0
+      },
+      "reasons": [],
+      "round": 3
+    },
+    "trials": [
+      {
+        "round": 3,
+        "idx": 0,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.8115668482737801,
+        "score": 81.15668482737802,
+        "beats_reference": 1,
+        "reference_score": 80.44069341508703,
+        "margin": 0.7159914122909896,
+        "submissions": 19,
+        "cost": 10.241115,
+        "wall_s": 2338.241696,
+        "status": "scored"
+      },
+      {
+        "round": 3,
+        "idx": 1,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.8136639301967693,
+        "score": 81.36639301967693,
+        "beats_reference": 1,
+        "reference_score": 80.44069341508703,
+        "margin": 0.9256996045899086,
+        "submissions": 27,
+        "cost": 13.301143749999996,
+        "wall_s": 2508.088049,
+        "status": "scored"
+      },
+      {
+        "round": 3,
+        "idx": 2,
+        "agent": "redacted",
+        "model": "redacted",
+        "reward": 0.8121873025871303,
+        "score": 81.21873025871304,
+        "beats_reference": 1,
+        "reference_score": 80.44069341508703,
+        "margin": 0.7780368436260119,
+        "submissions": 17,
+        "cost": 9.065142500000004,
+        "wall_s": 2106.034704,
+        "status": "scored"
+      }
+    ],
+    "best_reward": 0.8136639301967693,
+    "n_beating_reference": 3
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "revise",
+      "scores": {
+        "paper_alignment": 45,
+        "difficulty": 66,
+        "stability": 100,
+        "statement_quality": 90
+      },
+      "trials": 1,
+      "best_reward": 0.8061230260849481
+    },
+    {
+      "round": 2,
+      "verdict": "accept",
+      "scores": {
+        "paper_alignment": 96,
+        "difficulty": 56,
+        "stability": 100,
+        "statement_quality": 93
+      },
+      "trials": 3,
+      "best_reward": 0.8149906814506725
+    },
+    {
+      "round": 3,
+      "verdict": "accept",
+      "scores": {
+        "paper_alignment": 90,
+        "difficulty": 66,
+        "stability": 100,
+        "statement_quality": 94
+      },
+      "trials": 3,
+      "best_reward": 0.8136639301967693
+    }
+  ],
+  "judge_pre_execution": {},
+  "cost_usd": {
+    "total": 125.39,
+    "by_stage": {
+      "reproduce": 0.26,
+      "contribs": 0.28,
+      "generate": 6.91,
+      "judge": 0.33,
+      "refine": 4.51,
+      "trials": 97.73,
+      "review": 0.57,
+      "re-refine": 14.76,
+      "finalise": 0.04
+    }
+  }
+}

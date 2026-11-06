@@ -1,0 +1,30 @@
+{
+  "task_id": "runlts_predictor",
+  "status": "private_data_pinned_native_unqualified",
+  "framework_commit": "607496629452740887dc1b90a46834cc90dda1e0",
+  "upstream_root": "runlts_predictor/code",
+  "paper_sha256": "fef81aa0218507ed49d1d2ef5022a422d699a42f9e6112bfd75c8dab134faca9",
+  "archive_sha256": "357e152fc7ef890c423ff1e1397d971d17660abeb9010533cd68002eb7c5c5f2",
+  "submission_files": {
+    "my_cond_branch_predictor.cc": "dd673059e19faa9d6902490e6a2d511aec51092ed1de9e0b7568080b2d0590d5",
+    "my_cond_branch_predictor.h": "426c870ff54e8c80ca149a4ad3e49e96eecf4b38e1f938a9bb8c46ccf414c0be",
+    "cond_branch_predictor_interface.cc": "05035f8ec4004d90374c7438da9f43c287e3a2753a428c5cee58ed4f53208d27"
+  },
+  "beat_spec_sha256": "f5674d6641c03eb84142f3268be68e5c93065001b77331228087db2c17ebca3c",
+  "full105_identity_sha256": "71505618b468179e5d03664d7d414e5da4d54347a3fe4fecd1b9bac75bab1386",
+  "data_checksums": {
+    "manifest_sha256": "aa79106fa01668716f80f2cb88ece2cb53ab62b7645e1edd127b5a1c9a5b2dd2",
+    "training_pins_sha256": "2e1a5ef8a39077a585c9b1ede6bb1d7f0833c4010fe3dc0329f530352a66fd33",
+    "members": 105
+  },
+  "source_notices": "preserved verbatim; private manufacture authorized; publication not performed",
+  "requested_model": "redacted",
+  "actual_underlying_provider_model": "UNKNOWN",
+  "budget": {
+    "cumulative_usd": 1000,
+    "this_phase_reserve_usd": 100,
+    "historical_actual_cost": "UNKNOWN",
+    "invoice_cost": "UNKNOWN"
+  },
+  "prior_reproduction_sha256": "c057ecadf97de1f2c193d3455b1035e6e49d0f20f76511a3105a713c23f6ec3b"
+}

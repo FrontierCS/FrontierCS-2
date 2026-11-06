@@ -1,0 +1,47 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "lwe_structured_recovery",
+  "domain": "security",
+  "promotion": {},
+  "generated_at": "2026-09-12T00:33:03.703377+00:00",
+  "generator": {
+    "pipeline": null,
+    "commit": null,
+    "run_id": null,
+    "candidate_id": null,
+    "config_sha256": null
+  },
+  "paper": {
+    "paper_id": null,
+    "title": null,
+    "authors": [],
+    "year": null,
+    "venue": null,
+    "pdf_url": null,
+    "doi": null
+  },
+  "rank": {
+    "rank": null,
+    "overall_score": null,
+    "recommendation": null,
+    "scores": {},
+    "risks": []
+  },
+  "artifact": {
+    "repo_url": null,
+    "commit": null,
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": "Structured-LWE Public Witness Recovery",
+    "summary": "Recover valid public witnesses for a fixed catalog of 200 structured LWE instances.",
+    "paper_location": null,
+    "code_location": [
+      "2.0/problems/lwe_structured_recovery"
+    ],
+    "metric": "solved_count"
+  },
+  "host": null,
+  "provenance_note": "Manual native-format transfer of a legacy public task; not Smith-generated, ranked or promoted. No source paper was identified in the supplied task. Actual trial host facts are recorded in trial evidence, not inferred from policy. No separate research-code artifact has been identified. The benchmark migration source is recorded in policy.json metadata.conversion and upstream.lock.json; it is not a Smith paper artifact."
+}

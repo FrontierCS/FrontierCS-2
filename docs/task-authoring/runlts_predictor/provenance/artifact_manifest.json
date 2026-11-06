@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "runlts_predictor/code",
+  "authentic_execution": {
+    "entrypoint": "lib/cbp.cc",
+    "retained_files": [
+      "Makefile",
+      "lib/Makefile",
+      "lib/cbp.cc",
+      "lib/trace_reader.h",
+      "lib/uarchsim.cc",
+      "lib/uarchsim.h",
+      "lib/bp.cc",
+      "lib/bp.h",
+      "cbp.h",
+      "lib/sim_common_structs.h",
+      "cond_branch_predictor_interface.cc",
+      "my_cond_branch_predictor.h"
+    ]
+  },
+  "source_execution_spine": {
+    "entrypoint": "runlts_predictor/code/lib/cbp.cc",
+    "retained_files": [
+      "runlts_predictor/code/Makefile",
+      "runlts_predictor/code/lib/Makefile",
+      "runlts_predictor/code/lib/cbp.cc",
+      "runlts_predictor/code/lib/trace_reader.h",
+      "runlts_predictor/code/lib/uarchsim.cc",
+      "runlts_predictor/code/lib/uarchsim.h",
+      "runlts_predictor/code/lib/bp.cc",
+      "runlts_predictor/code/lib/bp.h",
+      "runlts_predictor/code/cbp.h",
+      "runlts_predictor/code/lib/sim_common_structs.h",
+      "runlts_predictor/code/cond_branch_predictor_interface.cc",
+      "runlts_predictor/code/my_cond_branch_predictor.h"
+    ],
+    "status": "ran",
+    "evidence": "Reproduction built the original simulator and ran ./cbp sample_traces/fp/sample_fp_trace.gz and ./cbp sample_traces/int/sample_int_trace.gz. lib/bp.cc invokes get_cond_dir_prediction and spec_update; lib/uarchsim.cc schedules register callbacks and wrong-path accounting; the original interface forwards register events to RUNLTS. Preserve this wiring and callback timing byte-for-byte.",
+    "command": "./cbp <original_trace.gz>"
+  },
+  "excision": [
+    {
+      "path": "my_cond_branch_predictor.cc",
+      "mode": "stubbed",
+      "symbols": [
+        "decode_notify",
+        "execute_notify"
+      ],
+      "stripped_symbols": [
+        "RBias_",
+        "WR_",
+        "RegFileStateEntry",
+        "RegFileState",
+        "make_reg_digest",
+        "rbias_index",
+        "register_values",
+        "best_reg"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "my_cond_branch_predictor.cc"
+    ],
+    "add_under": [
+      "solver_extensions/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "make_submission.sh",
+      "reason": "Patch packaging adapter stages newly authored helper files; no predictor implementation."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "cbp2016_tage_sc_l.h",
+    "cbp2016_tage_sc_l_192kb.h",
+    "scripts/trace_exec_training_list.py"
+  ],
+  "minimality_note": "Original flat simulator tree; plan paths normalized against explicit upstream_root by runtime compatibility repair. Only selected register core excised."
+}

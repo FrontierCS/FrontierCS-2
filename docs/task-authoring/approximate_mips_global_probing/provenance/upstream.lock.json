@@ -1,0 +1,365 @@
+{
+  "datasets": {
+    "eval": {
+      "bytes": 491,
+      "path": "datasets/eval.json",
+      "version": "sha256:7aa3cdb7c8b6f0189627de7b48d38d6678216b2c6488585cb87f8d4db2ee2c5e"
+    },
+    "train": {
+      "bytes": 498,
+      "path": "datasets/train.json",
+      "version": "sha256:80c37e9f64adb576a03f2c85892b3b6c4ed4b63f9569ab208cf99ac495e4d986"
+    }
+  },
+  "file_count": 68,
+  "files": [
+    {
+      "bytes": 41,
+      "path": ".dockerignore",
+      "sha256": "sha256:0b36d51ffdb123f440ee02c941afbe1ffb155e51156cad8d69a9215548a1e125"
+    },
+    {
+      "bytes": 1967,
+      "path": "agent-base/Dockerfile",
+      "sha256": "sha256:50c87136e4bf7dafef03bf76805acf5e2f3f813a1c6d7cc4c96c4f4616a9b5ea"
+    },
+    {
+      "bytes": 4412,
+      "path": "agent-base/frontier/task/README.md",
+      "sha256": "sha256:9575364a47991a6263320518ef4fc2d78529c89c1677bd3ef511887639ae3613"
+    },
+    {
+      "bytes": 1087,
+      "path": "agent-base/frontier/task/bin/README.md",
+      "sha256": "sha256:658ccd365082f0e61dcce58e781baf656fa94478485ea71e260736b6fead90d4"
+    },
+    {
+      "bytes": 4701,
+      "path": "agent-base/frontier/task/bin/fcs2_submission.py",
+      "sha256": "sha256:e30be129d058c029890e87878c19139d4e59b7899d1c30fb81abde75979c3f4d"
+    },
+    {
+      "bytes": 74,
+      "path": "agent-base/frontier/task/bin/make_submission.sh",
+      "sha256": "sha256:8aedf41252991b16649919d674dafdb91021a20078fb7a61236cef63305f66de"
+    },
+    {
+      "bytes": 788,
+      "path": "agent-base/frontier/task/bin/prepare_workspace.sh",
+      "sha256": "sha256:ae6f83743d9d3c8be0c6681f40b9fdaada5b8c1f3682d06421a94cd8ae87e9e3"
+    },
+    {
+      "bytes": 117,
+      "path": "agent-base/frontier/task/bin/submission-policy.json",
+      "sha256": "sha256:bdd962e4ddc467a4859fba23c29aee7788395e668de861e6c940c39735e44484"
+    },
+    {
+      "bytes": 18365,
+      "path": "agent-base/frontier/task/bin/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 38,
+      "path": "agent-base/frontier/task/repo/.gitignore",
+      "sha256": "sha256:b188dd66337084dcf0fd86051fbf58ec74ba7f2408492d198a7086ea0613cc47"
+    },
+    {
+      "bytes": 942,
+      "path": "agent-base/frontier/task/repo/.submission-base/src/alg.cpp",
+      "sha256": "sha256:03715b4d54e08800a993a8cf33a0fcf45075c7b4bdd56937055d890e7c59ea78"
+    },
+    {
+      "bytes": 1392,
+      "path": "agent-base/frontier/task/repo/.submission-manifest.sha256",
+      "sha256": "sha256:99d59abe2e55f0edc8e88c744a345c5930ad29f8945c681c093ea7b71903615f"
+    },
+    {
+      "bytes": 256,
+      "path": "agent-base/frontier/task/repo/Makefile",
+      "sha256": "sha256:67cdc73535f8e0d266783d5d31be71bd22939b9c086b46502ba005fb9660efc6"
+    },
+    {
+      "bytes": 7539,
+      "path": "agent-base/frontier/task/repo/README.md",
+      "sha256": "sha256:09de125fd689baf994c87eedd7613b26df2fb1e26539d19e8e46e1e065d2495f"
+    },
+    {
+      "bytes": 3919,
+      "path": "agent-base/frontier/task/repo/UPSTREAM_README.md",
+      "sha256": "sha256:ec9881ab52852f3f6d799fe7f86d0ae99396ddd56b7d5da80e5e5ae5aefea0c4"
+    },
+    {
+      "bytes": 1062,
+      "path": "agent-base/frontier/task/repo/make_submission.sh",
+      "sha256": "sha256:76240afcba10a03daa47d649001c8991011b7480d882b8020d50c6fc915ce93e"
+    },
+    {
+      "bytes": 9986,
+      "path": "agent-base/frontier/task/repo/src/Preprocess.cpp",
+      "sha256": "sha256:00fb1d9843eb49bb48e035ef81da11893c6347fdd18e6974a6b855841ad45326"
+    },
+    {
+      "bytes": 2108,
+      "path": "agent-base/frontier/task/repo/src/Preprocess.h",
+      "sha256": "sha256:8696fe85413ee393b513bfd92a623809c62802689231a79ecb21172b7434f606"
+    },
+    {
+      "bytes": 347,
+      "path": "agent-base/frontier/task/repo/src/StructType.h",
+      "sha256": "sha256:fd39a12a339d2754a9e810eaede85f8ae980584cf780efa95db1047a496acdb7"
+    },
+    {
+      "bytes": 942,
+      "path": "agent-base/frontier/task/repo/src/alg.cpp",
+      "sha256": "sha256:03715b4d54e08800a993a8cf33a0fcf45075c7b4bdd56937055d890e7c59ea78"
+    },
+    {
+      "bytes": 247,
+      "path": "agent-base/frontier/task/repo/src/basis.cpp",
+      "sha256": "sha256:a169142360d909b00d91e177eee9e81d16dc21a6015b9f6878dbc4b4d36c204c"
+    },
+    {
+      "bytes": 2628,
+      "path": "agent-base/frontier/task/repo/src/basis.h",
+      "sha256": "sha256:f1c8f1fa7cf665f353a3f55bd12600c09f954ee56ca129f469778641e0052c4f"
+    },
+    {
+      "bytes": 13094,
+      "path": "agent-base/frontier/task/repo/src/fastL2_ip.h",
+      "sha256": "sha256:9a94c336b2d1307bed7b9d1c370ec6c41ef77eeb3279765f9116bd81c079ff04"
+    },
+    {
+      "bytes": 197,
+      "path": "agent-base/frontier/task/repo/src/main.cpp",
+      "sha256": "sha256:33be6e655a4e15e0f380fc7e13818ea1648fe004c2442757ace3f08458650a62"
+    },
+    {
+      "bytes": 7174,
+      "path": "agent-base/frontier/task/repo/src/mf_alsh.cpp",
+      "sha256": "sha256:98968548280119af95383afceb6454b32750252a8b7ebf68ab27915f507a433e"
+    },
+    {
+      "bytes": 1323,
+      "path": "agent-base/frontier/task/repo/src/mf_alsh.h",
+      "sha256": "sha256:e8ab82feccf62340ecbc37f79d154ff39954b4e40672aafef29930ac6be6124b"
+    },
+    {
+      "bytes": 1826,
+      "path": "agent-base/frontier/task/repo/src/performance.h",
+      "sha256": "sha256:76faa0671e448b7ddd4fc4d3b26122fd4cb9ceae08ace9662a1f9569b93e5ba7"
+    },
+    {
+      "bytes": 898,
+      "path": "agent-base/frontier/task/repo/src/query_core.h",
+      "sha256": "sha256:77c4865005d3956433a55765b3db729e9337f3ff9a67bffd3a1beea7ff12e6ff"
+    },
+    {
+      "bytes": 491,
+      "path": "datasets/eval.json",
+      "sha256": "sha256:7aa3cdb7c8b6f0189627de7b48d38d6678216b2c6488585cb87f8d4db2ee2c5e"
+    },
+    {
+      "bytes": 498,
+      "path": "datasets/train.json",
+      "sha256": "sha256:80c37e9f64adb576a03f2c85892b3b6c4ed4b63f9569ab208cf99ac495e4d986"
+    },
+    {
+      "bytes": 5575,
+      "path": "judge/beat_spec.json",
+      "sha256": "sha256:ee8d50f9cce709c621232987ef291f9f0f7384c254fe3bc040d0dc36722eeff7"
+    },
+    {
+      "bytes": 579,
+      "path": "judge/config.yaml",
+      "sha256": "sha256:8d0b8987a37405aa497650bf7396e483906e860e587514b20107397f31a283e8"
+    },
+    {
+      "bytes": 1632,
+      "path": "judge/conformance.cpp",
+      "sha256": "sha256:8dd1dbabedc759f6f9aeebfb87cc1c783c3391e4b5987f012b904af5ffea64a5"
+    },
+    {
+      "bytes": 186,
+      "path": "judge/evaluate.sh",
+      "sha256": "sha256:9ac7d2505377964d058ec02a4ce4f1479ca8fa265eae65ab6d8dac569a99c9b6"
+    },
+    {
+      "bytes": 13288,
+      "path": "judge/evaluator.py",
+      "sha256": "sha256:fc5724b25bc57a0358689e4666fc9786d7e2385c9024cdc63a3bc26136926f3e"
+    },
+    {
+      "bytes": 38,
+      "path": "judge/harbor/app/.gitignore",
+      "sha256": "sha256:b188dd66337084dcf0fd86051fbf58ec74ba7f2408492d198a7086ea0613cc47"
+    },
+    {
+      "bytes": 942,
+      "path": "judge/harbor/app/.submission-base/src/alg.cpp",
+      "sha256": "sha256:03715b4d54e08800a993a8cf33a0fcf45075c7b4bdd56937055d890e7c59ea78"
+    },
+    {
+      "bytes": 1316,
+      "path": "judge/harbor/app/.submission-manifest.sha256",
+      "sha256": "sha256:5f2511297cf0e73feaacbac1ac9d73bf439042c693f8735469dea1a578e35816"
+    },
+    {
+      "bytes": 256,
+      "path": "judge/harbor/app/Makefile",
+      "sha256": "sha256:67cdc73535f8e0d266783d5d31be71bd22939b9c086b46502ba005fb9660efc6"
+    },
+    {
+      "bytes": 3919,
+      "path": "judge/harbor/app/UPSTREAM_README.md",
+      "sha256": "sha256:ec9881ab52852f3f6d799fe7f86d0ae99396ddd56b7d5da80e5e5ae5aefea0c4"
+    },
+    {
+      "bytes": 1062,
+      "path": "judge/harbor/app/make_submission.sh",
+      "sha256": "sha256:76240afcba10a03daa47d649001c8991011b7480d882b8020d50c6fc915ce93e"
+    },
+    {
+      "bytes": 9986,
+      "path": "judge/harbor/app/src/Preprocess.cpp",
+      "sha256": "sha256:00fb1d9843eb49bb48e035ef81da11893c6347fdd18e6974a6b855841ad45326"
+    },
+    {
+      "bytes": 2108,
+      "path": "judge/harbor/app/src/Preprocess.h",
+      "sha256": "sha256:8696fe85413ee393b513bfd92a623809c62802689231a79ecb21172b7434f606"
+    },
+    {
+      "bytes": 347,
+      "path": "judge/harbor/app/src/StructType.h",
+      "sha256": "sha256:fd39a12a339d2754a9e810eaede85f8ae980584cf780efa95db1047a496acdb7"
+    },
+    {
+      "bytes": 942,
+      "path": "judge/harbor/app/src/alg.cpp",
+      "sha256": "sha256:03715b4d54e08800a993a8cf33a0fcf45075c7b4bdd56937055d890e7c59ea78"
+    },
+    {
+      "bytes": 247,
+      "path": "judge/harbor/app/src/basis.cpp",
+      "sha256": "sha256:a169142360d909b00d91e177eee9e81d16dc21a6015b9f6878dbc4b4d36c204c"
+    },
+    {
+      "bytes": 2628,
+      "path": "judge/harbor/app/src/basis.h",
+      "sha256": "sha256:f1c8f1fa7cf665f353a3f55bd12600c09f954ee56ca129f469778641e0052c4f"
+    },
+    {
+      "bytes": 13094,
+      "path": "judge/harbor/app/src/fastL2_ip.h",
+      "sha256": "sha256:9a94c336b2d1307bed7b9d1c370ec6c41ef77eeb3279765f9116bd81c079ff04"
+    },
+    {
+      "bytes": 197,
+      "path": "judge/harbor/app/src/main.cpp",
+      "sha256": "sha256:33be6e655a4e15e0f380fc7e13818ea1648fe004c2442757ace3f08458650a62"
+    },
+    {
+      "bytes": 7174,
+      "path": "judge/harbor/app/src/mf_alsh.cpp",
+      "sha256": "sha256:98968548280119af95383afceb6454b32750252a8b7ebf68ab27915f507a433e"
+    },
+    {
+      "bytes": 1323,
+      "path": "judge/harbor/app/src/mf_alsh.h",
+      "sha256": "sha256:e8ab82feccf62340ecbc37f79d154ff39954b4e40672aafef29930ac6be6124b"
+    },
+    {
+      "bytes": 1826,
+      "path": "judge/harbor/app/src/performance.h",
+      "sha256": "sha256:76faa0671e448b7ddd4fc4d3b26122fd4cb9ceae08ace9662a1f9569b93e5ba7"
+    },
+    {
+      "bytes": 898,
+      "path": "judge/harbor/app/src/query_core.h",
+      "sha256": "sha256:77c4865005d3956433a55765b3db729e9337f3ff9a67bffd3a1beea7ff12e6ff"
+    },
+    {
+      "bytes": 707,
+      "path": "judge/judge_data/MNIST-LICENSE.txt",
+      "sha256": "sha256:19f57be90a049e4598d7111760233fc6c929a4f9533728735dabc66fc28648d3"
+    },
+    {
+      "bytes": 240008,
+      "path": "judge/judge_data/audio.ben",
+      "sha256": "sha256:561b23e6656c612a2398e8aa1fbe11d21492d7950187ec6a3af34267571e4c51"
+    },
+    {
+      "bytes": 41769228,
+      "path": "judge/judge_data/audio.data_new",
+      "sha256": "sha256:a051fc701b127993aef33a08d1bc58bc035d85e4b2f619f26cb961ee12c00f9f"
+    },
+    {
+      "bytes": 726,
+      "path": "judge/judge_data/mnist-provenance.json",
+      "sha256": "sha256:83faf9160f8876d8aeca0633659afbead265fba5a51f43e9da350a7566e8a858"
+    },
+    {
+      "bytes": 240008,
+      "path": "judge/judge_data/mnist.ben",
+      "sha256": "sha256:ff6590df287cd288ae74c27d80b4b59ee588f448bbbeeb9b26c935b7d9354d57"
+    },
+    {
+      "bytes": 14643745,
+      "path": "judge/judge_data/mnist.data_new.gz",
+      "sha256": "sha256:622ae052176fac80eae385920b442af612608ce15f599f1369a6c9dd93d2f740"
+    },
+    {
+      "bytes": 16844844,
+      "path": "judge/judge_data/squared_qd_cdf.bin",
+      "sha256": "sha256:ec896c1ba8248345cb42156c775da7adc73850cf653e001e6236c16ea4003954"
+    },
+    {
+      "bytes": 7539,
+      "path": "judge/readme",
+      "sha256": "sha256:09de125fd689baf994c87eedd7613b26df2fb1e26539d19e8e46e1e065d2495f"
+    },
+    {
+      "bytes": 4895,
+      "path": "judge/reference.patch",
+      "sha256": "sha256:0bb2e34b57ce3e3f401c6fa95e6707806dc7b2ec7f59f2231c0224b22987bf15"
+    },
+    {
+      "bytes": 18365,
+      "path": "judge/submission_patch.py",
+      "sha256": "sha256:7d13ebf4984a344ddcbd51afe485f3c0338d0d5cb83380b1a6bcbf05810b3eee"
+    },
+    {
+      "bytes": 2863,
+      "path": "policy.json",
+      "sha256": "sha256:cacb03ebdb4fdd6b5eb455643bd92e0fab9384b173857019985969e236929d08"
+    },
+    {
+      "bytes": 2982,
+      "path": "verifier/Dockerfile",
+      "sha256": "sha256:5890943caf8ebc7d06d36e89b406fb260a9ebbf415be10bd0040723aacef12e8"
+    },
+    {
+      "bytes": 13321,
+      "path": "verifier/beat_spec_feedback.py",
+      "sha256": "sha256:9839bc6d19c9400ecccf4be1c8e2fbe900a2f268cc0e814875a38286aa9e4805"
+    },
+    {
+      "bytes": 32758,
+      "path": "verifier/fcs2_verifier.py",
+      "sha256": "sha256:feb510f305e1b45e21bc36c378f220330d14f319d9fe03768c5c818e499d6029"
+    },
+    {
+      "bytes": 368,
+      "path": "verifier/verify.py",
+      "sha256": "sha256:1dd5c1c6d56b8607e9f5d2b0b32eabb048d21e36cd38d05a41b35908d1813b25"
+    }
+  ],
+  "problem_id": "approximate_mips_global_probing",
+  "schema_version": "frontier.frontiersmith-task-lock/v1",
+  "source": {
+    "artifact_commit": "8a2aed53502ad430e4b719f5af876d5f452f845a",
+    "evaluator_sha256": "sha256:fc5724b25bc57a0358689e4666fc9786d7e2385c9024cdc63a3bc26136926f3e",
+    "statement_sha256": "sha256:09de125fd689baf994c87eedd7613b26df2fb1e26539d19e8e46e1e065d2495f",
+    "task_dir": "task"
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""batch_local_counting judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+"""batch_local_counting judge: evaluate(tree) for the shared FrontierCS2 verifier.
 
 Scoring. Three trees are built (Release, -j1): the independent path (pristine/ +
 baseline_naive.patch, B), the reference (pristine/ + reference.patch) and the candidate (the

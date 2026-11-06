@@ -1,6 +1,6 @@
 """Evaluator for implementing the paper-aligned FARGO query core to the authors' FARGO source.
 
-The shared verifier (#757) applies the patch (only src/alg.cpp may change) and rejects a patch
+The shared verifier applies the patch (only src/alg.cpp may change) and rejects a patch
 whose alg.cpp contains a forbidden benchmark or process-inspection token (task.toml
 forbidden_content); evaluate(tree) gets the pristine starter with that file overlaid.
 
@@ -14,7 +14,7 @@ query_time_ms (lower; passes when strictly lower), candidates_verified (lower; p
 beats_reference = every metric passes on every point. A failed conformance check, build or run
 is a scored zero (_invalid).
 
-Process split (#757 isolate): conformance, build and every workload run (starter, candidate,
+Process split (isolate): conformance, build and every workload run (starter, candidate,
 reference) happen in fresh shared isolate instances that see only the tree, the vector file
 under a neutral name, the calibration table and a one-row placeholder ground truth; the judge's
 data, environment and other runs are out of reach. The instance prints, per operating point, the

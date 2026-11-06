@@ -18,7 +18,7 @@ environment, no network); simulations run up to trace_workers() at a time
 from one trace, so the degree of concurrency cannot change a result; results and
 failures are taken in manifest order, exactly as the sequential loop produced them.
 
-The shared verifier (#757) applies the patch (my_cond_branch_predictor.cc and
+The shared verifier applies the patch (my_cond_branch_predictor.cc and
 solver_extensions/) and calls check_tree(), which runs the source audit: a scope or
 source-policy violation is a shared rejection (out_of_scope / content_policy). evaluate(tree)
 then audits storage, builds and simulates; a candidate failure there is a scored zero with a

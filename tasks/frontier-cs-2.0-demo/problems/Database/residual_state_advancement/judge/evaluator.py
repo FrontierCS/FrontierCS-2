@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""residual_state_advancement judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+"""residual_state_advancement judge: evaluate(tree) for the shared FrontierCS2 verifier.
 
 Scoring. The candidate (the judged tree), the reference (pristine/ + reference.patch) and the
 per-leaf baseline (pristine/ + baseline_naive.patch) fit the suite's eight JoinBoost

@@ -1,0 +1,6 @@
+FROM golang:1.19@sha256:3025bf670b8363ec9f1b4c4f27348e6d9b7fec607c47e401e40df816853e743a
+RUN apt-get update -qq && apt-get install -y -qq python3-yaml python3-pytest && rm -rf /var/lib/apt/lists/*
+ENV GOMODCACHE=/opt/frontier/go-mod PATH=/usr/local/go/bin:/usr/bin:/bin
+COPY harbor/app/quarter_pir/code /build
+RUN cd /build && go mod download && chmod -R a+rX /opt/frontier/go-mod && rm -rf /build
+WORKDIR /workspace

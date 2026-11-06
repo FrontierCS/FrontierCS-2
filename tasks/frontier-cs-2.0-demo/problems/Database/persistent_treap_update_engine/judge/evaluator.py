@@ -1,4 +1,4 @@
-"""Judge of persistent_treap_update_engine (#757): evaluate(tree) on the shared verifier.
+"""Judge of persistent_treap_update_engine: evaluate(tree) on the shared verifier.
 
 `tree` is pristine/ (the Agent's repo/) with only the three update-engine headers overlaid; the
 shared edit scope has already rejected anything else (task.toml [submission]). The candidate,
@@ -19,7 +19,7 @@ Metrics (one beat_spec_workload_passes row per case/configuration pair):
   historical_query_us   median us per historical range query; lower; passes if every candidate
                         checksum equals the scaffold's and candidate < reference
 beats_reference = 1 iff every pair passes all three metrics (equality fails).
-The metric definitions before #757 are archived at docs/task-authoring/persistent_treap_update_engine/provenance/beat_spec.json.
+The metric definitions before the task.toml migration are kept in the authoring records.
 """
 
 from __future__ import annotations

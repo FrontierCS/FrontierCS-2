@@ -7,7 +7,7 @@ ARG VERIFIER_BASE
 FROM ${VERIFIER_BASE}
 
 USER root
-# The Python packages of the task's previous image, pinned to the versions it had (#757).
+# The Python packages of the task's previous image, pinned to the versions it had.
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git \

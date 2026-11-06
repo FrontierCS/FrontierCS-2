@@ -1,4 +1,4 @@
-"""Judge of edlib_exact_alignment for the shared verifier (#757): evaluate(tree), check_tree.
+"""Judge of edlib_exact_alignment for the shared verifier: evaluate(tree), check_tree.
 
 Score: raw_score = score_unbounded = 100 * mean_w(A_w / (A_w + T_w)), with T_w the median of
 the TIMING_ROUNDS verifier-measured path-run times on workload w and A_w = (nominal core

@@ -1,0 +1,83 @@
+{
+  "schema": "frontiersmith/metadata@1",
+  "task_id": "graph_mining_method_selection",
+  "domain": "databases",
+  "promotion": {
+    "round": 3,
+    "band": "very_hard",
+    "scores": {
+      "paper_alignment": 72,
+      "difficulty": 90,
+      "stability": 100,
+      "statement_quality": 95
+    },
+    "gate": {
+      "difficulty": 20,
+      "paper_alignment": 70,
+      "stability": 70,
+      "statement_quality": 70
+    },
+    "reviewer_verdict": "accept"
+  },
+  "generated_at": "2026-08-17T14:29:24.008599+00:00",
+  "generator": {
+    "pipeline": "frontiersmith",
+    "commit": "0fd7ef1c52133a17c136afe51008bc7de637ae13",
+    "run_id": "r_top33_42a7abeeb7",
+    "candidate_id": "cand_000",
+    "config_sha256": "704c4bf3bb6b33076b36b48c269e759e1a2558e5df3a3d91b89b19d7740c5801"
+  },
+  "paper": {
+    "paper_id": "vldb-2025-accurate-and-fast-approximate-graph-pattern-mining-at-scale-42a7abeeb7",
+    "title": "Accurate and Fast Approximate Graph Pattern Mining at Scale",
+    "authors": [
+      "Anna A Arpaci-Dusseau",
+      "Zixiang Zhou",
+      "Xuhao Chen"
+    ],
+    "year": 2025,
+    "venue": "PVLDB 18",
+    "pdf_url": "https://www.vldb.org/pvldb/vol18/p93-chen.pdf",
+    "doi": null
+  },
+  "rank": {
+    "rank": 33,
+    "overall_score": 76.0,
+    "recommendation": "candidate",
+    "scores": {
+      "agent_task_fit": 4.6,
+      "artifact_readiness": 2.8,
+      "evaluation_quality": 4.1,
+      "frontier_potential": 4.2
+    },
+    "risks": [
+      "The inspected setup is flagged as requiring a GPU and privileged execution, complicating reproducible sandboxed evaluation and limiting hardware portability.",
+      "Although the probe achieved its maximum inspect-only score of 3, no code was executed; compilation, dependency compatibility, and end-to-end benchmark operation remain unverified.",
+      "The artifact is hosted at an anonymous archival URL and appears to bundle sizable legacy dependencies, which may make long-term maintenance fragile.",
+      "Sampling introduces variance, so scoring needs fixed seeds or repeated trials and explicit statistical tolerances.",
+      "Billion-scale workloads may exceed benchmark time and memory budgets; evaluation should use representative bounded subsets and reserve larger cases for a limited final suite.",
+      "The paper is from 2025 with no citation or adoption evidence yet, so demonstrated external impact is limited."
+    ]
+  },
+  "artifact": {
+    "repo_url": "https://anonymous.4open.science/r/scale-gpm-B987/",
+    "commit": null,
+    "cloned_at": null,
+    "census": {}
+  },
+  "contribution": {
+    "title": null,
+    "summary": null,
+    "paper_location": null,
+    "code_location": [],
+    "metric": null
+  },
+  "host": null,
+  "host_note": "stage0/host.json was not synced off the instance; the machine these numbers were measured on is not recoverable, and measuring this one would name hardware that never ran them",
+  "recovered": {
+    "from": "stage9/cand_000/round_3/workspace",
+    "why": "the canonical task directory under stage2/ is not synced off the instance; this was rebuilt from the trace reviewer's copy",
+    "run_state": "COMPLETED",
+    "loop_state": "ACCEPTED"
+  }
+}
