@@ -1,4 +1,4 @@
-# Shared GPU tools: files every GPU task image copies, not a base to build FROM (each
+# Shared GPU tools (#757): files every GPU task image copies, not a base to build FROM (each
 # GPU task keeps its own CUDA/PyTorch stack). A GPU task's Dockerfile takes this image by build
 # argument (the build injects tasks/shared/bases.json) and copies what it needs:
 #

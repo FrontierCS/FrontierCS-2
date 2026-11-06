@@ -1,4 +1,4 @@
-"""Put a directory on the running interpreter's default import path.
+"""Put a directory on the running interpreter's default import path (#757).
 
     <python> install_frontier_pth.py /opt/frontier
 

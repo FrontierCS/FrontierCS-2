@@ -1,4 +1,4 @@
-# Values every task.toml task gets unless its task.toml sets them.
+# Values every task.toml task gets unless its task.toml sets them (#757).
 #
 # A task.toml holds only what differs between tasks and cannot be derived. Everything else is
 # here, explicitly, and is generous on purpose: a limit a task does not need to tighten should

@@ -1,4 +1,4 @@
-"""The shared FrontierCS2 Verifier: every task's judge runs through this one adapter.
+"""The shared FrontierCS2 Verifier: every task's judge runs through this one adapter (#757).
 
 The contract with a task's judge (judge/evaluator.py, run from a writable copy of the bundle):
 

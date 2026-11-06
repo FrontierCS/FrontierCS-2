@@ -1,4 +1,4 @@
-"""isolate: the launcher where a judge runs submitted code as a jailed subprocess.
+"""isolate: the launcher where a judge runs submitted code as a jailed subprocess (#757).
 
 Not a container: task.toml's [test_sandboxes.*] are separate containers beside the judge.
 
@@ -105,7 +105,7 @@ DEVICES = {"nvidia": ("/dev/nvidia*", "/dev/nvidia-caps/*")}
 DEVICE_ENV = {"nvidia": ("CUDA_VISIBLE_DEVICES", "NVIDIA_VISIBLE_DEVICES")}
 # Socket families a device class needs beyond the call's own (seccomp; the families' numbers
 # are below). libcuda's cuInit fails with CUDA_ERROR_OPERATING_SYSTEM on the GPU runners
-# (gVisor nvproxy) when socket(AF_UNIX) is refused (Verifier GPU runner probes). Under
+# (gVisor nvproxy) when socket(AF_UNIX) is refused (Verifier GPU runner probes, #854). Under
 # the userns backend the instance has its own empty network namespace either way; the landlock
 # backend does not add these (see _prepare).
 DEVICE_SOCKETS = {"nvidia": ("AF_UNIX",)}

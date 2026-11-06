@@ -38,7 +38,7 @@ Errors: VerifierGpuError subclasses Exception, NOT RuntimeError, so a judge's
 `except RuntimeError` for its own submission failures never turns a lost runner into a score.
 Let it propagate: the shared verifier reports it as an unscored `verifier_gpu_error`.
 
-Command test sandboxes (placement = "control"):
+Command test sandboxes (placement = "control"; design /data/task-format/design/sandboxes.md):
 
     run_sandboxes([SandboxRun(sandbox, files, steps, outputs=(), max_output_bytes=None)], *, into)
         -> [SandboxResult(steps, outputs, outputs_exceeded, logs)]
