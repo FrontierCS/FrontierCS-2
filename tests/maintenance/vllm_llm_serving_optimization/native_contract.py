@@ -41,25 +41,11 @@ class NativeContractFailure(ValueError):
     pass
 
 
-# Reviewed source from Smith PR joyemang33/FrontierSmith2#24 at f0e4b5b50
-# (declared-sidecar transport; scientific files unchanged since the metric
-# coverage record METRIC_COVERAGE_20261007.json). Hashes guard execution of
-# task-owned Python and freeze the transcribed beat spec. 2026-10-14 (owner
-# decision): verify.py and batch_measurements.py re-reviewed after the final
-# was enabled at the configured hidden rates; projection and scoring unchanged.
-# 2026-10-16: Qiuyang approved removing SWE slots 018 and 039 without
-# replacements; 48 final cases retain their original IDs and scientific arithmetic.
-# Fourth-attempt review: batch request reconstruction binds identity/variant for
-# the compact oversized-patch disposition. Root reviewed the exact diff and hash;
-# receipt validation and metric arithmetic are unchanged. Other pins stay fixed.
-# 2026-10-17: root reviewed bounded private traceback frames in verify.py;
-# ordinary scoring and the remaining scientific pins are unchanged.
-# Trusted measurement failures block scoring; candidate service faults alone
-# retain workload no-credit. Normal measurement arithmetic retains exact parity.
-# 2026-10-18 B0 candidate-only transition: these exact source pins are part of
-# the root-reviewed release diff; fixed-target baselines additionally need their
-# own immutable SHA release binding and three genuine accepted captures.
-# 2026-11-04 task.toml migration (#757, DECISIONS-pending-review): verify.py (shared result
+# Reviewed task sources. Hashes guard execution of task-owned Python and
+# freeze the transcribed beat spec: projection and scoring code, the instance
+# manifest, the datasets and the fixed-target release binding. Any change to a
+# pinned file needs a new review and a re-pinned digest here.
+# 2026-11-04 task.toml migration: verify.py (shared result
 # contract: score_unbounded, metrics.rejected categories, no aggregation field; scoring-note
 # docstring; [feedback] whitelist), judge/submission.py (rejection categories) and
 # judge/instance_manifest.json unchanged (test-sandbox build data lives in judge/test_sandboxes.json); scoring,
@@ -162,7 +148,7 @@ def load_reviewed_functions(root: Path) -> dict:
     ``expected_groups`` comes from the reviewed instance manifest module, which
     reads only its own pinned JSON file.
     """
-    manifest = {"__name__": "preview_vllm_manifest", "__file__": str(root / "judge/instance_manifest.py")}
+    manifest = {"__name__": "native_vllm_manifest", "__file__": str(root / "judge/instance_manifest.py")}
     source = root / "judge/instance_manifest.py"
     exec(compile(source.read_text(), str(source), "exec"), manifest)
     source = root / "verifier/verify.py"
@@ -170,7 +156,7 @@ def load_reviewed_functions(root: Path) -> dict:
     nodes = [node for node in parsed.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))
              or (isinstance(node, ast.Assign) and [getattr(t, "id", None) for t in node.targets]
                  == ["FEEDBACK"])]
-    namespace = {"__name__": "preview_vllm_verify", "__file__": str(source),
+    namespace = {"__name__": "native_vllm_verify", "__file__": str(source),
                  "json": json, "math": __import__("math"), "hashlib": hashlib,
                  "expected_groups": manifest["expected_groups"]}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)

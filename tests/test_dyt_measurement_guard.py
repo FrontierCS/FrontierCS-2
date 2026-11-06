@@ -1,10 +1,10 @@
-"""Dynamic Tanh measurement guard (Preview issue #647).
+"""Dynamic Tanh measurement guard.
 
 The accuracy run (``main.py``) and the evaluator's timed calls ran in
 distinguishable processes, and a submission switched implementations on
 ``sys.argv[0]``. The judge rejects process/harness introspection in every
 candidate-owned file (task.toml ``forbidden_content``, applied by the shared edit
-scope, #757) and runs candidate calls under the training process's argv.
+scope) and runs candidate calls under the training process's argv.
 """
 import deployment_test_guard  # noqa: F401 # isort: skip
 

@@ -154,7 +154,7 @@ class NativeDatasetsTests(unittest.TestCase):
 
     def test_layout_accepts_tar_with_complete_lock_but_keeps_identity_and_science_gates(self):
         # A policy.json task with a lock (the export fixture setUp copied); task.toml tasks
-        # keep neither (#757).
+        # keep neither.
         kind = layout.validate_task(self.root)
         self.policy = json.loads((self.root / "policy.json").read_text())
         self.prepare()

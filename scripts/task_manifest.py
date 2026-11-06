@@ -1,6 +1,6 @@
 """One task's definition and file layout, from `task.toml` or a legacy `policy.json`.
 
-`task.toml` (schema `frontier.task/v1`) is the only definition of a migrated task (#757). Tools
+`task.toml` (schema `frontier.task/v1`) is the only definition of a migrated task. Tools
 never parse it themselves: they call `load_policy` for the policy view they always used, and
 `layout` for the paths that differ between the two formats. A task directory holds exactly one
 of the two files; support for `policy.json` goes once every task is migrated.
@@ -108,7 +108,7 @@ AUDIT_KEYS = {"max_bundle_bytes": False, "max_model_request_bytes": False,
 # (task["sidecar_images"]).
 #
 # access = "service" (the default) is the kind above. access = "command" is the smallest
-# extension (design: /data/task-format/design/sandboxes.md): a machine of its own that the
+# extension (see tasks/template/TEMPLATE.md): a machine of its own that the
 # judge, now on the CPU control image, leases per run through the shared adapter's
 # run_sandboxes(), uploads only what it passes into `workdir`, runs commands there (deadline
 # enforced from the control side) and gets declared files back. Keys:
@@ -580,7 +580,7 @@ def _command_sandboxes(task: dict) -> dict:
                 _positive_int(f"{where}.resources.{key}", resources.get(key))
             raise ManifestError(f"{where}: a CPU command sandbox (resources without gpus) needs "
                                 "the platform's CPU sandbox provisioning, the next step of "
-                                "/data/task-format/design/sandboxes.md; only GPU runners exist")
+                                "tasks/template/TEMPLATE.md; only GPU runners exist")
         if set(resources) != {"gpus", "gpu_type"}:
             raise ManifestError(f"{where}.resources of a GPU runner are gpus and gpu_type (the "
                                 "host's CPU and memory are [gpu_parent_resources])")

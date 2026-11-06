@@ -1,6 +1,6 @@
 """Four GPU kernel tasks allow local modules while protecting trusted paths.
 
-A task.toml task (#757) states its editable surface in task.toml [submission]; the shared
+A task.toml task states its editable surface in task.toml [submission]; the shared
 edit_scope module enforces it on both sides (the Agent's make_submission.sh and the shared
 verifier) and the judge's check_tree adds the content rules. A legacy task keeps its own
 make_submission.sh and evaluator.validate_patch. The same contract holds for both.

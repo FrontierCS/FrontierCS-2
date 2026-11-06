@@ -1,4 +1,4 @@
-"""Residual State Advancement keeps the paper's in-database setting (#351).
+"""Residual State Advancement keeps the paper's in-database setting.
 
 The trusted executor caps rows returned to Python and rejects statements that
 change database settings; the evaluator screens the patch for routes around it
@@ -36,7 +36,7 @@ TASK = Path(
         ),
     )
 )
-# task.toml layout (#757): the starter is repo/; the shared verifier applies the patch with the
+# task.toml layout: the starter is repo/; the shared verifier applies the patch with the
 # shared edit scope and hands evaluate() the judged tree (pristine/ + the allowed files).
 REPO = TASK / "repo"
 PROVENANCE = ROOT / "docs/task-authoring/residual_state_advancement/provenance"
@@ -531,7 +531,7 @@ class EditableSurface(unittest.TestCase):
             "includes one trusted full read of the updated target",
         ):
             self.assertIn(fragment, statement)
-        # The scoring note (evaluator docstring) replaces judge/beat_spec.json (#757).
+        # The scoring note (evaluator docstring) replaces judge/beat_spec.json.
         note = ast.get_docstring(ast.parse((TASK / "judge/evaluator.py").read_text()))
         self.assertIn("trusted full read", note)
         self.assertIn("non-materialised-join rule", note)

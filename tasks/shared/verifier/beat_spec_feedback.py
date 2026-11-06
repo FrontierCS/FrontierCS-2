@@ -1,4 +1,4 @@
-"""Train feedback and operator results from an evaluator's beat-spec decisions (#757).
+"""Train feedback and operator results from an evaluator's beat-spec decisions.
 
 An evaluator returns, in its metrics, the exact per-workload decisions
 ``beat_spec_workload_passes`` (one row per workload: ``{"workload": id, "metrics":

@@ -1,4 +1,4 @@
-"""Progent: injection security is judged on executed tool calls (Preview issue #642).
+"""Progent: injection security is judged on executed tool calls.
 
 AgentDojo builds the trace for ``security_from_traces`` from every tool call the
 agent *requested*, including calls the submitted policy denied. Slack

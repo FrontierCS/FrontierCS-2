@@ -1,4 +1,4 @@
-"""The edit-scope check every task uses, on the Agent's side and the judge's (#757).
+"""The edit-scope check every task uses, on the Agent's side and the judge's.
 
 A submission is a unified diff of the task's starter tree (`repo/`). Whether it stays inside
 the task's editable surface is decided from the tree the patch actually produces, never from

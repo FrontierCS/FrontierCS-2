@@ -1,4 +1,4 @@
-"""flow_opd on the shared verifier (#757): the scoring contract, the two-body rule (check_tree),
+"""flow_opd on the shared verifier: the scoring contract, the two-body rule (check_tree),
 trusted faults stay unscored, and the shared GPU adapter keeps a failed remote result."""
 import deployment_test_guard  # noqa: F401
 import difflib

@@ -1,4 +1,4 @@
-"""tasks/template/Theory/template_task stays a valid, working task (#757).
+"""tasks/template/Theory/template_task stays a valid, working task.
 
 The template is what new tasks copy, so a format or contract change that breaks it must fail
 here: it passes the layout validator, and its judge, run through the shared verifier exactly as

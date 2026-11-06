@@ -1,4 +1,4 @@
-# frontier-agent-base: what every task's Agent image shares (#757).
+# frontier-agent-base: what every task's Agent image shares.
 # Build context: tasks/shared. Published by scripts/build_base_images.py; tasks pin it by digest.
 #
 # Ubuntu 24.04 by digest, apt from one dated snapshot, the uid 10001 user and /workspace,

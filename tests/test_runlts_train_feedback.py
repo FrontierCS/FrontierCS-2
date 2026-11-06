@@ -1,4 +1,4 @@
-"""RUNLTS train feedback through the shared verifier (#757).
+"""RUNLTS train feedback through the shared verifier.
 
 Train shows the Agent only the task.toml [feedback] metrics and the aggregate
 `beat_spec_progress`. A train candidate failure (storage, build, simulation, output) is a

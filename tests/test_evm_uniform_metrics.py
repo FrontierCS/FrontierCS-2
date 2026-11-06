@@ -1,4 +1,4 @@
-"""EVM State Checkpoints: one metric set on every workload (Preview issue #646).
+"""EVM State Checkpoints: one metric set on every workload.
 
 Spectrum workloads used to report only committed TPS and the checkpoint-micro trace
 only per-call create/restore/bytes, so a backend could move cost between them
@@ -27,7 +27,7 @@ HEADER = Path("lib/evmcow/execution_state.hpp")
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, as the Verifier base ships it
 GXX = shutil.which("g++")
 
-# The #646 pattern on the shipped header: above height 64 load_checkpoint() only
+# The known pattern on the shipped header: above height 64 load_checkpoint() only
 # records the target; get()/get_mut()/push() finish the restore, top()/pop() do not.
 LAZY_EDITS = (
     ("    inline void push(const uint256& item) {\n        values[height++] = item;",
@@ -190,7 +190,7 @@ class UniformMetricEvaluatorTests(unittest.TestCase):
                         e._one_benchmark(Path("b"), Path("s"), "YCSB:1:0.9", 1)
 
     def test_harness_tokens_are_forbidden_in_submissions(self):
-        # The tokens are task.toml forbidden_added rules, applied by the shared edit scope (#757).
+        # The tokens are task.toml forbidden_added rules, applied by the shared edit scope.
         sys.path.insert(0, str(ROOT / "scripts"))
         try:
             import task_manifest

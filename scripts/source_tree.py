@@ -1,6 +1,6 @@
 """A task's (or a shared image's) source tree is its git-tracked files, never what else lies on
 disk: an ignored judge/__pycache__ or a stray scratch file must not reach the source identity
-(the image tag) or a docker build context (#757, decision 54).
+(the image tag) or a docker build context.
 
 Inside a git work tree the source is `git ls-files`, and any untracked or ignored file under the
 directory fails the build, so the identity a worktree computes is the one a clean checkout

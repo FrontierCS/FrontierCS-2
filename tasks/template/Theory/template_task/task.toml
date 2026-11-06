@@ -1,4 +1,4 @@
-# task.toml: the one definition of a FrontierCS2 task (schema frontier.task/v1, #757).
+# task.toml: the one definition of a FrontierCS2 task (schema frontier.task/v1).
 #
 # Write only what differs between tasks. Everything else is either
 #   - a default, written out in tasks/shared/task-defaults.toml (override a key here only when

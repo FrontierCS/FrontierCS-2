@@ -1,5 +1,5 @@
 """lib/install_frontier_pth.py: after it runs with an interpreter, every process of that
-interpreter imports the shared modules by name, with no sys.path edits (#757). The GPU worker
+interpreter imports the shared modules by name, with no sys.path edits. The GPU worker
 shape: a judge re-runs a file with sys.executable, so the script's directory, not
 /opt/frontier, is sys.path[0]; `-I` workers drop cwd and PYTHONPATH as well."""
 

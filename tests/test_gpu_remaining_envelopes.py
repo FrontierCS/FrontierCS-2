@@ -29,7 +29,7 @@ def load(path, name):
 class RemainingEnvelopeTests(unittest.TestCase):
     def test_all_published_adapters_inventory(self):
         # Every forked GPU adapter still in the tree belongs to a policy.json task; a task.toml
-        # task uses the shared adapter (gpu-tools) and must not carry one (#757).
+        # task uses the shared adapter (gpu-tools) and must not carry one.
         forked = sorted(PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py"))
         self.assertTrue(forked)
         for path in forked:

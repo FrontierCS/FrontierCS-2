@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build, and optionally publish, the shared task images (#757).
+"""Build, and optionally publish, the shared task images.
 
   ./python scripts/build_base_images.py                              # build agent + verifier
   ./python scripts/build_base_images.py --roles gpu-tools --push

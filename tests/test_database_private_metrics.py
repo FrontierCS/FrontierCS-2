@@ -43,7 +43,7 @@ class DatabasePrivateMetrics(unittest.TestCase):
             )
             self.assertEqual(layout.validate_task(task), "patch-workspace")
             spec_path = task / "judge/beat_spec.json"
-            if not spec_path.is_file():  # a task.toml task: provenance copy (#757)
+            if not spec_path.is_file():  # a task.toml task: provenance copy
                 spec_path = ROOT / "docs/task-authoring" / name / "provenance/beat_spec.json"
             beat_spec = json.loads(spec_path.read_text())
             # A task.toml task has no verifier/ of its own: the shared helper projects it.
@@ -56,7 +56,7 @@ class DatabasePrivateMetrics(unittest.TestCase):
             helper = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(helper)
 
-            # The shared helper (task.toml tasks, #757) reads no spec file: progress comes from
+            # The shared helper (task.toml tasks) reads no spec file: progress comes from
             # the rows and the evaluator's beats_reference is the authority.
             def private(metrics):
                 return (helper.private_metrics(metrics) if shared

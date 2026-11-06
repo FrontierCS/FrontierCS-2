@@ -51,7 +51,7 @@ class FinalMetricsAssembly(unittest.TestCase):
             if export_root and (Path(export_root) / name).is_dir():
                 task = Path(export_root) / name
             native = task_manifest.is_native(task)
-            # A task.toml task runs the shared verifier (#757).
+            # A task.toml task runs the shared verifier.
             path = (task_manifest.SHARED / "verifier/fcs2_verifier.py" if native
                     else task / "verifier/fcs2_verifier.py")
             for helper in ("beat_spec_feedback", "candidate_diagnostic"):
@@ -61,7 +61,7 @@ class FinalMetricsAssembly(unittest.TestCase):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             sys.path.pop(0)
-            # A task.toml task has no judge/beat_spec.json (#757): its metric names are in the
+            # A task.toml task has no judge/beat_spec.json: its metric names are in the
             # archived spec, and the shared verifier reads [feedback] from config.yaml.
             spec_path = (ROOT.parents[2] / "docs/task-authoring" / name / "provenance/beat_spec.json"
                          if native else task / "judge/beat_spec.json")

@@ -38,7 +38,7 @@ class NanoWorldModelScoring(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         old_modules, old_path = dict(sys.modules), list(sys.path)
-        # The shared verifier (#757) and its beat-spec feedback, as the Verifier image holds them.
+        # The shared verifier and its beat-spec feedback, as the Verifier image holds them.
         sys.path.insert(0, str(ROOT / "tasks/shared/verifier"))
         sys.modules.pop("beat_spec_feedback", None)
         cls.verifier = module(ROOT / "tasks/shared/verifier/fcs2_verifier.py", "nano_scoring_test_verifier")

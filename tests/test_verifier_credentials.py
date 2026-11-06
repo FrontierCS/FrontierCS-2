@@ -1,4 +1,4 @@
-"""No platform credential reaches task code (decision 34).
+"""No platform credential reaches task code.
 
 The Verifier wrapper starts the shared verifier with FRONTIER_VERIFIER_TOKEN, the Driver bearer
 that also authorizes the result and evidence PUTs. These tests run the real shared verifier

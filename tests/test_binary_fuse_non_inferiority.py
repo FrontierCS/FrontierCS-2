@@ -1,4 +1,4 @@
-"""Guard the Binary Fuse certified non-inferiority accuracy contract (issue #321).
+"""Guard the Binary Fuse certified non-inferiority accuracy contract.
 
 The three performance metrics remain strict per-workload wins. The two accuracy
 metrics are certified non-inferiority guards against preregistered reference-only

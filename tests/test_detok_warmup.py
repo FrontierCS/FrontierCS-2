@@ -1,5 +1,5 @@
 """detok_latent_denoising: one untimed warm-up process runs before any timed
-process, so the first timed measurement is not cold (issue #315)."""
+process, so the first timed measurement is not cold."""
 
 import deployment_test_guard  # noqa: F401  # isort: skip
 

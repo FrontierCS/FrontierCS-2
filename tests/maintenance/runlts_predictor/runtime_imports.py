@@ -2,7 +2,7 @@
 
 The judge is imported as the Verifier image holds it (task_manifest.judge_bundle: judge/ with
 the generated config.yaml and the starter at pristine/), beside the shared verifier and the
-shared edit scope (#757).
+shared edit scope.
 """
 from contextlib import contextmanager
 import importlib

@@ -903,13 +903,13 @@ def referenced_local_evaluator_nodes(evaluator: Path) -> list[ast.AST]:
     return nodes
 
 
-# Metric names the feedback probe gives the shared helper for a task.toml task (#757): its
+# Metric names the feedback probe gives the shared helper for a task.toml task: its
 # rows, not a spec file, define the metric names, so any fixed pair exercises it.
 FEEDBACK_PROBE_METRICS = ("probe_time", "probe_bytes")
 
 
 def check_task_feedback(root: Path, evaluation: dict) -> None:
-    """A task.toml task's scoring contract (#757): no judge/beat_spec.json; the evaluator's
+    """A task.toml task's scoring contract: no judge/beat_spec.json; the evaluator's
     docstring is the scoring note and it emits the private beat-spec fields; what train returns
     to the Agent is task.toml [feedback], stated in the generated README; and the shared helper
     returns exactly those values plus aggregate progress."""
@@ -1589,7 +1589,7 @@ def sandbox_relaxations(root: Path) -> list[str]:
 def check_shared_from(ref: str, root: Path = task_manifest.REPO) -> None:
     """tasks/shared must be exactly `ref`'s (task-format/landing against origin/main): shared
     infrastructure changes on main only, so a staging branch that edits or lags it builds bases
-    no other branch has (#757)."""
+    no other branch has."""
     listed = subprocess.run(["git", "-C", str(root), "diff", "--name-only", ref, "--",
                              "tasks/shared"], capture_output=True, text=True)
     require(listed.returncode == 0,

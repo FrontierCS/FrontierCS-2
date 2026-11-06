@@ -1,4 +1,4 @@
-"""Candidate refusals are scored rejections; trusted prerequisites remain errors (#757)."""
+"""Candidate refusals are scored rejections; trusted prerequisites remain errors."""
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import importlib.util

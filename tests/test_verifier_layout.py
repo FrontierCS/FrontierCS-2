@@ -56,7 +56,7 @@ class VerifierLayoutTests(unittest.TestCase):
     def test_pod_matches_the_driver_verifier_pod(self):
         verifier = {**VERIFIER, "workspace_bytes": 4 << 30}
         pod = layout.pod_manifest("p", "image", verifier, "train",
-                                  node_selector={"pool": "eval16"})
+                                  node_selector={"pool": "eval"})
         spec = pod["spec"]
         self.assertIs(spec["hostUsers"], False)
         self.assertEqual(spec["securityContext"],
@@ -74,7 +74,7 @@ class VerifierLayoutTests(unittest.TestCase):
         self.assertEqual({item["name"] for item in container["env"]}, DRIVER_POD | WRAPPER)
         self.assertEqual(container["resources"]["limits"],
                          {"cpu": "4000m", "memory": str(8 << 30)})
-        self.assertEqual(spec["nodeSelector"], {"pool": "eval16"})
+        self.assertEqual(spec["nodeSelector"], {"pool": "eval"})
 
     def test_pod_cli_prints_the_manifest(self):
         import contextlib

@@ -1,4 +1,4 @@
-"""The task.toml migration (#757) keeps what the platform, the Agent and the judge saw:
+"""The task.toml migration keeps what the platform, the Agent and the judge saw:
 the expanded test sandboxes equal the previous policy's sidecars byte for byte, every previous
 platform value is unchanged, the Agent's pre-check scope mirrors the judge's patch policy, and
 every judge rejection maps to one shared category."""

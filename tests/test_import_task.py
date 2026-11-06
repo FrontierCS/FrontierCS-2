@@ -1294,7 +1294,7 @@ class BaselineTests(unittest.TestCase):
                 derived = baseline_from_result_json(task_root, definition)
             else:
                 # A task.toml task keeps its authoring result.json under docs/task-authoring
-                # (#757); derive from it on a copy of the task with it back at judge/.
+                #; derive from it on a copy of the task with it back at judge/.
                 with tempfile.TemporaryDirectory() as directory:
                     copy = Path(directory) / name
                     shutil.copytree(task_root, copy)

@@ -1,6 +1,6 @@
 # Task template
 
-`Theory/template_task/` is a complete, working FrontierCS2 task in the `task.toml` format (#757): a toy
+`Theory/template_task/` is a complete, working FrontierCS2 task in the `task.toml` format: a toy
 C problem (make `count_primes` fast) whose every file shows what a real task's file must
 contain. Start a new task by copying it:
 
@@ -262,7 +262,7 @@ and `verifier.json`, install the shared `submission_patch.py`, end as `USER 6553
   `sidecars` mapping; `task_manifest.py show` prints only their count.
 
   `access = "command"` (the default is `"service"`, all of the above) declares instead a machine
-  of its own the judge runs commands on (design: /data/task-format/design/sandboxes.md). The
+  of its own the judge runs commands on. The
   judge then runs on the CPU control image (derived `placement = "control"`; `[gpu.verifier]`
   keeps only the quota, and the control image holds `judge/` and `pristine/` like a CPU task).
   Keys: `trust`, `dockerfile` (`docker/agent-gpu.Dockerfile`, the judge-free Agent GPU image,

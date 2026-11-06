@@ -89,7 +89,7 @@ class HardwareClassTests(unittest.TestCase):
         sealed = self.sealed("train")
         with materialize_dataset(self.select("train", sealed), "dev", self.scratch) as root:
             # The judge source and runtime are no longer bound to the seal (owner decision,
-            # #757); the hardware class and the sealed constants still are.
+            # ); the hardware class and the sealed constants still are.
             with mock.patch.object(pc, "verify_cgroup", lambda policy: None):
                 for actual in self.admitted(sealed):
                     with mock.patch.object(pc, "hardware_identity", lambda: actual):

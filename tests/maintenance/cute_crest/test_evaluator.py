@@ -13,7 +13,7 @@ e = MODULES["evaluator"]
 gate = MODULES["gate"]
 runner = MODULES["crest_runner"]
 feedback = MODULES["beat_spec_feedback"]
-# Train feedback names: task.toml [feedback] (judge/beat_spec.json is gone, #757).
+# Train feedback names: task.toml [feedback] (judge/beat_spec.json is gone).
 VISIBLE = list(task_manifest.read_task(TASK)["feedback"])
 K = gate.K_SEEDS
 

@@ -1,4 +1,4 @@
-"""nano_world_model on the shared verifier (#757): the sampler policy is check_tree; the
+"""nano_world_model on the shared verifier: the sampler policy is check_tree; the
 candidate's machine receives only its tree, the runner side of the judge and public data; a
 candidate whose sampling fails on its own machine is a scored zero failing every clip once the
 reference ran, and a fault of the device check or the trusted runner stays unscored."""

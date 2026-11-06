@@ -1,4 +1,4 @@
-"""fast_kv_compaction's shards on the trusted command test sandbox [test_sandboxes.shard] (#757):
+"""fast_kv_compaction's shards on the trusted command test sandbox [test_sandboxes.shard]:
 the declaration, the runs evaluate() asks for and their combination, and shard_run's budget on
 the runner. Command and document classification: task_tests/fast_kv_compaction/test_instances.py."""
 import deployment_test_guard  # noqa: F401  # isort: skip
@@ -150,7 +150,7 @@ class ShardTests(unittest.TestCase):
                          ev.MIN_SHARD_SETUP_SECONDS + harness.QA_RESERVE_SECONDS * 3 * ev.FINAL_REPEATS)
 
     def test_evaluate_runs_on_the_tree_without_the_patch(self):
-        # The frozen targets: a failed run still reports the reference score (#940).
+        # The frozen targets: a failed run still reports the reference score.
         with mock.patch.object(ev, "run_harness", side_effect=RuntimeError("compaction failed: x")):
             score, unbounded, message, metrics = ev.evaluate(str(BUNDLE / "pristine"))
         self.assertEqual((score, unbounded), (0.0, 0.0))

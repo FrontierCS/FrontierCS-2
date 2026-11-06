@@ -1,4 +1,4 @@
-# frontier-verifier-base: what every task's Verifier image shares (#757).
+# frontier-verifier-base: what every task's Verifier image shares.
 # Build context: tasks/shared. Published by scripts/build_base_images.py; tasks pin it by digest.
 #
 # Ubuntu 24.04 by digest, apt from one dated snapshot, Python with zstandard, the uid 65532

@@ -376,7 +376,7 @@ def declares_public_budget(task_name, root, policy):
         return False
     if task_manifest.is_native(root):
         # A task.toml task states its clocks once, in the generated Agent README (the shared
-        # platform text filled from task.toml); its statement must not restate them (#757).
+        # platform text filled from task.toml); its statement must not restate them.
         notice = " ".join(task_manifest.agent_readme(root).split())
         return all(part in notice for part in (
             "**3 train calls**; a call is consumed when the submit is accepted and is never refunded,",
@@ -689,7 +689,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
 
 class LrrApprovedBudgetTests(unittest.TestCase):
     def test_exact_clocks_in_the_generated_agent_readme(self):
-        # lrr is a task.toml task (#757): its clocks come from task.toml into the generated
+        # lrr is a task.toml task: its clocks come from task.toml into the generated
         # /frontier/task/README.md, which must state each of them exactly.
         source = renderer.problem_directory(renderer.TASK_ROOT / "problems", "lrr")
         self.assertTrue(task_manifest.is_native(source))

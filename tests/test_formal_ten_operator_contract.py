@@ -53,7 +53,7 @@ class FormalTenOperatorContract(unittest.TestCase):
                 )
                 if name == "bounded_evm_path_prediction":
                     # The saved selection is the final answer, kept up to date; a task.toml
-                    # task states it in the shared store-final text (#757).
+                    # task states it in the shared store-final text.
                     self.assertIn(
                         "Save your chosen answer early and update it with" if native
                         else "You must save the final answer you select",

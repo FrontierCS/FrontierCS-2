@@ -1,5 +1,5 @@
 """task.toml [test_sandboxes.<name>] (one sandbox or a per-instance template): expansion into the platform's `sidecars`
-mapping, the image recipes and build args behind them, and their validation (#757)."""
+mapping, the image recipes and build args behind them, and their validation."""
 
 from __future__ import annotations
 

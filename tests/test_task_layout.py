@@ -33,7 +33,7 @@ class TaskLayoutTests(unittest.TestCase):
                 )
 
     def test_quota_drift_and_unlocked_source_are_rejected(self):
-        # A real policy.json task with a source lock; task.toml tasks keep neither (#757).
+        # A real policy.json task with a source lock; task.toml tasks keep neither.
         def valid(path):
             try:
                 return bool(layout.validate_task(path))
@@ -481,7 +481,7 @@ class BeatSpecGateTests(unittest.TestCase):
             "beat_spec_progress passed failed total pass_percent fail_percent candidate_seconds\n"
         )
         (root / "judge/beat_spec.json").write_text(json.dumps(self.spec))
-        # The legacy (policy.json) helper contract: a legacy task's own copy (#757).
+        # The legacy (policy.json) helper contract: a legacy task's own copy.
         legacy = next((path / "verifier/beat_spec_feedback.py"
                        for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
                        if (path / "policy.json").is_file()
@@ -657,7 +657,7 @@ class SharedBaseArgumentTests(unittest.TestCase):
 
     def test_a_command_sandbox_needs_a_verifier_gpu_control_pod(self):
         # Without FRONTIER_VERIFIER_GPU_TYPE the shared verifier drops the Driver bearer and
-        # run_sandboxes() fails before it leases a runner (ragen #963).
+        # run_sandboxes() fails before it leases a runner (ragen).
         bare = self.CONTROL.replace(
             "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n", "")
         for control in (bare, bare + "# ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB\n"):

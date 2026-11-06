@@ -1,4 +1,4 @@
-"""tasks/shared/lib/edit_scope.py: the one edit-scope check (#757)."""
+"""tasks/shared/lib/edit_scope.py: the one edit-scope check."""
 
 from __future__ import annotations
 

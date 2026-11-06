@@ -1,4 +1,4 @@
-"""Guard the RAGEN judge contract on the shared verifier (#757).
+"""Guard the RAGEN judge contract on the shared verifier.
 
 Trusted action, prompt and assistant provenance checks are installed around the real model
 call. A trusted provenance rejection, a source-preflight failure and a typed DataProto
@@ -224,7 +224,7 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             result = self.verify(self.evaluator._zero("invalid patch"), mode)
             self.assertEqual(result["status"], "passed")
             self.assertEqual(result["metrics"], {"score_unbounded": 0.0})
-            if mode == "eval":  # a final scored zero keeps beats_reference 0 (#757)
+            if mode == "eval":  # a final scored zero keeps beats_reference 0
                 self.assertEqual(result["private_metrics"], {"beats_reference": 0})
             else:
                 self.assertNotIn("private_metrics", result)
@@ -486,7 +486,7 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             self.assertEqual(result["status"], "passed")
             self.assertEqual(result["raw_score"], 0.0)
             self.assertEqual(result["metrics"], {"score_unbounded": 0.0})
-            if mode == "eval":  # a final scored zero keeps beats_reference 0 (#757)
+            if mode == "eval":  # a final scored zero keeps beats_reference 0
                 self.assertEqual(result["private_metrics"], {"beats_reference": 0})
             else:
                 self.assertNotIn("private_metrics", result)

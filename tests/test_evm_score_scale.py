@@ -44,7 +44,7 @@ class EvmScoreScaleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.e = load(EVM / "judge/evaluator.py", "evm_score_scale_evaluator", EVM / "judge")
-        # The task runs on the shared verifier; its feedback helper is the shared one (#757).
+        # The task runs on the shared verifier; its feedback helper is the shared one.
         shared = ROOT / "tasks/shared/verifier"
         cls.feedback = load(shared / "beat_spec_feedback.py", "evm_score_scale_feedback", shared)
 
@@ -162,7 +162,7 @@ class EvmScoreScaleTests(unittest.TestCase):
         self.assertEqual(set(metrics["workload_values"]), set(e._workload_ids(suite)))
         self.assertAlmostEqual(metrics["reference_score_unbounded"], 74.76, places=6)
         json.dumps(metrics, allow_nan=False)
-        # The shared helper: the task.toml [feedback] allowlist, no spec file (#757).
+        # The shared helper: the task.toml [feedback] allowlist, no spec file.
         sys.path.insert(0, str(ROOT / "scripts"))
         try:
             import task_manifest

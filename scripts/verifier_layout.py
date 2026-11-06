@@ -48,9 +48,9 @@ EVIDENCE = f"{WORK}/output/evidence.tar.zst"
 SMOKE_IDENTITY = "production-layout-smoke"
 # The Driver's Verifier workspace when task.verifier.workspace_bytes is unset.
 DEFAULT_WORKSPACE_BYTES = 4 << 30
-# Where the post-build Verifier smoke runs: the production Verifier nodes (eval16) in a
+# Where the post-build Verifier smoke runs: the production Verifier nodes in a
 # namespace whose deny-all NetworkPolicy keeps the Pod offline.
-NODE_SELECTOR = {"eks.amazonaws.com/nodegroup": "frontiercs2-preview-eval16"}
+NODE_SELECTOR = {"eks.amazonaws.com/nodegroup": "frontiercs2-eval"}
 SMOKE_NAMESPACE = "task-format-verify"
 
 

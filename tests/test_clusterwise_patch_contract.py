@@ -1,4 +1,4 @@
-"""The author patch through the shared edit scope and the judge's own reference tree (#757).
+"""The author patch through the shared edit scope and the judge's own reference tree.
 
 The shared verifier applies a submission with tasks/shared/lib/edit_scope.py before the
 evaluator runs; the judge applies its reference patch itself, inside the evaluator's scratch

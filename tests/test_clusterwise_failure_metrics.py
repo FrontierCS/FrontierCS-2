@@ -24,7 +24,7 @@ JUDGE = TASK / "judge"
 sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402
 
-# A task.toml task runs the shared verifier and its beat-spec helper (#757).
+# A task.toml task runs the shared verifier and its beat-spec helper.
 SHARED_VERIFIER = task_manifest.SHARED / "verifier"
 
 # The full evaluator imports numpy and compiler helpers that are intentionally

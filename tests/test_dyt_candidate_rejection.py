@@ -2,7 +2,7 @@
 
 A failed validity check returns (0, 0, fixed message, metrics) from evaluate(tree): train
 metrics are empty (the shared verifier admits only beat-spec metrics in train), and final
-keeps the private failure class in evidence only (#757).
+keeps the private failure class in evidence only.
 """
 
 import deployment_test_guard  # noqa: F401 # isort: skip

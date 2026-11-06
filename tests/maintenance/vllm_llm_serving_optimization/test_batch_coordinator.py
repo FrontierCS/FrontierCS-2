@@ -139,7 +139,7 @@ class BatchCoordinatorTests(unittest.TestCase):
             run_group(group, jps=0.5)
 
     def test_final_hidden_groups_accept_only_the_configured_rates(self):
-        # Owner-approved 2026-10-14: final runs hidden groups at the configured
+        # Final runs hidden groups at the configured
         # rates without the calibration label; any other rate is refused.
         self.assertEqual(FINAL_HIDDEN_JPS, {'swe': 1.0, 'bfcl': 1.25})
 

@@ -1,4 +1,4 @@
-"""Judge of template_task for the shared verifier (#757): evaluate(tree).
+"""Judge of template_task for the shared verifier: evaluate(tree).
 
 This docstring is the task's one scoring note; fill in each part for a new task.
 
