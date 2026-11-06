@@ -1,0 +1,46 @@
+# The definition of batch_local_counting (schema frontier.task/v1, #757). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "batch_local_counting"
+display_name = "Batch Local Counting"
+version = "g1-beat-spec-v1-continuous-score-v2-agent5h-r3"
+
+[agent]
+cpu_millis = 1000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 1000
+memory_bytes = 4294967296         # 4 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 180000
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 524288
+allowed_paths = [
+  "counting/forest.h", "counting/forest.cpp",
+  "counting/execution.h", "counting/execution.cpp",
+  "counting/aggregation.h", "counting/aggregation.cpp",
+  "executable/scope.cpp", "executable/command.cpp",
+  "plan/tree.h", "plan/tree.cpp",
+]
+max_changed_files = 12            # unchanged by the migration; the statement says twelve
+allow_new_files = false           # "no new file is permitted"
+# The workload tokens the old judge refused in added lines, case-insensitively.
+forbidden_added = ["web-spam", "rec-movielens", "bio-grid-yeast", "4voc", "5voc"]
+ignore_case = true
+
+[feedback]
+median_seconds = "Candidate median elapsed seconds of one full six-case round, over the five rounds."
+
+[paper]                           # for readers; the platform never reads it
+title = "Fast Local Subgraph Counting"
+venue = "PVLDB 2024"
+url = "https://www.vldb.org/pvldb/vol17/p1967-li.pdf"
+summary = "Implement the batched (shared-computation) path of the SCOPE exact local subgraph counter and minimize single-core wall time."

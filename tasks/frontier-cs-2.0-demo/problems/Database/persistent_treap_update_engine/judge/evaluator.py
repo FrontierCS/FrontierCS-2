@@ -1,3 +1,27 @@
+"""Judge of persistent_treap_update_engine (#757): evaluate(tree) on the shared verifier.
+
+`tree` is pristine/ (the Agent's repo/) with only the three update-engine headers overlaid; the
+shared edit scope has already rejected anything else (task.toml [submission]). The candidate,
+the private reference (pristine/ + reference.patch) and the fixed serial scaffold (pristine/)
+are built, checked with the correctness harness, and timed interleaved on six generated traces
+(development or final seeds) x four (threads, clients) configurations, five repetitions each.
+Every build and run is a fresh shared isolate instance (no judge files, environment or
+network; nothing persists between runs).
+
+Score: G[i,q] = median over repetitions of candidate/scaffold throughput; Q = geomean of G over
+the 24 pairs; raw_score = score_unbounded = 0 if Q <= 1 else 100*ln Q / (ln 10 + ln Q).
+A build, correctness, timeout or output failure is a scored zero; a reference or scaffold
+failure raises (a judging error, never a candidate verdict).
+
+Metrics (one beat_spec_workload_passes row per case/configuration pair):
+  case_throughput_ktps  median KTPS of the timed benchmark; higher; passes if candidate > reference
+  peak_memory_mib       median ru_maxrss of those processes; lower; passes if candidate < reference
+  historical_query_us   median us per historical range query; lower; passes if every candidate
+                        checksum equals the scaffold's and candidate < reference
+beats_reference = 1 iff every pair passes all three metrics (equality fails).
+The metric definitions before #757 are archived at docs/task-authoring/persistent_treap_update_engine/provenance/beat_spec.json.
+"""
+
 from __future__ import annotations
 
 import hashlib
@@ -12,17 +36,14 @@ import struct
 import subprocess
 import sys
 import tempfile
-import threading
 from typing import Any
 
-try:
-    from submission_patch import apply_submission_patch
-except ImportError:  # Local task-development fallback; Harbor supplies the helper.
-    apply_submission_patch = None
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+
 
 
 TASK_DIR = Path(__file__).resolve().parent
-APP_DIR = TASK_DIR / "harbor" / "app"
+APP_DIR = TASK_DIR / "pristine"
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 CORRECTNESS_SOURCE = TASK_DIR / "judge" / "correctness.cpp"
 HISTORY_SOURCE = TASK_DIR / "judge" / "history_bench.cpp"
@@ -30,16 +51,6 @@ ALLOW_PATHS = {
     "lib/treap/scheduler.hpp",
     "lib/treap/search_insert.hpp",
     "lib/treap/search_delete.hpp",
-}
-CONFIG: dict[str, Any] = {
-    "submission": {
-        "kind": "patch",
-        "path": "/app/solution.patch",
-        "repo_root": "/app",
-        "allow_paths": sorted(ALLOW_PATHS),
-        "max_changed_files": 3,
-        "max_patch_bytes": 262144,
-    }
 }
 TX = struct.Struct("@BQQ")
 HEADER = struct.Struct("@QQ")
@@ -53,13 +64,6 @@ CONFIGURATIONS = ((4, 1), (5, 1), (5, 2), (6, 2))
 # Paper Section 6.2 reports the average time of 10^5 historical range statistics.
 HISTORY_QUERIES = 100_000
 BEAT_METRICS = ("case_throughput_ktps", "peak_memory_mib", "historical_query_us")
-FORBIDDEN_SOURCE = (
-    "/proc", "/sys", "FRONTIER_", "getenv(", "secure_getenv(",
-    "readlink(", "getpid(", "getppid(", "clock_gettime(",
-    "std::filesystem", "std::ifstream", "std::ofstream", "std::chrono",
-    "steady_clock", "high_resolution_clock", "rdtsc", "rdtscp",
-    "program_invocation_name", "__progname", "getcwd(", "realpath(",
-)
 
 
 class ReferenceFailure(RuntimeError):
@@ -203,58 +207,6 @@ def _write_workload(path: Path, seed: int, profile: str, n: int, m: int) -> None
                 stream.write(TX.pack(0, left, left + 127))
 
 
-def _local_apply(patch_path: Path, root: Path) -> tuple[bool, str, Path | None]:
-    try:
-        text = patch_path.read_text(encoding="utf-8")
-    except Exception:
-        return False, "submission patch is unreadable", None
-    if len(text.encode()) > 262144:
-        return False, "submission patch exceeds the size limit", None
-    if not text.strip():
-        work = root / "candidate"
-        shutil.copytree(APP_DIR, work)
-        return True, "", work
-    paths = set(re.findall(r"^\+\+\+ b/(.+)$", text, re.MULTILINE))
-    if not paths or not paths <= ALLOW_PATHS:
-        return False, "submission changes a path outside the editable surface", None
-    if any(x in text for x in ("GIT binary patch", "new file mode", "deleted file mode", "rename from")):
-        return False, "structural or binary patches are not allowed", None
-    work = root / "candidate"
-    shutil.copytree(APP_DIR, work)
-    result = subprocess.run(
-        ["git", "apply", "--whitespace=nowarn", str(patch_path.resolve())],
-        cwd=work, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-    )
-    if result.returncode:
-        return False, "submission patch does not apply cleanly", None
-    return True, "", work
-
-
-def _apply_candidate(solution_path: str, root: Path) -> tuple[bool, str, Path | None]:
-    if apply_submission_patch is None:
-        return _local_apply(Path(solution_path), root)
-    result = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-    if not result.ok:
-        return False, result.message, None
-    staged = Path(result.workdir)
-    work = root / "candidate"
-    try:
-        shutil.copytree(staged, work)
-    finally:
-        shutil.rmtree(staged.parent, ignore_errors=True)
-    return True, "", work
-
-
-def _source_policy(tree: Path) -> str | None:
-    try:
-        source = "\n".join((tree / name).read_text(encoding="utf-8") for name in ALLOW_PATHS)
-    except Exception:
-        return "an editable source file is unreadable"
-    if any(fragment in source for fragment in FORBIDDEN_SOURCE):
-        return "submission inspects process, timing, filesystem, or judge state"
-    return None
-
-
 def _apply_reference(root: Path) -> Path:
     work = root / "reference"
     shutil.copytree(APP_DIR, work)
@@ -265,26 +217,40 @@ def _apply_reference(root: Path) -> Path:
     return work
 
 
+def _sandboxed(command: list[str], read: list[Path], layers=()) -> isolate.Result:
+    """One run of a built binary in a fresh isolate instance; a timeout raises."""
+    result = isolate.run(command, timeout_seconds=RUN_TIMEOUT, syscalls="no_fork",
+                              read_paths=[str(path) for path in read], layers=layers)
+    if result.timed_out:
+        raise subprocess.TimeoutExpired(command, RUN_TIMEOUT)
+    return result
+
+
 def _compile(tree: Path, output_dir: Path, name: str,
              history: bool = False) -> tuple[Path, ...]:
     include = os.environ.get("MIMALLOC_INCLUDE")
     library = os.environ.get("MIMALLOC_LIBRARY")
     common = ["g++", "-std=c++20", "-O3", "-DNDEBUG", "-march=native", "-msse4", "-maes"]
-    includes = [f"-I{tree}"] + ([f"-I{include}"] if include else [])
+    includes = ["-I{work}"] + ([f"-I{include}"] if include else [])
     links = ["-lpthread"] + ([library] if library else ["-lmimalloc"])
     main = output_dir / f"main-{name}"
     check = output_dir / f"check-{name}"
-    targets = [(tree / "main.cpp", main), (CORRECTNESS_SOURCE, check)]
+    targets = [("{work}/main.cpp", main), ("{in}/correctness.cpp", check)]
     if history:
-        targets.append((HISTORY_SOURCE, output_dir / f"history-{name}"))
+        targets.append(("{in}/history_bench.cpp", output_dir / f"history-{name}"))
     for source, target in targets:
-        proc = subprocess.run(
-            common + [str(source)] + includes + links + ["-o", str(target)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
-            timeout=BUILD_TIMEOUT,
-        )
-        if proc.returncode:
+        # The compiler reads the tree's headers, so it runs in the sandbox too.
+        result = isolate.run(
+            common + [source] + includes + links + ["-o", "{out}/binary"],
+            timeout_seconds=BUILD_TIMEOUT, tree=tree, outputs=["binary"],
+            inputs={"correctness.cpp": CORRECTNESS_SOURCE, "history_bench.cpp": HISTORY_SOURCE},
+            output_bytes=256 << 20)
+        if result.timed_out:
+            raise subprocess.TimeoutExpired(common, BUILD_TIMEOUT)
+        if result.returncode or result.limit or not result.outputs["binary"]:
             raise RuntimeError(f"{name} build failed")
+        target.write_bytes(result.outputs["binary"])
+        target.chmod(0o755)
     return tuple(target for _, target in targets)
 
 
@@ -292,62 +258,35 @@ def _check(binary: Path, suite: list[tuple[int, str, int, int, int, int, int]]) 
     for seed, profile, n, m, threads, block_size, clients in suite:
         for attempt in range(2):
             try:
-                proc = subprocess.run(
+                result = _sandboxed(
                     [str(binary), str(seed), str(n), str(m), profile,
-                     str(threads), str(block_size), str(clients)],
-                    # Query-client count follows the corresponding timed configuration.
-                    # It is a separate argument because scheduler construction does not receive it.
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    timeout=RUN_TIMEOUT,
-                )
+                     str(threads), str(block_size), str(clients)], [binary])
+                # Query-client count follows the corresponding timed configuration.
+                # It is a separate argument because scheduler construction does not receive it.
                 break
             except subprocess.TimeoutExpired:
                 if attempt == 1:
                     raise
-        if proc.returncode:
+        if result.returncode or result.limit:
             raise RuntimeError("persistent-version correctness check failed")
 
 
-def _measured_process(command: list[str]) -> tuple[str, int, int]:
+def _measured_process(command: list[str], read: list[Path]) -> tuple[str, int, int]:
     """Run one judge process; return stdout, exit code and its own peak RSS in KiB.
 
-    ``os.wait4`` reaps exactly this child, so ``ru_maxrss`` is this process's
-    kernel-recorded resident-set high-water mark, not a maximum over earlier
-    children.  The candidate cannot write it: it is measured by this trusted
-    parent from the kernel's accounting of the fixed benchmark executable.
+    The launcher reaps exactly this process with wait4, so the peak is its kernel-recorded
+    resident-set high-water mark (ru_maxrss), measured outside the instance.
     """
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL, text=True)
-    lock = threading.Lock()
-    expired = threading.Event()
-
-    def expire() -> None:
-        with lock:
-            if proc.returncode is None:
-                expired.set()
-                proc.kill()
-
-    timer = threading.Timer(RUN_TIMEOUT, expire)
-    timer.start()
-    try:
-        assert proc.stdout is not None
-        output = proc.stdout.read()
-        _, status, usage = os.wait4(proc.pid, 0)
-        with lock:
-            proc.returncode = os.waitstatus_to_exitcode(status)
-    finally:
-        timer.cancel()
-        if proc.stdout is not None:
-            proc.stdout.close()
-    if expired.is_set():
-        raise subprocess.TimeoutExpired(command, RUN_TIMEOUT)
-    return output, proc.returncode, int(usage.ru_maxrss)
+    result = _sandboxed(command, read, [isolate.PeakRss()])
+    returncode = result.returncode if result.limit is None else -9
+    return (result.stdout.decode(errors="replace"), returncode,
+            result.measurements["max_rss_bytes"] // 1024)
 
 
-def _retry_timeout(command: list[str]) -> tuple[str, int, int]:
+def _retry_timeout(command: list[str], read: list[Path]) -> tuple[str, int, int]:
     for attempt in range(2):
         try:
-            return _measured_process(command)
+            return _measured_process(command, read)
         except subprocess.TimeoutExpired:
             if attempt == 1:
                 raise
@@ -358,7 +297,7 @@ def _run(binary: Path, workload: Path, threads: int, clients: int) -> tuple[floa
     """Return (throughput KTPS, peak resident memory MiB) of one benchmark run."""
     stdout, returncode, peak_kib = _retry_timeout(
         [str(binary), "contreap", str(workload), "-threads", str(threads),
-         "-clients", str(clients), "-batchsize", str(BLOCK_SIZE)])
+         "-clients", str(clients), "-batchsize", str(BLOCK_SIZE)], [binary, workload])
     if returncode:
         raise RuntimeError("benchmark run failed")
     match = THROUGHPUT_RE.search("\n" + stdout)
@@ -382,7 +321,7 @@ def _history(binary: Path, workload: Path, threads: int, seed: int) -> tuple[flo
     """Return (average microseconds per historical range query, answer checksum)."""
     stdout, returncode, _ = _retry_timeout(
         [str(binary), str(workload), str(threads), str(BLOCK_SIZE),
-         str(HISTORY_QUERIES), str(seed)])
+         str(HISTORY_QUERIES), str(seed)], [binary, workload])
     if returncode:
         raise RuntimeError("historical query benchmark failed")
     match = HISTORY_RE.match(stdout.strip())
@@ -432,17 +371,11 @@ def _score(gain_over_naive: float) -> tuple[float, float]:
     return score, score
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    work_parent = TASK_DIR / ".eval-work"
-    work_parent.mkdir(exist_ok=True)
-    root = Path(tempfile.mkdtemp(prefix="run-", dir=work_parent))
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    root = Path(tempfile.mkdtemp(prefix="run-"))
     try:
-        ok, message, candidate_tree = _apply_candidate(solution_path, root)
-        if not ok or candidate_tree is None:
-            return _invalid(message)
-        policy_error = _source_policy(candidate_tree)
-        if policy_error:
-            return _invalid(policy_error)
+        candidate_tree = root / "candidate"
+        shutil.copytree(tree, candidate_tree)
         reference_tree = _baseline("reference", _apply_reference, root)
         naive_tree = root / "naive"
         shutil.copytree(APP_DIR, naive_tree)
@@ -614,7 +547,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             scalability_ratio=round(results["candidate"][-1] / results["candidate"][-2], 4),
         )
         return candidate_score, unbounded, "valid; mixed-workload throughput scored", metrics
-    except ReferenceFailure:
+    except (ReferenceFailure, isolate.IsolateError):
         # Judging error: the Verifier reports a failed verification, not a score.
         raise
     except subprocess.TimeoutExpired:
@@ -630,7 +563,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print(json.dumps({"score": 0.0, "message": "expected one patch path"}))
+        print(json.dumps({"score": 0.0, "message": "expected one judged tree"}))
         return 2
     score, unbounded, message, metrics = evaluate(sys.argv[1])
     print(json.dumps({"score": score, "score_unbounded": unbounded,

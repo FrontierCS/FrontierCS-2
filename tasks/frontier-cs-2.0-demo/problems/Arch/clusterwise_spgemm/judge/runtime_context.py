@@ -10,7 +10,15 @@ import tempfile
 from runtime_contract import LogicalCPU, RuntimeLimits, select_logical_cpus, validate_cpu_quota
 
 ROOT = Path(__file__).resolve().parent
-CONFIG = json.loads((ROOT / "runtime-config.json").read_text())
+
+
+class ResourceCeiling(RuntimeError):
+    """A measured memory or workspace ceiling was exceeded. During the candidate's build or runs
+    this is the candidate's fault (a scored zero); otherwise it is a judge failure."""
+
+# The generated config.yaml (JSON): task.toml [submission] as edit_scope, the eval timeout as
+# runtime.timeout_seconds, and this task's [judge.config] (benchmark, environment, datasets).
+CONFIG = json.loads((ROOT / "config.yaml").read_text())
 LIMITS = RuntimeLimits.from_config(CONFIG)
 
 
@@ -91,11 +99,11 @@ class Context:
     def memory_check(self, capture=None):
         self.workspace_check(capture)
         if resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024 > 8 * 1024**3:
-            raise RuntimeError("parent exceeds 8-GiB memory ceiling")
+            raise ResourceCeiling("parent exceeds 8-GiB memory ceiling")
         if self.cgroup:
             peak = int((self.cgroup / "memory.peak").read_text())
             if peak > 56 * 1024**3:
-                raise RuntimeError("total measured memory exceeds 56-GiB acceptance target")
+                raise ResourceCeiling("total measured memory exceeds 56-GiB acceptance target")
             for name in ("memory.current", "memory.peak", "memory.stat", "memory.events", "cpu.stat", "cpu.pressure", "memory.pressure"):
                 self.receipt[name] = (self.cgroup / name).read_text()[:8192]
 
@@ -119,7 +127,7 @@ class Context:
             total += dataset.stat().st_size
         self.receipt["accounted_workspace_bytes"] = total
         if total > CONFIG["environment"]["storage_mb"] * 1024**2:
-            raise RuntimeError("32-GiB workspace ceiling exceeded")
+            raise ResourceCeiling("32-GiB workspace ceiling exceeded")
 
 
 def require_disk_capture(file):
@@ -130,21 +138,3 @@ def require_disk_capture(file):
         raise OSError(ctypes.get_errno(), "capture filesystem readback failed")
     if ctypes.c_long.from_buffer(data).value in {0x01021994, 0x858458F6}:
         raise RuntimeError("tmpfs/ramfs capture is prohibited")
-
-
-def verify_source_tree(tree, pristine):
-    import hashlib
-    allowed = CONFIG["submission"]["allow_paths"]
-    editable = lambda s: any(s == p or (p.endswith("/") and s.startswith(p)) for p in allowed)
-    before = {p.relative_to(pristine).as_posix(): p for p in pristine.rglob("*") if p.is_file()}
-    after = {}
-    for path in tree.rglob("*"):
-        if path.is_symlink() or not (path.is_file() or path.is_dir()):
-            raise ValueError("nonregular submission member")
-        if path.is_file(): after[path.relative_to(tree).as_posix()] = path
-    for name in before.keys() | after.keys():
-        if editable(name): continue
-        if name not in before or name not in after:
-            raise ValueError("source-lock file set changed")
-        if hashlib.sha256(before[name].read_bytes()).digest() != hashlib.sha256(after[name].read_bytes()).digest():
-            raise ValueError("source-locked bytes changed")

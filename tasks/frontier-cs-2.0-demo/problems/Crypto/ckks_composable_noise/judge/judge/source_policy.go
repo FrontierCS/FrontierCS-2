@@ -1,7 +1,8 @@
 // Judge-owned AST policy for the editable part of package estimator.
 // It never implements estimator operations. The byte-identical fixed surface
-// (statistics, test vectors, experiment mains, module files) is checked by
-// fixed_surface.py before this program runs.
+// (statistics, test vectors, experiment mains, module files) and the file kinds
+// (.go only, no _test.go, regular files) are enforced by the shared edit scope
+// (task.toml [submission]) before this program runs.
 package main
 
 import (
@@ -173,14 +174,8 @@ func main() {
 			}
 			return nil
 		}
-		if info.Mode()&os.ModeType != 0 {
-			fail("special file " + rel)
-		}
 		if !strings.HasSuffix(rel, ".go") || fixedFiles[rel] {
 			return nil
-		}
-		if strings.HasSuffix(rel, "_test.go") {
-			fail("test file " + rel)
 		}
 		f := check(p, rel)
 		if keys, ok := protected[rel]; ok {

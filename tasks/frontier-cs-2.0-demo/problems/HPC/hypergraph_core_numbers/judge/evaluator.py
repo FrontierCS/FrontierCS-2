@@ -1,16 +1,32 @@
 #!/usr/bin/env python3
-"""Run original ligra/ligra.h parallel_main -> Compute -> KCore with private output observation."""
+"""Judge of hypergraph_core_numbers (#757): evaluate(tree) on the shared verifier.
+
+`tree` is pristine/ with only apps/hyper/HyperKCore-Efficient.C and files below
+apps/hyper/frontier_solution/ overlaid. check_tree keeps the original Compute body and the
+KCore result boundary (out_of_scope); a program that defines a symbol exported by a linked
+library is rejected after the build (content_policy). The original ligra.h -> Compute -> KCore
+spine runs in fresh confined processes (the shared isolate: no judge access, a new private
+TMPDIR, no forks), so no state survives between repeats; every execution's cores are
+oracle-checked.
+
+Score: t = median over the active workloads of the candidate's seven-run median eight-thread
+runtime (seconds, verifier-timed); raw_score = score_unbounded = 100*exp(-t/0.25). Any failure
+or wrong core number is a scored zero; a failing reference raises.
+
+Metrics (one beat_spec_workload_passes row per workload; development: 2, final: 4):
+  runtime_seconds             eight-thread median; lower; passes if C <= 0.97 * R
+  sequential_runtime_seconds  one-thread median; lower; passes if C <= 0.97 * R and every
+                              one-thread run succeeded with exact cores
+beats_reference = 1 iff all guards and executions are exact and every workload passes both.
+The metric definitions before #757 are archived at docs/task-authoring/hypergraph_core_numbers/provenance/beat_spec.json.
+"""
 from __future__ import annotations
-import hashlib, heapq, json, math, os, re, select, shutil, signal, statistics, struct, subprocess, sys, tempfile, time
+import hashlib, heapq, json, math, os, re, shutil, statistics, struct, subprocess, sys, tempfile, time
 from pathlib import Path
 TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
-try:
-    import yaml
-except ImportError:
-    yaml = None
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 REPEATS = 7
 MIN_SPEEDUP = 0.03
@@ -24,6 +40,10 @@ METRICS = ("runtime_seconds", "sequential_runtime_seconds")
 # `#define HYPER 1`, in its order; ligra.h (main) and hypergraphIO.h/IO.h (the
 # loader) are in hygra.h's include closure.
 FRAMEWORK_HEADERS = ("hygra.h", "index_map.h", "bucket.h", "edgeMapReduce.h")
+
+
+class LibraryInterposition(RuntimeError):
+    """The candidate program defines a symbol a linked library exports (a rejection)."""
 
 
 class ReferenceVerificationError(RuntimeError):
@@ -40,9 +60,8 @@ GUARDS = [
     ("singletons-cascade", 6, [[0],[0,1],[1,2],[2,3,4],[3,4]]),
 ]
 
-def _config():
-    if yaml: return yaml.safe_load((TASK_DIR/"config.yaml").read_text())
-    return {"submission":{"allow_paths":["apps/hyper/HyperKCore-Efficient.C","apps/hyper/frontier_solution/"],"max_patch_bytes":262144,"max_changed_files":20}}
+PRISTINE = TASK_DIR/"pristine"
+EDITABLE = "apps/hyper/HyperKCore-Efficient.C"
 
 def _test_generated(nv, nh, card, seed):
     # SplitMix-style deterministic membership generation, with deliberately irregular edge sizes.
@@ -113,7 +132,7 @@ def _oracle(nv, edges):
 
 def _observed(text):
     # The public Compute body stays exact; only this private copy observes its result.
-    pristine=(TASK_DIR/"harbor/app/apps/hyper/HyperKCore-Efficient.C").read_text()
+    pristine=(PRISTINE/EDITABLE).read_text()
     marker="template <class vertex>\nvoid Compute("
     frozen=marker+pristine.split(marker,1)[1]
     if text.count(frozen)!=1: raise RuntimeError("original Compute wiring was changed")
@@ -126,7 +145,7 @@ def _compile(repo, out):
     text=_observed((Path(repo)/"apps/hyper/HyperKCore-Efficient.C").read_text())
     # Baseline: the pristine editable file (the KCore stub, no solver code),
     # observed and compiled with exactly the same flags and paths.
-    baseline=_observed((TASK_DIR/"harbor/app/apps/hyper/HyperKCore-Efficient.C").read_text())
+    baseline=_observed((PRISTINE/EDITABLE).read_text())
     use=Path(out).with_suffix(".C"); use.write_text(text)
     base=Path(out).with_name(Path(out).name+"-baseline.C"); base.write_text(baseline)
     # The fixed framework (driver, loader, hygra) is parsed before any line of
@@ -265,33 +284,24 @@ def _reject_library_interposition(obj, baseline_obj, linkmap, binary):
         if name not in exported or name in REPLACEABLE: continue
         reference=pristine.get(symbol[0])
         if reference is not None and candidate.definition(symbol)==reference: continue
-        raise RuntimeError("program defines a library symbol")
+        raise LibraryInterposition("program defines a library symbol")
 
 def _run(binary, graph, expected, role, threads=PARALLEL_THREADS):
     # Correctness and time belong to this same execution; child-reported metrics are ignored.
-    import resource
+    # Every execution (candidate and reference alike) is a fresh confined process (the shared
+    # isolate): it reads only its binary and graph, writes only its own new TMPDIR, and
+    # cannot fork, so nothing (a file, SysV segment, keyring or helper process) carries over to
+    # the next repeat. The time is the launcher's fork-to-exit stamp of the binary alone.
     limit=max(65536,len(expected)*16+8192)
-    def output_limit(): resource.setrlimit(resource.RLIMIT_FSIZE,(limit,limit))
-    env=os.environ.copy(); env.update(OMP_NUM_THREADS=str(threads),OMP_DYNAMIC="FALSE")
-    with tempfile.TemporaryFile() as output:
-        started=time.perf_counter_ns()
-        p=subprocess.Popen([str(binary),"-s","-rounds","0","-nb","128",str(graph)],stdout=subprocess.DEVNULL,stderr=output,env=env,preexec_fn=output_limit,start_new_session=True)
-        try:
-            # pidfd readiness avoids Python's timeout-wait polling, which rounds short runs up.
-            descriptor=os.pidfd_open(p.pid)
-            try:
-                if not select.select([descriptor],[],[],40)[0]:
-                    raise RuntimeError(f"{role} executable timed out")
-                p.wait()
-            finally:
-                os.close(descriptor)
-        finally:
-            if p.poll() is None:
-                os.killpg(p.pid,signal.SIGKILL)
-                p.wait()
-        elapsed=(time.perf_counter_ns()-started)/1e9
-        if p.returncode: raise RuntimeError(f"{role} executable exited with status {p.returncode}")
-        output.seek(0); raw=output.read(limit+1)
+    result=isolate.run([str(binary),"-s","-rounds","0","-nb","128",str(graph)],
+                            timeout_seconds=40,read_paths=[str(binary),str(graph)],
+                            syscalls="no_fork",file_bytes=limit,output_bytes=limit+1,
+                            env={"PATH":os.environ.get("PATH","/usr/bin:/bin"),
+                                 "OMP_NUM_THREADS":str(threads),"OMP_DYNAMIC":"FALSE"})
+    if result.timed_out: raise RuntimeError(f"{role} executable timed out")
+    elapsed=result.command_seconds
+    if result.returncode or result.limit: raise RuntimeError(f"{role} executable exited with status {result.returncode}")
+    raw=result.stderr
     if len(raw)>limit: raise RuntimeError("core output exceeded its size limit")
     rows=[line for line in raw.decode("ascii").splitlines() if line.startswith("FRONTIER_CORES")]
     if len(rows)!=1: raise RuntimeError("core result was not uniquely observable")
@@ -311,32 +321,56 @@ def _run_reference(binary, graph, expected, threads=PARALLEL_THREADS):
 def _score_time(t): return 100.0*math.exp(-t/0.25)
 
 def _temp(prefix):
-    base=Path(os.environ.get("FRONTIER_EVAL_SCRATCH",Path.cwd()))
-    base.mkdir(parents=True,exist_ok=True)
+    base=os.environ.get("FRONTIER_EVAL_SCRATCH")
+    if base: Path(base).mkdir(parents=True,exist_ok=True)
     return Path(tempfile.mkdtemp(prefix=prefix,dir=base))
 
 def _failure_metrics(suite):
-    # Global invalidity fails every active workload; no elapsed time was measured.
+    # Global invalidity fails every active workload; no elapsed time was measured, so the
+    # reference is not scored either (the shared verifier requires both numbers).
     return {
         "beat_spec_workload_passes": [
             {"workload": name, "metrics": {metric: False for metric in METRICS}}
             for name, _ in suite
         ],
         "beats_reference": 0,
+        "reference_score": 0.0,
+        "margin": 0.0,
     }
 
-def evaluate(solution_path: str):
-    applied=None; reference=None; work=None
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: the original Compute body and the KCore result boundary of the
+    editable file stay exactly as shipped (the judge observes the result there)."""
+    try:
+        _observed((Path(tree)/EDITABLE).read_text())
+    except (OSError, UnicodeDecodeError, RuntimeError):
+        return "out_of_scope", [EDITABLE]
+    return None
+
+def _reference_tree(work):
+    tree=work/"reference-tree"
+    shutil.copytree(PRISTINE,tree)
+    for directory,names,files in os.walk(tree):
+        for name in [directory,*(os.path.join(directory,f) for f in files)]:
+            os.chmod(name,os.stat(name).st_mode|0o200)
+    p=subprocess.run(["git","apply","--whitespace=nowarn",str(TASK_DIR/"reference.patch")],cwd=tree,
+                     capture_output=True,text=True,timeout=300,
+                     env={**os.environ,"GIT_CEILING_DIRECTORIES":str(work)})
+    if p.returncode: raise ReferenceVerificationError("private reference could not be restored")
+    return tree
+
+def evaluate(tree: str):
+    work=None
     suite=FINAL if os.environ.get("FRONTIER_SUBMISSION_ROLE")=="final" else DEV
     try:
-        applied=apply_submission_patch(solution_path,TASK_DIR,_config())
-        if not applied.ok: return 0.0,0.0,applied.message,_failure_metrics(suite)
-        reference=apply_submission_patch(TASK_DIR/"reference.patch",TASK_DIR,_config())
-        if not reference.ok: raise ReferenceVerificationError("private reference could not be restored")
         work=_temp("frontier_eval_"); cb=work/"candidate"; rb=work/"reference"
-        _compile(Path(applied.workdir),cb)
+        reference_tree=_reference_tree(work)
         try:
-            _compile(Path(reference.workdir),rb)
+            _compile(Path(tree),cb)
+        except LibraryInterposition:
+            return 0.0,0.0,"program defines a library symbol",{"rejected":"content_policy"}
+        try:
+            _compile(reference_tree,rb)
         except Exception as error:
             raise ReferenceVerificationError("private reference did not build") from error
         fast=os.environ.get("FRONTIER_TEST_FAST")=="1"
@@ -383,7 +417,7 @@ def evaluate(solution_path: str):
                         continue
                     try:
                         st[name].append(_run(cb,path,expected,"candidate",SEQUENTIAL_THREADS))
-                    except ReferenceVerificationError:
+                    except (ReferenceVerificationError, isolate.IsolateError):
                         raise
                     except Exception as error:
                         sequential_failure[name]=type(error).__name__
@@ -399,16 +433,14 @@ def evaluate(solution_path: str):
         score=_score_time(med); refscore=_score_time(refmed)
         metrics={"beat_spec_workload_passes":rows,"beats_reference":int(all(value for row in rows for value in row["metrics"].values())),"reference_score":refscore,"margin":score-refscore,"candidate_runtime_seconds_median":med,"candidate_sequential_runtime_seconds_median":smed,"runtime_seconds_per_workload":cm,"reference_runtime_seconds_per_workload":rm,"candidate_runtime_samples":ct,"reference_runtime_samples":rt,"sequential_runtime_seconds_per_workload":scm,"reference_sequential_runtime_seconds_per_workload":srm,"candidate_sequential_runtime_samples":st,"reference_sequential_runtime_samples":srt,"candidate_sequential_failures":sequential_failure,"required_speedup_fraction":MIN_SPEEDUP,"candidate_core_numbers":"validated on every measured execution","reference_core_numbers":"oracle-validated on every measured execution","final_runtime_seconds":med,"workload_sha256":workload_hashes}
         return score,score,"valid exact result",metrics
-    except ReferenceVerificationError:
+    except (ReferenceVerificationError, isolate.IsolateError):
         # Failed verification, not a candidate score.
         raise
     except Exception as error:
         return 0.0,0.0,str(error)[:120] or "evaluation failed",_failure_metrics(suite)
     finally:
-        for result in (applied,reference):
-            if result and result.workdir: shutil.rmtree(Path(result.workdir).parent,ignore_errors=True)
         if work: shutil.rmtree(work,ignore_errors=True)
 
 if __name__=="__main__":
-    result=evaluate(sys.argv[1] if len(sys.argv)>1 else str(TASK_DIR/"reference.patch"))
+    result=evaluate(sys.argv[1] if len(sys.argv)>1 else str(PRISTINE))
     print(json.dumps({"score":result[0],"score_unbounded":result[1],"message":result[2],"metrics":result[3]},sort_keys=True))

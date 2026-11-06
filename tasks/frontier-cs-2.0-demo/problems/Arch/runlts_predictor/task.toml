@@ -1,0 +1,48 @@
+# The definition of runlts_predictor (schema frontier.task/v1, #757). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+schema = "frontier.task/v1"
+id = "runlts_predictor"
+display_name = "Register-aware Branch Prediction"
+version = "category-feedback-noise-statement-5h-final2h-20261014"
+
+[agent]
+cpu_millis = 1000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 42949672960     # 40 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 34359738368        # 32 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 18000
+eval_timeout_seconds = 7200
+
+# The editable surface, unchanged by the migration. Which bytes of my_cond_branch_predictor.cc
+# may change, and what added code may contain, is the judge's source audit (check_tree).
+[submission]
+max_bytes = 262144
+allowed_paths = ["my_cond_branch_predictor.cc", "solver_extensions/"]
+
+# Judge-only settings of the evaluator (config.yaml): the address-space limit of each build or
+# simulator process and the number of simulations run side by side.
+[judge.config]
+runtime = { environment = { memory_mb = 4096 } }
+environment = { cpus = 8 }
+
+# Agent-visible train metrics.
+[feedback]
+train_br_mis_pki_mean = "Candidate mean BrMisPKI (four-decimal printed rate) over the train traces."
+train_cyc_wp_pki_mean = "Candidate mean CycWpPKI (four-decimal printed rate) over the train traces."
+all_metrics_progress = "Counts and percentages of train traces on which both prediction comparisons clear together: passed, failed, total, pass_percent, fail_percent."
+category_means = "Per application category (compress, fp, infra, int, media, web): number of train traces and the candidate's mean br_mis_pki and cyc_wp_pki from exact counters."
+candidate_failure = "0 for a measured result; otherwise the failing stage of a scored zero: 1 C++ parse error in the source audit, 2 logical storage over 1,572,864 bits, 3 source audit over its limit, 4 build failed or timed out, 5 a simulation failed or timed out, 6 malformed simulator output, 7 instruction counts differ from the trace's, 8 another candidate failure."
+
+[paper]                           # for readers; the platform never reads it
+title = "RUNLTS: Register-value-aware Predictor Utilizing Nested Large Tables"
+venue = "CBP 2025"
+url = "https://ericrotenberg.wordpress.ncsu.edu/files/2025/06/cbp2025-final44-Koizumi.pdf"
+summary = "Design a register-aware conditional branch predictor evaluated in a cycle-aware trace simulator."

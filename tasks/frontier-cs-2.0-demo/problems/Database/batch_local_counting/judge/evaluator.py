@@ -1,12 +1,32 @@
 #!/usr/bin/env python3
+"""batch_local_counting judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+
+Scoring. Three trees are built (Release, -j1): the independent path (pristine/ +
+baseline_naive.patch, B), the reference (pristine/ + reference.patch) and the candidate (the
+judged tree, C). Five rounds in rotating order each run the six cases (three graphs x the
+5voc/4voc batch) with `scope.out -b -share`; every output file must equal the independent
+path's, byte for byte, in every round. raw_score = score_unbounded =
+100 * L / (2 + L), L = max(0, median_r log2(B_r / C_r)); any validity failure scores 0.
+
+Metrics (one row per case in beat_spec_workload_passes):
+  exact_counts           every output filename and byte equals the reference; passes when exact.
+  batch_latency_seconds  case wall time, lower is better; passes when correct and the
+                         candidate is strictly faster than the reference in all five rounds.
+beats_reference = 1 iff both metrics pass on all six cases. Train also returns
+median_seconds (the candidate's median full-suite seconds).
+
+The shared verifier has already applied the patch with the shared edit scope (task.toml
+[submission]); identical source trees are built and timed once. Every build and counting run
+of every tree is a fresh instance of the shared isolate launcher (no judge access, private
+directories deleted after the run, every process killed), so no state survives between runs;
+case times are the launcher's fork-to-exit stamp of scope.out alone.
+"""
 from __future__ import annotations
 
 import hashlib
 import gzip
 import math
 import os
-import re
-import signal
 import shutil
 import statistics
 import subprocess
@@ -16,27 +36,10 @@ import time
 from pathlib import Path
 
 TASK_DIR = Path(__file__).resolve().parent
+PRISTINE = TASK_DIR / "pristine"
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
-from submission_patch import apply_submission_patch
-from state_guard import StateGuard
-
-CONFIG = {
-    "submission": {
-        "kind": "patch",
-        "path": "/app/solution.patch",
-        "repo_root": "/app",
-        "allow_paths": [
-            "counting/forest.h", "counting/forest.cpp",
-            "counting/execution.h", "counting/execution.cpp",
-            "counting/aggregation.h", "counting/aggregation.cpp",
-            "executable/scope.cpp", "executable/command.cpp",
-            "plan/tree.h", "plan/tree.cpp",
-        ],
-        "max_changed_files": 12,
-        "max_patch_bytes": 524288,
-    }
-}
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 # Fixed independent halves of the upstream queries for which the artifact's
 # independent and optimized paths agree exactly on every evaluated graph.
@@ -48,8 +51,28 @@ FINAL_5 = _COMPATIBLE_5[1::2]
 DEV_4 = _COMPATIBLE_4[::2]
 FINAL_4 = _COMPATIBLE_4[1::2]
 RUNS = 5
-FORBIDDEN_ADDED = ("web-spam", "rec-movielens", "bio-grid-yeast",
-                   "4voc", "5voc", "frontier_", "submission_role")
+BUILD_TIMEOUT = 120 + 300 + 120 + 600 + 60  # the four step limits below, plus copying out
+RUN_TIMEOUT = 180
+OUTPUT_BYTES = 256 << 20
+BUILT = ".frontier-build"  # scope.out and the shared libraries it loads, side by side
+# The CMake targets are fixed (no build file is editable): scope.out links libplan, libgraph and
+# libutility as shared libraries; the instance that built them is gone when they run, so the
+# runs load them from the judge's copy through LD_LIBRARY_PATH.
+ARTIFACTS = ("scope.out", "libplan.so", "libgraph.so", "libutility.so")
+# nauty's configure rewrites tracked files, so the build runs in the instance's own copy. Each
+# step keeps its own limit; `timeout` exits 124 when one is exceeded.
+BUILD_SCRIPT = r"""set -e
+cd utility/automorphism
+timeout -s KILL 120 ./configure >/dev/null 2>&1
+sed -i '0,/^CFLAGS=/s//CFLAGS= -fPIC /' makefile
+timeout -s KILL 300 make -j1 nauty.a >/dev/null 2>&1
+mv nauty.a libnauty.a
+cd ../..
+timeout -s KILL 120 cmake -S . -B .frontier-build -DCMAKE_BUILD_TYPE=Release >/dev/null 2>&1
+timeout -s KILL 600 cmake --build .frontier-build --target scope.out -j1 >/dev/null 2>&1
+cp .frontier-build/executable/scope.out .frontier-build/plan/libplan.so \
+   .frontier-build/graph/libgraph.so .frontier-build/utility/libutility.so "$1/"
+"""
 
 
 CASE_NAMES = tuple(f"{graph}-{size}" for graph in
@@ -88,59 +111,22 @@ def _score_log_ratios(log_ratios: list[float]) -> tuple[float, float]:
     return score, 2.0 ** median_log_ratio
 
 
-def _added_source_uses_forbidden_token(patch: Path) -> str | None:
-    text = patch.read_text(encoding="utf-8", errors="replace")
-    added = "\n".join(line[1:] for line in text.splitlines()
-                      if line.startswith("+") and not line.startswith("+++"))
-    folded = added.casefold()
-    return next((token for token in FORBIDDEN_ADDED if token in folded), None)
-
-
-def _run(args: list[str], cwd: Path, timeout: int) -> subprocess.CompletedProcess:
-    proc = subprocess.Popen(
-        args, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        text=True, env={**os.environ, "LC_ALL": "C"}, start_new_session=True)
-    try:
-        proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        proc.wait()
-        raise
-    finally:
-        # A submitted binary must not leave workers consuming CPU or perturbing
-        # the next member of an interleaved timing round.
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-    return subprocess.CompletedProcess(args, proc.returncode)
-
-
 def _build(tree: Path) -> Path:
-    auto = tree / "utility" / "automorphism"
-    if _run(["./configure"], auto, 120).returncode != 0:
-        raise RuntimeError("nauty configuration failed")
-    makefile = auto / "makefile"
-    content = makefile.read_text(encoding="utf-8")
-    content = re.sub(r"^CFLAGS=", "CFLAGS= -fPIC ", content, count=1, flags=re.M)
-    makefile.write_text(content, encoding="utf-8")
-    if _run(["make", "-j1", "nauty.a"], auto, 300).returncode != 0:
-        raise RuntimeError("nauty build failed")
-    (auto / "nauty.a").replace(auto / "libnauty.a")
-    build = tree / ".frontier-build"
-    if _run(["cmake", "-S", str(tree), "-B", str(build),
-             "-DCMAKE_BUILD_TYPE=Release"], tree, 120).returncode != 0:
-        raise RuntimeError("CMake configuration failed")
-    if _run(["cmake", "--build", str(build), "--target", "scope.out", "-j1"],
-            tree, 600).returncode != 0:
+    """Build `tree` in an isolate instance; return the judge's copy of scope.out (its
+    shared libraries beside it)."""
+    result = isolate.run(["sh", "-c", BUILD_SCRIPT, "build", "{out}"], tree=tree,
+                              outputs=ARTIFACTS, timeout_seconds=BUILD_TIMEOUT,
+                              output_bytes=OUTPUT_BYTES, env={"LC_ALL": "C"})
+    if result.timed_out or result.returncode in (124, 137):
+        raise subprocess.TimeoutExpired("build", BUILD_TIMEOUT)
+    if not result.ok or not all(result.outputs.get(name) for name in ARTIFACTS):
         raise RuntimeError("C++ build failed")
-    binary = build / "executable" / "scope.out"
-    if not binary.is_file():
-        raise RuntimeError("scope.out was not produced")
-    return binary
+    built = tree / BUILT
+    built.mkdir(exist_ok=True)
+    for name in ARTIFACTS:
+        (built / name).write_bytes(result.outputs[name])
+        (built / name).chmod(0o555)
+    return built / "scope.out"
 
 
 def _make_workload(tree: Path, size: int, ids: tuple[int, ...], name: str) -> Path:
@@ -177,32 +163,55 @@ def _case_specs(tree: Path, final: bool) -> list[tuple[str, Path, Path, Path]]:
     return cases
 
 
-def _digest_outputs(output: Path) -> str:
-    files = sorted(p for p in output.iterdir() if p.is_file())
-    if not files:
+def _digest_outputs(outputs: dict) -> str:
+    if not any(data is not None for data in outputs.values()):
         raise RuntimeError("counter emitted no result files")
     digest = hashlib.sha256()
-    for path in files:
-        digest.update(path.name.encode())
+    for name in sorted(outputs):
+        data = outputs[name]
+        digest.update(name.encode())
         digest.update(b"\0")
-        digest.update(path.read_bytes())
+        # A missing file differs from every present one (no empty-file collision).
+        digest.update(b"\1missing" if data is None else data)
     return digest.hexdigest()
 
 
-def _prepare_patch(patch: Path, final: bool) -> dict:
-    result = apply_submission_patch(patch, TASK_DIR, CONFIG)
-    if not result.ok or result.workdir is None:
-        raise RuntimeError(result.message or "patch rejected")
-    tree = result.workdir
+def _patched_pristine(patch: Path) -> Path:
+    """A writable copy of the pristine starter with a trusted judge patch applied."""
+    tree = Path(tempfile.mkdtemp(prefix="judge-tree-")) / "tree"
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(tree.parent.resolve())}
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(patch)], cwd=tree,
+                   check=True, capture_output=True, timeout=300, env=env)
+    return tree
+
+
+def _tree_key(tree: Path) -> str:
+    """Identity of a source tree before it is built: the names and bytes of every file."""
+    digest = hashlib.sha256()
+    for path in sorted(p for p in tree.rglob("*") if p.is_file()):
+        digest.update(str(path.relative_to(tree)).encode())
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def _prepare_tree(tree: Path, final: bool) -> dict:
     binary = _build(tree)
     cases = []
     for name, workload, graph, triangle in _case_specs(tree, final):
-        output = tree / f".frontier-results-{name}"
+        # The results come back as the instance's out/<query file name>, one per query.
         command = [
             str(binary), "-q", str(workload), "-d", str(graph),
-            "-t", str(triangle), "-r", str(output), "-b", "-share",
+            "-t", str(triangle), "-r", "{out}", "-b", "-share",
         ]
-        cases.append((name, output, command))
+        reads = [str(p.resolve()) for p in (binary.parent, workload, graph, triangle)]
+        names = sorted(p.name for p in workload.iterdir())
+        cases.append((name, (command, reads, names), str(binary.parent.resolve())))
     return {
         "tree": tree,
         "cases": cases,
@@ -214,38 +223,34 @@ def _prepare_patch(patch: Path, final: bool) -> dict:
 
 
 def _run_prepared(prepared: dict) -> float:
-    start = time.monotonic()
+    seconds = 0.0
     digest = hashlib.sha256()
-    for name, output, command in prepared["cases"]:
-        if output.exists():
-            shutil.rmtree(output)
-        output.mkdir()
-        case_start = time.monotonic()
-        proc = _run(command, prepared["tree"], 180)
-        prepared["case_times"][name].append(time.monotonic() - case_start)
-        if proc.returncode != 0:
+    for name, (command, reads, names), libraries in prepared["cases"]:
+        result = isolate.run(command, read_paths=reads, outputs=names, cwd="{work}",
+                                  timeout_seconds=RUN_TIMEOUT, output_bytes=OUTPUT_BYTES,
+                                  env={"LC_ALL": "C", "LD_LIBRARY_PATH": libraries})
+        if result.timed_out:
+            raise subprocess.TimeoutExpired(command[0], RUN_TIMEOUT)
+        # The case time is scope.out alone (fork to exit, stamped by the launcher); the round
+        # adds the judge's own fixed hashing, not the instance's staging and cleanup.
+        prepared["case_times"][name].append(result.command_seconds)
+        if not result.ok:
             raise RuntimeError("counting run failed")
+        hashing = time.monotonic()
         digest.update(name.encode())
-        case_digest = _digest_outputs(output)
-        # Checked output is removed at once, so no later process (this or any
-        # other implementation, this or a later round) can read it back.
-        shutil.rmtree(output)
+        case_digest = _digest_outputs(result.outputs)
         previous = prepared["case_digests"].get(name)
         if previous is not None and previous != case_digest:
             raise RuntimeError("counts changed between repeated runs")
         prepared["case_digests"][name] = case_digest
         digest.update(case_digest.encode())
-    seconds = time.monotonic() - start
+        seconds += result.command_seconds + (time.monotonic() - hashing)
     current = digest.hexdigest()
     if prepared["digest"] and current != prepared["digest"]:
         raise RuntimeError("counts changed between repeated runs")
     prepared["digest"] = current
     prepared["times"].append(seconds)
     return seconds
-
-
-def _patch_key(patch: Path) -> str:
-    return hashlib.sha256(patch.read_bytes()).hexdigest()
 
 
 def _workload_decisions(naive: dict, reference: dict, candidate: dict) -> list[dict]:
@@ -270,33 +275,23 @@ def _workload_decisions(naive: dict, reference: dict, candidate: dict) -> list[d
     return rows
 
 
-def _paired_protocol(candidate_patch: Path, final: bool) -> dict:
-    patches = {
-        "naive": TASK_DIR / "baseline_naive.patch",
-        "reference": TASK_DIR / "reference.patch",
-        "candidate": candidate_patch,
-    }
-    label_keys = {label: _patch_key(patch) for label, patch in patches.items()}
+def _paired_protocol(trees: dict[str, Path], final: bool) -> dict:
+    # Identical source trees are built and timed once (a resubmitted reference is a tie,
+    # never a timing win), exactly as identical patches were before.
+    label_keys = {label: _tree_key(tree) for label, tree in trees.items()}
     unique_keys: list[str] = []
-    key_patches: dict[str, Path] = {}
+    key_trees: dict[str, Path] = {}
     for label in ("naive", "reference", "candidate"):
         key = label_keys[label]
-        if key not in key_patches:
+        if key not in key_trees:
             unique_keys.append(key)
-            key_patches[key] = patches[label]
+            key_trees[key] = trees[label]
 
     prepared: dict[str, dict] = {}
     try:
         for key in unique_keys:
-            prepared[key] = _prepare_patch(key_patches[key], final)
+            prepared[key] = _prepare_tree(key_trees[key], final)
 
-        # The five rounds repeat identical commands in one container, so every
-        # candidate round must leave the container as it found it (state_guard).
-        # Snapshots are outside the timed region.
-        candidate_key = label_keys["candidate"]
-        guard = (StateGuard([prepared[candidate_key]["tree"]])
-                 if candidate_key not in (label_keys["naive"], label_keys["reference"])
-                 else None)
         reference_logs: list[float] = []
         candidate_logs: list[float] = []
         for round_id in range(RUNS):
@@ -304,10 +299,7 @@ def _paired_protocol(candidate_patch: Path, final: bool) -> dict:
             order = unique_keys[shift:] + unique_keys[:shift]
             round_times: dict[str, float] = {}
             for key in order:
-                before = guard.snapshot() if guard and key == candidate_key else None
                 round_times[key] = _run_prepared(prepared[key])
-                if before is not None:
-                    guard.require_unchanged(before)
             naive_time = round_times[label_keys["naive"]]
             reference_logs.append(math.log2(
                 naive_time / round_times[label_keys["reference"]]))
@@ -332,29 +324,22 @@ def _paired_protocol(candidate_patch: Path, final: bool) -> dict:
         }
     finally:
         for item in prepared.values():
-            shutil.rmtree(item["tree"].parent, ignore_errors=True)
+            # Built outputs are large; the trees themselves are removed by their owners.
+            shutil.rmtree(item["tree"] / ".frontier-build", ignore_errors=True)
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    """Score the judged tree (pristine + the submission's allowed files)."""
+    # The judge's own trees: pristine/ with its trusted patches. A failure here is the
+    # judge's fault and raises. The candidate tree belongs to the shared verifier.
+    trees = {
+        "naive": _patched_pristine(TASK_DIR / "baseline_naive.patch"),
+        "reference": _patched_pristine(TASK_DIR / "reference.patch"),
+        "candidate": Path(tree),
+    }
     try:
-        scratch = TASK_DIR / ".evaluator-work"
-        scratch.mkdir(exist_ok=True)
-        tempfile.tempdir = str(scratch)
-        patch = Path(solution_path)
         final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
-        applied = apply_submission_patch(patch, TASK_DIR, CONFIG)
-        if not applied.ok:
-            metrics = dict(applied.metrics)
-            metrics.update(_metrics(0.0, 0.0))
-            return 0.0, 0.0, applied.message, metrics
-        if applied.workdir is not None:
-            shutil.rmtree(applied.workdir.parent, ignore_errors=True)
-        token = _added_source_uses_forbidden_token(patch)
-        if token:
-            metrics = _metrics(0.0, 0.0)
-            return 0.0, 0.0, "submission contains workload-specific or judge-specific source", metrics
-
-        result = _paired_protocol(patch, final)
+        result = _paired_protocol(trees, final)
         reference_score = result["reference_score"]
         candidate_score = result["candidate_score"]
         if not result["correct"]:
@@ -370,11 +355,11 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
         return candidate_score, candidate_score, "exact counts; timed batch accepted", metrics
     except subprocess.TimeoutExpired:
         return 0.0, 0.0, "build or counting timed out", _metrics(0.0, 0.0)
+    except isolate.IsolateError:
+        raise  # the boundary could not be built: a verification failure, not a score
     except Exception as exc:
         reason = str(exc).strip() or exc.__class__.__name__
         return 0.0, 0.0, reason[:180], _metrics(0.0, 0.0)
-
-
-if __name__ == "__main__":
-    chosen = sys.argv[1] if len(sys.argv) > 1 else str(TASK_DIR / "reference.patch")
-    print(evaluate(chosen))
+    finally:
+        for owned in (trees["naive"], trees["reference"]):
+            shutil.rmtree(owned.parent, ignore_errors=True)

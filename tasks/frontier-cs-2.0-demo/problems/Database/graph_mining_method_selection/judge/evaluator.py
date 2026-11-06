@@ -1,3 +1,22 @@
+"""graph_mining_method_selection judge: evaluate(tree) for the shared FrontierCS2 verifier (#757).
+
+Scoring. The judged tree's `threshold` (pristine/ + the submitted performance_model/src/
+main.py) is called once per case of the suite (112 measured configurations; train and final
+are disjoint halves) in a sandboxed interpreter that cannot read the judge (the shared
+isolate launcher) and must return "GS" or "NS". With stored runtimes, regret
+r_i = t_i(choice) / min(t_i(GS), t_i(NS)), R = geomean(r_i) and B = the better constant
+selector's geomean regret on the same suite:
+unbounded = 100 * (B - R) / (B - 1); raw_score = min(100, max(0, unbounded)).
+
+Metrics (one row per pattern workload: triangle, 4clique):
+  selected_runtime_seconds  geomean selected runtime, lower is better; passes when strictly
+                            below the reference selector's (1e-12 relative guard).
+  accuracy_qualified        every selected estimate meets its error target.
+beats_reference = 1 iff both metrics pass on both patterns. Train also returns
+geomean_selected_runtime_seconds, max_selected_relative_error and cases.
+
+The reference selector is pristine/ + reference.patch, run the same way.
+"""
 from __future__ import annotations
 
 import json
@@ -6,13 +25,13 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 TASK_DIR = Path(__file__).resolve().parent
-CONFIG = {"submission": {"allow_paths": ["performance_model/src/main.py"],
-                         "max_patch_bytes": 65536}}
+PRISTINE = TASK_DIR / "pristine"
 DEV_INDICES = tuple(range(0, 112))
 FINAL_INDICES = tuple(range(112, 224))
 WORKLOADS = ("triangle", "4clique")
@@ -148,14 +167,18 @@ for x in cases:
     answers.append(value)
 print("FRONTIER_RESULT=" + json.dumps(answers))
 '''
+    # The selector reads its own tree (read-only) and writes a fresh private TMPDIR only, never
+    # the judge (measured_workloads.json holds the answers); see the shared isolate.
+    proc = isolate.run([sys.executable, "-I", "-c", runner, workdir],
+                            stdin=json.dumps(_public_cases(suite)).encode(), timeout_seconds=12,
+                            read_paths=[workdir], cwd=workdir,
+                            env={"PATH": os.environ.get("PATH", "")})
+    if proc.timed_out:
+        return False, [], "selector timed out"
     try:
-        proc = subprocess.run([sys.executable, "-I", "-c", runner, workdir],
-                              input=json.dumps(_public_cases(suite)), text=True,
-                              capture_output=True, timeout=12, cwd=workdir,
-                              env={"PATH": os.environ.get("PATH", "")})
-        if proc.returncode:
+        if proc.returncode or proc.limit:
             return False, [], "selector crashed"
-        marker = next((line for line in reversed(proc.stdout.splitlines())
+        marker = next((line for line in reversed(proc.stdout.decode().splitlines())
                        if line.startswith("FRONTIER_RESULT=")), None)
         if marker is None:
             return False, [], "selector produced no valid result"
@@ -163,34 +186,36 @@ print("FRONTIER_RESULT=" + json.dumps(answers))
         if len(answers) != len(suite) or any(x not in ("GS", "NS") for x in answers):
             return False, [], "selector returned invalid decisions"
         return True, answers, "ok"
-    except subprocess.TimeoutExpired:
-        return False, [], "selector timed out"
     except Exception:
         return False, [], "selector output was invalid"
 
 
-def _evaluate_patch(path: str, suite: list[dict]) -> tuple[bool, list[str], str]:
-    result = apply_submission_patch(path, TASK_DIR, CONFIG)
-    if not result.ok:
-        return False, [], result.message
+def _evaluate_reference(suite: list[dict]) -> tuple[bool, list[str], str]:
+    """The judge's reference selector: pristine/ with judge/reference.patch applied."""
+    scratch = Path(tempfile.mkdtemp(prefix="graph-reference-"))
     try:
-        return _run_candidate(result.workdir, suite)
+        tree = scratch / "tree"
+        shutil.copytree(PRISTINE, tree)
+        subprocess.run(["git", "apply", "--whitespace=nowarn", str(TASK_DIR / "reference.patch")],
+                       cwd=tree, check=True, capture_output=True, timeout=60,
+                       env={**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch)})
+        return _run_candidate(str(tree), suite)
     finally:
-        if result.workdir:
-            shutil.rmtree(result.workdir, ignore_errors=True)
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
     try:
         final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
         suite = _load_suite(final)
-        ref_ok, ref_choices, _ = _evaluate_patch(str(TASK_DIR / "reference.patch"), suite)
+        ref_ok, ref_choices, _ = _evaluate_reference(suite)
         if not ref_ok:
             return 0.0, 0.0, "reference evaluation failed", _failed_metrics()
         reference_score, _, reference_regret, _ = _score(ref_choices, suite)
         base_metrics = {**_failed_metrics(), "reference_score": reference_score,
                         "margin": -reference_score}
-        ok, choices, reason = _evaluate_patch(solution_path, suite)
+        # The shared verifier's judged tree: pristine + the submitted main.py.
+        ok, choices, reason = _run_candidate(tree, suite)
         if not ok:
             return 0.0, 0.0, reason, base_metrics
         score, unbounded, regret, accuracy = _score(choices, suite)
@@ -213,6 +238,8 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                    "cases": len(suite)}
         message = f"score={score:.3f}; regret={regret:.4f}; accuracy={accuracy:.3f}"
         return score, unbounded, message, metrics
+    except isolate.IsolateError:
+        raise  # a judge fault, never a candidate score
     except Exception:
         return 0.0, 0.0, "evaluation failed safely", _failed_metrics()
 

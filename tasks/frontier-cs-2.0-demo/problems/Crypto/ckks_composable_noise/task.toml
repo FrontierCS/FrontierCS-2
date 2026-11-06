@@ -1,0 +1,51 @@
+# The definition of ckks_composable_noise (schema frontier.task/v1, #757). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "ckks_composable_noise"
+display_name = "CKKS Precision Propagation at 2,048 Slots"
+version = "composition-scaled-logn12-estimator-time-calibrated-v10"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 2147483648         # 2 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 7200
+eval_timeout_seconds = 600
+
+# The editable surface, unchanged by the migration: .go sources below estimator/ may be changed,
+# added or removed, except the fixed set (statement "Editable and fixed source"). The two fixed
+# declarations of dft.go are checked by the judge's Go policy (judge/evaluator.py check_tree).
+[submission]
+max_bytes = 262144
+allowed_paths = ["estimator/"]
+deny_paths = ["estimator/stats.go", "estimator/utils.go", "estimator/go.mod", "estimator/go.sum",
+              "estimator/experiments/", "estimator/**/*_test.go"]
+allowed_suffixes = [".go"]
+allow_delete = true
+max_changed_files = 32
+
+# Judge-only settings of the evaluator (config.yaml); timeout_seconds comes from the quota.
+[judge.config]
+environment = { cpus = 2, memory_mb = 4096 }
+runtime = { go_memory_limit = "3GiB" }
+
+# Agent-visible train metrics.
+[feedback]
+candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits = "Candidate mean absolute AVGLog2Prec.L2 discrepancy over the six train configurations, in bits."
+candidate_std_log2_prec_l2_abs_discrepancy_mean_bits = "Candidate mean absolute STDLog2Prec.L2 discrepancy over the six train configurations, in bits."
+candidate_estimator_seconds_mean = "Candidate mean estimator time per invocation over the six train configurations, in seconds."
+
+[paper]                           # for readers; the platform never reads it
+title = "Accurate and Composable Noise Estimates for CKKS with Application to Exact HE Computation"
+venue = "IACR CiC 2025"
+url = "https://eprint.iacr.org/2024/853.pdf"
+summary = "Build a fast estimator that predicts the precision of CKKS homomorphic-encryption computations."

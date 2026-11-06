@@ -1,0 +1,47 @@
+# The definition of join_tree_rewriting (schema frontier.task/v1, #757). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "join_tree_rewriting"
+display_name = "Join-Tree Rewriting"
+version = "g2-task-toml-shared-verifier"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 1073741824      # 1 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 8589934592         # 8 GiB
+command = ["/opt/frontier/verifier"]
+max_evidence_bytes = 4194304     # 4 MiB, as in the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 24000
+eval_timeout_seconds = 900
+
+[submission]
+max_bytes = 65536
+allowed_paths = ["2phase_nsa/binary_plan/rewrite_policy.py"]
+max_changed_files = 1             # unchanged by the migration
+allow_empty = true                # the judge always accepted an empty patch (the starter stub)
+
+# The traffic-audit capacities this task always had (the pending authoring copy in
+# tasks/pending keeps them too; tests/test_model_session_limits.py requires the two agree).
+[network.audit]
+max_model_response_bytes = 8388608
+max_ssh_bytes_per_direction = 8388608
+max_ssh_sessions = 32
+
+[feedback]                        # what train returns to the Agent beside beat_spec_progress
+all_metrics_progress = "Train queries clearing both exact_result and median_latency: passed, failed and total counts with pass_percent and fail_percent."
+candidate_median_latency_us = "Median over the train queries of the candidate's per-query median latency, in microseconds; null unless every query was measured."
+
+[paper]                           # for readers; the platform never reads it
+title = "Instance-Optimal Acyclic Join Processing Without Regret: Engineering the Yannakakis Algorithm in Column Stores"
+venue = "PVLDB 2025"
+url = "https://www.vldb.org/pvldb/vol18/p2413-vansummeren.pdf"
+summary = "Rewrite optimizer join trees into faster nested-semijoin plans for instance-optimal acyclic join processing in a column store."

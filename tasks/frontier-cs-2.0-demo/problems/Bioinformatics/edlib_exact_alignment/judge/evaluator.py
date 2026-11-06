@@ -1,62 +1,88 @@
-"""Private judge.
+"""Judge of edlib_exact_alignment for the shared verifier (#757): evaluate(tree), check_tree.
 
-Gate, per workload: correctness, cpu_time_seconds strictly below the reference
-and core_peak_live_bytes no greater than the reference.
+Score: raw_score = score_unbounded = 100 * mean_w(A_w / (A_w + T_w)), with T_w the median of
+the TIMING_ROUNDS verifier-measured path-run times on workload w and A_w = (nominal core
+length / 100000)^2 seconds; any correctness failure scores 0. Train measures the 30 public
+workloads, final the 30 public plus 30 held-out ones.
 
-cpu_time_seconds is a difference of two verifier-measured elapsed times of the
-same executable on the same input: the fastest of TIMING_ROUNDS path-printing
-runs minus the fastest of TIMING_ROUNDS location-only runs. The location-only
-run does everything the path run does up to the reconstruction call, with
-none of the editable code, so start-up, input, the retained distance and
-location search and the build's own code placement cancel. Every run of both
-kinds is validated before its time is used; the program's own timer line is
-only a diagnostic. Because the subtraction is only meaningful if nothing of a
-submission runs in the location-only mode, the body must stay inside its
-function (check_surface) and the built executable must have the reference
-build's constructor tables and runtime symbol definitions (elf_surface).
+Beat-spec metrics (beat_spec_workload_passes, one row per workload):
+- cpu_time_seconds, lower is better: the reconstruction time, the fastest path run minus the
+  fastest location-only run of the same executable; passes when 0 < candidate < reference.
+- core_peak_live_bytes, lower is better: heap and mapped bytes plus stack high-water inside the
+  outermost reconstruction call, plus edlib.cpp's writable and thread-local static storage, the
+  maximum of five instrumented runs; passes when candidate <= reference.
+beats_reference = 1 iff the reference qualification is complete, every correctness gate passes
+and every workload passes both metrics; otherwise 0.
 
-core_peak_live_bytes is requested live heap and mapped bytes plus the stack
-high-water mark inside the outermost reconstruction call, plus the writable
-and thread-local static storage of the translation unit.
+A fault of the submission (its build, any of its runs, anything they print, any correctness
+gate) is a scored zero with one fixed message (CANDIDATE_FAILURE_MESSAGE); a static or
+launch-surface rejection is a scored zero with its shared category. A fault of the trusted side
+(the reference lane, the judge, the launcher) is never a score: IncompleteEvaluation, unscored.
 
-Process peak RSS is recorded for evidence only. Every native execution runs
-under the native guard of native_cmake.py, which leaves it no way to create or
-modify a file.
+The subtraction is sound only if no submitted code runs in the location-only mode: check_tree
+keeps the body inside its function (check_surface) and the built executable must keep the
+reference build's launch surface (elf_surface). Every executable built from a tree runs in a
+fresh shared isolate instance (native_cmake.run_native). The full prior specification is archived at
+docs/task-authoring/edlib_exact_alignment/provenance/beat_spec.json.
 """
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 import json, math, os, re, shutil, statistics, tempfile, time
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 from core_measurement import build_core, parse_allocation, static_bytes, WRAPPED
 from elf_surface import ElfError, require_same_launch_surface
-from native_cmake import build_cmake_entrypoint, build_native_guard, protect_verifier_process, run_bounded, NativeError
+from native_cmake import NativeExecutable, NativeError, build_cmake_entrypoint, run_bounded, run_native as sandbox_run
+import subprocess
 import yaml
-import candidate_failure
-from submission_patch import apply_submission_patch
 from judge.workloads import rows, materialize
 ROOT=Path(__file__).resolve().parent
+PRISTINE=ROOT/'pristine'  # the starter repo; the shared verifier overlays the submission on a copy
 AUTHENTIC_ENTRYPOINT='apps/aligner/aligner.cpp'
 CONFIG=yaml.safe_load((ROOT/'config.yaml').read_text())
 SURFACE=json.loads((ROOT/'judge/surface.json').read_text())
 # Operator measurement hooks are never populated by the submission interface.
 BEFORE_PROCESS=None
 PROCESS_RECEIPTS=None
-# Set for the duration of one evaluation: the preloaded stage-2 guard and the
-# empty read-only directory every native process starts in.
-NATIVE_GUARD=None
-NATIVE_CWD=None
-RSS_NOTE=('peak_rss_bytes is wait4 ru_maxrss of the native process. It inherits the verifier '
-          "process's own pre-exec high-water mark, so it is reported for evidence and is not "
-          'part of the comparison.')
 # Interleaved rounds per workload; each round is one path run and one
 # location-only run of each lane. The per-lane statistic is the minimum.
 TIMING_ROUNDS=15
 # How the linker names a --wrap redirection depends on whether the name is referenced.
 WRAP_ALIASES=frozenset(prefix+name for name in WRAPPED for prefix in ('','__wrap_','__real_'))
-GUARD_SELFTEST_EXPECTED='EDLIB_NATIVE_GUARD control_read_only_open control_clock control_heap\n'
+
+# A rejection the Agent is told about uses one of the shared edit_scope categories.
+STATIC_CATEGORY={'outside_before_body':'out_of_scope','outside_after_body':'out_of_scope',
+                 'body_scope':'out_of_scope','body_forbidden_construct':'content_policy',
+                 'launch_surface':'content_policy'}
 
 class Invalid(Exception):
-    """`category`, when set, is a key of candidate_failure.CATEGORIES: the static rejection class."""
+    """`category`, when set, is a key of STATIC_CATEGORY: a rejection of the submission itself."""
     def __init__(self,message,category=None):
         super().__init__(message);self.category=category
+
+class CandidateFailure(Exception):
+    """A fault of the submission's lane; the original error is its __cause__."""
+
+# The only public text of a candidate failure: nothing from the error, which may carry
+# submission-controlled output, reaches the message.
+CANDIDATE_FAILURE_MESSAGE='submission failed validation or execution'
+
+@contextmanager
+def candidate_lane():
+    """Work on the submission's tree, its executables or their results.
+
+    Any error here is the submission's (CandidateFailure), except a launcher failure, which
+    stays a verification failure.
+    """
+    try:
+        yield
+    except (isolate.IsolateError,CandidateFailure):
+        raise
+    except Exception as error:
+        raise CandidateFailure() from error
+
+def lane(label):
+    """The candidate lane for 'C', the trusted lane (no conversion) for 'R'."""
+    return candidate_lane() if label=='C' else nullcontext()
 
 class IncompleteEvaluation(RuntimeError):
     """Use the native adapter's failed-execution evidence contract, not scores."""
@@ -130,23 +156,41 @@ def run(args,cwd,deadline):
     return run_bounded(args,cwd,deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS)
 
 def run_native(args,deadline):
-    """Every candidate/reference executable: guarded, read-only directory, fixed environment."""
-    if NATIVE_GUARD is None or NATIVE_CWD is None: raise NativeError('native guard is not prepared')
-    return run_bounded(args,NATIVE_CWD,deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS,preload=NATIVE_GUARD)
+    """Every candidate/reference executable: a fresh isolate instance per process.
 
-def prepare_native_guard(work,deadline):
-    """Build the guard, then prove on this runtime that it denies every write channel."""
-    global NATIVE_GUARD,NATIVE_CWD
-    tools=work/'native-guard';tools.mkdir()
-    guard,selftest=build_native_guard(tools,deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS)
-    cwd=work/'native-cwd';cwd.mkdir();cwd.chmod(0o555)
-    canary=tools/'canary';canary.write_text('edlib native guard canary\n')
-    NATIVE_GUARD,NATIVE_CWD=guard,cwd
-    before=sorted(x.name for x in tools.iterdir())
-    out,_,_=run_native([selftest,canary],deadline)
-    if out!=GUARD_SELFTEST_EXPECTED or canary.read_text()!='edlib native guard canary\n' \
-            or sorted(x.name for x in tools.iterdir())!=before or any(cwd.iterdir()):
-        raise NativeError('native guard self-test failed')
+    args[0] is the executable (a NativeExecutable, resolved again here, or a Path); every
+    other Path argument is an input file. They are linked into a private stage directory and
+    the instance gets its own copy of it; the command names them relative to its work dir.
+    Returns (output, elapsed seconds).
+    """
+    binary=args[0]
+    if isinstance(binary,NativeExecutable): binary=binary.resolve_for_execution()
+    stage=Path(tempfile.mkdtemp(prefix='edlib-stage-'))
+    try:
+        argv=[];names=0
+        for arg in args[1:]:
+            if isinstance(arg,Path):
+                names+=1;name=f'in{names}'+''.join(arg.suffixes[-1:])
+                _link(arg,stage/name);argv.append(name)
+            else: argv.append(str(arg))
+        _link(Path(binary),stage/'exe')
+        return sandboxed(stage,argv,deadline,[str(binary),*map(str,args[1:])])
+    finally:
+        shutil.rmtree(stage,ignore_errors=True)
+
+def sandboxed(stage,argv,deadline,shown):
+    """stage/exe with argv in one instance, with the operator hooks; `shown` is the receipt's argv."""
+    if BEFORE_PROCESS is not None: BEFORE_PROCESS()
+    started=time.monotonic()
+    out,elapsed=sandbox_run('exe',argv,stage,deadline)
+    if PROCESS_RECEIPTS is not None:
+        PROCESS_RECEIPTS.append({'argv':shown,'exit_code':0,'wall_seconds':time.monotonic()-started,
+                                 'elapsed_seconds':elapsed,'output_bytes':len(out)})
+    return out,elapsed
+
+def _link(source,target):
+    try: os.link(source,target)
+    except OSError: shutil.copy2(source,target)
 
 def body_stays_in_function(body):
     """True iff, read as C++ tokens, the body never closes the function it belongs to.
@@ -255,9 +299,9 @@ def check_surface(tree):
     s=(tree/SURFACE['path']).read_text()
     start,end=locate_body(s,SURFACE['prefix'],SURFACE['suffix'])
     body=s[start:end]
-    # A courtesy screen for obvious mistakes, not the enforcement: the native guard
-    # is what denies files, processes and state to the running executable.
-    if re.search(r'^\s*(?:#|%:|\?\?=)',body,re.M) or re.search(r'\b(?:system|popen|fork|execve|fopen|freopen|clock|setenv|getenv|asm)\s*\(',body):
+    # Directives would reach outside the body; clock and asm are the timing screen. Files,
+    # environment, processes and state are isolate's to deny (run_native).
+    if re.search(r'^\s*(?:#|%:|\?\?=)',body,re.M) or re.search(r'\b(?:clock|asm)\s*\(',body):
         raise Invalid('reconstruction may not access environment, processes, files or timing','body_forbidden_construct')
     # The only editable text is one function body: nothing at namespace scope.
     if not body_stays_in_function(body): raise Invalid('only reconstruction body may change','body_scope')
@@ -370,9 +414,9 @@ def checked_location_run(binary,mode,q,t,qp,tp,expected,deadline):
 
     `expected` is the reference API location result for this workload. The
     printed distance and every printed (start, end) pair must equal it. Returns
-    (output, verifier elapsed seconds, self-reported seconds, peak RSS).
+    (output, verifier elapsed seconds, self-reported seconds).
     """
-    out,rss,elapsed=run_native([binary,'-m',mode,'-l','-r','1','-k','-1',qp,tp],deadline)
+    out,elapsed=run_native([binary,'-m',mode,'-l','-r','1','-k','-1',qp,tp],deadline)
     try:
         distance,locations,seconds=parse_location_run(out,mode,q,t)
     except Invalid as error:
@@ -380,7 +424,7 @@ def checked_location_run(binary,mode,q,t,qp,tp,expected,deadline):
         raise
     if distance!=expected['distance'] or locations!=list(zip(expected['starts'],expected['ends'])):
         raise Invalid('CLI distance or location disagreement')
-    return out,elapsed,checked_duration(out,seconds,elapsed),rss
+    return out,elapsed,checked_duration(out,seconds,elapsed)
 
 def checked_cli_run(binary,mode,q,t,qp,tp,expected,deadline,instrumented=False):
     """Run the one CLI invocation used everywhere and validate what it printed.
@@ -392,9 +436,9 @@ def checked_cli_run(binary,mode,q,t,qp,tp,expected,deadline,instrumented=False):
     it must be well formed, positive and no greater than the elapsed time the
     verifier measured around the whole process, which is the value returned
     for comparison. Returns (output, verifier elapsed seconds, self-reported
-    seconds, peak RSS).
+    seconds).
     """
-    out,rss,elapsed=run_native([binary,'-m',mode,'-p','-f','CIG_EXT','-r','1','-k','-1',qp,tp],deadline)
+    out,elapsed=run_native([binary,'-m',mode,'-p','-f','CIG_EXT','-r','1','-k','-1',qp,tp],deadline)
     try:
         distance,ops,seconds=parse_cli_run(out,mode,q,t,instrumented)
     except Invalid as error:
@@ -402,14 +446,32 @@ def checked_cli_run(binary,mode,q,t,qp,tp,expected,deadline,instrumented=False):
         raise
     if distance!=expected['distance']: raise Invalid('CLI distance disagreement')
     replay(q,t,expected['starts'][0],expected['ends'][0],ops,distance)
-    return out,elapsed,checked_duration(out,seconds,elapsed),rss
+    return out,elapsed,checked_duration(out,seconds,elapsed)
 
-def probe(exe,qp,tp,mode,task,k,amb,deadline):
-    out,_,_=run_native([exe,qp,tp,['NW','SHW','HW'].index(mode),task,k,int(amb)],deadline)
-    return json.loads(out)
+def probe(exe,cases,deadline):
+    """API results of `cases` [(query path, target path, mode, task, k, amb)], in order.
+
+    One instance runs the judge's api_probe over all cases: one edlibAlign call and one JSON
+    line per case.
+    """
+    files={};lines=[]
+    for qp,tp,mode,task,k,amb in cases:
+        for path in (qp,tp): files.setdefault(path,f'f{len(files)}.fa')
+        lines.append(f"{files[qp]} {files[tp]} {['NW','SHW','HW'].index(mode)} {task} {k} {int(amb)}\n")
+    stage=Path(tempfile.mkdtemp(prefix='edlib-probe-'))
+    try:
+        for path,name in files.items(): _link(path,stage/name)
+        (stage/'cases').write_text(''.join(lines))
+        _link(Path(exe),stage/'exe')
+        out,_=sandboxed(stage,['cases'],deadline,[str(exe),'cases'])
+    finally:
+        shutil.rmtree(stage,ignore_errors=True)
+    rows=out.split('\n')
+    if rows[-1]!='' or len(rows)!=len(cases)+1: raise Invalid('API probe output malformed')
+    return [json.loads(row) for row in rows[:-1]]
 
 def validate(c,r,q,t,mode,task,k,amb):
-    if c['status']!=0 or r['status']!=0: raise Invalid('API status')
+    if c['status']!=0: raise Invalid('API status')
     if c['distance']!=r['distance'] or c['ends']!=r['ends'] or c['starts']!=r['starts']: raise Invalid('distance or location contract')
     d=c['distance']
     if len(q)*len(t)<=100000 and q and t:
@@ -433,14 +495,20 @@ def correctness(cprobe,rprobe,work,final,deadline):
         for n in [1,2,63,64,65,127,128,129,1792,1856,1920,4097]:
             q=''.join(rng.choice('ACGTN') for _ in range(n)); t='GT'+q[1:]+'AC'
             pairs.append((q,t))
+    cases=[];expected=[]
     for idx,(q,t) in enumerate(pairs):
-        qp=work/'q.fa';tp=work/'t.fa';qp.write_text('>q\n'+q+'\n');tp.write_text('>t\n'+t+'\n')
+        qp=work/f'q{idx}.fa';tp=work/f't{idx}.fa';qp.write_text('>q\n'+q+'\n');tp.write_text('>t\n'+t+'\n')
         for mode in ['NW','SHW','HW']:
             for task in [0,1,2]:
                 for k in [-1,0,2, max(len(q),len(t))]:
                     for amb in [False,True]:
-                        r=probe(rprobe,qp,tp,mode,task,k,amb,deadline); c=probe(cprobe,qp,tp,mode,task,k,amb,deadline)
-                        validate(c,r,q,t,mode,task,k,amb)
+                        cases.append((qp,tp,mode,task,k,amb));expected.append((q,t,mode,task,k,amb))
+    reference=probe(rprobe,cases,deadline)
+    if any(r['status']!=0 for r in reference): raise RuntimeError('reference API status')
+    with candidate_lane():
+        candidate=probe(cprobe,cases,deadline)
+        for r,c,(q,t,mode,task,k,amb) in zip(reference,candidate,expected):
+            validate(c,r,q,t,mode,task,k,amb)
 
 def score(times,workloads):
     # Absolute challenge scales avoid disclosing reference measurements via score.
@@ -460,8 +528,44 @@ def audit(workloads,qualified=False,correct=False,ct=None,rt=None,ca=None,ra=Non
     ct=ct or {};rt=rt or {};ca=ca or {};ra=ra or {}
     return [{'workload':w['id'],'metrics':{'cpu_time_seconds':bool(qualified and correct and w['id'] in ct and w['id'] in rt and 0<ct[w['id']]<rt[w['id']]),'core_peak_live_bytes':bool(qualified and correct and w['id'] in ca and w['id'] in ra and 0 <= ca[w['id']] <= ra[w['id']])}} for w in workloads]
 
-def evaluate(solution_path):
-    return _evaluate(solution_path,os.environ.get('FRONTIER_SUBMISSION_ROLE')=='final')
+def check_tree(tree,pristine,changes):
+    """Shared-verifier hook: only the reconstruction body of edlib.cpp may change, without
+    forbidden constructs. Returns (shared category, paths) to reject, or None."""
+    try:
+        check_surface(Path(tree))
+    except Invalid as error:
+        if error.category in STATIC_CATEGORY:
+            return STATIC_CATEGORY[error.category],[SURFACE['path']]
+        raise
+    return None
+
+def candidate_failure(workloads,final,cause,timing_failure):
+    """The scored zero of a candidate failure: the fixed message, the cause in private evidence.
+
+    Train carries every workload row failing and beats_reference 0, the fields the verifier's
+    train feedback (beat_spec_progress) needs. Final carries no beats_reference: the verifier
+    records a zero without beat-spec fields as not beating the reference, and there is no
+    measured reference_score or margin to report.
+    """
+    evidence={'schema':'edlib.candidate-failure/v1','exception_type':type(cause).__name__[:128],
+              'message':str(cause)[:512] if isinstance(cause,(Invalid,NativeError)) else None}
+    if timing_failure is not None: evidence['timing_failure']=timing_failure
+    metrics={'candidate_failure':evidence}
+    if not final: metrics.update(beat_spec_workload_passes=audit(workloads),beats_reference=0)
+    return 0.,0.,CANDIDATE_FAILURE_MESSAGE,metrics
+
+def evaluate(tree):
+    return _evaluate(Path(tree),os.environ.get('FRONTIER_SUBMISSION_ROLE')=='final')
+
+def reference_tree(scratch):
+    """The pristine starter with judge/reference.patch applied (trusted, judge-owned)."""
+    tree=Path(scratch)/'reference';shutil.copytree(PRISTINE,tree)
+    for path in (tree,*tree.rglob('*')):
+        if not path.is_symlink(): path.chmod(path.stat().st_mode|0o200)
+    env={**os.environ,'GIT_CEILING_DIRECTORIES':str(Path(scratch).resolve())}
+    subprocess.run(['git','apply','--whitespace=nowarn',str(ROOT/'reference.patch')],cwd=tree,
+                   check=True,capture_output=True,timeout=60,env=env)
+    return tree
 
 def measure_reference(final=False):
     """Operator-only local fit measurement; cannot qualify a submission or award PASS.
@@ -469,46 +573,47 @@ def measure_reference(final=False):
     Exercises the identical complete evaluator with the reference in both
     lanes. It leaves qualification.json false and the public entrypoint closed.
     """
-    return _evaluate(ROOT/'reference.patch',final,resource_measurement=True)
+    with tempfile.TemporaryDirectory(prefix='edlib-reference-') as scratch:
+        return _evaluate(reference_tree(scratch),final,resource_measurement=True)
 
-def _evaluate(solution_path,final,resource_measurement=False):
+def _evaluate(candidate_tree,final,resource_measurement=False):
     workloads=rows(final)
-    global NATIVE_GUARD,NATIVE_CWD
-    metrics={'beats_reference':0,'beat_spec_workload_passes':audit(workloads),'reference_score':None,'margin':None,'development_cpu_time_seconds_median':None,'development_peak_rss_bytes_max':None,'reference_qualification_complete':False,'peak_rss_bytes_gated':False,'peak_rss_bytes_note':RSS_NOTE}
-    patched=[]
+    metrics={'beats_reference':0,'beat_spec_workload_passes':audit(workloads),'reference_score':None,'margin':None,'development_cpu_time_seconds_median':None,'reference_qualification_complete':False}
     timing_failure=None
-    candidate_static=True
+    scratch=Path(tempfile.mkdtemp(prefix='edlib-judge-'))
     try:
         qualification=load_qualification()
         if not resource_measurement and not qualification.get('execution_admitted',False):
             raise Invalid('reference qualification pending; evaluation is not admitted')
         deadline=time.monotonic()+CONFIG['runtime']['timeout_seconds']
-        protect_verifier_process()
-        for path in [solution_path,ROOT/'reference.patch']:
+        trees=[candidate_tree,reference_tree(scratch)]
+        for label,tree in zip('CR',trees):
             if BEFORE_PROCESS is not None: BEFORE_PROCESS()
-            result=apply_submission_patch(path,ROOT,CONFIG)
-            if not result.ok: raise Invalid('invalid submission patch','patch_policy')
-            patched.append(result); check_surface(result.workdir)
-            # A category names a fault of the submission, never of the reference.
-            candidate_static=False
-        cb,cp=build(patched[0].workdir,deadline); rb,rp=build(patched[1].workdir,deadline)
-        check_launch_surface(cb,rb)
-        ac=build_core(patched[0].workdir,deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS)
-        ar=build_core(patched[1].workdir,deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS)
-        check_launch_surface(ac,ar,WRAP_ALIASES)
-        static={'C':static_bytes(ac),'R':static_bytes(ar)}
+            # A category names a fault of the submission only in the candidate lane.
+            with lane(label): check_surface(tree)
+        with candidate_lane(): cb,cp=build(trees[0],deadline)
+        rb,rp=build(trees[1],deadline)
+        with candidate_lane(): check_launch_surface(cb,rb)
+        with candidate_lane(): ac=build_core(trees[0],deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS)
+        ar=build_core(trees[1],deadline,before_process=BEFORE_PROCESS,receipts=PROCESS_RECEIPTS)
+        with candidate_lane():
+            check_launch_surface(ac,ar,WRAP_ALIASES)
+            static_candidate=static_bytes(ac)
+        static={'C':static_candidate,'R':static_bytes(ar)}
         with tempfile.TemporaryDirectory(prefix='edlib-eval-') as wd:
-            work=Path(wd);prepare_native_guard(work,deadline);correctness(cp,rp,work,final,deadline)
-            ct={};rt={};pt={};rssc={};rssr={};samples={};location_samples={};distances={};rss_samples={};own_samples={};allocc={};allocr={};alloc_samples={}
+            work=Path(wd);correctness(cp,rp,work,final,deadline)
+            ct={};rt={};pt={};samples={};location_samples={};distances={};own_samples={};allocc={};allocr={};alloc_samples={}
             for w in workloads:
                 q,t,qp,tp=materialize(w,work); mode=w['mode']; wid=w['id']
-                r=probe(rp,qp,tp,mode,2,-1,False,deadline); c=probe(cp,qp,tp,mode,2,-1,False,deadline)
-                validate(c,r,q,t,mode,2,-1,False)
+                # Reference API path, distance-only and location results; candidate API path.
+                r,rd,rl=probe(rp,[(qp,tp,mode,task,-1,False) for task in (2,0,1)],deadline)
+                if r['status']!=0: raise RuntimeError('reference API status')
+                with candidate_lane():
+                    c,=probe(cp,[(qp,tp,mode,2,-1,False)],deadline)
+                    validate(c,r,q,t,mode,2,-1,False)
                 # Retained distance-only engine certifies the large optimum.
-                rd=probe(rp,qp,tp,mode,0,-1,False,deadline)
                 if rd['distance']!=r['distance']: raise Invalid('large distance disagreement')
                 # Reference API location result: what every location-only run must print.
-                rl=probe(rp,qp,tp,mode,1,-1,False,deadline)
                 if rl['distance']!=r['distance'] or rl['starts'][:1]!=r['starts'][:1] or rl['ends'][:1]!=r['ends'][:1]:
                     raise Invalid('large location disagreement')
                 distances[wid]={'distance':r['distance'],'actual_similarity':1-r['distance']/min(len(q),len(t))}
@@ -517,68 +622,64 @@ def _evaluate(solution_path,final,resource_measurement=False):
                 # share one command line with the untimed and instrumented ones, so
                 # no execution can tell that it is a timed one, and every run of
                 # either kind is validated in full before its time is accepted.
-                for binary in (cb,rb): checked_cli_run(binary,mode,q,t,qp,tp,r,deadline)
-                values={'C':[],'R':[]};located={'C':[],'R':[]};mem={'C':[],'R':[]};own={'C':[],'R':[]}
+                for label,binary in (('C',cb),('R',rb)):
+                    with lane(label): checked_cli_run(binary,mode,q,t,qp,tp,r,deadline)
+                values={'C':[],'R':[]};located={'C':[],'R':[]};own={'C':[],'R':[]}
                 for rep_index in range(TIMING_ROUNDS):
                     lanes=[('C',cb),('R',rb)] if rep_index%2==0 else [('R',rb),('C',cb)]
                     for kind in ('path','location'):
                         for label,binary in lanes:
-                            try:
-                                if kind=='path':
-                                    out,value,reported,rss=checked_cli_run(binary,mode,q,t,qp,tp,r,deadline)
-                                    values[label].append(value);mem[label].append(rss);own[label].append(reported)
-                                else:
-                                    out,value,reported,rss=checked_location_run(binary,mode,q,t,qp,tp,rl,deadline)
-                                    located[label].append(value)
-                            except Invalid as error:
-                                # Diagnostics must never replace the original failure.
+                            with lane(label):
                                 try:
+                                    if kind=='path':
+                                        out,value,reported=checked_cli_run(binary,mode,q,t,qp,tp,r,deadline)
+                                        values[label].append(value);own[label].append(reported)
+                                    else:
+                                        out,value,reported=checked_location_run(binary,mode,q,t,qp,tp,rl,deadline)
+                                        located[label].append(value)
+                                except Invalid as error:
                                     timing_failure=timing_failure_evidence(getattr(error,'cli_output',''),wid,label,rep_index,getattr(error,'stage','match'),getattr(error,'value',None))
-                                except Exception:
-                                    pass
-                                raise
+                                    raise
                 ct[wid]=reconstruction_seconds(values['C'],located['C']);rt[wid]=reconstruction_seconds(values['R'],located['R'])
                 pt[wid]=statistics.median(values['C'])
-                rssc[wid]=max(mem['C']);rssr[wid]=max(mem['R']);samples[wid]=values;location_samples[wid]=located;rss_samples[wid]=mem;own_samples[wid]=own
+                samples[wid]=values;location_samples[wid]=located;own_samples[wid]=own
                 allocation={'C':[],'R':[]}
                 for rep in range(5):
                     for label,binary in ([('C',ac),('R',ar)] if rep%2==0 else [('R',ar),('C',ac)]):
-                        out,_,_,_=checked_cli_run(binary,mode,q,t,qp,tp,r,deadline,instrumented=True)
-                        allocation[label].append(parse_allocation(out)+static[label])
+                        with lane(label):
+                            out,_,_=checked_cli_run(binary,mode,q,t,qp,tp,r,deadline,instrumented=True)
+                            allocation[label].append(parse_allocation(out)+static[label])
                 allocc[wid]=max(allocation['C']);allocr[wid]=max(allocation['R']);alloc_samples[wid]=allocation
             qualification=load_qualification()
             qualified=not resource_measurement and qualification.get('reference_qualification_complete') is True
             reference_path={wid:statistics.median(samples[wid]['R']) for wid in samples}
             candidate_score=score(pt,workloads);reference_score=score(reference_path,workloads)
             decisions=audit(workloads,qualified,True,ct,rt,allocc,allocr)
-            metrics.update(beats_reference=int(all(all(x['metrics'].values()) for x in decisions)),beat_spec_workload_passes=decisions,reference_score=reference_score,margin=candidate_score-reference_score,reference_qualification_complete=qualified,cpu_time_seconds_candidate_by_workload=ct,cpu_time_seconds_reference_by_workload=rt,cpu_time_seconds_replicates_by_workload=samples,location_seconds_replicates_by_workload=location_samples,path_seconds_median_candidate_by_workload=pt,path_seconds_median_reference_by_workload=reference_path,timing_rounds=TIMING_ROUNDS,static_storage_bytes={'candidate':static['C'],'reference':static['R']},self_reported_seconds_replicates_by_workload=own_samples,peak_rss_bytes_candidate_by_workload=rssc,peak_rss_bytes_reference_by_workload=rssr,peak_rss_bytes_replicates_by_workload=rss_samples,core_peak_live_bytes_candidate_by_workload=allocc,core_peak_live_bytes_reference_by_workload=allocr,core_peak_live_bytes_replicates_by_workload=alloc_samples,private_expected_distances_endpoints_and_paths=distances)
+            metrics.update(beats_reference=int(all(all(x['metrics'].values()) for x in decisions)),beat_spec_workload_passes=decisions,reference_score=reference_score,margin=candidate_score-reference_score,reference_qualification_complete=qualified,cpu_time_seconds_candidate_by_workload=ct,cpu_time_seconds_reference_by_workload=rt,cpu_time_seconds_replicates_by_workload=samples,location_seconds_replicates_by_workload=location_samples,path_seconds_median_candidate_by_workload=pt,path_seconds_median_reference_by_workload=reference_path,timing_rounds=TIMING_ROUNDS,static_storage_bytes={'candidate':static['C'],'reference':static['R']},self_reported_seconds_replicates_by_workload=own_samples,core_peak_live_bytes_candidate_by_workload=allocc,core_peak_live_bytes_reference_by_workload=allocr,core_peak_live_bytes_replicates_by_workload=alloc_samples,private_expected_distances_endpoints_and_paths=distances)
             if not final:
-                metrics.update(development_cpu_time_seconds_median=statistics.median(pt.values()),development_peak_rss_bytes_max=max(rssc.values()))
+                metrics.update(development_cpu_time_seconds_median=statistics.median(pt.values()))
             return candidate_score,candidate_score,'valid; scientific comparison qualified' if qualified else 'valid; reference qualification pending',metrics
+    except isolate.IsolateError:
+        raise  # the sandbox could not be built: a verification failure, never a score
     except Exception as exc:
+        cause=exc.__cause__ if isinstance(exc,CandidateFailure) else exc
         if resource_measurement:
             import traceback
             metrics['operator_exception']=traceback.format_exc()
-            message=str(exc) if isinstance(exc,(Invalid,NativeError)) else 'evaluation failed safely'
+            message=str(cause) if isinstance(cause,(Invalid,NativeError)) else 'evaluation failed safely'
             return 0.,0.,message,metrics
-        # A development submission rejected by a static check is told which
-        # one: a fixed category and sentence (candidate_failure.py), which the
-        # verifier admits to train feedback only as the sole metric of a scored
-        # zero. Final keeps the private failed-execution contract below.
-        category=getattr(exc,'category',None)
-        if not final and category is not None and (candidate_static or category=='launch_surface'):
-            visible=candidate_failure.diagnostic(category)
-            return 0.,0.,visible['message'],{'candidate_diagnostic':visible}
-        # Incomplete measurement has no finite reference_score or margin. A
-        # scored-zero tuple would enter final beat-spec validation and mask the
-        # actual failure with "invalid private beat-spec metrics". The existing
-        # adapter records this bounded cause privately and emits a failed result
-        # without a numerical score. Completed-suite scoring above is unchanged.
+        if isinstance(exc,CandidateFailure):
+            # A submission rejected by a static or launch-surface check: a scored zero with one
+            # shared rejection category, which the verifier reports like an edit-scope rejection.
+            category=getattr(cause,'category',None)
+            if category in STATIC_CATEGORY:
+                return 0.,0.,str(cause),{'rejected':STATIC_CATEGORY[category]}
+            return candidate_failure(workloads,final,cause,timing_failure)
+        # A fault of the trusted side has no score: the adapter records this bounded cause
+        # privately and emits a failed result without a numerical score.
         raise IncompleteEvaluation(exc, final, timing_failure) from exc
     finally:
-        NATIVE_GUARD=NATIVE_CWD=None
-        for result in patched:
-            if result.cleanup_root: shutil.rmtree(result.cleanup_root,ignore_errors=True)
+        shutil.rmtree(scratch,ignore_errors=True)
 
 if __name__=='__main__':
     import sys

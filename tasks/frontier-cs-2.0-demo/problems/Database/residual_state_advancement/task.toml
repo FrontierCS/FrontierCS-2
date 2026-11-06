@@ -1,0 +1,65 @@
+# The definition of residual_state_advancement (schema frontier.task/v1, #757). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "residual_state_advancement"
+display_name = "Residual State Advancement"
+version = "r2-paper-setting-20261011"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 17179869184        # 16 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 17179869184        # 16 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 720000
+eval_timeout_seconds = 7200
+
+[submission]
+max_bytes = 131072
+allowed_paths = ["src/joinboost/app.py", "src/joinboost/semiring.py",
+                 "src/joinboost/aggregator.py", "src/joinboost/cjt.py",
+                 "src/joinboost/joingraph.py"]
+max_changed_files = 5
+allow_new_files = false
+# The added-line screens that guard the in-process timer and trusted executor: introspection
+# fragments (literal, case-insensitive) and the DuckDB-connection/reflection pattern
+# (case-sensitive, (?-i:...)). Judge files, the oracle and the environment are out of reach of
+# the fit (it runs under the shared isolate launcher), so no file/env screen is needed.
+forbidden_added = [
+  "benchmark\\.py",
+  "perf_counter",
+  "monotonic\\(",
+  "atexit",
+  "sys\\.modules",
+  "import\\ benchmark",
+  "__main__",
+  "builtins",
+  "inspect",
+  "importlib",
+  "ctypes",
+  "\\.fit\\ =",
+  "\\.fit=",
+  "setattr\\(",
+  "_getframe",
+  "currentframe",
+  "f_back",
+  "f_globals",
+  "f_locals",
+  "traceback",
+  "gc\\.get_objects",
+  "(?-i:\\bduckdb\\b|\\.conn\\b|[\\\"']conn[\\\"']|fetch(all|one|many|numpy|df|_|\\b)|\\.df\\(|\\.arrow\\(|\\.pl\\(|\\.to_df\\(|\\.torch\\(|\\.tf\\(|record_batch|__closure__|cell_contents|__globals__|__code__|__dict__|\\bvars\\(|\\beval\\(|\\bexec\\(|\\bcompile\\(|__import__|__builtins__|\\bgc\\.|__subclasses__|__reduce|_guard_connection|GuardedConnection|MAX_ROWS_PER|_check_statements)",
+]
+ignore_case = true
+
+[paper]                           # for readers; the platform never reads it
+title = "JoinBoost: Grow Trees over Normalized Data Using Only SQL"
+venue = "PVLDB 2023"
+url = "https://www.vldb.org/pvldb/vol16/p3071-huang.pdf"
+summary = "Speed up residual updates in JoinBoost's SQL-only gradient-boosted tree training over normalized data."
