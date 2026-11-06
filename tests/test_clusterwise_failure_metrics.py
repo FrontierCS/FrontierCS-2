@@ -21,6 +21,11 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm"
 JUDGE = TASK / "judge"
+sys.path.insert(0, str(ROOT / "scripts"))
+import task_manifest  # noqa: E402
+
+# A task.toml task runs the shared verifier and its beat-spec helper (#757).
+SHARED_VERIFIER = task_manifest.SHARED / "verifier"
 
 # The full evaluator imports numpy and compiler helpers that are intentionally
 # absent from the repository test runner. These failure-contract helpers are
@@ -43,12 +48,21 @@ selected = [
         in {
             "_failure_workloads",
             "_failure_metrics",
-            "_is_resource_failure",
             "evaluate",
         }
     )
 ]
+class ResourceCeiling(RuntimeError):
+    pass
+
+
+class TrustedAggregateDeadline(RuntimeError):
+    pass
+
+
 namespace = {
+    "ResourceCeiling": ResourceCeiling,
+    "TrustedAggregateDeadline": TrustedAggregateDeadline,
     "ROOT": JUDGE,
     "json": json,
     "traceback": traceback,
@@ -95,14 +109,27 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
             )
         self.assertEqual(metrics["private_gate_diagnostic"]["completed_workloads"], 0)
 
-    def test_memory_failure_is_not_a_scored_zero(self):
-        self.assertTrue(namespace["_is_resource_failure"](MemoryError("out of memory")))
+    def test_candidate_resource_failures_are_scored_zeros(self):
+        """Owner rule: a killed native process (CPU-time or OOM kill), compilation past its
+        budget and a measured memory ceiling in the candidate phase score zero."""
         killed = ValueError("native process failed")
         killed.process_returncode = -9
-        self.assertTrue(namespace["_is_resource_failure"](killed))
-        self.assertFalse(
-            namespace["_is_resource_failure"](ValueError("native process failed"))
-        )
+        ceiling = namespace["ResourceCeiling"]("total measured memory exceeds 56-GiB acceptance target")
+        for error in (killed, ceiling, TimeoutError("native process deadline exceeded")):
+            with self.subTest(error=type(error).__name__), patch.dict(namespace, {
+                    "Context": lambda **kwargs: SimpleNamespace(receipt={}),
+                    "LIMITS": SimpleNamespace(evaluator_seconds=60, build_seconds=600),
+                    "CONFIG": {}, "install": lambda *args: None, "_workloads": lambda final: [],
+                    "remaining": lambda *args, **kwargs: None,
+                    "require_disk_capture": lambda *args: None,
+                    "_reference_tree": lambda scratch, deadline: Path(scratch) / "reference",
+                    "_editable_files": lambda tree: {str(tree): b""},
+                    "PRISTINE": JUDGE / "pristine",
+                    "build": lambda tree, *args, error=error: (_ for _ in ()).throw(error)
+                    if Path(tree).name == "candidate" else None}):
+                result = namespace["evaluate"]("candidate")
+            self.assertEqual(result[:2], (0.0, 0.0))
+            self.assertEqual(result[3]["beats_reference"], 0)
 
     def test_actual_evaluator_exception_path_projects_fail_and_retains_diagnostic(self):
         context = SimpleNamespace(receipt={"memory_peak_bytes": 123})
@@ -111,21 +138,24 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
                 namespace,
                 {
                     "Context": lambda **kwargs: context,
-                    "LIMITS": SimpleNamespace(evaluator_seconds=60),
+                    "LIMITS": SimpleNamespace(evaluator_seconds=60, build_seconds=600),
                     "CONFIG": {},
                     "install": lambda *args: None,
                     "_workloads": lambda final: [],
-                    "sha": lambda path: str(path),
                     "remaining": lambda *args, **kwargs: None,
                     "require_disk_capture": lambda *args: None,
-                    "apply_submission_patch": lambda *args, **kwargs: SimpleNamespace(
-                        ok=False
-                    ),
+                    "_reference_tree": lambda scratch, deadline: Path(scratch) / "reference",
+                    "_editable_files": lambda tree: {str(tree): b""},
+                    "PRISTINE": JUDGE / "pristine",
+                    # The candidate's build fails a gate: a candidate rejection.
+                    "build": lambda tree, *args: (_ for _ in ()).throw(
+                        ValueError("forbidden symbol in the candidate object")
+                    ) if Path(tree).name == "candidate" else None,
                 },
             ),
             patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": "final"}),
         ):
-            result = namespace["evaluate"]("bad.patch")
+            result = namespace["evaluate"]("candidate")
         self.assertEqual(result[:2], (0.0, 0.0))
         self.assertEqual(result[3]["beats_reference"], 0)
         self.assertEqual(
@@ -133,18 +163,16 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
         )
 
         spec = importlib.util.spec_from_file_location(
-            "clusterwise_feedback", TASK / "verifier/beat_spec_feedback.py"
+            "clusterwise_feedback", SHARED_VERIFIER / "beat_spec_feedback.py"
         )
         helper = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(helper)
-        private = helper.private_metrics(
-            result[3], beat_spec_path=JUDGE / "beat_spec.json"
-        )
+        private = helper.private_metrics(result[3])
         self.assertEqual(private["beats_reference"], 0)
         self.assertEqual(private["margin"], -50.0)
         self.assertNotIn("private_gate_diagnostic", private)
         public = helper.public_metrics(
-            result[3], beat_spec_path=JUDGE / "beat_spec.json"
+            result[3], visible=list(task_manifest.read_task(TASK)["feedback"])
         )
         self.assertEqual(set(public), {"beat_spec_progress"})
         for row in private["beat_spec_progress"].values():
@@ -182,42 +210,42 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
     def test_reference_gate_and_adapter_type_error_do_not_become_candidate_fail(self):
         common = {
             "Context": lambda **kwargs: SimpleNamespace(receipt={}),
-            "LIMITS": SimpleNamespace(evaluator_seconds=60),
+            "LIMITS": SimpleNamespace(evaluator_seconds=60, build_seconds=600),
             "CONFIG": {},
             "install": lambda *args: None,
             "_workloads": lambda final: [],
-            "sha": lambda path: str(path),
             "remaining": lambda *args, **kwargs: None,
             "require_disk_capture": lambda *args: None,
-            "verify_source_tree": lambda *args: None,
+            "_editable_files": lambda tree: {str(tree): b""},
+            "PRISTINE": JUDGE / "pristine",
         }
 
         def incompatible(*args, **kwargs):
-            raise TypeError("apply_submission_patch got an unexpected keyword argument")
+            raise TypeError("_reference_tree got an unexpected keyword argument")
 
-        with patch.dict(namespace, {**common, "apply_submission_patch": incompatible}):
+        with patch.dict(namespace, {**common, "_reference_tree": incompatible}):
             with self.assertRaises(TypeError):
-                namespace["evaluate"]("bad.patch")
+                namespace["evaluate"]("candidate")
 
-        def invalid_reference(path, root, config, **kwargs):
-            return SimpleNamespace(
-                ok=path == "candidate.patch", workdir=root / "scratch/tree"
-            )
+        def invalid_reference(tree, *args):
+            if Path(tree).name == "reference":
+                raise ValueError("forbidden symbol in the reference object")
 
         with patch.dict(
-            namespace, {**common, "apply_submission_patch": invalid_reference}
+            namespace, {**common, "build": invalid_reference,
+                        "_reference_tree": lambda scratch, deadline: Path(scratch) / "reference"}
         ):
             with self.assertRaises(ValueError):
-                namespace["evaluate"]("candidate.patch")
+                namespace["evaluate"]("candidate")
 
     def test_final_adapter_returns_score_zero_fail_and_private_evidence(self):
         feedback_spec = importlib.util.spec_from_file_location(
-            "beat_spec_feedback", TASK / "verifier/beat_spec_feedback.py"
+            "beat_spec_feedback", SHARED_VERIFIER / "beat_spec_feedback.py"
         )
         feedback = importlib.util.module_from_spec(feedback_spec)
         feedback_spec.loader.exec_module(feedback)
         adapter_spec = importlib.util.spec_from_file_location(
-            "clusterwise_failure_adapter", TASK / "verifier/fcs2_verifier.py"
+            "clusterwise_failure_adapter", SHARED_VERIFIER / "fcs2_verifier.py"
         )
         adapter = importlib.util.module_from_spec(adapter_spec)
         with patch.dict(sys.modules, {"beat_spec_feedback": feedback}):
@@ -231,7 +259,8 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ):
             root = Path(directory)
             payload = root / "payload.tar"
-            body = b"invalid patch"
+            # A patch the shared edit scope accepts, so the evaluator runs.
+            body = (JUDGE / "reference.patch").read_bytes()
             with tarfile.open(payload, "w") as archive:
                 member = tarfile.TarInfo("payload/solution.patch")
                 member.size = len(body)
@@ -241,15 +270,15 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
             with patch.object(
                 adapter,
                 "load_evaluator",
-                return_value=lambda path: (
+                return_value=(lambda tree: (
                     0.0,
                     0.0,
                     "correctness gate failed",
                     metrics,
-                ),
+                ), None),
             ):
                 result = adapter.verify(
-                    bundle=JUDGE,
+                    bundle=task_manifest.judge_bundle(TASK),
                     entrypoint="payload/solution.patch",
                     payload=payload,
                     dataset=dataset,

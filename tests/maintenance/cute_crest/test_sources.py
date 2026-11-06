@@ -5,14 +5,14 @@ import deployment_test_guard  # noqa: F401  # isort: skip
 import json
 import re
 
-from tests.maintenance.cute_crest.runtime_imports import MODULES, REPO_TREE, TASK
+from tests.maintenance.cute_crest.runtime_imports import JUDGE, MODULES, REPO_TREE, TASK, task_manifest
 
 runner = MODULES["crest_runner"]
 gate = MODULES["gate"]
 SOURCES = json.loads((TASK / "judge/benchmark_sources.json").read_text())
 PROGRAMS = json.loads((TASK / "judge/programs.json").read_text())
-POLICY = json.loads((TASK / "policy.json").read_text())
-STATEMENT = (TASK / "judge/readme").read_text()
+POLICY = task_manifest.load_policy(TASK)
+STATEMENT = (REPO_TREE / "README.md").read_text()
 
 
 def test_sources_are_pinned_public_and_licensed():
@@ -22,9 +22,10 @@ def test_sources_are_pinned_public_and_licensed():
         assert set(source["licences"]) == set(source["provides"])
     crest = SOURCES["sources"][0]
     assert "3e5ececd3793c88f18af47853236af34ffde4569" in crest["url"]
-    fetch = (TASK / "agent-base/frontier/task/bin/fetch_benchmark.py").read_text()
+    fetch = (TASK / "docker/agent.Dockerfile").read_text()   # the Agent image fetches it inline
     assert crest["url"] in fetch and crest["sha256"] in fetch
     # The solver image keeps the development program only.
+    fetch = " ".join(line for line in fetch.splitlines() if not line.startswith("#"))
     assert "benchmarks/grep-2.2/" in fetch and "vim" not in fetch.lower() and "sed" not in fetch.lower()
 
 
@@ -45,20 +46,21 @@ def test_program_manifest():
 
 
 def test_images_build_what_the_evaluator_reads():
-    verifier = (TASK / "verifier/Dockerfile").read_text()
+    verifier = (TASK / "docker/verifier.Dockerfile").read_text()
     assert "python3 /opt/frontier/task/build_benchmarks.py /opt/crest-task" in verifier
     assert "libncurses-dev" in verifier and "patch" in verifier
-    agent = (TASK / "agent-base/Dockerfile").read_text()
-    assert "fetch_benchmark.py /frontier/task/benchmark-src/grep-2.2" in agent
+    agent = (TASK / "docker/agent.Dockerfile").read_text()
+    assert "/frontier/task/benchmark-src/grep-2.2" in agent
     assert "/frontier/task/benchmark-src/grep-2.2" in (REPO_TREE / "frontier_build.py").read_text()
 
 
 def test_harness_tree_is_identical_on_both_sides():
-    public = TASK / "agent-base/frontier/task/repo"
+    # One source: the Verifier image copies repo/ to pristine/, which build_benchmarks.py builds.
+    public = REPO_TREE
     names = lambda root: sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())  # noqa: E731
-    assert [n for n in names(public) if n != "README.md"] == names(REPO_TREE)
-    for name in names(REPO_TREE):
-        assert (public / name).read_bytes() == (REPO_TREE / name).read_bytes(), name
+    assert names(public) == names(JUDGE / "pristine")
+    assert "COPY repo /opt/frontier/task/pristine" in (TASK / "docker/verifier.Dockerfile").read_text()
+    assert "TASK / 'pristine'" in (TASK / "judge/build_benchmarks.py").read_text()
     # The reference search of the original tester is not in the public tree.
     assert not (public / "src/run_crest/concolic_search.cc").exists()
     text = "".join(p.read_text(errors="replace") for p in (public / "src").rglob("*") if p.is_file())
@@ -73,8 +75,9 @@ def test_statement_states_the_limits_the_code_enforces():
     assert "%d seconds" % PROGRAMS["development"][0]["run_wall_seconds"] in STATEMENT
     assert runner.RUN_WALL_SECONDS == PROGRAMS["development"][0]["run_wall_seconds"]
     assert "sqrt(2 / %d)" % gate.K_SEEDS in STATEMENT and "3 * s_cov" in STATEMENT and "3 * s_ovh" in STATEMENT
-    assert "%d-second timeout" % POLICY["quota"]["eval_timeout_seconds"] in STATEMENT
-    assert (TASK / "agent-base/frontier/task/repo/README.md").read_text() == STATEMENT.replace("/app", "/workspace/repo")
+    # Platform numbers are stated once, by the generated /frontier/task/README.md.
+    for value in (POLICY["quota"]["eval_timeout_seconds"], POLICY["quota"]["wall_time_seconds"]):
+        assert str(value) not in STATEMENT
 
 
 FIXED_SECONDS = 600   # judge start, two strategy builds, scratch clean-up

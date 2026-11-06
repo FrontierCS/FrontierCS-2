@@ -263,7 +263,8 @@ def validate_config(raw: Any) -> dict[str, Any]:
             "availability_zone_count",
             "operator_cidrs",
             "single_nat_gateway",
-        },
+        }
+        | ({"transitional_kubernetes_api_cidrs"} & set(network)),
         "network",
     )
     try:
@@ -309,6 +310,23 @@ def validate_config(raw: Any) -> dict[str, Any]:
     require_int(
         network["availability_zone_count"], "network.availability_zone_count", 2, 3
     )
+    if "transitional_kubernetes_api_cidrs" in network:
+        # Migration only: the current exact control-plane ENI /32s, kept beside the
+        # Terraform /28s until EKS has moved its ENIs into them. Remove afterwards.
+        transitional = network["transitional_kubernetes_api_cidrs"]
+        if not isinstance(transitional, list) or not 1 <= len(transitional) <= 4:
+            raise DeployError(
+                "network.transitional_kubernetes_api_cidrs must list 1-4 exact /32s"
+            )
+        for cidr in transitional:
+            try:
+                route = ipaddress.ip_network(require_string(cidr, "network.transitional_kubernetes_api_cidrs"), strict=True)
+            except ValueError as error:
+                raise DeployError(f"network.transitional_kubernetes_api_cidrs is invalid: {error}") from error
+            if route.version != 4 or route.prefixlen != 32 or str(route) != cidr or not route.subnet_of(vpc):
+                raise DeployError(
+                    "network.transitional_kubernetes_api_cidrs accepts only exact /32s inside network.vpc_cidr"
+                )
     operator_cidrs = network["operator_cidrs"]
     if (
         not isinstance(operator_cidrs, list)

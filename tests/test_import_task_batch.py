@@ -127,9 +127,8 @@ class BatchTests(unittest.TestCase):
             body = json.loads(manifest.read_text())
             definition = importer.validate_export(source)
             body["source_sha256"] = definition["source"]["source_set_sha256"]
-            for role, image in body["images"].items():
-                if role != "datasets":
-                    image["tag"] = definition["image_tag"]
+            for image in body["images"].values():  # the dataset image too: source-bound tags
+                image["tag"] = definition["image_tag"]
             manifest.write_text(json.dumps(body))
         before = snapshot(self.root)
         with self.assertRaises((ValueError, deploy.DeployError)):

@@ -3,14 +3,17 @@
 #
 import deployment_test_guard  # noqa: F401  # isort: skip
 import json
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 
-# The approved campaign covers these existing tasks, including both copies
-# where demo and pending overlap. Unrelated synthetic importer fixtures retain
-# their authored limits.
+import task_manifest  # noqa: E402
+
+# The approved campaign covers these existing tasks. Unrelated synthetic
+# importer fixtures retain their authored limits.
 CAMPAIGN_TASKS = frozenset(
     {
         "approximate_mips_query_stopping",
@@ -50,32 +53,23 @@ CAMPAIGN_TASKS = frozenset(
 
 
 class ModelSessionLimitTests(unittest.TestCase):
-    def test_task_policies_share_the_approved_limit(self):
+    def test_campaign_policies_use_the_approved_limit(self):
+        # Either definition format: policy.json, or task.toml over the shared defaults.
         policies = [
             p
-            for p in (ROOT / "tasks").glob("**/policy.json")
+            for name in ("policy.json", "task.toml")
+            for p in (ROOT / "tasks").glob(f"**/{name}")
             if p.parent.name in CAMPAIGN_TASKS
         ]
         self.assertEqual({p.parent.name for p in policies}, CAMPAIGN_TASKS)
-        by_task = {}
         for path in policies:
-            policy = json.loads(path.read_text())
+            policy = task_manifest.load_policy(path.parent)
             with self.subTest(path=str(path.relative_to(ROOT))):
                 self.assertEqual(policy["network"]["audit"]["max_model_sessions"], 1024)
                 self.assertEqual(policy["quota"]["wall_time_seconds"], 18000)
                 self.assertLessEqual(
                     policy["network"]["audit"]["max_bundle_bytes"], 32 * 1024**3
                 )
-                audit = dict(policy["network"]["audit"])
-                # Published releases may raise these operational floors while
-                # pending authoring copies retain their historical capacities.
-                audit["max_bundle_bytes"] = max(audit["max_bundle_bytes"], 32 * 1024**3)
-                audit["max_model_request_bytes"] = max(
-                    audit["max_model_request_bytes"], 64 * 1024**2
-                )
-                if path.parent.name in by_task:
-                    self.assertEqual(audit, by_task[path.parent.name])
-                by_task[path.parent.name] = audit
 
     def test_agent_budget_examples_do_not_reintroduce_the_old_limit(self):
         for path in (ROOT / "tasks").glob("**/agent-base/frontier/task/bin/README.md"):

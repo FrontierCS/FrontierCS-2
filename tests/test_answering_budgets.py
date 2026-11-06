@@ -11,11 +11,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer
+import task_manifest
 
 
 def declares_answering_and_independent_final(root, final_seconds):
-    """Accept the same contract in the entry or its explicitly linked guide."""
-    entry = (root / "agent-base/frontier/task/README.md").read_text()
+    """Accept the same contract in the entry or its explicitly linked guide. A task.toml
+    task's entry is the generated Agent README (its own opening + the shared platform text)."""
+    entry = (task_manifest.agent_readme(root) if task_manifest.is_native(root)
+             else task_manifest.layout(root).statement.read_text())
     if all(
         part in " ".join(entry.replace("18,000 seconds", "18000 seconds").split())
         for part in (
@@ -24,6 +27,15 @@ def declares_answering_and_independent_final(root, final_seconds):
             f"{final_seconds}-second",
         )
     ):
+        return True
+    # The shared platform text every task.toml task's Agent README ends with
+    # (tasks/shared/agent/README.platform.md). Only for task.toml tasks: there it is generated
+    # from task.toml, so its numbers cannot drift from the configuration.
+    if task_manifest.is_native(root) and all(part in " ".join(entry.split()) for part in (
+        "The overall answering window is **18000 seconds**;",
+        f"Final evaluation has a separate **{final_seconds}-second** allowance; it does not "
+        "consume train calls or the train wall-time budget. It runs after you exit,",
+    )):
         return True
     # This native contract states that final is measured independently after
     # the Agent exits, with the exact policy timeout. Comma punctuation does
@@ -150,7 +162,7 @@ def declares_answering_and_independent_final(root, final_seconds):
         return True
     # CKKS's frozen native entry separates answering, cumulative train and final.
     # Follow its exact public statement link for the explicit post-exit boundary.
-    ckks_statement = root / "agent-base/frontier/task/repo/README.md"
+    ckks_statement = task_manifest.layout(root).repo / "README.md"
     if (
         root.name == "ckks_composable_noise"
         and "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
@@ -172,7 +184,7 @@ def declares_answering_and_independent_final(root, final_seconds):
             return True
     # Edlib declares the exact clocks in its linked immutable statement and
     # the post-exit scoring boundary in the submission entry.
-    edlib_statement = root / "agent-base/frontier/task/repo/README.md"
+    edlib_statement = task_manifest.layout(root).repo / "README.md"
     if (
         root.name == "edlib_exact_alignment"
         and "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
@@ -195,7 +207,7 @@ def declares_answering_and_independent_final(root, final_seconds):
             return True
     # Glenside links its existing public statement, which contains both exact
     # clocks and the independent post-exit boundary. Preserve measured bytes.
-    statement = root / "agent-base/frontier/task/repo/README.md"
+    statement = task_manifest.layout(root).repo / "README.md"
     if (
         "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
         and not statement.is_symlink()
@@ -212,7 +224,7 @@ def declares_answering_and_independent_final(root, final_seconds):
     # Native exports may put their complete budget/lifecycle description in
     # the linked usage guide. Do not rewrite an immutable measured source just
     # to move equivalent declarations into this test's preferred paragraph.
-    guide = root / "agent-base/frontier/task/bin/README.md"
+    guide = task_manifest.layout(root).agent_tool("README.md")
     if (
         "/frontier/task/bin/README.md" not in entry
         and "](bin/README.md)" not in entry
@@ -249,7 +261,7 @@ def declares_answering_and_independent_final(root, final_seconds):
 
         try:
             quota = json.loads(sections[0], object_pairs_hook=unique_object)
-            authored = json.loads((root / "policy.json").read_text())["quota"]
+            authored = task_manifest.load_policy(root)["quota"]
             if (
                 quota == authored
                 and type(quota.get("wall_time_seconds")) is int
@@ -323,11 +335,11 @@ def declares_answering_and_independent_final(root, final_seconds):
 def declares_public_budget(task_name, root, policy):
     """Uniform five-hour answering, preserving Clusterwise train/final clocks."""
     quota = policy["quota"]
-    if task_name == "lrr":
+    if task_name == "lrr" and not task_manifest.is_native(root):
         expected = {"wall_time_seconds": 18000, "max_train_calls": 100,
                     "max_train_wall_seconds": 5400, "eval_timeout_seconds": 3600}
-        notice = " ".join((root / "agent-base/frontier/task/bin/README.md").read_text().split())
-        entry = (root / "agent-base/frontier/task/README.md").read_text()
+        notice = " ".join((task_manifest.layout(root).agent_tool("README.md")).read_text().split())
+        entry = (task_manifest.layout(root).statement).read_text()
         return (policy.get("problem_id") == task_name and quota == expected
                 and "[the testbed guide](bin/README.md)" in entry
                 and all(type(value) is int for value in quota.values())
@@ -340,7 +352,7 @@ def declares_public_budget(task_name, root, policy):
     if task_name == "ckks_composable_noise":
         release = json.loads((root / "judge/judge/release.json").read_text())
         if release.get("mode") == "calibration":
-            entry = (root / "agent-base/frontier/task/README.md").read_text()
+            entry = (task_manifest.layout(root).statement).read_text()
             return (
                 quota == {"wall_time_seconds": 600, "max_train_calls": 1,
                           "max_train_wall_seconds": 60, "eval_timeout_seconds": 7200}
@@ -362,7 +374,17 @@ def declares_public_budget(task_name, root, policy):
         return False
     if any(type(value) is not int for value in quota.values()):
         return False
-    entry = root / "agent-base/frontier/task/README.md"
+    if task_manifest.is_native(root):
+        # A task.toml task states its clocks once, in the generated Agent README (the shared
+        # platform text filled from task.toml); its statement must not restate them (#757).
+        notice = " ".join(task_manifest.agent_readme(root).split())
+        return all(part in notice for part in (
+            "**3 train calls**; a call is consumed when the submit is accepted and is never refunded,",
+            "Cumulative train wall time: **21600 seconds**, counted from verifier start to result.",
+            "The overall answering window is **18000 seconds**; Agent work and train share it.",
+            "Final evaluation has a separate **7200-second** allowance; it does not consume train calls or the train wall-time budget.",
+        ))
+    entry = task_manifest.layout(root).statement
     notice = " ".join(entry.read_text().split())
     # The native entry links the actual solver-facing task statement. Require
     # its fixed path and the entry's exact numeric contract before following it.
@@ -400,7 +422,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             statement = entry.parent / "repo/README.md"
             statement.parent.mkdir(parents=True)
             entry.write_text(entry_text)
@@ -433,7 +455,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         ]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for final_seconds, notice in notices:
                 for valid in (notice, " ".join(notice.split())):
@@ -460,7 +482,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (notice, notice.replace(" ", "\n")):
                 entry.write_text(valid)
@@ -487,8 +509,8 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
-            guide = root / "agent-base/frontier/task/bin/README.md"
+            entry = task_manifest.layout(root).statement
+            guide = task_manifest.layout(root).agent_tool("README.md")
             guide.parent.mkdir(parents=True)
             entry.write_text("Read /frontier/task/bin/README.md for time budgets.")
             for valid in (notice, " ".join(notice.split())):
@@ -520,8 +542,8 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
-            guide = root / "agent-base/frontier/task/bin/README.md"
+            entry = task_manifest.layout(root).statement
+            guide = task_manifest.layout(root).agent_tool("README.md")
             guide.parent.mkdir(parents=True)
             entry_text = (
                 "Read [testbed usage](bin/README.md). "
@@ -562,8 +584,8 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
-            guide = root / "agent-base/frontier/task/bin/README.md"
+            entry = task_manifest.layout(root).statement
+            guide = task_manifest.layout(root).agent_tool("README.md")
             guide.parent.mkdir(parents=True)
             entry.write_text("Read /frontier/task/bin/README.md for time budgets.")
             for valid in (notice, " ".join(notice.split())):
@@ -587,7 +609,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (notice, " ".join(notice.split())):
                 entry.write_text(valid)
@@ -611,7 +633,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             entry.write_text(notice)
             self.assertTrue(declares_answering_and_independent_final(root, 600))
@@ -633,7 +655,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (
                 notice,
@@ -658,7 +680,7 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
             renderer.catalog_task_names(), renderer.TASK_ROOT / "problems"
         ).items():
             with self.subTest(task=name):
-                policy = json.loads((root / "policy.json").read_text())
+                policy = task_manifest.load_policy(root)
                 self.assertEqual(definitions[name]["quota"], policy["quota"])
                 self.assertTrue(
                     declares_public_budget(name, root, policy)
@@ -666,31 +688,23 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
 
 
 class LrrApprovedBudgetTests(unittest.TestCase):
-    def test_exact_export_clocks_and_linked_public_guide(self):
-        source = ROOT / "tasks/frontier-cs-2.0-demo/problems/Security/lrr"
-        import copy
-        import tempfile
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            for name in ("README.md", "bin/README.md"):
-                target = root / "agent-base/frontier/task" / name
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes((source / "agent-base/frontier/task" / name).read_bytes())
-            policy = json.loads((source / "policy.json").read_text())
-            self.assertTrue(declares_public_budget("lrr", root, policy))
-            for key in policy["quota"]:
-                changed = copy.deepcopy(policy)
-                changed["quota"][key] += 1
-                self.assertFalse(declares_public_budget("lrr", root, changed))
-            guide = root / "agent-base/frontier/task/bin/README.md"
-            original = guide.read_text()
-            for old, new in (("18000 seconds", "18001 seconds"),
-                             ("5400 seconds", "5401 seconds"),
-                             ("3600-second", "3601-second"),
-                             ("100 train calls", "101 train calls"),
-                             ("after you exit", "before you exit")):
-                guide.write_text(original.replace(old, new))
-                self.assertFalse(declares_public_budget("lrr", root, policy))
+    def test_exact_clocks_in_the_generated_agent_readme(self):
+        # lrr is a task.toml task (#757): its clocks come from task.toml into the generated
+        # /frontier/task/README.md, which must state each of them exactly.
+        source = renderer.problem_directory(renderer.TASK_ROOT / "problems", "lrr")
+        self.assertTrue(task_manifest.is_native(source))
+        policy = task_manifest.load_policy(source)
+        self.assertEqual(policy["quota"], {"wall_time_seconds": 18000, "max_train_calls": 100,
+                                           "max_train_wall_seconds": 5400,
+                                           "eval_timeout_seconds": 3600})
+        self.assertTrue(declares_public_budget("lrr", source, policy))
+        notice = " ".join(task_manifest.agent_readme(source).split())
+        for part in ("**100 train calls**", "**5400 seconds**", "**18000 seconds**",
+                     "separate **3600-second** allowance"):
+            self.assertIn(part, notice)
+        changed = json.loads(json.dumps(policy))
+        changed["quota"]["eval_timeout_seconds"] += 1
+        self.assertFalse(declares_public_budget("lrr", source, changed))
 
 
 class NativeIndependentBudgetNoticeTests(unittest.TestCase):
@@ -711,7 +725,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "edlib_exact_alignment"
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             statement = entry.parent / "repo/README.md"
             statement.parent.mkdir(parents=True)
             entry.write_text(entry_text)
@@ -751,7 +765,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             entry.write_text(original)
             self.assertTrue(declares_answering_and_independent_final(root, 1800))
@@ -771,7 +785,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (notice, " ".join(notice.split()), notice.replace("18,000", "18000")):
                 entry.write_text(valid)
@@ -797,7 +811,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             guide = entry.parent / "bin/README.md"
             guide.parent.mkdir(parents=True)
             entry.write_text("Read the [testbed guide](bin/README.md).")
@@ -826,7 +840,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (
                 notice,
@@ -867,7 +881,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             notice = (
                 "You have 5 hours (18,000 seconds) for answering. "
@@ -913,7 +927,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (
                 notice,
@@ -946,7 +960,7 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             notice = (
                 "Then exit. Formal answering lasts 18,000 seconds and includes train waits; "
@@ -978,7 +992,7 @@ class LinkedBudgetGuideTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             guide = entry.parent / "bin/README.md"
             guide.parent.mkdir(parents=True)
             entry.write_text("See `/frontier/task/bin/README.md` for budgets.")
@@ -1044,7 +1058,7 @@ class StructuredBudgetGuideTests(unittest.TestCase):
         ]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             guide = entry.parent / "bin/README.md"
             guide.parent.mkdir(parents=True)
             entry.write_text("See [platform guide](bin/README.md).")
@@ -1082,7 +1096,7 @@ class ClusterwiseApprovedBudgetTests(unittest.TestCase):
         }}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (notice, notice.replace(". ", ".\n")):
                 entry.write_text(valid)
@@ -1138,7 +1152,7 @@ class ClusterwiseApprovedBudgetTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            entry = root / "agent-base/frontier/task/README.md"
+            entry = task_manifest.layout(root).statement
             guide = entry.parent / "repo/README.md"
             guide.parent.mkdir(parents=True)
             entry.write_text(entry_text)

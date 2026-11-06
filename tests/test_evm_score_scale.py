@@ -44,8 +44,9 @@ class EvmScoreScaleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.e = load(EVM / "judge/evaluator.py", "evm_score_scale_evaluator", EVM / "judge")
-        cls.feedback = load(EVM / "verifier/beat_spec_feedback.py", "evm_score_scale_feedback",
-                            EVM / "verifier")
+        # The task runs on the shared verifier; its feedback helper is the shared one (#757).
+        shared = ROOT / "tasks/shared/verifier"
+        cls.feedback = load(shared / "beat_spec_feedback.py", "evm_score_scale_feedback", shared)
 
     def setUp(self):
         self.e._REFERENCE_ANCHOR.clear()
@@ -129,9 +130,6 @@ class EvmScoreScaleTests(unittest.TestCase):
             work = tmp / "submission" / "work"
             (work / e.EDITABLE).parent.mkdir(parents=True)
             (work / e.EDITABLE).write_bytes(b"// candidate\n")
-            patch = tmp / "solution.patch"
-            patch.write_text("+++ b/lib/evmcow/execution_state.hpp\n+// fine\n")
-            applied = SimpleNamespace(ok=True, message="", metrics={"valid_patch": 1}, workdir=work)
             cache = tmp / "cache"
             (cache / "source" / e.EDITABLE).parent.mkdir(parents=True)
 
@@ -147,15 +145,15 @@ class EvmScoreScaleTests(unittest.TestCase):
 
             with mock.patch.dict("os.environ", {"FRONTIER_SUBMISSION_ROLE": "final",
                                                 "FRONTIER_SPECTRUM_CACHE": str(cache)}), \
-                    mock.patch.object(e, "APP_DIR", EVM / "agent-base/frontier/task/repo"), \
-                    mock.patch.object(e, "apply_submission_patch", return_value=applied), \
+                    mock.patch.object(e, "APP_DIR", EVM / "repo"), \
                     mock.patch.object(e, "_ensure_cache", return_value=(cache, cache / "source")), \
                     mock.patch.object(e, "_reference_header", return_value=b"// reference\n"), \
                     mock.patch.object(e, "_checkpoint_profile", side_effect=profile), \
                     mock.patch.object(e, "_build_variant"), \
                     mock.patch.object(e, "_qualities", return_value=(qualities, samples)), \
                     mock.patch.object(e, "_repeat_checkpoint_profiles", side_effect=repeat):
-                score, unbounded, message, metrics = e.evaluate(str(patch))
+                # The shared verifier hands the judge the tree (pristine + the edited header).
+                score, unbounded, message, metrics = e.evaluate(str(work))
         self.assertIn("valid Spectrum checkpoint backend", message)
         self.assertAlmostEqual(unbounded, 100 * math.log10(11.95))
         self.assertAlmostEqual(score, e._bounded_score(unbounded))
@@ -164,9 +162,15 @@ class EvmScoreScaleTests(unittest.TestCase):
         self.assertEqual(set(metrics["workload_values"]), set(e._workload_ids(suite)))
         self.assertAlmostEqual(metrics["reference_score_unbounded"], 74.76, places=6)
         json.dumps(metrics, allow_nan=False)
-        spec = EVM / "judge/beat_spec.json"
-        visible = self.feedback.public_metrics(metrics, beat_spec_path=spec)
-        private = self.feedback.private_metrics(metrics, beat_spec_path=spec)
+        # The shared helper: the task.toml [feedback] allowlist, no spec file (#757).
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import task_manifest
+        finally:
+            sys.path.pop(0)
+        allowed = list(task_manifest.read_task(EVM)["feedback"])
+        visible = self.feedback.public_metrics(metrics, visible=allowed)
+        private = self.feedback.private_metrics(metrics)
         for projected in (visible, private):
             self.assertNotIn("workload_values", projected)
             self.assertNotIn("reference_score_unbounded", projected)

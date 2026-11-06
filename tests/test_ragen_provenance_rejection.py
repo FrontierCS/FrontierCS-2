@@ -1,11 +1,12 @@
-"""Guard the issue131-provenance-r003 RAGEN judge contract as published in Preview.
+"""Guard the RAGEN judge contract on the shared verifier (#757).
 
-The earlier structure-rejection judge was replaced by trusted action, prompt and
-assistant provenance checks installed around the real model call. A trusted
-provenance rejection is an isolated scored zero carrying a closed diagnostic;
-patch and source preflight failures are plain scored zeros that never dispatch
-GPU work; infrastructure, execution-evidence and reference failures stay
-unscored; strict per-group comparison against the exact reference is retained.
+Trusted action, prompt and assistant provenance checks are installed around the real model
+call. A trusted provenance rejection, a source-preflight failure and a typed DataProto
+rejection are scored zeros with a fixed message: train metrics stay empty, final keeps the
+closed diagnostic in private evidence only. A missing public signature is an out_of_scope
+rejection by the check_tree hook; source that does not compile or is still stubbed is a plain
+scored zero that never dispatches GPU work; infrastructure, execution-evidence and reference
+failures stay unscored; strict per-group comparison against the exact reference is retained.
 Fake tensors and processes here are protocol checks, not GPU acceptance.
 """
 
@@ -21,7 +22,7 @@ import os
 import sys
 import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -35,6 +36,10 @@ TASK = Path(
         ),
     )
 )
+SHARED = ROOT / "tasks/shared"
+sys.path.insert(0, str(ROOT / "scripts"))
+import task_manifest  # noqa: E402
+
 CONTEXT = "ragen/llm_agent/ctx_manager.py"
 PROVENANCE = frozenset(
     {"action_provenance", "prompt_provenance", "assistant_provenance"}
@@ -75,24 +80,26 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             sys.modules.update(old_modules)
 
         self.addCleanup(restore)
-        sys.path[:0] = [str(TASK / "judge"), str(TASK / "verifier")]
+        sys.path[:0] = [str(TASK / "judge"), str(SHARED / "verifier"), str(SHARED / "lib"),
+                        str(SHARED / "verifier-gpu")]
         for name in (
-            "candidate_failure",
+            "source_preflight",
             "private_execution",
             "action_provenance",
-            "submission_patch",
+            "edit_scope",
             "beat_spec_feedback",
         ):
             sys.modules.pop(name, None)
-        self.failure = module(TASK / "judge/candidate_failure.py", "candidate_failure")
+        self.failure = module(TASK / "judge/source_preflight.py", "source_preflight")
         self.private = module(TASK / "judge/private_execution.py", "private_execution")
         self.provenance = module(
             TASK / "judge/action_provenance.py", "action_provenance"
         )
         self.evaluator = module(TASK / "judge/evaluator.py", "test_ragen_evaluator")
         self.verifier = module(
-            TASK / "verifier/fcs2_verifier.py", "test_ragen_verifier"
+            SHARED / "verifier/fcs2_verifier.py", "test_ragen_verifier"
         )
+        self.bundle = task_manifest.judge_bundle(TASK)
 
     # ------------------------------------------------------------- helpers
 
@@ -101,23 +108,21 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             self.evaluator.provenance_diagnostic(reason, CONTEXT, 1)
         )
 
-    def evaluate(self, candidate, reference=None):
-        """Run evaluate() with patched patch application, CUDA and GPU dispatch.
+    def evaluate(self, candidate, reference=None, role="development"):
+        """Run evaluate(tree) with patched reference preparation and sandbox runs.
 
-        `candidate`/`reference` are either payload dicts the fake GPU run returns
-        or exception instances it raises. Returns the result and dispatched roles.
+        `candidate`/`reference` are either payload dicts the fake PPO evidence yields
+        or exception instances judging it raises. Returns the result and the roles
+        whose PPO evidence was judged.
         """
         e = self.evaluator
         with tempfile.TemporaryDirectory() as tmp:
             paths = [Path(tmp) / name / "repo" for name in ("candidate", "reference")]
             for path in paths:
                 path.mkdir(parents=True)
-            applied = [
-                SimpleNamespace(ok=True, message="ok", workdir=str(p)) for p in paths
-            ]
             roles = []
 
-            def gpu(workdir, seed, evidence, role):
+            def rollouts(result, evidence, role, seed):
                 roles.append(role)
                 outcome = candidate if role == "candidate" else reference
                 if isinstance(outcome, BaseException):
@@ -128,35 +133,42 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 return copy.deepcopy(outcome)
 
             with (
-                patch.object(e, "apply_submission_patch", side_effect=applied),
+                patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": role}),
+                patch.object(e, "_reference_tree", return_value=paths[1]),
                 patch.object(e, "_source_valid", return_value=(True, "ok")),
-                patch.object(
-                    e, "_require_verifier_cuda", return_value={"cuda_available": True}
-                ),
-                patch.object(e, "_run_gpu", side_effect=gpu),
+                patch.object(e, "sandbox_workdir", return_value="/workspace/sandbox"),
+                patch.object(e, "_inspect", return_value=None),
+                patch.object(e, "_sandbox_run", return_value=None),
+                patch.object(e, "run_sandboxes", side_effect=lambda runs, into: list(runs)),
+                patch.object(e, "_machine", return_value={"cuda_available": True}),
+                patch.object(e, "_rollouts", side_effect=rollouts),
             ):
-                result = e.evaluate("solution.patch")
+                result = e.evaluate(str(paths[0]))
             return result, roles
 
     def verify(self, value, mode, evaluate=None):
+        """Run the shared verifier with an accepted edit scope and a stub evaluator."""
         v = self.verifier
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ):
             root = Path(tmp)
-            payload = root / "payload"
+            payload = root / "payload.tar"
             dataset = root / "dataset"
             payload.write_bytes(b"p")
             dataset.write_bytes(b"d")
+            scope = SimpleNamespace(ok=True, tree=TASK / "repo", changes=(), metrics={},
+                                    dispose=lambda: None)
             with (
                 patch.object(v, "extract_payload"),
                 patch.object(v, "entrypoint_path", return_value=payload),
-                patch.object(v, "stage_task", return_value=TASK / "judge"),
+                patch("edit_scope.check", return_value=scope),
                 patch.object(
-                    v, "load_evaluator", return_value=evaluate or (lambda _: value)
+                    v, "load_evaluator",
+                    return_value=(evaluate or (lambda _: value), None),
                 ),
             ):
                 return v.verify(
-                    bundle=TASK / "judge",
-                    entrypoint="solution.patch",
+                    bundle=self.bundle,
+                    entrypoint="payload/solution.patch",
                     payload=payload,
                     dataset=dataset,
                     mode=mode,
@@ -166,19 +178,20 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
 
     # --------------------------------------------- zeros before execution
 
-    def test_patch_failure_is_a_plain_scored_zero_without_gpu_dispatch(self):
+    def test_missing_public_signature_is_out_of_scope(self):
         e = self.evaluator
-        failed = SimpleNamespace(ok=False, message="patch failed", workdir=None)
-
-        def forbidden(*args, **kwargs):
-            raise AssertionError("a rejected patch reached GPU dispatch")
-
-        with (
-            patch.object(e, "apply_submission_patch", return_value=failed),
-            patch.object(e, "_run_gpu", side_effect=forbidden),
-            patch.object(e, "_require_verifier_cuda", side_effect=forbidden),
-        ):
-            self.assertEqual(e.evaluate("patch"), (0.0, 0.0, "patch failed", {}))
+        self.assertIsNone(e.check_tree(str(TASK / "repo"), str(TASK / "repo"), []))
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp)
+            context = tree / CONTEXT
+            context.parent.mkdir(parents=True)
+            source = (TASK / "repo" / CONTEXT).read_text(encoding="utf-8")
+            context.write_text(source.replace("def formulate_rollouts", "def renamed"),
+                               encoding="utf-8")
+            self.assertEqual(e.check_tree(str(tree), str(TASK / "repo"), []),
+                             ("out_of_scope", [CONTEXT]))
+            context.write_text("def broken(:\n", encoding="utf-8")
+            self.assertIsNone(e.check_tree(str(tree), str(TASK / "repo"), []))
 
     def test_unreadable_or_invalid_source_is_a_scored_zero_before_execution(self):
         e = self.evaluator
@@ -198,27 +211,23 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 raise AssertionError("invalid source reached execution")
 
             with (
-                patch.object(
-                    e,
-                    "apply_submission_patch",
-                    return_value=SimpleNamespace(
-                        ok=True, message="ok", workdir=str(workdir)
-                    ),
-                ),
-                patch.object(e, "_run_gpu", side_effect=forbidden),
-                patch.object(e, "_require_verifier_cuda", side_effect=forbidden),
+                patch.object(e, "_reference_tree", side_effect=forbidden),
+                patch.object(e, "run_sandboxes", side_effect=forbidden),
             ):
                 self.assertEqual(
-                    e.evaluate("patch"),
+                    e.evaluate(str(workdir)),
                     (0.0, 0.0, "ctx_manager.py does not compile", {}),
                 )
 
-    def test_plain_zero_results_carry_no_private_metrics(self):
+    def test_plain_zero_results_carry_only_beats_reference_zero(self):
         for mode in ("eval", "train"):
             result = self.verify(self.evaluator._zero("invalid patch"), mode)
             self.assertEqual(result["status"], "passed")
             self.assertEqual(result["metrics"], {"score_unbounded": 0.0})
-            self.assertNotIn("private_metrics", result)
+            if mode == "eval":  # a final scored zero keeps beats_reference 0 (#757)
+                self.assertEqual(result["private_metrics"], {"beats_reference": 0})
+            else:
+                self.assertNotIn("private_metrics", result)
 
     # ----------------------------------------- trusted provenance rejection
 
@@ -226,67 +235,28 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         for reason in sorted(PROVENANCE):
             with self.subTest(reason=reason):
                 value, roles = self.evaluate(self.rejection(reason))
-                # The exact reference is never dispatched for a rejected candidate.
+                # The exact reference's evidence is never judged for a rejected candidate.
                 self.assertEqual(roles, ["candidate"])
+                self.assertEqual(value, (0.0, 0.0, REJECTED, {}))
+                train = self.verify(value, "train")
+                self.assertEqual(train["metrics"], {"score_unbounded": 0.0})
                 diagnostic = self.failure.diagnostic(reason, CONTEXT, 1)
+                value, _ = self.evaluate(self.rejection(reason), role="final")
                 self.assertEqual(
-                    value, (0.0, 0.0, REJECTED, {"candidate_diagnostic": diagnostic})
+                    value, (0.0, 0.0, REJECTED, {"source_diagnostic": diagnostic})
                 )
                 final = self.verify(value, "eval")
                 self.assertEqual(final["metrics"], {"score_unbounded": 0.0})
-                self.assertNotIn("private_metrics", final)
-                train = self.verify(value, "train")
-                self.assertEqual(
-                    train["metrics"],
-                    {"score_unbounded": 0.0, "candidate_diagnostic": diagnostic},
-                )
+                self.assertEqual(final["private_metrics"], {"beats_reference": 0})
 
     def test_source_preflight_rejection_is_reported_distinctly(self):
         diagnostic = self.failure.diagnostic("syntax_error", CONTEXT, 7)
         value, roles = self.evaluate(self.failure.CandidateSourceError(diagnostic))
         self.assertEqual(roles, ["candidate"])
-        self.assertEqual(
-            value, (0.0, 0.0, PREFLIGHT, {"candidate_diagnostic": diagnostic})
-        )
-        self.assertEqual(
-            self.verify(value, "train")["metrics"]["candidate_diagnostic"], diagnostic
-        )
-
-    def test_rejection_results_must_stay_isolated_for_the_verifier(self):
-        value, _ = self.evaluate(self.rejection())
-        diagnostic = value[3]["candidate_diagnostic"]
-        tampered = {
-            "extra_metrics": (
-                *value[:3],
-                {**value[3], "private_execution": {"candidate": {"valid": True}}},
-            ),
-            "nonzero_score": (1.0, 1.0, value[2], value[3]),
-            "untrusted_message": (
-                *value[:3],
-                {"candidate_diagnostic": {**diagnostic, "message": "private secret"}},
-            ),
-            "unapproved_category": (
-                *value[:3],
-                {"candidate_diagnostic": {**diagnostic, "category": "row_count"}},
-            ),
-            "extra_field": (
-                *value[:3],
-                {"candidate_diagnostic": {**diagnostic, "extra": 1}},
-            ),
-            "legacy_marker": (
-                0.0,
-                0.0,
-                REJECTED,
-                {"candidate_rejection": True, "beats_reference": 0},
-            ),
-        }
-        for change, result in tampered.items():
-            for mode in ("eval", "train"):
-                with (
-                    self.subTest(change=change, mode=mode),
-                    self.assertRaises(self.verifier.VerifierFailure),
-                ):
-                    self.verify(result, mode)
+        self.assertEqual(value, (0.0, 0.0, PREFLIGHT, {}))
+        self.assertEqual(self.verify(value, "train")["metrics"], {"score_unbounded": 0.0})
+        value, _ = self.evaluate(self.failure.CandidateSourceError(diagnostic), role="final")
+        self.assertEqual(value[3], {"source_diagnostic": diagnostic})
 
     def test_closed_diagnostics_do_not_accept_untrusted_text(self):
         diagnostic = self.failure.diagnostic("action_provenance", CONTEXT, 1)
@@ -333,6 +303,7 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
 
     def test_real_dispatch_classifies_only_declared_provenance_files(self):
         e = self.evaluator
+        sandbox = sys.modules["fcs2_verifier_gpu"]
         for reason, declared in (
             ("action_provenance", True),
             ("prompt_provenance", True),
@@ -340,50 +311,94 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             ("row_count", False),
             ("tensor_shapes", False),
         ):
-            with (
-                self.subTest(reason=reason),
-                tempfile.TemporaryDirectory() as tmp,
-                patch.dict(os.environ),
-            ):
-                root = Path(tmp)
-                (root / "models/qwen2.5-0.5b-instruct").mkdir(parents=True)
-                os.environ["FRONTIER_MODEL_ROOT"] = str(root / "models")
-                work = root / "repo"
-                work.mkdir()
-                calls = []
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as tmp:
+                outputs = Path(tmp)
+                evidence = outputs / "work/.frontier-private-execution"
+                evidence.mkdir(parents=True, mode=0o700)
+                (evidence / "provenance-rejection.json").write_text(
+                    json.dumps({"schema": "ragen.action-provenance/v1", "reason": reason}))
+                done = sandbox.StepResult(0, False, 1.0)
+                result = sandbox.SandboxResult(
+                    [done, done, done, sandbox.StepResult(1, False, 9.0)], outputs, False,
+                    [None] * 4)
+                if declared:
+                    with self.assertRaises(self.failure.CandidateSourceError) as caught:
+                        e._rollouts(result, {}, "candidate", 271828)
+                    self.assertEqual(caught.exception.diagnostic["category"], reason)
+                else:
+                    # An undeclared reason is not a trusted rejection: the failed
+                    # process stays an unscored execution-evidence failure.
+                    with self.assertRaises(self.private.ExecutionEvidenceError):
+                        e._rollouts(result, {}, "candidate", 271828)
 
-                def run(command, *, calls=calls, work=work, reason=reason, **kwargs):
-                    calls.append(list(command))
-                    completed = SimpleNamespace(args=list(command), stdout="", stderr="")
-                    if len(calls) == 4:
-                        evidence = work / ".frontier-private-execution"
-                        evidence.mkdir()
-                        (evidence / "provenance-rejection.json").write_text(
-                            json.dumps(
-                                {"schema": "ragen.action-provenance/v1", "reason": reason}
-                            )
-                        )
-                        completed.returncode = 1
-                        return completed
-                    completed.returncode, completed.stdout = 0, "null"
-                    return completed
+    def test_a_lost_ppo_session_is_the_candidates_scored_zero(self):
+        sandbox = sys.modules["fcs2_verifier_gpu"]
+        done = sandbox.StepResult(0, False, 1.0)
+        lost = sandbox.SandboxResult(
+            [done, done, done, sandbox.StepResult(None, False, 30.0, lost_session=True)], None,
+            False, [None] * 4)
+        evidence = {}
+        with self.assertRaises(self.private.ExecutionEvidenceError):
+            self.evaluator._rollouts(lost, evidence, "candidate", 271828)
+        self.assertEqual(self.evaluator._candidate_run_failure(evidence),
+                         "the submission's PPO run lost its session")
+        self.assertIsNone(self.evaluator._machine(lost, "candidate"))
+        with self.assertRaises(self.evaluator.InfrastructureError):
+            self.evaluator._machine(lost, "reference")
+        # From the build step on submitted code has run: the submission's; before, infrastructure.
+        build = sandbox.SandboxResult(
+            [done, sandbox.StepResult(None, False, 3.0, lost_session=True), None, None], None,
+            False, [None] * 4)
+        self.assertIsNone(self.evaluator._machine(build, "candidate"))
+        evidence = {}
+        with self.assertRaises(self.private.ExecutionEvidenceError):
+            self.evaluator._rollouts(build, evidence, "candidate", 271828)
+        self.assertIn("training_session_lost", evidence["candidate"]["issues"])
+        device = sandbox.SandboxResult(
+            [sandbox.StepResult(None, False, 3.0, lost_session=True), None, None, None], None,
+            False, [None] * 4)
+        with self.assertRaises(self.evaluator.InfrastructureError):
+            self.evaluator._machine(device, "candidate")
 
-                with (
-                    patch.object(e, "_install_instrumentation"),
-                    patch.object(e.subprocess, "run", side_effect=run),
-                ):
-                    if declared:
-                        with self.assertRaises(self.failure.CandidateSourceError) as caught:
-                            e._run_gpu(work, 271828, {}, "candidate")
-                        self.assertEqual(
-                            caught.exception.diagnostic["category"], reason
-                        )
-                    else:
-                        # An undeclared reason is not a trusted rejection: the failed
-                        # process stays an unscored execution-evidence failure.
-                        with self.assertRaises(self.private.ExecutionEvidenceError):
-                            e._run_gpu(work, 271828, {}, "candidate")
-                self.assertEqual(len(calls), 4)
+    def test_scoring_uses_the_replayed_groups_and_a_replay_mismatch_is_invalid_evidence(self):
+        sandbox = sys.modules["fcs2_verifier_gpu"]
+        e = self.evaluator
+        reported = observations(success=1.0, reward=9.0)
+        replayed = observations(success=0.25, reward=-0.5)["groups"]
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = Path(tmp)
+            (outputs / "work/.frontier-private-execution").mkdir(parents=True, mode=0o700)
+            (outputs / "work/.frontier_rollouts.json").write_text(json.dumps(
+                {**reported, "structural_ok": True, "episodes": [{"env_id": 0}]}))
+            done = sandbox.StepResult(0, False, 1.0)
+            result = sandbox.SandboxResult([done] * 4, outputs, False, [None] * 4)
+            valid = {"valid": True, "issues": []}
+            with (patch.object(e, "collect_execution", side_effect=lambda _: dict(valid, issues=[])),
+                  patch.object(e, "_replay", return_value={"groups": replayed, "mismatch": None})):
+                payload = e._rollouts(result, {}, "candidate", 271828)
+            self.assertEqual(payload["groups"], replayed)
+            self.assertEqual(payload["reported_groups"], reported["groups"])
+            evidence = {}
+            with (patch.object(e, "collect_execution", side_effect=lambda _: dict(valid, issues=[])),
+                  patch.object(e, "_replay", return_value={"groups": replayed,
+                                                           "mismatch": "episode 3: initial state"}),
+                  self.assertRaises(self.private.ExecutionEvidenceError)):
+                e._rollouts(result, evidence, "candidate", 271828)
+            self.assertIn("rollout_replay_mismatch", evidence["candidate"]["issues"])
+
+    def test_a_ppo_timeout_is_the_candidate_timeout_issue(self):
+        sandbox = sys.modules["fcs2_verifier_gpu"]
+        with tempfile.TemporaryDirectory() as tmp:
+            done = sandbox.StepResult(0, False, 1.0)
+            result = sandbox.SandboxResult(
+                [done, done, done, sandbox.StepResult(None, True, 755.0)], Path(tmp), False,
+                [None] * 4)
+            evidence = {}
+            with self.assertRaises(self.private.ExecutionEvidenceError):
+                self.evaluator._rollouts(result, evidence, "candidate", 271828)
+        self.assertIn("training_process_timeout", evidence["candidate"]["issues"])
+        self.assertEqual(self.evaluator._candidate_run_failure(evidence),
+                         "the submission's PPO run exceeded its 750-second deadline")
 
     # ------------------------------------------------ unscored failures
 
@@ -393,7 +408,7 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 "candidate": {
                     "valid": False,
                     "process_returncode": 1,
-                    "issues": ["training_process_failed"],
+                    "issues": ["rollout_evidence_missing"],
                 }
             }
         )
@@ -412,9 +427,23 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         def crash(_):
             raise RuntimeError("CUDA failure")
 
-        with self.assertRaises(self.verifier.VerifierFailure) as caught:
-            self.verify(None, "eval", evaluate=crash)
-        self.assertEqual(caught.exception.code, "evaluator_error")
+        crashed = self.verify(None, "eval", evaluate=crash)
+        self.assertEqual(crashed["status"], "failed")
+        self.assertEqual(crashed["failure"]["code"], "evaluator_error")
+
+    def test_candidate_crash_or_timeout_is_a_scored_zero_after_the_reference(self):
+        for issue, message in (
+                ("training_process_failed", "the submission's PPO run failed"),
+                ("training_process_timeout",
+                 "the submission's PPO run exceeded its 750-second deadline")):
+            with self.subTest(issue=issue):
+                error = self.private.ExecutionEvidenceError({"candidate": {
+                    "valid": False, "process_returncode": 1, "issues": [issue]}})
+                value, roles = self.evaluate(error, observations())
+                self.assertEqual(roles, ["candidate", "reference"])
+                self.assertEqual(value, (0.0, 0.0, message, {}))
+                with self.assertRaises(self.evaluator.InfrastructureError):
+                    self.evaluate(error, RuntimeError("reference failed"))
 
     def test_reference_failure_is_infrastructure_not_a_scientific_fail(self):
         with self.assertRaises(self.evaluator.InfrastructureError) as caught:
@@ -445,22 +474,25 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         }})
 
     def test_typed_candidate_rejection_scores_zero_in_train_and_final(self):
-        value, roles = self.evaluate(self.typed_failure(), observations())
-        self.assertEqual(roles, ["candidate", "reference"])
-        self.assertEqual(value[:2], (0.0, 0.0))
-        self.assertEqual(value[3]["beats_reference"], 0)
-        self.assertEqual(value[3]["candidate_diagnostic"]["reason"], "terminal_reward")
-        for mode in ("train", "eval"):
+        for mode, role in (("train", "development"), ("eval", "final")):
+            value, roles = self.evaluate(self.typed_failure(), observations(), role=role)
+            self.assertEqual(roles, ["candidate", "reference"])
+            self.assertEqual(value[:3], (0.0, 0.0, "candidate training DataProto violates the task contract"))
+            if mode == "train":
+                self.assertEqual(value[3], {})
+            else:
+                self.assertEqual(value[3]["candidate_rejection"], "terminal_reward")
             result = self.verify(value, mode)
             self.assertEqual(result["status"], "passed")
             self.assertEqual(result["raw_score"], 0.0)
-            if mode == "eval":
-                self.assertEqual(result["private_metrics"]["beats_reference"], 0)
+            self.assertEqual(result["metrics"], {"score_unbounded": 0.0})
+            if mode == "eval":  # a final scored zero keeps beats_reference 0 (#757)
+                self.assertEqual(result["private_metrics"], {"beats_reference": 0})
             else:
-                self.assertEqual(result["metrics"]["candidate_diagnostic"]["reason"], "terminal_reward")
+                self.assertNotIn("private_metrics", result)
 
     def test_typed_zero_retains_reference_control_in_evidence(self):
-        value, _ = self.evaluate(self.typed_failure(), observations())
+        value, _ = self.evaluate(self.typed_failure(), observations(), role="final")
         with patch.object(self.verifier, "write_evidence") as write:
             self.verify(value, "eval")
         record = json.loads(write.call_args.args[1]["metrics.json"])
@@ -468,24 +500,7 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         self.assertTrue(execution["reference"]["valid"])
         self.assertEqual(execution["reference"]["process_returncode"], 0)
         self.assertFalse(execution["candidate"]["valid"])
-        self.assertEqual(record["metrics"]["candidate_diagnostic"]["reason"], "terminal_reward")
-
-    def test_verifier_rejects_unbound_typed_zero(self):
-        value, _ = self.evaluate(self.typed_failure(), observations())
-        for fault in ("missing_reference", "failed_reference", "wrong_reason", "duplicate_reason"):
-            altered = copy.deepcopy(value)
-            execution = altered[3]["private_execution"]
-            if fault == "missing_reference":
-                execution.pop("reference")
-            elif fault == "failed_reference":
-                execution["reference"]["valid"] = False
-            elif fault == "wrong_reason":
-                altered[3]["candidate_diagnostic"] = self.failure.structure_diagnostic("binary_masks")
-            else:
-                execution["candidate"]["diagnostics"]["events"].append(
-                    {"event": "candidate_rejection", "reason": "terminal_reward"})
-            with self.subTest(fault=fault), self.assertRaises(self.verifier.VerifierFailure):
-                self.verify(altered, "eval")
+        self.assertEqual(record["metrics"]["candidate_rejection"], "terminal_reward")
 
     def test_typed_rejection_requires_successful_exact_reference(self):
         with self.assertRaises(self.evaluator.InfrastructureError):
@@ -538,7 +553,9 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             for filename in ("ctx_manager.py", "es_manager.py"):
                 (folder / filename).write_text("# pristine fixture\n")
             with patch.object(self.evaluator, "install_execution"):
-                self.evaluator._install_instrumentation(root, root / "out.json", 1)
+                self.evaluator._install_instrumentation(
+                    root, PurePosixPath("/workspace/sandbox/work"),
+                    PurePosixPath("/workspace/sandbox/observer"), 1)
             source = (folder / "ctx_manager.py").read_text()
             tree = ast.parse(source)
             compile(tree, "ctx_manager.py", "exec")

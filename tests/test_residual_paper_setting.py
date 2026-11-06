@@ -11,6 +11,7 @@ only where DuckDB, pandas and scikit-learn are installed.
 import deployment_test_guard  # noqa: F401  # isort: skip
 
 import ast
+import hashlib
 import importlib
 import importlib.util
 import json
@@ -35,7 +36,10 @@ TASK = Path(
         ),
     )
 )
-REPO = TASK / "agent-base/frontier/task/repo"
+# task.toml layout (#757): the starter is repo/; the shared verifier applies the patch with the
+# shared edit scope and hands evaluate() the judged tree (pristine/ + the allowed files).
+REPO = TASK / "repo"
+PROVENANCE = ROOT / "docs/task-authoring/residual_state_advancement/provenance"
 EXECUTOR = "src/joinboost/executor.py"
 EDITABLE = [
     "src/joinboost/app.py",
@@ -62,8 +66,6 @@ SCIENTIFIC_STACK = all(
 LOCAL_MODULES = (
     "joinboost",
     "benchmark",
-    "submission_patch",
-    "_local_submission_patch",
     "residual_paper_setting_evaluator",
 )
 
@@ -89,12 +91,49 @@ def _stage(case):
     case.addCleanup(shutil.rmtree, work, True)
     task = Path(work) / "task"
     shutil.copytree(TASK / "judge", task)
-    shutil.copytree(REPO, task / "harbor" / "app")
+    shutil.copytree(REPO, task / "pristine")
     return task
+
+
+def _scope():
+    """The shared edit_scope module and this task's rules (task.toml [submission])."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        import task_manifest
+    finally:
+        sys.path.pop(0)
+    scope = task_manifest._edit_scope()
+    return scope, scope.Rules.from_mapping(
+        task_manifest.edit_scope_rules(task_manifest.read_task(TASK)))
+
+
+def _judge(evaluator, task, patch_text):
+    """What the shared verifier does: edit scope, then check_tree, then evaluate(tree).
+    A rejection is (0.0, 0.0, category, {"rejected": category})."""
+    scope, rules = _scope()
+    result = scope.check(patch_text.encode(), task / "pristine", rules)
+    try:
+        if not result.ok:
+            return 0.0, 0.0, result.category, {"rejected": result.category}
+        verdict = evaluator.check_tree(str(result.tree), str(task / "pristine"),
+                                       list(result.changes))
+        if verdict is not None:
+            return 0.0, 0.0, verdict[0], {"rejected": verdict[0]}
+        return evaluator.evaluate(str(result.tree))
+    finally:
+        result.dispose()
+
+
+def _screen(patch_text):
+    """The shared edit scope's verdict on a patch (None = accepted)."""
+    scope, rules = _scope()
+    result = scope.check(patch_text.encode(), REPO, rules, build_tree=False)
+    return None if result.ok else result.category
 
 
 def _load_evaluator(case, task):
     _restore_modules(case)
+    sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, beside the judge in the Verifier base
     sys.path.insert(0, str(task))
     spec = importlib.util.spec_from_file_location(
         "residual_paper_setting_evaluator", task / "evaluator.py"
@@ -413,29 +452,22 @@ class TrustedExecutor(unittest.TestCase):
 
 class EditableSurface(unittest.TestCase):
     def test_executor_is_not_editable_anywhere(self):
-        policy = json.loads((TASK / "policy.json").read_text())
-        self.assertEqual(policy["metadata"]["runtime"]["allowed_paths"], EDITABLE)
-        config = (TASK / "judge/config.yaml").read_text()
-        self.assertNotIn("executor.py", config)
-        self.assertIn("max_changed_files: 5", config)
-        for path in EDITABLE:
-            self.assertIn("    - " + path + "\n", config)
-        self.assertNotIn("executor.py", (REPO / "make_submission.sh").read_text())
-        self.assertNotIn(
-            "executor.py`", (TASK / "agent-base/frontier/task/README.md").read_text()
-        )
-        statement = (TASK / "judge/readme").read_text()
+        _, rules = _scope()
+        self.assertEqual(list(rules.allowed_paths), EDITABLE)
+        self.assertEqual(rules.max_changed_files, 5)
+        self.assertFalse(rules.allow_new_files)
+        self.assertNotIn("executor.py", (TASK / "task.toml").read_text())
+        # The stale upstream make_submission.sh is gone; the shared tool makes the patch.
+        self.assertFalse((REPO / "make_submission.sh").exists())
+        self.assertNotIn("executor.py`", (TASK / "README.md").read_text())
+        statement = (REPO / "README.md").read_text()
         listed = statement.split("The only files that may change are:")[1].split("```")[
             1
         ]
         self.assertEqual(listed.split(), EDITABLE)
-        self.assertEqual(
-            statement,
-            (TASK / "agent-base/frontier/task/guide/README.md").read_text(),
-        )
 
     def test_statement_states_the_enforced_limits(self):
-        statement = (TASK / "judge/readme").read_text()
+        statement = (REPO / "README.md").read_text()
         for fragment in (
             "MAX_ROWS_PER_QUERY = 10,000",
             "MAX_ROWS_PER_SESSION = 250,000",
@@ -444,7 +476,6 @@ class EditableSurface(unittest.TestCase):
             "MAX_BYTES_PER_SESSION = 1,000,000",
             "MAX_TEXT_LENGTH = 256",
             "`LIST`, `ARRAY`, `STRUCT`, `MAP`, `UNION`, `BLOB`, `BIT`",
-            "`submission returned more data to Python than the trusted executor allows`",
             "`threads=2`",
             "`memory_limit='10GB'`",
             "Joins and aggregations run in the DBMS.",
@@ -493,17 +524,17 @@ class EditableSurface(unittest.TestCase):
                 "STATE_TOLERANCE": 1.0e-6,
             },
         )
-        statement = (TASK / "judge/readme").read_text()
+        statement = (REPO / "README.md").read_text()
         for fragment in (
             "at least 10% of the fact table's rows",
             "more than 4 columns beyond the fact table's own 5",
-            "`submission materialised the join into a fact-scale relation`",
             "includes one trusted full read of the updated target",
         ):
             self.assertIn(fragment, statement)
-        spec = json.loads((TASK / "judge/beat_spec.json").read_text())
-        self.assertIn("trusted full read", spec["metrics"][1]["means"])
-        self.assertIn("non-materialised-join rule", spec["beats_reference"])
+        # The scoring note (evaluator docstring) replaces judge/beat_spec.json (#757).
+        note = ast.get_docstring(ast.parse((TASK / "judge/evaluator.py").read_text()))
+        self.assertIn("trusted full read", note)
+        self.assertIn("non-materialised-join rule", note)
 
     def test_no_resampled_private_join_is_shipped(self):
         self.assertFalse((TASK / "judge/judge_data/favorita/train_small.csv").exists())
@@ -514,9 +545,13 @@ class EditableSurface(unittest.TestCase):
         private = sorted(p.name for p in (TASK / "judge").rglob("*.parquet"))
         self.assertEqual(public, [f"sales-dev-{i}.parquet" for i in range(4)])
         self.assertEqual(private, [f"sales-final-{i}.parquet" for i in range(4)])
-        agent_tree = TASK / "agent-base"
-        self.assertFalse(list(agent_tree.rglob("sales-final-*")))
-        lock = json.loads((TASK / "upstream.lock.json").read_text())
+        self.assertFalse(list(REPO.rglob("sales-final-*")))
+        for name, digest in FACT_SHA256.items():
+            path = (TASK / "judge/judge_data/favorita" if "final" in name
+                    else REPO / "data/favorita") / name
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), digest, name)
+        # The pre-migration lock (provenance) recorded the same bytes.
+        lock = json.loads((PROVENANCE / "upstream.lock.json").read_text())
         recorded = {row["path"]: row["sha256"] for row in lock["files"]}
         for name, digest in FACT_SHA256.items():
             root = (
@@ -527,7 +562,7 @@ class EditableSurface(unittest.TestCase):
             self.assertEqual(recorded[root + name], "sha256:" + digest, name)
 
     def test_statement_records_the_data_source(self):
-        statement = (TASK / "judge/readme").read_text()
+        statement = (REPO / "README.md").read_text()
         for fragment in (
             "github.com/bgautijonsson/groceries",
             "f79ac95b1c61ca9767f4e7d379bc2229fd8938fc",
@@ -580,10 +615,8 @@ class EvaluatorPolicy(unittest.TestCase):
 
     def test_eight_workloads_spread_depth_rounds_and_topology(self):
         e = self.evaluator
-        spec = json.loads((self.task / "beat_spec.json").read_text())
         for suite in (e.DEV_SUITE, e.FINAL_SUITE):
             self.assertEqual(len(suite), 8)
-            self.assertEqual(spec["workload_count"], len(suite))
             # Every workload is a distinct (slice, profile); every slice twice.
             keys = [(c["fact"], c["depth"], c["estimators"]) for c in suite]
             self.assertEqual(len(set(keys)), 8)
@@ -601,23 +634,25 @@ class EvaluatorPolicy(unittest.TestCase):
                 [c["rows"] for c in suite[:4]], [c["rows"] for c in suite[4:]]
             )
         self.assertEqual(len(e.PAIR_ORDER), 4)
-        config = (self.task / "config.yaml").read_text()
-        self.assertIn("timeout_seconds: 7200", config)
-        policy = json.loads((TASK / "policy.json").read_text())
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import task_manifest
+        finally:
+            sys.path.pop(0)
+        policy = task_manifest.load_policy(TASK)
         self.assertEqual(policy["quota"]["eval_timeout_seconds"], 7200)
         self.assertEqual(
             policy["quota"]["max_train_wall_seconds"],
             policy["quota"]["max_train_calls"] * 7200,
         )
-        statement = (TASK / "judge/readme").read_text()
+        statement = (REPO / "README.md").read_text()
         self.assertIn("each contain eight deterministic cases", statement)
-        self.assertIn("evaluation timeout is 7,200 seconds", statement)
+        # The evaluation timeout is a platform number: /frontier/task/README.md states it.
+        self.assertIn("**7200-second**", task_manifest.agent_readme(TASK))
 
     def test_bundled_patches_pass_the_static_screen(self):
         for name in ("reference.patch", "baseline_naive.patch"):
-            self.assertEqual(
-                self.evaluator._patch_policy(self.task / name), (True, "ok"), name
-            )
+            self.assertIsNone(_screen((self.task / name).read_text()), name)
 
     def test_static_screen_rejects_routes_around_the_executor(self):
         e = self.evaluator
@@ -634,30 +669,17 @@ class EvaluatorPolicy(unittest.TestCase):
             "state = self.cjt.exe.__dict__",
         ):
             with self.subTest(line=line):
-                path = self._write(_patch_adding([line]))
-                self.assertEqual(e._patch_policy(path), (False, e.STATIC_BYPASS_REASON))
+                text = _patch_adding([line])
+                self.assertEqual(_screen(text), "content_policy")
                 self.assertEqual(
-                    e.evaluate(str(path))[:3], (0.0, 0.0, e.STATIC_BYPASS_REASON)
+                    _judge(e, self.task, text)[:3], (0.0, 0.0, "content_policy")
                 )
 
     def test_patch_touching_the_executor_is_outside_the_surface(self):
-        path = self._write(_patch_adding(["# tuned"], EXECUTOR))
-        score, unbounded, message, metrics = self.evaluator.evaluate(str(path))
+        text = _patch_adding(["# tuned"], EXECUTOR)
+        score, unbounded, message, metrics = _judge(self.evaluator, self.task, text)
         self.assertEqual((score, unbounded), (0.0, 0.0))
-        self.assertIn("outside the editable", message)
-        self.assertEqual(metrics["beats_reference"], 0)
-
-    def test_executor_bytes_are_locked_in_the_patched_tree(self):
-        e = self.evaluator
-        tree = self.task.parent / "tree"
-        shutil.copytree(self.task / "harbor" / "app", tree)
-        self.assertEqual(e._structural_policy(tree), (True, "ok"))
-        with (tree / EXECUTOR).open("a") as handle:
-            handle.write("\n")
-        self.assertEqual(
-            e._structural_policy(tree),
-            (False, "the trusted executor must remain unchanged"),
-        )
+        self.assertEqual(metrics, {"rejected": "out_of_scope"})
 
     def test_worker_policy_exit_maps_to_closed_reasons(self):
         e = self.evaluator
@@ -676,11 +698,11 @@ class EvaluatorPolicy(unittest.TestCase):
             ("materialised_join", "materialised_join"),
             ("anything else", "executor"),
         ):
-            done = types.SimpleNamespace(
+            done = e.isolate.Result(
                 returncode=e.POLICY_EXIT_CODE,
-                stdout=json.dumps({"policy_violation": code}) + "\n",
+                stdout=(json.dumps({"policy_violation": code}) + "\n").encode(), stderr=b"",
             )
-            with patch.object(e.subprocess, "run", return_value=done):
+            with patch.object(e.isolate, "run", return_value=done):
                 with self.assertRaises(e.PolicyRejection) as caught:
                     e._run_once(Path("tree"), e.FAST_SUITE[0])
             self.assertEqual(caught.exception.code, expected)
@@ -705,14 +727,14 @@ class EvaluatorPolicy(unittest.TestCase):
                 raise e.PolicyRejection(code)
             return dict(sample)
 
-        candidate = self._write(_patch_adding(["# byte-different reference"]))
+        text = _patch_adding(["# byte-different reference"])
         with (
             patch.dict(os.environ, {"FRONTIER_EVALUATOR_FAST": "1"}),
             patch.object(e, "_prepare_oracle", return_value=None),
             patch.object(e, "_baseline_seconds", return_value=2.0),
             patch.object(e, "_run_once", side_effect=run_once),
         ):
-            return e.evaluate(str(candidate))
+            return _judge(e, self.task, text)
 
     def test_candidate_violation_is_an_invalid_submission(self):
         e = self.evaluator
@@ -768,14 +790,12 @@ class RealWorkload(unittest.TestCase):
         self.addCleanup(environment.stop)
 
     def _evaluate(self, lines, **options):
-        path = self.task.parent / "candidate.patch"
-        path.write_text(_patch_adding(lines, **options))
-        return self.evaluator.evaluate(str(path))
+        return _judge(self.evaluator, self.task, _patch_adding(lines, **options))
 
     def test_in_database_solutions_pass(self):
         e = self.evaluator
         for name in ("reference.patch", "baseline_naive.patch"):
-            score, _, message, metrics = e.evaluate(str(self.task / name))
+            score, _, message, metrics = _judge(e, self.task, (self.task / name).read_text())
             self.assertIn("correct ensemble", message, name)
             self.assertEqual(metrics["correct"], 1)
         score, _, message, metrics = self._evaluate(["# byte-different reference"])
@@ -788,7 +808,7 @@ class RealWorkload(unittest.TestCase):
         sys.path.insert(0, str(self.task))
         benchmark = importlib.import_module("benchmark")
         e = self.evaluator
-        data = self.task / "harbor/app/data/favorita"
+        data = self.task / "pristine/data/favorita"
         private = self.task / "judge_data/favorita"
         con = duckdb.connect()
         for name in ("items", "transactions"):

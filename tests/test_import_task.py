@@ -562,14 +562,14 @@ class ImportTests(unittest.TestCase):
             self.source, definition, "joyemang33", self.source / "judge/reference.patch"
         )
         expected = entry["agent_image"]["tag"]
-        for tag in ("v1", expected):
-            manifest["images"]["datasets"]["tag"] = tag
-            path.write_text(json.dumps(manifest))
-            adopted = importer.published_manifest(
-                path, self.source.name, manifest["source_sha256"], entry
-            )
-            self.assertEqual(adopted["dataset_image"]["tag"], tag)
-        for tag in ("latest", "v2", "source-" + "0" * 64):
+        self.assertEqual(entry["dataset_image"]["tag"], expected)
+        manifest["images"]["datasets"]["tag"] = expected
+        path.write_text(json.dumps(manifest))
+        adopted = importer.published_manifest(
+            path, self.source.name, manifest["source_sha256"], entry
+        )
+        self.assertEqual(adopted["dataset_image"]["tag"], expected)
+        for tag in ("v1", "latest", "v2", "source-" + "0" * 64):
             manifest["images"]["datasets"]["tag"] = tag
             path.write_text(json.dumps(manifest))
             with self.subTest(tag=tag), self.assertRaises(deploy.DeployError):
@@ -1288,9 +1288,18 @@ class BaselineTests(unittest.TestCase):
                 continue
             count += 1
             definition = deploy.TASK_DEFINITIONS[name]
-            derived = baseline_from_result_json(
-                renderer.problem_directory(ROOT / importer.PROBLEMS, name), definition
-            )
+            task_root = renderer.problem_directory(ROOT / importer.PROBLEMS, name)
+            authored = ROOT / "docs/task-authoring" / name / "provenance/judge-result.json"
+            if (task_root / "judge/result.json").is_file() or not authored.is_file():
+                derived = baseline_from_result_json(task_root, definition)
+            else:
+                # A task.toml task keeps its authoring result.json under docs/task-authoring
+                # (#757); derive from it on a copy of the task with it back at judge/.
+                with tempfile.TemporaryDirectory() as directory:
+                    copy = Path(directory) / name
+                    shutil.copytree(task_root, copy)
+                    shutil.copyfile(authored, copy / "judge/result.json")
+                    derived = baseline_from_result_json(copy, definition)
             self.assertEqual(
                 renderer.json_text(
                     {k: v for k, v in derived.items() if k not in annotations}

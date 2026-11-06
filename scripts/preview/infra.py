@@ -25,6 +25,7 @@ TASK_CATALOG_PATH = REPOSITORY_ROOT / "config/task-catalog.json"
 SUPPORTED_SCHEMA = "frontier.deployment-site/v2"
 SUPPORTED_TASK_CATALOG_SCHEMA = "frontier.deployment-task-catalog/v2"
 SUPPORTED_KUBERNETES_VERSION = "1.34"
+MANAGEMENT_RESPONSE_LIMIT = 16 * 1024 * 1024
 APPLICATION_REPOSITORY = "https://github.com/FrontierCS/FrontierCS-2.git"
 SITE_RE = re.compile(r"^[a-z][a-z0-9-]{1,22}[a-z0-9]$")
 REGION_RE = re.compile(r"^[a-z]{2}(?:-[a-z]+)+-[0-9]$")
@@ -102,6 +103,7 @@ class DeployError(RuntimeError):
 class ManagementHTTPError(DeployError):
     def __init__(self, status: int, path: str, detail: str):
         self.status = status
+        self.detail = detail
         super().__init__(f"Management HTTP {status} for {path}: {detail}")
 
 
@@ -409,6 +411,7 @@ def validate_outputs(config: Mapping[str, Any], outputs: Mapping[str, Any]) -> N
         "efs_file_system_id",
         "efs_object_store_access_point_id",
         "efs_registry_access_point_id",
+        "kubernetes_api_cidrs",
     }
     missing = sorted(required - set(outputs))
     if missing:
@@ -438,6 +441,7 @@ def validate_outputs(config: Mapping[str, Any], outputs: Mapping[str, Any]) -> N
     ):
         if not isinstance(outputs[field], str) or not outputs[field].startswith(prefix):
             raise DeployError(f"Terraform output {field} is invalid")
+    allowed_api_cidrs(config, outputs)
 
 
 def k8s_list(items: Sequence[Mapping[str, Any]]) -> bytes:
@@ -714,13 +718,97 @@ def validate_runtime_images(
     return result
 
 
-def api_cidrs(
-    config: Mapping[str, Any], kubeconfig: Path, *, receipt_path: Path | None = None
+# The Kubernetes API allowlist is the EKS control-plane ENI /28s plus the
+# default/kubernetes ClusterIP /32. Anything wider, public or numerous is not an
+# API route but a hole in the platform boundary.
+API_CIDR_MAX_ENTRIES = 8
+API_CIDR_MIN_PREFIX = 28
+_RFC1918 = tuple(
+    ipaddress.ip_network(value)
+    for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
+)
+
+
+def validate_api_cidrs(cidrs: Any) -> list[str]:
+    """Return the TCP 443 Kubernetes API allowlist unchanged, or refuse it."""
+    if (
+        not isinstance(cidrs, (list, tuple))
+        or not 1 <= len(cidrs) <= API_CIDR_MAX_ENTRIES
+        or len(set(cidrs)) != len(cidrs)
+    ):
+        raise DeployError(
+            f"Kubernetes API routes require 1-{API_CIDR_MAX_ENTRIES} distinct IPv4 CIDRs"
+        )
+    networks = []
+    for cidr in cidrs:
+        try:
+            network = (
+                ipaddress.ip_network(cidr, strict=True) if isinstance(cidr, str) else None
+            )
+        except ValueError:
+            network = None
+        if (
+            network is None
+            or network.version != 4
+            or str(network) != cidr
+            or network.prefixlen < API_CIDR_MIN_PREFIX
+            or not any(network.subnet_of(private) for private in _RFC1918)
+        ):
+            raise DeployError(
+                "Kubernetes API routes must be canonical private IPv4 CIDRs no wider "
+                f"than /{API_CIDR_MIN_PREFIX}: {cidr!r}"
+            )
+        networks.append(network)
+    for index, network in enumerate(networks):
+        if any(network.overlaps(other) for other in networks[index + 1 :]):
+            raise DeployError(f"Kubernetes API routes overlap: {network}")
+    return list(cidrs)
+
+
+def allowed_api_cidrs(
+    config: Mapping[str, Any], outputs: Mapping[str, Any]
 ) -> list[str]:
+    """The stable allowlist from Terraform: control-plane /28s + Service /32.
+
+    During the one-time subnet migration the site may add the current exact ENI
+    /32s (network.transitional_kubernetes_api_cidrs) until EKS has moved them.
+    """
+    terraform = outputs.get("kubernetes_api_cidrs")
+    if not isinstance(terraform, list) or terraform != sorted(terraform):
+        raise DeployError("Terraform kubernetes_api_cidrs must be a sorted list")
+    transitional = config["network"].get("transitional_kubernetes_api_cidrs", [])
+    cidrs = validate_api_cidrs(sorted(terraform + list(transitional)))
+    service = ipaddress.ip_network(config["network"]["service_ipv4_cidr"])
+    service_route = f"{service.network_address + 1}/32"
+    vpc = ipaddress.ip_network(config["network"]["vpc_cidr"])
+    subnets = [cidr for cidr in cidrs if cidr != service_route]
+    if (
+        cidrs != sorted(cidrs)
+        or service_route not in cidrs
+        or not subnets
+        or any(not ipaddress.ip_network(cidr).subnet_of(vpc) for cidr in subnets)
+    ):
+        raise DeployError(
+            "Terraform kubernetes_api_cidrs must be the sorted Service ClusterIP /32 "
+            "plus control-plane subnets inside the site VPC"
+        )
+    return cidrs
+
+
+def api_cidrs(
+    config: Mapping[str, Any],
+    outputs: Mapping[str, Any],
+    kubeconfig: Path,
+    *,
+    receipt_path: Path | None = None,
+) -> list[str]:
+    """Return the stable allowlist after proving every live API endpoint is inside it."""
     # Resolve Service DNAT targets inside the cluster, never deployment-host DNS.
     from .api_routes import discover_api_routes
 
-    return discover_api_routes(config, kubeconfig, receipt_path=receipt_path)["cidrs"]
+    allowed = allowed_api_cidrs(config, outputs)
+    discover_api_routes(config, kubeconfig, allowed, receipt_path=receipt_path)
+    return allowed
 
 
 def admission_control_rbac() -> list[dict[str, Any]]:
@@ -988,10 +1076,7 @@ def render_runtime_manifest(
 ) -> bytes:
     validate_outputs(config, outputs)
     images = validate_runtime_images(runtime_images, config)
-    if not kubernetes_api_cidrs or any(
-        ipaddress.ip_network(value).prefixlen != 32 for value in kubernetes_api_cidrs
-    ):
-        raise DeployError("Kubernetes API CIDRs must be a non-empty exact /32 set")
+    kubernetes_api_cidrs = validate_api_cidrs(kubernetes_api_cidrs)
     labels = platform_labels(config, "frontier-management")
     controller_labels = platform_labels(config, "frontier-storage-controller")
     execution, network = config["execution"], config["network"]
@@ -3163,7 +3248,7 @@ def api_json_with_headers(
     )
     try:
         with urllib_request.urlopen(call, timeout=30) as response:
-            payload = response.read(4 * 1024 * 1024 + 1)
+            payload = response.read(MANAGEMENT_RESPONSE_LIMIT + 1)
             response_headers = {
                 key.lower(): value for key, value in response.headers.items()
             }
@@ -3183,8 +3268,10 @@ def api_json_with_headers(
         raise ManagementHTTPError(error.code, path, detail) from error
     except (urllib_error.URLError, http.client.HTTPException, OSError) as error:
         raise DeployError(f"Management request failed for {path}: {error}") from error
-    if len(payload) > 4 * 1024 * 1024:
-        raise DeployError(f"Management response exceeded 4 MiB: {path}")
+    if len(payload) > MANAGEMENT_RESPONSE_LIMIT:
+        raise DeployError(
+            f"Management response exceeded {MANAGEMENT_RESPONSE_LIMIT >> 20} MiB: {path}"
+        )
     try:
         return json.loads(payload), response_headers
     except (json.JSONDecodeError, UnicodeDecodeError) as error:

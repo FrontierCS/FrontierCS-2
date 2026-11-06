@@ -153,10 +153,9 @@ class NativeDatasetsTests(unittest.TestCase):
                 datasets.check_tar_dataset(path)
 
     def test_layout_accepts_tar_with_complete_lock_but_keeps_identity_and_science_gates(self):
-        task = "batch_local_counting"
-        source = renderer.problem_directory(layout.DEFAULT_PROBLEMS_ROOT, task)
-        self.root = Path(self.temp.name) / task
-        shutil.copytree(source, self.root)
+        # A policy.json task with a lock (the export fixture setUp copied); task.toml tasks
+        # keep neither (#757).
+        kind = layout.validate_task(self.root)
         self.policy = json.loads((self.root / "policy.json").read_text())
         self.prepare()
         lock_path = self.root / "upstream.lock.json"
@@ -166,7 +165,7 @@ class NativeDatasetsTests(unittest.TestCase):
             lock["file_count"] = len(lock["files"])
             lock_path.write_text(json.dumps(lock))
         lock_files()
-        self.assertEqual(layout.validate_task(self.root), "patch-workspace")
+        self.assertEqual(layout.validate_task(self.root), kind)
         self.policy["quota"]["max_train_calls"] += 1; self.save(); lock_files()
         with self.assertRaisesRegex(layout.LayoutFailure, "task-authored"):
             layout.validate_task(self.root)

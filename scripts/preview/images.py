@@ -510,6 +510,8 @@ ALLOWED = {
     "verifier/beat_spec_feedback.py",
     "policy.json",
     "upstream.lock.json",
+    "task.toml",
+    "README.md",
 }
 # Descriptive provenance/history text (and two comment-only dependency
 # records) may change in a source-only release: they are copied verbatim by the
@@ -1038,7 +1040,7 @@ def previous_problem_path(repository: Path, commit: str, problem: str) -> str:
         if not value.startswith(prefix):
             continue
         parts = value[len(prefix) :].split("/")
-        if len(parts) in (2, 3) and parts[-2:] == [problem, "policy.json"]:
+        if len(parts) in (2, 3) and parts[-2] == problem and parts[-1] in ("policy.json", "task.toml"):
             matches.append(value.rsplit("/", 1)[0])
     require(
         len(matches) == 1, f"previous task must have one source directory: {problem}"

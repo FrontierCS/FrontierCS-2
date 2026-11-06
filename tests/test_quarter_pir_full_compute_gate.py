@@ -16,7 +16,31 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Crypto/quarter_pir"
-CODE = TASK / "judge/harbor/app/quarter_pir/code"
+CODE = TASK / "repo/quarter_pir/code"
+STATEMENT = TASK / "repo/README.md"
+FIXTURES = ROOT / "tests/maintenance/quarter_pir/fixtures"
+sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, as in the Verifier base
+import task_manifest  # noqa: E402
+
+SIZES = (67108864,)
+PLAN_SCHEMA = "quarter-pir.fresh-seed-plan/v1"
+
+
+def plan_archive(role: str) -> bytes:
+    """The dataset carries the experiment plan only; seeds are never stored."""
+    import io
+    sizes = SIZES * (2 if role == "eval" else 1)
+    plan = {"schema": PLAN_SCHEMA, "role": role, "queries_per_experiment": 1000,
+            "seed_policy": "fresh-private-per-evaluation",
+            "experiments": [{"db_size": size} for size in sizes]}
+    body = json.dumps(plan, indent=1, sort_keys=True).encode() + b"\n"
+    output = io.BytesIO()
+    with tarfile.open(fileobj=output, mode="w", format=tarfile.USTAR_FORMAT) as archive:
+        member = tarfile.TarInfo("plan.json")
+        member.size, member.mode, member.mtime = len(body), 0o600, 0
+        archive.addfile(member, io.BytesIO(body))
+    return output.getvalue()
 
 
 def load(name, path):
@@ -29,12 +53,14 @@ def load(name, path):
 class QuarterPIRFullComputeGateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gate = load("quarter_pir_gate_metrics_test", TASK / "judge/table2_metrics.py")
-        submission = types.ModuleType("submission_patch")
-        submission.apply_submission_patch = None
-        with patch.dict(sys.modules, {"table2_metrics": cls.gate, "submission_patch": submission}):
-            cls.evaluator = load("quarter_pir_evaluator_gate_test", TASK / "judge/evaluator.py")
-        cls.spec = json.loads((TASK / "judge/beat_spec.json").read_text())
+        # The judge as the Verifier image holds it (judge/ + generated config.yaml + pristine/).
+        bundle = task_manifest.judge_bundle(TASK)
+        cls.gate = load("quarter_pir_gate_metrics_test", bundle / "table2_metrics.py")
+        layers = load("quarter_pir_layers_test", bundle / "layers.py")
+        with patch.dict(sys.modules, {"table2_metrics": cls.gate, "layers": layers}):
+            cls.evaluator = load("quarter_pir_evaluator_gate_test", bundle / "evaluator.py")
+        # The archived beat spec: the gate's design record (the judge no longer ships it).
+        cls.spec = json.loads((ROOT / "docs/task-authoring/quarter_pir/provenance/beat_spec.json").read_text())
 
     def result(self, *, size=65536, offline=1_000_000_000, online=400_000_000, storage=2_000_000,
                hint="a" * 64, up=100, down=128, rss=700_000_000, depth=492, volume=None, answered=None,
@@ -258,30 +284,26 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
             self.assertFalse(any(value for row in rows for value in row["metrics"].values()))
 
     def test_visible_feedback_is_declared_consistently(self):
-        visible = [row["name"] for row in self.spec["solver_feedback"]]
-        policy = json.loads((TASK / "policy.json").read_text())
+        visible = list(task_manifest.read_task(TASK)["feedback"])
+        visible_names = visible
         self.assertEqual(self.evaluator.VISIBLE, visible)
-        self.assertEqual(policy["metadata"]["evaluation"]["solver_visible_metrics"], visible)
-        self.assertNotIn("preprocessing_calibration", policy["metadata"])
-        statement = (TASK / "judge/readme").read_text()
-        for phrase in ("strictly fewer bytes on the wire", "deterministic public function",
-                       "The response is free", "client storage must not exceed",
-                       "trusted and locked", "Goroutines must settle before an entry point returns",
-                       "in the client, in the server and in `ReduceRequest` alike",
+        statement = " ".join(STATEMENT.read_text().split())
+        for phrase in ("strictly fewer bytes per online query", "deterministic public function",
+                       "The response is free", "no more client storage",
+                       "must stay byte-identical", "**Goroutines** settle before any entry point",
+                       "(client, server, `ReduceRequest`) returns",
                        "32,768 bytes",
-                       "scored about 28 on the authors' development host; the value depends on the hardware"):
+                       "scored about 28 on the authors' development host (the value depends on the hardware)"):
             self.assertIn(phrase, statement)
         for stale in ("#346", "issue ", "predecessor", "calibrated", "64 MiB", "@", "between 26 and 28"):
             self.assertNotIn(stale, statement)
-        for name in visible:
-            self.assertIn(name, statement)
-        for category, code in self.evaluator.VALIDITY_CODES.items():
-            self.assertRegex(statement, rf"\b{code} ")
+        # The validity codes are train feedback, documented with the metric (task.toml [feedback]).
+        feedback = (TASK / "task.toml").read_text()
         self.assertEqual(sorted(self.evaluator.VALIDITY_CODES.values()), list(range(13)))
         self.assertEqual(self.evaluator.VALIDITY_CODES["hint_audit"], 12)
-        self.assertIn("12 primary-hint audit failed", statement)
+        self.assertIn("12 primary-hint audit failed", feedback)
         self.assertEqual(self.evaluator.VALIDITY_CODES["coverage_probe"], 11)
-        self.assertIn("11 failed an additional query", statement)
+        self.assertIn("11 failed an additional query", feedback)
         self.assertIn("11 failed an additional query", json.dumps(self.spec))
 
     def test_coverage_probe_is_a_paired_validity_condition_outside_every_metric(self):
@@ -367,9 +389,9 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertLess(audit.index("client.PrimaryHint(hint)"), audit.index("settled(goroutines)"))
         self.assertNotIn("online +=", audit)
         self.assertIn("export[hint*uint64(len(record)):", audit)
-        statement = (TASK / "judge/readme").read_text()
+        statement = " ".join(STATEMENT.read_text().split())
         self.assertIn("func (c *Client) PrimaryHint(j uint64) (uint32, util.DBEntry)", statement)
-        self.assertIn("Nothing is asked about backup hints or about hints a query has consumed", statement)
+        self.assertIn("nothing is asked about backup hints or about hints a query has consumed", statement)
 
     def test_client_storage_is_the_peak_over_the_online_phase(self):
         # A reading after the export alone misses state released before it and rebuilt by a query.
@@ -413,18 +435,25 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("if settings.SkipVolume {", probe)
         exchange = conductor[conductor.index("exchange := func("):conductor.index("readStorage := func(")]
         self.assertNotIn("'M'", exchange)
-        for statement in ((TASK / "judge/readme").read_text(),
-                          (TASK / "agent-base/frontier/task/repo/README.md").read_text()):
-            self.assertIn("The peak live state of your client over the online phase", statement)
-            self.assertIn("State released before a reading and rebuilt afterwards does count", statement)
+        statement = " ".join(STATEMENT.read_text().split())
+        self.assertIn("The peak live state of your client over the online phase", statement)
+        self.assertIn("State released before a reading and rebuilt afterwards does count", statement)
         expected = json.loads((ROOT / "tests/maintenance/quarter_pir/fixtures/expected.json").read_text())["fixtures"]
         self.assertEqual(expected["positive/release_state_before_storage_reading.patch"]["expect"], "valid_over_storage")
 
     def test_submission_code_is_given_the_planned_budget_not_the_measured_query_count(self):
+        # The evaluator starts the client and the reducer (each in a sandbox instance) with the
+        # database size and the thread count only; the conductor just attaches their pipes.
+        evaluator = (TASK / "judge/evaluator.py").read_text()
+        start = evaluator[evaluator.index("for name in ('client', 'reducer'):"):
+                          evaluator.index("pipes = {")]
+        self.assertIn("'-size', str(size), '-thread', str(THREADS)]", start)
+        self.assertNotIn("QUERY", start)
+        self.assertNotIn("queries", start)
         conductor = (CODE / "conductor/conductor.go").read_text()
-        spawn = conductor[conductor.index("func spawn("):conductor.index("func peakResident(")]
-        self.assertNotIn("Queries", spawn)
-        self.assertNotIn("queries", spawn.replace("number of queries this run", ""))
+        attach = conductor[conductor.index("func attach("):conductor.index("func main() {")]
+        self.assertNotIn("Queries", attach)
+        self.assertNotIn("queries", attach)
         for name in ("ec24/ec24_client.go", "reducer/reducer.go", "server/server.go", "server/replay.go"):
             source = (CODE / name).read_text()
             self.assertIn("refwire.NewPlannedParams(", source)
@@ -436,11 +465,11 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("g.HistoryHit = make([]uint64, 0, historyReserve)", refwire)
         self.assertNotIn("make([]uint64, p.OnlineQueries)", refwire)
         self.assertNotIn("NewPlannedParams", self.policy_allowlist()["easypir/refwire"])
-        statement = (TASK / "judge/readme").read_text()
+        statement = " ".join(STATEMENT.read_text().split())
         self.assertIn("`OnlineQueries` is the planned query budget of one preprocessing", statement)
-        self.assertIn("chosen by the harness, possibly adversarially, within what the provided implementation answers",
+        self.assertIn("first chosen by the harness, possibly adversarially, within what the provided implementation answers",
                       statement)
-        self.assertIn("A client that would fail on such a query is invalid even if the harness never issues it", statement)
+        self.assertIn("up to the planned budget that the reference serves, issued or not", statement)
         self.assertNotIn("`OnlineQueries` (1,000)", statement)
         self.assertNotIn("For each of 1,000 queries", statement)
         for fixture in sorted((ROOT / "tests/maintenance/quarter_pir/fixtures").rglob("*.patch")) + [TASK / "judge/reference.patch"]:
@@ -471,22 +500,22 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
                 self.gate.check_result(self.result(size=67108864, volume=volume), size=67108864)
         # The full volume phase needs more time: one deadline everywhere, and every train
         # call can still reserve it.
-        policy = json.loads((TASK / "policy.json").read_text())["quota"]
+        quota = task_manifest.load_policy(TASK)["quota"]
         limit = self.evaluator.LIMIT
-        self.assertEqual(policy["eval_timeout_seconds"], limit)
-        self.assertEqual(policy["max_train_wall_seconds"], policy["max_train_calls"] * limit)
+        self.assertEqual(quota["eval_timeout_seconds"], limit)
+        self.assertEqual(quota["max_train_wall_seconds"], quota["max_train_calls"] * limit)
         self.assertLess(self.evaluator.RUN_LIMIT, limit)
-        guide = (TASK / "agent-base/frontier/task/README.md").read_text()
-        self.assertIn(f"independent {limit:,}-second timeout", guide)
-        self.assertIn(f"cumulative {policy['max_train_wall_seconds']:,}-second verification allowance", guide)
-        for statement in ((TASK / "judge/readme").read_text(),
-                          (TASK / "agent-base/frontier/task/repo/README.md").read_text()):
-            self.assertIn(f"{limit:,}-second evaluation deadline", statement)
-            self.assertIn("67,108,864 database entries", statement)
-            self.assertNotIn("65,536 entries", statement)
-            for internal in ("forced", "garbage collection", "drawn at random", "five measured",
-                             "STORAGE_JITTER", "probe_seed", "2.23 MB", "85.5 MB", "fraction", "eighth"):
-                self.assertNotIn(internal, statement)
+        # The platform numbers are in the generated guide, never in the statement.
+        guide = " ".join(task_manifest.agent_readme(TASK).split())
+        self.assertIn(f"**{limit}-second** allowance", guide)
+        self.assertIn(f"**{quota['max_train_wall_seconds']} seconds**", guide)
+        statement = " ".join(STATEMENT.read_text().split())
+        self.assertNotIn(f"{limit:,}-second", statement)
+        self.assertIn("67,108,864 entries", statement)
+        self.assertNotIn("65,536 entries", statement)
+        for internal in ("forced", "garbage collection", "drawn at random", "five measured",
+                         "STORAGE_JITTER", "probe_seed", "2.23 MB", "85.5 MB", "fraction", "eighth"):
+            self.assertNotIn(internal, statement)
 
     def test_seeds_are_fresh_private_and_never_constant(self):
         first, second = self.evaluator.fresh_seeds(), self.evaluator.fresh_seeds()
@@ -524,16 +553,16 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
             self.assertIsNotNone(allowed[path])
         self.assertEqual(allowed["easypir/safeaes"], {"RoundKeys", "ExpandKey", "MMO", "Encrypt", "Xor16"})
         # The statement lists the import paths and points at the tool for the permitted names.
-        statement = (TASK / "judge/readme").read_text()
-        rule = statement[statement.index("**Source policy.**"):statement.index("**Goroutines must settle")]
+        statement = " ".join(STATEMENT.read_text().split())
+        rule = statement[statement.index("## What you may change"):statement.index("## Interface")]
         for path in allowed:
             self.assertIn(f"`{path}`", rule)
-        self.assertIn("`policy/policy.go`", rule)
+        self.assertIn("`quarter_pir/code/policy/policy.go`", rule)
 
     def test_no_slice_or_raw_pointer_can_reach_assembly_from_the_editable_package(self):
         allowed = self.policy_allowlist()
         # The editable package is Go source only; assembly lives in trusted packages.
-        for tree in (CODE / "pir", TASK / "agent-base/frontier/task/repo/quarter_pir/code/pir"):
+        for tree in (CODE / "pir",):
             self.assertEqual(sorted(path.name for path in tree.iterdir()), ["client.go", "reduce.go", "server.go"])
             for path in tree.iterdir():
                 self.assertFalse(re.search(r"^func [^{]*\)\s*$", path.read_text(), flags=re.M))
@@ -644,27 +673,33 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("const Limit = 10 * time.Second", helper)
 
     def test_protected_files_must_be_byte_identical(self):
-        harbor = TASK / "judge/harbor/app"
+        """The shared edit scope with task.toml's rules: only pir/ may change, no links."""
+        import shutil
+        import subprocess
+        scope = task_manifest._edit_scope()
+        rules = scope.Rules.from_mapping(task_manifest.edit_scope_rules(task_manifest.read_task(TASK)))
         with tempfile.TemporaryDirectory() as directory:
-            import shutil
             tree = Path(directory) / "tree"
-            shutil.copytree(harbor, tree)
-            with self.subTest("protected tree"):
-                self.evaluator.check_protected(tree)
-                (tree / "quarter_pir/code/pir/extra.go").write_text("package pir\n")
-                self.evaluator.check_protected(tree)
-                driver = tree / "quarter_pir/code/ec24/ec24_client.go"
-                driver.write_text(driver.read_text() + "\n")
-                with self.assertRaises(self.evaluator.Rejected):
-                    self.evaluator.check_protected(tree)
-                shutil.copy(harbor / "quarter_pir/code/ec24/ec24_client.go", driver)
-                (tree / "quarter_pir/code/util/extra.go").write_text("package util\n")
-                with self.assertRaises(self.evaluator.Rejected):
-                    self.evaluator.check_protected(tree)
-                (tree / "quarter_pir/code/util/extra.go").unlink()
-                (tree / "quarter_pir/code/pir/link.go").symlink_to("/etc/passwd")
-                with self.assertRaises(self.evaluator.Rejected):
-                    self.evaluator.check_protected(tree)
+            shutil.copytree(TASK / "repo", tree)
+            git = lambda *a: subprocess.run(["git", "-C", str(tree), *a], check=True, capture_output=True)
+            git("init", "-q"); git("add", "-A")
+            git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base")
+
+            def verdict():
+                git("add", "-A")
+                body = subprocess.run(["git", "-C", str(tree), "diff", "--cached", "--binary", "HEAD"],
+                                      check=True, capture_output=True).stdout
+                git("reset", "-q", "--hard"); git("clean", "-qfd")
+                return scope.check(body, TASK / "repo", rules, build_tree=False)
+            (tree / "quarter_pir/code/pir/extra.go").write_text("package pir\n")
+            self.assertTrue(verdict().ok)
+            driver = tree / "quarter_pir/code/ec24/ec24_client.go"
+            driver.write_text(driver.read_text() + "\n")
+            self.assertEqual(verdict().category, "out_of_scope")
+            (tree / "quarter_pir/code/util/extra.go").write_text("package util\n")
+            self.assertEqual(verdict().category, "out_of_scope")
+            (tree / "quarter_pir/code/pir/link.go").symlink_to("/etc/passwd")
+            self.assertEqual(verdict().category, "forbidden_file_type")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """Progent: the agent image must not ship the held-out final AgentDojo user tasks.
 
-The judge keeps the full AgentDojo suites (judge/harbor/app); the agent-visible
-copy (agent-base/frontier/task/repo) drops every user task in the final split of
+The judge keeps the full AgentDojo suites (judge/upstream_app); the agent-visible
+copy (repo/, the Agent's /frontier/task/repo) drops every user task in the final split of
 judge/workloads.py, and every combined user task built from one of them.
 """
 import deployment_test_guard  # noqa: F401 # isort: skip
@@ -18,9 +18,11 @@ from pathlib import Path
 
 TASK = Path(__file__).resolve().parents[1] / (
     "tasks/frontier-cs-2.0-demo/problems/Security/progent_privilege_control")
-AGENT = TASK / "agent-base"
-AGENT_REPO = AGENT / "frontier/task/repo"
-JUDGE_REPO = TASK / "judge/harbor/app"
+# Everything the Agent image holds from the task: its README and repo/ (with the episode runner
+# and its public harness under repo/tools/).
+AGENT_REPO = TASK / "repo"
+AGENT_HARNESS = AGENT_REPO / "tools/harness"
+JUDGE_REPO = TASK / "judge/upstream_app"
 SUITES_REL = Path("agentdojo/src/agentdojo/default_suites")
 DATA_REL = Path("agentdojo/src/agentdojo/data/suites")
 MIN_LITERAL = 16
@@ -118,7 +120,8 @@ def _judge_split_literals():
 
 
 def _agent_files():
-    return {p: p.read_text(errors="replace") for p in sorted(AGENT.rglob("*")) if p.is_file()}
+    files = [TASK / "README.md", *(p for p in sorted(AGENT_REPO.rglob("*")) if p.is_file())]
+    return {p: p.read_text(errors="replace") for p in files}
 
 
 class ProgentHeldoutIsolationTests(unittest.TestCase):
@@ -134,7 +137,7 @@ class ProgentHeldoutIsolationTests(unittest.TestCase):
             self.assertEqual(FULL[suite]["user"], [f"user_task_{i}" for i in range(len(FULL[suite]["user"]))])
 
     def test_agent_suite_tasks_lists_only_runnable_dev_tasks(self):
-        agent = json.loads((AGENT / "frontier/task/harness/suite_tasks.json").read_text())
+        agent = json.loads((AGENT_HARNESS / "suite_tasks.json").read_text())
         self.assertEqual(list(agent), list(FULL))
         for suite in workloads.SUITES:
             self.assertEqual(agent[suite]["user"], _agent_dev(suite), suite)
@@ -166,7 +169,8 @@ class ProgentHeldoutIsolationTests(unittest.TestCase):
             self.assertTrue(updated <= dev, suite)
 
     def test_only_user_task_modules_and_harness_split_differ_from_judge(self):
-        agent = {p.relative_to(AGENT_REPO) for p in AGENT_REPO.rglob("*") if p.is_file()}
+        agent = {p.relative_to(AGENT_REPO) for p in AGENT_REPO.rglob("*")
+                 if p.is_file() and not p.relative_to(AGENT_REPO).is_relative_to("tools")}
         judge = {p.relative_to(JUDGE_REPO) for p in JUDGE_REPO.rglob("*") if p.is_file()}
         self.assertEqual(agent, judge)
         changed = {p for p in agent if (AGENT_REPO / p).read_bytes() != (JUDGE_REPO / p).read_bytes()}
@@ -176,7 +180,7 @@ class ProgentHeldoutIsolationTests(unittest.TestCase):
                 self.assertEqual(path.read_bytes(), (JUDGE_REPO / path.relative_to(AGENT_REPO)).read_bytes())
 
     def test_no_removed_task_literal_anywhere_in_agent_tree(self):
-        """Every distinctive string literal of a removed task is absent from agent-base/."""
+        """Every distinctive string literal of a removed task is absent from the Agent-visible files."""
         files = _agent_files()
         needles, kept_text = _judge_split_literals()
         for suite in workloads.SUITES:
@@ -219,7 +223,7 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
     """Imports both AgentDojo copies (needs the task's pinned dependencies).
 
     Set PROGENT_AGENTDOJO_PYTHON to an interpreter with
-    agent-base/frontier/task/requirements-lock.txt installed.
+    repo/tools/requirements-lock.txt installed.
     """
 
     @classmethod
@@ -238,7 +242,7 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
                 raise AssertionError(result.stderr[-4000:])
             return json.loads(result.stdout)
 
-        cls.agent = load(AGENT_REPO, AGENT / "frontier/task/harness/trusted")
+        cls.agent = load(AGENT_REPO, AGENT_HARNESS / "trusted")
         cls.judge = load(JUDGE_REPO, TASK / "judge/trusted")
 
     def test_agent_enumerates_exactly_the_dev_tasks_and_all_injections(self):

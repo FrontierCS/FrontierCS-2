@@ -38,12 +38,16 @@ class NanoWorldModelScoring(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         old_modules, old_path = dict(sys.modules), list(sys.path)
-        sys.path.insert(0, str(TASK / "verifier"))
+        # The shared verifier (#757) and its beat-spec feedback, as the Verifier image holds them.
+        sys.path.insert(0, str(ROOT / "tasks/shared/verifier"))
         sys.modules.pop("beat_spec_feedback", None)
-        cls.verifier = module(TASK / "verifier/fcs2_verifier.py", "nano_scoring_test_verifier")
-        sys.modules.pop("submission_patch", None)
-        with patch.dict(sys.modules, {"yaml": SimpleNamespace(safe_load=lambda _: {})}):
-            cls.ev = module(TASK / "judge/evaluator.py", "nano_scoring_test_evaluator")
+        cls.verifier = module(ROOT / "tasks/shared/verifier/fcs2_verifier.py", "nano_scoring_test_verifier")
+        # The judge as the Verifier image holds it: judge/ with the starter at pristine/.
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import task_manifest
+        sys.path.insert(0, str(ROOT / "tasks/shared/verifier-gpu"))
+        cls.bundle = task_manifest.judge_bundle(TASK)
+        cls.ev = module(cls.bundle / "evaluator.py", "nano_scoring_test_evaluator")
         sys.path[:] = old_path
         for key in set(sys.modules) - set(old_modules) - {"nano_scoring_test_verifier", "nano_scoring_test_evaluator"}:
             del sys.modules[key]
@@ -134,14 +138,17 @@ class NanoWorldModelScoring(unittest.TestCase):
             self.assertLess(abs(self.score(cand(dp, rs, rl)) - 50.0), 0.25)
 
     def evaluate(self, candidate, reference, role="final"):
+        # The sandbox runs as seams: the candidate returned valid latents, the trusted runner
+        # measured these rows.
         with (
-            patch.object(self.ev, "_apply", return_value=SimpleNamespace(ok=True, workdir="/nonexistent/repo")),
-            patch.object(self.ev, "_policy_check"),
-            patch.object(self.ev, "_reference_rows", return_value=reference),
-            patch.object(self.ev, "_run_entrypoint", return_value=candidate),
+            patch.object(self.ev, "_candidate_run"),
+            patch.object(self.ev, "run_sandboxes", return_value=[None]),
+            patch.object(self.ev, "_candidate_latents", return_value=None),
+            patch.object(self.ev, "_trusted_rows",
+                         return_value={"reference": reference, "candidate": candidate}),
             patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": role}),
         ):
-            return self.ev.evaluate("solution.patch")
+            return self.ev.evaluate(str(TASK / "repo"))
 
     def test_evaluate_exports_relative_score_and_operator_rows(self):
         reference = [cand(0.1 * i) for i in range(6)]
@@ -164,14 +171,17 @@ class NanoWorldModelScoring(unittest.TestCase):
             payload, dataset = root / "payload", root / "dataset"
             payload.write_bytes(b"payload")
             dataset.write_bytes(b"dataset")
+            # A measured result: edit_scope accepted the patch and evaluate(tree) returned `value`.
+            scope = SimpleNamespace(ok=True, tree=root, changes=(), metrics={}, dispose=lambda: None)
+            edit_scope = SimpleNamespace(check=lambda *args, **kwargs: scope, CATEGORIES={})
             with (
-                patch.object(v, "load_candidate_diagnostic", return_value=None),
                 patch.object(v, "extract_payload"),
                 patch.object(v, "entrypoint_path", return_value=payload),
-                patch.object(v, "stage_task", return_value=TASK / "judge"),
-                patch.object(v, "load_evaluator", return_value=lambda _: value),
+                patch.object(v, "load_edit_scope", return_value=(edit_scope, None)),
+                patch.object(v, "stage_task", return_value=self.bundle),
+                patch.object(v, "load_evaluator", return_value=(lambda _: value, None)),
             ):
-                return v.verify(bundle=TASK / "judge", entrypoint="solution.patch", payload=payload, dataset=dataset,
+                return v.verify(bundle=self.bundle, entrypoint="solution.patch", payload=payload, dataset=dataset,
                                 mode=mode, result_path=root / "result.json", evidence_path=root / "evidence.tar.zst")
 
     def test_operator_rows_never_reach_solver_feedback(self):

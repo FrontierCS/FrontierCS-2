@@ -6,6 +6,7 @@ import importlib.util
 import math
 import os
 import statistics
+import sys
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(os.environ.get("FRONTIER_BATCH_SCORE_EXPORT", str(
     ROOT / "tasks/frontier-cs-2.0-demo/problems/Database/batch_local_counting"
 )))
+# The shared launcher the judge imports: the Verifier image puts it on the default import path.
+sys.path.insert(0, str(ROOT / "tasks/shared/lib"))
 spec = importlib.util.spec_from_file_location("batch_score_evaluator", TASK / "judge/evaluator.py")
 evaluator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(evaluator)

@@ -1,15 +1,11 @@
 """Affected storage criterion checks only; no build or scientific simulation."""
 import deployment_test_guard  # noqa: F401  # isort: skip
 
-from pathlib import Path
 from decimal import Decimal
-import copy
 import json
-import sys
 import unittest
 
-ROOT=Path(__file__).resolve().parents[3]/"tasks/frontier-cs-2.0-demo/problems/Arch/runlts_predictor/judge"
-from tests.maintenance.runlts_predictor.runtime_imports import MODULES
+from tests.maintenance.runlts_predictor.runtime_imports import FEEDBACK, MODULES
 e = MODULES["evaluator"]
 feedback = MODULES["beat_spec_feedback"]
 
@@ -23,13 +19,13 @@ class LogicalStorageTests(unittest.TestCase):
         result=self.grade(1572864)
         self.assertEqual(result[3]['beats_reference'],1)
         self.assertEqual(len(result[3]['beat_spec_workload_passes']),105)
-        p=feedback.private_metrics(result[3],beat_spec_path=ROOT/'beat_spec.json')['beat_spec_progress']
+        p=feedback.private_metrics(result[3])['beat_spec_progress']
         self.assertEqual(set(p),{'br_mis_pki','cyc_wp_pki','logical_storage_bits'})
         self.assertEqual((p['logical_storage_bits']['passed'],p['logical_storage_bits']['failed'],p['logical_storage_bits']['total']),(105,0,105))
     def test_prediction_ties_still_fail(self):
         result=self.grade(1570890,equal=True)
         self.assertEqual(result[3]['beats_reference'],0)
-        p=feedback.private_metrics(result[3],beat_spec_path=ROOT/'beat_spec.json')['beat_spec_progress']
+        p=feedback.private_metrics(result[3])['beat_spec_progress']
         self.assertEqual((p['br_mis_pki']['passed'],p['cyc_wp_pki']['passed'],p['logical_storage_bits']['passed']),(0,0,105))
     def test_over_cap_is_invalid(self):
         with self.assertRaises(e.CandidateError):self.grade(1572865)
@@ -41,7 +37,7 @@ class LogicalStorageTests(unittest.TestCase):
         self.assertEqual(a[:2],b[:2]);self.assertEqual(b[3]['logical_storage_accounting']['sr_bits'],55837)
     def test_development_progress_has_24_rows(self):
         result=self.grade(1572864,final=False)
-        p=feedback.private_metrics(result[3],beat_spec_path=ROOT/'beat_spec.json')['beat_spec_progress']
+        p=feedback.private_metrics(result[3])['beat_spec_progress']
         self.assertEqual(p['logical_storage_bits']['total'],24)
     def mixed(self,final=False):
         # 24 development rows: 9 win both comparisons, 5 only BrMisPKI, 4 only CycWpPKI, 6 neither.
@@ -61,9 +57,11 @@ class LogicalStorageTests(unittest.TestCase):
         self.assertEqual(e.PREDICTION_METRICS,('br_mis_pki','cyc_wp_pki'))
         self.assertEqual(result[3]['beats_reference'],0)
         self.assertEqual(result[3]['all_metrics_progress'],self.counts(9))
-        visible=feedback.public_metrics(result[3],beat_spec_path=ROOT/'beat_spec.json',
-            configured_visible=e.CONFIG['evaluation']['solver_visible_metrics'])
-        self.assertEqual(set(visible),{'train_br_mis_pki_mean','train_cyc_wp_pki_mean','all_metrics_progress','category_means','beat_spec_progress'})
+        visible=feedback.public_metrics(result[3],visible=e.CONFIG['evaluation']['solver_visible_metrics'])
+        self.assertEqual(e.CONFIG['evaluation']['solver_visible_metrics'],FEEDBACK)
+        self.assertEqual(set(visible),{'train_br_mis_pki_mean','train_cyc_wp_pki_mean','all_metrics_progress','category_means',
+                                       'candidate_failure','beat_spec_progress'})
+        self.assertEqual(visible['candidate_failure'],0)
         self.assertEqual(visible['all_metrics_progress'],self.counts(9))
         self.assertEqual(visible['beat_spec_progress'],{'br_mis_pki':self.counts(14),'cyc_wp_pki':self.counts(13),
             'logical_storage_bits':self.counts(24)})
@@ -80,12 +78,16 @@ class LogicalStorageTests(unittest.TestCase):
         self.assertEqual(self.grade(1572864,equal=True,final=False)[3]['all_metrics_progress'],self.counts(0))
     def test_final_result_has_no_joint_count(self):
         self.assertNotIn('all_metrics_progress',self.mixed(final=True)[3])
-        self.assertNotIn('all_metrics_progress',feedback.private_metrics(self.mixed(final=True)[3],beat_spec_path=ROOT/'beat_spec.json'))
+        self.assertNotIn('all_metrics_progress',feedback.private_metrics(self.mixed(final=True)[3]))
     def test_missing_storage_decision_rejected(self):
         result=self.grade(1572864);del result[3]['beat_spec_workload_passes'][0]['metrics']['logical_storage_bits']
-        with self.assertRaises(ValueError):feedback.private_metrics(result[3],beat_spec_path=ROOT/'beat_spec.json')
-    def test_false_storage_decision_cannot_claim_pass(self):
-        result=self.grade(1572864);result[3]['beat_spec_workload_passes'][0]['metrics']['logical_storage_bits']=False
-        with self.assertRaises(ValueError):feedback.private_metrics(result[3],beat_spec_path=ROOT/'beat_spec.json')
+        with self.assertRaises(ValueError):feedback.private_metrics(result[3])
+    def test_storage_decision_is_true_on_every_graded_row(self):
+        # grade() itself: a graded result passes storage on every trace, and its
+        # beats_reference is the conjunction of every decision of every row.
+        for result in (self.grade(1572864),self.grade(1570890,equal=True),self.mixed(),self.mixed(final=True)):
+            rows=result[3]['beat_spec_workload_passes']
+            self.assertTrue(all(r['metrics']['logical_storage_bits'] for r in rows))
+            self.assertEqual(result[3]['beats_reference'],int(all(all(r['metrics'].values()) for r in rows)))
 
 if __name__=='__main__':unittest.main()

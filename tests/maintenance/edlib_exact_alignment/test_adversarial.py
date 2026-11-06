@@ -8,9 +8,11 @@ not the source-phase unit tests:
 Each fixture in adversarial/ is the reference body with one attack wrapped
 around it. Every fixture is evaluated on one 10,000-base and one 30,000-base
 workload with the unchanged evaluator code path; only the workload list, the
-short-case correctness sweep and repeated compilation are trimmed. For the
-two attacks that depend on files, a control without the guard shows that the
-attack itself works. That control really does create files and System V IPC
+short-case correctness sweep and repeated compilation are trimmed. Every
+executable runs under the shared isolate launcher (tasks/shared/lib/isolate.py),
+so the Landlock/seccomp host requirements of isolate.available() apply.
+For the attacks that depend on files, a control outside the sandbox shows that
+the attack itself works. That control really does create files and System V IPC
 objects, so run this file only inside a disposable verifier container.
 """
 import deployment_test_guard  # noqa: F401  # isort: skip
@@ -23,6 +25,10 @@ from pathlib import Path
 import pytest
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 JUDGE_ROOT = REPOSITORY_ROOT / 'tasks/frontier-cs-2.0-demo/problems/Bioinformatics/edlib_exact_alignment/judge'
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tasks/shared/lib'))  # isolate, as in the Verifier base
+import task_manifest  # noqa: E402
+JUDGE_ROOT = task_manifest.judge_bundle(JUDGE_ROOT.parent)
 sys.path.insert(0, str(JUDGE_ROOT))
 # Generic judge module names are shared with other tasks' judges; load this
 # task's own whatever the interpreter imported first.
@@ -77,12 +83,17 @@ def test_reference_completes_and_is_never_better_than_itself_on_storage(small):
     assert metrics['core_peak_live_bytes_candidate_by_workload']==metrics['core_peak_live_bytes_reference_by_workload']
     assert all(set(row['metrics'])=={'cpu_time_seconds','core_peak_live_bytes'} for row in metrics['beat_spec_workload_passes'])
     assert all(row['metrics']['core_peak_live_bytes'] for row in metrics['beat_spec_workload_passes'])
-    assert metrics['peak_rss_bytes_gated'] is False and len(metrics['peak_rss_bytes_candidate_by_workload'])==len(WORKLOADS)
-    # Every native execution ran with the fixed environment, in the read-only directory.
+    assert not any(key.startswith('peak_rss') for key in metrics)
+    # Every native execution ran in its own sandbox instance: nothing left behind.
     assert not stray_files()
 
 def test_state_cache_cannot_store_or_reuse_a_path(small):
-    """(a) Writes the path to a file in one process and returns it from the next."""
+    """(a) Writes the path to a file in one process and returns it from the next.
+
+    Every CLI run is a fresh instance. The API probe runs a batch of cases in one instance,
+    so there a cache can hit (and announces itself); every probed case is still checked
+    against the reference, and the trimmed suite here probes one case per instance.
+    """
     kind,metrics=outcome('state_cache')
     # A reused path announces itself on stderr, which the exact output parser rejects;
     # completing therefore means no process ever found state from an earlier one.
@@ -105,24 +116,32 @@ def test_wrong_path_in_the_printed_mode_is_rejected(small):
     """(b) The mirror image: skips the work in the only mode that is now timed."""
     assert outcome('wrong_path_when_printed')==('rejected','path is missing or nonoptimal')
 
-def test_screen_evasion_reaches_no_writable_object(small):
-    """(c) (fopen)(...), a function pointer and asm-labelled raw syscalls."""
-    kind,metrics=outcome('screen_evasion')
-    assert kind=='completed',metrics       # any channel that opened would have printed
+def test_screen_evasion_reaches_only_its_own_instance(small):
+    """(c) (fopen)(...), a function pointer and asm-labelled raw syscalls.
+
+    The writes into the instance's private working directory succeed and are announced on
+    stderr, which the exact output parsers reject (the API probe runs first); nothing outside
+    the instance opens (test_controls_show_the_attacks_work_outside_the_sandbox lists them).
+    """
+    assert outcome('screen_evasion')==('rejected','API probe output malformed')
     assert not stray_files()
+
+def test_judge_data_is_out_of_reach(small):
+    """PoC: a body that answers only if it can read the verifier's files gets no score."""
+    kind,_=outcome('judge_read')
+    assert kind=='rejected'
+
 
 def test_forged_small_time_gains_nothing(small):
     """Correct path, 50 ms of extra real cost, then a complete output with a 1 ns
-    timer line and exit before the CLI prints its own."""
-    kind,metrics=outcome('forged_time_small')
-    assert kind=='completed',metrics
-    candidate=metrics['cpu_time_seconds_candidate_by_workload'];reference=metrics['cpu_time_seconds_reference_by_workload']
-    # The compared time is the verifier's: the real cost is all there.
-    assert all(candidate[w]>reference[w]+0.045 for w in candidate)
-    assert not any(row['metrics']['cpu_time_seconds'] for row in metrics['beat_spec_workload_passes'])
-    assert metrics['beats_reference']==0 and metrics['margin']<0
-    # The forged line was read, as a diagnostic only.
-    assert all(x==1e-9 for w in candidate for x in metrics['self_reported_seconds_replicates_by_workload'][w]['C'])
+    timer line and exit before the CLI prints its own.
+
+    The timed runs accept it (the compared time is the verifier's, the forged line only
+    a bounded diagnostic: test_compared_time_is_the_verifiers_and_bounds_the_self_report).
+    In the sandbox the instrumented build has the same command line, so the forgery also
+    replaces the instrumented run, whose output then lacks the collector line.
+    """
+    assert outcome('forged_time_small')==('rejected','CLI output malformed')
 
 def test_forged_large_time_is_rejected(small):
     assert outcome('forged_time_large')==('rejected','self-reported duration exceeds verifier-measured elapsed time')
@@ -153,9 +172,9 @@ def test_every_candidate_execution_is_validated(small,monkeypatch,execution):
     each invalidate the evaluation. A location-only run is corrupted in its
     printed distance.
     """
-    real=native_cmake.run_bounded;seen=[0]
-    def tampering(args,cwd,deadline,**options):
-        out,rss,elapsed=real(args,cwd,deadline,**options)
+    real=e.run_native;seen=[0]
+    def tampering(args,deadline):
+        out,elapsed=real(args,deadline)
         candidate=isinstance(args[0],native_cmake.NativeExecutable) and tampering.candidate in str(args[0].source)
         if candidate:
             if seen[0]==execution:
@@ -166,8 +185,8 @@ def test_every_candidate_execution_is_validated(small,monkeypatch,execution):
                     head,tail=out.split('\n#0: ');distance,rest=tail.split(' ',1)
                     out=head+'\n#0: '+str(int(distance)+1)+' '+rest
             seen[0]+=1
-        return out,rss,elapsed
-    monkeypatch.setattr(e,'run_bounded',tampering)
+        return out,elapsed
+    monkeypatch.setattr(e,'run_native',tampering)
     applied=e.apply_submission_patch
     def remember(path,root,config):
         result=applied(path,root,config)
@@ -183,18 +202,25 @@ def _plain(binary,q,t,cwd):
     return subprocess.run([str(binary),'-m','NW','-p','-f','CIG_EXT','-r','1','-k','-1',str(q),str(t)],cwd=cwd,
                           capture_output=True,text=True)
 
-def test_controls_show_the_attacks_work_without_the_guard(tmp_path,monkeypatch):
-    """Without the guard the cache is reused and write channels open; with it, neither."""
+# Announced by screen_evasion in the sandbox: files in the instance's own (discarded) working
+# directory and an anonymous memfd. Nothing in /tmp, /dev/shm, /var/tmp, no IPC object, no socket.
+PRIVATE_CHANNELS={'EDLIB_FIXTURE channel open: '+x for x in (
+    '(fopen) edlib-fx-evasion','pointer fopen edlib-fx-evasion','raw open edlib-fx-evasion',
+    'raw openat edlib-fx-evasion','memfd_create')}
+
+def test_controls_show_the_attacks_work_outside_the_sandbox(tmp_path,monkeypatch):
+    """Outside the sandbox the cache is reused, write channels open and judge files are read;
+    in it, no reuse, only instance-private channels, and the judge-data cheat gets no answer."""
     import time
     deadline=time.monotonic()+600
     row=[w for w in REAL_ROWS(False) if w['id']==WORKLOADS[0]][0]
     q,t,qp,tp=e.materialize(row,tmp_path)
     built={}
-    for name in ('state_cache','screen_evasion'):
+    for name in ('state_cache','screen_evasion','judge_read'):
         result=e.apply_submission_patch(FIXTURES/(name+'.patch'),e.ROOT,e.CONFIG)
         assert result.ok
         built[name]=e.build(result.workdir,deadline)[0].artifact
-    free=tmp_path/'unguarded';free.mkdir()
+    free=tmp_path/'unconfined';free.mkdir()
     first=_plain(built['state_cache'],qp,tp,free);second=_plain(built['state_cache'],qp,tp,free)
     assert 'state reused' not in first.stderr and 'state reused' in second.stderr
     assert list(free.glob('edlib-fx-*'))
@@ -203,29 +229,21 @@ def test_controls_show_the_attacks_work_without_the_guard(tmp_path,monkeypatch):
     assert 'channel open: (fopen)' in opened and 'channel open: raw openat' in opened and 'channel open: mkdir' in opened
     for stray in list(free.iterdir())+[Path(p) for p in stray_files()]:
         stray.rmdir() if stray.is_dir() else stray.unlink()
-    # The same binaries under the guard: twice each, no reuse, nothing opened, nothing left behind.
+    if Path('/opt/frontier/task/evaluator.py').is_file():   # the verifier container's layout
+        e.parse_cli_run(_plain(built['judge_read'],qp,tp,free).stdout,'NW',q,t)
+    # The same binaries in the sandbox: twice each, no reuse, nothing left behind.
     monkeypatch.setattr(e,'PROCESS_RECEIPTS',None)
-    work=tmp_path/'guarded';work.mkdir()
-    e.prepare_native_guard(work,deadline)
-    try:
-        for name in built:
-            for _ in range(2):
-                out,_,_=e.run_native([built[name],'-m','NW','-p','-f','CIG_EXT','-r','1','-k','-1',qp,tp],deadline)
-                assert 'EDLIB_FIXTURE' not in out
-                e.parse_cli_run(out,'NW',q,t)
-        assert not stray_files() and not any(e.NATIVE_CWD.iterdir())
-    finally:
-        e.NATIVE_GUARD=e.NATIVE_CWD=None
-
-def test_guard_self_test_reports_every_probe_without_the_guard(tmp_path):
-    """The self-test is meaningful: unguarded, the same binary reports open channels."""
-    import time
-    guard,selftest=native_cmake.build_native_guard(tmp_path,time.monotonic()+120)
-    canary=tmp_path/'canary';canary.write_text('x\n')
-    free=tmp_path/'cwd';free.mkdir()
-    out=subprocess.run([str(selftest),str(canary)],cwd=free,capture_output=True,text=True).stdout
-    assert out!=e.GUARD_SELFTEST_EXPECTED
-    for probe in ('fopen_write_cwd','fstat','shmget','socket_unix','kill_parent_probe'): assert ' '+probe+' ' in out+' '
+    run=lambda name:e.run_native([built[name],'-m','NW','-p','-f','CIG_EXT','-r','1','-k','-1',qp,tp],deadline)[0]
+    for _ in range(2):
+        out=run('state_cache')
+        assert 'EDLIB_FIXTURE' not in out
+        e.parse_cli_run(out,'NW',q,t)
+        out=run('screen_evasion')
+        announced={line for line in out.split('\n') if line.startswith('EDLIB_FIXTURE')}
+        assert announced<=PRIVATE_CHANNELS,announced-PRIVATE_CHANNELS
+        e.parse_cli_run('\n'.join(line for line in out.split('\n') if not line.startswith('EDLIB_FIXTURE')),'NW',q,t)
+        with pytest.raises(e.Invalid): e.parse_cli_run(run('judge_read'),'NW',q,t)
+    assert not stray_files()
 
 # ---- the location-only run and the storage metric ----
 

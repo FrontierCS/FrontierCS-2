@@ -15,8 +15,8 @@ TASK = Path(__file__).resolve().parents[1] / (
 class ClusterwiseOpenMPScanTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which('g++'), 'native regression requires g++')
     def test_all_scan_overloads_cover_capped_team_without_reading_past_input(self):
-        source = (TASK / 'judge/harbor/app/utility.h').read_text()
-        self.assertEqual(source, (TASK / 'agent-base/frontier/task/repo/utility.h').read_text())
+        # One source: the Verifier image copies repo/ to the judge's pristine/.
+        source = (TASK / 'repo/utility.h').read_text()
         functions = source[source.index('// Prefix sum (Sequential)'):source.index('// Sort by key')]
         # Test the exact functions; the allocator shim removes the external TBB
         # dependency and is never used for performance measurements.

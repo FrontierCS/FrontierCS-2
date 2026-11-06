@@ -13,12 +13,12 @@ from pathlib import Path
 
 import pytest
 
-from tests.maintenance.runlts_predictor.runtime_imports import MODULES, TASK
+from tests.maintenance.runlts_predictor.runtime_imports import DESIGN_SPEC, FEEDBACK, MODULES, TASK
 
 e = MODULES["evaluator"]
 feedback = MODULES["beat_spec_feedback"]
 BITS = MODULES["source_policy"].REFERENCE_BITS
-SPEC = TASK / "judge/beat_spec.json"
+SPEC = DESIGN_SPEC
 MANIFEST = json.loads((TASK / "judge/workload_manifest.json").read_text())["workloads"]
 PINNED = {row["id"]: e.pinned_measurement(row)
           for row in json.loads((TASK / "judge/reference_counts.json").read_text())["rows"]}
@@ -108,10 +108,10 @@ def development():
 
 def test_category_means_are_the_candidates_own_and_nothing_else():
     result, candidate, reference = development()
-    shown = feedback.public_metrics(result[3], beat_spec_path=SPEC,
-                                    configured_visible=e.CONFIG["evaluation"]["solver_visible_metrics"])
+    shown = feedback.public_metrics(result[3], visible=e.CONFIG["evaluation"]["solver_visible_metrics"])
     assert set(shown) == {"train_br_mis_pki_mean", "train_cyc_wp_pki_mean", "all_metrics_progress",
-                          "category_means", "beat_spec_progress"}
+                          "category_means", "candidate_failure", "beat_spec_progress"}
+    assert shown["candidate_failure"] == 0
     assert set(shown["beat_spec_progress"]) == set(e.METRICS)
     exact = lambda rows, field: float(sum(Fraction(1000 * getattr(m, field), m.instr) for m in rows) / len(rows))
     assert {k: v["traces"] for k, v in shown["category_means"].items()} == {
@@ -144,24 +144,29 @@ def test_category_means_are_the_candidates_own_and_nothing_else():
     spec = json.loads(SPEC.read_text())
     for entry in spec["solver_feedback"]:
         assert entry["reveals_reference"].startswith(("no \u2014 ", "no; ")), entry["name"]
+    # [feedback] is the design record's list plus the candidate-only failure code.
+    assert FEEDBACK == [entry["name"] for entry in spec["solver_feedback"]] + ["candidate_failure"]
 
 
 def test_final_metrics_have_no_category_means():
     assert "category_means" not in final_suite(lambda i: (90_000, 900_000))
 
 
-def test_statements_keep_the_strict_rule_and_state_the_measured_noise():
-    sentence = ("Measured on official final evaluations, a change unrelated to component quality (shifting by one call "
-                "the shared random stream that the retained predictor uses) moves a single trace's mispredictions by "
-                "about 1% (standard deviation; up to 6.6%) and its wrong-path cycles by about 0.7%, so winning every "
-                "trace requires an improvement clearly larger than that on each trace.")
-    for path in (TASK / "judge/readme", TASK / "agent-base/frontier/task/repo/README.md"):
-        text = path.read_text()
-        for needle in ("strictly lower value for both quantities on every one of the 105 final traces",
-                       "A tie or regression anywhere fails that criterion.", sentence, "category_means"):
-            assert needle in text, (path.name, needle)
-        for stale in ("remains incomplete", "repeatability remain pending", "mean_gate", "0.002"):
-            assert stale not in text, (path.name, stale)
+def test_statement_keeps_the_strict_rule_and_states_the_measured_noise():
+    # The statement (repo/README.md); train feedback names, category_means among them, are the
+    # beat spec's solver_feedback (test_category_means_are_the_candidates_own_and_nothing_else).
+    text = " ".join((TASK / "repo/README.md").read_text().split())
+    for needle in ("105 original CBP traces", "| final | all 105, rerun afresh (includes the train subset) |",
+                   "**Beats the reference** when, on **every** final trace, all three hold: `br_mis_pki` "
+                   "(mispredictions per instruction) strictly lower than the private reference's and `cyc_wp_pki` "
+                   "(wrong-path cycles per instruction) strictly lower, both compared as exact integer counters "
+                   "with no tolerance (a tie fails); and `logical_storage_bits <= 1,572,864`.",
+                   "A one-call shift of the shared random stream moves one trace's mispredictions by about 1% "
+                   "(up to 6.6%) and wrong-path cycles by about 0.7%, so winning every trace needs a clearly "
+                   "larger improvement."):
+        assert needle in text, needle
+    for stale in ("remains incomplete", "repeatability remain pending", "mean_gate", "0.002"):
+        assert stale not in text, stale
 
 
 @pytest.mark.skipif(not os.environ.get("RUNLTS_OFFICIAL_METRICS"),

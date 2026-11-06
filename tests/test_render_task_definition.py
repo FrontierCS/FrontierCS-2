@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.dont_write_bytecode = True
 import render_task_definition as renderer
+import task_manifest
 
 
 class RendererTests(unittest.TestCase):
@@ -196,7 +197,8 @@ class RendererTests(unittest.TestCase):
                     row["source"]["identity_algorithm"], expected["identity_algorithm"]
                 )
                 self.assertEqual(row["image_tag"], expected["image_tag"])
-                policy = json.loads((root / "policy.json").read_text())
+                # Either definition format: policy.json, or task.toml over the shared defaults.
+                policy = task_manifest.load_policy(root)
                 for key in (
                     "family",
                     "display_name",
@@ -247,8 +249,19 @@ class RendererTests(unittest.TestCase):
         expected["metadata"]["evaluation"]["beat_spec_sha256"] = (
             "sha256:19bb12002bd89b264f142f9e38a570133d98dee964051c032c2e5050135dff5d"
         )
-        # Internal repository URL replaced in the public release tree.
-        expected["metadata"]["conversion"]["source_repo"] = "private authoring repository"
+        # The task.toml migration (#757) moved the metadata the platform does not read to
+        # docs/task-authoring/sparse_video_attention_policy/provenance/policy-metadata.json;
+        # runtime.language is no longer emitted for task.toml tasks.
+        provenance = json.loads(
+            (ROOT / "docs/task-authoring/sparse_video_attention_policy/provenance/"
+             "policy-metadata.json").read_text()
+        )["metadata"]
+        metadata = expected["metadata"]
+        for key in ("conversion", "generator", "isolation", "paper"):
+            self.assertEqual(metadata.pop(key), provenance[key], key)
+        for key in ("beat_spec_sha256", "suite_relation"):
+            self.assertEqual(metadata["evaluation"].pop(key), provenance["evaluation"][key], key)
+        metadata["runtime"].pop("language")
         for field in (
             "quota",
             "agent",
@@ -311,7 +324,10 @@ class RendererTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "regular files"):
                 renderer.source_sha256(root)
             (root / "fifo").unlink()
-            with mock.patch.object(renderer.subprocess, "Popen") as popen:
+            with (
+                mock.patch.object(renderer.source_tree, "in_work_tree", return_value=False),
+                mock.patch.object(renderer.subprocess, "Popen") as popen,
+            ):
                 proc = popen.return_value.__enter__.return_value
                 proc.stdout = __import__("io").BytesIO(b"partial archive")
                 proc.wait.return_value = 2
@@ -325,7 +341,8 @@ class RendererTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             shutil.copytree(source / "datasets", root / "datasets")
-            original = json.loads((source / "policy.json").read_text())
+            # Either definition format: policy.json, or the policy view of task.toml.
+            original = task_manifest.load_policy(source)
             variants = []
             for key in ("quota", "agent", "verifier", "submission"):
                 changed = copy.deepcopy(original)

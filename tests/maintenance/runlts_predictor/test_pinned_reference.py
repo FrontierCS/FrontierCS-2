@@ -17,13 +17,14 @@ import tarfile
 import types
 
 import pytest
-from tests.maintenance.runlts_predictor.runtime_imports import MODULES
+from tests.maintenance.runlts_predictor.runtime_imports import (
+    JUDGE, MODULES, REPOSITORY_ROOT, check_runtime_telemetry, write_payload)
 
 e = MODULES["evaluator"]
 adapter = MODULES["fcs2_verifier"]
 policy = MODULES["source_policy"]
-apply_submission_patch = MODULES["submission_patch"].apply_submission_patch
-REPO = Path(__file__).resolve().parents[3]
+REPO = REPOSITORY_ROOT
+PROVENANCE = REPO / "docs/task-authoring/runlts_predictor/provenance"
 GENERATOR = REPO / "scripts/maintenance/runlts_predictor/pin_reference_counts.py"
 HEADER = "       Instr       Cycles      IPC      NumBr     MispBr BrPerCyc MispBrPerCyc        MR     MPKI      CycWP   CycWPAvg   CycWPPKI"
 N = 1000000
@@ -43,11 +44,9 @@ def workloads():
 
 
 @pytest.fixture
-def restored():
-    result = apply_submission_patch(e.ROOT / "reference.patch", e.ROOT, e.CONFIG)
-    assert result.ok, result.message
-    yield result.workdir
-    shutil.rmtree(result.cleanup_root)
+def restored(tmp_path):
+    """The pristine predictor with judge/reference.patch, as the evaluator restores it."""
+    return e.reference_tree(tmp_path)
 
 
 def refused(reason, suite, tree):
@@ -77,7 +76,7 @@ def test_shipped_table_is_pinned_and_covers_every_workload(restored):
 def test_shipped_identity_is_the_pinned_reference_and_documents(restored):
     identity = json.loads(e.PINNED_REFERENCE.read_text())["identity"]
     assert identity == e.reference_identity(restored)
-    provenance = json.loads((e.ROOT / "provenance.json").read_text())
+    provenance = json.loads((PROVENANCE / "judge-provenance.json").read_text())
     assert identity["reference_core_sha256"] == provenance["submission_files"]["my_cond_branch_predictor.cc"]
     assert identity["workload_manifest_sha256"] == provenance["data_checksums"]["manifest_sha256"]
     assert identity["invocation"]["build_argv"] == ["make", "-j1", "OPT=-O3 -D_GLIBCXX_ASSERTIONS"]
@@ -217,9 +216,6 @@ def stage(tmp_path, monkeypatch):
     state.table, state.install = table, install
     install(table)
 
-    def patched(path, task_root, config):
-        side = "reference" if Path(path).name == "reference.patch" else "candidate"
-        return types.SimpleNamespace(ok=True, workdir=trees[side], cleanup_root=None)
 
     def command(argv, cwd, timeout, deadline):
         side = "reference" if Path(cwd) == trees["reference"] else "candidate"
@@ -229,8 +225,10 @@ def stage(tmp_path, monkeypatch):
             return json.dumps({"valid": True, "logical_bits": policy.REFERENCE_BITS, "method": "fixture"})
         return state.outputs[side] if step == "trace" else ""
 
-    monkeypatch.setattr(e, "apply_submission_patch", patched)
+    monkeypatch.setattr(e, "predictor_copy", lambda source, scratch, name: trees["candidate"])
+    monkeypatch.setattr(e, "reference_tree", lambda scratch: trees["reference"])
     monkeypatch.setattr(e, "run_command", command)
+    monkeypatch.setattr(e, "run_sandboxed", lambda argv, cwd, timeout, deadline, **sandbox: command(argv, cwd, timeout, deadline))
     monkeypatch.setattr(e, "manifest", lambda final: list(state.suite))
     monkeypatch.delenv("FRONTIER_SUBMISSION_ROLE", raising=False)
     monkeypatch.delenv(e.REFERENCE_AUDIT_ENV, raising=False)
@@ -238,7 +236,7 @@ def stage(tmp_path, monkeypatch):
 
 
 def test_default_evaluation_never_builds_or_runs_the_reference(stage):
-    score, _, message, metrics = e.evaluate("candidate.patch")
+    score, _, message, metrics = e.evaluate("candidate-tree")
     assert message == "evaluation complete" and score > 0 and metrics["beats_reference"] == 1
     assert stage.calls == [("candidate", "audit"), ("candidate", "build"), ("candidate", "trace"), ("candidate", "trace")]
     assert [row["role"] for row in metrics["private_runtime_telemetry"]["traces"]] == ["candidate", "candidate"]
@@ -247,12 +245,12 @@ def test_default_evaluation_never_builds_or_runs_the_reference(stage):
     # The comparison still uses the reference's exact counters, from the table.
     assert [(row["reference_instr"], row["reference_misp_br"], row["reference_cyc_wp"])
             for row in metrics["paired_measurements"]] == [(N, 3000, 140000)] * 2
-    adapter.validated_runtime_telemetry(metrics["private_runtime_telemetry"])
+    check_runtime_telemetry(metrics["private_runtime_telemetry"])
 
 
 def test_tie_with_the_pinned_counts_does_not_clear_the_strict_comparison(stage):
     stage.outputs["candidate"] = output(3000, 139999)
-    metrics = e.evaluate("candidate.patch")[3]
+    metrics = e.evaluate("candidate-tree")[3]
     assert metrics["beats_reference"] == 0
     assert metrics["beat_spec_workload_passes"][0]["metrics"] == {
         "br_mis_pki": False, "cyc_wp_pki": True, "logical_storage_bits": True}
@@ -271,7 +269,7 @@ def test_identity_mismatch_is_an_infrastructure_error_not_a_candidate_score(stag
     monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE", role)
     (stage.trees["reference"] / "lib/cbp.cc").write_text("// a different simulator\n")
     with pytest.raises(e.EvaluationError, match="pinned reference identity mismatch") as caught:
-        e.evaluate("candidate.patch")
+        e.evaluate("candidate-tree")
     evidence = caught.value.private_execution_evidence
     assert evidence["mismatched"] == ["reference_tree_sha256"] and "private_runtime_telemetry" in evidence
     assert ("candidate", "build") not in stage.calls and ("candidate", "trace") not in stage.calls
@@ -281,22 +279,22 @@ def test_missing_row_is_an_infrastructure_error(stage):
     stage.table["rows"][1]["id"] = "unit/renamed"
     stage.install(stage.table)
     with pytest.raises(e.EvaluationError, match="pinned reference row missing") as caught:
-        e.evaluate("candidate.patch")
+        e.evaluate("candidate-tree")
     assert caught.value.private_execution_evidence["workload"] == "unit/w1"
     stage.suite = stage.suite[:1]
-    assert e.evaluate("candidate.patch")[2] == "evaluation complete"
+    assert e.evaluate("candidate-tree")[2] == "evaluation complete"
 
 
 def test_live_audit_passes_when_the_reference_reproduces_the_table(stage, monkeypatch):
     monkeypatch.setenv(e.REFERENCE_AUDIT_ENV, "live")
-    score, _, message, metrics = e.evaluate("candidate.patch")
+    score, _, message, metrics = e.evaluate("candidate-tree")
     assert message == "evaluation complete" and metrics["beats_reference"] == 1
     assert stage.calls == [("candidate", "audit"), ("reference", "build"), ("candidate", "build"),
                            ("reference", "trace"), ("candidate", "trace"), ("reference", "trace"), ("candidate", "trace")]
     assert metrics["pinned_reference"]["live_check"] == "live_reference"
     assert metrics["pinned_reference"]["workloads_equal_to_live_execution"] == 2
     monkeypatch.delenv(e.REFERENCE_AUDIT_ENV)
-    assert e.evaluate("candidate.patch")[0] == score  # the audit does not change the result
+    assert e.evaluate("candidate-tree")[0] == score  # the audit does not change the result
 
 
 @pytest.mark.parametrize("live,field", [((3001, 140000), "misp_br"), ((3000, 139999), "cyc_wp")])
@@ -304,7 +302,7 @@ def test_live_audit_fails_as_infrastructure_when_one_counter_differs(stage, monk
     monkeypatch.setenv(e.REFERENCE_AUDIT_ENV, "live")
     stage.outputs["reference"] = output(*live)
     with pytest.raises(e.EvaluationError, match="pinned reference counts differ from live reference execution") as caught:
-        e.evaluate("candidate.patch")
+        e.evaluate("candidate-tree")
     evidence = caught.value.private_execution_evidence
     assert evidence["reference_phase"] == "pinned_audit" and evidence["audit_source"] == "live_reference"
     assert evidence["workload"] == "unit/w0" and field in evidence["fields"]
@@ -315,29 +313,29 @@ def test_live_audit_fails_as_infrastructure_when_one_counter_differs(stage, monk
 def test_unknown_audit_mode_is_refused(stage, monkeypatch):
     monkeypatch.setenv(e.REFERENCE_AUDIT_ENV, "yes")
     with pytest.raises(e.EvaluationError, match="unknown reference audit mode"):
-        e.evaluate("candidate.patch")
+        e.evaluate("candidate-tree")
 
 
 def test_reference_submission_is_checked_against_the_table_without_a_second_run(stage):
     # The reference qualification run: the candidate tree is the reference tree.
     (stage.trees["candidate"] / "my_cond_branch_predictor.cc").write_text("// reference\n")
     stage.outputs["candidate"] = output()
-    metrics = e.evaluate("reference.as.candidate.patch")[3]
+    metrics = e.evaluate("reference-as-candidate-tree")[3]
     assert metrics["beats_reference"] == 0 and metrics["margin"] == 0
     assert metrics["pinned_reference"]["live_check"] == "reference_submission"
     assert metrics["pinned_reference"]["workloads_equal_to_live_execution"] == 2
     assert ("reference", "trace") not in stage.calls and ("reference", "build") not in stage.calls
     stage.outputs["candidate"] = output(2999, 140000)
     with pytest.raises(e.EvaluationError, match="pinned reference counts differ from live reference execution") as caught:
-        e.evaluate("reference.as.candidate.patch")
+        e.evaluate("reference-as-candidate-tree")
     assert caught.value.private_execution_evidence["audit_source"] == "reference_submission"
 
 
 def test_adapter_reports_a_refused_table_as_a_failed_verification(stage, monkeypatch, tmp_path):
     zstandard = pytest.importorskip("zstandard")
     (stage.trees["reference"] / "lib/cbp.cc").write_text("// a different simulator\n")
-    payload = tmp_path / "payload.tar"
-    payload.write_bytes(b"fixture-only")
+    # The shared verifier: the real bundle, payload, edit scope and check_tree.
+    payload = write_payload(tmp_path / "payload.tar", (JUDGE / "baseline_naive.patch").read_bytes())
     result_path, evidence_path = tmp_path / "result.json", tmp_path / "evidence.tar.zst"
     scratch = tmp_path / "adapter-scratch"
     scratch.mkdir()
@@ -345,14 +343,11 @@ def test_adapter_reports_a_refused_table_as_a_failed_verification(stage, monkeyp
                        "FRONTIER_EVIDENCE_PATH": evidence_path, "FRONTIER_PAYLOAD_PATH": payload,
                        "FRONTIER_DATASET_PATH": tmp_path / "dataset.json", "FRONTIER_VERIFICATION_MODE": "train"}.items():
         monkeypatch.setenv(key, str(value))
-    monkeypatch.setattr(adapter, "extract_payload", lambda *a: None)
-    monkeypatch.setattr(adapter, "entrypoint_path", lambda *a: tmp_path / "solution.patch")
-    monkeypatch.setattr(adapter, "stage_task", lambda *a: tmp_path)
-    monkeypatch.setattr(adapter, "load_evaluator", lambda *a: e.evaluate)
-    assert adapter.main(tmp_path, "payload/solution.patch") == 0
+    monkeypatch.setattr(adapter, "load_evaluator", lambda *a: (e.evaluate, e.check_tree))
+    assert adapter.main(JUDGE, "payload/solution.patch") == 0
     result = json.loads(result_path.read_text())
     assert result["status"] == "failed" and "raw_score" not in result and result["metrics"] == {}
-    assert "candidate_diagnostic" not in result_path.read_text()
+    assert "rejected" not in result_path.read_text()
     raw = zstandard.ZstdDecompressor().decompress(evidence_path.read_bytes())
     with tarfile.open(fileobj=io.BytesIO(raw)) as archive:
         private = json.loads(archive.extractfile("metrics.json").read())["metrics"]["private_execution"]

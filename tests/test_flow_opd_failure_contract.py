@@ -1,20 +1,24 @@
-"""OCR candidate rejections and trusted faults retain separate native outcomes."""
+"""flow_opd on the shared verifier (#757): the scoring contract, the two-body rule (check_tree),
+trusted faults stay unscored, and the shared GPU adapter keeps a failed remote result."""
 import deployment_test_guard  # noqa: F401
+import difflib
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import shutil
 import sys
-import subprocess
 import tarfile
 import tempfile
 import unittest
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = Path(os.environ.get('FRONTIER_FLOW_OPD_EXPORT', str(
-    ROOT / 'tasks/frontier-cs-2.0-demo/problems/Machine Learning/flow_opd')))
+TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Machine Learning/flow_opd'
+SHARED = ROOT / 'tasks/shared'
+sys.path.insert(0, str(ROOT / 'scripts'))
+import task_manifest  # noqa: E402
 
 
 def load(path, name):
@@ -25,16 +29,23 @@ def load(path, name):
 
 
 scoring = load(TASK/'judge/judge/scoring.py', 'flow_failure_scoring')
-feedback = load(TASK/'verifier/beat_spec_feedback.py', 'flow_failure_feedback')
-with mock.patch.dict(sys.modules, {'beat_spec_feedback': feedback}):
-    adapter = load(TASK/'verifier/fcs2_verifier.py', 'flow_failure_native')
-gpu = load(TASK/'verifier/fcs2_verifier_gpu.py', 'flow_failure_gpu')
+feedback = load(SHARED/'verifier/beat_spec_feedback.py', 'flow_failure_feedback')
+gpu = load(SHARED/'verifier-gpu/fcs2_verifier_gpu.py', 'flow_failure_gpu')
+_PARAMETERS = Path(tempfile.mkdtemp(prefix='flow-failure-')) / 'verifier.json'
+_PARAMETERS.write_text(json.dumps({'gpu': {'placement': 'runner', 'max_gpu_instances': 1,
+                                           'lease_seconds': {'train': 7200, 'eval': 7200}}}))
+gpu.PARAMETERS = _PARAMETERS  # gpu-tools v4 reads [gpu.verifier] from verifier.json
+BUNDLE = task_manifest.judge_bundle(TASK)
+sys.path.insert(0, str(BUNDLE))
+evaluator = load(BUNDLE/'evaluator.py', 'flow_failure_evaluator')
+PIPELINE = 'flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py'
+SDE = 'flow_grpo/diffusers_patch/sd3_sde_with_logprob.py'
 
 
 class CandidateRejectionTests(unittest.TestCase):
     def test_rejection_uses_frozen_reference_and_explicit_unmeasured_checks(self):
         metrics = scoring.failure_metrics(['a','b'], reference={'a':.25,'b':.75}, final=True)
-        private = feedback.private_metrics(metrics, beat_spec_path=TASK/'judge/beat_spec.json')
+        private = feedback.private_metrics(metrics)
         self.assertEqual(private['beats_reference'], 0)
         self.assertEqual(private['reference_score'], 50)
         self.assertEqual(private['margin'], -50)
@@ -53,7 +64,7 @@ class CandidateRejectionTests(unittest.TestCase):
     def test_development_rejection_uses_public_reference_only(self):
         metrics = scoring.failure_metrics(['private'], reference={'private':.95},
                                           feedback_reference=[.2,.4], final=False)
-        public = feedback.public_metrics(metrics, beat_spec_path=TASK/'judge/beat_spec.json')
+        public = feedback.public_metrics(metrics, visible=task_manifest.read_task(TASK)['feedback'])
         self.assertEqual(metrics['reference_score'], 30.000000000000004)
         self.assertNotIn('reference_score', public)
         self.assertNotIn('private', json.dumps(public))
@@ -73,80 +84,76 @@ class CandidateRejectionTests(unittest.TestCase):
             {'workload':'b','metrics':{'ocr_reward':True}}])
 
 
+class SurfaceTests(unittest.TestCase):
+    """check_tree: only the two computational bodies may change; files stay UTF-8."""
+
+    def tree_with(self, path, transform):
+        scratch = Path(tempfile.mkdtemp(prefix='flow-surface-'))
+        self.addCleanup(shutil.rmtree, scratch, True)
+        tree = scratch/'tree'
+        shutil.copytree(BUNDLE/'pristine', tree)
+        target = tree/path
+        target.chmod(0o644)
+        target.write_bytes(transform(target.read_bytes()))
+        return tree
+
+    def change(self, path, status='M'):
+        return [mock.Mock(status=status, path=path)]
+
+    def test_pristine_passes(self):
+        self.assertIsNone(evaluator.check_tree(str(BUNDLE/'pristine'), str(BUNDLE/'pristine'), []))
+
+    def test_body_change_is_allowed(self):
+        tree = self.tree_with(SDE, lambda b: b.replace(b'raise NotImplementedError', b'return None', 1))
+        self.assertIsNone(evaluator.check_tree(str(tree), str(BUNDLE/'pristine'), self.change(SDE)))
+
+    def test_import_or_signature_change_is_out_of_scope(self):
+        for path, transform in (
+                (SDE, lambda b: b'import os\n' + b),
+                (PIPELINE, lambda b: b.replace(b'noise_level: float = 0.7', b'noise_level: float = 0.5', 1))):
+            with self.subTest(path=path):
+                tree = self.tree_with(path, transform)
+                self.assertEqual(evaluator.check_tree(str(tree), str(BUNDLE/'pristine'), self.change(path)),
+                                 ('out_of_scope', [path]))
+
+    def test_non_utf8_file_is_malformed(self):
+        tree = self.tree_with(SDE, lambda b: b + b'# \xff\n')
+        self.assertEqual(evaluator.check_tree(str(tree), str(BUNDLE/'pristine'), self.change(SDE)),
+                         ('malformed', [SDE]))
+
+
+class RuntimeAdapterTests(unittest.TestCase):
+    def test_instance_adapter_reaches_the_judge_transition_guard(self):
+        # frontier_runtime.py loads parents[2]/judge/transition_checks.py for qualified profiles;
+        # in the run's isolate instance that is {in}/judge, staged next to {in}/adapter.
+        with tempfile.TemporaryDirectory() as scratch:
+            output = Path(scratch)
+            (output/'corpus').mkdir()
+            profile = output/'run-profile.json'
+            profile.write_text(json.dumps({'dataset': str(output/'corpus')}))
+            inputs = evaluator.instance_inputs(output, profile)
+            staged = output/'in'
+            staged.mkdir()
+            for name in ('adapter', 'judge'):
+                shutil.copytree(inputs[name], staged/name)
+            runtime = staged/'adapter/app/frontier_runtime.py'
+            self.assertTrue((runtime.parents[2]/'judge/transition_checks.py').is_file())
+            self.assertTrue(os.access(staged/'adapter/app/frontier_shim/accelerate', os.X_OK))
+
+
 class TrustedFailureTests(unittest.TestCase):
-    def evaluator_case(self, case):
-        code = '''import pathlib,sys,importlib.util,json,os,tempfile,types
-from unittest import mock
-p=pathlib.Path(sys.argv[1]);sys.path.insert(0,str(p/'judge'))
-s=importlib.util.spec_from_file_location('flow_evaluator',p/'judge/evaluator.py')
-e=importlib.util.module_from_spec(s);s.loader.exec_module(e)
-os.environ['FRONTIER_SUBMISSION_ROLE']='final'
-case=sys.argv[2]
-with tempfile.NamedTemporaryFile(mode='w',suffix='.patch') as f:
- f.write('not a patch');f.flush()
- try:
-  if case=='qualification':
-   with mock.patch.object(e,'qualification',side_effect=e.QualificationError('private details')):r=e.evaluate(f.name)
-  elif case=='runtime':
-   with mock.patch.object(e,'validate_patch',return_value=(True,'',{})), mock.patch.object(e,'apply_submission_patch',side_effect=OSError('private details')):r=e.evaluate(f.name)
-  elif case=='apply_false':
-   with mock.patch.object(e,'validate_patch',return_value=(True,'',{})), mock.patch.object(e,'apply_submission_patch',return_value=types.SimpleNamespace(ok=False,cleanup_root=None)):r=e.evaluate(f.name)
-  elif case=='pristine':
-   with mock.patch.object(e,'check_surface',side_effect=SyntaxError('trusted scaffold invalid')):r=e.evaluate(f.name)
-  elif case=='read':r=e.evaluate(f.name+'.missing')
-  else:r=e.evaluate(f.name)
-  print(json.dumps({'score':r[0],'rows':len(r[3]['beat_spec_workload_passes']),
-                    'reference':r[3]['reference_score'],'status':r[3]['candidate_rejection']['status']}))
- except Exception as err:print(json.dumps({'trusted':getattr(err,'trusted_evaluation_failure',None)}))
-'''
-        return json.loads(subprocess.check_output([sys.executable,'-c',code,str(TASK),case]))
-
-    def test_actual_invalid_patch_returns_eight_unmeasured_fail_checks(self):
-        result = self.evaluator_case('patch')
-        self.assertEqual(result['score'], 0)
-        self.assertEqual(result['rows'], 8)
-        self.assertEqual(result['status'], 'invalid_submission')
-        self.assertGreater(result['reference'], 0)
-
-    def test_actual_qualification_and_unclassified_runtime_remain_unscored(self):
-        self.assertEqual(self.evaluator_case('qualification'),
-                         {'trusted':{'reason':'reference_or_qualification_invalid'}})
-        self.assertEqual(self.evaluator_case('runtime'),
-                         {'trusted':{'reason':'trusted_runtime_unclassified'}})
-
-    def test_patch_io_apply_and_pristine_faults_are_not_candidate_rejections(self):
-        for case in ['apply_false','pristine','read']:
-            with self.subTest(case=case):
-                self.assertEqual(self.evaluator_case(case),
-                                 {'trusted':{'reason':'trusted_runtime_unclassified'}})
-
-    def test_reason_enums_remain_unscored_with_private_evidence(self):
-        for reason in ['reference_or_qualification_invalid','trusted_runtime_unclassified',
-                       'workload_runtime_unclassified','workload_report_missing','evaluator_invocation_invalid']:
-            def evaluate(_):
-                raise scoring.TrustedEvaluationFailure(reason)
-            with self.subTest(reason=reason), self.assertRaises(adapter.VerifierFailure) as caught:
-                adapter.run_evaluator(evaluate, Path('submission'), 'eval')
-            self.assertEqual(caught.exception.code, 'trusted_evaluation_failure')
-            self.assertEqual(caught.exception.private_evidence, {'trusted_failure':{'reason':reason}})
-
-    def test_arbitrary_failure_reason_is_rejected(self):
-        for reason in ['secret-value', [], {}, None, 0]:
-            def evaluate(_):
-                raise scoring.TrustedEvaluationFailure(reason)
-            with self.subTest(reason=reason), self.assertRaises(adapter.VerifierFailure) as caught:
-                adapter.run_evaluator(evaluate, Path('submission'), 'eval')
-            self.assertEqual(caught.exception.code, 'invalid_evaluator_result')
-            self.assertNotIn('secret-value', caught.exception.message)
-
-    def test_private_metric_error_retains_schema_only(self):
-        with self.assertRaises(adapter.VerifierFailure) as caught:
-            adapter._private_metrics({'beats_reference':0,'beat_spec_workload_passes':[],
-                                      'reference_score':None,'margin':None}, TASK/'judge/beat_spec.json')
-        details = caught.exception.private_evidence['evaluator_validation']
-        self.assertEqual(details['workload_rows'], 0)
-        self.assertFalse(details['reference_score_finite'])
-        self.assertFalse(details['margin_finite'])
+    def test_qualification_and_runtime_faults_remain_unscored(self):
+        cases = (
+            (mock.patch.object(evaluator, 'qualification', side_effect=evaluator.QualificationError('x')),
+             'reference_or_qualification_invalid'),
+            (mock.patch.object(evaluator, 'offline_model_root', side_effect=OSError('private')),
+             'trusted_runtime_unclassified'),
+        )
+        for patcher, reason in cases:
+            with self.subTest(reason=reason), patcher, mock.patch.dict(os.environ, {'FRONTIER_SUBMISSION_ROLE': 'final'}):
+                with self.assertRaises(evaluator.TrustedEvaluationFailure) as caught:
+                    evaluator.evaluate(str(BUNDLE/'pristine'))
+                self.assertEqual(caught.exception.trusted_evaluation_failure, {'reason': reason})
 
 
 class RemoteFailureRetentionTests(unittest.TestCase):
@@ -203,7 +210,7 @@ class RemoteFailureRetentionTests(unittest.TestCase):
                 with (
                     mock.patch.dict(os.environ, {'FRONTIER_MAX_EVIDENCE_BYTES':'32768',
                                                   'FRONTIER_VERIFIER_DEADLINE_UNIX_MS':''}),
-                    mock.patch.object(gpu, '_config', return_value=('url','verification','token','gpu',7200,1)),
+                    mock.patch.object(gpu, '_config', return_value=('url','verification','token','gpu',1)),
                     mock.patch.object(gpu, '_input_archive'),
                     mock.patch.object(gpu, '_create_runner', return_value={'runner_id':'owned','granted_seconds':7200}),
                     mock.patch.object(gpu, '_ssh_argv', return_value=['ssh']),
@@ -231,28 +238,38 @@ class RemoteFailureRetentionTests(unittest.TestCase):
                                      'confirmed' if terminated else 'unconfirmed')
 
 
-class NativeEvidenceIntegrationTests(unittest.TestCase):
+class SharedVerifierIntegrationTests(unittest.TestCase):
+    """The run-failure and trusted-fault outcomes through the shared verifier."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, str(SHARED/'verifier'))
+        cls.adapter = load(SHARED/'verifier/fcs2_verifier.py', 'flow_shared_verifier')
+
     def invoke(self, evaluate, root, retained):
+        adapter = self.adapter
         payload, dataset = root/'payload.tar', root/'dataset.tar'
         payload.write_bytes(b'payload');dataset.write_bytes(b'dataset')
+        scope = mock.Mock(ok=True, tree=root, changes=(), metrics={})
+        edit_scope = mock.Mock(check=mock.Mock(return_value=scope), CATEGORIES={})
         with (
             mock.patch.dict(os.environ, {'FRONTIER_VERIFIER_SCRATCH':str(root)}),
-            mock.patch.object(adapter, 'load_candidate_diagnostic', return_value=None),
             mock.patch.object(adapter, 'extract_payload'),
-            mock.patch.object(adapter, 'entrypoint_path', return_value=root/'submission.patch'),
-            mock.patch.object(adapter, 'stage_task', return_value=TASK/'judge'),
-            mock.patch.object(adapter, 'load_evaluator', return_value=evaluate),
+            mock.patch.object(adapter, 'entrypoint_path', return_value=root/'payload.tar'),
+            mock.patch.object(adapter, 'load_edit_scope', return_value=(edit_scope, None)),
+            mock.patch.object(adapter, 'stage_task', return_value=BUNDLE),
+            mock.patch.object(adapter, 'load_evaluator', return_value=(evaluate, None)),
             mock.patch.object(adapter, 'write_evidence', side_effect=lambda path, files: retained.append(files)),
         ):
-            return adapter.verify(bundle=TASK, entrypoint='submission.patch', payload=payload,
+            return adapter.verify(bundle=BUNDLE, entrypoint='payload/solution.patch', payload=payload,
                                   dataset=dataset, mode='eval',result_path=root/'result.json',
                                   evidence_path=root/'evidence.tar.zst')
 
-    def test_candidate_rejection_is_scored_fail_and_keeps_real_reference(self):
+    def test_failed_run_is_scored_fail_and_keeps_real_reference(self):
         metrics = scoring.failure_metrics(['a','b'], reference={'a':.25,'b':.75}, final=True)
         with tempfile.TemporaryDirectory() as temp:
             retained = []
-            result = self.invoke(lambda _: (0,0,'Rejected',metrics),Path(temp),retained)
+            result = self.invoke(lambda _: (0,0,'Invalid or incomplete run.',metrics),Path(temp),retained)
         self.assertEqual(result['status'], 'passed')
         self.assertEqual(result['raw_score'], 0)
         self.assertEqual(result['private_metrics']['beats_reference'], 0)
@@ -267,22 +284,9 @@ class NativeEvidenceIntegrationTests(unittest.TestCase):
             result = self.invoke(evaluate,Path(temp),retained)
         self.assertEqual(result['status'], 'failed')
         self.assertNotIn('raw_score', result)
-        self.assertEqual(result['failure']['code'], 'trusted_evaluation_failure')
-        self.assertEqual(json.loads(retained[-1]['metrics.json'])['metrics'],
-                         {'trusted_failure':{'reason':'workload_runtime_unclassified'}})
-
-    def test_post_evaluator_validation_failure_retains_schema_evidence(self):
-        metrics = {'beats_reference':0,'beat_spec_workload_passes':[],
-                   'reference_score':None,'margin':None}
-        with tempfile.TemporaryDirectory() as temp:
-            retained = []
-            with self.assertRaises(adapter.VerifierFailure) as caught:
-                self.invoke(lambda _: (0,0,'Rejected',metrics),Path(temp),retained)
-        self.assertTrue(caught.exception._failure_evidence_written)
-        self.assertEqual(caught.exception.code, 'invalid_evaluator_result')
-        envelope = json.loads(retained[-1]['metrics.json'])
-        self.assertNotIn('raw_score',envelope)
-        self.assertEqual(envelope['metrics']['evaluator_validation']['workload_rows'],0)
+        self.assertEqual(result['failure']['code'], 'evaluator_error')
+        evidence = json.loads(retained[-1]['metrics.json'])['metrics']['evaluator_exception']
+        self.assertEqual(evidence['exception_type'], 'TrustedEvaluationFailure')
 
 
 if __name__ == '__main__':

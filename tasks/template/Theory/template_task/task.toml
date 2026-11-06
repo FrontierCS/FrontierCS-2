@@ -1,0 +1,64 @@
+# task.toml: the one definition of a FrontierCS2 task (schema frontier.task/v1, #757).
+#
+# Write only what differs between tasks. Everything else is either
+#   - a default, written out in tasks/shared/task-defaults.toml (override a key here only when
+#     the task needs it), or
+#   - derived: the category is this task's folder (problems/<Category>/<id>), the datasets are
+#     datasets/train.json and datasets/eval.json (hash and size computed), and the submission
+#     is always a patch.
+# scripts/task_manifest.py checks this file strictly (unknown keys are refused) and generates
+# config.yaml, submission-policy.json and verifier.json from it at build time.
+
+schema = "frontier.task/v1"
+id = "template_task"                 # must equal the directory name; [a-z0-9_]
+display_name = "Count Primes (template)"
+version = "r001"                     # bump on any change that alters judging
+
+# The Agent sandbox (the solver's machine).
+[agent]
+cpu_millis = 2000
+memory_bytes = 4294967296            # 4 GiB
+workspace_bytes = 5368709120         # 5 GiB writable /workspace
+
+# The Verifier Pod that runs the judge.
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296            # 4 GiB
+# workspace_bytes = 8589934592       # optional: writable scratch for the judge's builds
+
+# Time and train budgets. README.md states the same numbers (the validator checks the
+# train-call count; keep the others consistent by hand).
+[quota]
+wall_time_seconds = 18000            # whole answering window (5 h)
+max_train_calls = 20                 # `frontier-submit train` calls
+max_train_wall_seconds = 12000       # cumulative Verifier time spent on train
+eval_timeout_seconds = 600           # one evaluation (train or final)
+
+# The answer: a git diff of repo/, written by make_submission.sh as payload/solution.patch.
+[submission]
+max_bytes = 262144                   # the submitted tar; also the patch cap unless max_patch_bytes
+allowed_paths = ["src/primes.c"]     # repo-relative files (or "dir/") the patch may touch
+
+# What a train result returns to the Agent besides score_unbounded, beat_spec_progress and
+# rejected: the evaluator metrics named here, each with the one sentence the generated README
+# shows for it, in display order. This task returns none (the default); a task that does writes
+#   [feedback]
+#   solved_count = "Distinct instances whose submitted answer passes every check."
+# Names are lower_snake_case and never private ("reference", "margin", "beats..." are refused).
+
+# Overrides of tasks/shared/task-defaults.toml, only where a task needs them, e.g.
+#   [network.audit]                  # GPU tasks: SSH sessions per role
+#   max_ssh_sessions = 48
+#   ssh_session_budgets = { agent = 32, verifier_train = 12, verifier_eval = 4 }
+#
+# Task-specific blocks, only when used (see TEMPLATE.md):
+#   [judge.config]                   merged into the generated config.yaml (judge-specific keys)
+#   [gpu.agent] / [gpu.verifier] / [accelerator]   GPU tasks, with docker/*-gpu.Dockerfile
+
+# What the task is based on, for readers: the public task page and tasks/metadata/<id>.yaml.
+# The platform and the judge never read it.
+[paper]
+title = "The Genuine Sieve of Eratosthenes"
+venue = "Journal of Functional Programming 2009"
+url = "https://doi.org/10.1017/S0956796808007004"
+summary = "Make a prime-counting routine fast without changing its answers."

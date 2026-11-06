@@ -9,8 +9,9 @@ subprocess.run(['git','-C',tmp+'/r','apply','--whitespace=nowarn',os.path.abspat
 real=wc.require; wc.TIMED_MAIN_SHA256={}
 for kind,root in (('authored','harbor/app/'),('canonical_restored',tmp+'/r/')):
     for row in wc.configurations():
-        if kind=='canonical_restored' and row['circuit'] not in wc.RESTORED_MAIN_SHA256: continue
         src=open(root+row['main_path']).read()
+        # Only the mains the restoration patch changes get a canonical_restored form.
+        if kind=='canonical_restored' and src==open('harbor/app/'+row['main_path']).read(): continue
         cfg=wc.configured_main(src,row); assert wc.main_source_binding_kind(cfg,row)==kind,(row['id'],kind)
         wc.require=lambda v,m: real(v,m) if 'frozen form' not in m else None
         d=wc.timed_main(cfg,row); wc.require=real

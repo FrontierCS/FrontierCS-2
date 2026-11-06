@@ -19,6 +19,7 @@ import tarfile
 from pathlib import Path, PurePosixPath
 
 import jsonschema
+import task_manifest
 
 from .acceptance import REFERENCE_EXECUTION
 from .infra import DeployError, duplicate_safe_object
@@ -253,7 +254,7 @@ def task_binding(docs, source, definition, entry, repository):
     task_id = typed_id(config["task_version_id"], "taskver")
     catalog = unwrap_catalog(docs["task_catalog"], task_id)
     identity = definition["source"]["source_set_sha256"]
-    policy = parse(read_regular(source / "policy.json", MAX_JSON))
+    policy = task_manifest.load_policy(source)
     logical_ids = {source.name, "frontier-cs-2.0-" + source.name.replace("_", "-")}
     require(
         request["task_id"] in logical_ids and policy["problem_id"] == source.name,

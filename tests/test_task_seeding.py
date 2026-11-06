@@ -18,6 +18,23 @@ from preview import cli, infra, publication
 from preview import images as image_ops
 
 
+def not_found(path: str) -> infra.ManagementHTTPError:
+    """Management's Problem answer for an exact version read of an unknown id."""
+    return infra.ManagementHTTPError(
+        404, path, json.dumps({"code": "not_found", "detail": "does not exist"})
+    )
+
+
+def exact_version(collections: dict[str, list[dict]], path: str) -> dict:
+    """Serve GET {endpoint}/{id} from per-endpoint version lists."""
+    endpoint, _, version_id = path.rpartition("/")
+    matches = [item for item in collections[endpoint] if item["id"] == version_id]
+    if not matches:
+        raise not_found(path)
+    (match,) = matches
+    return match
+
+
 def resolved_catalog(task_names=None) -> dict:
     catalog = json.loads((ROOT / "config/task-catalog.json").read_text())
     if task_names is not None:
@@ -528,7 +545,7 @@ class TaskDocumentTests(unittest.TestCase):
         )
         version_id = document["driver_config"]["task_version_id"]
         existing = {**document, "id": version_id, "display_name": "changed"}
-        with mock.patch.object(publication, "api_json", return_value=[existing]) as api:
+        with mock.patch.object(publication, "api_json", return_value=existing) as api:
             with self.assertRaisesRegex(
                 frontier_deploy.DeployError, "immutable version differs"
             ):
@@ -541,8 +558,80 @@ class TaskDocumentTests(unittest.TestCase):
         api.assert_called_once_with(
             "http://127.0.0.1:8080",
             "GET",
-            "/api/v1/task-versions",
+            f"/api/v1/task-versions/{version_id}",
         )
+
+
+class ExactVersionReadTests(unittest.TestCase):
+    base = "http://127.0.0.1:8080"
+    endpoint = "/api/v1/candidate-versions"
+
+    def test_find_version_reads_only_the_exact_quoted_version(self) -> None:
+        stored = {"id": "candver a/b", "definition_digest": "sha256:" + "1" * 64}
+        with mock.patch.object(publication, "api_json", return_value=stored) as api:
+            self.assertEqual(
+                publication.find_version(self.base, self.endpoint, "candver a/b"),
+                stored,
+            )
+        api.assert_called_once_with(
+            self.base, "GET", "/api/v1/candidate-versions/candver%20a%2Fb"
+        )
+
+    def test_only_the_not_found_problem_means_missing(self) -> None:
+        path = f"{self.endpoint}/candver_x"
+        with mock.patch.object(publication, "api_json", side_effect=not_found(path)):
+            self.assertIsNone(
+                publication.find_version(self.base, self.endpoint, "candver_x")
+            )
+        for detail in ("", "<html>404</html>", '{"code":"route_missing"}', "[]"):
+            with self.subTest(detail=detail):
+                error = infra.ManagementHTTPError(404, path, detail)
+                with mock.patch.object(publication, "api_json", side_effect=error):
+                    with self.assertRaises(infra.ManagementHTTPError):
+                        publication.find_version(self.base, self.endpoint, "candver_x")
+
+    def test_find_version_rejects_a_different_or_malformed_version(self) -> None:
+        for response in ({"id": "candver_other"}, [{"id": "candver_x"}]):
+            with self.subTest(response=response):
+                with mock.patch.object(publication, "api_json", return_value=response):
+                    with self.assertRaisesRegex(
+                        frontier_deploy.DeployError, "wrong version"
+                    ):
+                        publication.find_version(self.base, self.endpoint, "candver_x")
+
+    def test_conflicting_post_rereads_the_exact_version(self) -> None:
+        path = f"{self.endpoint}/candver_x"
+        body = {"definition_digest": "sha256:" + "2" * 64}
+        stored = {"id": "candver_x", **body}
+        conflict = infra.ManagementHTTPError(409, self.endpoint, "already exists")
+        different = {**stored, "definition_digest": "sha256:" + "3" * 64}
+        for remote, expected in ((stored, stored), (different, None)):
+            with self.subTest(expected=expected):
+                with mock.patch.object(
+                    publication,
+                    "api_json",
+                    side_effect=[not_found(path), conflict, remote],
+                ) as api:
+                    if expected is None:
+                        with self.assertRaises(infra.ManagementHTTPError):
+                            publication.ensure_version(
+                                self.base, self.endpoint, "candver_x", body
+                            )
+                    else:
+                        self.assertEqual(
+                            publication.ensure_version(
+                                self.base, self.endpoint, "candver_x", body
+                            ),
+                            expected,
+                        )
+                self.assertEqual(
+                    api.call_args_list,
+                    [
+                        mock.call(self.base, "GET", path),
+                        mock.call(self.base, "POST", self.endpoint, body),
+                        mock.call(self.base, "GET", path),
+                    ],
+                )
 
 
 class TaskSeedingIdempotencyTests(unittest.TestCase):
@@ -642,10 +731,13 @@ class TaskSeedingIdempotencyTests(unittest.TestCase):
         }
 
         def api_json(_base, method, path, body=None, headers=None):
-            self.assertIn(path, stored)
             self.assertIsNone(headers)
             if method == "GET":
-                return list(stored[path].values())
+                endpoint, _, version_id = path.rpartition("/")
+                if version_id not in stored[endpoint]:
+                    raise not_found(path)
+                return stored[endpoint][version_id]
+            self.assertIn(path, stored)
             self.assertEqual(method, "POST")
             version_id = body["driver_config"].get(
                 "task_version_id",

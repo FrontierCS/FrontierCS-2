@@ -7,13 +7,14 @@ from pathlib import Path
 import types
 
 import pytest
-from tests.maintenance.cute_crest.runtime_imports import MODULES, TASK
+from tests.maintenance.cute_crest.runtime_imports import JUDGE, MODULES, TASK, task_manifest
 
 e = MODULES["evaluator"]
 gate = MODULES["gate"]
 runner = MODULES["crest_runner"]
 feedback = MODULES["beat_spec_feedback"]
-SPEC = json.loads((TASK / "judge/beat_spec.json").read_text())
+# Train feedback names: task.toml [feedback] (judge/beat_spec.json is gone, #757).
+VISIBLE = list(task_manifest.read_task(TASK)["feedback"])
 K = gate.K_SEEDS
 
 
@@ -35,16 +36,16 @@ def harness(monkeypatch, tmp_path):
     """Replaces building and measuring; returns a setter for the fake runs."""
     state = {}
     tools = (Path("/nonexistent"), runner, types.SimpleNamespace(
-        environment=lambda tree, out, tmp=None: ({}, None)), MODULES["solution_policy"])
+        environment=lambda tree, out, tmp=None: ({}, None)))
     monkeypatch.setattr(e, "load_tools", lambda: tools)
-    monkeypatch.setattr(e, "build_candidate", lambda tools, solution, out, env: Path("/nonexistent/host"))
+    monkeypatch.setattr(e, "build_candidate", lambda policy, solution, out: Path("/nonexistent/host"))
     monkeypatch.setattr(e, "measure", lambda tools, programs, hosts, scratch, env:
                         measured(programs, state["candidate"], state["reference"]))
 
-    def evaluate(candidate, reference, role="development", patch="reference.patch"):
+    def evaluate(candidate, reference, role="development"):
         state.update(candidate=candidate, reference=reference)
         monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE", role)
-        return e.evaluate(str(TASK / "judge" / patch))
+        return e.evaluate(str(JUDGE / "pristine"))
     return evaluate
 
 
@@ -87,7 +88,7 @@ def test_final_grades_two_programs_and_returns_no_development_feedback(harness):
     partial = lambda i, n: run((8500, 661)[i] + n % 7, overhead_seconds=20.0 + n % 3)  # noqa: E731
     _, _, _, metrics = harness(partial, reference, role="final")
     assert metrics["beats_reference"] == 0
-    assert feedback.private_metrics(metrics, beat_spec_path=TASK / "judge/beat_spec.json")["beats_reference"] == 0
+    assert feedback.private_metrics(metrics)["beats_reference"] == 0
 
 
 def test_early_ended_runs_are_valid_and_keep_their_coverage(harness):
@@ -121,7 +122,7 @@ def test_strategy_fault_voids_the_submission(harness, status, code):
     assert (score, unbounded, message) == (0.0, 0.0, "invalid candidate: " + code)
     assert metrics["beats_reference"] == 0
     assert not any(metrics["beat_spec_workload_passes"][0]["metrics"].values())
-    assert feedback.public_metrics(metrics, beat_spec_path=TASK / "judge/beat_spec.json")
+    assert feedback.public_metrics(metrics, visible=VISIBLE)
 
 
 def test_reference_or_harness_failure_is_never_a_candidate_result(harness):
@@ -133,34 +134,67 @@ def test_reference_or_harness_failure_is_never_a_candidate_result(harness):
         harness(lambda i, n: run(0, status="harness_error:sandbox_unavailable"), spread(1586))
 
 
-def test_invalid_patches_are_invalid_candidates(harness, tmp_path, monkeypatch):
-    outside = tmp_path / "outside.patch"
-    outside.write_text("diff --git a/src/run_crest/search_harness.cc b/src/run_crest/search_harness.cc\n"
-                       "--- a/src/run_crest/search_harness.cc\n+++ b/src/run_crest/search_harness.cc\n"
-                       "@@ -1,1 +1,1 @@\n-// Copyright (c) 2008, Jacob Burnim (jburnim@cs.berkeley.edu)\n+// x\n")
-    monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE", "development")
-    assert e.evaluate(str(outside))[2] == "invalid candidate: invalid_patch"
-    assert e.evaluate(str(tmp_path / "missing.patch"))[2] == "invalid candidate: missing_submission"
+def edit_scope_check(patch):
+    """The shared verifier's edit scope with this task's rules (task.toml [submission])."""
+    scope = task_manifest._edit_scope()
+    rules = scope.Rules.from_mapping(task_manifest.edit_scope_rules(task_manifest.read_task(TASK)))
+    return scope.check(patch.encode(), JUDGE / "pristine", rules)
+
+
+def test_patches_outside_the_solution_directory_are_rejected_out_of_scope():
+    outside = ("diff --git a/src/run_crest/search_harness.cc b/src/run_crest/search_harness.cc\n"
+               "--- a/src/run_crest/search_harness.cc\n+++ b/src/run_crest/search_harness.cc\n"
+               "@@ -1,2 +1,2 @@\n-// Copyright (c) 2008, Jacob Burnim (jburnim@cs.berkeley.edu)\n+// x\n //\n")
+    result = edit_scope_check(outside)
+    assert not result.ok and result.category == "out_of_scope"
+    reference = edit_scope_check((TASK / "judge/reference.patch").read_text())
+    try:
+        assert reference.ok and e.check_tree(str(reference.tree), str(JUDGE / "pristine"),
+                                             list(reference.changes)) is None
+    finally:
+        reference.dispose()
+
+
+@pytest.mark.parametrize("name,text,category", [
+    ("strategy.cc", '#include <cstdio>\n', "content_policy"),
+    ("strategy.cc", '#pragma once\n', "content_policy"),
+    ("notes.txt", 'hello\n', "out_of_scope"),
+])
+def test_source_rule_violations_are_rejected_by_check_tree(tmp_path, name, text, category):
+    import shutil
+    tree = tmp_path / "tree"
+    shutil.copytree(JUDGE / "pristine", tree)
+    path = tree / "src/frontier_solution" / name
+    path.write_text(path.read_text() + text if path.exists() else text)
+    change = types.SimpleNamespace(path="src/frontier_solution/" + name)
+    assert e.check_tree(str(tree), str(JUDGE / "pristine"), [change]) == (category, [change.path])
 
 
 def test_policy_violation_reports_its_category(monkeypatch, tmp_path):
-    policy = MODULES["solution_policy"]
+    # The sandboxed build lists an object that references time(): an object-rule rejection.
+    listing = "_ZN8frontier12MakeStrategyEv T 0 10\ntime U\n"
+    sections = "  [ 1] .text PROGBITS 0 0 0 00 AX 0 0 1\n"
 
-    def refuse(*args, **kwargs):
-        raise policy.PolicyViolation("forbidden_symbol", "time")
+    def build(argv, **kwargs):
+        outputs = {name: (listing if name.endswith(".nm") else sections).encode()
+                   for name in kwargs["outputs"] if name != "strategy_host"}
+        return types.SimpleNamespace(returncode=0, limit=None,
+                                     outputs={**outputs, "strategy_host": b"\x7fELF"})
     tools = (Path("/nonexistent"), runner, types.SimpleNamespace(
-        environment=lambda tree, out, tmp=None: ({}, None), build_strategy=refuse, BuildError=RuntimeError), policy)
+        environment=lambda tree, out, tmp=None: ({}, None)))
     monkeypatch.setattr(e, "load_tools", lambda: tools)
+    monkeypatch.setattr(e.isolate, "run", build)
     monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE", "final")
-    score, _, message, metrics = e.evaluate(str(TASK / "judge/reference.patch"))
-    assert (score, message) == (0.0, "invalid candidate: forbidden_symbol")
-    assert len(metrics["beat_spec_workload_passes"]) == 2
+    monkeypatch.setenv("CREST_TASK_SCRATCH", str(tmp_path))
+    score, unbounded, _, metrics = e.evaluate(str(JUDGE / "pristine"))
+    # A compiled-object rule is a rejection with the shared category, like the source rules.
+    assert (score, unbounded, metrics) == (0.0, 0.0, {"rejected": "content_policy"})
 
 
 def test_development_feedback_is_exactly_the_declared_candidate_only_set(harness):
     _, _, _, metrics = harness(spread(1500), lambda i, n: run(1234567, overhead_seconds=7654.321))
-    visible = feedback.public_metrics(metrics, beat_spec_path=TASK / "judge/beat_spec.json")
-    declared = {entry["name"] for entry in SPEC["solver_feedback"]}
+    visible = feedback.public_metrics(metrics, visible=VISIBLE)
+    declared = set(VISIBLE)
     assert set(visible) == declared | {"beat_spec_progress"}
     text = json.dumps({k: v for k, v in visible.items() if k != "beat_spec_progress"})
     assert "1234567" not in text and "7654" not in text
@@ -190,7 +224,7 @@ def test_seeds_keys_and_interleaving(monkeypatch):
         captured["jobs"], captured["workers"] = jobs, workers
         return {key: run(1) for key, _ in jobs}
     fake_runner = types.SimpleNamespace(ProgramSpec=runner.ProgramSpec, run_many=run_many)
-    e.measure((Path("/t"), fake_runner, None, None), programs, {"candidate": "c", "reference": "r"}, Path("/s"), {})
+    e.measure((Path("/t"), fake_runner, None), programs, {"candidate": "c", "reference": "r"}, Path("/s"), {})
     jobs = captured["jobs"]
     assert captured["workers"] == 8 and len(jobs) == 2 * 2 * K
     assert [key[1] for key, _ in jobs[:4]] == ["candidate", "reference", "reference", "candidate"]
@@ -201,9 +235,9 @@ def test_seeds_keys_and_interleaving(monkeypatch):
 
 
 def test_program_manifest_does_not_reach_the_solver_tree():
-    public = TASK / "agent-base/frontier/task"
+    public = TASK / "repo"
     names = {p.name for p in public.rglob("*")}
     assert "programs.json" not in names and "reference.patch" not in names and "gate.py" not in names
-    statement = (public / "README.md").read_text().lower() + (TASK / "judge/readme").read_text().lower()
+    statement = (TASK / "README.md").read_text().lower() + (public / "README.md").read_text().lower()
     for word in ("vim", "sed 3", "sed-3"):
         assert word not in statement

@@ -21,7 +21,12 @@ import frontier_deploy as deploy
 from preview import acceptance, cli, infra, publication
 from preview import config as site_config
 from preview import images as image_ops
-from test_task_seeding import mirrored_images, resolved_catalog
+from test_task_seeding import (
+    exact_version,
+    mirrored_images,
+    not_found,
+    resolved_catalog,
+)
 
 
 class SeedSelectionTests(unittest.TestCase):
@@ -115,7 +120,7 @@ class SeedSelectionTests(unittest.TestCase):
 
         def get(base, method, path):
             self.assertEqual(method, "GET")
-            return [{"id": "unrelated-version"}, *reversed(documents[path])]
+            return exact_version(documents, path)
 
         with (
             mock.patch.object(publication, "api_json", side_effect=get) as api,
@@ -166,7 +171,12 @@ class SeedSelectionTests(unittest.TestCase):
         )
         self.assertEqual(
             api.call_args_list[0],
-            mock.call("http://127.0.0.1:58080", "GET", "/api/v1/candidate-versions"),
+            mock.call(
+                "http://127.0.0.1:58080",
+                "GET",
+                "/api/v1/candidate-versions/"
+                + documents["/api/v1/candidate-versions"][0]["id"],
+            ),
         )
 
     def test_check_reports_missing_and_different_versions_and_fails_after_all_gets(
@@ -181,7 +191,7 @@ class SeedSelectionTests(unittest.TestCase):
 
         def get(base, method, path):
             self.assertEqual(method, "GET")
-            return documents[path]
+            return exact_version(documents, path)
 
         with mock.patch.object(publication, "api_json", side_effect=get) as api:
             with self.assertRaisesRegex(deploy.DeployError, "missing or differ"):
@@ -196,7 +206,9 @@ class SeedSelectionTests(unittest.TestCase):
         self.assertIn(": DIFFERS", self.stdout.getvalue())
         self.assertEqual(self.state_bytes(), before)
 
-    def test_check_collection_404_is_an_error_not_a_missing_version(self):
+    def test_check_route_404_without_not_found_problem_is_an_error(self):
+        # A Management build without the exact-read route answers 404 with no
+        # Problem body; that is an error, never a missing version.
         documents = self.documents()
         before = self.state_bytes()
         for endpoint in documents:
@@ -206,19 +218,13 @@ class SeedSelectionTests(unittest.TestCase):
 
                 def get(base, method, path, *, endpoint=endpoint):
                     self.assertEqual(method, "GET")
-                    if path == endpoint:
-                        error = HTTPError(
-                            base + path, 404, "missing collection", {}, None
-                        )
-                        error.close()
-                        raise deploy.DeployError(
-                            "collection unavailable: 404"
-                        ) from error
-                    return documents[path]
+                    if path.startswith(endpoint + "/"):
+                        raise deploy.ManagementHTTPError(404, path, "")
+                    return exact_version(documents, path)
 
                 with mock.patch.object(publication, "api_json", side_effect=get):
                     with self.assertRaisesRegex(
-                        deploy.DeployError, "collection unavailable: 404"
+                        deploy.DeployError, "Management HTTP 404"
                     ):
                         deploy.seed_tasks(
                             self.config,
@@ -253,7 +259,7 @@ class SeedSelectionTests(unittest.TestCase):
                         if isinstance(capacity, Exception):
                             raise capacity
                         return capacity
-                    return documents[path]
+                    return exact_version(documents, path)
 
                 with (
                     mock.patch.object(
@@ -328,6 +334,17 @@ class SeedSelectionTests(unittest.TestCase):
                             b"X-Management-Driver-Mode: kubernetes\r\n"
                             b"X-Management-Accepting-Evaluations: true\r\n"
                         )
+                        if path not in (overview_path, capacity_path):
+                            try:
+                                version = exact_version(documents, path)
+                            except deploy.ManagementHTTPError as error:
+                                raise HTTPError(
+                                    request.full_url,
+                                    404,
+                                    "Not Found",
+                                    {},
+                                    io.BytesIO(error.detail.encode()),
+                                ) from None
                         if path == truncated_path:
                             # Real HTTPResponse chunk parsing raises IncompleteRead
                             # even when the client bounds response.read(size).
@@ -341,7 +358,7 @@ class SeedSelectionTests(unittest.TestCase):
                                 if path == capacity_path
                                 else {}
                                 if path == overview_path
-                                else documents[path]
+                                else version
                             ).encode()
                             wire = (
                                 headers
@@ -403,17 +420,16 @@ class SeedSelectionTests(unittest.TestCase):
                     )
                     self.assertEqual(self.state_bytes(), before)
 
-    def test_check_rejects_malformed_or_duplicate_collection_matches(self):
+    def test_check_rejects_malformed_or_wrong_exact_version_reads(self):
         candidate = self.documents()["/api/v1/candidate-versions"][0]
-        for response, message in (
-            ({}, "version list is malformed"),
-            ([candidate, candidate], "duplicate version"),
-        ):
-            with self.subTest(message=message):
+        for response in ([candidate], {**candidate, "id": "candver_other"}):
+            with self.subTest(response=type(response).__name__):
                 with mock.patch.object(
                     publication, "api_json", return_value=response
                 ) as api:
-                    with self.assertRaisesRegex(deploy.DeployError, message):
+                    with self.assertRaisesRegex(
+                        deploy.DeployError, "wrong version"
+                    ):
                         deploy.seed_tasks(
                             self.config,
                             self.state / "kubeconfig",
@@ -421,7 +437,9 @@ class SeedSelectionTests(unittest.TestCase):
                             check=True,
                         )
                 api.assert_called_once_with(
-                    "http://127.0.0.1:58080", "GET", "/api/v1/candidate-versions"
+                    "http://127.0.0.1:58080",
+                    "GET",
+                    "/api/v1/candidate-versions/" + candidate["id"],
                 )
 
     def test_check_refuses_stale_mirrors_before_http(self):
@@ -463,7 +481,7 @@ class SeedSelectionTests(unittest.TestCase):
 
         def api(base, method, path, body=None):
             if method == "GET":
-                return []
+                raise not_found(path)
             self.assertEqual(method, "POST")
             posted.append(body)
             driver = body["driver_config"]

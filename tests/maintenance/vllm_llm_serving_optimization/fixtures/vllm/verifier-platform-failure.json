@@ -1,0 +1,22 @@
+{
+  "schema_version": "frontier.verifier-platform-failure/v1",
+  "run_id": "run_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+  "attempt_id": "attempt_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+  "verification_id": "verification_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+  "task_config_digest": "sha256:f15af63b11a043c56a959b712730f2e25d4286a0b5df6484dddac6ecc4b32460",
+  "verifier_image_digest": "sha256:cc728b88bed0e56f8c4ce4fa66a5ad5c202c7d781b06a4969d0125a8d4055cdd",
+  "operation_id": "gpurunner_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+  "controller_binding": {
+    "schema_version": "frontier.verifier-provisioning-claim/v1",
+    "create_request_digest": "sha256:b135f9a7131d0503014d2cdafe776ad4244597f3ca99897cf92eed64774b3de7",
+    "create_idempotency_digest": "sha256:b20ade85adaae44979652613299c25112d39a157c2fe920c5810347fa3213202",
+    "frozen_group_variant_plan_digest": "sha256:4b81d41167db1c99da86cb8caf696dbbeef1616b69b558fced49c088aaca5b82",
+    "expected_provisioning_slot_set_digest": "sha256:62cea5826ae80ab12dd48995a2653298a6327fbf9e720cec1e931b0cb803c4d9"
+  },
+  "cause": "gpu_create_failed",
+  "proof": {
+    "producer": "fixed_gpu_create_capacity"
+  },
+  "candidate_independent": true,
+  "input_forwarded_bytes": 0
+}

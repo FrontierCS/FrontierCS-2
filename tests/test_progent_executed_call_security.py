@@ -28,8 +28,8 @@ from pathlib import Path
 TASK = Path(__file__).resolve().parents[1] / (
     "tasks/frontier-cs-2.0-demo/problems/Security/progent_privilege_control")
 COPIES = {
-    "judge": (TASK / "judge/harbor/app/agentdojo/src", TASK / "judge"),
-    "agent": (TASK / "agent-base/frontier/task/repo/agentdojo/src", TASK / "agent-base/frontier/task/harness"),
+    "judge": (TASK / "judge/upstream_app/agentdojo/src", TASK / "judge"),
+    "agent": (TASK / "repo/agentdojo/src", TASK / "repo/tools/harness"),
 }
 
 _PROBE = r"""
@@ -120,7 +120,7 @@ def _python():
 
 class ProgentExecutedCallSecurityTests(unittest.TestCase):
     """Needs the task's pinned dependencies; set PROGENT_AGENTDOJO_PYTHON to an
-    interpreter with agent-base/frontier/task/requirements-lock.txt installed."""
+    interpreter with repo/tools/requirements-lock.txt installed."""
 
     @classmethod
     def setUpClass(cls):
