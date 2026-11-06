@@ -1,4 +1,23 @@
-"""Native evaluator for localization-guided regex repair reconstruction."""
+"""Native evaluator for localization-guided regex repair (shared verifier, #757).
+
+The shared verifier applies the patch with the task's edit-scope rules and calls evaluate(tree):
+the starter (bundle pristine/) with only the allowed files overlaid. The submitted constructor
+renders one chat per frozen regex under the shared isolate launcher (/opt/frontier/isolate.py,
+userns backend on the GPU runner); the fixed Qwen3-8B server answers; ReDoSHunter and Xeger
+score each answer. The trusted reference is pristine/ + judge/reference.patch.
+
+Scoring. Per regex q = credited * min(kept, admitted), where credited = compiles AND a completed
+ReDoSHunter result with no successful attack AND complete bidirectional samples AND jaccard > 0,
+kept / admitted = the share of the original's / the repair's 100 Xeger samples the other matches.
+raw_score = score_unbounded = 100 * mean q over every regex of the suite (development 20, final
+100). A constructor failure (PolicyError) scores 0 with no metrics.
+Metrics (per workload = stratum/split, beat_spec_workload_passes), candidate vs reference:
+  vulnerability_elimination_rate, repair_rate, well_formed_rate, nls, jaccard, precision, recall:
+    higher is better; pass if strictly higher, or both equal 1.0.
+  rli  relative length increase, lower is better; pass if strictly lower.
+beats_reference = 1 iff every workload passes every metric. reference_score = 100 * the
+reference's fidelity; margin = score - reference_score.
+"""
 from __future__ import annotations
 
 import atexit
@@ -15,11 +34,12 @@ import time
 import urllib.request
 import urllib.error
 
-from submission_patch import apply_submission_patch
-import yaml
+import isolate  # noqa: E402  (/opt/frontier, on the import path by frontier.pth)
+
 
 TASK_DIR = Path(__file__).resolve().parent
-CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text(encoding="utf-8"))
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
+REFERENCE_PATCH = TASK_DIR / "reference.patch"
 DATA = TASK_DIR / "workloads.json"
 ASSETS = TASK_DIR / "judge_assets"
 METRIC_NAMES = ("vulnerability_elimination_rate", "repair_rate", "well_formed_rate", "rli", "nls", "jaccard", "precision", "recall")
@@ -73,10 +93,9 @@ class PolicyError(Exception):
 
 
 CONSTRUCTOR_TIMEOUT_SECONDS = 600
-
-
-SANDBOX_ISOLATION_UNAVAILABLE = 70
-SANDBOX_BAD_ARGUMENTS = 64
+# The rendered chats come back on stdout. The old pipe had no cap; this one is far above any chat
+# the fixed 8,192-token context can take, so a cap hit is a misbehaving constructor.
+CONSTRUCTOR_OUTPUT_BYTES = 256 << 20
 
 
 def _policy_input(item_input: dict) -> dict:
@@ -96,44 +115,28 @@ def _policy_input(item_input: dict) -> dict:
 
 
 def _render_chats(repo, task: str, lines: list[str]) -> list:
-    """Run the retained constructor over every input in an isolated process.
+    """Run the retained constructor over every input in a fresh shared isolate instance.
 
-    policy_sandbox.py gives it a view without the judge, the verifier I/O or
-    any scratch state, and its PID namespace ends every process it started.
+    The instance gets a writable copy of the patched tree as its cwd, the worker and the request
+    as read-only inputs, and nothing of the judge (its files, the verifier I/O, FRONTIER_* env,
+    scratch state, network); every process it starts ends with it. An IsolateError (the
+    boundary could not be built) propagates: an evaluator error, never a candidate score.
     """
-    bundle = Path(os.path.realpath(tempfile.mkdtemp(prefix="lrr-policy-", dir="/tmp")))
-    try:
-        shutil.copytree(repo, bundle / "tree", symlinks=True)
-        shutil.copyfile(TASK_DIR / "constructor_worker.py", bundle / "worker.py")
-        (bundle / "request.json").write_text(json.dumps({"task": task, "lines": lines}), encoding="utf-8")
-        for path in [bundle, *bundle.rglob("*")]:
-            if not path.is_symlink():
-                path.chmod(0o755 if path.is_dir() else 0o644)
-        proc = subprocess.Popen(
-            # The platform copies TASK_DIR under /workspace, which the sandbox hides.
-            [sys.executable, "-I", str(TASK_DIR / "policy_sandbox.py"), "/opt/frontier/task", str(bundle)],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            text=True, start_new_session=True, env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
-        )
-        try:
-            out, err = proc.communicate(timeout=CONSTRUCTOR_TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            out, err = "", "prompt constructor exceeded its time limit"
-        finally:
-            try:
-                os.killpg(proc.pid, 9)
-            except ProcessLookupError:
-                pass
-            proc.wait()
-    finally:
-        shutil.rmtree(bundle, ignore_errors=True)
-    if proc.returncode in (SANDBOX_ISOLATION_UNAVAILABLE, SANDBOX_BAD_ARGUMENTS):
-        raise RuntimeError("policy sandbox unavailable: " + (err or "").strip()[-200:])
-    if proc.returncode != 0 or not out:
-        tail = (err or "").strip().splitlines()[-1:] or ["no diagnostic"]
+    result = isolate.run(
+        [sys.executable, "-I", "{in}/worker.py", "{in}/request.json"],
+        timeout_seconds=CONSTRUCTOR_TIMEOUT_SECONDS, tree=str(repo),
+        inputs={"worker.py": str(TASK_DIR / "constructor_worker.py"),
+                "request.json": json.dumps({"task": task, "lines": lines}).encode("utf-8")},
+        env={"PYTHONDONTWRITEBYTECODE": "1", "PYTHONHASHSEED": "0"},
+        output_bytes=CONSTRUCTOR_OUTPUT_BYTES)
+    err = result.stderr.decode("utf-8", "replace")
+    if result.limit == "time":
+        raise PolicyError("prompt constructor failed: prompt constructor exceeded its time limit")
+    if not result.ok or not result.stdout:
+        tail = err.strip().splitlines()[-1:] or [f"limit {result.limit}" if result.limit else "no diagnostic"]
         raise PolicyError("prompt constructor failed: " + tail[0][:160])
     try:
-        rows = json.loads(out)["rows"]
+        rows = json.loads(result.stdout)["rows"]
     except (ValueError, KeyError, TypeError) as exc:
         raise PolicyError("prompt constructor returned malformed output") from exc
     if not isinstance(rows, list) or len(rows) != len(lines):
@@ -335,18 +338,35 @@ def _run_policy(repo, workloads: list[dict], task: str = "five_shot_localization
     return result
 
 
+def _reference_tree() -> Path:
+    """A scratch copy of the pristine starter with judge/reference.patch applied (trusted,
+    judge-owned). The caller removes its parent directory."""
+    scratch = Path(tempfile.mkdtemp(prefix="lrr-reference-"))
+    tree = scratch / "reference"
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch.resolve())}
+    try:
+        subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)], cwd=tree,
+                       check=True, capture_output=True, timeout=120, env=env)
+    except (OSError, subprocess.SubprocessError) as exc:
+        shutil.rmtree(scratch, ignore_errors=True)
+        raise RuntimeError("private reference patch is invalid") from exc
+    return tree
+
+
 def _reference(workloads: list[dict]) -> dict[str, dict[str, float]]:
     role = "final" if os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final" else "development"
     if role not in _reference_cache:
-        applied = apply_submission_patch(str(TASK_DIR / "reference.patch"), TASK_DIR, CONFIG)
-        if not applied.ok:
-            raise RuntimeError("private reference patch is invalid")
+        tree = _reference_tree()
         try:
-            _reference_cache[role] = _run_policy(Path(applied.workdir), workloads)
+            _reference_cache[role] = _run_policy(tree, workloads)
         except PolicyError as exc:
             raise RuntimeError("private reference policy failed") from exc
         finally:
-            shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
+            shutil.rmtree(tree.parent, ignore_errors=True)
     return _reference_cache[role]
 
 
@@ -361,13 +381,11 @@ def prepare() -> dict:
     final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
     workloads = json.loads(DATA.read_text(encoding="utf-8"))["final" if final else "development"]
     reference = _reference(workloads)
-    applied = apply_submission_patch(str(TASK_DIR / "reference.patch"), TASK_DIR, CONFIG)
-    if not applied.ok:
-        raise RuntimeError("private reference patch is invalid")
+    tree = _reference_tree()
     try:
-        ordinary = _run_policy(Path(applied.workdir), workloads, "five_shot")
+        ordinary = _run_policy(tree, workloads, "five_shot")
     finally:
-        shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
+        shutil.rmtree(tree.parent, ignore_errors=True)
     no_repair = {}
     for workload in workloads:
         originals = [item["input"]["pattern"] for item in workload["items"]]
@@ -380,7 +398,7 @@ def prepare() -> dict:
     }
 
 
-def evaluate(solution_path: str):
+def evaluate(tree: str):
     started = time.monotonic()
     if not Path("/app/scripts/inference.py").is_file():
         subprocess.run(
@@ -394,15 +412,12 @@ def evaluate(solution_path: str):
     final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
     data = json.loads(DATA.read_text(encoding="utf-8"))
     workloads = data["final"] if final else data["development"]
-    applied = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-    if not applied.ok:
-        return _fail(applied.message)
+    # The shared verifier has applied the patch; `tree` is the starter with only the allowed
+    # files overlaid.
     try:
-        candidate = _run_policy(Path(applied.workdir), workloads)
+        candidate = _run_policy(Path(tree), workloads)
     except PolicyError as exc:
         return _fail(str(exc))
-    finally:
-        shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
     reference = _reference(workloads)
     rows = []
     for workload in workloads:
@@ -428,7 +443,3 @@ def evaluate(solution_path: str):
     }
     return score, score, "evaluated through constructor, fixed model, detector, and semantic scorers", metrics
 
-
-if __name__ == "__main__":
-    path = sys.argv[1] if len(sys.argv) > 1 else str(TASK_DIR / "reference.patch")
-    print(json.dumps(evaluate(path), indent=2))

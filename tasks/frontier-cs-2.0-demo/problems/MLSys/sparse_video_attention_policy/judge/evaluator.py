@@ -1,12 +1,31 @@
 #!/usr/bin/env python3
-"""GPU evaluator for the stripped Wan + HunyuanVideo SVG attention task.
+"""
 
-The authoritative path invokes the retained 720p shell entrypoint of the
-workload's model (Wan2.1 or HunyuanVideo) for the candidate. Dense and
-exact-upstream videos prepared once through that same path are hash-checked,
-decoded, and scored as the paired target and frontier. Unit tests replace only
-the expensive GPU runner; patch application, bookkeeping, and score arithmetic
-remain real.
+# The authoritative path runs the workload model's retained 720p shell entrypoint for the
+# candidate. Dense and reference videos prepared once through the same path are hash-checked,
+# decoded and scored as the paired target and reference. Unit tests replace only the GPU runner.Judge of sparse_video_attention_policy for the shared verifier (#757): evaluate(tree), check_tree.
+
+Score: per workload, with T the candidate latency, Td the fixed pre-measured dense latency and
+P, S, L the 81-frame means of PSNR, SSIM and VGG-LPIPS against the fixed dense video,
+quality = (clip((P-15)/20) + clip((S-0.5)/0.5) + clip((0.35-L)/0.35)) / 3,
+efficiency = clip(Td/max(1e-12, T) - 1), score = 100 * quality * (0.25 + 0.75 * efficiency),
+clip to [0, 1]. raw_score = score_unbounded = the mean over the suite (4 train, 12 final
+workloads, clamped to [0, 100]); any correctness failure on any workload scores 0.
+
+Beat-spec metrics (beat_spec_workload_passes, one row per workload; the withheld SVG-EAR
+reference is measured on the same workload in the same run):
+- e2e_latency_seconds, lower is better: the synchronized 50-step pipeline call; passes when
+  candidate <= 0.96 * reference (at least 4% lower).
+- psnr_db, higher is better: mean frame PSNR 10*log10(1/MSE) on [0, 1] frames; passes when
+  candidate >= reference - 0.25 dB.
+- ssim, higher is better: mean frame SSIM (11x11 average pool, C1 = 0.01^2, C2 = 0.03^2);
+  passes when candidate >= reference - 0.01.
+- lpips, lower is better: mean frame VGG-LPIPS on [0, 1] frames; passes when
+  candidate <= reference + 0.005.
+beats_reference = 1 iff every one of the 12 final workloads (every workload of the evaluated
+suite) passes all four metrics; equality at a bound passes; otherwise 0. It does not change the
+score. The prior specification is archived at
+docs/task-authoring/sparse_video_attention_policy/provenance/beat_spec.json.
 """
 
 from __future__ import annotations
@@ -25,37 +44,23 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import threading
 import time
+import traceback
 from typing import Any
 
 _MODULE_DIR = Path(__file__).resolve().parent
 if str(_MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(_MODULE_DIR))
-from submission_patch import apply_submission_patch
+import isolate  # noqa: E402  (/opt/frontier, on the import path by frontier.pth)
 
 
 TASK_DIR = _MODULE_DIR
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 DENSE_TARGET_DIR = TASK_DIR / "dense_targets"
 DENSE_MANIFEST_SCHEMA_VERSION = 2
 TARGET_READY = "ready"
 TARGET_PENDING = "PENDING"
-
-CONFIG = {
-    "submission": {
-        "kind": "patch",
-        "repo_root": "/app",
-        "allow_paths": [
-            "svg/models/wan/attention.py",
-            "svg/models/hyvideo/attention.py",
-            "svg/kmeans_utils.py",
-            "svg/solver_extensions/",
-        ],
-        "max_changed_files": 12,
-        "max_patch_bytes": 262144,
-    }
-}
 
 EXPECTED_FRAMES = 81
 EXPECTED_HEIGHT = 720
@@ -139,6 +144,24 @@ WORKER_TIMEOUT_SECONDS = GENERATION_TIMEOUT_SECONDS + 300
 # patch application, target checks, orchestration and cleanup.
 OUTER_TIMEOUT_SECONDS = 12600
 MAX_WORKER_OUTPUT_BYTES = 64 * 1024
+# A workload worker whose generation sandbox could not be built exits with this code; the
+# evaluation then fails as infrastructure (never a scored zero).
+SANDBOX_UNAVAILABLE_EXIT = 75
+# A workload worker whose candidate generation or candidate metrics failed exits with this code:
+# the only worker failure scored as the candidate's (zero). Any other worker failure (an import
+# error, a target or reference stage, invalid output) is the judge's and raises.
+CANDIDATE_FAILED_EXIT = 65
+# Limits of one generation's isolate instance: the MP4 + timing + phases and its stdout/stderr;
+# its private disk (tree copy, Triton/flashinfer caches, HOME, TMPDIR).
+GENERATION_OUTPUT_BYTES = 1 << 30
+GENERATION_DISK_BYTES = 64 << 30
+# Image runtime variables a generation keeps (it ran with the judge's whole environment
+# before isolate); everything else, FRONTIER_* included, is not passed on.
+GENERATION_ENV_PASSTHROUGH = (
+    "LD_LIBRARY_PATH", "LIBRARY_PATH", "CPATH", "CUDA_HOME", "CUDA_PATH", "CC", "CXX",
+    "NVIDIA_DRIVER_CAPABILITIES", "TORCH_HOME", "HF_HOME", "HF_HUB_CACHE",
+    "PYTHONDONTWRITEBYTECODE", "PYTHONUNBUFFERED",
+)
 MAX_OPERATOR_DIAGNOSTIC_BYTES = 4 * 1024
 
 # Score calibration.  All are challenge constants (not from materials).
@@ -168,12 +191,12 @@ SPEC_METRICS = (
 )
 
 # Added code may implement arbitrary tensor policies, but it may not reach into
-# the private runner or replace the class whose call boundary is timed.
+# the private runner or replace the class whose call boundary is timed: the timer runs in
+# the generation's own process (after the warm-up, around the synchronized pipeline call),
+# so isolate, which keeps judge files, environment and network out of reach,
+# cannot protect it. These tokens guard that in-process boundary and its timing file.
 FORBIDDEN_ADDED_PATTERNS = (
-    re.compile(r"FRONTIER_(?:SUBMISSION_ROLE|MODEL_ROOT)"),
-    re.compile(r"HARBOR_"),
-    re.compile(r"(?:^|\W)(?:inspect|subprocess|socket|runpy)(?:\W|$)"),
-    re.compile(r"(?:^|\W)(?:open|listdir|scandir|walk|glob)(?:\W|$)"),
+    re.compile(r"(?:^|\W)(?:inspect|subprocess|runpy|open)(?:\W|$)"),
     re.compile(r"(?:__closure__|__dict__|__import__|_getframe|/proc/|perf_counter|WanPipeline|HunyuanVideoPipeline|sys\.modules)"),
 )
 
@@ -196,6 +219,22 @@ class SuiteTargetsUnavailable(Exception):
     This is deliberately not a RuntimeError: the evaluator re-raises it so the
     verifier reports an evaluator failure instead of a scored 0 verdict.
     """
+
+
+class SandboxUnavailable(Exception):
+    """The generation's isolate instance could not be built: an infrastructure failure.
+
+    Not a RuntimeError, so evaluate() re-raises it instead of scoring a zero."""
+
+
+class CandidateStageFailure(RuntimeError):
+    """Inside a workload worker: the candidate's generation or its metrics failed."""
+
+
+class WorkerFault(Exception):
+    """A workload worker failed for a reason other than the candidate (the judge or its image).
+
+    Not a RuntimeError, so evaluate() re-raises it instead of scoring a zero."""
 
 
 class WorkloadWorkerFailure(RuntimeError):
@@ -233,14 +272,12 @@ _GENERATION_PHASES = (
 )
 
 
-def _generation_diagnostic(phase_path, started, stderr_bytes, stderr_hash, tail, capture_complete):
+def _generation_diagnostic(phase_bytes, elapsed, stderr, capture_complete):
+    """Operator-only record of one generation: its phase marks and the stderr tail."""
     phases = []
-    phase_path = Path(phase_path)
     try:
-        with phase_path.open("rb") as handle:
-            raw = handle.read(4097)
-        if len(raw) <= 4096:
-            records = json.loads(raw)
+        if phase_bytes is not None and len(phase_bytes) <= 4096:
+            records = json.loads(phase_bytes)
             if isinstance(records, list) and len(records) <= len(_GENERATION_PHASES):
                 previous_elapsed = 0.0
                 for record in records:
@@ -254,110 +291,30 @@ def _generation_diagnostic(phase_path, started, stderr_bytes, stderr_hash, tail,
                         break
                     phases.append(record)
                     previous_elapsed = record["elapsed_seconds"]
-    except (OSError, ValueError, TypeError, RecursionError):
+    except (ValueError, TypeError, RecursionError):
         pass
-    elapsed = time.monotonic() - started
     if phases and phases[-1]["elapsed_seconds"] > elapsed:
         phases = []
+    tail = stderr[-1024:]
     return {
         "subprocess_elapsed_seconds": elapsed,
-        "stderr_observed_bytes": stderr_bytes,
-        "stderr_observed_sha256": stderr_hash.hexdigest(),
-        "stderr_tail": bytes(tail).decode("utf-8", "replace"),
-        "stderr_tail_truncated": stderr_bytes > len(tail),
+        "stderr_observed_bytes": len(stderr),
+        "stderr_observed_sha256": hashlib.sha256(stderr).hexdigest(),
+        "stderr_tail": tail.decode("utf-8", "replace"),
+        "stderr_tail_truncated": len(stderr) > len(tail),
         "stderr_capture_complete": capture_complete,
         "phases": phases,
     }
 
 
-def _run_generation_process(
-    command: list[str], *, cwd: Path, env: dict[str, str], timeout: int
-) -> subprocess.CompletedProcess:
-    """Run generation while retaining only the last diagnostic stderr bytes."""
-    global _LAST_GENERATION_DIAGNOSTIC
-    started = time.monotonic()
-    stderr_count = 0
-    stderr_hash = hashlib.sha256()
-    stderr_lock = threading.Lock()
-    process = subprocess.Popen(
-        command,
-        cwd=cwd,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-        start_new_session=True,
-    )
-    if process.stderr is None:
-        raise RuntimeError("generation stderr pipe unavailable")
-    stderr_tail = bytearray()
-    reader_errors: list[BaseException] = []
-
-    def read_stderr() -> None:
-        nonlocal stderr_count
-        try:
-            while chunk := process.stderr.read(64 * 1024):
-                with stderr_lock:
-                    stderr_count += len(chunk)
-                    stderr_hash.update(chunk)
-                    if len(chunk) >= 1024:
-                        stderr_tail[:] = chunk[-1024:]
-                    else:
-                        excess = max(
-                            0,
-                            len(stderr_tail) + len(chunk)
-                            - 1024,
-                        )
-                        if excess:
-                            del stderr_tail[:excess]
-                        stderr_tail.extend(chunk)
-        except BaseException as error:
-            reader_errors.append(error)
-
-    reader = threading.Thread(
-        target=read_stderr,
-        name="svg-generation-stderr",
-        daemon=True,
-    )
-    reader.start()
-    try:
-        returncode = process.wait(timeout=timeout)
-    except subprocess.TimeoutExpired as error:
-        try:
-            os.killpg(process.pid, 9)
-        except ProcessLookupError:
-            pass
-        process.wait()
-        reader.join(timeout=5)
-        if not reader.is_alive():
-            process.stderr.close()
-        with stderr_lock:
-            captured_tail = bytes(stderr_tail)
-            _LAST_GENERATION_DIAGNOSTIC = _generation_diagnostic(env.get("FRONTIER_GENERATION_PHASE_PATH", "/nonexistent"), started, stderr_count, stderr_hash, stderr_tail, not reader.is_alive() and not reader_errors)
-        expired = subprocess.TimeoutExpired(command, timeout, stderr=captured_tail)
-        expired.operator_generation = _LAST_GENERATION_DIAGNOSTIC
-        raise expired from error
-    reader.join(timeout=5)
-    if not reader.is_alive():
-        process.stderr.close()
-    if reader.is_alive() or reader_errors:
-        raise RuntimeError("generation stderr capture failed")
-    with stderr_lock:
-        _LAST_GENERATION_DIAGNOSTIC = _generation_diagnostic(env.get("FRONTIER_GENERATION_PHASE_PATH", "/nonexistent"), started, stderr_count, stderr_hash, stderr_tail, not reader.is_alive() and not reader_errors)
-    return subprocess.CompletedProcess(
-        command,
-        returncode,
-        stdout=b"",
-        stderr=bytes(stderr_tail),
-    )
-
-
-def _generation_failure_message(process: subprocess.CompletedProcess) -> str:
+def _generation_failure_message(result) -> str:
     """Return bounded detail that remains inside the outer worker traceback."""
-    stderr = process.stderr or b""
+    stderr = result.stderr or b""
     tail = stderr[-MAX_OPERATOR_DIAGNOSTIC_BYTES:].decode("utf-8", "replace")
+    limit = f" (isolate {result.limit} limit)" if result.limit else ""
     return (
         f"Video generation stderr tail:\n{tail}\n"
-        f"Video generation process exited with code {process.returncode}"
+        f"Video generation process exited with code {result.returncode}{limit}"
     )
 
 
@@ -403,20 +360,6 @@ def _scratch_root() -> Path:
         return fallback
 
 
-def _apply_patch(path: str | Path):
-    # Keep the 31 MiB source copies and CUDA builds off RAM-backed /tmp.
-    tempfile.tempdir = str(_scratch_root())
-    old_ceiling = os.environ.get("GIT_CEILING_DIRECTORIES")
-    os.environ["GIT_CEILING_DIRECTORIES"] = str(_scratch_root())
-    try:
-        return apply_submission_patch(str(path), TASK_DIR, CONFIG)
-    finally:
-        if old_ceiling is None:
-            os.environ.pop("GIT_CEILING_DIRECTORIES", None)
-        else:
-            os.environ["GIT_CEILING_DIRECTORIES"] = old_ceiling
-
-
 def _empty_metrics() -> dict[str, Any]:
     workloads = _workloads(os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final")
     return {
@@ -429,21 +372,42 @@ def _empty_metrics() -> dict[str, Any]:
     }
 
 
-def _added_source(patch_path: str | Path) -> str:
-    text = Path(patch_path).read_text(encoding="utf-8", errors="replace")
-    return "\n".join(
-        line[1:]
-        for line in text.splitlines()
-        if line.startswith("+") and not line.startswith("+++")
-    )
+def _reference_tree() -> Path:
+    """The pristine starter with judge/reference.patch applied (trusted, judge-owned)."""
+    scratch = Path(tempfile.mkdtemp(prefix="svg-reference-", dir=_scratch_root()))
+    tree = scratch / "reference"
+    shutil.copytree(PRISTINE, tree)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch.resolve())}
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)], cwd=tree,
+                   check=True, capture_output=True, timeout=120, env=env)
+    return tree
 
 
-def _task_policy_error(patch_path: str | Path) -> str | None:
-    added = _added_source(patch_path)
-    for pattern in FORBIDDEN_ADDED_PATTERNS:
-        match = pattern.search(added)
-        if match:
-            return f"submitted source uses forbidden harness-access token: {match.group(0)[:40]}"
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: no harness-access tokens in added source, and the public
+    callables still exist. The judge's exact reference is exempt from the token screen (its
+    upstream code keeps a logging `open`); a submission that is not byte-identical to it is not."""
+    tree = Path(tree)
+    reference = _reference_tree()
+    try:
+        is_reference = all(
+            (tree / c.path).read_bytes() == (reference / c.path).read_bytes()
+            if c.status != "D" else not (reference / c.path).exists()
+            for c in changes)
+    finally:
+        shutil.rmtree(reference.parent, ignore_errors=True)
+    if not is_reference:
+        hits = [c.path for c in changes
+                if any(p.search("\n".join(c.added)) for p in FORBIDDEN_ADDED_PATTERNS)]
+        if hits:
+            return "content_policy", hits
+    try:
+        _check_public_contract(tree)
+    except (RuntimeError, SyntaxError, OSError):
+        return "content_policy", [c.path for c in changes if c.status != "D"]
     return None
 
 
@@ -577,19 +541,23 @@ def _build_extension(root: Path) -> None:
         raise RuntimeError("CUDA extension build failed")
 
 
+# The shim's own environment names: the instance's tree and output directory (isolate
+# placeholders, expanded by the launcher). The shim removes them before the program starts.
+SHIM_WORK_ENV = "SVG_SHIM_WORK"
+SHIM_OUT_ENV = "SVG_SHIM_OUT"
+GENERATION_OUTPUTS = ("video.mp4", "timing.json", "phases.json")
+
+
 def _runner_source(
-    target: Path,
     model_path: Path,
-    output_path: Path,
-    timing_path: Path,
-    logging_path: Path,
     seed: int,
     prompt: str,
     pattern: str,
     spec: ModelSpec = MODELS["wan"],
 ) -> str:
-    # Values are literals in a private, per-run shim.  Candidate code sees only
-    # the normal upstream argv, while the timer path remains in this closure.
+    # Values are literals in a per-run shim inside the generation's isolate instance (the tree and
+    # output directory come from its environment). Candidate code sees only the normal
+    # upstream argv, while the timer path remains in this closure.
     return f'''#!/usr/bin/env python3
 import json
 import os
@@ -597,7 +565,9 @@ import random
 import runpy
 import sys
 import time
-PHASE_PATH = {str(timing_path.with_name("phases.json"))!r}
+WORK = os.environ.pop({SHIM_WORK_ENV!r})
+OUT = os.environ.pop({SHIM_OUT_ENV!r})
+PHASE_PATH = os.path.join(OUT, "phases.json")
 _operator_phase_origin = time.monotonic()
 _operator_phases = []
 def _operator_phase(stage):
@@ -618,12 +588,12 @@ import torch
 from diffusers import {spec.pipeline_class} as TimedPipeline
 _operator_phase("imports_complete")
 
-TARGET = {str(target)!r}
 PROGRAM = {spec.program!r}
+TARGET = os.path.join(WORK, PROGRAM)
 MODEL = {str(model_path)!r}
-OUTPUT = {str(output_path)!r}
-TIMING = {str(timing_path)!r}
-LOGGING = {str(logging_path)!r}
+OUTPUT = os.path.join(OUT, "video.mp4")
+TIMING = os.path.join(OUT, "timing.json")
+LOGGING = os.path.join(os.environ["TMPDIR"], "attention.jsonl")
 SEED = {int(seed)!r}
 PROMPT = {prompt!r}
 PATTERN = {pattern!r}
@@ -711,26 +681,44 @@ _operator_phase("entrypoint_complete")
 '''
 
 
+def _generation_env() -> dict[str, str]:
+    """The generation's environment inside its isolate instance: the image's runtime variables
+    only (the launcher adds PATH, HOME, TMPDIR, LANG, CUDA_VISIBLE_DEVICES; no FRONTIER_*)."""
+    env = {name: os.environ[name] for name in GENERATION_ENV_PASSTHROUGH if name in os.environ}
+    env.update({
+        # The shim first: the retained entrypoint's `python` is the judge's timed runner.
+        # (In env, not the launcher's `path`, so the {in} placeholder is expanded.)
+        "PATH": "{in}/bin:" + os.environ.get("PATH", isolate.DEFAULT_PATH),
+        "PYTHONPATH": "{work}",
+        # Each generation compiles independently into its own private cache.
+        "TRITON_CACHE_DIR": "{tmp}/triton-cache",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        SHIM_WORK_ENV: "{work}",
+        SHIM_OUT_ENV: "{out}",
+    })
+    return env
+
+
 def _run_generation(
     root: Path, workload: Workload, pattern: str, keep_video: Path | None = None
 ) -> tuple[float, Any]:
-    """Run one fresh generation process; optionally retain its MP4 for authoring."""
+    """Run one fresh generation in its own isolate instance; optionally retain its MP4 for authoring.
+
+    The instance gets a private copy of `root`, the shim, one GPU and the offline models;
+    the judge, the targets, the scratch and every other run are unreadable to it. Its video,
+    the shim's timing and phase marks come back as declared outputs."""
+    global _LAST_GENERATION_DIAGNOSTIC
     spec = workload.spec
+    model_path = _model_path(spec.name)
     run_dir = Path(tempfile.mkdtemp(prefix=f"{spec.name}-{pattern.lower()}-", dir=_scratch_root()))
     try:
-        output_path = run_dir / "video.mp4"
-        timing_path = run_dir / "timing.json"
-        logging_path = run_dir / "attention.jsonl"
         shim_dir = run_dir / "bin"
         shim_dir.mkdir()
         shim = shim_dir / "python"
         shim.write_text(
             _runner_source(
-                root / spec.program,
-                _model_path(spec.name),
-                output_path,
-                timing_path,
-                logging_path,
+                model_path,
                 workload.seed,
                 (root / f"examples/{workload.prompt_id}/prompt.txt").read_text(
                     encoding="utf-8"),
@@ -740,27 +728,44 @@ def _run_generation(
             encoding="utf-8",
         )
         shim.chmod(0o755)
-        env = os.environ.copy()
-        env["PATH"] = str(shim_dir) + os.pathsep + env.get("PATH", "")
-        env["PYTHONPATH"] = str(root)
-        # Each GPU worker compiles independently; sharing Triton's writable cache
-        # across four processes can corrupt a first-run artifact.
-        env["TRITON_CACHE_DIR"] = str(run_dir / "triton-cache")
-        env["HF_HUB_OFFLINE"] = "1"
-        env["TRANSFORMERS_OFFLINE"] = "1"
-        env["FRONTIER_GENERATION_PHASE_PATH"] = str(run_dir / "phases.json")
-        proc = _run_generation_process(
-            ["bash", str(spec.entrypoint)],
-            cwd=root,
-            env=env,
-            timeout=GENERATION_TIMEOUT_SECONDS,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(_generation_failure_message(proc))
-        payload = json.loads(timing_path.read_text(encoding="utf-8"))
-        latency = float(payload["seconds"])
+        try:
+            result = isolate.run(
+                ["bash", str(spec.entrypoint)],
+                timeout_seconds=GENERATION_TIMEOUT_SECONDS,
+                tree=root,
+                inputs={"bin": shim_dir},
+                outputs=GENERATION_OUTPUTS,
+                read_paths=[str(model_path.parent)],
+                env=_generation_env(),
+                devices=["nvidia"],
+                dev_shm=True,
+                output_bytes=GENERATION_OUTPUT_BYTES,
+                disk_bytes=GENERATION_DISK_BYTES,
+            )
+        except isolate.IsolateError as error:
+            raise SandboxUnavailable(str(error)) from error
+        _LAST_GENERATION_DIAGNOSTIC = _generation_diagnostic(
+            result.outputs.get("phases.json"), result.command_seconds, result.stderr,
+            result.limit != "output")
+        if result.timed_out:
+            expired = subprocess.TimeoutExpired(
+                ["bash", str(spec.entrypoint)], GENERATION_TIMEOUT_SECONDS,
+                stderr=result.stderr[-1024:])
+            expired.operator_generation = _LAST_GENERATION_DIAGNOSTIC
+            raise expired
+        if not result.ok:
+            raise RuntimeError(_generation_failure_message(result))
+        try:
+            latency = float(json.loads(result.outputs.get("timing.json") or b"")["seconds"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RuntimeError("video generation produced invalid timing") from exc
         if not math.isfinite(latency) or latency <= 0:
             raise RuntimeError("video generation produced invalid timing")
+        video = result.outputs.get("video.mp4")
+        if not video:
+            raise RuntimeError("video generation produced no video")
+        output_path = run_dir / "video.mp4"
+        output_path.write_bytes(video)
         frames = _load_video(output_path)
         if keep_video is not None:
             shutil.copyfile(output_path, keep_video)
@@ -871,8 +876,11 @@ def _evaluate_paired(candidate_root: Path, workload: Workload) -> tuple[dict[str
     reference_latency, reference_frames = _operator_stage("reference_target", _cached_target, workload, "reference")
     # The timed model runs in a fresh child before LPIPS creates a CUDA context
     # or occupies memory on that GPU. Target creation uses the same ordering.
-    candidate_latency, candidate_frames = _operator_stage("candidate_generation", _run_generation, candidate_root, workload, "EAR")
-    candidate = _operator_stage("candidate_metrics", _fidelity, candidate_frames, dense_frames)
+    try:
+        candidate_latency, candidate_frames = _operator_stage("candidate_generation", _run_generation, candidate_root, workload, "EAR")
+        candidate = _operator_stage("candidate_metrics", _fidelity, candidate_frames, dense_frames)
+    except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
+        raise CandidateStageFailure(str(error)) from error
     candidate["e2e_latency_seconds"] = candidate_latency
     candidate["_operator_generation"] = _LAST_GENERATION_DIAGNOSTIC
     reference = _operator_stage("reference_metrics", _fidelity, reference_frames, dense_frames)
@@ -904,13 +912,20 @@ def _worker_result(candidate_root: Path, workload: Workload, gpu_index: int) -> 
         stderr=subprocess.PIPE,
         timeout=WORKER_TIMEOUT_SECONDS,
     )
+    if proc.returncode == SANDBOX_UNAVAILABLE_EXIT:
+        raise SandboxUnavailable(f"generation isolate launcher unavailable for {workload.workload_id}: "
+                                 + proc.stderr[-MAX_OPERATOR_DIAGNOSTIC_BYTES:].decode("utf-8", "replace"))
+    if proc.returncode == CANDIDATE_FAILED_EXIT:
+        raise WorkloadWorkerFailure(workload.workload_id, proc)
     if (
         proc.returncode != 0
         or not proc.stdout
         or len(proc.stdout) > MAX_WORKER_OUTPUT_BYTES
         or len(proc.stderr) > MAX_WORKER_OUTPUT_BYTES
     ):
-        raise WorkloadWorkerFailure(workload.workload_id, proc)
+        raise WorkerFault(
+            f"GPU worker for {workload.workload_id} exited {proc.returncode}: "
+            + proc.stderr[-MAX_OPERATOR_DIAGNOSTIC_BYTES:].decode("utf-8", "replace"))
     try:
         # LPIPS reports its fixed weight initialization on stdout. The worker's
         # bounded final line is the machine-readable record.
@@ -1051,25 +1066,16 @@ def prepare() -> dict[str, Any]:
     }
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    applied = None
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
     final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
     workloads = _workloads(final)
     # Without every prepared target there is no valid verdict for any
     # submission. Raise instead of returning a scored zero.
     _require_suite_targets(workloads)
     try:
-        # The judge-only exact upstream patch contains its original logging
-        # `open`; solver submissions do not receive that patch or this exemption.
-        is_reference = Path(solution_path).read_bytes() == REFERENCE_PATCH.read_bytes()
-        policy_error = None if is_reference else _task_policy_error(solution_path)
-        if policy_error:
-            return 0.0, 0.0, policy_error, _empty_metrics()
-        applied = _apply_patch(solution_path)
-        if not applied.ok or applied.workdir is None:
-            return 0.0, 0.0, applied.message or "submission patch was rejected", _empty_metrics()
-        root = Path(applied.workdir)
-        _check_public_contract(root)
+        # The shared verifier has applied the patch and run check_tree (token screen and
+        # public callables); `tree` is the starter with only the allowed files overlaid.
+        root = Path(tree)
         results = _evaluate_suite(root, workloads)
 
         candidate_scores = [
@@ -1097,7 +1103,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             f"{wave_count} four-GPU wave(s): {candidate_score:.2f}/100.",
             metrics,
         )
-    except SuiteTargetsUnavailable:
+    except (SuiteTargetsUnavailable, SandboxUnavailable, WorkerFault):
         raise
     except WorkloadWorkerFailure as exc:
         # The public result remains generic. The trusted adapter removes this
@@ -1112,8 +1118,6 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
     except Exception:
         return 0.0, 0.0, "evaluation failed", _empty_metrics()
     finally:
-        if applied is not None and applied.workdir is not None:
-            shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
         gc.collect()
 
 
@@ -1141,7 +1145,14 @@ def _workload_worker_main() -> int:
 
 def _main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] == "--workload-worker":
-        return _workload_worker_main()
+        try:
+            return _workload_worker_main()
+        except SandboxUnavailable as error:
+            print(f"isolate launcher unavailable: {error}", file=sys.stderr)
+            return SANDBOX_UNAVAILABLE_EXIT
+        except CandidateStageFailure:
+            traceback.print_exc()
+            return CANDIDATE_FAILED_EXIT
     path = sys.argv[1] if len(sys.argv) > 1 else str(REFERENCE_PATCH)
     score, unbounded, message, metrics = evaluate(path)
     print(json.dumps({"score": score, "score_unbounded": unbounded, "message": message, "metrics": metrics}, sort_keys=True))

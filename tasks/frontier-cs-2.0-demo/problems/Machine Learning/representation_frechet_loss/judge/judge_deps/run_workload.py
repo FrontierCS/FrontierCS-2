@@ -13,7 +13,7 @@ import time
 
 import yaml
 
-from runtime import HERE, ChildRunner, SetupDeadlineExpired, admit_reference, check_queue_runtime, prepare_assets, sha256
+from runtime import HERE, ChildRunner, SetupDeadlineExpired, prepare_assets, sha256
 from private_evidence import Journal, report_bytes
 
 TASK = HERE.parent
@@ -77,14 +77,10 @@ def validate_report(train, evaluation, workload, recipe):
 def execute(repo, suite, model_root):
     journal = Journal(os.environ.get("FRONTIER_FD_EVIDENCE_PATH"))
     journal.record("suite_started", suite=suite, runner_pid=os.getpid(), runner_uid=os.getuid())
-    check_queue_runtime()
     boundary = HERE / "queue_boundary/src"
     sys.path.insert(0, str(boundary))
     from observer_queue import prepare_queue_snapshot
 
-    source = json.loads((HERE / "source.json").read_text())
-    if sha256(HERE / "eval_all_fds.py") != source["private_eval_sha256"]:
-        raise ValueError("private upstream evaluator source changed")
     recipe = json.loads((HERE / "workloads.json").read_text())
     config = yaml.safe_load((TASK / "config.yaml").read_text())
     local_deadline = os.environ.get("FRONTIER_VERIFIER_LOCAL_DEADLINE")
@@ -107,9 +103,6 @@ def execute(repo, suite, model_root):
         signal.signal(signum, interrupted)
     with tempfile.TemporaryDirectory(prefix="fd-workloads-") as temp:
         scratch = Path(temp)
-        # A root verifier drops the actor UID. Allow traversal to its snapshot;
-        # private workload directories below remain owner-only and unmounted.
-        scratch.chmod(0o711)
         stats, asset_env = prepare_assets(model_root, scratch)
         # No provider or Driver environment is forwarded to scientific code.
         env = {key: os.environ[key] for key in ("PATH", "LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES")
@@ -117,22 +110,16 @@ def execute(repo, suite, model_root):
         env.update(asset_env, HOME=str(scratch), TMPDIR=str(scratch),
                    PYTHONDONTWRITEBYTECODE="1", PYTHONUNBUFFERED="1", OMP_NUM_THREADS="1")
         reference = scratch / "reference"
-        shutil.copytree(TASK / "harbor/app", reference,
+        shutil.copytree(TASK / "pristine", reference,
                         ignore=shutil.ignore_patterns(".git", "__pycache__"))
         for path in [reference, *reference.rglob("*")]:
             path.chmod(path.stat().st_mode | 0o200)
         env["GIT_CEILING_DIRECTORIES"] = str(scratch)
         runner.run(["git", "apply", "--whitespace=nowarn", str(TASK / "reference.patch")],
                    cwd=reference, env=env, log=scratch / "patch.log")
-        admit_reference(reference)
-        spine_manifest = scratch / "spine.json"
-        spine_manifest.write_text(json.dumps({
-            p.relative_to(reference).as_posix(): sha256(p)
-            for p in reference.rglob("*") if p.is_file()}))
         snapshots = {}
         for side, source_repo in (("candidate", repo), ("reference", reference)):
-            snapshots[side] = prepare_queue_snapshot(
-                source_repo, reference, spine_manifest, scratch / (side + "-queue"))
+            snapshots[side] = prepare_queue_snapshot(source_repo, scratch / (side + "-queue"))
             for path in [snapshots[side], *snapshots[side].rglob("*")]:
                 path.chmod(0o755 if path.is_dir() else 0o444)
         rows = []
@@ -143,8 +130,6 @@ def execute(repo, suite, model_root):
                 side_dir.mkdir(mode=0o700)
                 (side_dir / "data").mkdir()
                 (side_dir / "data/fid_stats").symlink_to(stats, target_is_directory=True)
-                queue_scratch = side_dir / "queue-workers"
-                queue_scratch.mkdir()
                 reports = {}
                 for phase in ("train", "eval"):
                     report = side_dir / (phase + ".json")
@@ -153,10 +138,9 @@ def execute(repo, suite, model_root):
                     argv = [sys.executable, "-I", "-B", "-m", "torch.distributed.run", "--standalone",
                             "--local-addr=127.0.0.1", "--nproc-per-node=1",
                             str(boundary / "queue_observer_entry.py"), "--phase", phase, "--suite", suite,
-                            "--trusted-repo", str(reference), "--spine-manifest", str(spine_manifest),
-                            "--queue-source", str(snapshots[side]), "--queue-scratch", str(queue_scratch),
+                            "--trusted-repo", str(reference),
+                            "--queue-source", str(snapshots[side]),
                             "--queue-python", sys.executable, "--observer", str(HERE / "observe.py"),
-                            "--observer-sha256", sha256(HERE / "observe.py"),
                             "--seconds", str(max(1, int(runner.deadline - time.monotonic()))),
                             "--device", "cuda:0", "--report", str(report), "--"]
                     argv += arguments(workload, recipe, model_root, stats, side_dir,

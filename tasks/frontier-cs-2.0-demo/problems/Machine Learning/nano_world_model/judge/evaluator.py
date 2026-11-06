@@ -1,43 +1,72 @@
-"""GPU evaluator for action-conditioned Point Maze future-video sampling."""
+"""Judge of nano_world_model: action-conditioned Point Maze future-video sampling (#757).
+
+Runs on the CPU control image (design/sandboxes.md, class 1: output-scored with a deadline). The
+shared verifier applies the patch with the task's edit-scope rules, runs check_tree (the sampler
+source policy) and calls evaluate(tree): the starter with only the allowed files overlaid.
+
+1. The candidate's machine, a [test_sandboxes.candidate] runner of the Agent GPU image, receives
+   only the submitted tree, the runner side of this judge (native_run.py, judge_runtime/
+   sitecustomize.py) and the suite's public data (public_inputs.py: actions, and per clip only
+   the context frame; no scored frame, no state). It runs the device check and checkpoint
+   conversion, then the tree's own src/main.py over all clips in one step of 4950 s, which
+   counts from the runner's readiness (the control side enforces it); each dfot_sample result
+   (the latent video of one clip) comes back.
+2. A [test_sandboxes.trusted] runner of the Verifier GPU image (this judge baked in) runs the
+   reference (judge/reference.patch) natively on the real judge data and decodes the candidate's
+   latents through the same native pipeline (dfot_sample returns them in call order); both are
+   measured there against the ground truth.
+
+Scoring. Each suite clip (4 development, 6 final) is sampled once by the candidate and by the
+trusted reference in the same verification. Per clip: PSNR, SSIM and LPIPS (VGG) over the three
+future frames; the means P, S, L over all clips against the reference's P*, S*, L*:
+  g_P = (P - P*)/2.5, g_S = log2((1-S*)/(1-S))/0.3, g_L = log2(L*/L)/0.4,
+  G = clamp((min g + 0.06)/0.05, 0, 1), t = tanh(g),
+  score_unbounded = 50 + 50/3 * (sum of G*t over positive t + sum of t over negative t);
+  raw_score = clamp(score_unbounded, 0, 100). The reference scores 50.
+Metrics (per clip, beat_spec_workload_passes):
+  psnr   mean PSNR (dB) of the future frames, higher is better; passes if > reference.
+  ssim   mean SSIM, higher is better; passes if > reference.
+  lpips  mean LPIPS, lower is better; passes if < reference.
+beats_reference = 1 iff every clip passes all three (no ties). A candidate whose sampling fails
+(a crash, the deadline, a lost session or an output-cap overrun on its own machine, or a missing
+or malformed latent) scores 0 and fails every clip once the reference run succeeded; a failure of
+the device check, of the trusted runner or of the reference raises (an unscored verification).
+"""
 
 from __future__ import annotations
 
-import json
 import ast
+import json
 import math
 import os
-import statistics
 import shutil
-import subprocess
+import statistics
+import struct
 import sys
 import tempfile
-import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
-
-import yaml
 
 _EVALUATOR_DIR = Path(__file__).resolve().parent
 if str(_EVALUATOR_DIR) not in sys.path:
     sys.path.insert(0, str(_EVALUATOR_DIR))
 
-from submission_patch import apply_submission_patch
-from judge_runtime.execution_audit import validate as validate_execution_audit
+from fcs2_verifier_gpu import SandboxResult, SandboxRun, SandboxStep, run_sandboxes, sandbox_workdir
+from native_run import command, environment
 
 
 TASK_DIR = _EVALUATOR_DIR
-CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text(encoding="utf-8"))
-REFERENCE_PATCH = TASK_DIR / "reference.patch"
-MODEL_REVISION = "b84303b7151cbd1836841c3a87bf095e1015b150"
-VAE_REVISION = "31f26fdeee1355a5c34592e401dd41e45d25a493"
+PUBLIC_DATA = TASK_DIR / "public_data"  # judge/public_inputs.py, run by the image build
+# Both GPU images' interpreter; the trusted runner's judge is baked at /opt/frontier/task.
+PYTHON = "/opt/frontier/runtime-python"
+TRUSTED_NATIVE_RUN = "/opt/frontier/task/native_run.py"
 # Beat spec v3: the clip count comes from each suite manifest (dev 4, final 6).
-# Every clip enters both the strict per-clip comparison and the continuous score
-# (the manifests' strict_only flag is historical and no longer used).
-# Release refresh 2026-10-11: 825 s per graded clip as before (1650 s covered two clips).
+# Release refresh 2026-10-11: 825 s per graded clip (4950 s for all clips of a suite).
 RUN_TIMEOUT_SECONDS = 4950
-# The immutable entrypoint declared by ARTIFACT_PLAN.json/artifact_manifest.json.
-AUTHENTIC_ENTRYPOINT = "src/main.py"
-_REFERENCE_CACHE: dict[str, list[dict[str, float]]] = {}
+PREPARE_SECONDS = 300      # device check and checkpoint conversion, before submitted code runs
+SAMPLE_SHAPE = (1, 4, 4, 32, 32)
+_NPY_HEADER = {"descr": "<f4", "fortran_order": False, "shape": SAMPLE_SHAPE}
+_NPY_MAGIC = b"\x93NUMPY\x01\x00"
 
 # Continuous score: reference-relative, 50 for the trusted reference measured
 # in the same verification, bounded to (0, 100).  Each metric is first averaged
@@ -52,19 +81,12 @@ _ERROR_FLOOR = 1e-6        # keeps the log ratios finite for perfect predictions
 
 
 class CandidateExecutionError(Exception):
-    """A candidate failed after the trusted reference completed successfully."""
+    """The candidate's returned results are not valid workload metrics."""
 
 
-def _private_process_tail(stdout: str | bytes | None, stderr: str | bytes | None) -> None:
-    parts = [part.decode("utf-8", errors="replace") if isinstance(part, bytes)
-             else (part or "") for part in (stdout, stderr)]
-    tail = "\n".join(parts).encode("utf-8", errors="replace")[-8192:]
-    print("nanowm private subprocess tail:\n" + tail.decode("utf-8", errors="ignore"),
-          file=sys.stderr, flush=True)
+class InfrastructureError(RuntimeError):
+    """The fixed evaluation environment, the trusted runner or the reference could not run."""
 
-
-def _apply(path: str):
-    return apply_submission_patch(path, TASK_DIR, CONFIG)
 
 def _policy_check(repo: Path) -> None:
     forbidden_text = (
@@ -94,12 +116,6 @@ def _policy_check(repo: Path) -> None:
     if extra.exists():
         paths.extend(p for p in extra.rglob("*") if p.is_file())
     for path in paths:
-        if path.is_symlink():
-            raise ValueError("solver source must not be a symbolic link")
-        if not path.is_file():
-            raise ValueError(f"required sampler source is missing: {path.name}")
-        if path.suffix not in (".py", ".pyi"):
-            raise ValueError("solver extensions must be Python source")
         module_parts = path.relative_to(repo / "src").with_suffix("").parts
         if not all(part.isidentifier() for part in module_parts):
             raise ValueError("solver source paths must use valid Python module names")
@@ -147,155 +163,103 @@ def _suite_name() -> str:
     return "final" if os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final" else "dev"
 
 
-def _checkpoint_path() -> Path:
-    cache_root = Path(os.environ.get("FRONTIER_EVAL_CACHE", "/workspace/.nanowm-eval-cache"))
-    cache_root.mkdir(parents=True, exist_ok=True)
-    converted = cache_root / "point-maze-30k.pt"
-    if converted.exists():
-        return converted
-    model_root = Path(os.environ.get("FRONTIER_MODEL_ROOT", "/opt/frontier/models"))
-    source = model_root / "point-maze" / "model.safetensors"
-    if not source.is_file():
-        raise FileNotFoundError("pinned Point Maze checkpoint is unavailable")
-    from safetensors.torch import load_file
-    import torch
-
-    state = load_file(str(source), device="cpu")
-    torch.save(state, converted)
-    return converted
+def _log(result: SandboxResult, step: int) -> None:
+    if result.logs[step]:
+        print(result.logs[step].decode("utf-8", errors="replace"), file=sys.stderr)
 
 
-def _run_entrypoint(repo: Path, suite: str, *, isolated: bool = False) -> list[dict[str, float]]:
-    if not __import__("torch").cuda.is_available():
-        raise RuntimeError("an NVIDIA GPU is required")
-    model_root = Path(os.environ.get("FRONTIER_MODEL_ROOT", "/opt/frontier/models"))
-    vae = model_root / "sd-vae"
-    if not (vae / "config.json").is_file():
-        raise FileNotFoundError("pinned SD-VAE is unavailable")
-    subset = TASK_DIR / "judge_data" / f"{suite}_subset.json"
-    data_root = TASK_DIR / "judge_data"
-    checkpoint = _checkpoint_path()
-    run_root = Path(tempfile.mkdtemp(prefix=f"nanowm-{suite}-"))
-    command = [
-        sys.executable, str(repo / AUTHENTIC_ENTRYPOINT),
-        "experiment=evaluate_only",
-        "dataset=dino_wm/point_maze",
-        "model=nanowm_b2",
-        f"experiment.resume_from_checkpoint={checkpoint}",
-        f"dataset.loader.validation_fixed_subset_path={subset}",
-        "experiment.evaluation.batch_size=1",
-        "experiment.evaluation.save_videos=true",
-        "experiment.infra.num_workers=0",
-        "experiment.infra.compile=false",
-        "experiment.infra.mixed_precision=false",
-        "wandb.enabled=false",
-        "logger.name=none",
-        f"hydra.run.dir={run_root}",
-    ]
-    env = os.environ.copy()
-    # Do not inherit bridge settings from an enclosing evaluation process.
-    for name in list(env):
-        if name.startswith("NANOWM_"):
-            del env[name]
-    env.update({
-        "DATASET_DIR": str(data_root),
-        "VAE_MODEL_PATH": str(vae),
-        "RESULTS_DIR": str(run_root),
-        "PYTHONPATH": os.pathsep.join((
-            str(TASK_DIR / "judge_runtime"), str(repo / "frontier_runtime"), str(repo / "src")
-        )),
-        "HF_HUB_OFFLINE": "1",
-        "TRANSFORMERS_OFFLINE": "1",
-        "PYTHONHASHSEED": "3407",
-        "PYTHONDONTWRITEBYTECODE": "1",
-    })
-    trusted = None
-    bridge_audit = run_root / "bridge-audit.jsonl"
+def _writable(directory: Path) -> None:
+    for path in (directory, *directory.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+
+
+def _candidate_run(tree: Path, suite: str, files: Path) -> SandboxRun:
+    """The candidate's machine: files/tree (the submitted tree), files/data (the suite's public
+    data), files/runtime (native_run.py, sitecustomize.py); the device check and checkpoint
+    conversion, then the tree's src/main.py with each dfot_sample result saved to out/latents."""
+    root = PurePosixPath(sandbox_workdir("candidate"))
+    shutil.copytree(tree, files / "tree", symlinks=True)
+    shutil.copytree(PUBLIC_DATA / suite, files / "data")
+    (files / "runtime").mkdir()
+    shutil.copy2(TASK_DIR / "native_run.py", files / "runtime" / "native_run.py")
+    shutil.copy2(TASK_DIR / "judge_runtime" / "sitecustomize.py", files / "runtime" / "sitecustomize.py")
+    (files / "out" / "latents").mkdir(parents=True)
+    _writable(files)
+    repo, checkpoint = root / "tree", root / "cache" / "point-maze-30k.pt"
+    sample = command(PYTHON, str(repo), str(root / "data" / "subset.json"), str(checkpoint),
+                     str(root / "run"))
+    return SandboxRun("candidate", files, [
+        SandboxStep([PYTHON, str(root / "runtime" / "native_run.py"), "prepare", str(checkpoint)],
+                    PREPARE_SECONDS),
+        SandboxStep(["/bin/sh", "-c", f'cd {repo} && exec "$0" "$@"', *sample], RUN_TIMEOUT_SECONDS,
+                    {**environment(str(root / "runtime"), str(repo), str(root / "data"),
+                                   str(root / "run")),
+                     "NANOWM_LATENTS_RECORD": str(root / "out" / "latents")}),
+    ], ["out/latents"])
+
+
+def _latent(path: Path) -> bool:
+    """A float32 C-order .npy of SAMPLE_SHAPE with finite values (read without numpy)."""
+    if not path.is_file():
+        return False
+    raw = path.read_bytes()
+    if raw[:8] != _NPY_MAGIC or len(raw) < 10:
+        return False
+    size = int.from_bytes(raw[8:10], "little")
     try:
-        if isolated:
-            trusted = _apply(str(REFERENCE_PATCH))
-            if not trusted.ok:
-                raise RuntimeError("trusted native caller could not be restored")
-            command[1] = str(Path(trusted.workdir) / AUTHENTIC_ENTRYPOINT)
-            env["PYTHONPATH"] = os.pathsep.join((
-                str(TASK_DIR / "judge_runtime"),
-                str(Path(trusted.workdir) / "frontier_runtime"),
-                str(Path(trusted.workdir) / "src")
-            ))
-            env.update({"NANOWM_CANDIDATE_REPO": str(repo),
-                        "NANOWM_PUBLIC_REPO": str(TASK_DIR / "harbor/app"),
-                        "NANOWM_BRIDGE_AUDIT": str(bridge_audit),
-                        "NANOWM_CALLER_DEADLINE": str(time.monotonic() + RUN_TIMEOUT_SECONDS - 10),
-                        "FRONTIER_MODEL_ROOT": str(model_root)})
-        execution_audit = run_root / "native-execution.json"
-        env["NANOWM_ENTRYPOINT"] = command[1]
-        env["NANOWM_EXECUTION_AUDIT"] = str(execution_audit)
-        try:
-            completed = subprocess.run(
-                command, cwd=Path(trusted.workdir) if trusted else repo,
-                env=env, capture_output=True, text=True,
-                timeout=RUN_TIMEOUT_SECONDS,
-            )
-        except subprocess.TimeoutExpired as exc:
-            _private_process_tail(exc.stdout, exc.stderr)
-            if isolated:
-                raise RuntimeError("trusted isolated native caller exceeded its time limit") from exc
-            raise CandidateExecutionError("candidate evaluation exceeded its time limit") from exc
-        events = []
-        if isolated and bridge_audit.exists():
-            events = [json.loads(line) for line in bridge_audit.read_text().splitlines()]
-        if any(event["event"] == "infrastructure_failure" for event in events):
-            _private_process_tail(completed.stdout, completed.stderr)
-            raise RuntimeError("isolated candidate runtime is unavailable")
-        if isolated and not any(event["event"] == "installed" for event in events):
-            _private_process_tail(completed.stdout, completed.stderr)
-            raise RuntimeError("trusted sampling isolation hook did not install")
-        if completed.returncode != 0:
-            _private_process_tail(completed.stdout, completed.stderr)
-            if isolated and not any(event["event"] == "candidate_failure" for event in events):
-                raise RuntimeError("trusted native caller or writer failed")
-            raise CandidateExecutionError("candidate evaluation subprocess failed")
-        if isolated and sum(event["event"] == "call_complete" for event in events) != _expected_workloads(suite):
-            raise RuntimeError("trusted native caller did not complete isolated sampling")
-        # Saved arrays alone are insufficient: require the retained entrypoint,
-        # native data loader, checkpoint load, VAE and sampling integration.
-        validate_execution_audit(execution_audit, isolated=isolated)
-        rows = _measure_saved_predictions(run_root, subset)
-        if len(rows) != _expected_workloads(suite):
-            raise CandidateExecutionError("candidate did not produce every expected clip")
-        return rows
-    finally:
-        shutil.rmtree(run_root, ignore_errors=True)
-        if trusted is not None and getattr(trusted, "workdir", None):
-            shutil.rmtree(Path(trusted.workdir).parent, ignore_errors=True)
+        fields = ast.literal_eval(raw[10:10 + size].decode("latin-1"))
+    except (ValueError, SyntaxError):
+        return False
+    data = raw[10 + size:]
+    return (fields == _NPY_HEADER and len(data) == math.prod(SAMPLE_SHAPE) * 4
+            and all(math.isfinite(value) for (value,) in struct.iter_unpack("<f", data)))
 
 
-def _measure_saved_predictions(run_root: Path, subset_path: Path) -> list[dict[str, float]]:
-    import lpips
-    import piqa
-    import torch
-    import numpy as np
+def _candidate_latents(result: SandboxResult, suite: str, destination: Path) -> str | None:
+    """Copy the candidate's latents, one per clip, to `destination`; or the reason its sampling
+    failed (a scored zero once the reference run succeeds)."""
+    prepare = result.steps[0]
+    if prepare.lost_session or prepare.timed_out or prepare.exit_code != 0:
+        # Before any submitted code ran: the fixed environment.
+        _log(result, 0)
+        raise InfrastructureError("the candidate machine's device check or checkpoint conversion failed")
+    step = result.steps[1]
+    if step.lost_session:
+        # Owner 2026-11-05: a lost session on the candidate's own machine is its scored zero.
+        return "candidate evaluation lost its session"
+    if result.outputs_exceeded:
+        return "candidate evaluation returned more than the output cap"
+    if step.timed_out:
+        return f"candidate evaluation exceeded its {RUN_TIMEOUT_SECONDS}-second deadline"
+    if step.exit_code != 0:
+        _log(result, 1)
+        return "candidate evaluation failed"
+    returned = result.outputs / "out" / "latents"
+    names = [f"{index:04d}.npy" for index in range(_expected_workloads(suite))]
+    if (not returned.is_dir() or sorted(p.name for p in returned.iterdir()) != names
+            or not all(_latent(returned / name) for name in names)):
+        return "candidate did not return a valid latent video for every clip"
+    shutil.copytree(returned, destination)
+    return None
 
-    device = torch.device("cuda")
-    psnr_metric = piqa.PSNR(epsilon=1e-8, value_range=1.0, reduction="none").to(device).eval()
-    ssim_metric = piqa.SSIM(window_size=11, sigma=1.5, n_channels=3, reduction="none").to(device).eval()
-    lpips_metric = lpips.LPIPS(net="vgg").to(device).eval()
-    specs = json.loads(subset_path.read_text(encoding="utf-8"))["slices"]
-    rows: list[dict[str, float]] = []
-    for spec in specs:
-        tag = f"traj_{spec['traj_idx']:04d}_start_{spec['start_frame']:04d}"
-        matches = list(run_root.rglob(f"{tag}/raw_data.npz"))
-        if len(matches) != 1:
-            raise CandidateExecutionError("candidate prediction output is incomplete")
-        with np.load(matches[0]) as payload:
-            pred = torch.from_numpy(payload["pred"][:, 1:]).permute(1, 0, 2, 3).to(device)
-            gt = torch.from_numpy(payload["gt"][:, 1:]).permute(1, 0, 2, 3).to(device)
-        with torch.no_grad():
-            psnr = psnr_metric(pred, gt).mean().item()
-            ssim = ssim_metric(pred, gt).mean().item()
-            lpips_value = lpips_metric(pred * 2 - 1, gt * 2 - 1).mean().item()
-        rows.append({"psnr": psnr, "ssim": ssim, "lpips": lpips_value})
-    return rows
+
+def _trusted_rows(suite: str, files: Path, scratch: Path, with_candidate: bool) -> dict:
+    """The reference's rows and, `with_candidate`, the candidate's (decoded from files/latents),
+    from the trusted runner."""
+    root = PurePosixPath(sandbox_workdir("trusted"))
+    argv = [PYTHON, TRUSTED_NATIVE_RUN, "score", suite, str(root / "scores.json")]
+    if with_candidate:
+        argv.append(str(root / "latents"))
+    outputs = scratch / "trusted-outputs"
+    outputs.mkdir()
+    (result,) = run_sandboxes([SandboxRun("trusted", files, [SandboxStep(argv, None)],
+                                          ["scores.json"])], into=outputs)
+    step = result.steps[0]
+    if step.lost_session or step.timed_out or step.exit_code != 0 or result.outputs is None:
+        _log(result, 0)
+        raise InfrastructureError("the trusted reference and decode run failed")
+    return json.loads((result.outputs / "scores.json").read_text(encoding="utf-8"))
 
 
 def _suite_means(rows: list[dict[str, float]]) -> dict[str, float]:
@@ -323,24 +287,6 @@ def continuous_score(candidate: list[dict[str, float]], reference: list[dict[str
     return REFERENCE_SCORE + (50.0 / 3.0) * sum(gate * t if t > 0 else t for t in terms)
 
 
-def _reference_rows(suite: str) -> list[dict[str, float]]:
-    if suite in _REFERENCE_CACHE:
-        return _REFERENCE_CACHE[suite]
-    result = _apply(str(REFERENCE_PATCH))
-    if not result.ok:
-        raise RuntimeError("hidden reference patch could not be applied")
-    try:
-        try:
-            rows = _run_entrypoint(Path(result.workdir), suite)
-            _validate_rows(rows, suite)
-        except Exception as exc:
-            raise RuntimeError("trusted reference evaluation failed") from exc
-        _REFERENCE_CACHE[suite] = rows
-        return rows
-    finally:
-        shutil.rmtree(Path(result.workdir).parent, ignore_errors=True)
-
-
 def _validate_rows(rows: list[dict[str, float]], suite: str) -> None:
     if len(rows) != _expected_workloads(suite):
         raise CandidateExecutionError("workload result count mismatch")
@@ -352,82 +298,96 @@ def _validate_rows(rows: list[dict[str, float]], suite: str) -> None:
             raise CandidateExecutionError("invalid or non-finite workload metrics")
 
 
-def prepare() -> dict[str, Any]:
-    suite = _suite_name()
-    _reference_rows(suite)
-    return {"ready": True, "suite": suite, "workloads": _expected_workloads(suite)}
+def _failed(suite: str, message: str) -> tuple[float, float, str, dict[str, Any]]:
+    """A candidate whose run failed after the trusted reference completed: a scored zero
+    that fails every workload of the suite (no measurements to report)."""
+    ids = [f"clip-{i + 1:02d}" for i in range(_expected_workloads(suite))]
+    return 0.0, 0.0, message, {
+        "beat_spec_workload_passes": [
+            {"workload": workload, "metrics": {"psnr": False, "ssim": False, "lpips": False}}
+            for workload in ids
+        ],
+        "beats_reference": 0,
+        "reference_score": REFERENCE_SCORE,
+        "margin": -REFERENCE_SCORE,
+    }
 
 
-def _rejected(message: str) -> tuple[float, float, str, dict[str, Any]]:
-    # A rejected candidate has no workload measurements to aggregate.
-    return 0.0, 0.0, message, {"candidate_rejection": True, "beats_reference": 0}
-
-
-def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
-    result = None
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: the sampler source policy (allowed imports, no data, runtime or
+    frame access) over the three sampler modules and every helper below
+    src/diffusion/frontier_solution/, which must be importable Python modules."""
+    root = Path(tree)
+    changed = [c.path for c in changes if c.status != "D"] or [c.path for c in changes]
+    extra = root / "src/diffusion/frontier_solution"
+    if extra.exists():
+        bad = [str(p.relative_to(root)) for p in extra.rglob("*") if p.is_file()
+               and not all(part.isidentifier()
+                           for part in p.relative_to(root / "src").with_suffix("").parts)]
+        if bad:
+            return "out_of_scope", bad
     try:
-        if not isinstance(solution_path, (str, os.PathLike)):
-            return _rejected("invalid submission path")
-        if "\x00" in os.fspath(solution_path):
-            return _rejected("invalid submission path")
-        suite = _suite_name()
-        if not (TASK_DIR / "harbor/app" / AUTHENTIC_ENTRYPOINT).is_file():
-            raise RuntimeError("trusted task substrate is unavailable")
-        result = _apply(solution_path)
-        if not result.ok:
-            if result.candidate_rejection is True:
-                return _rejected(result.message)
-            raise RuntimeError("submission preparation failed") from RuntimeError(result.message)
-        repo = Path(result.workdir)
-        try:
-            _policy_check(repo)
-        except ValueError as exc:
-            return _rejected(str(exc))
-        # Establish the trusted runtime before classifying candidate execution failures.
-        reference = _reference_rows(suite)
-        try:
-            candidate = _run_entrypoint(repo, suite, isolated=True)
-            _validate_rows(candidate, suite)
-        except CandidateExecutionError:
-            return _rejected("candidate evaluation failed")
-        candidate_score = continuous_score(candidate, reference)
-        ids = [f"clip-{i + 1:02d}" for i in range(_expected_workloads(suite))]
-        passes = []
-        for workload, cand, ref in zip(ids, candidate, reference):
-            passes.append({
-                "workload": workload,
-                "metrics": {
-                    "psnr": bool(cand["psnr"] > ref["psnr"]),
-                    "ssim": bool(cand["ssim"] > ref["ssim"]),
-                    "lpips": bool(cand["lpips"] < ref["lpips"]),
-                },
-            })
-        beats_reference = int(all(v for row in passes for v in row["metrics"].values()))
-        metrics: dict[str, Any] = {
-            "psnr": sum(row["psnr"] for row in candidate) / len(candidate),
-            "ssim": sum(row["ssim"] for row in candidate) / len(candidate),
-            "lpips": sum(row["lpips"] for row in candidate) / len(candidate),
-            "beat_spec_workload_passes": passes,
-            "beats_reference": beats_reference,
-            "reference_score": REFERENCE_SCORE,
-            "margin": candidate_score - REFERENCE_SCORE,
-            # Operator evidence only: not in beat_spec solver_feedback.
-            "per_workload_measurements": [
-                {"workload": workload, "candidate": dict(cand), "reference": dict(ref)}
-                for workload, cand, ref in zip(ids, candidate, reference)
-            ],
-        }
-        if not math.isfinite(candidate_score):
-            raise RuntimeError("non-finite quality score")
-        score = min(100.0, max(0.0, candidate_score))
-        return score, candidate_score, f"evaluated {len(ids)} action-conditioned clips", metrics
+        _policy_check(root)
+    except (ValueError, OSError, UnicodeDecodeError):
+        return "content_policy", changed
+    return None
+
+
+def evaluate(tree: str) -> tuple[float, float, str, dict[str, Any]]:
+    suite = _suite_name()
+    scratch = Path(tempfile.mkdtemp(prefix="nanowm-"))
+    try:
+        (scratch / "candidate").mkdir()
+        (scratch / "candidate-outputs").mkdir()
+        (sampled,) = run_sandboxes([_candidate_run(Path(tree), suite, scratch / "candidate")],
+                                   into=scratch / "candidate-outputs")
+        trusted = scratch / "trusted"
+        trusted.mkdir()
+        failure = _candidate_latents(sampled, suite, trusted / "latents")
+        rows = _trusted_rows(suite, trusted, scratch, with_candidate=failure is None)
     finally:
-        if result is not None and getattr(result, "workdir", None):
-            shutil.rmtree(Path(result.workdir).parent, ignore_errors=True)
+        shutil.rmtree(scratch, ignore_errors=True)
+    reference = rows["reference"]
+    try:
+        _validate_rows(reference, suite)
+    except CandidateExecutionError as exc:
+        raise InfrastructureError("trusted reference evaluation failed") from exc
+    if failure is not None:
+        return _failed(suite, failure)
+    candidate = rows["candidate"]
+    try:
+        _validate_rows(candidate, suite)
+    except CandidateExecutionError:
+        return _failed(suite, "candidate evaluation failed")
+    candidate_score = continuous_score(candidate, reference)
+    ids = [f"clip-{i + 1:02d}" for i in range(_expected_workloads(suite))]
+    passes = []
+    for workload, cand, ref in zip(ids, candidate, reference):
+        passes.append({
+            "workload": workload,
+            "metrics": {
+                "psnr": bool(cand["psnr"] > ref["psnr"]),
+                "ssim": bool(cand["ssim"] > ref["ssim"]),
+                "lpips": bool(cand["lpips"] < ref["lpips"]),
+            },
+        })
+    beats_reference = int(all(v for row in passes for v in row["metrics"].values()))
+    metrics: dict[str, Any] = {
+        "psnr": sum(row["psnr"] for row in candidate) / len(candidate),
+        "ssim": sum(row["ssim"] for row in candidate) / len(candidate),
+        "lpips": sum(row["lpips"] for row in candidate) / len(candidate),
+        "beat_spec_workload_passes": passes,
+        "beats_reference": beats_reference,
+        "reference_score": REFERENCE_SCORE,
+        "margin": candidate_score - REFERENCE_SCORE,
+        # Operator evidence only: not in beat_spec solver_feedback.
+        "per_workload_measurements": [
+            {"workload": workload, "candidate": dict(cand), "reference": dict(ref)}
+            for workload, cand, ref in zip(ids, candidate, reference)
+        ],
+    }
+    if not math.isfinite(candidate_score):
+        raise RuntimeError("non-finite quality score")
+    score = min(100.0, max(0.0, candidate_score))
+    return score, candidate_score, f"evaluated {len(ids)} action-conditioned clips", metrics
 
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("usage: evaluator.py SOLUTION_PATCH", file=sys.stderr)
-        raise SystemExit(2)
-    print(json.dumps({"result": evaluate(sys.argv[1])}, indent=2))

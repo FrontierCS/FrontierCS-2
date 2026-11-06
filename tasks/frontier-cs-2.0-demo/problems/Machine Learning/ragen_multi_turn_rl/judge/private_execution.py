@@ -477,8 +477,8 @@ def observe_worker(cls, role, directory, torch):
 
 
 def install(workdir, private_module, directory):
-    directory = Path(directory)
-    directory.mkdir(mode=0o700)
+    """Append the observation hooks to the tree at `workdir`. `private_module` and `directory`
+    (the 0700 records directory, created by the caller) are paths where the tree runs."""
     hooks = (
         ("ragen/trainer/agent_trainer.py", "observe_trainer", "RayAgentTrainer"),
         ("ragen/llm_agent/es_manager.py", "observe_environment", "EnvStateManager"),

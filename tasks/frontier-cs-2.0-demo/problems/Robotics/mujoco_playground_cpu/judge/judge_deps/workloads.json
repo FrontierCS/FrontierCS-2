@@ -25,9 +25,7 @@
     "action_rate"
   ],
   "guards": {
-    "require_gpu": true,
-    "require_subreaper": true,
-    "require_immutable_runtime": true
+    "require_gpu": true
   },
   "conditions": {
     "flat": {

@@ -1,0 +1,70 @@
+# The definition of dynamic_tanh (schema frontier.task/v1, #757). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+#
+# GPU task: the Agent has one A100-80GB runner (docker/agent-gpu.Dockerfile) and the Verifier
+# runs the judge on one A100-80GB (docker/verifier-gpu.Dockerfile) through the shared GPU
+# adapter (docker/verifier.Dockerfile).
+schema = "frontier.task/v1"
+id = "dynamic_tanh"
+display_name = "Learned Transformer Layer Mapping"
+version = "preflight-9740a08b6f00-beat-spec-v3"
+
+[agent]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+[verifier]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 3
+max_train_wall_seconds = 2700
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["dynamic_tanh.py", "solver_extensions/"]
+max_changed_files = 32            # as before; the statement tells the Agent the same
+# Process and harness introspection (Preview #647): no file the submission owns may name
+# these, comments included (judge-only; the statement lists them).
+forbidden_content = ['argv|__main__|\binspect\b|_getframe|currentframe|f_back|f_globals|f_locals|f_code|\btraceback\b|getpid|getppid|/proc|environ|getenv|sys\.modules|cmdline|program_invocation']
+ignore_case = true
+
+[gpu.agent]
+allowed_types = ["A100-80GB"]
+max_gpu_seconds = 1800
+max_instance_seconds = 900
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 1
+max_gpu_seconds = 4500
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["A100-80GB"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions).
+[network.audit]
+max_ssh_bytes_per_direction = 8388608   # 8 MiB, as before
+max_ssh_sessions = 48
+ssh_session_budgets = { agent = 32, verifier_train = 12, verifier_eval = 4 }
+
+[feedback]                        # train metrics besides beat_spec_progress; each a mean over the development workloads
+top1_accuracy_pct = "Candidate top-1 validation accuracy after the workload's training run, in percentage points; mean over workloads."
+training_latency_ms = "Candidate median time of the 16-step fp16 training block, in milliseconds; mean over workloads."
+inference_latency_ms = "Candidate median time of the 16-batch forward-only inference block, in milliseconds; mean over workloads."
+
+[paper]                           # for readers; the platform never reads it
+title = "Transformers without Normalization"
+venue = "CVPR 2025"
+url = "https://arxiv.org/abs/2503.10622"
+summary = "Train ViT image classifiers whose normalization layers are replaced by Dynamic Tanh-style element-wise mappings without losing accuracy."

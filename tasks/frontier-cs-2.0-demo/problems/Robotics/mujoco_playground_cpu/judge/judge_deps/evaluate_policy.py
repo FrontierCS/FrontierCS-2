@@ -1,8 +1,8 @@
 """Trusted evaluation of one serialised policy. Runs as ``python -I -B``.
 
 The environment, its command sampling, physics, reward terms and all random
-streams come from the pristine tree given by ``--repo`` (hash-verified by the
-parent immediately before launch). The policy arrives as a ``jax.export``
+streams come from the pristine tree given by ``--repo`` (admitted against the
+manifest at suite start; training runs in isolate cannot reach it). The policy arrives as a ``jax.export``
 artifact and is only ever called as a tensor function; no submitted Python is
 imported here.
 

@@ -17,7 +17,6 @@
   "task_owned_files": [
     {"path": "frontier-build.sh", "reason": "GPU-workspace import and syntax build adapter for the retained upstream program."},
     {"path": "frontier-bench.sh", "reason": "GPU runner adapter that invokes the retained upstream main.py unchanged."},
-    {"path": "make_submission.sh", "reason": "Patch packager that includes solver-authored helper files."},
     {"path": "public_test.py", "reason": "Small public contract check that does not encode the removed implementation."}
   ],
   "retained_alternatives": [],

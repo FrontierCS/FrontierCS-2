@@ -1,0 +1,94 @@
+# The definition of nano_world_model (schema frontier.task/v1, #757). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+#
+# GPU task: the Agent has one A100-80GB runner (docker/agent-gpu.Dockerfile). The Verifier runs
+# the judge on its CPU control image (docker/verifier.Dockerfile). The candidate's sampling runs
+# on a [test_sandboxes.candidate] runner of the Agent GPU image, which holds only the submitted
+# tree and public inputs; the reference and the decode of the candidate's latents run afterwards
+# on a [test_sandboxes.trusted] runner of the Verifier GPU image.
+schema = "frontier.task/v1"
+id = "nano_world_model"
+display_name = "Future Video Sampling"
+version = "g1-beat-spec-v3"
+
+[agent]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+[verifier]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 3
+max_train_wall_seconds = 10800
+eval_timeout_seconds = 10200
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["src/diffusion/df_sample.py", "src/diffusion/gaussian_diffusion.py",
+                 "src/diffusion/flow_matching.py", "src/diffusion/frontier_solution/"]
+max_changed_files = 20            # as before; the Agent's submission tool enforced the same
+allowed_suffixes = [".py", ".pyi"]  # the judge refused any other helper before (sampler policy)
+# The sampler source policy (allowed imports, no data/runtime/frame access, importable module
+# names) is judge/evaluator.py check_tree.
+
+[gpu.agent]
+allowed_types = ["A100-80GB"]
+max_gpu_seconds = 1800
+max_instance_seconds = 1800
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 2
+max_gpu_seconds = 30000           # (5700 s + 1800 s) x (3 train calls + 1 final)
+
+# Command test sandboxes (design /data/task-format/design/sandboxes.md), one after the other.
+# candidate: the device check and checkpoint conversion 300 s, then sampling 4950 s, counted
+# from the runner's readiness; with the adapter's per-step grace, upload and collect: 5620 s.
+[test_sandboxes.candidate]
+access = "command"
+dockerfile = "docker/agent-gpu.Dockerfile"
+workdir = "/workspace/sandbox"
+resources = { gpus = 1, gpu_type = "A100-80GB" }
+max_concurrent = 1
+lease_seconds = { train = 5700, eval = 5700 }
+
+# trusted: the reference run and the candidate's decode, one step taking the rest of the grant.
+[test_sandboxes.trusted]
+access = "command"
+trust = "trusted"
+dockerfile = "docker/verifier-gpu.Dockerfile"
+workdir = "/workspace/trusted"
+resources = { gpus = 1, gpu_type = "A100-80GB" }
+max_concurrent = 1
+lease_seconds = { train = 1800, eval = 1800 }
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["A100-80GB"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions). Per
+# verification: the candidate run 6 upload chunks (about 40 MB of public data) + 2 steps +
+# 1 collect, the trusted run 1 + 1 + 1: 12 per call.
+[network.audit]
+max_ssh_sessions = 80
+ssh_session_budgets = { agent = 32, verifier_train = 36, verifier_eval = 12 }
+
+[paper]                           # for readers; the platform never reads it
+title = "Nano World Models: A Minimalist Implementation of Future Video Prediction"
+venue = "arXiv 2026"
+url = "https://arxiv.org/abs/2605.23993"
+summary = "Speed up future-video sampling in the NanoWM action-conditioned video world model."
+
+[feedback]
+psnr = "Candidate mean PSNR of the predicted future frames over the train clips, in dB; higher is better."
+ssim = "Candidate mean SSIM of the predicted future frames over the train clips; higher is better."
+lpips = "Candidate mean VGG-LPIPS of the predicted future frames over the train clips; lower is better."

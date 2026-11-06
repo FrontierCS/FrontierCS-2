@@ -1,20 +1,45 @@
-"""GPU evaluator for the model-wide LayerNorm replacement task."""
+"""Judge of dynamic_tanh: the model-wide LayerNorm -> DyT mapping, on one GPU (#757 scoring note).
+
+Score (raw_score = score_unbounded, 0..100): per workload w, latency_w = 100 / (1 + (T_w / T*_w)^4)
+with T_w / T*_w the median training-block time of the submission / the authors' reference; the
+score is the mean over the three workloads (equal latency scores 50). Any failed validity check
+(fresh-model checks, training or loading the model, timed-path comparison) is a scored zero.
+
+Metrics, per workload (means over workloads are the train feedback):
+- top1_accuracy_pct: top-1 accuracy on the workload's validation shard after its training run;
+  higher is better; passes when >= the reference's (no tolerance).
+- training_latency_ms: median CUDA-synchronized time of a 16-step fp16 training block; lower is
+  better; passes when strictly below the reference's.
+- inference_latency_ms: median time of a 16-batch forward-only block; lower is better; passes
+  when strictly below the reference's.
+
+beats_reference = 1 iff every metric passes on every workload and every validity check passes.
+The archived beat spec is docs/task-authoring/dynamic_tanh/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 
 import contextlib, hashlib, importlib.util, io, itertools, json, math, os, re, shutil, statistics, subprocess, sys, tempfile, types
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
-import candidate_failure
-from submission_patch import _make_owner_writable, apply_submission_patch
+
+import isolate  # noqa: E402  (/opt/frontier, on the import path by frontier.pth)
 
 TASK_DIR = Path(__file__).resolve().parent
-APP_DIR = TASK_DIR / "harbor" / "app"
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 ASSET_ROOT = TASK_DIR / "judge_assets" / "flower_photos"
 MANIFEST_PATH = ASSET_ROOT / "manifest.json"
 CLASSES = ("daisy", "dandelion", "roses", "sunflowers", "tulips")
 EPOCHS, WARMUP_BLOCKS, TIMED_BLOCKS, SUBPROCESS_TIMEOUT = 2, 3, 11, 180
+# The training process runs under the shared isolate launcher (isolate.run): a copy of the tree,
+# the workload's photographs as read-only inputs, the GPU, a private HOME/TMPDIR, an environment
+# built from nothing, no judge files and no network. DataLoader workers pass batches through
+# POSIX shared memory and AF_UNIX sockets. Its checkpoint and log come back as declared outputs;
+# a ViT-Base checkpoint with its AdamW state is about 1 GiB (the default 8 GiB private disk
+# holds the run's checkpoints).
+TRAIN_OUTPUTS = (f"checkpoint-{EPOCHS - 1}.pth", "log.txt")
+TRAIN_OUTPUT_BYTES = 4 << 30
 # Batches per timed block: one block runs this many consecutive steps, so a block
 # is long enough that launch and scheduling jitter averages out (A100: one ViT-Base
 # step of batch 4-8 is about 20-28 ms and paired single-step blocks varied by ~5-10%).
@@ -82,36 +107,12 @@ TIMED_STEP_ALLOWANCE = 1
 # The parameters after a training block may differ from the oracle's replay of the
 # same optimizer steps by at most this fraction of the block's update, jointly.
 TIMED_REPLAY_TOLERANCE = 1e-3
-REFERENCE_PATCH_SHA256 = "2da4be0b556d65bf7ad472de3709c6a5cc467ea2e762a23f9ab4e6b6898af2ad"
-REFERENCE_DYNAMIC_SHA256 = "609a1f4412d1d570c74d4deb725436fda3322a3bbb05c1d2c6a0de6b7b6c5039"
-RETAINED_SHA256 = {
-    "main.py": "d8741525a66575718ffe4172dc0be1abdcacf7b2d9a915454069e76014876fc6",
-    "engine.py": "ca4313d4cae84e5fa7e978e70fae0f53b5bf7d0d8735a36b642e177da6bd1384",
-    "datasets.py": "6fe0cd7b3909f7fb602e86c464d2f8c047bf293bf2957f8a98b44ebb26cc9dd8",
-    "optim_factory.py": "93f3223335c825fed6c98fc7c5fb42525c58ee22741c76238fb8f801cf3f7225",
-    "utils.py": "4b189315f67e25f612b9e7a6df6fb20111f96ca4a3ac989b6eeb1ab4264c40c9",
-}
 
-# Process and harness introspection (Preview issue #647). The accuracy run
-# (frontier-bench.sh -> main.py) and the evaluator's timed and validated calls
-# must execute the same implementation; submitted code may not inspect which
-# process, entry point, caller or environment it runs in. Every file the
-# candidate owns is scanned after the patch is applied, comments included.
-INTROSPECTION_PATTERN = re.compile(
-    r"argv|__main__|\binspect\b|_getframe|currentframe|f_back|f_globals|f_locals|f_code"
-    r"|\btraceback\b|getpid|getppid|/proc|environ|getenv|sys\.modules|cmdline|program_invocation",
-    re.IGNORECASE)
-INTROSPECTION_MESSAGE = "patch inspects the process, entry point, caller or environment"
-
-def _introspection_violation(tree: Path) -> bool:
-    owned = [tree / "dynamic_tanh.py"]
-    extensions = tree / "solver_extensions"
-    if extensions.is_dir():
-        owned += sorted(path for path in extensions.rglob("*") if path.is_file())
-    for path in owned:
-        if path.is_file() and INTROSPECTION_PATTERN.search(path.read_bytes().decode("utf-8", errors="replace")):
-            return True
-    return False
+# Process and harness introspection (Preview issue #647) is screened by the shared verifier:
+# task.toml [submission] forbidden_content, over every changed file, comments included. The
+# training process runs under the shared isolate launcher (_train), but the fresh-model checks and the
+# timed blocks run the submitted module in this process, beside the reference, the oracle and
+# the CUDA timer, so the screen stays.
 
 @contextmanager
 def _training_argv(command):
@@ -131,10 +132,19 @@ class CandidateError(RuntimeError):
 
 # The only facts a timed-path rejection may add to the public message and to
 # the solver-visible diagnostic: which block and which quantity failed first.
-# Fixed strings from candidate_failure.py, one pair per rejected submission;
-# no value, threshold, workload or repeat.
-TIMED_PATH_PROTOCOLS = candidate_failure.BLOCKS
-TIMED_PATH_QUANTITIES = candidate_failure.QUANTITIES
+# Fixed strings, one pair per rejected submission; no value, threshold, workload or repeat.
+TIMED_PATH_PROTOCOLS = {"training": "training block", "inference": "inference block"}
+TIMED_PATH_QUANTITIES = {
+    "output": "model output", "loss": "loss",
+    "gradient_joint": "gradient of all parameters jointly",
+    "gradient_other": "gradient of the parameters outside the replacement sites",
+    "gradient_alpha": "gradient of the replacement sites' alpha",
+    "gradient_scale": "gradient of the replacement sites' weight (scale)",
+    "gradient_shift": "gradient of the replacement sites' bias (shift)",
+    "shape": "missing or wrong-shape result",
+    "overwritten_gradient": "a gradient overwritten after its step",
+    "nonfinite": "nonfinite values that do not match",
+}
 CANDIDATE_FAILURE_MESSAGE = "submission failed validation or authentic model execution"
 
 class TimedPathRejection(CandidateError):
@@ -157,13 +167,6 @@ def _timed_path_category(error):
         protocol, quantity = error.__dict__.get("protocol"), error.__dict__.get("quantity")
         if type(protocol) is str and type(quantity) is str and protocol in TIMED_PATH_PROTOCOLS and quantity in TIMED_PATH_QUANTITIES:
             return protocol, quantity
-    return None
-
-def _candidate_diagnostic(error, stage):
-    """The solver-visible rejection class of a development submission, or None."""
-    category = _timed_path_category(error)
-    if category is not None: return candidate_failure.diagnostic("timed_path", *category)
-    if stage in ("patch_policy", "semantic_validation", "model_workload"): return candidate_failure.diagnostic(stage)
     return None
 
 def _development():
@@ -236,24 +239,12 @@ def _private_candidate_failure(error, stage):
             "stage": stage if stage in ("semantic_validation", "model_workload") else "unknown",
             "cause_kind": kind}
 
-def _config():
-    return {"submission": {"kind": "patch", "path": "/app/solution.patch",
-            "allow_paths": ["dynamic_tanh.py", "solver_extensions/"],
-            "max_changed_files": 32, "max_patch_bytes": 262144}}
-
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-def _verify_sources() -> None:
-    if _sha256(REFERENCE_PATCH) != REFERENCE_PATCH_SHA256:
-        raise RuntimeError("trusted reference source lock failed")
-    for relative, expected in RETAINED_SHA256.items():
-        if _sha256(APP_DIR / relative) != expected:
-            raise RuntimeError("retained upstream source lock failed")
 
 def _load_manifest():
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
@@ -290,15 +281,15 @@ def _selected_workloads(workloads):
 
 def _reference_tree(root: Path) -> Path:
     destination = root / "reference_repo"
-    shutil.copytree(APP_DIR, destination)
+    shutil.copytree(PRISTINE, destination)
     # Release substrates are deliberately 0555/0444. Only this disposable
     # judge-side copy is made writable; the pristine public tree is untouched.
-    _make_owner_writable(destination)
+    for path in (destination, *destination.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
     proc = subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)], cwd=destination,
                           text=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=20)
     if proc.returncode: raise RuntimeError("trusted reference patch did not apply")
-    if _sha256(destination / "dynamic_tanh.py") != REFERENCE_DYNAMIC_SHA256:
-        raise RuntimeError("trusted reference does not restore upstream bytes")
     return destination
 
 @contextmanager
@@ -424,34 +415,46 @@ def _validate_semantics(candidate_repo, reference_repo, workloads):
         del reference, candidate, images, ri, ci; torch.cuda.empty_cache()
     return {"converted_sites": coverage}
 
-def _train_command(repo, workload, output):
-    root = ASSET_ROOT / "images" / workload["id"]
+def _train_command(repo, workload, output, root=None):
+    root = ASSET_ROOT / "images" / workload["id"] if root is None else root
     # timm disables auto-augmentation for an empty policy string.
-    return [str(repo / "frontier-bench.sh"), "--model", workload["model"], "--drop_path", "0",
+    return [f"{repo}/frontier-bench.sh", "--model", workload["model"], "--drop_path", "0",
         "--batch_size", str(workload["batch_size"]), "--epochs", str(EPOCHS), "--lr", "0.004",
         "--min_lr", "0.000001", "--warmup_epochs", "0", "--weight_decay", "0.05",
-        "--data_set", "image_folder", "--data_path", str(root / "train"), "--eval_data_path", str(root / "val"),
+        "--data_set", "image_folder", "--data_path", f"{root}/train", "--eval_data_path", f"{root}/val",
         "--nb_classes", "5", "--dynamic_tanh", "true", "--device", "cuda", "--num_workers", "2",
         "--pin_mem", "true", "--dist_eval", "false", "--use_amp", "true", "--mixup", "0", "--cutmix", "0",
         "--smoothing", "0", "--aa", "", "--reprob", "0", "--model_ema", "false",
         "--save_ckpt", "true", "--save_ckpt_num", "1", "--seed", str(workload["seed"]), "--output_dir", str(output)]
 
+def _train_options(repo, workload):
+    """The isolate call of one training run: the command over the instance's own paths."""
+    images = ASSET_ROOT / "images" / workload["id"]
+    return {"argv": _train_command("{work}", workload, "{out}", "{in}"),
+            "timeout_seconds": SUBPROCESS_TIMEOUT, "tree": repo,
+            "inputs": {"train": images / "train", "val": images / "val"}, "outputs": TRAIN_OUTPUTS,
+            "env": {"FRONTIER_REPO_ROOT": "{work}", "PYTHONHASHSEED": str(workload["seed"]),
+                    "CUBLAS_WORKSPACE_CONFIG": ":4096:8", "PYTHONDONTWRITEBYTECODE": "1",
+                    "PYTHONUNBUFFERED": "1"},
+            "devices": ["nvidia"], "unix_sockets": True, "dev_shm": True,
+            "output_bytes": TRAIN_OUTPUT_BYTES}
+
 def _train(repo, workload, output):
     with _trusted_execution("training output workspace failed"):
         output.mkdir(parents=True, exist_ok=True)
-        command = _train_command(repo, workload, output)
-    env = os.environ.copy(); env.update({"FRONTIER_REPO_ROOT": str(repo), "PYTHONHASHSEED": str(workload["seed"]), "CUBLAS_WORKSPACE_CONFIG": ":4096:8"})
+        options = _train_options(repo, workload)
     try:
-        proc = subprocess.run(command, cwd=repo, env=env, text=True,
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=SUBPROCESS_TIMEOUT)
-    except OSError as error:
-        raise InfrastructureError("trusted training process could not start") from error
-    except subprocess.TimeoutExpired as error:
-        tail = error.stdout or ""
-        if isinstance(tail, bytes): tail = tail.decode("utf-8", errors="replace")
-        raise RuntimeError("authentic training command timed out\n" + tail[-6000:]) from error
-    if proc.returncode: raise RuntimeError("authentic training command failed\n" + proc.stdout[-6000:])
-    matches = re.findall(r"Accuracy of the model on the \d+ test images: ([0-9.]+)%", proc.stdout[-30000:])
+        result = isolate.run(**options)
+    except isolate.IsolateError as error:
+        raise InfrastructureError("isolate launcher for the training process failed") from error
+    stdout = result.stdout.decode("utf-8", errors="replace")
+    tail = (stdout + result.stderr.decode("utf-8", errors="replace"))[-6000:]
+    if result.timed_out: raise RuntimeError("authentic training command timed out\n" + tail)
+    if not result.ok: raise RuntimeError("authentic training command failed\n" + tail)
+    with _trusted_execution("training output workspace failed"):
+        for name, data in result.outputs.items():
+            if data is not None: (output / name).write_bytes(data)
+    matches = re.findall(r"Accuracy of the model on the \d+ test images: ([0-9.]+)%", stdout[-30000:])
     lines = (output / "log.txt").read_text(encoding="utf-8").strip().splitlines() if (output / "log.txt").is_file() else []
     if not matches or not lines: raise RuntimeError("training metrics are missing")
     loss = float(json.loads(lines[-1])["train_loss"])
@@ -1096,25 +1099,15 @@ def _runtime_receipt(torch):
             "gpu_memory_bytes": int(properties.total_memory), "torch": str(torch.__version__)[:64],
             "cuda_runtime": str(torch.version.cuda)[:64]}
 
-def evaluate(solution_path: str):
+def evaluate(tree: str):
+    """Shared-verifier contract: `tree` is the pristine starter with only the submission's
+    allowed files overlaid (edit scope and the introspection screen already passed)."""
     global _CUDA_SENTINEL
     runtime = None
     candidate_stage = "unknown"
     try:
-        _verify_sources(); _, workloads = _load_manifest(); suite = _selected_workloads(workloads)
-        result = apply_submission_patch(solution_path, TASK_DIR, _config())
-        if not result.ok:
-            invalid = _invalid(result.message)
-            # Development feedback names the rejection class; the patch tool's
-            # own text, which quotes submitted paths, stays in the message.
-            if _development(): invalid[3]["candidate_diagnostic"] = candidate_failure.diagnostic("patch_policy")
-            return invalid
-        candidate = Path(result.workdir)
-        if _introspection_violation(candidate):
-            shutil.rmtree(candidate.parent, ignore_errors=True)
-            invalid = _invalid(INTROSPECTION_MESSAGE)
-            if _development(): invalid[3]["candidate_diagnostic"] = candidate_failure.diagnostic("patch_policy")
-            return invalid
+        _, workloads = _load_manifest(); suite = _selected_workloads(workloads)
+        candidate = Path(tree)
         try:
             import torch
             if not torch.cuda.is_available():
@@ -1134,18 +1127,14 @@ def evaluate(solution_path: str):
                         rows.append(_run_workload(candidate, reference, root / x["id"], x))
         finally:
             _CUDA_SENTINEL = None
-            shutil.rmtree(candidate.parent, ignore_errors=True)
         result = _format_result(rows, suite, guards)
         result[3]["all_final_metrics"]["runtime"] = runtime
         return result
     except CandidateError as error:
         result = _invalid(_candidate_message(error))
-        visible = _candidate_diagnostic(error, candidate_stage) if _development() else None
-        if visible is not None:
-            # The verifier admits this to train feedback only as the sole metric
-            # of a scored zero, so the private diagnostic travels in final mode.
-            result[3]["candidate_diagnostic"] = visible
-        else:
+        # A scored zero with the fixed message. Train metrics stay empty (the shared verifier
+        # admits only beat-spec metrics there); final keeps the private failure class.
+        if not _development():
             result[3]["all_final_metrics"] = {
                 "candidate_failure": _private_candidate_failure(error, candidate_stage), "runtime": runtime}
         return result
@@ -1160,12 +1149,12 @@ def evaluate(solution_path: str):
         raise failure from error
 
 def prepare():
-    _verify_sources(); manifest, workloads = _load_manifest()
+    manifest, workloads = _load_manifest()
     return {"task": "model_wide_elementwise_mapping", "accelerator_required": "nvidia_gpu",
             "workload_count": len(workloads), "dataset_archive_sha256": manifest["source"]["sha256"]}
 
 def main(argv):
-    if len(argv) != 2: print("usage: evaluator.py SOLUTION_PATCH", file=sys.stderr); return 2
+    if len(argv) != 2: print("usage: evaluator.py TREE", file=sys.stderr); return 2
     score, unbounded, message, metrics = evaluate(argv[1])
     print(json.dumps({"score": score, "score_unbounded": unbounded, "message": message, "metrics": metrics}, sort_keys=True)); return 0
 

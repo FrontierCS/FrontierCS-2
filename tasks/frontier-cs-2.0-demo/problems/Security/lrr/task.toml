@@ -1,0 +1,74 @@
+# The definition of lrr (schema frontier.task/v1, #757). Only what differs between tasks is
+# here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the category
+# is this task's folder.
+#
+# The Agent has no GPU. The Verifier runs the judge (a fixed llama.cpp Qwen3-8B server,
+# ReDoSHunter and the semantic scorers) on one A100-80GB (docker/verifier-gpu.Dockerfile)
+# through the shared GPU adapter.
+schema = "frontier.task/v1"
+id = "lrr"
+display_name = "Localized Regex Repair"
+version = "lrr-preview-v1"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 12884901888        # 12 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 12884901888        # 12 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 5400
+eval_timeout_seconds = 3600
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["scripts/scalpel_to_thinking_steps.py", "prompts/localization.txt",
+                 "prompts/5-shot-localization-prompt.txt", "prompts/1-shot-prompt.txt",
+                 "prompts/5-shot-prompt.txt", "frontier_solution/"]
+max_changed_files = 20            # as before; the Agent's submission tool enforced the same
+allow_delete = true               # the old checker let a patch delete editable files
+
+# No Agent GPU (all-zero quota); Management requires the block with allowed_types when the
+# Verifier has a GPU.
+[gpu.agent]
+allowed_types = ["A100-80GB"]
+max_gpu_seconds = 0
+max_instance_seconds = 0
+max_instances = 0
+
+[gpu.verifier]
+max_gpu_instances = 1
+max_gpu_seconds = 7200
+
+[accelerator]
+agent_sandbox = false
+allowed_types = ["A100-80GB"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the Verifier GPU runner, per role (they must sum to max_ssh_sessions).
+[network.audit]
+max_ssh_sessions = 404
+ssh_session_budgets = { agent = 0, verifier_train = 400, verifier_eval = 4 }
+
+[paper]                           # for readers; the platform never reads it
+title = "Repairing Regex Vulnerabilities via Localization-Guided Instructions"
+venue = "EACL 2026"
+url = "https://aclanthology.org/2026.eacl-long.379.pdf"
+summary = "Write localization-guided repair prompts that let a fixed local LLM rewrite ReDoS-vulnerable regular expressions so they are safe while preserving their language."
+
+[feedback]
+train_vulnerability_elimination_rate = "Share of train regexes whose repair has a completed detector result with no successful attack, regardless of semantics."
+train_repair_rate = "Share of train regexes with a credited repair."
+train_well_formed_rate = "Share of train regexes with a well-formed repair."
+train_mean_rli = "Mean relative length increase of the repairs over all train regexes; lower is better."
+train_mean_nls = "Mean normalized Levenshtein similarity of the repairs over all train regexes."
+train_mean_jaccard = "Mean Xeger Jaccard estimate of the repairs over all train regexes."
+train_mean_precision = "Mean Xeger precision estimate of the repairs over all train regexes."
+train_mean_recall = "Mean Xeger recall estimate of the repairs over all train regexes."

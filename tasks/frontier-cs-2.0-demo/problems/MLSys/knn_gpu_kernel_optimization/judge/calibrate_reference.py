@@ -16,7 +16,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--data-root', type=Path, default=Path('/data'))
-    parser.add_argument('--starter', type=Path, default=ROOT/'repo')
+    parser.add_argument('--starter', type=Path, default=ROOT/'pristine')
     parser.add_argument('--workload', choices=('sift_k10','sift_k50','sift_k100','gist_k10','gist_k50','gist_k100'))
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args(argv)

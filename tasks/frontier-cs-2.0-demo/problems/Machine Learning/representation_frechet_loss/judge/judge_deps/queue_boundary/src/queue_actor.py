@@ -1,4 +1,8 @@
-"""Untrusted-side queue host: never creates trusted reports or checkpoints."""
+"""Untrusted-side queue host: never creates trusted reports or checkpoints.
+
+It runs under the shared isolate launcher (queue_process.py): the boundary is built before this
+interpreter starts, so nothing here confines itself.
+"""
 
 import math
 import os
@@ -8,8 +12,6 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from restricted_runtime import install, restrict_syscalls
-from queue_profile import runtime_paths
 import queue_wire as wire
 
 
@@ -18,26 +20,10 @@ def main():
     deadline = float(sys.argv[4])
     if not math.isfinite(deadline) or deadline <= time.monotonic():
         raise ValueError("Queue lifetime must have a finite future deadline")
-    if sys.argv[3] not in ("cpu", "namespace_cuda", "namespace_cpu"):
+    if sys.argv[3] not in ("cpu", "cuda"):
         raise ValueError("Unknown queue runtime profile")
-    allow_cuda = sys.argv[3] == "namespace_cuda"
+    allow_cuda = sys.argv[3] == "cuda"
     os.chdir(scratch)
-    if sys.argv[3].startswith("namespace_"):
-        if os.readlink("/proc/self/ns/pid") == os.environ["FQ_PARENT_PIDNS"]:
-            raise RuntimeError("Queue actor shares its parent's PID namespace")
-        if not os.statvfs("/").f_flag & os.ST_RDONLY:
-            raise RuntimeError("Queue namespace root must be read-only")
-        if not allow_cuda:
-            restrict_syscalls("/actor/libseccomp.so.2")
-    else:
-        reads, writes = runtime_paths(source, scratch, Path(__file__).parent)
-        install(reads, writes)
-    if os.geteuid() == 0:
-        os.setgroups([])
-        os.setgid(65534)
-        os.setuid(65534)
-    if os.geteuid() == 0:
-        raise RuntimeError("Queue worker must not run submitted code as root")
     import torch
     torch.set_num_threads(1)
     if allow_cuda:
@@ -45,9 +31,6 @@ def main():
             raise RuntimeError("Exactly one isolated CUDA device is required")
         torch.empty(0, device="cuda:0")
         torch.cuda.synchronize()
-        # Initialize only trusted libraries inside the isolated namespace.
-        # Confine their helper threads before READY or candidate import.
-        restrict_syscalls("/actor/libseccomp.so.2", synchronize_threads=True)
     # Reserve fd 1 for framed data even if submitted code prints.
     output = os.dup(1)
     os.dup2(2, 1)
