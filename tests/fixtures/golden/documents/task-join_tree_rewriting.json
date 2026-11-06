@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:20a3b0a6f7512d20e06cd8eb17329a8aa4c93ecb540acefd5ff5aafa6ae50d48",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/join_tree_rewriting/20a3b0a6f7512d20e06cd8eb17329a8aa4c93ecb540acefd5ff5aafa6ae50d48.json",
+  "definition_digest": "sha256:a0a27cafa399a8205d8721eba56619343926f448fca1d6f5826b82c2e54a41d6",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/join_tree_rewriting/a0a27cafa399a8205d8721eba56619343926f448fca1d6f5826b82c2e54a41d6.json",
   "display_name": "Join-Tree Rewriting",
   "driver_config": {
     "agent": {
@@ -68,7 +68,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_34T6M1DTYQVK2V1BCHR7SD5THS",
+    "task_version_id": "taskver_3QJGT9J7TX676JSGNMK8E01JZP",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -80,7 +80,7 @@
       "result_path": "/frontier/output/result.json"
     }
   },
-  "family": "frontier-cs-2.0/databases",
+  "family": "Database",
   "metadata": {
     "accelerator": null,
     "datasets": {
@@ -97,55 +97,25 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 100,
-      "historical_authored_max_dev_submissions": 25,
       "solver_visible_metrics": [
         "all_metrics_progress",
         "candidate_median_latency_us"
-      ],
-      "suite_relation": null
+      ]
     },
     "frontier_cs_2_0": {
-      "adapter_version": "g1-public-runtime-python31116-zstandard0230",
+      "adapter_version": "g2-task-toml-shared-verifier",
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "join_tree_rewriting",
-      "source_set_sha256": "sha256:13ec0acfd2ef9d3d4cd8dc112fed5c200bb594f8b5f478dd117f8c43d0f60d37"
-    },
-    "generator": {
-      "candidate_id": "cand_001",
-      "commit": "ef47b82d98fb26e99f06f996d47a0c35297b524e",
-      "pipeline": "frontiersmith2",
-      "run_id": "r_top17_78569b6083"
-    },
-    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-    "paper": {
-      "authors": [
-        "Liese Bekkers",
-        "Frank Neven",
-        "Stijn Vansummeren",
-        "Remy Wang"
-      ],
-      "doi": null,
-      "paper_id": "vldb-2025-instance-optimal-acyclic-join-processing-without-regret-engineering-the-yannakakis-algorithm-in-78569b6083",
-      "pdf_url": "https://www.vldb.org/pvldb/vol18/p2413-vansummeren.pdf",
-      "title": "Instance-Optimal Acyclic Join Processing Without Regret: Engineering the Yannakakis Algorithm in Column Stores",
-      "venue": "PVLDB 18",
-      "year": 2025
+      "source_set_sha256": "sha256:0fbd1519057702639668584d8a3a4e9f9a0f532c3e1b0cf90d5ce1c488203070"
     },
     "runtime": {
       "allowed_paths": [
         "2phase_nsa/binary_plan/rewrite_policy.py"
       ],
-      "language": "python",
-      "release": {
-        "evidence_codec": "zstandard==0.23.0",
-        "independent_measurement_required": true,
-        "python_base": "python:3.11.16-slim-bookworm@sha256:4b4c524dc3dce996864e030c7bd9c6b0e517597189fee48f48e05b499442444b",
-        "supersedes_source_sha256": "sha256:a1140bc0d2211f66c5d29bc72b8c41ef2f365068c3e149102e13b84fac63ce3f"
-      },
       "submission_kind": "patch"
     }
   },
   "task_id": "frontier-cs-2.0-join-tree-rewriting",
-  "version": "g1-public-runtime-python31116-zstandard0230-cfg-20a3b0a6f751"
+  "version": "g2-task-toml-shared-verifier-cfg-a0a27cafa399"
 }

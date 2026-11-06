@@ -1,7 +1,7 @@
 id: "representation_frechet_loss"
 display_name: "Differentiable Population Statistics"
 category: "Machine Learning"
-summary: "Implement differentiable population mean/covariance statistics (FeatureQueue) for post-training an image generator with representation Frechet distances."
+summary: "Implement differentiable population mean/covariance statistics (FeatureQueue) for post-training an image generator with representation Fréchet distances."
 paper_title: "Representation Fréchet Loss for Visual Generation"
 paper_venue: "arXiv 2026"
 paper_url: "https://arxiv.org/abs/2604.28190"

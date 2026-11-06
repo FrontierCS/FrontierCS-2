@@ -15,8 +15,8 @@ verifier_cpu_cores: 3
 verifier_memory_gib: 12
 verifier_disk_gib: null
 verifier_gpu_type: "A100-80GB"
-verifier_gpu_count: 1
-verifier_gpu_seconds: 7200
+verifier_gpu_count: 2
+verifier_gpu_seconds: 12000
 agent_model_api: "candidate"
 task_model_keys: []
 task_model_budget_usd: 0
