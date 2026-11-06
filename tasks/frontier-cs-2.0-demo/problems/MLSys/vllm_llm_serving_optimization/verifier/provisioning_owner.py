@@ -8,6 +8,10 @@ from instance_manifest import expected_groups
 from terminal_contract import canonical
 
 CLAIM_SCHEMA = 'frontier.verifier-provisioning-claim/v1'
+# The runner image the parents boot. The create body omits `image`, so the Driver applies
+# its default; the claim binds that effective value: [gpu_type, gpu_count,
+# max_duration_seconds, image] (core docs/contract/verifier-controller-provenance.md).
+RUNNER_IMAGE = 'verifier_gpu'
 FAILURE_SCHEMA = 'frontier.verifier-platform-failure/v1'
 _DIGEST = re.compile(r'^sha256:[0-9a-f]{64}$')
 _ULID = r'[0-7][0-9A-HJKMNP-TV-Z]{25}'
@@ -49,7 +53,8 @@ class ProvisioningOwner:
                 or request['max_duration_seconds'] <= 0 or not slots):
             raise ValueError('exact owned original provisioning request required')
         self.plan_bytes, self.slot_bytes = canonical(plan), canonical(slots)
-        self.request_bytes = canonical([request['gpu_type'], request['gpu_count'], request['max_duration_seconds']])
+        self.request_bytes = canonical([request['gpu_type'], request['gpu_count'],
+                                        request['max_duration_seconds'], RUNNER_IMAGE])
         self.key = key
         self._claim_bytes = canonical({'schema_version': CLAIM_SCHEMA,
             'create_request_digest': digest(self.request_bytes),
@@ -67,7 +72,7 @@ class ProvisioningOwner:
     def check_request(self, request, key, verification_id):
         if (key != self.key or verification_id != self.identity['verification_id']
                 or canonical([request.get('gpu_type'), request.get('gpu_count'),
-                              request.get('max_duration_seconds')]) != self.request_bytes
+                              request.get('max_duration_seconds'), RUNNER_IMAGE]) != self.request_bytes
                 or set(request) != {'gpu_type', 'gpu_count', 'max_duration_seconds'}):
             raise ValueError('provisioning owner differs from authenticated request')
 

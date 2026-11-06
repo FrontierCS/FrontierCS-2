@@ -1,4 +1,22 @@
-"""Native CPU Verifier entrypoint. Driver owns credentials, GPUs and final clock."""
+"""Standalone CPU Verifier of vllm_llm_serving_optimization (task.toml [verifier] command); the
+Driver owns credentials, GPUs and the final clock. Scoring note (statement: repo/README.md):
+
+raw_score = score_unbounded = 0.8*SWE + 0.2*BFCL on 0-100 (judge/continuous.py). Per load group,
+r_i = vanilla latency (median of 3 captures) / candidate latency, 1/8 for a candidate-caused
+missing result; S = exp(mean log r_i); final S_w = sqrt(S_public*S_hidden); L(S) = 0 if S<=1
+else 100*log S/(log 10+log S); times quality = 1 if the pooled correct-fraction drop vs vanilla
+is <= 0.05 absolute or relative, else 0.05/relative_drop. A rule violation is a scored 0 with
+metrics.rejected (judge/submission.py categories).
+Per-group comparisons against the optimized reference (judge/fixed_targets.py), each workload
+= one benchmark x load group (train: swe/public, bfcl/public; final: x public, hidden):
+- paired_timing: mean(log ref_i - log cand_i) > 0, ref_i = fastest of 3 captures; higher better.
+- p90 / p95 / p99: candidate nearest-rank tail latency strictly below the smallest capture
+  value of that percentile; lower better.
+- correctness: correct count >= median(R1,R2,R3) - max(1, ceil(0.05*N)); higher better.
+A group also needs complete usable candidate results. beats_reference = every comparison
+passes in every group (conjunction). beat_spec_progress counts the comparisons per metric.
+Provenance: docs/task-authoring/vllm_llm_serving_optimization/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 import hashlib
 import json
@@ -82,7 +100,7 @@ def submission_input(archive, destination, maximum, clean_source):
         raise
     except Exception as error:
         return None, {'valid_submission': False, 'disposition': 'invalid_submission',
-                      'origin': 'submission_input_boundary',
+                      'origin': 'submission_input_boundary', 'category': 'malformed',
                       'error_type': type(error).__name__,
                       'message': 'Submission input is invalid.', **identity}
 
@@ -165,6 +183,17 @@ def beat_spec_progress(result, mode):
     return progress
 
 
+# task.toml [feedback], in order: the only evaluator metrics a train result returns.
+FEEDBACK = (
+    'swe_public_geometric_mean_latency_seconds', 'swe_public_speedup_over_vanilla',
+    'swe_public_p90_latency_seconds', 'swe_public_p95_latency_seconds',
+    'swe_public_p99_latency_seconds', 'swe_public_correct',
+    'bfcl_public_geometric_mean_latency_seconds', 'bfcl_public_speedup_over_vanilla',
+    'bfcl_public_p90_latency_seconds', 'bfcl_public_p95_latency_seconds',
+    'bfcl_public_p99_latency_seconds', 'bfcl_public_correct',
+)
+
+
 def train_feedback(result):
     """Whitelist public candidate aggregates, never copy private result objects."""
     metrics = {}
@@ -186,6 +215,8 @@ def train_feedback(result):
         for name, value in timing.items():
             if type(value) in (int, float) and math.isfinite(value) and value > 0:
                 metrics[prefix + name] = value
+    if not set(metrics) <= set(FEEDBACK):
+        raise ValueError('train feedback outside task.toml [feedback]')
     progress = beat_spec_progress(result, 'train')
     if progress is not None:
         metrics['beat_spec_progress'] = {name: progress[name] for name in
@@ -194,20 +225,34 @@ def train_feedback(result):
 
 
 def result_projection(result,mode):
+    """The platform result in the shared contract (tasks/shared/verifier/fcs2_verifier.py):
+    metrics carry score_unbounded (the 0-100 score itself), train adds the [feedback] metrics
+    and beat_spec_progress, final keeps beats_reference and beat_spec_progress private."""
     score=result.get('score')
     if mode not in {'train','eval'} or isinstance(score,bool) or not isinstance(score,(int,float)) or not math.isfinite(score) or not 0<=score<=100 or type(result.get('pass')) is not bool:
         raise ValueError('invalid complete operator result')
-    value={'status':'passed','raw_score':score,'summary':'Verification completed.','metrics':{}}
+    value={'status':'passed','raw_score':score,'summary':'Verification completed.',
+           'metrics':{'score_unbounded':score}}
     if mode=='train':
-        value['metrics'] = train_feedback(result)
+        value['metrics'].update(train_feedback(result))
     if mode=='eval':
         value['private_metrics']={'beats_reference':int(result['pass'])}
         progress = beat_spec_progress(result, mode)
         if progress is not None:
-            value['private_metrics'].update(beat_spec_progress=progress,
-                                            aggregation={'kind': 'conjunction'})
+            value['private_metrics'].update(beat_spec_progress=progress)
         elif result['pass']:
             raise ValueError('passing operator result lacks complete comparison evidence')
+    return value
+
+
+def rejection_projection(category,mode):
+    """A submission outside the rules: a scored zero with its shared public category."""
+    if mode not in {'train','eval'}:
+        raise ValueError('unknown verification mode')
+    value={'status':'passed','raw_score':0.0,'summary':'Verification completed.',
+           'metrics':{'score_unbounded':0.0,'rejected':category}}
+    if mode=='eval':
+        value['private_metrics']={'beats_reference':0,'rejected':category}
     return value
 
 
@@ -241,7 +286,7 @@ def main():
         (evidence/'selection.json').write_text(json.dumps(selection,indent=2)+'\n')
         (evidence/'submission.json').write_text(json.dumps(inspected,indent=2)+'\n')
         if not inspected['valid_submission']:
-            result=result_projection({'score':0.0,'pass':False},mode)
+            result=rejection_projection(inspected['category'],mode)
         else:
             phase=plan['phases'][mode]
             limits=phase_limits(config,mode,requested_gpu_seconds=max(

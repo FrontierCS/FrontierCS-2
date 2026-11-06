@@ -1,0 +1,124 @@
+# The definition of vllm_llm_serving_optimization (schema frontier.task/v1, #757). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+#
+# GPU task with its own standalone Verifier (verifier/verify.py, [verifier] command): the CPU
+# control Verifier drives four H100 parents (docker/verifier-gpu.Dockerfile) that serve the
+# candidate vLLM, a scheduler service and the 48 SWE-bench test sandboxes beside them.
+schema = "frontier.task/v1"
+id = "vllm_llm_serving_optimization"
+display_name = "GPU vLLM Serving Optimization"
+version = "declared-sidecars-final-enabled-r003"
+
+[agent]
+cpu_millis = 8000
+memory_bytes = 34359738368        # 32 GiB
+workspace_bytes = 68719476736     # 64 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 34359738368        # 32 GiB
+command = ["/opt/frontier/python/bin/python", "/opt/frontier/verifier/verify.py"]
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 25
+max_train_wall_seconds = 7620
+eval_timeout_seconds = 108000
+
+# The Agent-side pre-check (shared make_submission.sh). The judge applies the original task's
+# patch policy (judge/patch_policy.py, judge/submission.py), which these rules mirror; the
+# maintenance test test_submission_scope.py keeps the two equal.
+[submission]
+max_bytes = 2097152               # the archive
+max_patch_bytes = 1500000         # the patch, as the Agent was told
+max_changed_files = 80
+allow_empty = true                # an empty patch evaluates unmodified vLLM
+allow_rename = true               # the old tool sent git renames and the judge accepts a rename
+                                  # whose old and new paths are both allowlisted
+allowed_suffixes = [".py", ".pyi"]
+allowed_paths = [
+  "vllm/v1/core/**", "vllm/v1/core/sched/**", "vllm/v1/core/kv_cache_utils.py",
+  "vllm/config/scheduler.py", "vllm/config/cache.py",
+  "vllm/v1/worker/**", "vllm/v1/engine/**", "vllm/v1/executor/**",
+  "vllm/v1/request.py", "vllm/v1/outputs.py", "vllm/v1/serial_utils.py",
+  "vllm/entrypoints/openai/protocol.py", "vllm/entrypoints/openai/serving_engine.py",
+  "vllm/entrypoints/openai/serving_chat.py", "vllm/entrypoints/openai/serving_completion.py",
+  "vllm/sampling_params.py",
+]
+
+[feedback]                        # Agent-visible train metrics, in display order
+swe_public_geometric_mean_latency_seconds = "Geometric mean of the candidate's end-to-end conversation latency over the public SWE-bench cases, in seconds; omitted unless every case has usable timing."
+swe_public_speedup_over_vanilla = "Paired geometric mean of unmodified-vLLM latency (per-case median of three fixed captures) over candidate latency on the public SWE-bench cases; omitted unless every case has usable timing."
+swe_public_p90_latency_seconds = "Candidate p90 end-to-end latency on the public SWE-bench cases, in seconds, integer nearest rank; omitted unless every case has usable timing."
+swe_public_p95_latency_seconds = "Candidate p95 end-to-end latency on the public SWE-bench cases, in seconds, integer nearest rank; omitted unless every case has usable timing."
+swe_public_p99_latency_seconds = "Candidate p99 end-to-end latency on the public SWE-bench cases, in seconds, integer nearest rank; omitted unless every case has usable timing."
+swe_public_correct = "Number of the 5 public SWE-bench cases the candidate resolved; 0 when the candidate server failed."
+bfcl_public_geometric_mean_latency_seconds = "Geometric mean of the candidate's end-to-end conversation latency over the public BFCL cases, in seconds; omitted unless every case has usable timing."
+bfcl_public_speedup_over_vanilla = "Paired geometric mean of unmodified-vLLM latency (per-case median of three fixed captures) over candidate latency on the public BFCL cases; omitted unless every case has usable timing."
+bfcl_public_p90_latency_seconds = "Candidate p90 end-to-end latency on the public BFCL cases, in seconds, integer nearest rank; omitted unless every case has usable timing."
+bfcl_public_p95_latency_seconds = "Candidate p95 end-to-end latency on the public BFCL cases, in seconds, integer nearest rank; omitted unless every case has usable timing."
+bfcl_public_p99_latency_seconds = "Candidate p99 end-to-end latency on the public BFCL cases, in seconds, integer nearest rank; omitted unless every case has usable timing."
+bfcl_public_correct = "Number of the 8 public BFCL cases the candidate answered correctly; 0 when the candidate server failed."
+
+[gpu.agent]
+allowed_types = ["H100"]
+max_gpu_seconds = 18000
+max_instance_seconds = 18000
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 4
+max_gpu_seconds = 691200
+
+[gpu_parent_resources.verifier]   # the scheduler service and the test sandboxes share it
+cpu_millis = 16000
+memory_bytes = 68719476736        # 64 GiB
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["H100"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+[network.audit]
+max_model_response_bytes = 8388608      # 8 MiB
+max_model_sessions = 256
+max_ssh_bytes_per_direction = 268435456 # 256 MiB
+max_ssh_sessions = 1754
+ssh_session_budgets = { agent = 512, verifier_train = 900, verifier_eval = 342 }
+
+# The judge's scheduler service beside every Verifier GPU parent: a trusted test sandbox that
+# holds the operation's attestation key.
+[test_sandboxes.scheduler]
+trust = "trusted"
+dockerfile = "docker/test-sandbox-scheduler.Dockerfile"
+args = ["/opt/frontier/python/bin/python", "/opt/frontier/judge/scheduler_service.py", "--host", "0.0.0.0", "--port", "8002", "--max-request-bytes", "67108864", "--max-response-bytes", "67108864", "--variants", "candidate"]
+attestation_key = true
+phases = ["train", "eval"]
+workdir = "/tmp"
+
+# The SWE-bench test sandboxes (untrusted): one per SWE instance the datasets select (5 in
+# train, all 48 in final), each on its instance's SWE-bench image; judge/test_sandboxes.json
+# (build-time only, never in an image) gives each its slot, base image digest and source
+# preparation. The images are the registered ones, retagged by digest (content unchanged). Role
+# `candidate` serves the agent's tool calls, role `check` runs the instance's tests. Slots keep
+# the original numbering (018 and 039 were removed, 2026-10-16).
+[test_sandboxes.swe]
+dockerfile = "docker/test-sandbox.Dockerfile"
+instances = { dataset_key = "swe_instance_ids", manifest = "judge/test_sandboxes.json" }
+workdir = "/testbed"
+
+[test_sandboxes.swe.roles.candidate]
+args = ["/opt/frontier/worker-python/bin/python", "-P", "-m", "serving_eval.swe_tool_service", "--driver-identity-file", "/tmp/frontier-identity.json", "--instance-id", "{instance}", "--listen-profile", "bridge", "--host", "0.0.0.0", "--port", "8001", "--max-request-bytes", "1048576", "--max-output-bytes", "16777216"]
+
+[test_sandboxes.swe.roles.check]
+args = ["/opt/frontier/worker-python/bin/python", "-P", "-m", "serving_eval.swe_correctness_service", "--driver-identity-file", "/tmp/frontier-identity.json", "--instance-id", "{instance}", "--host", "0.0.0.0", "--port", "8003", "--max-request-bytes", "2097152", "--max-output-bytes", "67108864", "--variants", "candidate"]
+
+[paper]                           # for readers; the platform never reads it
+title = "Continuum: Efficient and Robust Multi-Turn LLM Agent Scheduling with KV Cache Time-to-Live"
+venue = "arXiv 2025"
+url = "https://arxiv.org/pdf/2511.02230"
+summary = "Optimize vLLM 0.11.0's Python scheduling and serving for multi-turn SWE-bench and BFCL agent conversations on Qwen3-Coder-30B-A3B, cutting end-to-end latency on one H100 while keeping correctness."
