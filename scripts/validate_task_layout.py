@@ -41,6 +41,10 @@ class LayoutFailure(ValueError):
     pass
 
 
+def warn(root: Path, message: str) -> None:
+    print(f"WARN {root.name}: {message}", file=sys.stderr)
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise LayoutFailure(message)
