@@ -2,8 +2,8 @@
  "schema": "binary-fuse-calibration-manifest/v3",
  "reference_statistics_status": "CALIBRATED_REFERENCE_ONLY",
  "rule": "certified-non-inferiority/v1",
- "statistical_profile_sha256": "sha256:db7eb298304226355efbd05b7721f453e8797380bfb652bf462e35b8e9b5a13d",
- "measurement_sha256": "sha256:8b33bcde27eeb93cfff7a7943aeb952b653889c782a12b4fe12abddaef02d471",
+ "statistical_profile_sha256": "sha256:8c91b7624a107ff7c76e7cacd04179339b8590f5763bd5c8c2c716ef77e8ebfe",
+ "measurement_sha256": "sha256:bcc3f3187e6d64b6e9ea4d036445842010723a5676968b95e4d857b444a1857c",
  "complete_reference_rounds": 5,
  "reference_scope": "900 authentic host constructions from the retained r6 rounds, rederived without native replay; anchors preregistered from reference-only points and the fingerprint specification",
  "production_runtime": {

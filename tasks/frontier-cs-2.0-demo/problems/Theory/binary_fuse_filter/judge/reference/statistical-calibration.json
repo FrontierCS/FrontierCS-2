@@ -2,7 +2,7 @@
  "schema": "binary-fuse-reference-statistical-calibration/v3",
  "status": "CALIBRATED_REFERENCE_ONLY",
  "rule": "certified-non-inferiority/v1",
- "measurement_sha256": "sha256:8b33bcde27eeb93cfff7a7943aeb952b653889c782a12b4fe12abddaef02d471",
+ "measurement_sha256": "sha256:bcc3f3187e6d64b6e9ea4d036445842010723a5676968b95e4d857b444a1857c",
  "successor_solver_results_seen": false,
  "sample_alpha": 2.7777777777777776e-09,
  "reference_repeat_summaries": [
