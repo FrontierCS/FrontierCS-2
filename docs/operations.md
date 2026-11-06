@@ -762,36 +762,166 @@ seeding these task revisions; copying task definitions alone is insufficient.
 
 ### Kubernetes API destination discovery and rotation
 
-Preview resolves Kubernetes API egress from the cluster's `default/kubernetes`
-Service, Endpoints, and EndpointSlices. All must agree on ready IPv4 TCP 443
-backends in two stable reads. The resulting allowlist contains only the Service
-IP and exact backend `/32` destinations. DNS on the deployment machine is not
-an authority for in-cluster Service DNAT targets: an external machine can resolve
-public EKS addresses while the cluster uses private control-plane addresses.
-Missing, mismatched or transitioning discovery fails closed; no VPC-wide CIDR is
-added as a fallback.
+EKS places its control-plane ENIs (the backends of `default/kubernetes`) in the
+cluster's `vpc_config` subnets and replaces them on upgrades and maintenance, so
+their exact addresses are not stable. Terraform therefore gives the control plane
+two dedicated `/28` subnets (`aws_subnet.control_plane`, one per site AZ, used by
+nothing else) and exports the complete TCP 443 allowlist as the
+`kubernetes_api_cidrs` output: those `/28`s plus the Service ClusterIP `/32`
+(`10.42.200.0/28`, `10.42.200.16/28`, `172.20.0.1/32` in the default configuration).
+Management `MANAGEMENT_KUBERNETES_API_CIDRS` and the API rule of the
+`frontier-management-boundary` and `frontier-storage-controller-boundary`
+NetworkPolicies are rendered from exactly that output. The allowlist must be
+sorted, 1-8 canonical, non-overlapping RFC 1918 IPv4 CIDRs no wider than `/28`,
+with the Service `/32` and every other entry inside the site VPC; anything else
+fails before rendering or patching.
 
-Fresh deployment saves `api-routes.json` beside its rendered runtime manifest.
-An idle `upgrade-runtime` refreshes `MANAGEMENT_KUBERNETES_API_CIDRS` and only the
-API rule in the existing Management and storage-controller NetworkPolicies,
-using resource-version tests. It preserves all other network rules and task,
-Candidate, quota and scientific settings. The upgrade directory retains the
-observed object identities/resource versions, collector hash, exact routes,
-policy before/patch files and an accepted receipt bound to the route receipt.
-Discovery is repeated before applying changes and policies are read back after
-upgrade. A failure after a partial apply is not acceptance; inspect the retained
-receipts, keep the site idle, and retry the guarded upgrade.
+The site still reads the cluster's `default/kubernetes` Service, Endpoints and
+EndpointSlices; all must agree on ready IPv4 TCP 443 backends in two stable reads,
+and every observed backend (and the Service IP) must lie inside the Terraform
+allowlist. An endpoint outside it is refused by name, with a pointer to the EKS
+cluster subnets. DNS on the deployment machine is not an authority for in-cluster
+Service DNAT targets. Missing, mismatched or transitioning discovery fails closed;
+no VPC-wide CIDR is added as a fallback.
 
-Run `verify` before a new evaluation campaign. The CLI `verify`, `smoke`, and
-`gpu-smoke` commands reject a route mismatch and direct the operator to the
-existing idle/backup/seed-check `upgrade-runtime` window. EKS can rotate its
-private control-plane endpoints. This installer refreshes routes during deploy
-and upgrade; it is not a running endpoint watcher and does not rewrite immutable
-active Run dispatches or namespace policies. Direct UI/API evaluation creation
-bypasses these CLI checks. A native Management pre-dispatch route check is needed
-to enforce this boundary for every caller; the installer does not claim to
-provide that platform guarantee. Do not extend readiness deadlines or allow
-`10.0.0.0/8` to compensate for an incomplete API destination allowlist.
+Fresh deployment saves `api-routes.json` (observed endpoints, allowed CIDRs,
+object identities) beside its rendered runtime manifest. An idle `upgrade-runtime`
+sets `MANAGEMENT_KUBERNETES_API_CIDRS` to the Terraform allowlist and replaces
+only the API rule in the two NetworkPolicies, using resource-version tests. It
+preserves all other network rules and task, Candidate, quota and scientific
+settings; discovery is repeated before applying changes and policies are read
+back after upgrade. A failure after a partial apply is not acceptance; inspect
+the retained receipts, keep the site idle, and retry the guarded upgrade.
+
+Native Management admission requires every live endpoint to lie inside the
+configured CIDRs, so ENI rotation inside the `/28`s no longer blocks runs. An
+endpoint outside them still refuses with `API_ROUTE_CONFIGURATION_DRIFT`;
+`GET /api/v1/platform/api-route-admission` then lists the out-of-range endpoints
+in `detail`. That means the cluster's subnets changed: compare
+`aws eks describe-cluster ... resourcesVpcConfig.subnetIds` with Terraform
+`control_plane_subnet_ids`. Do not widen the allowlist, extend readiness
+deadlines or allow `10.0.0.0/8` to compensate.
+
+#### One-time migration to the control-plane subnets
+
+Requires the merged the change and Management and Driver images built from
+the merged core change (the Driver also validates the frozen dispatch's CIDRs, so
+an older Driver rejects `/28` entries). Run from the the checkout used for the
+site, with the site's own `TF_DATA_DIR`; never run a whole-platform
+`make apply` for this. A full platform plan on 2026-11-04 also wanted to roll both
+node groups to a new AMI, upgrade every add-on, reset the VPC CNI from the live
+`strict` / `WARM_IP_TARGET=10` / `MINIMUM_IP_TARGET=30` to the coded
+`standard` / 2 / 8, and move cluster-creator access and the module KMS key admin
+from `user/runyuan` to the caller. Each step below is targeted to avoid that.
+
+```bash
+cd <checkout>                       # e.g. ~/FrontierCS-2
+export AWS_REGION=us-west-1 CLUSTER=frontiercs2-preview
+export KUBECONFIG=$PWD/.state/preview/kubeconfig
+export TF_DATA_DIR=$PWD/.state/preview/terraform-data/platform TF_IN_AUTOMATION=1
+B=$PWD/../api-cidr-backup-$(date -u +%Y%m%dT%H%M%SZ); mkdir -m 700 "$B"
+```
+
+1. **Window and backup.** Stop submissions; the site must have zero active and
+   queued Runs (`upgrade-runtime` enforces this; cancel Runs stuck in QUEUED by the
+   drift first). Then:
+
+   ```bash
+   tar -C . -czf "$B/state.tgz" .state/preview
+   for r in configmap/frontier-management-config deployment/frontier-management \
+            networkpolicy/frontier-management-boundary \
+            networkpolicy/frontier-storage-controller-boundary; do
+     kubectl -n frontier-system get "$r" -o yaml > "$B/${r//\//-}.yaml"; done
+   kubectl -n default get service,endpoints,endpointslices -o yaml > "$B/default-kubernetes.yaml"
+   aws eks describe-cluster --name $CLUSTER > "$B/cluster.json"
+   python3 scripts/frontier_deploy.py render --config config/site.json
+   terraform -chdir=terraform/platform init -input=false -reconfigure \
+     -backend-config=$PWD/.generated/preview/backend.hcl
+   terraform -chdir=terraform/platform state pull > "$B/platform.tfstate"
+   ```
+
+   Also take the consistent [database backups](#5-backup-and-deletion).
+
+2. **Create the subnets** (5 to add, 0 to change, 0 to destroy; nothing uses them yet):
+
+   ```bash
+   V=-var-file=$PWD/.generated/preview/platform.auto.tfvars.json
+   terraform -chdir=terraform/platform plan -input=false $V \
+     -target=aws_route_table_association.control_plane -out="$B/subnets.tfplan"
+   terraform -chdir=terraform/platform apply -input=false "$B/subnets.tfplan"
+   terraform -chdir=terraform/platform output -json control_plane_subnet_ids
+   terraform -chdir=terraform/platform output -json kubernetes_api_cidrs
+   ```
+
+   Expect `["10.42.200.0/28","10.42.200.16/28","172.20.0.1/32"]`.
+
+3. **Move the cluster's ENIs.** Use the EKS API directly; a targeted Terraform
+   apply of `module.eks.aws_eks_cluster.this[0]` by anyone but `user/runyuan`
+   also rewrites the module KMS key policy.
+
+   ```bash
+   IDS=$(terraform -chdir=terraform/platform output -json control_plane_subnet_ids | jq -r 'join(",")')
+   U=$(aws eks update-cluster-config --name $CLUSTER \
+         --resources-vpc-config subnetIds=$IDS --query update.id --output text)
+   until aws eks describe-update --name $CLUSTER --update-id $U \
+           --query 'update.status' --output text | grep -qx Successful; do sleep 30; done
+   aws eks describe-cluster --name $CLUSTER --query cluster.resourcesVpcConfig.subnetIds
+   aws ec2 describe-network-interfaces --filters "Name=description,Values=Amazon EKS $CLUSTER" \
+     --query 'NetworkInterfaces[].[PrivateIpAddress,SubnetId,Status]' --output table
+   kubectl get endpointslices -n default -l kubernetes.io/service-name=kubernetes -o wide
+   ```
+
+   Stop if the update is `Failed`. Continue only when the ENIs and every
+   EndpointSlice address are inside `10.42.200.0/28` or `10.42.200.16/28` and two
+   reads a minute apart agree. A cluster-targeted plan must now show no
+   `subnet_ids` change (only the KMS policy caveat above; do not apply it):
+   `terraform -chdir=terraform/platform plan $V -target='module.eks.aws_eks_cluster.this[0]'`.
+   Until step 4 the old exact `/32` pins block Management's API egress; runs stay
+   refused as they already were.
+
+4. **Deploy core and config.** Set `application.commit` and both
+   `application.runtime_source_commits` to the merged core commit and pin the
+   matching Management and Driver image tags/digests in `config/site.json`, run
+   `make test` and `make validate`, then:
+
+   ```bash
+   python3 scripts/frontier_deploy.py upgrade-runtime --config config/site.json
+   ```
+
+   It reads `kubernetes_api_cidrs`, proves the live endpoints are inside it, and
+   CAS-patches the ConfigMap and both NetworkPolicies from the old `/32`s to the
+   allowlist (TCP 443 only) before rolling Management.
+
+5. **Verify a run is admitted.**
+
+   ```bash
+   kubectl -n frontier-system get cm frontier-management-config \
+     -o jsonpath='{.data.MANAGEMENT_KUBERNETES_API_CIDRS}'   # the allowlist
+   python3 scripts/frontier_deploy.py verify --config config/site.json
+   kubectl -n frontier-system port-forward svc/frontier-management 18080:8080 &
+   curl -s localhost:18080/api/v1/platform/api-route-admission | jq '{state,reason,detail}'
+   # expect state READY, reason ""
+   python3 scripts/frontier_deploy.py smoke --config config/site.json
+   kubectl -n frontier-system logs deploy/frontier-management --since=15m | grep -c API_ROUTE_ || true
+   ```
+
+   The smoke Run must leave QUEUED and finish; the log count must be 0.
+
+6. **Rollback.**
+   - Step 4 failed before mutation: nothing changed; fix and retry.
+   - Runtime rollback: restore the previous `config/site.json` pins and check out
+     the previous the commit, then run its `upgrade-runtime`; it re-pins the
+     exact `/32`s of the current ENIs (now inside the `/28`s) and the old exact-set
+     check admits again until the next rotation. If `upgrade-runtime` itself cannot
+     run, `kubectl replace -f` the backed-up ConfigMap and NetworkPolicies with
+     their API `/32`s edited to the live EndpointSlice addresses, then
+     `kubectl -n frontier-system rollout restart deploy/frontier-management`.
+   - Cluster subnets rollback: `aws eks update-cluster-config --name $CLUSTER
+     --resources-vpc-config subnetIds=subnet-0ed176c2e0b0e4d63,subnet-00cc8aff26850c844`,
+     wait for `Successful`, then re-pin the runtime as above.
+   - Remove the `/28`s only after the cluster no longer uses them and the site
+     change is reverted:
+     `terraform plan -destroy -target=aws_route_table_association.control_plane -target=aws_subnet.control_plane -target=aws_route_table.control_plane`.
 
 ### Native API route-reader grant
 

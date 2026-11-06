@@ -59,6 +59,9 @@ Network access still requires an allowed `network.operator_cidrs` address.
   inside that Service CIDR and cannot use the Kubernetes API `.1` or CoreDNS
   `.10` addresses.
 - `operator_cidrs` accepts only exact IPv4 `/32` routes.
+- `transitional_kubernetes_api_cidrs` (optional, migration only) adds 1-4 exact
+  `/32`s inside the VPC to the Terraform `kubernetes_api_cidrs` allowlist while EKS
+  moves its control-plane ENIs into the dedicated `/28`s; remove it afterwards.
 
 Changing a Service CIDR or fixed ClusterIP after cluster creation is a site
 replacement, not an in-place config edit. Node bootstrap freezes the registry
