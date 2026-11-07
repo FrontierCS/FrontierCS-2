@@ -6,12 +6,14 @@ Each task has one flat file, tasks/metadata/<id>.yaml. Every line is
 The schema is flat with consistent types so the records can be published as a
 dataset (for example as JSON Lines).
 
-Hand-written fields: summary, paper_title, paper_venue, paper_url.
-Every other field is derived from config/task-definitions.json (rendered from
-each task's policy.json) and the task's GPU verifier image recipe. Task trees
-are never edited: they are bound to the published images by source identity.
+Every field is derived: summary and paper_* from the task's task.toml `[paper]`
+table (for readers; the platform never reads it), the rest from
+config/task-definitions.json (rendered from each task.toml over
+tasks/shared/task-defaults.toml) and the GPU type the task's GPU verifier image
+declares. Task trees are never edited: they are bound to the published images
+by source identity.
 
-    python3 scripts/task_metadata.py write   # refresh derived fields, keep hand fields
+    python3 scripts/task_metadata.py write   # rewrite every file from the sources
     python3 scripts/task_metadata.py check   # fail if any file is stale or missing
     python3 scripts/task_metadata.py table   # rewrite TASKS.md from the metadata
     python3 scripts/task_metadata.py jsonl   # print all records as JSON Lines
@@ -23,6 +25,7 @@ import argparse
 import json
 import re
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +36,7 @@ METADATA = ROOT / "tasks/metadata"
 TABLE = ROOT / "TASKS.md"
 GIB = 1 << 30
 
-HAND_FIELDS = ("summary", "paper_title", "paper_venue", "paper_url")
+PAPER_FIELDS = {"summary": "summary", "paper_title": "title", "paper_venue": "venue", "paper_url": "url"}
 FIELDS = (
     "id",
     "display_name",
@@ -80,22 +83,20 @@ def task_directory(name: str) -> Path:
 
 
 def verifier_gpu_type(directory: Path) -> str | None:
-    """GPU type from the verifier-gpu recipe, else from the GPU requests the
-    CPU verifier sends to the Driver (tasks that orchestrate their own GPUs)."""
-    types = set()
-    for path in sorted((directory / "verifier-gpu").glob("**/*")):
-        if path.is_file() and path.stat().st_size < 1 << 20:
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            types.update(re.findall(r'VERIFIER_GPU_TYPE="?([A-Za-z0-9-]+)', text))
-    if not types:
-        for path in sorted((directory / "verifier").glob("**/*.py")):
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            types.update(re.findall(r"""['"]gpu_type['"]\s*:\s*['"]([A-Za-z0-9-]+)['"]""", text))
+    """GPU type of the Verifier's GPUs: what the task's images declare (FRONTIER_VERIFIER_GPU_TYPE in
+    docker/) and, for Driver-managed verifier GPUs, task.toml [accelerator] allowed_types."""
+    accelerator = tomllib.loads((directory / "task.toml").read_text(encoding="utf-8")).get("accelerator", {})
+    types = set(accelerator.get("allowed_types", [])) if accelerator.get("verifier_gpu") else set()
+    for path in sorted((directory / "docker").glob("*.Dockerfile")):
+        types.update(re.findall(r"FRONTIER_VERIFIER_GPU_TYPE=([A-Za-z0-9-]+)", path.read_text(encoding="utf-8")))
     if len(types) > 1:
-        raise SystemExit(
-            f"{directory.name}: ambiguous verifier GPU types {sorted(types)}"
-        )
+        raise SystemExit(f"{directory.name}: ambiguous verifier GPU types {sorted(types)}")
     return types.pop() if types else None
+
+
+def paper(directory: Path) -> dict:
+    table = tomllib.loads((directory / "task.toml").read_text(encoding="utf-8")).get("paper", {})
+    return {field: table.get(key) for field, key in PAPER_FIELDS.items()}
 
 
 def derived(name: str, definition: dict) -> dict:
@@ -111,6 +112,7 @@ def derived(name: str, definition: dict) -> dict:
     agent_types = agent_gpu.get("allowed_types") or []
     keys = definition.get("additional_keys") or []
     record = {
+        **paper(directory),
         "id": name,
         "display_name": definition["display_name"],
         "category": directory.parent.name,
@@ -148,7 +150,7 @@ def derived(name: str, definition: dict) -> dict:
         "eval_timeout_seconds": quota["eval_timeout_seconds"],
     }
     if record["verifier_gpu_count"] and record["verifier_gpu_type"] is None:
-        raise SystemExit(f"{name}: GPU verifier image declares no VERIFIER_GPU_TYPE")
+        raise SystemExit(f"{name}: GPU verifier image declares no FRONTIER_VERIFIER_GPU_TYPE")
     return record
 
 
@@ -180,15 +182,12 @@ def catalog_names() -> list[str]:
     return [task["name"] for task in json.loads(CATALOG.read_text())["tasks"]]
 
 
-def expected_records(existing: dict[str, dict]) -> dict[str, dict]:
+def expected_records() -> dict[str, dict]:
     definitions = json.loads(DEFINITIONS.read_text())
     records = {}
     for name in catalog_names():
-        hand = {key: (existing.get(name) or {}).get(key) for key in HAND_FIELDS}
         record = derived(name, definitions[name])
-        records[name] = {
-            key: hand[key] if key in HAND_FIELDS else record[key] for key in FIELDS
-        }
+        records[name] = {key: record[key] for key in FIELDS}
     return records
 
 
@@ -270,7 +269,7 @@ def main(arguments: list[str] | None = None) -> int:
     parser.add_argument("command", choices=("write", "check", "table", "jsonl"))
     options = parser.parse_args(arguments)
     existing = existing_records()
-    records = expected_records(existing)
+    records = expected_records()
     if options.command == "write":
         METADATA.mkdir(exist_ok=True)
         for path in METADATA.glob("*.yaml"):

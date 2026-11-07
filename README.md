@@ -57,16 +57,28 @@ than the human state of the art, within a fixed budget.
 
 ```text
 tasks/frontier-cs-2.0-demo/problems/<Category>/<task_id>/
-├── policy.json          # budgets and limits the platform enforces
-├── upstream.lock.json   # hash of every file in the task (its source identity)
-├── agent-base/          # Agent image: task statement, read-only repo, tools
-├── agent-gpu/           # (GPU tasks) image for the Agent's GPU runners
+├── task.toml            # the task's only definition: budgets, limits, submission scope, feedback
+├── README.md            # what the task is (generated Agent README points here)
+├── repo/                # the repository the Agent starts from; its README.md is the statement
+├── docker/              # agent.Dockerfile, verifier.Dockerfile (+ agent-gpu / verifier-gpu)
 ├── datasets/            # train and eval workload descriptors
-├── judge/               # evaluator, reference patch, beat specification
-├── verifier/            # Verifier image that scores submissions
-└── verifier-gpu/        # (GPU tasks) Verifier image for GPU scoring
-tasks/metadata/<task_id>.yaml   # clean per-task summary, paper and resources
+├── judge/               # evaluator (evaluate(tree)), reference patch, judge data
+└── gpu/                 # (GPU tasks) files for the GPU runners
+tasks/shared/            # shared code built into the base images every task builds FROM
+├── task-defaults.toml   # explicit defaults for every value a task.toml leaves out
+├── bases.json           # the current agent, verifier and gpu-tools base image digests
+├── lib/                 # isolate (sandbox launcher), edit_scope (submission scope check)
+├── verifier/            # the shared Verifier: applies the patch, checks scope, calls evaluate
+└── verifier-gpu/        # the shared GPU adapter
+tasks/template/          # a complete example task covering every task.toml feature
+tasks/metadata/<task_id>.yaml   # per-task summary, paper and resources, generated from task.toml
+docs/task-authoring/<task_id>/provenance/   # archived scoring records (beat specs, results)
 ```
+
+`task.toml` holds only what differs between tasks and cannot be derived; everything
+else comes from `tasks/shared/task-defaults.toml`, and the category is the task's
+folder. The Agent never sees `task.toml`; the platform generates the Agent's
+`/frontier/task/README.md` from it. See `tasks/template/TEMPLATE.md` for every field.
 
 A run has three parts:
 
@@ -94,8 +106,8 @@ its result stays with the Judge.
 
 Each task directory is immutable: its files hash to the source identity that tags
 its published images, so the code in this repository is exactly what runs.
-Corrections to descriptive metadata live in `tasks/metadata/`, outside the hashed
-tree.
+`tasks/metadata/` is generated from each `task.toml` (`[paper]` and the rendered
+limits) by `scripts/task_metadata.py`.
 
 ## What you need
 
@@ -232,8 +244,9 @@ final patch (when one was submitted) and full agent trace.
 ## Adding a task
 
 A task is a directory in the layout shown in [How a task works](#how-a-task-works):
-`policy.json`, the Agent and Verifier image sources, the judge with its
-reference patch, and the workload descriptors. Add one only through the
+`task.toml`, the Agent and Verifier Dockerfiles, the starting repository, the judge
+with its reference patch, and the workload descriptors. Start from
+`tasks/template/Theory/template_task/`. Add one only through the
 importer, which validates the directory, builds and checks the task and
 reference images, and updates the catalog and definitions:
 

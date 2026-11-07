@@ -2,7 +2,7 @@
 
 Import a task directory (the layout described in the README's
 [How a task works](../README.md#how-a-task-works)) into a clean worktree of this
-repository. The directory name must equal `policy.json.problem_id` (lowercase
+repository. The directory name must equal the `id` in its `task.toml` (lowercase
 letters, digits and underscores, starting with a letter).
 
 ```bash
@@ -57,11 +57,12 @@ that import exempt from automatic sorting so formatting preserves the guard's
 required initialization order.
 
 The renderer's frozen `preview-source-identity/v1` hashes the complete task tree
-using normalized GNU tar. Hidden files, executable bits and `upstream.lock.json`
-participate. Symlinks, special files, nonzero tar exits and any set `TAR_OPTIONS`
+using normalized GNU tar. Hidden files and executable bits
+participate; for a `task.toml` task the identity also binds the files generated from
+`task.toml` and `tasks/shared/task-defaults.toml` and the resolved base image digests. Symlinks, special files, nonzero tar exits and any set `TAR_OPTIONS`
 are errors. All native tasks use this algorithm; keep generated contexts and
-receipts outside task trees. Resources, quotas and audit budgets come from the
-exported policy without a Preview cap.
+receipts outside task trees. Resources, quotas and audit budgets come from
+`task.toml` over the shared defaults, without a platform cap.
 
 ## Export contract
 
@@ -69,25 +70,23 @@ The input contains only regular files and directories, including these members:
 
 ```text
 problem_id/
-  policy.json
-  upstream.lock.json
-  agent-base/Dockerfile
-  verifier/Dockerfile
-  verifier/verify.py
+  task.toml                # schema frontier.task/v1; only what differs from the defaults
+  README.md
+  repo/README.md           # the statement
+  docker/agent.Dockerfile
+  docker/verifier.Dockerfile
   datasets/train.json
   datasets/eval.json
-  judge/evaluator.py       # needed for a bound baseline
+  judge/evaluator.py       # evaluate(tree) for the shared Verifier
   judge/reference.patch   # optional reference candidate payload
-  judge/result.json       # optional authoring scores
 ```
 
-Policy schema is `frontier.frontiersmith-task-policy/v1`. Policy quota, agent,
-verifier, submission, metadata, family, display_name and version feed the
-existing renderer. Dataset body hashes must equal
-`policy.metadata.datasets.{train,eval}.version`, using `sha256:<64 lowercase hex>`.
-GPU roles are enabled by `gpu.agent.max_instances > 0` and/or
-`gpu.verifier.max_gpu_instances > 0`; each enabled role needs its corresponding
-`agent-gpu/Dockerfile` or `verifier-gpu/Dockerfile`.
+`tasks/template/TEMPLATE.md` documents every `task.toml` field and
+`tasks/template/Theory/template_task/` is a complete example. Dataset body hashes are
+computed at build time from the fixed dataset paths.
+GPU roles are enabled by `[gpu.agent] max_instances > 0` and/or
+`[gpu.verifier] max_gpu_instances > 0`; each enabled role needs its corresponding
+`docker/agent-gpu.Dockerfile` or `docker/verifier-gpu.Dockerfile`.
 
 Optional `policy.sidecars` declares same-host containers that the Driver starts
 beside the GPU runner of each listed phase (Core `TaskConfig.images.gpu_sidecars`).
