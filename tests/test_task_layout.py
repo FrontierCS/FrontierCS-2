@@ -655,19 +655,26 @@ class SharedBaseArgumentTests(unittest.TestCase):
                 layout.check_gpu_adapter_pins(self.fixture(directory, gpu=gpu))
 
 
-    def test_a_command_sandbox_needs_a_verifier_gpu_control_pod(self):
-        # Without FRONTIER_VERIFIER_GPU_TYPE the shared verifier drops the Driver bearer and
-        # run_sandboxes() fails before it leases a runner (ragen).
+    def test_a_command_sandbox_control_pod_needs_no_gpu_environment(self):
+        # The shared verifier keeps the Driver bearer for declared sandboxes (verifier.json
+        # `sandboxes`), so the control image sets no FRONTIER_VERIFIER_GPU_TYPE for it.
         bare = self.CONTROL.replace(
             "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n", "")
-        for control in (bare, bare + "# ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB\n"):
-            with self.subTest(control=control), tempfile.TemporaryDirectory() as directory:
-                root = self.fixture(directory, control=control, settings=self.COMMAND)
-                with self.assertRaisesRegex(layout.LayoutFailure,
-                                            r"verifier\.Dockerfile sets no ENV FRONTIER_VERIFIER_GPU_TYPE"):
-                    layout.check_gpu_adapter_pins(root)
-        with tempfile.TemporaryDirectory() as directory:  # lease_seconds alone runs on a runner
-            layout.check_gpu_adapter_pins(self.fixture(directory, control=bare))
+        with tempfile.TemporaryDirectory() as directory:
+            layout.check_gpu_adapter_pins(self.fixture(directory, control=bare, settings=self.COMMAND))
+
+    def test_a_cpu_only_task_with_command_sandboxes_needs_only_the_control_adapter(self):
+        bare = self.CONTROL.replace(
+            "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n", "")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "cpu_task"
+            (root / "docker").mkdir(parents=True)
+            (root / "task.toml").write_text(self.COMMAND)
+            (root / "docker/verifier.Dockerfile").write_text(bare)
+            layout.check_gpu_adapter_pins(root)  # no verifier-gpu recipe exists or is needed
+            (root / "docker/verifier.Dockerfile").write_text("ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n")
+            with self.assertRaisesRegex(layout.LayoutFailure, r"FROM \$\{GPU_TOOLS\} AS"):
+                layout.check_gpu_adapter_pins(root)
 
 
 class BasesTagTests(unittest.TestCase):

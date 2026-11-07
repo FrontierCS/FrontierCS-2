@@ -108,6 +108,18 @@ def mirrored_images(catalog: dict) -> dict:
                 "source_sha256": task[image_name]["digest"],
             }
             counter += 1
+        # CPU runner images: the cluster copy keeps the catalog digest (Pods pull it by digest).
+        for image_name in ("agent_cpu_runner_image", "verifier_cpu_runner_image"):
+            if image_name in task:
+                source = task[image_name]
+                repository = f"172.20.0.50:5000/frontier/tasks/{problem}/{image_name}"
+                result[problem][image_name] = {
+                    "tag": f"{repository}:source-test",
+                    "digest": source["digest"],
+                    "reference": f"{repository}@{source['digest']}",
+                    "source_reference": source["repository"] + "@" + source["digest"],
+                    "source_sha256": source["digest"],
+                }
     return result
 
 
@@ -512,6 +524,8 @@ class TaskDocumentTests(unittest.TestCase):
         ]
         self.assertEqual(
             len(pulls), 1 + len(references) + 3 * len(self.catalog["tasks"])
+            + sum(name in task for task in self.catalog["tasks"]
+                  for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image"))
         )
         self.assertTrue(all(command[3] == "linux/amd64" for command in pulls))
         self.assertTrue(all("@sha256:" in command[4] for command in pulls))

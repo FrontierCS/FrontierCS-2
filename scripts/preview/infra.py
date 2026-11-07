@@ -1520,6 +1520,9 @@ def render_runtime_manifest(
         config_data["MANAGEMENT_VERIFIER_NODE_ALLOWLISTS"] = json.dumps(
             allowlists, sort_keys=True, separators=(",", ":")
         )
+    if "cpu_machines" in config["execution"]:
+        # Verifier CPU machines on Kubernetes: their node group and the site envelope.
+        config_data.update(cpu_machine_management_env(config["execution"]["cpu_machines"]))
     required_tasks = config["execution"].get("verifier_placement_required_task_ids", [])
     if required_tasks:
         config_data["MANAGEMENT_VERIFIER_PLACEMENT_REQUIRED_TASK_IDS"] = json.dumps(
@@ -3399,3 +3402,88 @@ def runtime_admission_preflight(
         else:
             print(f"runtime preflight (informational): {error}")
         return {}
+
+
+CPU_MACHINE_ENV = (
+    "MANAGEMENT_CPU_RUNNER_BACKEND",
+    "MANAGEMENT_CPU_RUNNER_PLACEMENT",
+    "MANAGEMENT_CPU_MACHINE_MAX_INSTANCES",
+    "MANAGEMENT_CPU_MACHINE_MAX_CPU_MILLIS",
+    "MANAGEMENT_CPU_MACHINE_MAX_MEMORY_BYTES",
+)
+
+
+def validate_cpu_machines(value: Any) -> None:
+    """execution.cpu_machines: the site's Verifier CPU machines on Kubernetes, their node group
+    (frontier-contracts CpuMachinePlacement) and the envelope one Run namespace may hold
+    (Management's CpuMachineEnvelope)."""
+    if not isinstance(value, dict) or set(value) != {
+        "placement", "max_instances", "max_cpu_millis", "max_memory_bytes"
+    }:
+        raise DeployError(
+            "execution.cpu_machines requires exactly placement, max_instances, max_cpu_millis "
+            "and max_memory_bytes"
+        )
+    placement = value["placement"]
+    if not isinstance(placement, dict) or "node_selector" not in placement or not set(
+        placement
+    ) <= {"node_selector", "tolerations"}:
+        raise DeployError(
+            "execution.cpu_machines.placement requires node_selector and optional tolerations"
+        )
+    selector = placement["node_selector"]
+    if (
+        not isinstance(selector, dict)
+        or not selector
+        or any(
+            not isinstance(key, str) or not 1 <= len(key) <= 253
+            or not isinstance(label, str) or len(label) > 63
+            for key, label in selector.items()
+        )
+    ):
+        raise DeployError(
+            "execution.cpu_machines.placement.node_selector must name the node group "
+            "(nonempty label keys up to 253 characters, values up to 63)"
+        )
+    if "tolerations" in placement:
+        tolerations = placement["tolerations"]
+        if (
+            not isinstance(tolerations, list)
+            or not tolerations
+            or any(not isinstance(item, dict) or not item for item in tolerations)
+        ):
+            raise DeployError(
+                "execution.cpu_machines.placement.tolerations must be a nonempty array of "
+                "toleration objects"
+            )
+    bounds = (
+        ("max_instances", 1, 64, 1),
+        ("max_cpu_millis", 1000, 64000, 1000),
+        ("max_memory_bytes", 1 << 20, 256 << 30, 1 << 20),
+    )
+    for name, low, high, step in bounds:
+        number = value[name]
+        if type(number) is not int or not low <= number <= high or number % step:
+            raise DeployError(
+                f"execution.cpu_machines.{name} must be an integer in {low}..{high}, "
+                f"a multiple of {step}"
+            )
+
+
+def cpu_machine_management_env(value: Mapping[str, Any]) -> dict[str, str]:
+    """The Management ConfigMap entries for execution.cpu_machines. The placement is the
+    canonical JSON CpuMachinePlacement::canonical() prints (serde: fields in declaration order,
+    maps sorted, no whitespace, no ASCII escaping)."""
+    validate_cpu_machines(value)
+    placement = {"node_selector": dict(sorted(value["placement"]["node_selector"].items()))}
+    if "tolerations" in value["placement"]:
+        placement["tolerations"] = value["placement"]["tolerations"]
+    return {
+        "MANAGEMENT_CPU_RUNNER_BACKEND": "kubernetes",
+        "MANAGEMENT_CPU_RUNNER_PLACEMENT": json.dumps(
+            placement, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ),
+        "MANAGEMENT_CPU_MACHINE_MAX_INSTANCES": str(value["max_instances"]),
+        "MANAGEMENT_CPU_MACHINE_MAX_CPU_MILLIS": str(value["max_cpu_millis"]),
+        "MANAGEMENT_CPU_MACHINE_MAX_MEMORY_BYTES": str(value["max_memory_bytes"]),
+    }

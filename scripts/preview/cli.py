@@ -35,6 +35,8 @@ from .api_routes import (
 from .config import (
     read_and_validate,
     render_bundle,
+    CPU_MACHINE_ENV,
+    cpu_machine_management_env,
     state_directory,
     validate_verifier_node_allowlists,
     validate_verifier_placement_required_task_ids,
@@ -191,6 +193,10 @@ def require_idle_runtime(base: str) -> None:
             raise DeployError(f"runtime upgrade requires zero {state} Runs")
 
 
+# runtime_upgrade_patches(cpu_machines=KEEP): leave the CPU machine settings as they are.
+KEEP = object()
+
+
 def runtime_upgrade_patches(
     configmap: Mapping[str, Any],
     deployment: Mapping[str, Any],
@@ -204,6 +210,7 @@ def runtime_upgrade_patches(
     large_verifier_results: bool = False,
     verifier_node_allowlists: list | None = None,
     verifier_placement_required_task_ids: list | None = None,
+    cpu_machines: Mapping[str, Any] | None | object = KEEP,
     reviewed_public_repair: bool = False,
 ) -> tuple[list, list, dict]:
     """Update immutable runtime pins and the optional Preview gateway wiring."""
@@ -253,6 +260,21 @@ def runtime_upgrade_patches(
         elif key in data:
             del data[key]
             cm_patch.append({"op": "remove", "path": "/data/" + key})
+    if cpu_machines is not KEEP:
+        # The site's execution.cpu_machines, or None when it has none: absent means the keys
+        # are absent, never a default.
+        if any(entry.get("name") in CPU_MACHINE_ENV
+               for entry in containers[indices[0]].get("env", [])):
+            raise DeployError("CPU machine settings reject direct environment overrides")
+        wanted = {} if cpu_machines is None else cpu_machine_management_env(cpu_machines)
+        for key in CPU_MACHINE_ENV:
+            if key in wanted:
+                cm_patch.append({"op": "replace" if key in data else "add",
+                                 "path": "/data/" + key, "value": wanted[key]})
+                data[key] = wanted[key]
+            elif key in data:
+                del data[key]
+                cm_patch.append({"op": "remove", "path": "/data/" + key})
     if cluster_name is not None or region is not None:
         if (not isinstance(cluster_name, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,99}', cluster_name)
                 or not isinstance(region, str) or not re.fullmatch(r'[a-z]{2}(?:-[a-z]+)+-[0-9]', region)
@@ -614,6 +636,7 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         large_verifier_results=True,
         verifier_node_allowlists=config["execution"].get("verifier_node_allowlists", []),
         verifier_placement_required_task_ids=config["execution"].get("verifier_placement_required_task_ids", []),
+        cpu_machines=config["execution"].get("cpu_machines"),
         reviewed_public_repair=reviewed_public_repair,
     )
     preserved_observer = []

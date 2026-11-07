@@ -1,5 +1,6 @@
 """Command test sandboxes: task.toml [test_sandboxes.<name>] access = "command" and the shared
-GPU adapter's run_sandboxes() (tasks/shared/verifier-gpu/fcs2_verifier_gpu.py).
+adapter's run_sandboxes() (tasks/shared/verifier-gpu/fcs2_verifier_gpu.py), on GPU runners and on
+CPU machines (the same protocol; only `resources` differs).
 
 The adapter cases reuse test_shared_gpu_adapter's fake Driver and fake SSH gateway (the remote
 commands run locally with /workspace mapped to a per-runner directory), so the real upload,
@@ -12,24 +13,31 @@ import deployment_test_guard  # noqa: F401  # isort: skip
 
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from test_shared_gpu_adapter import TEMPLATE, AdapterCase, task_manifest
+from unittest import mock
+
+from test_shared_gpu_adapter import REPO, TEMPLATE, AdapterCase, task_manifest
 
 SANDBOX = {"image": "agent_gpu", "workdir": "/workspace/sandbox",
            "resources": {"gpus": 1, "gpu_type": "A100-80GB"}, "max_concurrent": 2,
            "lease_seconds": {"train": 900, "eval": 900}}
+CPU_SANDBOX = {**SANDBOX, "image": "agent_cpu",
+               "resources": {"cpu_millis": 4000, "memory_bytes": 8589934592}}
 
 
 class RunSandboxes(AdapterCase):
     def setUp(self):
         super().setUp()
-        self.parameters.write_text(json.dumps({"entrypoint": "payload/solution.patch", "gpu": {
-            "placement": "control", "max_gpu_instances": 2, "sandboxes": {"candidate": SANDBOX}}}))
+        self.parameters.write_text(json.dumps({
+            "entrypoint": "payload/solution.patch",
+            "gpu": {"placement": "control", "max_gpu_instances": 2},
+            "sandboxes": {"candidate": SANDBOX}}))
         self.files = self.scratch / "files"
         (self.files / "work").mkdir(parents=True)
         (self.files / "work" / "answer.txt").write_text("42")
@@ -165,9 +173,65 @@ class RunSandboxes(AdapterCase):
         self.assertEqual(self.driver.creates, [])
 
     def test_other_placements_have_no_sandboxes(self):
+        # verifier.json has `sandboxes` only for a task that declares command test sandboxes
+        # (task_manifest validated it); run_sandboxes on any other task fails on the missing key.
         self.write_parameters("runner", {"train": 600, "eval": 600})
-        with self.assertRaises(self.gpu.VerifierGpuError):
+        with self.assertRaisesRegex(KeyError, "sandboxes"):
             self.run_one(self.step("true"))
+
+
+class RunCpuSandboxes(RunSandboxes):
+    """Every RunSandboxes case again on a CPU machine: the same judge code, upload, steps and
+    collect; only the create request carries the machine's exact shape instead of GPUs. A task
+    without GPUs has no `gpu` table and no FRONTIER_VERIFIER_GPU_TYPE."""
+
+    def setUp(self):
+        super().setUp()
+        os.environ.pop("FRONTIER_VERIFIER_GPU_TYPE")
+        os.environ.pop("FRONTIER_VERIFIER_GPU_COUNT")
+        self.parameters.write_text(json.dumps({"entrypoint": "payload/solution.patch",
+                                               "sandboxes": {"candidate": CPU_SANDBOX}}))
+
+    def test_only_the_files_go_up_steps_run_in_the_workdir_and_outputs_come_back(self):
+        result = self.run_one(self.step("mkdir out && cat work/answer.txt > out/answer"))
+        self.assertEqual((result.outputs / "out/answer").read_text(), "42")
+        create = self.driver.creates[0]
+        self.assertEqual({key: value for key, value in create.items() if key != "key"}, {
+            "image": "agent_cpu", "cpu_millis": 4000, "memory_bytes": 8589934592,
+            "max_duration_seconds": 900})
+        self.assertEqual(len(self.driver.deleted), 1)
+
+    def test_a_reply_of_another_shape_is_refused_as_infrastructure(self):
+        original = self.driver.open
+
+        def other_shape(request, timeout=None):
+            response = original(request, timeout)
+            if request.get_method() == "POST":
+                body = json.loads(response._body)
+                body["cpu_millis"] = 8000
+                response._body = json.dumps(body).encode()
+            return response
+
+        with mock.patch.object(self.gpu, "_HTTP", mock.Mock(open=other_shape)):
+            # Unscored, loudly: the reply is not this machine, so its identity is not trusted
+            # for a delete either (the Driver reclaims it at the verification's end).
+            with self.assertRaisesRegex(self.gpu.VerifierGpuError, "termination was not confirmed"):
+                self.run_one(self.step("true"))
+
+    def test_other_placements_have_no_sandboxes(self):
+        self.parameters.write_text(json.dumps({"entrypoint": "payload/solution.patch"}))
+        with self.assertRaisesRegex(KeyError, "sandboxes"):
+            self.run_one(self.step("true"))
+
+    def test_the_shared_verifier_keeps_the_driver_bearer_for_declared_sandboxes(self):
+        verifier = self.verifier
+        for sandboxes, kept in ((True, "bearer"), (False, None)):
+            with mock.patch.dict(verifier._sealed, clear=True), \
+                    mock.patch.dict(os.environ, {"FRONTIER_VERIFIER_TOKEN": "bearer"}), \
+                    mock.patch.object(verifier, "_wipe_initial_environment", lambda names: None):
+                verifier.seal_credentials(sandboxes=sandboxes)
+                self.assertEqual(verifier.verifier_token(), kept)
+                self.assertNotIn("FRONTIER_VERIFIER_TOKEN", os.environ)
 
 
 COMMAND = '''
@@ -191,6 +255,26 @@ lease_seconds = { train = 600, eval = 600 }
 '''
 
 
+CPU_COMMAND = '''
+[test_sandboxes.candidate]
+access = "command"
+dockerfile = "docker/agent.Dockerfile"
+workdir = "/workspace/sandbox"
+resources = { cpu_millis = 4000, memory_bytes = 8589934592 }
+max_concurrent = 2
+lease_seconds = { train = 600, eval = 600 }
+
+[test_sandboxes.timing]
+access = "command"
+trust = "trusted"
+dockerfile = "docker/verifier.Dockerfile"
+workdir = "/workspace/timing"
+resources = { cpu_millis = 4000, memory_bytes = 8589934592 }
+max_concurrent = 1
+lease_seconds = { train = 600, eval = 600 }
+'''
+
+
 class Manifest(unittest.TestCase):
     def task(self, extra: str) -> Path:
         root = Path(tempfile.mkdtemp(prefix="command-sandbox-")) / "Theory" / "template_task"
@@ -201,12 +285,13 @@ class Manifest(unittest.TestCase):
 
     def test_a_command_sandbox_puts_the_judge_on_the_control_image(self):
         task, origins = task_manifest.resolve(self.task(COMMAND))
-        self.assertEqual(task_manifest.verifier_parameters(task)["gpu"], {
-            "placement": "control", "max_gpu_instances": 2,
-            "sandboxes": {"candidate": {
-                "image": "agent_gpu", "workdir": "/workspace/sandbox",
-                "resources": {"gpus": 1, "gpu_type": "A100-80GB"}, "max_concurrent": 2,
-                "lease_seconds": {"train": 600, "eval": 600}}}})
+        parameters = task_manifest.verifier_parameters(task)
+        self.assertEqual(parameters["gpu"], {"placement": "control", "max_gpu_instances": 2})
+        self.assertEqual(parameters["sandboxes"], {"candidate": {
+            "image": "agent_gpu", "workdir": "/workspace/sandbox",
+            "resources": {"gpus": 1, "gpu_type": "A100-80GB"}, "max_concurrent": 2,
+            "lease_seconds": {"train": 600, "eval": 600}}})
+        self.assertNotIn("verifier_cpu", task)
         self.assertEqual(origins[("gpu", "verifier", "placement")],
                          'derived: [test_sandboxes] access = "command"')
         policy = task_manifest.policy_from_task(task)
@@ -236,19 +321,120 @@ class Manifest(unittest.TestCase):
             with self.subTest(name), self.assertRaises(task_manifest.ManifestError):
                 task_manifest.read_task(self.task(text))
 
-    def test_a_cpu_machine_is_declared_but_not_provisioned_yet(self):
-        text = COMMAND.replace('resources = { gpus = 1, gpu_type = "A100-80GB" }',
-                               "resources = { cpu_millis = 16000, memory_bytes = 68719476736 }")
-        with self.assertRaisesRegex(task_manifest.ManifestError, "CPU sandbox provisioning"):
-            task_manifest.read_task(self.task(text))
+    def test_a_cpu_machine_needs_only_its_resources(self):
+        # A task without GPUs: the declaration alone makes its CPU machines and their quota.
+        root = self.task(CPU_COMMAND)
+        task, origins = task_manifest.resolve(root)
+        self.assertNotIn("gpu", task)
+        parameters = task_manifest.verifier_parameters(task)
+        self.assertNotIn("gpu", parameters)
+        self.assertEqual(parameters["sandboxes"], {
+            "candidate": {"image": "agent_cpu",
+                          "workdir": "/workspace/sandbox",
+                          "resources": {"cpu_millis": 4000, "memory_bytes": 8589934592},
+                          "max_concurrent": 2, "lease_seconds": {"train": 600, "eval": 600}},
+            "timing": {"image": "verifier_cpu", "workdir": "/workspace/timing",
+                       "resources": {"cpu_millis": 4000, "memory_bytes": 8589934592},
+                       "max_concurrent": 1, "lease_seconds": {"train": 600, "eval": 600}}})
+        # Three machines at once (2 + 1), each for a whole verification of each call.
+        timeout, calls = task["quota"]["eval_timeout_seconds"], task["quota"]["max_train_calls"]
+        self.assertEqual(task["verifier_cpu"], {
+            "shapes": [{"cpu_millis": 4000, "memory_bytes": 8589934592}], "max_instances": 3,
+            "max_seconds": calls * 3 * timeout, "final_seconds": 3 * timeout})
+        self.assertEqual(task_manifest.policy_from_task(task)["verifier_cpu"], task["verifier_cpu"])
+        self.assertTrue(origins[("verifier_cpu", "max_instances")].startswith("derived"))
+        self.assertEqual(task_manifest.cpu_runner_roles(task),
+                         ["agent-cpu-runner", "verifier-cpu-runner"])
+        generated = task_manifest.generated_files(root)
+        self.assertEqual(generated[".frontier-generated/runner/cpu-runner.Dockerfile"],
+                         (REPO / "tasks/shared/images/cpu-runner.Dockerfile").read_bytes())
+        self.assertIn(".frontier-generated/runner/task-runtime", generated)
+        # A task without CPU machines generates no runner layer.
+        self.assertNotIn(".frontier-generated/runner/task-runtime",
+                         task_manifest.generated_files(self.task(COMMAND)))
+
+    def test_a_cpu_machine_refusals(self):
+        cases = {
+            "fractional cores": (CPU_COMMAND.replace("cpu_millis = 4000", "cpu_millis = 3500"),
+                                 "must be whole cores"),
+            "memory that is not whole MiB": (
+                CPU_COMMAND.replace("memory_bytes = 8589934592", "memory_bytes = 8589934593"), "whole MiB"),
+            "more than 256 GiB": (
+                CPU_COMMAND.replace("memory_bytes = 8589934592", "memory_bytes = 549755813888"), "256 GiB"),
+            "GPUs and CPU together": (CPU_COMMAND.replace(
+                "cpu_millis = 4000, memory_bytes", "gpus = 1, cpu_millis = 4000, memory_bytes"),
+                "resources of a GPU runner are gpus and gpu_type"),
+            "only cores": (CPU_COMMAND.replace(", memory_bytes = 8589934592 }", " }"),
+                           "exactly cpu_millis and memory_bytes"),
+            "the judge's image for the candidate": (
+                CPU_COMMAND.replace('dockerfile = "docker/agent.Dockerfile"',
+                                    'dockerfile = "docker/verifier.Dockerfile"'), "carries the judge"),
+            "a GPU image for a CPU machine": (
+                CPU_COMMAND.replace('dockerfile = "docker/agent.Dockerfile"',
+                                    'dockerfile = "docker/agent-gpu.Dockerfile"'), "a CPU machine runs one of"),
+            "a CPU image for a GPU runner": (COMMAND.replace("agent-gpu.Dockerfile", "agent.Dockerfile"),
+                                             "a GPU machine runs one of"),
+            "the quota written by hand": ("verifier_cpu = { max_instances = 3 }\n" + CPU_COMMAND, "verifier_cpu"),
+        }
+        for name, (text, message) in cases.items():
+            with self.subTest(name), self.assertRaisesRegex(task_manifest.ManifestError, message):
+                task_manifest.read_task(self.task(text))
 
     def test_a_trusted_sandbox_may_run_on_the_verifier_gpu_image(self):
         text = COMMAND.replace('access = "command"', 'access = "command"\ntrust = "trusted"').replace(
             "agent-gpu.Dockerfile", "verifier-gpu.Dockerfile")
         task = task_manifest.read_task(self.task(text))
-        self.assertEqual(task_manifest.verifier_parameters(task)["gpu"]["sandboxes"]["candidate"]["image"],
+        self.assertEqual(task_manifest.verifier_parameters(task)["sandboxes"]["candidate"]["image"],
                          "verifier_gpu")
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class VerifierChannelSize(unittest.TestCase):
+    """The Verifier's SSH channel size (FRONTIER_MAX_SSH_BYTES_PER_DIRECTION, by which the
+    adapter sizes upload chunks and collects to 7/8) is the Verifier image's own: a legacy task's
+    Dockerfile ENV, else the shared adapter's 8 MiB. The Driver never sets it. The task's
+    network.audit.max_ssh_bytes_per_direction is a retired recording capacity; many tasks declare
+    512 MiB, which the adapter would refuse. Every catalog task's effective size must be one its
+    adapter accepts."""
+
+    ENV = re.compile(r"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION=(\d+)")
+
+    def test_every_catalog_tasks_effective_channel_size_is_accepted_by_its_adapter(self):
+        from test_shared_gpu_adapter import load_adapter
+        import importlib.util
+        import render_task_definition as renderer
+        shared = load_adapter()
+        catalog = json.loads((REPO / "config/task-catalog.json").read_text())["tasks"]
+        checked = 0
+        for task in catalog:
+            root = renderer.problem_directory(renderer.TASK_ROOT / "problems", task["name"])
+            vendored = root / "verifier/fcs2_verifier_gpu.py"
+            if vendored.is_file():
+                spec = importlib.util.spec_from_file_location(f"vendored_{task['name']}", vendored)
+                adapter = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(adapter)
+                values = {match for dockerfile in (root / "verifier").glob("*Dockerfile*")
+                          for match in self.ENV.findall(dockerfile.read_text(encoding="utf-8"))}
+            elif task_manifest.is_native(root):
+                parameters = task_manifest.verifier_parameters(task_manifest.read_task(root))
+                if "gpu" not in parameters and "sandboxes" not in parameters:
+                    continue
+                adapter = shared
+                values = {match for dockerfile in (root / "docker").glob("verifier*.Dockerfile")
+                          for match in self.ENV.findall(dockerfile.read_text(encoding="utf-8"))}
+            else:
+                continue
+            self.assertLessEqual(len(values), 1, task["name"])
+            environment = {"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": values.pop()} if values else {}
+            with self.subTest(task=task["name"]):
+                self.assertGreater(adapter._upload_chunk_bytes(environment), 0)
+            checked += 1
+        self.assertGreaterEqual(checked, 25)
+        print(f"{checked} catalog tasks use a GPU adapter; each one accepts its channel size", file=sys.stderr)
+        # What the Driver must never pass: the retired cap many tasks declare.
+        with self.assertRaises(shared.VerifierGpuError):
+            shared._upload_chunk_bytes({"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": str(512 * 1024 * 1024)})

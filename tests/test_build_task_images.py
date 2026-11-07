@@ -645,8 +645,15 @@ with mock.patch.object(Path, 'open', checked_open):
                 return command[-1].split(":")[0] + "@sha256:" + "a" * 64
             return ""
 
+        def built_digest(reference):
+            # The registry holds nothing of this release, except what this run built: a CPU
+            # runner is built FROM its task image by registry digest (as after --push).
+            tags = {c[c.index("--tag") + 1] for c in commands if c[:2] == ["docker", "build"]}
+            return "sha256:" + "b" * 64 if reference in tags else None
+
         with (
             mock.patch.object(build_task_images, "run", side_effect=fake_run),
+            mock.patch.object(build_task_images, "registry_digest", side_effect=built_digest),
             mock.patch.object(
                 renderer, "render", side_effect=lambda root, name: definitions[name]
             ),
@@ -728,7 +735,10 @@ with mock.patch.object(Path, 'open', checked_open):
             self.assertIn("linux/amd64", command)
             dockerfile = Path(command[command.index("-f") + 1])
             if "datasets" not in command[command.index("--tag") + 1]:
-                self.assertEqual(command[-1], str(dockerfile.parent.parent))
+                # A task recipe is <context>/<dir>/Dockerfile or <context>/docker/<role>.Dockerfile;
+                # the shared CPU runner layer is <context>/.frontier-generated/runner/....
+                runner = dockerfile.name == "cpu-runner.Dockerfile"
+                self.assertEqual(command[-1], str(dockerfile.parents[2 if runner else 1]))
                 build_args = dict(command[i + 1].split("=", 1)
                                   for i, value in enumerate(command) if value == "--build-arg")
                 sources = build_task_images.dockerfile_bases(dockerfile, {
@@ -1686,6 +1696,41 @@ class VerifierSmokeTests(unittest.TestCase):
                     "img@sha256:" + "a" * 64, "a_task", root, definition), seen
             finally:
                 self.seen, self.record = seen, record
+
+    def test_a_cpu_sandbox_task_smokes_that_its_image_reads_the_declared_sandboxes(self):
+        # cute_crest's judge leases Driver CPU machines: without a Driver the smoke checks that
+        # the image's shared adapter reads exactly task.toml's command test sandboxes.
+        root = renderer.problem_directory(build_task_images.TASK_ROOT / "problems", "cute_crest")
+        definition = renderer.render(root, "cute_crest")
+        expected = task_manifest.verifier_parameters(task_manifest.read_task(root))["sandboxes"]
+        calls = []
+
+        def pod(image, verifier, mode, work, command, **_):
+            calls.append((image, mode, command))
+            return subprocess.CompletedProcess(command, 0, "command test sandboxes search: ok\n", "")
+
+        with (
+            mock.patch.object(build_task_images, "run_in_pod", side_effect=pod),
+            mock.patch.object(build_task_images, "fixture_smoke", return_value=[]),
+        ):
+            verdict = build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "cute_crest", root, definition)
+        self.assertEqual(verdict, "command test sandboxes search: ok")
+        [(image, mode, command)] = calls
+        self.assertEqual((image, mode), ("img@sha256:" + "a" * 64, "train"))
+        self.assertEqual(command[:3], ["/opt/frontier/runtime-python", "-c", build_task_images.SANDBOX_CHECK])
+        self.assertEqual(json.loads(command[3]), expected)
+        self.assertIn("fcs2_verifier_gpu.sandbox_parameters()", build_task_images.SANDBOX_CHECK)
+
+        def mismatch(image, verifier, mode, work, command, **_):
+            return subprocess.CompletedProcess(command, 1, "", "AssertionError: sandboxes: task.toml")
+
+        with (
+            mock.patch.object(build_task_images, "run_in_pod", side_effect=mismatch),
+            mock.patch.object(build_task_images, "fixture_smoke", return_value=[]),
+            self.assertRaisesRegex(build_task_images.BuildFailure,
+                                   "does not read task.toml's command test sandboxes"),
+        ):
+            build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "cute_crest", root, definition)
 
     def test_cpu_task_judges_the_reference_in_train_mode_in_the_production_layout(self):
         verdict, seen = self.cpu_smoke({"status": "passed", "raw_score": 50.0, "metrics": {}})

@@ -351,3 +351,48 @@ class NativeDeployTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CpuMachinePublicationTests(unittest.TestCase):
+    """A task with CPU command sandboxes publishes its runner images (public tag for Modal, the
+    cluster-registry copy for Kubernetes Pods) and its derived Verifier CPU machine quota."""
+
+    def test_task_config_carries_runner_images_and_cpu_machine_quota(self):
+        # The resolved catalog as is: this test is about the TaskConfig, not the baselines.
+        catalog = resolved_catalog()
+        mirrors = mirrored_images(catalog)
+        task = copy.deepcopy(next(t for t in catalog["tasks"] if t["name"] == "residual_state_advancement"))
+        name = task["name"]
+        digest = "sha256:" + "e" * 64
+        task["agent_cpu_runner_image"] = {"repository": f"docker.io/joyemang33/fcs2-task-{name}-agent-runner",
+                                          "tag": "source-x", "digest": digest}
+        mirror = copy.deepcopy(mirrors[name])
+        mirror["agent_cpu_runner_image"] = {
+            "reference": f"172.20.0.50:5000/frontier/tasks/{name.replace('_', '-')}/agent-cpu-runner@{digest}",
+            "digest": digest}
+        definitions = copy.deepcopy(deploy.TASK_DEFINITIONS)
+        quota = {"shapes": [{"cpu_millis": 2000, "memory_bytes": 8 << 30}], "max_instances": 1,
+                 "max_seconds": 3000, "final_seconds": 1500}
+        definitions[name].update(verifier_cpu=quota, cpu_runner_images=["agent_cpu"])
+        document = deploy.task_version_document(task, mirror, definitions=definitions)
+        config = document["driver_config"]
+        self.assertEqual(config["quota"]["verifier_cpu"], quota)
+        self.assertEqual(config["images"]["agent_cpu_runner"], {
+            "tag": f"docker.io/joyemang33/fcs2-task-{name}-agent-runner:source-x", "digest": digest,
+            "reference": mirror["agent_cpu_runner_image"]["reference"]})
+        # Another identity than the task without CPU machines.
+        original = next(t for t in catalog["tasks"] if t["name"] == name)
+        plain = deploy.task_version_document(original, mirrors[name])
+        self.assertNotEqual(plain["driver_config"]["task_version_id"], config["task_version_id"])
+        # A cluster copy of another digest is refused.
+        mirror["agent_cpu_runner_image"]["digest"] = "sha256:" + "f" * 64
+        with self.assertRaisesRegex(deploy.DeployError, "mirrored agent_cpu_runner_image is not the catalog digest"):
+            deploy.task_version_document(task, mirror, definitions=definitions)
+
+    def test_import_lists_one_runner_role_per_kind(self):
+        import import_task
+        definition = {"cpu_runner_images": ["agent_cpu", "verifier_cpu"]}
+        self.assertEqual(import_task.image_roles(definition, False),
+                         ["agent", "verifier", "datasets", "agent_cpu_runner", "verifier_cpu_runner"])
+        for role in ("agent_cpu_runner", "verifier_cpu_runner"):
+            self.assertIn(role, import_task.ROLE_KEYS)

@@ -12,6 +12,9 @@ from typing import Any
 
 from .infra import (
     ACCOUNT_RE,
+    CPU_MACHINE_ENV as CPU_MACHINE_ENV,
+    cpu_machine_management_env as cpu_machine_management_env,
+    validate_cpu_machines,
     APPLICATION_REPOSITORY,
     COMMIT_RE,
     FORBIDDEN_CONFIG_KEYS,
@@ -489,9 +492,12 @@ def validate_config(raw: Any) -> dict[str, Any]:
             {"verifier_placement_required_task_ids"}
             if "verifier_placement_required_task_ids" in execution
             else set()
-        ),
+        )
+        | ({"cpu_machines"} if "cpu_machines" in execution else set()),
         "execution",
     )
+    if "cpu_machines" in execution:
+        validate_cpu_machines(execution["cpu_machines"])
     if "verifier_node_allowlists" in execution:
         validate_verifier_node_allowlists(execution["verifier_node_allowlists"])
     from task_selection import verifier_workspace_budgets

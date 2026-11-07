@@ -54,6 +54,12 @@ from .infra import (
     validate_image,
 )
 
+# A CPU command sandbox's Driver runner image -> (its catalog row key, its repository).
+CPU_RUNNER_IMAGES = {
+    "agent_cpu": ("agent_cpu_runner_image", "fcs2-task-{name}-agent-runner"),
+    "verifier_cpu": ("verifier_cpu_runner_image", "fcs2-task-verifier-{name}-runner"),
+}
+
 
 def load_task_definitions() -> dict[str, dict[str, Any]]:
     """Load the reviewed definitions when used, never while importing modules."""
@@ -122,6 +128,10 @@ def validate_task_catalog(
             repositories["agent_gpu_image"] = f"fcs2-task-{name}-agent-gpu"
         if gpu.get("verifier", {}).get("max_gpu_instances", 0):
             repositories["verifier_gpu_image"] = f"fcs2-task-verifier-{name}-gpu"
+        # CPU machines of command test sandboxes: the runner image of each kind they use.
+        for runner in policy.get("cpu_runner_images", ()):
+            key, repository = CPU_RUNNER_IMAGES[runner]
+            repositories[key] = repository.format(name=name)
         sidecars = policy.get("sidecars") or {}
         require_exact_keys(
             task,
@@ -587,6 +597,13 @@ def task_version_document(
                 for name in ("agent_gpu_image", "verifier_gpu_image")
                 if name in task
             },
+            # Only tasks with CPU machines carry these, so every existing task version keeps
+            # the identity it was seeded with.
+            **{
+                name: task[name]
+                for name, _ in CPU_RUNNER_IMAGES.values()
+                if name in task
+            },
             # Only tasks declaring sidecars carry this key, so every existing
             # task version keeps the identity it was seeded with.
             **(
@@ -714,6 +731,23 @@ def task_version_document(
         task_config["images"]["gpu_parent_resources"] = json.loads(
             json.dumps(policy["gpu_parent_resources"])
         )
+    # Command test sandboxes on CPU machines: their runner images (Core TaskConfig
+    # images.agent_cpu_runner / verifier_cpu_runner, imported by Modal like the GPU images) and
+    # the Verifier CPU machine quota task.toml derives (quota.verifier_cpu).
+    for runner, (catalog_name, _) in CPU_RUNNER_IMAGES.items():
+        if catalog_name in task:
+            image = task[catalog_name]
+            mirrored = require_mapping(mirrored_images.get(catalog_name), f"mirrored {catalog_name}")
+            reference = require_string(mirrored.get("reference"), f"mirrored {catalog_name}.reference")
+            if mirrored.get("digest") != image["digest"] or not reference.endswith("@" + image["digest"]):
+                raise DeployError(f"mirrored {catalog_name} is not the catalog digest")
+            task_config["images"][f"{runner}_runner"] = {
+                "tag": f"{image['repository']}:{image['tag']}",
+                "digest": image["digest"],
+                "reference": reference,
+            }
+    if "verifier_cpu" in policy:
+        task_config["quota"]["verifier_cpu"] = json.loads(json.dumps(policy["verifier_cpu"]))
     if "network" in policy:
         task_config["network"] = network
     else:

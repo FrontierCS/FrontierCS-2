@@ -99,6 +99,16 @@
     "smoke": {
       "enabled": true,
       "timeout_seconds": 900
+    },
+    "cpu_machines": {
+      "placement": {
+        "node_selector": {
+          "eks.amazonaws.com/nodegroup": "frontiercs2-preview-eval16"
+        }
+      },
+      "max_instances": 4,
+      "max_cpu_millis": 16000,
+      "max_memory_bytes": 68719476736
     }
   },
   "features": {

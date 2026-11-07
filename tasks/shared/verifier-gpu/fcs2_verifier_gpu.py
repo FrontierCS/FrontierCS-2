@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Run FrontierSmith verifier work on Driver-owned Modal GPUs (shared GPU adapter, gpu-tools).
+"""Run FrontierSmith verifier work on Driver-owned Modal machines (shared GPU adapter, gpu-tools):
+the whole verification on one GPU runner, or a judge's commands on command test sandboxes (GPU
+runners and CPU machines alike).
 
 The EKS Verifier Pod remains the control plane.  It already has a verification-scoped Driver
 bearer, so this adapter creates Verifier-owned runners, connects only through the Driver's
@@ -22,7 +24,9 @@ the GPU type and count stay FRONTIER_VERIFIER_GPU_TYPE / FRONTIER_VERIFIER_GPU_C
     placement = "control"  (derived: the task declares a [test_sandboxes.<name>] with
                            access = "command") the shared verifier runs the judge on the CPU
                            control image; evaluate() runs commands on sandbox runners with
-                           `run_sandboxes()` below.
+                           `run_sandboxes()` below. A task without GPUs whose command
+                           sandboxes are CPU machines has no `gpu` table at all: its judge is
+                           on the control image as always.
     lease_seconds = { train = N, eval = M }
                            the runner lease requested per verification mode (default: both
                            quota.eval_timeout_seconds). The Driver may grant less.
@@ -38,13 +42,15 @@ Errors: VerifierGpuError subclasses Exception, NOT RuntimeError, so a judge's
 `except RuntimeError` for its own submission failures never turns a lost runner into a score.
 Let it propagate: the shared verifier reports it as an unscored `verifier_gpu_error`.
 
-Command test sandboxes (placement = "control"; design /data/task-format/design/sandboxes.md):
+Command test sandboxes (verifier.json `sandboxes`; design /data/task-format/design/sandboxes.md):
 
     run_sandboxes([SandboxRun(sandbox, files, steps, outputs=(), max_output_bytes=None)], *, into)
         -> [SandboxResult(steps, outputs, outputs_exceeded, logs)]
         One runner per run of the declared sandbox (its image, resources and per-mode
         lease_seconds from verifier.json), all leased at once, at most max_concurrent per
-        sandbox. The upload is exactly `files` (a local directory), extracted as the sandbox's
+        sandbox. `resources` is the machine: { gpus, gpu_type } a GPU runner, { cpu_millis,
+        memory_bytes } a CPU machine of exactly that shape (every run of one sandbox is the
+        same machine type); the protocol below is the same for both, and so is this API. The upload is exactly `files` (a local directory), extracted as the sandbox's
         workdir; nothing else reaches the runner (the judge bundle only when a trusted
         sandbox's judge puts it in `files`). Steps
         (SandboxStep(argv, seconds, env)) run there in order with the image runtime plus `env`;
@@ -367,7 +373,7 @@ def _driver_token() -> str:
 
 def gpu_parameters() -> dict:
     """The task's verifier.json `gpu`: placement and max_gpu_instances, plus lease_seconds
-    ("runner") or the command test sandboxes ("control", as task_manifest wrote them)."""
+    ("runner"). The command test sandboxes are verifier.json `sandboxes` (sandbox_parameters)."""
     if "FRONTIER_VERIFIER_GPU_SECONDS" in os.environ:
         raise VerifierGpuError("FRONTIER_VERIFIER_GPU_SECONDS is retired; the lease is "
                                "task.toml [gpu.verifier] lease_seconds")
@@ -428,7 +434,9 @@ def _request(method: str, driver_url: str, verification_id: str, token: str,
             raw = response.read(MAX_RESPONSE_BYTES + 1)
     except urllib.error.HTTPError as error:
         if error.code == 429:
-            raise VerifierGpuError("the Verifier GPU quota is exhausted") from error
+            # Quota exhausted, or a GPU type / CPU machine shape the task does not declare.
+            raise VerifierGpuError("the Driver refused the runner: the Verifier quota is "
+                                   "exhausted or does not declare this machine") from error
         raise VerifierGpuError(
             f"{method} Verifier GPU endpoint returned HTTP {error.code}") from error
     except (urllib.error.URLError, TimeoutError, OSError) as error:
@@ -445,13 +453,15 @@ def _request(method: str, driver_url: str, verification_id: str, token: str,
 
 
 def _create_runner(driver_url: str, verification_id: str, token: str,
-                   gpu_type: str, seconds: int, gpu_count: int = 1, *,
+                   gpu_type: str | None, seconds: int, gpu_count: int = 1, *,
                    window: _WaitWindow | None = None,
                    idempotency_scope: str | None = None,
-                   image: str | None = None) -> dict:
-    """A ready runner of the Verifier GPU image, or with `image` ("agent_gpu", a command test
-    sandbox) of that TaskConfig image; the Driver echoes the image it used."""
-    body = {"gpu_type": gpu_type, "gpu_count": gpu_count, "max_duration_seconds": seconds}
+                   image: str | None = None, machine: dict | None = None) -> dict:
+    """A ready runner of the Verifier GPU image, or with `image` (a command test sandbox's
+    TaskConfig runner image) of that image; the Driver echoes the image it used. `machine` is a
+    CPU machine's exact shape ({cpu_millis, memory_bytes}, a *_cpu image) instead of GPUs."""
+    shape = dict(machine) if machine is not None else {"gpu_type": gpu_type, "gpu_count": gpu_count}
+    body = {**shape, "max_duration_seconds": seconds}
     if image is not None:
         body["image"] = image
     runner = _request("POST", driver_url, verification_id, token, "", expect=202, body=body,
@@ -460,9 +470,9 @@ def _create_runner(driver_url: str, verification_id: str, token: str,
     runner_id = str(runner.get("runner_id") or "")
     if (RUNNER_ID.fullmatch(runner_id) is None
             or runner.get("state") != "ready"
-            or runner.get("gpu_count") != gpu_count
+            or any(runner.get(key) != value for key, value in shape.items() if key != "gpu_type")
             or (image is not None and runner.get("image") != image)):
-        raise VerifierGpuError("the Driver did not return a ready canonical GPU runner")
+        raise VerifierGpuError("the Driver did not return a ready canonical runner")
     expected = (f"{driver_url}/internal/v1/verifications/{verification_id}/"
                 f"gpu-runners/{runner_id}/connect")
     if runner.get("proxy_endpoint") != expected:
@@ -618,7 +628,7 @@ class _ConnectBroker:
                                                        struct.calcsize("3i")))[1]
             if uid != os.getuid():
                 raise VerifierGpuError("the ProxyCommand peer is not this Verifier")
-            driver_url, verification_id, token, _gpu_type, _gpu_count = self._config
+            driver_url, verification_id, token = self._config
             try:
                 upstream = _connect_socket(driver_url, verification_id, token, self.runner_id)
             except OSError as error:
@@ -657,7 +667,8 @@ def _broker(runner_id: str, scratch: Path) -> _ConnectBroker:
     with _BROKERS_LOCK:
         broker = _BROKERS.get(runner_id)
         if broker is None:
-            broker = _BROKERS[runner_id] = _ConnectBroker(runner_id, scratch / "connect.sock", _config())
+            broker = _BROKERS[runner_id] = _ConnectBroker(runner_id, scratch / "connect.sock",
+                                                          _driver_config())
         return broker
 
 
@@ -676,7 +687,7 @@ def _ssh_argv(runner: dict, scratch: Path) -> list[str]:
         encoding="utf-8")
     known_hosts.chmod(0o600)
     broker = _broker(str(runner["runner_id"]), scratch)
-    proxy = (f"{sys.executable} /opt/frontier/fcs2_verifier_gpu.py _connect "
+    proxy = (f"{sys.executable} {shlex.quote(str(Path(__file__).resolve()))} _connect "
              f"{runner['runner_id']} {shlex.quote(str(broker.path))}")
     return [
         "/usr/bin/ssh", "-o", "StrictHostKeyChecking=yes",
@@ -1465,9 +1476,9 @@ def _collect(function, index: int, errors: list) -> None:
 
 
 # ---------------------------------------------------------------- command test sandboxes
-# task.toml [test_sandboxes.<name>] access = "command" (verifier.json gpu.sandboxes, placement
-# "control"): the judge runs here and runs commands on runners of the sandbox's image. The full
-# contract is in the module docstring ("Command test sandboxes").
+# task.toml [test_sandboxes.<name>] access = "command" (verifier.json `sandboxes`): the judge runs
+# here and runs commands on machines of the sandbox's image and shape. The full contract is in
+# the module docstring ("Command test sandboxes").
 WORKSPACE = "/workspace/"  # the runner user's home; every sandbox path is below it
 SANDBOX_LOGS = "/workspace/frontier-sandbox-logs"
 STEP_KILL_AFTER_SECONDS = 5
@@ -1807,11 +1818,14 @@ def _sandbox_run(index: int, request: SandboxRun, spec: dict, *, mode: str, call
             create_end = min(create_end, outer.work_end)
         anchor = time.monotonic()
         record["create_requested"] = True
+        resources = spec["resources"]
+        machine = None if "gpus" in resources else {
+            "cpu_millis": resources["cpu_millis"], "memory_bytes": resources["memory_bytes"]}
         runner = _create_runner(
-            driver_url, verification_id, token, spec["resources"]["gpu_type"], seconds,
-            spec["resources"]["gpus"], window=_WaitWindow(create_end, "work_budget_exhausted"),
+            driver_url, verification_id, token, resources.get("gpu_type"), seconds,
+            resources.get("gpus", 1), window=_WaitWindow(create_end, "work_budget_exhausted"),
             idempotency_scope=f"sandbox-v1:{call}:{mode}:{index}:{request.sandbox}",
-            image=spec["image"])
+            image=spec["image"], machine=machine)
         deadline = _runner_deadline(runner, seconds, anchor=anchor)
         if outer is not None:
             deadline = min(deadline, outer.work_end)
@@ -1888,12 +1902,18 @@ def _sandbox_run(index: int, request: SandboxRun, spec: dict, *, mode: str, call
                 cancel.set()
 
 
+def sandbox_parameters() -> dict:
+    """verifier.json `sandboxes`: the task's command test sandboxes, by name (task_manifest
+    wrote and validated them: image, trust, workdir, resources, max_concurrent, lease_seconds)."""
+    return json.loads(PARAMETERS.read_text(encoding="utf-8"))["sandboxes"]
+
+
 def sandbox_workdir(name: str) -> str:
     """The declared workdir of command test sandbox `name`: where its files land on a runner."""
-    gpu = gpu_parameters()
-    if gpu["placement"] != "control" or name not in gpu["sandboxes"]:
+    sandboxes = sandbox_parameters()
+    if name not in sandboxes:
         raise VerifierGpuError(f"no command test sandbox {name!r} in task.toml")
-    return gpu["sandboxes"][name]["workdir"]
+    return sandboxes[name]["workdir"]
 
 
 def run_sandboxes(runs, *, into) -> list[SandboxResult]:
@@ -1901,13 +1921,10 @@ def run_sandboxes(runs, *, into) -> list[SandboxResult]:
     the results in order. `into` is an empty local directory the judge owns: run i's outputs
     go to `into/<i>`. See "Command test sandboxes" in the module docstring."""
     global _SANDBOX_CALLS
-    gpu = gpu_parameters()
-    if gpu["placement"] != "control":
-        raise VerifierGpuError('run_sandboxes needs a task.toml [test_sandboxes.<name>] with '
-                               'access = "command"')
+    sandboxes = sandbox_parameters()
     mode = _required_env("FRONTIER_VERIFICATION_MODE")
     capture = _upload_chunk_bytes(os.environ)
-    runs = _sandbox_requests(runs, gpu["sandboxes"], mode, capture)
+    runs = _sandbox_requests(runs, sandboxes, mode, capture)
     into = Path(into)
     if not into.is_dir() or any(into.iterdir()):
         raise VerifierGpuError("run_sandboxes needs an empty directory `into`")
@@ -1928,7 +1945,7 @@ def run_sandboxes(runs, *, into) -> list[SandboxResult]:
             directory = scratch / f"run-{index}"
             directory.mkdir()
             results[index] = _sandbox_run(
-                index, runs[index], gpu["sandboxes"][runs[index].sandbox], mode=mode, call=call,
+                index, runs[index], sandboxes[runs[index].sandbox], mode=mode, call=call,
                 scratch=directory, driver=driver, outer=outer, capture=capture,
                 destination=into / str(index), cancel=cancel, record=records[index])
 

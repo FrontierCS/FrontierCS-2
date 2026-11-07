@@ -80,7 +80,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from fcs2_verifier import main
-raise SystemExit(main(Path(sys.argv[2]), "payload/solution.patch"))
+raise SystemExit(main(Path(sys.argv[2]), "payload/solution.patch", sandboxes=False))
 """
 
 

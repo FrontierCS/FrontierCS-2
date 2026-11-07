@@ -393,11 +393,12 @@ SHARED_IMAGE_REFERENCE = re.compile(r"\S*/frontier-(?:agent-base|verifier-base|g
 
 def check_gpu_adapter_pins(root: Path) -> None:
     """A task.toml that sets `[gpu.verifier] lease_seconds`, or declares a command test sandbox,
-    needs the shared verifier and GPU adapter that implement them (an older fcs2_verifier.py
-    does not know the control placement and silently ships the whole verification to one
-    runner): its control Verifier takes the GPU adapter from a `${GPU_TOOLS}` stage and its GPU
-    Verifier the verifier modules from a `${VERIFIER_BASE}` stage, both the
-    tasks/shared/bases.json releases."""
+    needs the shared verifier and adapter that implement them (an older fcs2_verifier.py does not
+    know the control placement and silently ships the whole verification to one runner, or drops
+    the Driver bearer run_sandboxes() leases machines with): its control Verifier takes the
+    adapter from a `${GPU_TOOLS}` stage and, for a Verifier-GPU task, its GPU Verifier the
+    verifier modules from a `${VERIFIER_BASE}` stage, both the tasks/shared/bases.json releases.
+    The same holds for GPU runners and CPU machines: the judge runs on the control image."""
     raw = tomllib.loads((root / task_manifest.MANIFEST).read_text(encoding="utf-8"))
     settings = raw.get("gpu", {}).get("verifier", {})
     uses = []
@@ -408,23 +409,15 @@ def check_gpu_adapter_pins(root: Path) -> None:
     if not uses:
         return
     feature = " and ".join(uses)
-    for role, name in (("verifier", "GPU_TOOLS"), ("verifier-gpu", "VERIFIER_BASE")):
+    roles = (("verifier", "GPU_TOOLS"),) + ((("verifier-gpu", "VERIFIER_BASE"),)
+                                           if "verifier" in raw.get("gpu", {}) else ())
+    for role, name in roles:
         path = task_manifest.layout(root).dockerfile(role)
         stages = check_shared_base_arguments(path, regular(path).read_text())
         require(task_manifest.SHARED_BASE_ARGUMENTS[name] in stages.values(),
                 f"{path.name} needs a `FROM ${{{name}}} AS <stage>` stage: task.toml sets "
                 f"{feature}, which the tasks/shared/bases.json shared verifier and GPU adapter "
                 "implement")
-    if task_manifest.command_sandboxes(raw):
-        # The judge runs on the control image; the shared verifier keeps the Driver bearer that
-        # run_sandboxes() needs only on a Verifier-GPU control Pod (FRONTIER_VERIFIER_GPU_TYPE).
-        path = task_manifest.layout(root).dockerfile("verifier")
-        env = [line for line in regular(path).read_text().splitlines()
-               if not line.lstrip().startswith("#")]
-        require(re.search(r"\bFRONTIER_VERIFIER_GPU_TYPE=[A-Za-z0-9]", "\n".join(env)) is not None,
-                f"{path.name} sets no ENV FRONTIER_VERIFIER_GPU_TYPE, but task.toml declares a "
-                "command test sandbox: without it the shared verifier drops the Driver bearer "
-                "and run_sandboxes() cannot lease a runner")
 
 
 def check_bases() -> None:
