@@ -1,9 +1,25 @@
-"""Evaluator for the SIGReg objective reconstruction task."""
+"""Judge of lejepa_world_model (SIGReg objective reconstruction) for the shared verifier.
+
+Score: per workload Q_w = 35 clip(r2_zh) + 35 clip(r2_hz) + 20 clip(1 - orth_err_normalized)
+(clip to [0, 1]); efficiency = min(10, 5 T_ref / max(T_cand, 1e-9)) with T the summed wall times
+of the three runs; raw_score = score_unbounded = round(clip(mean_w Q_w + efficiency, 0, 100), 4).
+Train runs the three development seeds, final three held-out seeds. check_tree rejects a
+capability-policy break (content_policy; helpers are Python only by task.toml); a stateful loss
+(purity check) is rejected as content_policy; a failed preflight, crash, timeout (150 s per run)
+or invalid result file scores 0. Every run of submitted code (preflight, purity, training) is a
+fresh shared isolate instance (loss_runner.py inside; T = the instance's command time).
+
+Beat-spec metrics (beat_spec_workload_passes, one row per workload, raw final values):
+- r2_zh, r2_hz, higher is better: pass when strictly higher than the reference's.
+- orth_err_normalized, epsilon, procrustes_mse, lower is better: pass when strictly lower.
+- delta, lower is better: passes when strictly lower, or when both are exactly 0.
+beats_reference = 1 iff every metric passes on every workload.
+"""
 
 from __future__ import annotations
 
 import ast
-import hashlib
+import io
 import json
 import math
 import os
@@ -11,22 +27,22 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import zipfile
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-import candidate_failure
-from sandbox_runner import STATEFUL_LOSS_EXIT
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+from loss_runner import STATEFUL_LOSS_EXIT
 
 
 TASK_DIR = Path(__file__).resolve().parent
-CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text(encoding="utf-8"))
+# The starter tree (repo/), copied here by the Verifier image; the reference patch applies to it.
+PRISTINE = TASK_DIR / "pristine"
+EDITABLE = ("experiments/lejepa_id/losses.py", "experiments/lejepa_id/frontier_solution")
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
-SANDBOX_RUNNER = TASK_DIR / "sandbox_runner.py"
+LOSS_RUNNER = TASK_DIR / "loss_runner.py"
 ENTRYPOINT = "experiments/run.py"
 UPSTREAM_ROOT = Path(".")
 SPEC_METRICS = ("r2_zh", "r2_hz", "orth_err_normalized")
@@ -171,11 +187,7 @@ def _policy_check(tree: Path) -> tuple[bool, str]:
     helper = root / "frontier_solution"
     if helper.exists():
         for item in sorted(helper.rglob("*")):
-            if item.is_symlink():
-                return False, "solution helper namespace may not contain symlinks"
-            if item.is_file() and item.suffix != ".py":
-                return False, "solution helper namespace accepts Python source files only"
-            if item.is_file():
+            if item.is_file():  # Python source only: task.toml allowed_suffixes
                 paths.append(item)
     for path in paths:
         is_helper = helper in path.parents
@@ -312,12 +324,53 @@ def _policy_check(tree: Path) -> tuple[bool, str]:
     return True, ""
 
 
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: the static capability policy of losses.py and frontier_solution/."""
+    if _policy_check(Path(tree))[0]:
+        return None
+    return "content_policy", [c.path for c in changes if c.status != "D"]
+
+
+def _fresh_reference_tree() -> Path:
+    """A copy of the pristine starter with reference.patch applied (trusted, judge-owned).
+    The caller removes its parent with _cleanup_tree."""
+    scratch = Path(tempfile.mkdtemp(prefix="lejepa-reference-"))
+    tree = scratch / "tree"
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = dict(os.environ, GIT_CEILING_DIRECTORIES=str(scratch.resolve()))
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)], cwd=tree,
+                   check=True, capture_output=True, timeout=60, env=env)
+    return tree
+
+
+def _editable_files(tree: Path) -> dict[str, bytes]:
+    found = {}
+    for relative in EDITABLE:
+        path = tree / relative
+        if path.is_file():
+            found[relative] = path.read_bytes()
+        elif path.is_dir():
+            for item in sorted(path.rglob("*")):
+                if item.is_file():
+                    found[item.relative_to(tree).as_posix()] = item.read_bytes()
+    return found
+
+
+def _is_reference(tree: Path) -> bool:
+    """Whether the judged tree's editable files are exactly the reference's."""
+    reference = _fresh_reference_tree()
+    try:
+        return _editable_files(tree) == _editable_files(reference)
+    finally:
+        _cleanup_tree(reference.parent)
+
+
 def _seal_solver_tree(tree: Path) -> None:
-    """Make submitted source readable but immutable to the sandbox UID."""
-    os.chmod(tree.parent, 0o711)
-    staged_patch = tree.parent / "submission.patch"
-    if staged_patch.exists():
-        os.chmod(staged_patch, 0o600)
+    """Make submitted source read-only; each instance's copy keeps the modes, so a run cannot
+    rewrite the sources it imports again (purity re-imports)."""
     for directory, names, files in os.walk(tree, followlinks=False):
         os.chmod(directory, 0o555)
         for name in names + files:
@@ -327,134 +380,100 @@ def _seal_solver_tree(tree: Path) -> None:
 
 
 def _cleanup_tree(root: Path) -> None:
-    # The unprivileged verifier owns the sealed directories and must unseal them.
+    # The verifier owns the sealed directories and must unseal them.
     for directory, _names, _files in os.walk(root, followlinks=False):
         os.chmod(directory, 0o700)
     shutil.rmtree(root)
 
 
+def _sandboxed(tree: Path, args: list[str], timeout: float, **kwargs) -> isolate.Result:
+    """One fresh isolate instance running loss_runner.py on a copy of `tree`: it reads only
+    the system directories and its own copy, writes only its private dirs, has no network, and
+    cannot start processes (Torch's single worker thread still runs)."""
+    inputs = {"loss_runner.py": LOSS_RUNNER, **kwargs.pop("inputs", {})}
+    return isolate.run(
+        [sys.executable, "{in}/loss_runner.py", *args], tree=tree, inputs=inputs,
+        cwd="{work}/experiments", timeout_seconds=timeout, syscalls="no_fork",
+        env={"PYTHONPATH": "{work}/experiments", "PYTHONHASHSEED": "0",
+             "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
+             "NUMEXPR_NUM_THREADS": "1", "PYTHONDONTWRITEBYTECODE": "1",
+             "XDG_CACHE_HOME": "{home}"},
+        **kwargs)
+
+
+def _last_line(result: isolate.Result, fallback: str) -> str:
+    detail = (result.stderr or result.stdout).decode("utf-8", "replace").strip().splitlines()
+    return detail[-1][:160] if detail else fallback
+
+
 def _preflight(tree: Path) -> tuple[bool, str]:
-    experiments = tree / UPSTREAM_ROOT / "experiments"
-    env = _run_env(tree)
-    try:
-        proc = subprocess.run(
-            [sys.executable, str(SANDBOX_RUNNER), "preflight", str(experiments)],
-            capture_output=True, text=True, timeout=30, env=env, cwd=experiments,
-        )
-    except subprocess.TimeoutExpired:
+    result = _sandboxed(tree, ["preflight", "{work}/experiments"], 30)
+    if result.timed_out:
         return False, "loss interface preflight timed out"
-    if proc.returncode:
-        detail = (proc.stderr or proc.stdout).strip().splitlines()
-        return False, f"loss interface preflight failed: {detail[-1][:160] if detail else 'error'}"
+    if not result.ok:
+        return False, f"loss interface preflight failed: {_last_line(result, 'error')}"
     return True, ""
 
 
 def _purity_check(tree: Path) -> tuple[bool, str, bool]:
     """Run the sandboxed statelessness check; the last field marks a stateful loss."""
-    experiments = tree / UPSTREAM_ROOT / "experiments"
-    try:
-        # The replayed calls are a subset of one training run's, so its limit applies.
-        proc = subprocess.run(
-            [sys.executable, str(SANDBOX_RUNNER), "purity", str(experiments)],
-            capture_output=True, text=True, timeout=RUN_TIMEOUT_SECONDS,
-            env=_run_env(tree), cwd=experiments,
-        )
-    except subprocess.TimeoutExpired:
+    # The replayed calls are a subset of one training run's, so its limit applies.
+    result = _sandboxed(tree, ["purity", "{work}/experiments"], RUN_TIMEOUT_SECONDS)
+    if result.timed_out:
         return False, "loss purity check timed out", False
-    if proc.returncode == STATEFUL_LOSS_EXIT:
+    if result.returncode == STATEFUL_LOSS_EXIT and result.limit is None:
         return False, STATEFUL_LOSS_MESSAGE, True
-    if proc.returncode:
-        detail = (proc.stderr or proc.stdout).strip().splitlines()
-        return False, f"loss purity check failed: {detail[-1][:160] if detail else 'error'}", False
+    if not result.ok:
+        return False, f"loss purity check failed: {_last_line(result, 'error')}", False
     return True, "", False
 
 
-def _run_env(tree: Path) -> dict[str, str]:
-    scratch = tree.parent / ".runtime-scratch"
-    scratch.mkdir(mode=0o700, exist_ok=True)
-    if os.geteuid() == 0:
-        os.chown(scratch, 65534, 65534)
-    env = os.environ.copy()
-    env.update({
-        "PYTHONPATH": str(tree / UPSTREAM_ROOT / "experiments"),
-        "PYTHONHASHSEED": "0",
-        "OMP_NUM_THREADS": "1",
-        "MKL_NUM_THREADS": "1",
-        "OPENBLAS_NUM_THREADS": "1",
-        "NUMEXPR_NUM_THREADS": "1",
-        "PYTHONDONTWRITEBYTECODE": "1",
-        "FRONTIER_SANDBOX_SCRATCH": str(scratch),
-        "HOME": str(scratch),
-        "TMPDIR": str(scratch),
-        "XDG_CACHE_HOME": str(scratch),
-    })
-    return env
-
-
 def _run_one(tree: Path, seed: int, test_mode: bool) -> dict[str, float]:
-    with tempfile.TemporaryDirectory(prefix="lejepa-run-") as tmp_name:
-        tmp = Path(tmp_name)
-        experiments = tree / UPSTREAM_ROOT / "experiments"
-        cfg = yaml.safe_load((experiments / "configs" / "2d.yaml").read_text())
-        cfg["out"] = str(tmp / "results")
-        cfg["steps"] = 3 if test_mode else 1000
-        cfg["log_every"] = 3 if test_mode else 250
-        if test_mode:
-            cfg["num_eval"] = 128
-            cfg["batch_size"] = 32
-            cfg["runs"]["spiral_lejepa"]["hidden"] = 16
-        config_path = tmp / "workload.yaml"
-        config_path.write_text(yaml.safe_dump(cfg), encoding="utf-8")
-        # The confined child writes its own run artifacts; the evaluator reads
-        # them after it exits, including when both processes use the same UID.
-        if os.geteuid() == 0:
-            os.chown(tmp, 65534, 65534)
-        os.chmod(tmp, 0o700)
-        os.chmod(config_path, 0o444)
-        cmd = [
-            sys.executable, str(SANDBOX_RUNNER), "train", str(experiments),
-            "--config", str(config_path),
-            "--run", "spiral_lejepa", "--seed", str(seed),
-        ]
-        started = time.perf_counter()
-        try:
-            proc = subprocess.run(
-                cmd, cwd=experiments, env=_run_env(tree),
-                capture_output=True, text=True,
-                timeout=30 if test_mode else RUN_TIMEOUT_SECONDS,
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise RuntimeError(f"training workload timed out after {exc.timeout:g} seconds") from None
-        elapsed = time.perf_counter() - started
-        if proc.returncode:
-            detail = (proc.stderr or proc.stdout).strip().splitlines()
-            raise RuntimeError(
-                f"training workload failed: {detail[-1][:160] if detail else 'nonzero exit'}"
-            )
-        result_path = tmp / "results" / f"spiral_lejepa_seed={seed}.json"
-        pt_path = result_path.with_suffix(".pt")
-        try:
-            payload = json.loads(result_path.read_text(encoding="utf-8"))
-            row = {name: float(payload[name]) for name in BEAT_METRICS}
-        except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-            raise RuntimeError(f"training produced invalid metrics: {exc}") from None
-        if not all(math.isfinite(value) for value in row.values()):
-            raise RuntimeError("training produced non-finite metrics")
-        if any(row[name] < 0 for name in H5_METRICS):
-            raise RuntimeError("training produced invalid bound metrics")
-        # Do not unpickle candidate-controlled data.  A genuine torch.save
-        # artifact is a nontrivial zip archive containing data.pkl.
-        try:
-            if pt_path.stat().st_size < 1024 or not zipfile.is_zipfile(pt_path):
+    experiments = tree / UPSTREAM_ROOT / "experiments"
+    cfg = yaml.safe_load((experiments / "configs" / "2d.yaml").read_text())
+    cfg["steps"] = 3 if test_mode else 1000
+    cfg["log_every"] = 3 if test_mode else 250
+    if test_mode:
+        cfg["num_eval"] = 128
+        cfg["batch_size"] = 32
+        cfg["runs"]["spiral_lejepa"]["hidden"] = 16
+    stem = f"spiral_lejepa_seed={seed}"
+    # The instance writes its run artifacts to its own out/; the judge reads them back.
+    result = _sandboxed(
+        tree, ["train", "{work}/experiments", "{in}/workload.yaml", "{out}",
+               "--run", "spiral_lejepa", "--seed", str(seed)],
+        30 if test_mode else RUN_TIMEOUT_SECONDS,
+        inputs={"workload.yaml": yaml.safe_dump(cfg).encode()},
+        outputs=[stem + ".json", stem + ".pt"])
+    if result.timed_out:
+        raise RuntimeError(f"training workload timed out after {30 if test_mode else RUN_TIMEOUT_SECONDS:g} seconds")
+    if not result.ok:
+        raise RuntimeError(f"training workload failed: {_last_line(result, 'nonzero exit')}")
+    try:
+        payload = json.loads(result.outputs[stem + ".json"])
+        row = {name: float(payload[name]) for name in BEAT_METRICS}
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"training produced invalid metrics: {exc}") from None
+    if not all(math.isfinite(value) for value in row.values()):
+        raise RuntimeError("training produced non-finite metrics")
+    if any(row[name] < 0 for name in H5_METRICS):
+        raise RuntimeError("training produced invalid bound metrics")
+    # Do not unpickle candidate-controlled data.  A genuine torch.save
+    # artifact is a nontrivial zip archive containing data.pkl.
+    pt = result.outputs[stem + ".pt"]
+    if pt is None:
+        raise RuntimeError("training did not produce its PyTorch result")
+    try:
+        if len(pt) < 1024 or not zipfile.is_zipfile(io.BytesIO(pt)):
+            raise RuntimeError("training produced an invalid PyTorch result")
+        with zipfile.ZipFile(io.BytesIO(pt)) as archive:
+            if not any(name.endswith("/data.pkl") or name == "data.pkl"
+                       for name in archive.namelist()):
                 raise RuntimeError("training produced an invalid PyTorch result")
-            with zipfile.ZipFile(pt_path) as archive:
-                if not any(name.endswith("/data.pkl") or name == "data.pkl"
-                           for name in archive.namelist()):
-                    raise RuntimeError("training produced an invalid PyTorch result")
-        except OSError as exc:
-            raise RuntimeError(f"training did not produce its PyTorch result: {exc}") from None
-        row["seconds"] = elapsed
-        return row
+    except zipfile.BadZipFile as exc:
+        raise RuntimeError(f"training produced an invalid PyTorch result: {exc}") from None
+    row["seconds"] = result.command_seconds
+    return row
 
 
 def _run_suite(tree: Path, seeds: tuple[int, ...], test_mode: bool) -> list[dict[str, float]]:
@@ -465,14 +484,15 @@ def _reference_suite(final: bool, test_mode: bool, seeds: tuple[int, ...]) -> li
     key = (final, test_mode)
     if key in _REFERENCE_CACHE:
         return _REFERENCE_CACHE[key]
-    applied = apply_submission_patch(REFERENCE_PATCH, TASK_DIR, CONFIG)
-    if not applied.ok or applied.workdir is None:
-        raise RuntimeError(f"internal reference patch error: {applied.message}")
     try:
-        _seal_solver_tree(applied.workdir)
-        rows = _run_suite(applied.workdir, seeds, test_mode)
+        tree = _fresh_reference_tree()
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError("internal reference patch error") from exc
+    try:
+        _seal_solver_tree(tree)
+        rows = _run_suite(tree, seeds, test_mode)
     finally:
-        _cleanup_tree(applied.workdir.parent)
+        _cleanup_tree(tree.parent)
     _REFERENCE_CACHE[key] = rows
     return rows
 
@@ -529,35 +549,29 @@ def prepare() -> dict[str, Any]:
     return {"ready": True, "workloads": len(rows), "suite": "final" if final else "development"}
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    applied = None
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
     try:
-        applied = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not applied.ok or applied.workdir is None:
-            return _zero(applied.message or "invalid submission patch")
-        ok, reason = _policy_check(applied.workdir)
-        if not ok:
-            return _zero(reason)
-        _seal_solver_tree(applied.workdir)
-        ok, reason = _preflight(applied.workdir)
+        work = Path(tree)
+        # Decided before sealing: the editable files byte-identical to the reference's.
+        is_reference = _is_reference(work)
+        _seal_solver_tree(work)
+        ok, reason = _preflight(work)
         if not ok:
             return _zero(reason)
         final, test_mode, seeds = _suite()
-        ok, reason, stateful = _purity_check(applied.workdir)
+        ok, reason, stateful = _purity_check(work)
         if not ok:
-            rejected = _zero(reason)
-            if stateful and not final:
-                # The verifier admits this to train feedback only as the sole
-                # metric of a scored zero; a final rejection stays an empty zero.
-                rejected[3]["candidate_diagnostic"] = candidate_failure.diagnostic("stateful_loss")
-            return rejected
+            if stateful:
+                # A loss that carries state between calls breaks the task's rules: a scored
+                # zero with the shared category, in train and final alike.
+                return 0.0, 0.0, reason, {"rejected": "content_policy"}
+            return _zero(reason)
 
         reference = _reference_suite(final, test_mode, seeds)
-        submitted_bytes = Path(solution_path).read_bytes()
-        if submitted_bytes == REFERENCE_PATCH.read_bytes():
+        if is_reference:
             candidate = [dict(row) for row in reference]
         else:
-            candidate = _run_suite(applied.workdir, seeds, test_mode)
+            candidate = _run_suite(work, seeds, test_mode)
         score, reference_score = _scores(candidate, reference)
 
         audit = []
@@ -589,16 +603,18 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             metrics[f"reference_{name}"] = [row[name] for row in reference]
             metrics[f"{name}_clear_by_workload"] = clears[name]
         return score, score, "completed authentic LeJEPA training workloads", metrics
+    except isolate.IsolateError:
+        raise  # the boundary could not be built: a verification failure, not a score
     except Exception as exc:
         return _zero(f"evaluation failed: {type(exc).__name__}: {exc}")
-    finally:
-        if applied is not None and applied.workdir is not None:
-            _cleanup_tree(applied.workdir.parent)
 
 
 def main() -> None:
-    path = sys.argv[1] if len(sys.argv) > 1 else str(REFERENCE_PATCH)
-    score, unbounded, message, metrics = evaluate(path)
+    if len(sys.argv) > 1:
+        tree = sys.argv[1]
+    else:
+        tree = str(_fresh_reference_tree())
+    score, unbounded, message, metrics = evaluate(tree)
     print(json.dumps({
         "score": score,
         "score_unbounded": unbounded,

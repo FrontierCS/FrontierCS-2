@@ -1,104 +1,85 @@
-"""Private build and process boundaries for the authentic application."""
+"""Builds of the authentic application: the pristine counting CLI and the candidate worker library."""
 import os
-import hashlib
 from pathlib import Path
-import resource
 import shutil
-import signal
+import stat
 import subprocess
-from submission_patch import _make_owner_writable
+
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 TASK = Path(__file__).resolve().parent
 ENTRY = Path('apps/hyper/BipartiteButterflies.C')
+PRISTINE = TASK / 'pristine'
 FLAGS = '-std=c++14 -fopenmp -march=native -O3 -DOPENMP -DBYTERLE -include cstdint'.split()
+COMPILE_LIMITS = {'timeout_seconds': 180, 'cpu_seconds': 180, 'memory_bytes': 8 << 30,
+                  'file_bytes': 64 << 20, 'output_bytes': 64 << 20}
+
+
+def make_owner_writable(root):
+    """The pristine tree is published 0555/0444; only a disposable copy becomes writable."""
+    for directory, names, files in os.walk(root, followlinks=False):
+        for path in [Path(directory), *(Path(directory) / name for name in names + files)]:
+            if path.is_symlink():
+                continue
+            mode = path.lstat().st_mode
+            if stat.S_ISDIR(mode) or stat.S_ISREG(mode):
+                os.chmod(path, stat.S_IMODE(mode) | stat.S_IWUSR, follow_symlinks=False)
 
 
 def clean_environment():
-    # exec also removes inherited verifier memory before any submitted code runs.
     return {'PATH': '/usr/bin:/bin', 'LANG': 'C', 'OMP_NUM_THREADS': '1',
             'OMP_DYNAMIC': 'FALSE', 'OPENBLAS_NUM_THREADS': '1'}
 
 
-def bounded(command, *, cwd, timeout, env=None):
-    def limits():
-        os.sched_setaffinity(0, sorted(os.sched_getaffinity(0))[:4])
-        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        resource.setrlimit(resource.RLIMIT_AS, (8 << 30, 8 << 30))
-        resource.setrlimit(resource.RLIMIT_CPU, (180, 180))
-    # Candidate descendants cannot setsid/setpgid; always reap the entire group.
-    with subprocess.Popen(list(map(str, command)), cwd=cwd, env=env or clean_environment(),
-                          stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                          start_new_session=True, close_fds=True, preexec_fn=limits) as process:
-        try:
-            stdout, stderr = process.communicate(timeout=timeout)
-            return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
-        finally:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
-
-
 def build(repo):
+    """Build the pristine CLI (trusted: pristine sources and the judge's worker header only)
+    and compile the tree's CountTotal into a worker library inside the shared isolate launcher.
+    Returns (CLI binary, worker library), both in a judge-private directory."""
     repo = repo.resolve()
-    pristine = TASK / 'harbor/app'
-    fixed = {p.relative_to(pristine): p for p in pristine.rglob('*') if p.is_file()}
-    submitted = {p.relative_to(repo): p for p in repo.rglob('*') if not p.is_dir()}
-    def editable(path):
-        return str(path) in ('apps/hyper/butterfly_count_total.h', 'apps/hyper/butterfly_count.h', 'apps/hyper/butterfly_ecount.h', 'apps/hyper/butterfly_peel.h', 'apps/hyper/butterfly_epeel.h', 'apps/hyper/butterfly_putils.h', 'apps/hyper/butterfly_utils.h') or str(path).startswith('apps/hyper/solver_extensions/')
-    if any(p.is_symlink() for p in repo.rglob('*')):
-        raise RuntimeError('submission does not build')
-    for path in fixed.keys() | submitted.keys():
-        if not editable(path) and (path not in fixed or path not in submitted or
-                                  hashlib.sha256(fixed[path].read_bytes()).digest() !=
-                                  hashlib.sha256(submitted[path].read_bytes()).digest()):
-            raise RuntimeError('submission does not build')
     if not (repo / ENTRY).is_file():
         raise RuntimeError('authentic entrypoint is missing')
     private = repo.parent / 'trusted-build'
     private.mkdir()
     compiler_tmp = private / 'tmp'
     compiler_tmp.mkdir()
-    compiler_env = dict(clean_environment(), TMPDIR=str(compiler_tmp))
-    # Only pristine source enters this parent binary. Candidate source is compiled
-    # separately under Landlock; even preprocessor/assembler file reads are confined.
     parent = private / 'parent'
-    shutil.copytree(TASK / 'harbor/app', parent)
-    _make_owner_writable(parent)
-    for name in ('trusted_count_total.h', 'trusted_isolation.h', 'sandbox_build.cpp'):
-        shutil.copyfile(TASK / name, private / name)
+    shutil.copytree(PRISTINE, parent)
+    make_owner_writable(parent)
+    shutil.copyfile(TASK / 'trusted_count_total.h', private / 'trusted_count_total.h')
     source = parent / ENTRY
     text = source.read_text()
     original = '#include "butterfly_count_total.h"'
     if text.count(original) != 1:
         raise RuntimeError('authentic entrypoint is missing')
     source.write_text(text.replace(original, '#include "' + str(private / 'trusted_count_total.h') + '"'))
-    sandbox = private / 'sandbox-build'
-    p = bounded(['/usr/bin/g++', '-std=c++14', '-fopenmp', private / 'sandbox_build.cpp',
-                 '-o', sandbox], cwd=private, timeout=30, env=compiler_env)
-    if p.returncode:
-        raise RuntimeError('submission does not build')
     binary = parent / 'apps/hyper/BipartiteButterflies'
-    p = bounded(['/usr/bin/make', '-j4', 'PCC=g++', 'PCFLAGS=' + ' '.join(FLAGS) + ' -ldl'],
-                cwd=binary.parent, timeout=180, env=compiler_env)
+    try:
+        p = subprocess.run(['/usr/bin/make', '-j4', 'PCC=g++', 'PCFLAGS=' + ' '.join(FLAGS) + ' -ldl'],
+                           cwd=binary.parent, env=dict(clean_environment(), TMPDIR=str(compiler_tmp)),
+                           stdin=subprocess.DEVNULL, capture_output=True, timeout=180)
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError('authentic entrypoint did not build') from error
     if p.returncode or not binary.is_file():
         raise RuntimeError('authentic entrypoint did not build')
-    wrapper = repo / 'apps/hyper/fs2_worker.cpp'
-    wrapper.write_text('''#include "BipartiteButterflies.C"
+    (repo / 'apps/hyper/fs2_worker.cpp').write_text('''#include "BipartiteButterflies.C"
 extern "C" long fs2_count_total(bipartiteCSR* g, bool v, long w, long mw, long ma, int t, int r) {
   return CountTotal(*g, v, w, mw, ma, static_cast<CountType>(t), static_cast<RankType>(r));
 }
 ''')
-    library = repo / 'apps/hyper/fs2_worker.so'
+    # Submitted source is compiled in a fresh confined instance (its own copy of the tree,
+    # no judge files, no network); only the library comes back.
     # Makefile COMMON normally creates these Ligra include symlinks in apps/hyper.
-    p = bounded([sandbox, repo, '/usr/bin/g++', *FLAGS, '-I', repo / 'ligra',
-                 '-fPIC', '-shared', wrapper, '-o', library],
-                cwd=repo, timeout=180)
-    if p.returncode or not library.is_file() or library.is_symlink():
+    result = isolate.run(['/usr/bin/g++', *FLAGS, '-I', '{work}/ligra', '-fPIC', '-shared',
+                               '{work}/apps/hyper/fs2_worker.cpp', '-o', '{out}/worker.so'],
+                              tree=str(repo), outputs=['worker.so'], env={'LANG': 'C'},
+                              path='/usr/bin:/bin', **COMPILE_LIMITS)
+    library = result.outputs.get('worker.so')
+    if not result.ok or not library:
         raise RuntimeError('submission does not build')
-    # Keep the loader target outside the compiler's writable tree after cleanup.
-    final_library = private / 'worker.so'
-    shutil.copyfile(library, final_library)
-    final_library.chmod(0o400)
-    return binary, final_library
+    # The two files a counting run gets as its instance tree.
+    run = private / 'run'
+    run.mkdir()
+    shutil.copy2(binary, run / binary.name)
+    (run / 'worker.so').write_bytes(library)
+    (run / 'worker.so').chmod(0o400)
+    return run / binary.name, run / 'worker.so'

@@ -1,0 +1,40 @@
+# The definition of parallel_radix_sort (schema frontier.task/v1). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest,
+# and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "parallel_radix_sort"
+display_name = "In-place Integer Redistribution"
+version = "native-std-sort-v1-beat-spec-v3-refscore-shared-verifier"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 2147483648         # 2 GiB
+workspace_bytes = 2147483648      # 2 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 2147483648         # 2 GiB
+max_evidence_bytes = 1048576       # 1 MiB, as the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 18000
+eval_timeout_seconds = 900
+
+[submission]
+max_bytes = 276480                # the archive limit the Agent was told (the patch cap was 262144)
+allowed_paths = ["RadixSort/edgelistgraph.h", "RadixSort/frontier_solution/"]
+max_changed_files = 20            # unchanged by the migration; the statement states it
+allow_executable = true           # the old judge applied new executable files under the editable directory
+
+[feedback]
+dev_candidate_median_sort_time_ns = "Median over the six train cases of the candidate's median sort-call time, in nanoseconds."
+dev_candidate_max_auxiliary_bytes = "Largest peak live auxiliary allocation of the candidate over the six train cases, in bytes."
+dev_candidate_median_region_graph_ns = "Median over the six train cases of the candidate's median region-graph time per sort call (timer build), in nanoseconds."
+
+[paper]                           # for readers; the platform never reads it
+title = "Theoretically-Efficient and Practical Parallel In-Place Radix Sorting"
+venue = "SPAA 2019"
+url = "https://people.csail.mit.edu/jshun/RegionsSort.pdf"
+summary = "Speed up Regions Sort, a parallel in-place most-significant-digit radix sorter."

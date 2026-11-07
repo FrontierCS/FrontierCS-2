@@ -1,0 +1,17 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "a77b75e928acc1eef87107639b42bddc10c97f8c",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2605.26379"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "artifact_commit": "de7503f1b2291ba1e9fc03d9c433180794803440",
+      "id": "2605.26379",
+      "title": "When Does LeJEPA Learn a World Model?"
+    }
+  }
+}

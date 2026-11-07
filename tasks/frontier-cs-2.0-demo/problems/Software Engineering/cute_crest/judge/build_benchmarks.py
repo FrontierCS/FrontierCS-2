@@ -3,7 +3,7 @@
 
 usage: build_benchmarks.py OUT [--sources DIR]
 
-OUT/tree    the harness tree (a copy of harbor/app), built
+OUT/tree    the harness tree (a copy of the starter, pristine/), built
 OUT/build   its toolchain
 OUT/bench   the instrumented programs named by programs.json
 OUT/src     the program sources as built, with their licence files, so that
@@ -129,7 +129,7 @@ def main():
     tree = out / 'tree'
     if tree.exists():
         shutil.rmtree(tree)
-    shutil.copytree(TASK / 'harbor/app', tree)
+    shutil.copytree(TASK / 'pristine', tree)
     sys.path.insert(0, str(tree))
     import frontier_build as fb
     fb.make_writable(tree)

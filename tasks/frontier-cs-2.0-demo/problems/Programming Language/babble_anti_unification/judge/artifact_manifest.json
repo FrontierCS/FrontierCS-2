@@ -18,17 +18,26 @@
     {
       "path": "src/learn.rs",
       "mode": "stubbed",
-      "symbols": ["pub fn new"]
+      "symbols": [
+        "pub fn new"
+      ]
     },
     {
       "path": "src/dfta.rs",
       "mode": "stubbed",
-      "symbols": ["pub(crate) fn cross_over"]
+      "symbols": [
+        "pub(crate) fn cross_over"
+      ]
     }
   ],
   "solution_surface": {
-    "modify": ["src/learn.rs", "src/dfta.rs"],
-    "add_under": ["src/learn_extensions/"],
+    "modify": [
+      "src/learn.rs",
+      "src/dfta.rs"
+    ],
+    "add_under": [
+      "src/learn_extensions/"
+    ],
     "no_new_files_reason": ""
   },
   "offline_dependencies": {
@@ -43,10 +52,6 @@
     {
       "path": ".cargo/config.toml",
       "reason": "Task-owned Cargo source replacement that forces all locked registry dependencies to the shipped offline vendor directory."
-    },
-    {
-      "path": "make_submission.sh",
-      "reason": "Task-owned patch packager that stages new solver files and enforces the editable surface."
     },
     {
       "path": "frontier-build.sh",

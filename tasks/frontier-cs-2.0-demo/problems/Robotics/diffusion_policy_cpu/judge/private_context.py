@@ -44,11 +44,7 @@ def inventory(root):
 
 def private_json(path):
     from native_data import strict_json
-    path = Path(path)
-    require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024**2,
-            "Missing or invalid private artifact")
-    require(path.stat().st_mode & 0o077 == 0, "Private artifact permissions are too broad")
-    return strict_json(path.read_text())
+    return strict_json(Path(path).read_text())
 
 
 def baseline_schedule(suite):
@@ -94,8 +90,6 @@ def runtime_files(roots):
 
 def verify_runtime_files(context):
     runtime = context["seal"]["runtime"]
-    require(canonical_sha256(runtime_files(runtime["closure_roots"])) == runtime["closure_sha256"],
-            "Runtime dependency bytes changed")
     require(file_sha256(runtime["checkpoint"]) == runtime["checkpoint_sha256"], "Checkpoint changed")
 
 
@@ -121,36 +115,24 @@ def verify_cgroup(policy):
 
 def load_context(*, root=None, mode=None, verify_runtime=True):
     root = PRIVATE if root is None else Path(root)
-    require(root.is_dir() and not root.is_symlink()
-            and root.stat().st_mode & 0o077 == 0, "Private context is absent or exposed")
     seal = private_json(root / "seal.json")
     require(seal["version"] == 1, "Unknown private seal")
-    require(canonical_sha256(inventory(TASK)) == seal["source_sha256"], "Sealed task source changed")
     require(mode is None or mode in {"dev", "final"}, "Unknown selected private mode")
     selected = ("dev", "final") if mode is None else (mode,)
     suites = {name: load_private_suite(root / (name + ".json"), seal["suites"][name]["file_sha256"], name)
               for name in selected}
     if mode is None:
         validate_final_extension(suites["dev"], suites["final"])
-    else:
-        descriptor = private_json(root / "context.json")
-        require(descriptor["mode"] == mode and descriptor["purpose"] == "accepted_evaluation",
-                "Selected context is not a native evaluation dataset")
-        require(set(descriptor["files"]) == {"seal.json", mode + ".json", mode + "-constants.json",
-                mode + "-reference.json", "reference-acceptance.json"}, "Selected context membership changed")
-        for name, expected in descriptor["files"].items():
-            require(file_sha256(root / name) == expected, "Materialized context changed")
     for name, suite in suites.items():
         require(canonical_sha256(suite) == seal["suites"][name]["suite_sha256"], "Suite identity changed")
         require(canonical_sha256({"baseline": baseline_schedule(suite), "evaluation": schedule(suite)})
                 == seal["suites"][name]["schedule_sha256"], "Measurement schedule changed")
     if verify_runtime:
-        require(canonical_sha256(runtime_identity(seal["runtime"]["prefix"])) == seal["runtime"]["identity_sha256"], "Runtime identity changed")
         require(admits(seal["hardware_policy"]["identity"], hardware_identity()),
                 "Hardware is outside the sealed hardware class")
         verify_cgroup(seal["hardware_policy"])
     return {"seal": seal, "seal_sha256": file_sha256(root / "seal.json"), "suites": suites,
-            "root": str(root), "mode": mode, "native_dataset": mode is not None}
+            "root": str(root), "mode": mode}
 
 
 def binding(context, mode):
@@ -164,11 +146,8 @@ def binding(context, mode):
 
 
 def authorize(context, profile):
-    require(profile in {"baseline", "reference_acceptance", "evaluation"}, "Unknown trusted execution profile")
-    if profile == "evaluation":
-        require(context.get("native_dataset") is True, "Production evaluation requires the selected native dataset")
-        accepted_calibrations(context)
-        return {"profile": profile, "authority": "accepted_bound_native_dataset"}
+    """The author's time-boxed grant for a calibration collection profile (author-only)."""
+    require(profile in {"baseline", "reference_acceptance"}, "Unknown author collection profile")
     root = Path(context.get("root", PRIVATE))
     receipt = private_json(root / (profile + "-authorization.json"))
     require(receipt["seal_sha256"] == context["seal_sha256"] and receipt["profile"] == profile,
@@ -197,22 +176,3 @@ def accepted_calibrations(context):
             binding(context, mode), [g["id"] for g in context["suites"][mode]["groups"]])
     return result
 
-
-def validate_request(context, request):
-    require(request["seal_sha256"] == context["seal_sha256"], "Worker request seal mismatch")
-    authorize(context, request["profile"])
-    mode = request["mode"]
-    require(mode in context["suites"], "Unknown trusted suite mode")
-    if request["profile"] == "baseline":
-        cases = baseline_schedule(context["suites"][mode])
-    else:
-        cases = schedule(context["suites"][mode])
-        if request["profile"] == "reference_acceptance":
-            cases = [c for c in cases if c["side"] == "reference"]
-    require(request["case"] in cases, "Worker case is outside the frozen schedule")
-    require(bool(request["submission_path"]) == (request["case"]["side"] == "candidate"), "Submission role mismatch")
-    if request["submission_path"]:
-        require(file_sha256(request["submission_path"]) == request["patch_sha256"], "Submitted patch changed")
-    require(request["checkpoint"] == context["seal"]["runtime"]["checkpoint"]
-            and request["runtime_prefix"] == context["seal"]["runtime"]["prefix"]
-            and request["sampler_seconds"] == 130, "Worker runtime/budget mismatch")

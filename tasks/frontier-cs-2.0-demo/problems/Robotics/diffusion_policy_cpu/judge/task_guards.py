@@ -3,22 +3,15 @@
 from __future__ import annotations
 
 import ast
-from dataclasses import dataclass
-import hashlib
 import io
-import json
 import math
-import os
 from pathlib import Path
-import stat
 import tokenize
 
 POLICY = "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py"
 HELPERS = "diffusion_policy/sampler_extensions"
-QUALIFIED_SYMBOL = "DiffusionTransformerLowdimPolicy.conditional_sample"
 MAX_HELPER_FILES = 16
 MAX_HELPER_BYTES = 65536
-MAX_PATCH_BYTES = 262144
 MAX_POLICY_BYTES = 131072
 DEV_FIELDS = (
     "dev_mean_episode_max_reward", "dev_episode_success_rate",
@@ -38,32 +31,8 @@ class TaskIntegrityError(RuntimeError):
     pass
 
 
-@dataclass(frozen=True)
-class ValidatedSource:
-    policy_sha256: str
-    helper_count: int
-    helper_bytes: int
-
-
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def regular_inventory(root: Path) -> dict[str, Path]:
-    if root.is_symlink() or not root.is_dir():
-        raise InvalidSubmission("Invalid source tree.")
-    files = {}
-    for directory, names, filenames in os.walk(root, followlinks=False):
-        for name in names + filenames:
-            path = Path(directory) / name
-            mode = path.lstat().st_mode
-            if stat.S_ISLNK(mode) or not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
-                raise InvalidSubmission("Only regular files and directories are allowed.")
-            if stat.S_ISREG(mode):
-                if path.stat().st_nlink != 1:
-                    raise InvalidSubmission("Hard-linked source files are forbidden.")
-                files[path.relative_to(root).as_posix()] = path
-    return files
+class CandidateTimeout(RuntimeError):
+    """The candidate's own sampler, episode process or the suite budget ran out: a scored zero."""
 
 
 def method_region(source: str) -> tuple[ast.Module, ast.FunctionDef, int, int]:
@@ -119,44 +88,28 @@ def verify_method_only(pristine: bytes, submitted: bytes) -> None:
         raise InvalidSubmission("Only the conditional_sample body may be modified.")
 
 
-def validate_tree(root: Path, pristine: Path, lock: dict) -> ValidatedSource:
-    expected = lock["files"]
-    baseline = regular_inventory(pristine)
-    if set(baseline) != set(expected):
-        raise TaskIntegrityError("The pristine source inventory changed.")
-    for name, entry in expected.items():
-        if sha256(baseline[name]) != entry["sha256"]:
-            raise TaskIntegrityError("The pristine source lock changed.")
-    actual = regular_inventory(root)
-    if not set(expected).issubset(actual):
-        raise InvalidSubmission("Required source files cannot be removed.")
-    helpers = []
-    for name, path in actual.items():
-        if name in expected:
-            if (path.stat().st_mode & 0o111) != expected[name]["executable_bits"]:
-                raise InvalidSubmission("Source executable permissions cannot change.")
-            if name != POLICY and sha256(path) != expected[name]["sha256"]:
-                raise InvalidSubmission("A locked upstream file was modified.")
-        else:
-            relative = Path(name)
-            if (not name.startswith(HELPERS + "/") or relative.suffix != ".py"
-                    or any(part.startswith(".") for part in relative.parts)):
-                raise InvalidSubmission("New files must be Python helpers in the allowed namespace.")
-            if path.stat().st_mode & 0o111:
-                raise InvalidSubmission("New helpers must not be executable files.")
-            helpers.append(path)
-    helper_bytes = sum(p.stat().st_size for p in helpers)
-    if len(helpers) > MAX_HELPER_FILES or helper_bytes > MAX_HELPER_BYTES:
+def check_source(root: Path, pristine: Path) -> None:
+    """The source rules task.toml [submission] cannot express.
+
+    The shared edit scope already admits only the policy file and new, non-executable `.py`
+    helpers under HELPERS (no links, mode changes, deletions or dot paths) and rebuilds the
+    judged tree from the pristine starter. Left here: the helper count and byte allowance, the
+    policy byte allowance, the conditional_sample-body-only rule and helpers that parse.
+    """
+    helper_root = root / HELPERS
+    helpers = sorted(p for p in helper_root.rglob("*") if p.is_file()) if helper_root.is_dir() else []
+    if (len(helpers) > MAX_HELPER_FILES
+            or sum(p.stat().st_size for p in helpers) > MAX_HELPER_BYTES):
         raise InvalidSubmission("The helper file or byte allowance was exceeded.")
-    if actual[POLICY].stat().st_size > MAX_POLICY_BYTES:
+    policy = root / POLICY
+    if policy.stat().st_size > MAX_POLICY_BYTES:
         raise InvalidSubmission("The sampler source byte allowance was exceeded.")
-    verify_method_only(baseline[POLICY].read_bytes(), actual[POLICY].read_bytes())
+    verify_method_only((pristine / POLICY).read_bytes(), policy.read_bytes())
     for helper in helpers:
         try:
             ast.parse(helper.read_bytes())
         except (SyntaxError, ValueError, RecursionError) as exc:
             raise InvalidSubmission("A helper is not valid Python.") from exc
-    return ValidatedSource(sha256(actual[POLICY]), len(helpers), helper_bytes)
 
 
 def suite_mode(environ: dict[str, str]) -> str:
@@ -201,6 +154,3 @@ def public_feedback(mode: str, *, complete: bool, candidate: dict | None = None,
         result["beat_spec_progress"] = safe
     return result
 
-
-def load_lock(task: Path) -> dict:
-    return json.loads((task / "source_lock.json").read_text())

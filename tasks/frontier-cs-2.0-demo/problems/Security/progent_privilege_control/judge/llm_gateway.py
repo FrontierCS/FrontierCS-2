@@ -41,7 +41,14 @@ def _inventory_endpoint(key_name):
     if MODEL_ALIAS not in entry["model_aliases"]:
         raise InfraError(f"model key '{key_name}' does not allow {MODEL_ALIAS}")
     auth = inventory["caller_auth"]
-    headers = {auth["header"]: os.environ[auth["token_env"]]}
+    if auth["token_env"] != "FRONTIER_VERIFIER_TOKEN":
+        raise InfraError("the model gateway caller token is not the Verifier's")
+    # The shared verifier sealed the Driver bearer out of the environment before the judge ran.
+    from fcs2_verifier import verifier_token
+    token = verifier_token()
+    if not token:
+        raise InfraError("the Verifier has no model gateway caller token")
+    headers = {auth["header"]: token}
     return inventory["base_url"], Path(entry["value_path"]).read_text(), headers
 
 

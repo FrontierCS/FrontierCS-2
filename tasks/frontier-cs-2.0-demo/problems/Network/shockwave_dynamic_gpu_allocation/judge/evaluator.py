@@ -1,9 +1,26 @@
+"""Shockwave dynamic GPU allocation judge: the trace-driven Gavel simulator on the candidate.
+
+The shared verifier applies the patch (task.toml [submission]) and calls evaluate(tree). Each
+trace runs in a fresh shared isolate instance. A build, run, timeout or output-validity
+failure is a bare scored zero, as before.
+
+Score: per trace w (two per suite), with makespan M, average JCT J, worst finish-time-fairness
+rho R and unfair-job percentage U (rho > 1.05):
+score_w = 40 * 12000 / (12000 + M) + 40 * 7000 / (7000 + J) + 15 * 0.55 / (R + 0.05)
+          + 5 * (1 - U / 100)
+raw_score = score_unbounded = mean over the traces (constants: task.toml [judge.config]).
+
+Metrics, one row per trace in beat_spec_workload_passes, each lower is better and passes when
+the candidate is strictly below the reference (pristine + reference.patch) on that trace:
+makespan_seconds, average_jct_seconds, worst_finish_time_fairness_rho,
+unfair_job_fraction_percent. beats_reference = 1 iff every trace passes all four. Train also
+returns the candidate's four values per trace (anonymous ordered arrays).
+"""
 from __future__ import annotations
 
 import json
 import math
 import os
-import pickle
 import shutil
 import subprocess
 import sys
@@ -13,12 +30,14 @@ from typing import Any
 
 import yaml
 
-from submission_patch import apply_submission_patch
-
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 TASK_DIR = Path(__file__).resolve().parent
+# config.yaml is generated from task.toml; the simulation and score constants are its
+# [judge.config.evaluation] keys.
 CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text(encoding="utf-8"))
 EVAL = CONFIG["evaluation"]
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission on a copy
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 ENTRYPOINT = "scripts/drivers/simulate_scheduler_with_trace.py"
 SPEC_METRICS = (
@@ -118,63 +137,95 @@ def _result_metrics(result: Any, workload: str) -> dict[str, float]:
     }
 
 
+# Runs inside its isolate instance: the trace driver (submitted scheduler code) as a child, then its
+# result pickle turned into plain JSON there, so the judge never unpickles submitted objects.
+# Types the judge checks (job and worker identities) are kept as ints or sent as null.
+RUNNER = r'''
+import json, pickle, shutil, subprocess, sys
+pickle_path, inputs, scratch, command = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+# The driver writes beside its trace, so it reads writable copies of the read-only inputs.
+shutil.copytree(inputs, scratch, dirs_exist_ok=True)
+def report(**value):
+    sys.stdout.write(json.dumps(value) + "\n")
+    raise SystemExit(0)
+code = subprocess.run([sys.executable, *command], stdin=subprocess.DEVNULL,
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+if code != 0:
+    report(status="exit")
+try:
+    data = open(pickle_path, "rb").read()
+except OSError:
+    report(status="no_result")
+try:
+    sys.path.insert(0, ".")
+    result = pickle.loads(data)
+    def identity(value):
+        return value if type(value) is int else None
+    def schedule(round_):
+        if not isinstance(round_, dict):
+            return None
+        return [[identity(job), [identity(worker) for worker in assigned]
+                 if isinstance(assigned, (tuple, list)) else None]
+                for job, assigned in round_.items()]
+    report(status="ok", result={
+        "makespan": float(result["makespan"]), "avg_jct": float(result["avg_jct"]),
+        "finish_time_fairness_list": [float(x) for x in result["finish_time_fairness_list"]],
+        "jct_list": [float(x) for x in result["jct_list"]],
+        "per_round_schedule": [schedule(round_) for round_ in result["per_round_schedule"]]})
+except Exception:
+    report(status="malformed")
+'''
+
+
 def _run_workload(repo: Path, workload: str) -> dict[str, float]:
-    scheduler = repo / "scheduler"
-    with tempfile.TemporaryDirectory(prefix="shockwave-workload-") as td:
-        run_dir = Path(td)
-        trace = run_dir / f"{workload}.trace"
-        throughput = run_dir / "tacc_throughputs.json"
-        config = run_dir / "shockwave_config.json"
-        shutil.copyfile(TASK_DIR / "judge_data" / f"{workload}.trace", trace)
-        shutil.copyfile(TASK_DIR / "judge_data" / "tacc_throughputs.json", throughput)
-        shutil.copyfile(TASK_DIR / "judge_data" / "shockwave_config.json", config)
-        output_dir = run_dir / "output"
-        command = [
-            sys.executable,
-            ENTRYPOINT,
-            "--trace_file", str(trace),
-            "--policy", "shockwave",
-            "--throughputs_file", str(throughput),
-            "--cluster_spec", str(EVAL["cluster_spec"]),
-            "--num_gpus_per_server", str(EVAL["num_gpus_per_server"]),
-            "--seed", str(EVAL["seed"]),
-            "--solver", "GUROBI",
-            "--time_per_iteration", str(EVAL["time_per_iteration"]),
-            "--config", str(config),
-            "--pickle_output_dir", str(output_dir),
-        ]
-        env = os.environ.copy()
-        env.update({
-            "PYTHONHASHSEED": "0",
-            "OMP_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1",
-            "MKL_NUM_THREADS": "1",
-        })
-        try:
-            proc = subprocess.run(
-                command,
-                cwd=scheduler,
-                env=env,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=int(EVAL["workload_timeout_seconds"]),
-            )
-        except subprocess.TimeoutExpired as exc:
-            raise EvaluationError("scheduler timed out") from exc
-        if proc.returncode != 0:
-            raise EvaluationError("scheduler exited unsuccessfully")
-        result_path = output_dir / f"shockwave_{workload}_simulation.pickle"
-        if not result_path.is_file():
-            raise EvaluationError("scheduler produced no result")
-        try:
-            sys.path.insert(0, str(scheduler))
-            result = pickle.loads(result_path.read_bytes())
-        except Exception as exc:
-            raise EvaluationError("scheduler produced malformed statistics") from exc
-        finally:
-            if sys.path and sys.path[0] == str(scheduler):
-                sys.path.pop(0)
-        return _result_metrics(result, workload)
+    """One trace through the original driver, in a fresh isolate instance (the shared
+    launcher: no judge files, no FRONTIER_* environment, no network, nothing kept)."""
+    result_name = f"shockwave_{workload}_simulation.pickle"
+    command = [
+        ENTRYPOINT,
+        "--trace_file", f"{{tmp}}/{workload}.trace",
+        "--policy", "shockwave",
+        "--throughputs_file", "{tmp}/tacc_throughputs.json",
+        "--cluster_spec", str(EVAL["cluster_spec"]),
+        "--num_gpus_per_server", str(EVAL["num_gpus_per_server"]),
+        "--seed", str(EVAL["seed"]),
+        "--solver", "GUROBI",
+        "--time_per_iteration", str(EVAL["time_per_iteration"]),
+        "--config", "{tmp}/shockwave_config.json",
+        "--pickle_output_dir", "{out}",
+    ]
+    data = TASK_DIR / "judge_data"
+    run = isolate.run(
+        [sys.executable, "-c", RUNNER, "{out}/" + result_name, "{in}", "{tmp}", *command],
+        timeout_seconds=int(EVAL["workload_timeout_seconds"]), tree=repo,
+        cwd="{work}/scheduler",
+        inputs={f"{workload}.trace": data / f"{workload}.trace",
+                "tacc_throughputs.json": data / "tacc_throughputs.json",
+                "shockwave_config.json": data / "shockwave_config.json"},
+        env={"PYTHONHASHSEED": "0", "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
+             "MKL_NUM_THREADS": "1", "PYTHONDONTWRITEBYTECODE": "1"})
+    if run.timed_out:
+        raise EvaluationError("scheduler timed out")
+    try:
+        report = json.loads(run.stdout.decode().strip().splitlines()[-1])
+        status = report["status"]
+    except (ValueError, IndexError, KeyError, TypeError, AttributeError):
+        status = "exit"
+    if run.returncode != 0 or run.limit or status == "exit":
+        raise EvaluationError("scheduler exited unsuccessfully")
+    if status == "no_result":
+        raise EvaluationError("scheduler produced no result")
+    if status != "ok":
+        raise EvaluationError("scheduler produced malformed statistics")
+    result = report["result"]
+    try:
+        result["per_round_schedule"] = [
+            round_ if round_ is None else {job: tuple(assigned) if assigned is not None else None
+                                           for job, assigned in round_}
+            for round_ in result["per_round_schedule"]]
+    except (TypeError, ValueError) as exc:
+        raise EvaluationError("scheduler produced malformed statistics") from exc
+    return _result_metrics(result, workload)
 
 
 def _run_suite(repo: Path, suite: tuple[str, ...]) -> dict[str, dict[str, float]]:
@@ -219,26 +270,33 @@ def _all_comparisons_beat(passes: list[dict[str, Any]]) -> int:
     return int(all(value for row in decisions for value in row.values()))
 
 
-def _cleanup_patch_result(result: Any) -> None:
-    workdir = getattr(result, "workdir", None)
-    if workdir is not None:
-        shutil.rmtree(Path(workdir).parent, ignore_errors=True)
+def _reference_tree(scratch: Path) -> Path:
+    """The pristine starter with reference.patch applied (trusted, judge-owned)."""
+    tree = scratch / "reference"
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch.resolve())}
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)], cwd=tree,
+                   check=True, capture_output=True, timeout=60, env=env)
+    return tree
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
-    candidate = None
-    reference = None
+def evaluate(tree: str) -> tuple[float, float, str, dict[str, Any]]:
+    """Score the judged tree: the starter with the submission's allowed files overlaid (the
+    shared verifier has applied the patch). A build, run or output failure is a scored zero
+    with no metrics, as before."""
+    scratch = Path(tempfile.mkdtemp(prefix="shockwave-reference-"))
     try:
         final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
         suite = FINAL_SUITE if final else DEV_SUITE
-        candidate = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not candidate.ok or candidate.workdir is None:
-            return 0.0, 0.0, candidate.message, {}
-        reference = apply_submission_patch(str(REFERENCE_PATCH), TASK_DIR, CONFIG)
-        if not reference.ok or reference.workdir is None:
+        try:
+            reference = _reference_tree(scratch)
+        except (OSError, subprocess.SubprocessError):
             return 0.0, 0.0, "withheld reference could not be prepared", {}
-        candidate_rows = _run_suite(candidate.workdir, suite)
-        reference_rows = _run_suite(reference.workdir, suite)
+        candidate_rows = _run_suite(Path(tree), suite)
+        reference_rows = _run_suite(reference, suite)
         score = _score(candidate_rows)
         reference_score = _score(reference_rows)
         passes = []
@@ -262,22 +320,13 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
         return score, score, "scheduler completed the authentic trace suite", metrics
     except EvaluationError as exc:
         return 0.0, 0.0, str(exc), {}
+    except isolate.IsolateError:
+        raise  # a judging fault, not a candidate verdict
     except Exception as exc:
         return 0.0, 0.0, f"evaluation failed: {type(exc).__name__}", {}
     finally:
-        if candidate is not None:
-            _cleanup_patch_result(candidate)
-        if reference is not None:
-            _cleanup_patch_result(reference)
+        shutil.rmtree(scratch, ignore_errors=True)
 
 
 def prepare() -> dict[str, Any]:
     return {"execution": "original trace driver", "development_workloads": len(DEV_SUITE), "final_workloads": len(FINAL_SUITE)}
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(json.dumps({"score": 0.0, "message": "usage: evaluator.py PATCH"}))
-        raise SystemExit(2)
-    score, unbounded, message, metrics = evaluate(sys.argv[1])
-    print(json.dumps({"score": score, "score_unbounded": unbounded, "message": message, "metrics": metrics}, sort_keys=True))

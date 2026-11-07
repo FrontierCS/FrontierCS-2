@@ -10,7 +10,6 @@ import math
 import os
 import random
 import re
-import resource
 import shutil
 import signal
 import subprocess
@@ -19,6 +18,8 @@ import tempfile
 import time
 from pathlib import Path
 from typing import Any, Callable, Iterable
+
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 SUITE_REVISION = 3
 CASES_PER_TOPOLOGY = 5
@@ -71,11 +72,7 @@ APPROVED_STRATEGY_HASHES = {
     "a357d045d94164707faec7b34fe8a174dda1ffe5b6b6ff3d38da56a47d8be488": "baseline_strong",
 }
 
-# Computed from the exact Harbor-staged /app tree. The editable search file,
-# optional Candidate/ helpers, build artifacts, and Harbor-owned root workflow
-# files are deliberately absent from the versioned tree digest.
-LOCKED_TREE_HASH = "afcb69e01ba74e8cd54fc0b1d3564766e141cbee04f739abfb7fe19decf11720"
-LOCKED_TREE_DOMAIN = b"metaopt-locked-tree-v2\0"
+# Harbor-owned root workflow files, never copied into the build.
 LEGACY_WORKFLOW_FILES = frozenset({
     "AGENT.md",
     "readme",
@@ -751,38 +748,6 @@ def _run_local_strategy(path: Path, instances: list[dict[str, Any]]) -> list[Any
     return answers
 
 
-def _is_legacy_workflow_file(relative: Path) -> bool:
-    return len(relative.parts) == 1 and relative.name in LEGACY_WORKFLOW_FILES
-
-
-def _locked_tree_hash(source: Path) -> str:
-    digest = hashlib.sha256()
-    digest.update(LOCKED_TREE_DOMAIN)
-    editable = Path("MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs")
-    candidate_root = Path("MetaOptimize/TrafficEngineering/Candidate")
-    paths: list[tuple[str, Path]] = []
-    for path in source.rglob("*"):
-        relative = path.relative_to(source)
-        if any(part in {".git", "bin", "obj", "__pycache__"} for part in relative.parts):
-            continue
-        if (
-            not path.is_file()
-            or relative == editable
-            or candidate_root in relative.parents
-            or _is_legacy_workflow_file(relative)
-        ):
-            continue
-        paths.append((relative.as_posix(), path))
-    for relative, path in sorted(paths):
-        digest.update(relative.encode("utf-8"))
-        digest.update(b"\0")
-        with path.open("rb") as stream:
-            for chunk in iter(lambda: stream.read(131_072), b""):
-                digest.update(chunk)
-        digest.update(b"\0")
-    return digest.hexdigest()
-
-
 def _validate_project(source: Path) -> None:
     if not source.is_dir():
         raise ValueError("submission is not a directory")
@@ -810,8 +775,6 @@ def _validate_project(source: Path) -> None:
             continue
     if not (source / editable).is_file():
         raise ValueError("missing BudgetedDemandSearch.cs")
-    if _locked_tree_hash(source) != LOCKED_TREE_HASH:
-        raise ValueError("locked substrate file changed")
 
 
 def _copy_project(source: Path, destination: Path) -> None:
@@ -872,26 +835,32 @@ class _BoundedChildOutput:
     def finish(self, phase: str, return_code: int | None) -> dict:
         self.drain()
         self.stream.close()
-        text = bytes(self.tail).decode("utf-8", errors="replace")
-        text = re.sub(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)", "", text)
-        text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text)
-        text = "".join(c for c in text if c.isprintable() or c in "\n\t")
-        text = re.sub(r"(?i)(bearer\s+)[^\s]+", r"\1[redacted]", text)
-        after = _cgroup_events()
-        return {
-            "phase": phase, "return_code": return_code,
-            "elapsed_seconds": round(time.monotonic() - self.started, 3),
-            "output_stream": self.output_stream,
-            "output_tail": text, "output_bytes_seen": self.bytes_seen,
-            "output_truncated": self.bytes_seen > MAX_DIAGNOSTIC_STDERR_BYTES,
-            "output_capture_complete": self.eof,
-            "output_limit_bytes": MAX_DIAGNOSTIC_STDERR_BYTES,
-            "cgroup_event_delta": {key: after[key] - value for key, value in self.before.items()
-                                   if key in after and after[key] >= value},
-            "cgroup_event_scope": "visible cgroup mount counters; aggregate and not attributable to this child alone",
-            "cgroup_events_available": bool(self.before) and bool(after),
-            "limitation": "outer process output only; immutable runner suppresses managed exceptions",
-        }
+        return _diagnostics(phase, return_code, time.monotonic() - self.started,
+                            self.output_stream, bytes(self.tail), self.bytes_seen, self.eof,
+                            self.before)
+
+
+def _diagnostics(phase: str, return_code: int | None, elapsed: float, stream: str, tail: bytes,
+                 seen: int, complete: bool, before: dict[str, int]) -> dict:
+    text = tail[-MAX_DIAGNOSTIC_STDERR_BYTES:].decode("utf-8", errors="replace")
+    text = re.sub(r"\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)", "", text)
+    text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", text)
+    text = "".join(c for c in text if c.isprintable() or c in "\n\t")
+    after = _cgroup_events()
+    return {
+        "phase": phase, "return_code": return_code,
+        "elapsed_seconds": round(elapsed, 3),
+        "output_stream": stream,
+        "output_tail": text, "output_bytes_seen": seen,
+        "output_truncated": seen > MAX_DIAGNOSTIC_STDERR_BYTES,
+        "output_capture_complete": complete,
+        "output_limit_bytes": MAX_DIAGNOSTIC_STDERR_BYTES,
+        "cgroup_event_delta": {key: after[key] - value for key, value in before.items()
+                               if key in after and after[key] >= value},
+        "cgroup_event_scope": "visible cgroup mount counters; aggregate and not attributable to this child alone",
+        "cgroup_events_available": bool(before) and bool(after),
+        "limitation": "outer process output only; immutable runner suppresses managed exceptions",
+    }
 
 
 def _kill_child_group(process: subprocess.Popen) -> None:
@@ -921,62 +890,14 @@ def _run_bounded_build(command: list[str], **kwargs) -> subprocess.CompletedProc
     return result
 
 
-def _run_case_io(process: subprocess.Popen, capture: _BoundedChildOutput,
-                 instance: dict, output_path: Path, deadline: float) -> None:
-    assert process.stdin is not None
-    os.set_blocking(process.stdin.fileno(), False)
-    body = json.dumps(instance, separators=(",", ":"), allow_nan=False).encode("utf-8")
-    offset = 0
-    input_closed = False
-    while process.poll() is None:
-        capture.drain()
-        input_progress = False
-        if not input_closed:
-            for _ in range(16):
-                try:
-                    offset += os.write(process.stdin.fileno(), body[offset:offset + 4096])
-                    input_progress = True
-                except BlockingIOError:
-                    break
-                except BrokenPipeError:
-                    process.stdin.close()
-                    input_closed = True
-                    break
-                if offset == len(body):
-                    process.stdin.close()
-                    input_closed = True
-                    break
-        if output_path.stat().st_size > MAX_OUTPUT_BYTES:
-            _kill_child_group(process)
-            process.stdin.close()
-            raise CandidateFailure("output_limit", "search output too large",
-                                   case_id=instance["id"],
-                                   diagnostics=capture.finish("case", process.returncode))
-        if time.monotonic() >= deadline:
-            _kill_child_group(process)
-            process.stdin.close()
-            raise CandidateFailure("case_timeout", "search timed out on an instance",
-                                   case_id=instance["id"],
-                                   diagnostics=capture.finish("case", process.returncode))
-        if not input_progress:
-            time.sleep(0.02)
-    process.stdin.close()
-
-
-def _child_limits() -> None:
-    resource.setrlimit(
-        resource.RLIMIT_CPU,
-        (CASE_CPU_LIMIT_SECONDS, CASE_CPU_LIMIT_SECONDS + 2),
-    )
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    resource.setrlimit(
-        resource.RLIMIT_NOFILE,
-        (MAX_CHILD_FILE_DESCRIPTORS, MAX_CHILD_FILE_DESCRIPTORS),
-    )
-    resource.setrlimit(
-        resource.RLIMIT_NPROC,
-        (MAX_CHILD_PROCESSES, MAX_CHILD_PROCESSES),
-    )
+def _instance_sandbox(app: Path, environment: dict[str, str]) -> dict[str, Any]:
+    """isolate.run arguments of one instance process: reads the built project and the
+    package cache (and the system, where the .NET runtime lives); its own TMPDIR and HOME."""
+    return {"cwd": str(app), "read_paths": [app, "/opt/frontier/nuget"],
+            "env": {**environment, "DOTNET_CLI_HOME": "{home}", "TMPDIR": "{tmp}",
+                    "TMP": "{tmp}", "TEMP": "{tmp}"},
+            "timeout_seconds": CASE_TIMEOUT_SECONDS + 3, "cpu_seconds": CASE_CPU_LIMIT_SECONDS,
+            "processes": MAX_CHILD_PROCESSES, "open_files": MAX_CHILD_FILE_DESCRIPTORS}
 
 
 def _run_csharp_project(source: Path, instances: list[dict[str, Any]]) -> list[Any]:
@@ -1023,36 +944,29 @@ def _run_csharp_project(source: Path, instances: list[dict[str, Any]]) -> list[A
 
         answers: list[Any] = []
         for instance in instances:
-            output_path = root / f"output_{len(answers)}.json"
-            with output_path.open("wb") as output:
-                before = _cgroup_events()
-                process = subprocess.Popen(
-                    ["dotnet", str(assembly)],
-                    cwd=app,
-                    env=environment,
-                    stdin=subprocess.PIPE,
-                    stdout=output,
-                    stderr=subprocess.PIPE,
-                    text=False,
-                    start_new_session=True,
-                    preexec_fn=_child_limits,
-                )
-                capture = _BoundedChildOutput(process, before)
-                deadline = time.monotonic() + CASE_TIMEOUT_SECONDS + 3
-                _run_case_io(process, capture, instance, output_path, deadline)
-            # A submission may leave helpers alive after its entry point exits.
-            # Kill the process group before starting the next private instance.
-            _kill_child_group(process)
-            diagnostics = capture.finish("case", process.returncode)
-            if process.returncode != 0:
-                raise CandidateFailure("case_execution_failed", "search failed on an instance",
-                                       case_id=instance["id"], return_code=process.returncode,
-                                       diagnostics=diagnostics)
-            if output_path.stat().st_size > MAX_OUTPUT_BYTES:
+            # Each instance is a fresh confined process (the shared isolate): it reads the
+            # built project, the runtime and the package cache, writes only its own new TMPDIR
+            # and HOME, cannot read the judge (suite keys, reference search) or the verifier
+            # input/output, and whatever it leaves running is killed before the next instance.
+            before = _cgroup_events()
+            run = isolate.run(
+                ["dotnet", str(assembly)],
+                stdin=json.dumps(instance, separators=(",", ":"), allow_nan=False).encode("utf-8"),
+                **_instance_sandbox(app, environment))
+            diagnostics = _diagnostics("case", run.returncode, run.wall_seconds, "stderr",
+                                       run.stderr, len(run.stderr), True, before)
+            if run.timed_out:
+                raise CandidateFailure("case_timeout", "search timed out on an instance",
+                                       case_id=instance["id"], diagnostics=diagnostics)
+            if run.limit == "output" or len(run.stdout) > MAX_OUTPUT_BYTES:
                 raise CandidateFailure("output_limit", "search output too large",
-                                       case_id=instance["id"])
+                                       case_id=instance["id"], diagnostics=diagnostics)
+            if run.returncode != 0 or run.limit:
+                raise CandidateFailure("case_execution_failed", "search failed on an instance",
+                                       case_id=instance["id"], return_code=run.returncode,
+                                       diagnostics=diagnostics)
             try:
-                result = json.loads(output_path.read_text(encoding="utf-8"))
+                result = json.loads(run.stdout.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError):
                 raise CandidateFailure("invalid_output", "search returned invalid JSON",
                                        case_id=instance["id"]) from None

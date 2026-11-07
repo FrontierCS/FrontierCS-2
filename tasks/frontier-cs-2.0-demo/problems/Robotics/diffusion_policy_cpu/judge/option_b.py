@@ -111,19 +111,10 @@ def unavailable(reason):
             "unbounded": None, "native_result": None, "solver_feedback": {}}
 
 
-def assemble_scores(measurement, *, baseline=None, expected_binding=None, suite=None, fixture_only=False, execution_context=None):
+def assemble_scores(measurement, *, baseline=None, expected_binding=None, suite=None, fixture_only=False):
     if baseline is None or expected_binding is None or suite is None:
         return unavailable("fresh_bound_calibration_and_explicit_manifests_required")
-    if not fixture_only and execution_context is None:
-        return unavailable("real_score_execution_disabled")
     try:
-        if not fixture_only:
-            from private_context import accepted_calibrations, binding, load_context
-            current = load_context(root=execution_context["root"], mode=execution_context["mode"])
-            need(current["seal_sha256"] == execution_context["seal_sha256"], "Execution context changed")
-            accepted = accepted_calibrations(current)
-            need(suite == current["suites"][suite["mode"]] and baseline == accepted[suite["mode"]]
-                 and expected_binding == binding(current, suite["mode"]), "Unaccepted score inputs")
         validate_suite(suite, suite["mode"])
         need(suite["mode"] in {"dev", "final"} and measurement["private"]["mode"] == suite["mode"],
              "Suite routing mismatch")

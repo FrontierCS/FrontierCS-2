@@ -1,0 +1,58 @@
+# The definition of shockwave_dynamic_gpu_allocation (schema frontier.task/v1). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder. A CPU task: the "GPUs" are simulated.
+schema = "frontier.task/v1"
+id = "shockwave_dynamic_gpu_allocation"
+display_name = "Dynamic GPU Allocation"
+version = "native-standardization-4-task-toml"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 4294967296         # 4 GiB
+command = ["/opt/frontier/verifier"]
+max_evidence_bytes = 4194304     # 4 MiB, as in the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 3
+max_train_wall_seconds = 5400
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["scheduler/shockwave.py", "scheduler/shockwave_helper.py", "scheduler/solver_extensions/"]
+max_changed_files = 20            # the statement's limit
+
+# The simulator and score constants the judge reads (config.yaml `evaluation`), unchanged.
+[judge.config.evaluation]
+cluster_spec = "4:0:0"
+num_gpus_per_server = "1:1:1"
+seed = 0
+time_per_iteration = 120
+workload_timeout_seconds = 240
+makespan_scale_seconds = 12000.0
+average_jct_scale_seconds = 7000.0
+fairness_numerator_rho = 0.55
+fairness_offset_rho = 0.05
+unfair_threshold_rho = 1.05
+makespan_weight = 40.0
+average_jct_weight = 40.0
+worst_fairness_weight = 15.0
+unfair_fraction_weight = 5.0
+
+[feedback]                        # what train returns to the Agent beside beat_spec_progress
+makespan_seconds = "Candidate makespan per train trace, in seconds; anonymous order."
+average_jct_seconds = "Candidate average job completion time per train trace, in seconds; anonymous order."
+worst_finish_time_fairness_rho = "Candidate maximum job-level finish-time-fairness rho per train trace; anonymous order."
+unfair_job_fraction_percent = "Candidate percentage of jobs with rho above 1.05 per train trace; anonymous order."
+
+[paper]                           # for readers; the platform never reads it
+title = "Shockwave: Fair and Efficient Cluster Scheduling for Dynamic Adaptation in Machine Learning"
+venue = "NSDI 2023"
+url = "https://arxiv.org/pdf/2210.00093"
+summary = "Improve a round-based GPU cluster scheduler for ML jobs whose batch size and throughput change during training."

@@ -1,4 +1,19 @@
-"""Deterministic evaluator for the removed Polar Express numerical routines."""
+"""Judge of polar_express (Polar Express polar-factor approximation) for the shared verifier.
+
+Score over the six original workloads: q_s = clip((-log10 max(e_s, 1e-15)) / 12, 0, 1) with e_s the
+max scalar grid error of the returned composition, q_p = clip((-log10 max(e_p, 1e-15)) / 8, 0, 1)
+with e_p the relative Frobenius error to the float64 SVD polar factor; raw_score =
+score_unbounded = 100 (mean q_s + mean q_p) / 2. check_tree rejects a capability-policy break
+(content_policy); any runtime fault, invalid output or timeout scores 0. Train and final use the
+same twelve records with disjoint seeds.
+
+Beat-spec metrics (beat_spec_workload_passes, all twelve workloads), each against the best of
+four reference variants (published, matched, per_workload, unguarded) per workload and metric:
+- worst_case_scalar_error, relative_polar_factor_error, spectral_polar_error,
+  top_subspace_polar_error, lower is better: pass when strictly lower.
+- polar_cosine_similarity, higher is better: passes when strictly higher.
+beats_reference = 1 iff every metric passes on every workload. A reference failure raises.
+"""
 
 from __future__ import annotations
 
@@ -20,20 +35,14 @@ for _thread_variable in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THR
 
 import numpy as np
 
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+
 
 
 TASK_DIR = Path(__file__).resolve().parent
-SUBSTRATE = TASK_DIR / "harbor" / "app"
+# The starter tree (repo/), copied here by the Verifier image; the reference patch applies to it.
+SUBSTRATE = TASK_DIR / "pristine"
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
-CONFIG: dict[str, Any] = {
-    "submission": {
-        "kind": "patch",
-        "allow_paths": ["polar_express.py", "frontier_solution/"],
-        "max_changed_files": 20,
-        "max_patch_bytes": 1_048_576,
-    }
-}
 
 # Both suites have the same two-cases-per-shape stratification and disjoint seeds.
 # Each seed draws new orthonormal factors and new singular spectra for every member.
@@ -263,7 +272,7 @@ from pathlib import Path
 
 payload = json.loads(sys.stdin.readline())
 safe_dumps = json.dumps
-repo = Path(payload["repo"])
+repo = Path(sys.argv[1])
 sys.path.insert(0, str(repo))
 os.chdir(repo)
 
@@ -274,7 +283,14 @@ from nbclient import NotebookClient
 nb = nbformat.read(repo / "plotsforpolar.ipynb", as_version=4)
 if payload.get("fast"):
     nb.cells = nb.cells[:5]
-NotebookClient(nb, timeout=60, kernel_name="python3", allow_errors=False).execute(cwd=str(repo))
+# Isolate has no network: the kernel talks over unix sockets, named relative to the
+# shared working directory (an absolute runtime path can exceed the socket path limit).
+from traitlets.config import Config
+kernel_config = Config()
+kernel_config.KernelManager.transport = "ipc"
+kernel_config.KernelManager.ip = "kernel"
+NotebookClient(nb, timeout=60, kernel_name="python3", allow_errors=False,
+               config=kernel_config).execute(cwd=str(repo))
 
 import torch
 from torch.utils._python_dispatch import TorchDispatchMode
@@ -485,36 +501,56 @@ def _run_tree(repo: Path, seed: int, *, authentic: bool = True) -> list[dict[str
         return _run_prepared_tree(prepared, seed, authentic=authentic)
 
 
+# The python3 kernel, started as this evaluator's interpreter. Its IOPub output pipe for forked
+# subprocesses binds a TCP port, which isolate does not have; the notebook does not fork.
+KERNEL_SPEC = {
+    "argv": [sys.executable, "-c",
+             "import ipykernel.iostream as s; i = s.IOPubThread.__init__; "
+             "s.IOPubThread.__init__ = lambda self, socket, pipe=False: i(self, socket, pipe=False); "
+             "from ipykernel import kernelapp; kernelapp.launch_new_instance()",
+             "-f", "{connection_file}"],
+    "display_name": "Python 3 (ipykernel)", "language": "python",
+}
+
+
+def _sandboxed_runner(repo: Path, payload: dict, kernelspec: Path) -> isolate.Result:
+    return isolate.run(
+        [sys.executable, "-c", RUNNER, "{work}"],
+        timeout_seconds=100, tree=repo, stdin=(json.dumps(payload) + "\n").encode(),
+        inputs={"jupyter": kernelspec}, unix_sockets=True,
+        env={
+            "MPLBACKEND": "Agg",
+            "TORCH_COMPILE_DISABLE": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "OMP_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "PYTHONHASHSEED": "0",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "JUPYTER_PATH": "{in}/jupyter",
+            "JUPYTER_DATA_DIR": "{work}/.frontier_jupyter",
+            "PATH": str(Path(sys.executable).parent) + os.pathsep + isolate.DEFAULT_PATH,
+        })
+
+
 def _run_prepared_tree(repo: Path, seed: int, *, authentic: bool = True) -> list[dict[str, Any]]:
     matrices, oracles = _suite(seed)
     payload = {
-        "repo": str(repo),
         "workloads": SUITE,
         "matrices": matrices,
         "fast": bool(os.environ.get("FCS_EVALUATOR_TEST_FAST")) or not authentic,
     }
-    env = os.environ.copy()
-    env.update({
-        "MPLBACKEND": "Agg",
-        "TORCH_COMPILE_DISABLE": "1",
-        "OPENBLAS_NUM_THREADS": "1",
-        "OMP_NUM_THREADS": "1",
-        "MKL_NUM_THREADS": "1",
-        "PYTHONHASHSEED": "0",
-        # Keep kernelspec discovery independent of a writable user home and
-        # make the kernelspec's `python` resolve to this evaluator interpreter.
-        "JUPYTER_PATH": str(Path(sys.prefix) / "share" / "jupyter"),
-        "JUPYTER_DATA_DIR": str(repo / ".frontier_jupyter"),
-        "PATH": str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", ""),
-    })
-    proc = subprocess.run(
-        [sys.executable, "-c", RUNNER],
-        input=json.dumps(payload) + "\n",
-        text=True,
-        capture_output=True,
-        env=env,
-        timeout=100,
-    )
+    # A fresh isolate instance (the shared launcher): a private copy of the prepared tree,
+    # no judge files, an environment built from nothing, no network, nothing kept.
+    with tempfile.TemporaryDirectory(prefix="polar-kernelspec-") as kernelspec:
+        spec = Path(kernelspec) / "kernels" / "python3"
+        spec.mkdir(parents=True)
+        spec.joinpath("kernel.json").write_text(json.dumps(KERNEL_SPEC))
+        run = _sandboxed_runner(repo, payload, Path(kernelspec))
+    if run.timed_out:
+        raise subprocess.TimeoutExpired(sys.executable, 100)
+    proc = subprocess.CompletedProcess(sys.executable, run.returncode,
+                                       run.stdout.decode(errors="replace"),
+                                       run.stderr.decode(errors="replace"))
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout).strip().splitlines()
         raise ValueError(detail[-1] if detail else "numerical runner failed")
@@ -634,13 +670,22 @@ def _variant_source(source: str, variant: str) -> str:
 
 
 def _reference_tree(variant: str = "published") -> Path:
-    # Reference replay needs the same writable disposable copy as a submission.
+    """A writable copy of the pristine starter with reference.patch applied (trusted,
+    judge-owned), as a submission's tree is. The caller removes its parent."""
     if variant not in REFERENCE_VARIANTS:
         raise ValueError("unknown reference variant")
-    applied = apply_submission_patch(REFERENCE_PATCH, TASK_DIR, CONFIG)
-    if not applied.ok:
-        raise RuntimeError("reference patch could not be applied: " + applied.message)
-    repo = Path(applied.workdir)
+    scratch = Path(tempfile.mkdtemp(prefix="polar-reference-"))
+    repo = scratch / "repo"
+    shutil.copytree(SUBSTRATE, repo, symlinks=True)
+    for path in (repo, *repo.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = dict(os.environ, GIT_CEILING_DIRECTORIES=str(scratch.resolve()))
+    applied = subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)],
+                             cwd=repo, capture_output=True, text=True, timeout=60, env=env)
+    if applied.returncode != 0:
+        shutil.rmtree(scratch, ignore_errors=True)
+        raise RuntimeError("reference patch could not be applied")
     if variant != "published":
         module = repo / "polar_express.py"
         try:
@@ -694,15 +739,19 @@ def _reference_rows(seed: int) -> dict[str, list[dict[str, Any]]]:
     return json.loads(json.dumps(_REFERENCE_CACHE[key]))
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    candidate_root: Path | None = None
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: the declared numerical API restrictions (imports, reflection,
+    decompositions) of polar_express.py and frontier_solution/."""
     try:
-        applied = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not applied.ok:
-            return _invalid(applied.message)
-        candidate_repo = Path(applied.workdir)
-        candidate_root = candidate_repo.parent
-        _policy_check(candidate_repo)
+        _policy_check(Path(tree))
+    except ValueError:
+        return "content_policy", [c.path for c in changes if c.status != "D"]
+    return None
+
+
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    try:
+        candidate_repo = Path(tree)
         final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
         seed = FINAL_SEED if final else DEV_SEED
 
@@ -742,20 +791,17 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             "top_subspace_polar_error": sum(float(r["top"]) for r in candidate) / len(candidate),
         }
         return score, score, "Scored six deterministic interval-matrix workloads; graded twelve.", metrics
-    except ReferenceFailure:
+    except (ReferenceFailure, isolate.IsolateError):
         raise
     except subprocess.TimeoutExpired:
         return _invalid("Submission timed out during notebook or numerical execution.")
     except Exception as exc:
         return _invalid(f"Invalid submission: {type(exc).__name__}: {exc}")
-    finally:
-        if candidate_root is not None:
-            shutil.rmtree(candidate_root, ignore_errors=True)
 
 
 def _main() -> int:
     if len(sys.argv) != 2:
-        print("usage: evaluator.py SOLUTION_PATCH", file=sys.stderr)
+        print("usage: evaluator.py TREE", file=sys.stderr)
         return 2
     result = evaluate(sys.argv[1])
     print(json.dumps({"score": result[0], "score_unbounded": result[1], "message": result[2], "metrics": result[3]}))

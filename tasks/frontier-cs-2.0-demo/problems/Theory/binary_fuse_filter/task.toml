@@ -1,0 +1,42 @@
+# The definition of binary_fuse_filter (schema frontier.task/v1). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest,
+# and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "binary_fuse_filter"
+display_name = "Binary Fuse Filter Construction and Lookup"
+version = "certified-non-inferiority-r8-shared-verifier"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+max_evidence_bytes = 4194304      # 4 MiB, as the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 12000
+eval_timeout_seconds = 180
+
+[submission]
+max_bytes = 1048576               # the archive limit the Agent was told; the judge's 524288-byte patch cap is loosened to it (owner decision)
+allowed_paths = ["include/"]
+max_changed_files = 32            # unchanged by the migration; the statement states it
+allow_executable = true           # the old judge applied new executable files under include/
+
+[feedback]
+mean_resident_bytes = "Mean over the train workloads of the candidate's maximum retained allocation, in bytes."
+mean_build_ns = "Mean over the train workloads of the candidate's median construction time, in nanoseconds."
+mean_lookup_ns = "Mean over the train workloads of the candidate's median time per lookup, in nanoseconds."
+mean_effective_fpr = "Mean over the train workloads of the candidate's worst empirical false-positive probability."
+space_overhead_defined_workloads = "Number of train workloads whose candidate space-overhead point is defined (false-positive rate strictly between 0 and 1)."
+
+[paper]                           # for readers; the platform never reads it
+title = "Binary Fuse Filters: Fast and Smaller Than Xor Filters"
+venue = "ACM JEA 2022"
+url = "https://arxiv.org/abs/2201.01174"
+summary = "Implement and optimize construction and lookup of static binary fuse approximate-membership filters."

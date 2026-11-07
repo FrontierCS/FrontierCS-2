@@ -1,0 +1,41 @@
+# The definition of glenside (schema frontier.task/v1). Only what differs between tasks
+# is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+schema = "frontier.task/v1"
+id = "glenside"
+display_name = "Access-Pattern Rewriting"
+version = "r12-task-toml-shared-verifier"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+command = ["/opt/frontier/verifier"]
+max_evidence_bytes = 4194304     # 4 MiB, as in the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 12000
+eval_timeout_seconds = 300
+
+[submission]
+max_bytes = 1048576
+allowed_paths = ["code/src/language/rewrites.rs", "code/src/language/solver_extensions/"]
+allowed_suffixes = [".rs"]        # the judge always required Rust source in both places
+allow_executable = true           # the old patch checker accepted new 100755 files
+
+[feedback]                        # what train returns to the Agent beside beat_spec_progress
+development_im2col_discovered_count = "Number of development workloads with a valid im2col discovery (0 to 14)."
+development_rewrite_time_seconds_median = "Median over the development workloads of the candidate's three-run median rewrite time, in seconds."
+development_egraph_node_growth_median = "Median over the development workloads of the candidate's maximum e-graph node growth."
+
+[paper]                           # for readers; the platform never reads it
+title = "Pure Tensor Program Rewriting via Access Patterns (Representation Pearl)"
+venue = "MAPS 2021"
+url = "https://arxiv.org/abs/2105.09377"
+summary = "Find better access-pattern rewrites that map tensor convolutions onto matrix hardware in Glenside."

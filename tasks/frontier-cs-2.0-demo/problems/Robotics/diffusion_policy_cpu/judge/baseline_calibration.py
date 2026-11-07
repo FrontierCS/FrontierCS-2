@@ -57,7 +57,7 @@ def main():
             for case in baseline_schedule(context["suites"][mode]):
                 remaining = (datetime.fromisoformat(grant["work_cutoff"]) - datetime.now(timezone.utc)).total_seconds()
                 require(remaining >= 155, "Insufficient authorized time for a complete trajectory")
-                rows.append(launch_episode(context, "baseline", mode, case, mode_dir))
+                rows.append(launch_episode(context, mode, case, mode_dir))
                 write_json(mode_dir / "rows.json", rows)
                 print(json.dumps({"mode": mode, "completed": len(rows), "case": case,
                                   "raw_metrics": rows[-1]["trajectory"]["raw_metrics"],

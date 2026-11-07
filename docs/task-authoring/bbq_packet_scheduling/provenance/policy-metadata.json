@@ -1,0 +1,16 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_scheduling_s2r9_python"
+    },
+    "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
+    "paper": {
+      "title": "BBQ: A Fast and Scalable Integer Priority Queue for Hardware Packet Scheduling",
+      "url": "https://www.usenix.org/system/files/nsdi24-atre.pdf"
+    }
+  }
+}
