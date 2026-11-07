@@ -204,3 +204,137 @@ class VerifierPlacementTests(unittest.TestCase):
         for nodes in [[], ["x", "x"], ["bad..node"], ["UPPER"], ["a" * 64]]:
             with self.assertRaises(jsonschema.ValidationError):
                 jsonschema.validate([{**self.policy, "nodes": nodes}], schema)
+
+
+class CpuMachineSiteTests(unittest.TestCase):
+    """execution.cpu_machines: Verifier CPU machines on Kubernetes, declared by the site."""
+
+    KEYS = (
+        "MANAGEMENT_CPU_RUNNER_BACKEND",
+        "MANAGEMENT_CPU_RUNNER_PLACEMENT",
+        "MANAGEMENT_CPU_MACHINE_MAX_INSTANCES",
+        "MANAGEMENT_CPU_MACHINE_MAX_CPU_MILLIS",
+        "MANAGEMENT_CPU_MACHINE_MAX_MEMORY_BYTES",
+    )
+    EVAL16 = {
+        "MANAGEMENT_CPU_RUNNER_BACKEND": "kubernetes",
+        "MANAGEMENT_CPU_RUNNER_PLACEMENT":
+            '{"node_selector":{"eks.amazonaws.com/nodegroup":"example-cpu-nodegroup"}}',
+        "MANAGEMENT_CPU_MACHINE_MAX_INSTANCES": "4",
+        "MANAGEMENT_CPU_MACHINE_MAX_CPU_MILLIS": "16000",
+        "MANAGEMENT_CPU_MACHINE_MAX_MEMORY_BYTES": "68719476736",
+    }
+
+    def setUp(self):
+        self.raw = json.loads((ROOT / "config/site.example.json").read_text())
+        self.machines = copy.deepcopy(self.raw["execution"]["cpu_machines"])
+
+    @staticmethod
+    def render(raw):
+        config = frontier_deploy.validate_config(raw)
+        return json.loads(frontier_deploy.render_runtime_manifest(
+            config, Fixture.outputs(config), Fixture.images(config), ["172.20.0.1/32"]))
+
+    @staticmethod
+    def item(manifest, kind, name):
+        return next(x for x in manifest["items"]
+                    if x["kind"] == kind and x["metadata"]["name"] == name)
+
+    def test_the_example_site_renders_its_cpu_machines_and_absent_renders_no_key(self):
+        declared = self.render(self.raw)
+        cm = self.item(declared, "ConfigMap", "frontier-management-config")
+        self.assertEqual({k: cm["data"][k] for k in self.KEYS}, self.EVAL16)
+        absent = copy.deepcopy(self.raw)
+        del absent["execution"]["cpu_machines"]
+        plain = self.render(absent)
+        plain_cm = self.item(plain, "ConfigMap", "frontier-management-config")
+        self.assertFalse(set(self.KEYS) & set(plain_cm["data"]))
+        # Only Management's configuration (and so its rollout annotation) differs.
+        for key in self.KEYS:
+            cm["data"].pop(key)
+        before = self.item(plain, "Deployment", "frontier-management")
+        after = self.item(declared, "Deployment", "frontier-management")
+        self.assertNotEqual(before["spec"]["template"]["metadata"]["annotations"],
+                            after["spec"]["template"]["metadata"]["annotations"])
+        after["spec"]["template"]["metadata"]["annotations"] = before["spec"]["template"]["metadata"]["annotations"]
+        self.assertEqual(plain, declared)
+
+    def test_placement_is_the_canonical_json_the_contract_prints(self):
+        from preview.config import cpu_machine_management_env
+        self.machines["placement"] = {
+            "node_selector": {"z": "1", "a": "2"},
+            "tolerations": [{"operator": "Exists", "key": "k", "effect": "NoSchedule"}],
+        }
+        self.assertEqual(
+            cpu_machine_management_env(self.machines)["MANAGEMENT_CPU_RUNNER_PLACEMENT"],
+            '{"node_selector":{"a":"2","z":"1"},'
+            '"tolerations":[{"effect":"NoSchedule","key":"k","operator":"Exists"}]}')
+
+    def invalid(self):
+        m = self.machines
+        placement = m["placement"]
+        return [
+            None, [], {}, {**m, "extra": 1},
+            {k: v for k, v in m.items() if k != "max_memory_bytes"},
+            {**m, "placement": {}}, {**m, "placement": {"node_selector": {}}},
+            {**m, "placement": {**placement, "extra": 1}},
+            {**m, "placement": {"node_selector": {"": "x"}}},
+            {**m, "placement": {"node_selector": {"k": "v" * 64}}},
+            {**m, "placement": {"node_selector": {"k": 1}}},
+            {**m, "placement": {**placement, "tolerations": []}},
+            {**m, "placement": {**placement, "tolerations": [{}]}},
+            {**m, "max_instances": 0}, {**m, "max_instances": 65}, {**m, "max_instances": True},
+            {**m, "max_cpu_millis": 1500}, {**m, "max_cpu_millis": 65000}, {**m, "max_cpu_millis": "16000"},
+            {**m, "max_memory_bytes": 0}, {**m, "max_memory_bytes": (256 << 30) + (1 << 20)},
+            {**m, "max_memory_bytes": (8 << 30) + 1},
+        ]
+
+    def test_config_and_schema_refuse_malformed_or_partial_declarations(self):
+        import jsonschema
+        schema = json.loads((ROOT / "config/site.schema.json").read_bytes())[
+            "properties"]["execution"]["properties"]["cpu_machines"]
+        jsonschema.validate(self.machines, schema)
+        for value in self.invalid():
+            with self.subTest(value=value):
+                raw = copy.deepcopy(self.raw)
+                raw["execution"]["cpu_machines"] = value
+                with self.assertRaises(frontier_deploy.DeployError):
+                    frontier_deploy.validate_config(raw)
+                with self.assertRaises(jsonschema.ValidationError):
+                    jsonschema.validate(value, schema)
+
+    def test_upgrade_sets_replaces_removes_and_rejects_overrides(self):
+        from preview import cli
+        dep = {"metadata": {"resourceVersion": "2"}, "spec": {"template": {
+            "metadata": {"annotations": {}}, "spec": {"containers": [{"name": "management", "image": "old"}]}}}}
+        images = {k: {"reference": "new-" + k} for k in ("management", "driver")}
+
+        def configmap(extra):
+            return {"metadata": {"resourceVersion": "1"}, "data": {
+                "MANAGEMENT_DRIVER_BACKENDS": "local-k8s", "MANAGEMENT_DRIVER_IMAGE": "old", **extra}}
+
+        # Not passed: the keys stay as they are.
+        stale = {"MANAGEMENT_CPU_MACHINE_MAX_INSTANCES": "2"}
+        _, _, untouched = cli.runtime_upgrade_patches(configmap(stale), dep, images)
+        self.assertEqual(untouched["MANAGEMENT_CPU_MACHINE_MAX_INSTANCES"], "2")
+        # Declared: every key is set, the stale one replaced.
+        patches, _, data = cli.runtime_upgrade_patches(configmap(stale), dep, images, cpu_machines=self.machines)
+        self.assertEqual({k: data[k] for k in self.KEYS}, self.EVAL16)
+        self.assertIn({"op": "replace", "path": "/data/MANAGEMENT_CPU_MACHINE_MAX_INSTANCES", "value": "4"}, patches)
+        self.assertIn({"op": "add", "path": "/data/MANAGEMENT_CPU_RUNNER_BACKEND", "value": "kubernetes"}, patches)
+        # Absent from the site: every key is removed, none invented.
+        patches, _, data = cli.runtime_upgrade_patches(configmap(self.EVAL16), dep, images, cpu_machines=None)
+        self.assertFalse(set(self.KEYS) & set(data))
+        for key in self.KEYS:
+            self.assertIn({"op": "remove", "path": "/data/" + key}, patches)
+        _, _, data = cli.runtime_upgrade_patches(configmap({}), dep, images, cpu_machines=None)
+        self.assertFalse(set(self.KEYS) & set(data))
+        with self.assertRaisesRegex(frontier_deploy.DeployError, "cpu_machines.max_cpu_millis"):
+            cli.runtime_upgrade_patches(configmap({}), dep, images,
+                                        cpu_machines={**self.machines, "max_cpu_millis": 1500})
+        for key in self.KEYS:
+            with self.subTest(key=key):
+                overridden = copy.deepcopy(dep)
+                overridden["spec"]["template"]["spec"]["containers"][0]["env"] = [{"name": key, "value": "x"}]
+                with self.assertRaisesRegex(frontier_deploy.DeployError, "direct environment overrides"):
+                    cli.runtime_upgrade_patches(configmap({}), overridden, images, cpu_machines=self.machines)

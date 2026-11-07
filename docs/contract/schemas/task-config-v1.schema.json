@@ -39,6 +39,8 @@
             "verifier": { "$ref": "#/$defs/gpu_host_resources" }
           }
         },
+        "agent_cpu_runner": { "$ref": "#/$defs/runner_image" },
+        "verifier_cpu_runner": { "$ref": "#/$defs/runner_image" },
         "agent_gpu": {
           "type": "object",
           "additionalProperties": false,
@@ -98,6 +100,17 @@
             "max_gpu_instances": { "type": "integer", "minimum": 0 },
             "max_gpu_seconds": { "type": "integer", "minimum": 0 },
             "eval_timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 604800 }
+          }
+        },
+        "verifier_cpu": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["shapes", "max_instances", "max_seconds", "final_seconds"],
+          "properties": {
+            "shapes": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "$ref": "#/$defs/cpu_machine_shape" } },
+            "max_instances": { "type": "integer", "minimum": 1, "maximum": 64 },
+            "max_seconds": { "type": "integer", "minimum": 0 },
+            "final_seconds": { "type": "integer", "minimum": 1 }
           }
         }
       }
@@ -204,6 +217,29 @@
       }
     },
     "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "runner_image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tag", "digest", "reference"],
+      "properties": {
+        "tag": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/sha256" },
+        "reference": {
+          "description": "The same digest in the cluster registry, what a Kubernetes runner Pod pulls: <repository>@<digest>.",
+          "type": "string",
+          "pattern": "^[^\\s@]+@sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "cpu_machine_shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu_millis", "memory_bytes"],
+      "properties": {
+        "cpu_millis": { "type": "integer", "minimum": 1000, "maximum": 64000, "multipleOf": 1000 },
+        "memory_bytes": { "type": "integer", "minimum": 1048576, "maximum": 274877906944, "multipleOf": 1048576 }
+      }
+    },
     "gpu_host_resources": {
       "type": "object",
       "additionalProperties": false,

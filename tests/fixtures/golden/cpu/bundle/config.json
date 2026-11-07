@@ -30,6 +30,16 @@
   },
   "execution": {
     "agent_external_egress": false,
+    "cpu_machines": {
+      "max_cpu_millis": 16000,
+      "max_instances": 4,
+      "max_memory_bytes": 68719476736,
+      "placement": {
+        "node_selector": {
+          "eks.amazonaws.com/nodegroup": "example-cpu-nodegroup"
+        }
+      }
+    },
     "max_active_drivers": 1,
     "object_store_gib": 20,
     "registry_storage_gib": 20,

@@ -2,15 +2,18 @@
 
 Runs `evaluate(tree)` of a task.toml task here, as the CPU control image does, with the shared
 adapter's Driver lease and SSH gateway replaced by Modal Sandboxes of the published runner images
-(one GPU, no network) and an exec as the runner's SSH user (uid 10001). Each sandbox's runner
-image kind (agent_gpu, verifier_gpu) maps to a published image; a verifier_gpu image gets this
-checkout's judge bundle at /opt/frontier/task, where the task's Verifier GPU image holds it. Everything above that
+(the declared GPUs, or a CPU machine of exactly the declared cores and memory; no network) and
+an exec as the runner's SSH user (uid 10001). Each sandbox's runner image kind (agent_gpu,
+verifier_gpu, agent_cpu, verifier_cpu) maps to a published image; a verifier_gpu image gets this
+checkout's judge bundle at /opt/frontier/task, where the task's Verifier GPU image holds it (a
+verifier_cpu runner image already holds it, as the Verifier image does). Everything above that
 transport is the real code: run_sandboxes() builds the upload, step and collect commands, the
 judge classifies the results. No Driver, Management or site call; it costs the task's GPUs.
 
   set -a; . ~/.config/fcs2/modal.env; set +a
   uv run --no-project --with modal --with zstandard python scripts/maintenance/sandbox_runner.py \
     --task <task dir> --image agent_gpu=<image@sha256:...> [--image verifier_gpu=<...>] \
+    [--image agent_cpu=<agent CPU runner image> --image verifier_cpu=<...>] \
     --candidate reference|<patch> [--mode train|eval] [--bundle <staged judge bundle>]
 
 The judge and the adapter come from this checkout; --bundle replaces the staged judge/ +
@@ -77,7 +80,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--task", type=Path, required=True)
     parser.add_argument("--image", action="append", required=True, metavar="KIND=REF",
-                        help="the published image of a runner image kind (agent_gpu, verifier_gpu)")
+                        help="the published image of a runner image kind (agent_gpu, "
+                             "verifier_gpu, agent_cpu, verifier_cpu)")
     parser.add_argument("--bundle", type=Path,
                         help="a staged judge bundle (default: task_manifest.judge_bundle)")
     parser.add_argument("--candidate", required=True,
@@ -107,14 +111,21 @@ def main() -> int:
     lock = threading.Lock()
 
     def create_runner(driver_url, verification_id, token, gpu_type, seconds, gpu_count=1, *,
-                      window=None, idempotency_scope=None, image=None):
+                      window=None, idempotency_scope=None, image=None, machine=None):
         started = time.monotonic()
-        # The Driver's Modal GPU name (core driver-modal modal_gpu_type): H100 is the exact-H100
-        # selector "H100!"; a plain "H100" may run on an H200.
-        modal_gpu = "H100!" if gpu_type.upper() == "H100" else gpu_type.upper()
-        sandbox = modal.Sandbox.create(
-            app=app, image=images[image], gpu=modal_gpu if gpu_count == 1 else f"{modal_gpu}:{gpu_count}",
-            cpu=8, memory=64 * 1024, timeout=seconds + 900, block_network=True)
+        if machine is not None:
+            # A CPU machine as the Driver makes it (core driver-modal sandbox_resources): request
+            # and limit are the declared cores and memory.
+            cores, memory = machine["cpu_millis"] / 1000, machine["memory_bytes"] // (1024 * 1024)
+            shape = {"cpu": (cores, cores), "memory": (memory, memory)}
+        else:
+            # The Driver's Modal GPU name (core driver-modal modal_gpu_type): H100 is the
+            # exact-H100 selector "H100!"; a plain "H100" may run on an H200.
+            modal_gpu = "H100!" if gpu_type.upper() == "H100" else gpu_type.upper()
+            shape = {"gpu": modal_gpu if gpu_count == 1 else f"{modal_gpu}:{gpu_count}",
+                     "cpu": 8, "memory": 64 * 1024}
+        sandbox = modal.Sandbox.create(app=app, image=images[image], timeout=seconds + 900,
+                                       block_network=True, **shape)
         with lock:
             number = len(sandboxes)
             runner_id = "gpurunner_0" + "".join(
@@ -122,7 +133,8 @@ def main() -> int:
             sandboxes[runner_id] = sandbox
         print(f"### runner {runner_id} ({idempotency_scope}) = {sandbox.object_id}, "
               f"up after {time.monotonic() - started:.0f} s", flush=True)
-        return {"runner_id": runner_id, "state": "ready", "gpu_count": gpu_count,
+        return {"runner_id": runner_id, "state": "ready",
+                **(dict(machine) if machine is not None else {"gpu_count": gpu_count}),
                 "granted_seconds": seconds, "image": image}
 
     def terminate_runner(driver_url, verification_id, token, runner_id, *, window=None):

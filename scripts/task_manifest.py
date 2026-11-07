@@ -114,26 +114,40 @@ AUDIT_KEYS = {"max_bundle_bytes": False, "max_model_request_bytes": False,
 # enforced from the control side) and gets declared files back. Keys:
 #   access, trust, dockerfile, workdir   as above (trust "untrusted" = candidate-only machine)
 #   resources     = the machine's shape: { gpus = 1..=64, gpu_type = "<Driver GPU type>" } is
-#                   a GPU runner; { cpu_millis, memory_bytes } without gpus is a CPU machine
-#                   (a dedicated pod; its provisioning path is the next step, refused for now)
+#                   a GPU runner; { cpu_millis, memory_bytes } without gpus is a CPU machine of
+#                   exactly that shape (whole cores, whole MiB; request = limit, so every machine
+#                   of one sandbox is the same machine type)
 #   max_concurrent = machines of this sandbox at once
 #   lease_seconds = { train = N, eval = M }: the lease requested per machine, per mode
-# `dockerfile` names the runner image: docker/agent-gpu.Dockerfile (the task's Agent GPU image,
-# the candidate's own environment) or, trusted only, docker/verifier-gpu.Dockerfile (an image
-# that carries the judge's harness). An untrusted one's recipe copies nothing from judge/.
-# The adapter reads them from verifier.json `gpu.sandboxes`; they are never platform sidecars.
+# `dockerfile` names the runner image, by the task recipe it is built from. A GPU runner:
+# docker/agent-gpu.Dockerfile (the task's Agent GPU image, the candidate's own environment) or,
+# trusted only, docker/verifier-gpu.Dockerfile (an image that carries the judge's harness). A CPU
+# machine: docker/agent.Dockerfile (the Agent image) or, trusted only, docker/verifier.Dockerfile
+# (the Verifier image), each with the shared runner layer (tasks/shared/images/
+# cpu-runner.Dockerfile) that the build adds. An untrusted one's recipe copies nothing from judge/.
+# The adapter reads them from verifier.json `sandboxes`; they are never platform sidecars. CPU
+# machines are the Verifier's CPU machine quota (task["verifier_cpu"], derived below).
 TEST_SANDBOX_KEYS = {"access": False, "trust": False, "dockerfile": True, "workdir": True,
                      "args": False, "phases": False, "attestation_key": False,
                      "instances": False, "roles": False}
 TEST_SANDBOX_ACCESS = ("service", "command")
 COMMAND_SANDBOX_KEYS = {"access": True, "trust": False, "dockerfile": True, "workdir": True,
                         "resources": True, "max_concurrent": True, "lease_seconds": True}
-# A command sandbox's recipe -> (the Driver runner image, its [gpu.<role>] table, trusted only).
-# Each is an image the platform already publishes for the task (TaskConfig images.agent_gpu and
-# images.verifier gpu_tag); a docker/test-sandbox*.Dockerfile runner image needs a TaskConfig
+# A command sandbox's recipe -> (the Driver runner image, the [gpu.<role>] table that publishes
+# it or None, trusted only, machine kind). Each is an image the platform publishes for the task
+# (TaskConfig images.agent_gpu, images.verifier gpu_tag, images.agent_cpu_runner,
+# images.verifier_cpu_runner); a docker/test-sandbox*.Dockerfile runner image needs a TaskConfig
 # image entry of its own in core first.
-COMMAND_RUNNER_IMAGES = {"docker/agent-gpu.Dockerfile": ("agent_gpu", "agent", False),
-                         "docker/verifier-gpu.Dockerfile": ("verifier_gpu", "verifier", True)}
+COMMAND_RUNNER_IMAGES = {"docker/agent-gpu.Dockerfile": ("agent_gpu", "agent", False, "gpu"),
+                         "docker/verifier-gpu.Dockerfile": ("verifier_gpu", "verifier", True, "gpu"),
+                         "docker/agent.Dockerfile": ("agent_cpu", None, False, "cpu"),
+                         "docker/verifier.Dockerfile": ("verifier_cpu", None, True, "cpu")}
+# The CPU runner images, by Driver image, and the build role each is published as.
+CPU_RUNNER_ROLES = {"agent_cpu": "agent-cpu-runner", "verifier_cpu": "verifier-cpu-runner"}
+CPU_CORE_MILLIS = 1000
+MAX_CPU_MACHINE_MILLIS = 64_000
+MAX_CPU_MACHINE_MEMORY_BYTES = 256 * 1024 * 1024 * 1024
+MAX_CPU_MACHINE_INSTANCES = 64
 GPU_TYPE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 MAX_RUNNER_GPUS = 64  # the Driver's gpu_count bound per runner
 TEST_SANDBOX_SINGLE = {"args", "phases"}
@@ -285,6 +299,8 @@ def _leaves(table: dict, prefix: tuple = ()) -> dict[tuple, object]:
 DERIVED = {
     "category": "derived: the task's folder",
     "datasets": "derived: datasets/ files",
+    "verifier_cpu": 'derived: [test_sandboxes] CPU machines (access = "command")',
+    "cpu_runner_images": 'derived: [test_sandboxes] CPU machines (access = "command")',
 }
 # Expanded from [test_sandboxes] (and the datasets); `show` summarizes them.
 EXPANDED = ("sidecars", "sidecar_images")
@@ -364,22 +380,29 @@ def resolve(root: Path) -> tuple[dict, dict[tuple, str]]:
     _check_keys("pumpkin.result", pumpkin["result"], {"status": True, "score": True})
     _check_feedback(task["feedback"])
     commands = _command_sandboxes(task)
-    if commands:
-        if gpu_verifier is None:
-            raise ManifestError("a GPU command test sandbox needs [gpu.verifier] (its runners "
-                                "are the Verifier's GPU quota)")
+    gpu_commands = {name: table for name, table in commands.items()
+                    if "gpus" in table["resources"]}
+    if gpu_commands and gpu_verifier is None:
+        raise ManifestError("a GPU command test sandbox needs [gpu.verifier] (its runners "
+                            "are the Verifier's GPU quota)")
+    if commands and gpu_verifier is not None:
         if "lease_seconds" in gpu_verifier:
             raise ManifestError("a task with a command test sandbox runs its judge on the "
                                 "control image: [gpu.verifier] sets no lease_seconds (each "
                                 "sandbox declares its own lease_seconds)")
-        needed = sum(table["max_concurrent"] * table["resources"].get("gpus", 0)
-                     for table in commands.values())
+        needed = sum(table["max_concurrent"] * table["resources"]["gpus"]
+                     for table in gpu_commands.values())
         if needed > gpu_verifier["max_gpu_instances"]:
             raise ManifestError(f"the command test sandboxes hold up to {needed} GPUs at once, "
                                 f"more than [gpu.verifier] max_gpu_instances "
                                 f"({gpu_verifier['max_gpu_instances']})")
         task["gpu"]["verifier"]["placement"] = CONTROL_PLACEMENT
-    elif gpu_verifier is not None:
+    if len(commands) > len(gpu_commands):
+        task["verifier_cpu"] = verifier_cpu_quota(task)
+        task["cpu_runner_images"] = sorted({COMMAND_RUNNER_IMAGES[table["dockerfile"]][0]
+                                            for name, table in commands.items()
+                                            if name not in gpu_commands})
+    if gpu_verifier is not None and not commands:
         timeout = task["quota"]["eval_timeout_seconds"]
         task["gpu"]["verifier"]["placement"] = RUNNER_PLACEMENT
         task["gpu"]["verifier"].setdefault("lease_seconds", {"train": timeout, "eval": timeout})
@@ -575,24 +598,26 @@ def _command_sandboxes(task: dict) -> dict:
         resources = _check_keys(f"{where}.resources", table["resources"],
                                 {"gpus": False, "gpu_type": False, "cpu_millis": False,
                                  "memory_bytes": False})
-        if "gpus" not in resources:
-            for key in ("cpu_millis", "memory_bytes"):
-                _positive_int(f"{where}.resources.{key}", resources.get(key))
-            raise ManifestError(f"{where}: a CPU command sandbox (resources without gpus) needs "
-                                "the platform's CPU sandbox provisioning, the next step of "
-                                "tasks/template/TEMPLATE.md; only GPU runners exist")
-        if set(resources) != {"gpus", "gpu_type"}:
+        kind = "gpu" if "gpus" in resources else "cpu"
+        if kind == "gpu" and set(resources) != {"gpus", "gpu_type"}:
             raise ManifestError(f"{where}.resources of a GPU runner are gpus and gpu_type (the "
                                 "host's CPU and memory are [gpu_parent_resources])")
+        if kind == "cpu":
+            _cpu_machine_shape(where, resources)
         dockerfile = table["dockerfile"]
         if dockerfile not in COMMAND_RUNNER_IMAGES:
             raise ManifestError(f"{where}.dockerfile must be one of {sorted(COMMAND_RUNNER_IMAGES)} "
                                 "(a runner image the task publishes)")
-        _image, role, trusted_only = COMMAND_RUNNER_IMAGES[dockerfile]
+        _image, role, trusted_only, image_kind = COMMAND_RUNNER_IMAGES[dockerfile]
+        if image_kind != kind:
+            choices = sorted(name for name, image in COMMAND_RUNNER_IMAGES.items()
+                             if image[3] == kind)
+            raise ManifestError(f"{where}: a {kind.upper()} machine runs one of {choices}, not "
+                                f"{dockerfile}")
         if trusted_only and trust != "trusted":
             raise ManifestError(f"{where}: {dockerfile} carries the judge; only a "
                                 'trust = "trusted" command sandbox may run on it')
-        if role not in task.get("gpu", {}):
+        if role is not None and role not in task.get("gpu", {}):
             raise ManifestError(f"{where}.dockerfile = {dockerfile!r} needs [gpu.{role}], which "
                                 "publishes that image")
         workdir = table["workdir"]
@@ -600,9 +625,11 @@ def _command_sandboxes(task: dict) -> dict:
                 or ".." in Path(workdir).parts or any(c.isspace() for c in workdir)):
             raise ManifestError(f"{where}.workdir must be a directory below /workspace/ (the "
                                 "runner user's writable home)")
-        if type(resources["gpus"]) is not int or not 1 <= resources["gpus"] <= MAX_RUNNER_GPUS:
+        if kind == "gpu" and (type(resources["gpus"]) is not int
+                              or not 1 <= resources["gpus"] <= MAX_RUNNER_GPUS):
             raise ManifestError(f"{where}.resources.gpus must be an integer in 1..={MAX_RUNNER_GPUS}")
-        if not isinstance(resources["gpu_type"], str) or GPU_TYPE.fullmatch(resources["gpu_type"]) is None:
+        if kind == "gpu" and (not isinstance(resources["gpu_type"], str)
+                              or GPU_TYPE.fullmatch(resources["gpu_type"]) is None):
             raise ManifestError(f"{where}.resources.gpu_type must be a Driver GPU type such as "
                                 '"A100-80GB"')
         _positive_int(f"{where}.max_concurrent", table["max_concurrent"])
@@ -613,6 +640,55 @@ def _command_sandboxes(task: dict) -> dict:
                 raise ManifestError(f"{where}.lease_seconds.{mode} must be an integer in "
                                     f"1..={timeout} (quota.eval_timeout_seconds)")
     return found
+
+
+def _cpu_machine_shape(where: str, resources: dict) -> None:
+    """A CPU machine is exactly { cpu_millis, memory_bytes }: whole cores (a timing-scored
+    candidate and its reference never share a core with another tenant) and whole MiB."""
+    if set(resources) != {"cpu_millis", "memory_bytes"}:
+        raise ManifestError(f"{where}.resources of a CPU machine are exactly cpu_millis and "
+                            "memory_bytes")
+    cpu, memory = resources["cpu_millis"], resources["memory_bytes"]
+    if (type(cpu) is not int or not CPU_CORE_MILLIS <= cpu <= MAX_CPU_MACHINE_MILLIS
+            or cpu % CPU_CORE_MILLIS):
+        raise ManifestError(f"{where}.resources.cpu_millis must be whole cores (a multiple of "
+                            f"{CPU_CORE_MILLIS}) in {CPU_CORE_MILLIS}..={MAX_CPU_MACHINE_MILLIS}")
+    if (type(memory) is not int or not 1 <= memory <= MAX_CPU_MACHINE_MEMORY_BYTES
+            or memory % (1024 * 1024)):
+        raise ManifestError(f"{where}.resources.memory_bytes must be whole MiB, at most "
+                            f"{MAX_CPU_MACHINE_MEMORY_BYTES} (256 GiB)")
+
+
+def cpu_command_sandboxes(task: dict) -> dict:
+    """The resolved task's command test sandboxes that are CPU machines, by name."""
+    return {name: table for name, table in command_sandboxes(task).items()
+            if "gpus" not in table["resources"]}
+
+
+def cpu_runner_roles(task: dict) -> list[str]:
+    """The CPU runner image roles the task's CPU command sandboxes use (build role names,
+    agent-cpu-runner / verifier-cpu-runner), sorted."""
+    return sorted(CPU_RUNNER_ROLES[image] for image in task.get("cpu_runner_images", ()))
+
+
+def verifier_cpu_quota(task: dict) -> dict:
+    """TaskConfig quota.verifier_cpu, derived from the CPU command sandboxes: their exact shapes,
+    at most every sandbox's max_concurrent machines at once, and as many machine-seconds as
+    those machines can hold for a whole verification (quota.eval_timeout_seconds), per train
+    call (the TRAIN pool) and for the final (the FINAL pool). The Driver also caps each lease by
+    the verification's remaining time, so a judge never runs short of declared machines."""
+    tables = cpu_command_sandboxes(task)
+    instances = sum(table["max_concurrent"] for table in tables.values())
+    if instances > MAX_CPU_MACHINE_INSTANCES:
+        raise ManifestError(f"the CPU command test sandboxes hold up to {instances} machines at "
+                            f"once, more than the platform's {MAX_CPU_MACHINE_INSTANCES}")
+    per_verification = instances * task["quota"]["eval_timeout_seconds"]
+    shapes = sorted({(table["resources"]["cpu_millis"], table["resources"]["memory_bytes"])
+                     for table in tables.values()})
+    return {"shapes": [{"cpu_millis": cpu, "memory_bytes": memory} for cpu, memory in shapes],
+            "max_instances": instances,
+            "max_seconds": task["quota"]["max_train_calls"] * per_verification,
+            "final_seconds": per_verification}
 
 
 def _sidecars(root: Path, task: dict) -> tuple[dict, dict]:
@@ -664,7 +740,8 @@ def policy_from_task(task: dict) -> dict:
             },
         },
     }
-    for key in ("gpu", "gpu_parent_resources", "additional_keys"):
+    for key in ("gpu", "gpu_parent_resources", "additional_keys", "verifier_cpu",
+                "cpu_runner_images"):
         if key in task:
             policy[key] = task[key]
     if "sidecars" in task:
@@ -835,24 +912,26 @@ def submission_policy(task: dict) -> dict:
 
 
 def verifier_parameters(task: dict) -> dict:
-    """`/opt/frontier/verifier.json`, which the shared verifier entry reads; for a Verifier-GPU
-    task also `gpu`, which the shared GPU adapter reads: placement and runner cap, plus the
-    per-mode lease ("runner") or the command test sandboxes ("control")."""
+    """`/opt/frontier/verifier.json`, which the shared verifier entry reads: for a task with
+    command test sandboxes `sandboxes` (GPU runners and CPU machines alike, which the shared
+    adapter's run_sandboxes() leases), for a Verifier-GPU task also `gpu`: placement and runner
+    cap, plus the per-mode lease ("runner")."""
     parameters = {"entrypoint": task["submission"]["entrypoint"]}
     if "verifier" in task.get("gpu", {}):
         verifier = task["gpu"]["verifier"]
         gpu = {"placement": verifier["placement"],
                "max_gpu_instances": verifier["max_gpu_instances"]}
-        if verifier["placement"] == CONTROL_PLACEMENT:
-            gpu["sandboxes"] = {
-                name: {"image": COMMAND_RUNNER_IMAGES[table["dockerfile"]][0],
-                       "workdir": table["workdir"], "resources": dict(table["resources"]),
-                       "max_concurrent": table["max_concurrent"],
-                       "lease_seconds": dict(table["lease_seconds"])}
-                for name, table in command_sandboxes(task).items()}
-        else:
+        if verifier["placement"] == RUNNER_PLACEMENT:
             gpu["lease_seconds"] = dict(verifier["lease_seconds"])
         parameters["gpu"] = gpu
+    commands = command_sandboxes(task)
+    if commands:
+        parameters["sandboxes"] = {
+            name: {"image": COMMAND_RUNNER_IMAGES[table["dockerfile"]][0],
+                   "workdir": table["workdir"], "resources": dict(table["resources"]),
+                   "max_concurrent": table["max_concurrent"],
+                   "lease_seconds": dict(table["lease_seconds"])}
+            for name, table in commands.items()}
     return parameters
 
 
@@ -965,6 +1044,11 @@ def generated_files(root: Path) -> dict[str, bytes]:
         f"{GENERATED}/agent/submission-policy.json": _dump(submission_policy(task)),
         f"{GENERATED}/agent/README.md": agent_readme(root, task).encode(),
         f"{GENERATED}/verifier/verifier.json": _dump(verifier_parameters(task)),
+        # A task with CPU machines: the shared runner layer its build adds to those images.
+        **({f"{GENERATED}/runner/cpu-runner.Dockerfile":
+                (SHARED / "images" / "cpu-runner.Dockerfile").read_bytes(),
+            f"{GENERATED}/runner/task-runtime": (SHARED / "lib" / "task_runtime.py").read_bytes()}
+           if cpu_command_sandboxes(task) else {}),
     }
 
 
@@ -1004,6 +1088,9 @@ def resolved_bases(root: Path) -> dict[str, str]:
         for name in _BASE_ARGUMENT_FROM.findall(recipe.read_text(encoding="utf-8")):
             if name in SHARED_BASE_ARGUMENTS:
                 roles.add(SHARED_BASE_ARGUMENTS[name])
+    # CPU machines' runner images take the SSH bootstrap from gpu-tools (the shared runner layer).
+    if is_native(root) and cpu_command_sandboxes(read_task(root)):
+        roles.add("gpu-tools")
     return {role: base_reference(role) for role in sorted(roles)}
 
 

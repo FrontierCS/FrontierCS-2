@@ -616,7 +616,10 @@ class SeedSelectionTests(unittest.TestCase):
         ]
         self.assertEqual(
             len(pulled),
-            1 + 3 * len(selection.selected) + len(selection.reference_names),
+            1 + 3 * len(selection.selected) + len(selection.reference_names)
+            # The selected tasks' CPU runner images are cluster images too.
+            + sum(name in task for task in raw["tasks"] if task["name"] in selection.selected
+                  for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")),
         )
         self.assertFalse(
             any(

@@ -247,7 +247,8 @@ def render(root: Path, name: str) -> dict:
             },
         }
     )
-    for key in ("network", "gpu", "sidecars", "gpu_parent_resources"):
+    for key in ("network", "gpu", "sidecars", "gpu_parent_resources", "verifier_cpu",
+                "cpu_runner_images"):
         if key in policy:
             row[key] = policy[key]
     if "additional_keys" in policy:

@@ -237,14 +237,65 @@ and `verifier.json`, install the shared `submission_patch.py`, end as `USER 6553
     before that deadline.
   - Submitted code on a runner also goes through the shared launcher: the Verifier GPU image
     takes it from gpu-tools (`COPY --from=frontier_gpu_tools
-    /opt/frontier/shared-gpu/isolate.py /opt/frontier/`), and on the runner (gVisor: no
-    Landlock) `run`/`start` build the `userns` backend. `devices=["nvidia"]` gives an instance
-    the GPU, `network="loopback"` a private `lo` (vLLM), `start` a long-lived worker over pipes.
-- `[test_sandboxes.<name>]` (Verifier-GPU tasks whose judge needs containers beside the GPU
-  runner; the platform starts each as a "sidecar"). Every table has `dockerfile`
-  (`docker/test-sandbox[-<x>].Dockerfile`), `workdir` and `trust` (`"untrusted"`, the default,
-  or `"trusted"`; only a trusted sandbox may hold judge secrets such as `attestation_key`). It is
-  either
+    /opt/frontier/shared-gpu/isolate.py /opt/frontier/`, then `install_frontier_pth.py` so the
+    image's Python imports it by name), and on the runner (gVisor: no Landlock) `run`/`start`
+    build the `userns` backend. `devices=["nvidia"]` gives an instance the GPU,
+    `network="loopback"` a private `lo` (vLLM), `start` a long-lived worker over pipes.
+
+- Test sandboxes, `[test_sandboxes.<name>]`: machines or containers beside the judge (the FCS
+  paper's term). Every table has `dockerfile`, `workdir` and `trust` (`"untrusted"`, the default,
+  or `"trusted"`). Two kinds, by `access`:
+
+  `access = "command"` declares a machine of its own the judge runs commands
+  on: a GPU runner or a CPU machine, the same protocol, API and journal; only `resources`
+  differs. The judge then runs on the CPU control image (for a GPU task derived
+  `placement = "control"`, `[gpu.verifier]` keeping only the quota); the control image holds
+  `judge/` and `pristine/` like a CPU task and takes the shared adapter from a `${GPU_TOOLS}`
+  stage (checked), with `openssh-client` and `libnss-wrapper`. Keys: `trust`, `dockerfile`,
+  `workdir` (below `/workspace/`: the upload lands and steps run there), `resources`,
+  `max_concurrent` and `lease_seconds = { train, eval }` (at least the steps plus upload,
+  collect and per-step grace; at most `quota.eval_timeout_seconds`).
+  - A GPU runner: `resources = { gpus, gpu_type }`; `dockerfile` is `docker/agent-gpu.Dockerfile`
+    (the judge-free Agent GPU image) or, trusted only, `docker/verifier-gpu.Dockerfile`. The sum
+    of `max_concurrent x gpus` is at most `[gpu.verifier] max_gpu_instances`.
+  - A CPU machine: `resources = { cpu_millis, memory_bytes }`, exactly that machine (whole
+    cores, whole MiB; reserved = capped, so every machine of one sandbox is the same machine
+    type and a candidate and its reference are timed alike); `dockerfile` is
+    `docker/agent.Dockerfile` (the Agent image: the candidate's own environment, no judge) or,
+    trusted only, `docker/verifier.Dockerfile` (the Verifier image). The build adds the shared
+    runner layer (`tasks/shared/images/cpu-runner.Dockerfile`: sshd, the SSH bootstrap,
+    `/opt/frontier/task-runtime`); nothing else is needed. The task's CPU machine quota is
+    derived (`max_concurrent` machines at once, each for a whole verification); a task needs
+    no `[gpu]` table for it. A step's argv is `["/opt/frontier/task-runtime", program, ...]`
+    to run with the image's environment (sshd clears it). A step that needs a terminal opens
+    its own pty (`script -qec CMD /dev/null`, Python `pty`); steps have no network.
+  A sandbox task's judge holds the Driver bearer in its process (fcs2_verifier `_sealed`, for
+  run_sandboxes()): it never imports or runs candidate code in-process on the control image;
+  candidate code runs only on the sandbox machines (or, on the control image, through
+  `isolate.run`).
+  `evaluate` calls `fcs2_verifier_gpu.run_sandboxes([SandboxRun(name, files, steps, outputs)],
+  into=dir)`: one runner per run, exactly `files` uploaded, each `SandboxStep(argv, seconds,
+  env)` killed at its `seconds` (a reported `timed_out`, not an error), declared outputs back;
+  the last step may set `seconds=None` to take the rest of the runner's grant. The two classes:
+  - class 1, `trust = "untrusted"` (ragen_multi_turn_rl, nano_world_model,
+    cute_crest): the candidate's own machine, on the Agent (GPU) image. For output-scored
+    work with a deadline. Nothing on it is trusted, including any judge script uploaded beside
+    the candidate: the judge validates the returned files as untrusted input and recomputes the
+    score on the control image from data that never leaves it, never from a number the
+    candidate's code reports. A timeout, a non-zero exit, a lost session or malformed output is
+    the candidate's scored zero; the same on the reference's run is the judge's fault (raise).
+  - class 2, `trust = "trusted"` (fast_kv_compaction, polygon): a machine of
+    the Verifier (GPU) image carrying the judge's toolchain and the shared isolate launcher. The
+    judge may upload its own harness; the harness runs candidate code through `isolate.run`
+    there (timing-scored work belongs here, measured from outside the candidate's process) and
+    its output is trusted. Its failure is the judge's fault, never a score; a long harness takes
+    `seconds=None` and budgets itself by `FRONTIER_VERIFIER_LOCAL_DEADLINE`.
+  A task usually needs one class.
+
+  `access = "service"` (the default; vllm_llm_serving_optimization, no template) declares a
+  container the platform starts beside a GPU runner of the Verifier or the Agent (a "sidecar";
+  `dockerfile` is `docker/test-sandbox[-<x>].Dockerfile`; only a trusted one may hold judge
+  secrets such as `attestation_key`). It is either
   - one sandbox: `args`, `phases` (`agent`/`train`/`eval`), optional `attestation_key`; sidecar
     and image `<name>` (e.g. a judge's scheduler service), or
   - a template: `instances = { dataset_key = "...", manifest = "judge/....json" }` and

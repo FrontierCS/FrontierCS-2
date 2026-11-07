@@ -24,4 +24,4 @@ network_domains: []
 agent_wall_time_seconds: 18000
 train_calls: 100
 train_wall_seconds: 12000
-eval_timeout_seconds: 330
+eval_timeout_seconds: 1800

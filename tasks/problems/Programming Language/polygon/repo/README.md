@@ -115,11 +115,11 @@ failure prints `ok: false` and exits nonzero.
   byte-compilation, a Z3 4.13 executable and the MariaDB server tools; a build failure scores 0.
 - Per case, the runner must exit successfully and emit one record with `ok: true`, finite
   `time_seconds` in `[0, b_w]` for the case budget `b_w`, and nonnegative integer iterations and
-  backtracks. A timeout (the budget plus twelve seconds of runner headroom), crash, nonzero exit,
-  missing row, `ok: false`, malformed JSON or invalid metric, and a result that arrives after
-  `b_w`, a call that raises, or a call that returns no decision, counts as `refuted = false`,
-  `time_seconds = b_w` for that case only. A decoded database on which
-  MariaDB sees equal results is a valid non-refutation with its measured time.
+  backtracks. A timeout (budget + 12 s), crash, nonzero exit, missing row, `ok: false`,
+  malformed JSON or invalid metric, a result that arrives after `b_w`, a result line over
+  131,072 bytes (`RESULT_MAX_BYTES`; never truncated), or a call that raises or returns no
+  decision, counts as `refuted = false`, `time_seconds = b_w` for that case. A decoded database
+  on which MariaDB sees equal results is a valid non-refutation with its measured time.
 
 ## Workload
 

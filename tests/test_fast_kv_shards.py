@@ -38,8 +38,9 @@ class ShardTests(unittest.TestCase):
         task = task_manifest.read_task(TASK)
         self.assertEqual(task["gpu"]["verifier"]["placement"], "control")
         self.assertEqual(task["gpu"]["verifier"]["max_gpu_instances"], max(ev.INSTANCES.values()))
-        sandbox = task_manifest.verifier_parameters(task)["gpu"]["sandboxes"][ev.SANDBOX]
-        self.assertEqual(sandbox, {"image": "verifier_gpu", "workdir": "/workspace/frontier-verifier",
+        sandbox = task_manifest.verifier_parameters(task)["sandboxes"][ev.SANDBOX]
+        self.assertEqual(sandbox, {"image": "verifier_gpu",
+                                   "workdir": "/workspace/frontier-verifier",
                                    "resources": {"gpus": 1, "gpu_type": "H100"},
                                    "max_concurrent": max(ev.INSTANCES.values()),
                                    "lease_seconds": {"train": 3600, "eval": 4500}})

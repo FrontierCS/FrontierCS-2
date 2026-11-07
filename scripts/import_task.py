@@ -58,6 +58,8 @@ ROLE_KEYS = {
     "datasets": "dataset_image",
     "agent_gpu": "agent_gpu_image",
     "verifier_gpu": "verifier_gpu_image",
+    "agent_cpu_runner": "agent_cpu_runner_image",
+    "verifier_cpu_runner": "verifier_cpu_runner_image",
     "reference": "reference",
 }
 
@@ -180,6 +182,8 @@ def image_roles(definition: dict, reference: bool) -> list[str]:
         roles.append("agent_gpu")
     if gpu.get("verifier", {}).get("max_gpu_instances", 0):
         roles.append("verifier_gpu")
+    # CPU machines of command test sandboxes: one runner image per kind they use.
+    roles.extend(f"{kind}_runner" for kind in definition.get("cpu_runner_images", ()))
     if reference:
         roles.append("reference")
     return roles
