@@ -11,8 +11,8 @@
       "train_sha256": "sha256:80c37e9f64adb576a03f2c85892b3b6c4ed4b63f9569ab208cf99ac495e4d986"
     },
     "display_name": "FARGO paper-aligned query core",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-20e906ee72b1a4dcaa2d76a3c57cb52548606ec215536e6b5c3c08acbeece6cf",
+    "family": "Database",
+    "image_tag": "source-a29de71c49bc4b7bc587aae5a5d3f05609bb4e0fd31a8024910a7bdb64fde66d",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -35,38 +35,12 @@
           "mean_kratio",
           "mean_time_ms",
           "mean_candidates"
-        ],
-        "suite_relation": "train: Audio and MNIST; final: both datasets with train plus held-out query/index split"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": "f40af5601fbc37e69f9ebe23610afe2c90f5ef6c",
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Xi Zhao",
-          "Bolong Zheng",
-          "Xiaomeng Yi",
-          "Xiaofan Luan",
-          "Charles Xie",
-          "Xiaofang Zhou",
-          "Christian S. Jensen"
-        ],
-        "doi": "10.14778/3579075.3579084",
-        "paper_id": "vldb-2023-fargo-fast-maximum-inner-product-search-via-global-multi-probing-8ba4aaffff",
-        "pdf_url": "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf",
-        "title": "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing",
-        "venue": "PVLDB 16",
-        "year": 2023
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "src/alg.cpp"
         ],
-        "language": "c++",
         "submission_kind": "patch"
       }
     },
@@ -75,10 +49,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -90,7 +64,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:20e906ee72b1a4dcaa2d76a3c57cb52548606ec215536e6b5c3c08acbeece6cf"
+      "source_set_sha256": "sha256:a29de71c49bc4b7bc587aae5a5d3f05609bb4e0fd31a8024910a7bdb64fde66d"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -103,7 +77,7 @@
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "g2-audio-mnist-beat-spec-v3"
@@ -120,23 +94,10 @@
       "train_sha256": "sha256:f6b71ec17f9c450ed21e06ae05030d92941645fea801d74927b276d3cb117f6e"
     },
     "display_name": "Approximate-MIPS Query Stopping",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba",
+    "family": "Database",
+    "image_tag": "source-4215fc960b1dcd385ef5f965ac54ea14dfc7e903820ecd093b63602455065c35",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_host": "Unknown; original judge/metadata.json host and host_note preserved",
-        "required_cpu_features": [
-          "avx2",
-          "avx512f",
-          "avx512dq",
-          "avx512bw"
-        ],
-        "scope": "T40 native runtime standardization; scientific semantics preserved",
-        "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
-        "source_path": "2.0/fcs2/problems/approximate_mips_query_stopping",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 440,
@@ -156,38 +117,12 @@
           "mean_kratio",
           "mean_time_ms",
           "mean_candidates"
-        ],
-        "suite_relation": null
-      },
-      "generator": {
-        "candidate_id": "cand_001",
-        "commit": "3676f0c07e03214559968f631baf9752726dd29e",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top68_8ba4aaffff"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Xi Zhao",
-          "Bolong Zheng",
-          "Xiaomeng Yi",
-          "Xiaofan Luan",
-          "Charles Xie",
-          "Xiaofang Zhou",
-          "Christian S. Jensen"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2023-fargo-fast-maximum-inner-product-search-via-global-multi-probing-8ba4aaffff",
-        "pdf_url": "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf",
-        "title": "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing",
-        "venue": "PVLDB 16",
-        "year": 2023
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "src/alg.cpp"
         ],
-        "language": "c++",
         "submission_kind": "patch"
       }
     },
@@ -196,10 +131,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -211,7 +146,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:5be15ad0887ccebbb287638d84367d2a9d8c6d15965189eee8f3e648cf7fd1ba"
+      "source_set_sha256": "sha256:4215fc960b1dcd385ef5f965ac54ea14dfc7e903820ecd093b63602455065c35"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -227,7 +162,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 4294967296
     },
-    "version": "g1-transport64mib"
+    "version": "g1-transport64mib-shared-verifier"
   },
   "babble_anti_unification": {
     "agent": {
@@ -241,19 +176,10 @@
       "train_sha256": "sha256:29b48cb9950134a8858b32c301ffa4f8dd2d5512076d4f7acebe8a073ddc8c22"
     },
     "display_name": "Reusable Library Candidates",
-    "family": "frontier-cs-2.0/algorithms",
-    "image_tag": "source-c25a5e6dd06d6c3657de7c40cef533e4af91778753fbbb3052b58e8f9c15b4b4",
+    "family": "Programming Language",
+    "image_tag": "source-a6bc62c28c17288ff60b7212b5881e2982e3335bfaa169e02ad1c818442c9a01",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": "authoring source history (not distributed)",
-        "note": "Existing generator, paper, artifact and local-release history retain their source meanings. PASS now requires every workload to clear compression and strict runtime comparisons; continuous compression scoring remains independent. Historical staging evidence is bound to its exact immutable source.",
-        "original_metadata_path": "judge/metadata.json",
-        "scope": "T40 native standardization plus per-workload/per-metric PASS conjunction",
-        "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
-        "source_path": "2.0/fcs2/problems/babble_anti_unification",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 432,
@@ -271,24 +197,14 @@
         "solver_visible_metrics": [
           "compression_ratio",
           "runtime_seconds"
-        ],
-        "suite_relation": "same_distribution"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "ef47b82d98fb26e99f06f996d47a0c35297b524e",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_ble-popl23"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": "arXiv:2212.04596",
       "runtime": {
         "allowed_paths": [
           "src/learn.rs",
           "src/dfta.rs",
           "src/learn_extensions/"
         ],
-        "language": "rust",
         "submission_kind": "patch"
       }
     },
@@ -297,10 +213,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -312,7 +228,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:c25a5e6dd06d6c3657de7c40cef533e4af91778753fbbb3052b58e8f9c15b4b4"
+      "source_set_sha256": "sha256:a6bc62c28c17288ff60b7212b5881e2982e3335bfaa169e02ad1c818442c9a01"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -325,10 +241,10 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 2147483648
     },
-    "version": "native-standardization-1-agent5h-r2"
+    "version": "native-standardization-1-agent5h-r2-task-toml"
   },
   "batch_local_counting": {
     "agent": {
@@ -342,8 +258,8 @@
       "train_sha256": "sha256:192f72eac119f17c4f866fe46e653d3ccc730e7c848ebed35e77c06461847868"
     },
     "display_name": "Batch Local Counting",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-563816fc066098b1af7c91b97484322e2960f503e3c1c2f33536df1d46f6b747",
+    "family": "Database",
+    "image_tag": "source-773f87b6baf4dfe42f619fc3be725ea6a31a8f9620ca5f7793205e50e7f152f8",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -360,30 +276,9 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "beat_spec_sha256": "sha256:84755aa5099acd470d60f50f8a73c7acc6e477236048f72d0c69f9cfd74ff325",
         "solver_visible_metrics": [
           "median_seconds"
-        ],
-        "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
-      },
-      "generator": {
-        "candidate_id": "cand_002",
-        "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top78_f094b386ab"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Qiyan Li",
-          "Jeffrey Xu Yu"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2024-fast-local-subgraph-counting-f094b386ab",
-        "pdf_url": "https://www.vldb.org/pvldb/vol17/p1967-li.pdf",
-        "title": "Fast Local Subgraph Counting",
-        "venue": "PVLDB 17",
-        "year": 2024
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -398,19 +293,7 @@
           "plan/tree.h",
           "plan/tree.cpp"
         ],
-        "language": "cpp",
         "submission_kind": "patch"
-      },
-      "scoring": {
-        "anchors": {
-          "four_times_speedup": 50,
-          "no_speedup": 0
-        },
-        "mapping": "L = max(0, median_log_ratio); score = 100 * L / (2 + L)",
-        "objective": "Median of five paired full-suite log2(naive_seconds / candidate_seconds).",
-        "raw_timing_metrics_preserved": true,
-        "reference_independent": true,
-        "version": "paired-log-ratio-rational-v2"
       }
     },
     "network": {
@@ -418,10 +301,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -433,7 +316,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:563816fc066098b1af7c91b97484322e2960f503e3c1c2f33536df1d46f6b747"
+      "source_set_sha256": "sha256:773f87b6baf4dfe42f619fc3be725ea6a31a8f9620ca5f7793205e50e7f152f8"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -446,7 +329,7 @@
       ],
       "cpu_millis": 1000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3"
@@ -463,23 +346,19 @@
       "train_sha256": "sha256:0032bbab241f6ccbf837a76ca809d468124f85ba653028d4dfed88954ab753f2"
     },
     "display_name": "BBQ bitmap traversal",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-87107b5f61b433cb1d1ad084d03f705f85fda394838e714298a4fa057d35863e",
+    "family": "Network",
+    "image_tag": "source-65cc9b1e3650413e3429ce4a36accb02b40398050fbd742078e8338cb68a93c0",
     "metadata": {
       "accelerator": null,
       "datasets": {
         "eval": {
           "bytes": 430,
-          "media_type": "application/json",
           "path": "datasets/eval.json",
-          "source": "task",
           "version": "sha256:d7ea29bd1ebff3a012bad3e326cc258fdc4db2b4ef6a1f62c007fbb66eed8739"
         },
         "train": {
           "bytes": 437,
-          "media_type": "application/json",
           "path": "datasets/train.json",
-          "source": "task",
           "version": "sha256:0032bbab241f6ccbf837a76ca809d468124f85ba653028d4dfed88954ab753f2"
         }
       },
@@ -492,26 +371,13 @@
           "dev_min_throughput_ops_per_cycle",
           "dev_max_latency_cycles",
           "dev_valid_fraction"
-        ],
-        "suite_relation": "extends"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_scheduling_s2r9_python"
-      },
-      "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
-      "paper": {
-        "title": "BBQ: A Fast and Scalable Integer Priority Queue for Hardware Packet Scheduling",
-        "url": "https://www.usenix.org/system/files/nsdi24-atre.pdf"
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "hardware/bbq/generator/bbq_level_lx.py",
           "hardware/bbq/generator/solver_extensions/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -520,10 +386,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 25165824,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -535,7 +401,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:87107b5f61b433cb1d1ad084d03f705f85fda394838e714298a4fa057d35863e"
+      "source_set_sha256": "sha256:65cc9b1e3650413e3429ce4a36accb02b40398050fbd742078e8338cb68a93c0"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -548,7 +414,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "s2r11_clock-period-r3"
@@ -565,9 +431,10 @@
       "train_sha256": "sha256:24fabc0dc6f36f9ad670a8296b396102ce877a1e7f7a7544bc9f843f1875065c"
     },
     "display_name": "Binary Fuse Filter Construction and Lookup",
-    "family": "frontier-cs-2.0/data_structures",
-    "image_tag": "source-619e6f55b512a925fbae0d57a116dfdae586815a6eb9c01a149031b040f87ee4",
+    "family": "Theory",
+    "image_tag": "source-ab031d00eba8742a216f5a4076db860c3d0a0c0d8518c015766a6605fcb6a3d3",
     "metadata": {
+      "accelerator": null,
       "datasets": {
         "eval": {
           "bytes": 196,
@@ -581,73 +448,19 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 100,
-        "authored_max_train_wall_seconds": 12000,
-        "predecessor_native_tree_sha256": "sha256:880181bdba38509421aa87d3ebba1e9a78d90a1ea0a12f22a4774625b37df51b",
         "solver_visible_metrics": [
           "mean_resident_bytes",
           "mean_build_ns",
           "mean_lookup_ns",
           "mean_effective_fpr",
           "space_overhead_defined_workloads"
-        ],
-        "successor_status": "REFERENCE_STATISTICS_CALIBRATED_EXACT_RUNTIME_QUALIFIED",
-        "suite_relation": "train plus disjoint seeded extension"
-      },
-      "generator": {
-        "method": "manual-native-skill",
-        "pipeline_stages_invoked": false
-      },
-      "paper": {
-        "archive_bytes": 150983,
-        "archive_sha256": "66f9c67699ef3ab409c710fa36a8bb8e574304781e8e3bfccbf665aae2e3d19a",
-        "base_revision": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
-        "doi": "10.1145/3510449",
-        "file_count": 21,
-        "files": {
-          ".github/workflows/msys2.yml": "0e9eafc770002e485f799a459467911a5c5cca6adc0b60111489e552a72ce19b",
-          ".github/workflows/ubuntu.yml": "bbaa3d0d6d2a63706777afb9163be25a8f26a6f2bd5408aa1ed5639cbc022543",
-          ".gitignore": "a1404fad666485fb65e2172d0a76e8e4b5ada45179bd7e66def207f1b7289cf1",
-          ".travis.yml": "9c9dbbcc54b9d5985a67c7edcfc168f0d02977b76c3cb142315e65d08e2bce24",
-          "CMakeLists.txt": "8f833586b2efabf774720b97e44cb366d92446d0e8ec084bd789ecd37a21b31b",
-          "LICENSE": "a111b5902eaeb94cb51b3ead2fef619724817bf55ebe561b3d7caeb1d5305190",
-          "Makefile": "41b18ad67bcd7e2fe19d1b332618d301759d02b3d30d840473dfdd4b4cee21d4",
-          "README.md": "eac1a40933940f3788ed33202b171e8b45bb402d9c68e1f71f04f6cc32d1f6e3",
-          "benchmarks/CMakeLists.txt": "2f6279e25f128d6702e076abcaf0f4334caabded4c1671940a5695113a584e29",
-          "benchmarks/bench.c": "dada61ed25905fd1178144621768d4905481b421544f78a51be80a733acb8034",
-          "benchmarks/query.c": "83c4b5a4f35f8116eabef85f5300464a6bc3de1c52bfa32350d1422942953d87",
-          "benchmarks/spaceusage.c": "dae60cb61704a8f9bf32498c52b64490552745b2d78509520adb197b223effa6",
-          "cmake/config.cmake.in": "73b9705f76279c3879dcdb03b408a3ae81fa0aa8b2befcc7e4bfb027a609c960",
-          "figures/comparison.png": "6d564a5a5a31a55ac27aaeb9aa11f49939bb69db83afa990fca14449be41b575",
-          "include/binaryfusefilter.h": "26f192bdff8a971c9db49afce4c9cf51cc17477ca7047c6ae7c5a272a1b6985f",
-          "include/xorfilter.h": "5574a1b6f3e4e1764e996f4642db33376e0618657ec39936a9828064909a196e",
-          "tests/CMakeLists.txt": "988a76e9cf4374d98b0aa63b9d47f421295baa13429347b62f5fd4fb48858e33",
-          "tests/a.c": "20bcd14f0d4cdde7ad94fa9da032ffcf78082d5c4b87ac87c73e5e4b4e762c60",
-          "tests/b.c": "0237c27f6fd4fdc5d9716af555b735313ea0ff42bf5eded03726795f42757459",
-          "tests/installation_tests/find/CMakeLists.txt": "df1ce0a7956e36f3f9d14cc23ffa270bedeea9b3e125ca04418517f533539310",
-          "tests/unit.c": "ac292e74f212fb1aeb6b6b967a42cc811177d590ff7b4fc386fb657538864ad2"
-        },
-        "license": {
-          "key": "apache-2.0",
-          "name": "Apache License 2.0",
-          "node_id": "MDc6TGljZW5zZTI=",
-          "spdx_id": "Apache-2.0",
-          "url": "https://api.github.com/licenses/apache-2.0"
-        },
-        "license_path": "LICENSE",
-        "paper_sha256": "cad450437b5cd2cf18d87441a5e4d71dd50c40a8adffcd5fe4a2904d21e87e14",
-        "paper_url": "https://arxiv.org/pdf/2201.01174",
-        "paper_version": "arXiv:2201.01174v1, 2022-01-04",
-        "pin": "3e10fb185a0c51e5866518d13b403e07db63d8d8",
-        "repo": "FastFilter/xor_singleheader",
-        "unpacked_bytes": 272412
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "include/"
         ],
-        "language": "c",
         "submission_kind": "patch"
       }
     },
@@ -656,10 +469,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 4194304,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 1048576,
-        "max_ssh_sessions": 1
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -671,7 +484,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:619e6f55b512a925fbae0d57a116dfdae586815a6eb9c01a149031b040f87ee4"
+      "source_set_sha256": "sha256:ab031d00eba8742a216f5a4076db860c3d0a0c0d8518c015766a6605fcb6a3d3"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -687,7 +500,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 4294967296
     },
-    "version": "certified-non-inferiority-r8"
+    "version": "certified-non-inferiority-r8-shared-verifier"
   },
   "bounded_evm_path_prediction": {
     "agent": {
@@ -701,8 +514,8 @@
       "train_sha256": "sha256:e5b62dcac52cb1888c5ac0fae2207a027044ae2df85a95396f93d9a945c54bce"
     },
     "display_name": "Bounded EVM Path Prediction",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275",
+    "family": "Database",
+    "image_tag": "source-4e627d768056e22947d2b23d06b6837750770b039169b042c36ade75925e61c3",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -719,43 +532,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 50,
-        "beat_spec_sha256": "sha256:c2d68ab8563de1517783c588c995fa3fd9b5e27bbe5fff86a228ca2cfa147aee",
         "solver_visible_metrics": [
           "raw_quality",
           "branch_accuracy",
           "transaction_path_accuracy",
           "observations"
-        ],
-        "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
-      },
-      "generator": {
-        "candidate_id": "cand_001",
-        "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top75_6e3582446a"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Shijie Zhang",
-          "Ru Cheng",
-          "Xinpeng Liu",
-          "Jiang Xiao",
-          "Hai Jin",
-          "Bo Li"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2025-seer-accelerating-blockchain-transaction-execution-by-fine-grained-branch-prediction-6e3582446a",
-        "pdf_url": "https://www.vldb.org/pvldb/vol18/p822-xiao.pdf",
-        "title": "Seer: Accelerating Blockchain Transaction Execution by Fine-Grained Branch Prediction",
-        "venue": "PVLDB 18",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "core/vm/predictor.go"
         ],
-        "language": "go",
         "submission_kind": "patch"
       }
     },
@@ -764,10 +551,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -779,7 +566,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275"
+      "source_set_sha256": "sha256:4e627d768056e22947d2b23d06b6837750770b039169b042c36ade75925e61c3"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -792,7 +579,7 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3"
@@ -809,8 +596,8 @@
       "train_sha256": "sha256:dc6669beb31ba9e137fe2be86fe180343acdde539c0ae5291c17b61c2f041a8b"
     },
     "display_name": "CKKS Precision Propagation at 2,048 Slots",
-    "family": "frontier-cs-2.0/cryptography",
-    "image_tag": "source-c7be13138304715842cb29b6eba86c0bd86e28f714a70e466c66ca988da289de",
+    "family": "Crypto",
+    "image_tag": "source-56ef80fafe68db4c30a7b5a4212becf2659a4030970dc566a52d52aff9d8c7c6",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -826,41 +613,29 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 100,
-        "authored_max_train_wall_seconds": 7200,
         "solver_visible_metrics": [
           "candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits",
           "candidate_std_log2_prec_l2_abs_discrepancy_mean_bits",
           "candidate_estimator_seconds_mean"
-        ],
-        "suite_relation": "extends"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "26d11b48188325cb998efb96c4a7d60d990bc5b0",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_able_noise"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "estimator/"
         ],
-        "language": "go",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 2597322752,
-        "max_model_request_bytes": 1048576,
-        "max_model_response_bytes": 8388608,
-        "max_model_sessions": 256,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -872,7 +647,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:c7be13138304715842cb29b6eba86c0bd86e28f714a70e466c66ca988da289de"
+      "source_set_sha256": "sha256:56ef80fafe68db4c30a7b5a4212becf2659a4030970dc566a52d52aff9d8c7c6"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -885,7 +660,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "composition-scaled-logn12-estimator-time-calibrated-v10"
@@ -902,8 +677,8 @@
       "train_sha256": "sha256:e7d56702e8a5050bd473adf789d99813dfe0e9d3ee3b9b7b5388530e4148940e"
     },
     "display_name": "Fixed-Length Clustered Sparse Multiplication",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-660de2526e4a01f45711690593409abbb142fd1c4027962b31ce249d58144381",
+    "family": "Arch",
+    "image_tag": "source-268761cda890207c12b9481a3ddf898aaa7297fa2a381c6238558a35ce287228",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -923,36 +698,12 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 32400,
         "authored_max_dev_submissions": 3,
-        "authored_max_train_wall_seconds": 21600,
         "solver_visible_metrics": [
           "candidate_median_execution_time_ms",
           "candidate_median_throughput_mflops",
           "candidate_max_output_bytes"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "64c28b11bc4b4a9cfb00d6e507e22dce8af8559b",
-        "pipeline": "frontiersmith2",
-        "run_id": "cw60-implementation001"
-      },
-      "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
-      "paper": {
-        "authors": [
-          "Abdullah Al Raqibul Islam",
-          "Helen Xu",
-          "Dong Dai",
-          "Aydin Buluc"
-        ],
-        "doi": null,
-        "paper_id": "clusterwise_spgemm_cw_260909a",
-        "pdf_url": "https://arxiv.org/pdf/2507.21253v1",
-        "title": "Improving SpGEMM Performance Through Matrix Reordering and Cluster-wise Computation",
-        "venue": "arXiv",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -965,7 +716,6 @@
           "BIN.h",
           "frontier_solution/"
         ],
-        "language": "c++17",
         "submission_kind": "patch"
       }
     },
@@ -974,10 +724,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -989,7 +739,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:660de2526e4a01f45711690593409abbb142fd1c4027962b31ce249d58144381"
+      "source_set_sha256": "sha256:268761cda890207c12b9481a3ddf898aaa7297fa2a381c6238558a35ce287228"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1002,7 +752,7 @@
       ],
       "cpu_millis": 60000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 68719476736
     },
     "version": "g2-separate-kernel-build"
@@ -1019,8 +769,8 @@
       "train_sha256": "sha256:2a75239a368e4c4758b4255cd61b4881478d397528e2589c2e96821eb0777fb0"
     },
     "display_name": "Search Strategy for Concolic Testing",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-f01e499bbb7153251d38efd4f1e1ba9ebe13be837dfb07e8b092bcbf4637f779",
+    "family": "Software Engineering",
+    "image_tag": "source-324981b8f8ab28f1b90b06e47cade5fd0df6bd9a18b82248cf415e912f48439e",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1036,9 +786,7 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 100,
-        "authored_max_train_wall_seconds": 18000,
         "solver_visible_metrics": [
           "dev_branches_covered_mean",
           "dev_coverage_curve",
@@ -1046,45 +794,24 @@
           "dev_solver_attempts_mean",
           "dev_runs_ended_early",
           "dev_killed_executions_mean"
-        ],
-        "suite_relation": "different_programs"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "the graded programs, the reference strategy and the gate are built into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Jacob Burnim",
-          "Koushik Sen"
-        ],
-        "doi": "10.1109/ASE.2008.69",
-        "paper_id": "crest_search_heuristics_ase2008",
-        "pdf_url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-123.pdf",
-        "title": "Heuristics for Scalable Dynamic Test Generation",
-        "venue": "ASE",
-        "year": 2008
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "src/frontier_solution/"
         ],
-        "language": "cpp",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 3051356160,
-        "max_model_request_bytes": 1048576,
-        "max_model_response_bytes": 8388608,
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -1096,7 +823,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f01e499bbb7153251d38efd4f1e1ba9ebe13be837dfb07e8b092bcbf4637f779"
+      "source_set_sha256": "sha256:324981b8f8ab28f1b90b06e47cade5fd0df6bd9a18b82248cf415e912f48439e"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1109,7 +836,7 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 34359738368
     },
     "version": "search-strategy-r2"
@@ -1126,7 +853,7 @@
       "train_sha256": "sha256:7c6b18bf67ae6d9aca3f86f2eaaa63ebc6a6b94862fcb356aa1d38a285eb519d"
     },
     "display_name": "GPU DBSCAN Kernel Optimization",
-    "family": "frontier-cs-2.0/systems",
+    "family": "MLSys",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -1141,7 +868,7 @@
         "max_gpu_seconds": 13200
       }
     },
-    "image_tag": "source-51ef23f05a43fa8694917c80c88f0cf3e4541f644b95110fed4777d84487f893",
+    "image_tag": "source-d96fab76e425af74a43c04b9bf1be6f9ea28c69ae303d659e3dd040160ebf03b",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1152,14 +879,6 @@
         "credential_reaches_agent": false,
         "provider": "driver-managed",
         "verifier_gpu": true
-      },
-      "conversion": {
-        "continuous_score": "0 if any timed candidate ARI < 0.99 or speedup <= 1; otherwise 100*log(speedup)/(log(10)+log(speedup))",
-        "pass_fail": "every workload: median latency < optimized reference; worst timed ARI >= reference and every timed ARI >= 0.99; worst timed noise mismatch <= reference; zero new tolerance",
-        "source_commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
-        "source_path": "2.0/problems/dbscan_gpu_kernel_optimization",
-        "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-        "status": "user_reviewed_reference_and_model_pair_complete"
       },
       "datasets": {
         "eval": {
@@ -1175,39 +894,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 25,
-        "beat_spec_sha256": "sha256:4de51219a0b5ddbee1e59610cb431d28a8af74dda2c018fce02766591bcbcac6",
-        "continuous_score": "0 if any timed candidate ARI < 0.99 or speedup <= 1; otherwise 100*log(speedup)/(log(10)+log(speedup))",
         "solver_visible_metrics": [
           "geomean_speedup",
           "dbscan_latency_ms",
           "adjusted_rand_index",
           "noise_mismatch_fraction"
-        ],
-        "suite_relation": "train original w0-w1; final freshly measures original w0-w3; public seeds are reused in final, hidden w2-w3 seeds are independent. Beat spec v3 (2026-10-08): final also measures hidden strict-only w4-w5 (PASS only; continuous score over w0-w3)."
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "config_sha256": null,
-        "pipeline": null,
-        "run_id": null
-      },
-      "isolation": "Hidden final shapes, workload generator, seeds, reference patch, comparisons and evidence exist only in the Verifier GPU image. Agent images contain the public train shapes, naive starter and runtime content.",
-      "paper": {
-        "authors": [],
-        "doi": null,
-        "paper_id": null,
-        "pdf_url": null,
-        "title": null,
-        "venue": null,
-        "year": null
-      },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
-          "dbscanlib/"
+          "dbscanlib/**/*.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -1216,7 +913,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 67108864,
         "max_ssh_sessions": 1076,
@@ -1236,7 +933,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:51ef23f05a43fa8694917c80c88f0cf3e4541f644b95110fed4777d84487f893"
+      "source_set_sha256": "sha256:d96fab76e425af74a43c04b9bf1be6f9ea28c69ae303d659e3dd040160ebf03b"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1249,7 +946,7 @@
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "native-staging.4-beat-spec-v3"
@@ -1266,7 +963,7 @@
       "train_sha256": "sha256:d6f34beccd62adda662a989f7a5dca96e6eda8022648c5b9613b8c31a3010a5e"
     },
     "display_name": "Robust Image Tokenizer",
-    "family": "frontier-cs-2.0/vision",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -1281,7 +978,7 @@
         "max_gpu_seconds": 5400
       }
     },
-    "image_tag": "source-2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0",
+    "image_tag": "source-17e4289511ac885654d1fd878bfd8132818226dbfc0a350975f41202bc17fae7",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1313,24 +1010,14 @@
           "development_mean_ordinary_quantized_png_lpips",
           "development_mean_ema_quantized_png_lpips",
           "development_mean_method_process_wall_seconds"
-        ],
-        "suite_relation": "same_distribution"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "models/detok.py",
           "models/autoencoder.py",
           "models/frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -1339,7 +1026,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 8388608,
         "max_ssh_sessions": 60,
@@ -1359,7 +1046,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:2a3672fdf571f8039f2a3a52d20773f3499b42897b5942480b5702ab36457ef0"
+      "source_set_sha256": "sha256:17e4289511ac885654d1fd878bfd8132818226dbfc0a350975f41202bc17fae7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1372,7 +1059,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "g1"
@@ -1389,23 +1076,19 @@
       "train_sha256": "sha256:08049f21b131c3fb94930c2d9607655205c65861083136373ed5f12755048db8"
     },
     "display_name": "Closed-loop action sampling",
-    "family": "frontier-cs-2.0/robotics",
-    "image_tag": "source-44755f8c3ea5551c7366c92926bde94952de32d57d68184762f753b373f3264e",
+    "family": "Robotics",
+    "image_tag": "source-a78048c65eb4415a5a0ecf63974eab77ef3435ae3b2006a13c32d7223f7db37d",
     "metadata": {
       "accelerator": null,
       "datasets": {
         "eval": {
           "bytes": 41169,
-          "media_type": "application/json",
           "path": "datasets/eval.json",
-          "source": "task",
           "version": "sha256:a8fb92402cfa0354ea833e1ef42922507e54e6e91c648d82ca7cce4fcee27562"
         },
         "train": {
           "bytes": 41170,
-          "media_type": "application/json",
           "path": "datasets/train.json",
-          "source": "task",
           "version": "sha256:08049f21b131c3fb94930c2d9607655205c65861083136373ed5f12755048db8"
         }
       },
@@ -1415,25 +1098,14 @@
           "dev_mean_episode_max_reward",
           "dev_episode_success_rate",
           "dev_mean_predict_action_seconds",
-          "dev_total_workload_wall_seconds",
-          "candidate_diagnostic"
-        ],
-        "suite_relation": "extends"
+          "dev_total_workload_wall_seconds"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": "f40af5601fbc37e69f9ebe23610afe2c90f5ef6c",
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
           "diffusion_policy/sampler_extensions/"
         ],
-        "language": "patch",
         "submission_kind": "patch"
       }
     },
@@ -1457,7 +1129,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:44755f8c3ea5551c7366c92926bde94952de32d57d68184762f753b373f3264e"
+      "source_set_sha256": "sha256:a78048c65eb4415a5a0ecf63974eab77ef3435ae3b2006a13c32d7223f7db37d"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1466,18 +1138,14 @@
     "task_id": "frontier-cs-2.0-diffusion-policy-cpu",
     "verifier": {
       "command": [
-        "/opt/frontier/runtime-python",
-        "-I",
-        "-B",
-        "-c",
-        "\"\"\"Select a measured hardware-specific private dataset, then use the stock verifier.\n\nThis command changes transport only. All scientific source, scoring and hardware\nequality checks remain in the existing immutable Verifier image.\n\"\"\"\nimport base64\nimport hashlib\nimport io\nimport json\nimport os\nfrom pathlib import Path\nimport platform\nimport sys\nimport tarfile\nimport tempfile\n\nMAX_BYTES = 4 * 1024**2\n\n\ndef require(ok, message):\n    if not ok:\n        raise ValueError(message)\n\n\ndef strict_json(body):\n    def pairs(items):\n        result = {}\n        for key, value in items:\n            require(key not in result, \"Duplicate JSON key\")\n            result[key] = value\n        return result\n    def constant(value):\n        raise ValueError(\"Nonfinite JSON\")\n    return json.loads(body, object_pairs_hook=pairs, parse_constant=constant)\n\n\ndef digest(body):\n    return hashlib.sha256(body).hexdigest()\n\n\ndef hardware_key(identity):\n    return digest(json.dumps(identity, sort_keys=True, separators=(\",\", \":\"),\n                             allow_nan=False).encode())\n\n\ndef actual_identity():\n    os.sched_setaffinity(0, sorted(os.sched_getaffinity(0))[:2])\n    return {\"architecture\": platform.machine(), \"kernel\": platform.release(),\n            \"cpu_models\": sorted({line.split(\":\", 1)[1].strip()\n                for line in Path(\"/proc/cpuinfo\").read_text().splitlines()\n                if line.startswith(\"model name\")}),\n            \"affinity\": sorted(os.sched_getaffinity(0))}\n\n\ndef select_dataset(path, mode, identity, scratch, read_dataset):\n    \"\"\"Admit by the sealed hardware class; inspect both mode-specific archives before selection.\"\"\"\n    require(mode in {\"train\", \"eval\"}, \"Unknown native verification mode\")\n    path = Path(path)\n    require(path.is_file() and not path.is_symlink()\n            and 0 < path.stat().st_size <= MAX_BYTES, \"Invalid composite dataset\")\n    selector = strict_json(path.read_bytes())\n    require(isinstance(selector, dict)\n            and set(selector) == {\"schema\", \"problem_id\", \"mode\", \"archive_sha256\", \"archive_base64\"}\n            and selector[\"schema\"] == \"frontier.diffusion-json-archive/v1\"\n            and selector[\"problem_id\"] == \"diffusion_policy_cpu\"\n            and selector[\"mode\"] == mode\n            and isinstance(selector[\"archive_base64\"], str)\n            and isinstance(selector[\"archive_sha256\"], str),\n            \"Invalid JSON archive selector\")\n    archive_body = base64.b64decode(selector[\"archive_base64\"], validate=True)\n    require(0 < len(archive_body) <= MAX_BYTES\n            and \"sha256:\" + digest(archive_body) == selector[\"archive_sha256\"],\n            \"Composite archive binding changed\")\n    bodies = {}\n    with tarfile.open(fileobj=io.BytesIO(archive_body), mode=\"r:\") as archive:\n        total = 0\n        for member in archive:\n            require(member.isfile() and not member.pax_headers and member.sparse is None\n                    and member.name not in bodies and len(bodies) < 4,\n                    \"Unexpected composite member\")\n            require(member.name == \"manifest.json\" or (\n                len(member.name) == 68 and member.name.endswith(\".tar\")\n                and all(c in \"0123456789abcdef\" for c in member.name[:-4])),\n                \"Invalid composite member name\")\n            total += member.size\n            require(0 < member.size <= 2 * 1024**2 and total <= MAX_BYTES,\n                    \"Composite member exceeds bound\")\n            body = archive.extractfile(member).read(2 * 1024**2 + 1)\n            require(len(body) == member.size, \"Truncated composite member\")\n            bodies[member.name] = body\n    require(\"manifest.json\" in bodies, \"Missing composite manifest\")\n    manifest = strict_json(bodies[\"manifest.json\"])\n    require(set(manifest) == {\"schema\", \"mode\", \"source_sha256\", \"datasets\"}\n            and manifest[\"schema\"] == \"frontier.diffusion-hardware-datasets/v1\"\n            and manifest[\"mode\"] == mode and isinstance(manifest[\"datasets\"], dict)\n            and 1 <= len(manifest[\"datasets\"]) <= 3, \"Invalid composite manifest\")\n    require(set(bodies) == {\"manifest.json\"} | {key + \".tar\" for key in manifest[\"datasets\"]},\n            \"Composite membership differs\")\n    from hardware_admission import admits  # sealed judge rule\n    selected = None\n    for key, entry in manifest[\"datasets\"].items():\n        require(set(entry) == {\"identity\", \"sha256\", \"size_bytes\", \"seal_sha256\"}\n                and hardware_key(entry[\"identity\"]) == key, \"Invalid hardware binding\")\n        body = bodies[key + \".tar\"]\n        require(digest(body) == entry[\"sha256\"] and len(body) == entry[\"size_bytes\"],\n                \"Hardware dataset bytes changed\")\n        target = scratch / (key + \".tar\")\n        with target.open(\"xb\") as stream:\n            stream.write(body)\n        target.chmod(0o400)\n        # Existing parser enforces private membership, descriptor hashes and mode.\n        inner = read_dataset(target, \"dev\" if mode == \"train\" else \"final\")\n        seal = strict_json(inner[\"seal.json\"])\n        require(digest(inner[\"seal.json\"]) == entry[\"seal_sha256\"]\n                and seal[\"source_sha256\"] == manifest[\"source_sha256\"]\n                and seal[\"hardware_policy\"][\"identity\"] == entry[\"identity\"],\n                \"Hardware seal differs\")\n        if admits(entry[\"identity\"], identity):\n            require(selected is None, \"Ambiguous matching hardware\")\n            selected = target\n    require(selected is not None, \"Actual hardware has no accepted dataset\")\n    return selected\n\n\ndef main():\n    os.umask(0o077)\n    sys.dont_write_bytecode = True\n    sys.path.insert(0, \"/opt/frontier/task\")\n    from native_data import read_dataset\n    sys.path.insert(0, \"/opt/frontier\")\n    from fcs2_verifier import write_evidence\n    result = Path(os.environ[\"FRONTIER_RESULT_PATH\"])\n    evidence = Path(os.environ[\"FRONTIER_EVIDENCE_PATH\"])\n    require(result == Path(\"/frontier/output/result.json\")\n            and evidence == Path(\"/frontier/output/evidence.tar.zst\"), \"Unexpected output paths\")\n    identity = actual_identity()\n    try:\n        # The exec-owned temporary directory is removed with the native Pod.\n        scratch = Path(tempfile.mkdtemp(prefix=\"hardware-dataset-\", dir=\"/frontier\"))\n        selected = select_dataset(os.environ[\"FRONTIER_DATASET_PATH\"],\n            os.environ[\"FRONTIER_VERIFICATION_MODE\"], identity, scratch, read_dataset)\n    except Exception as error:\n        write_evidence(evidence, {\"hardware-selection.json\": json.dumps({\n            \"actual_identity\": identity, \"failure_type\": type(error).__name__,\n            \"message\": str(error)[:1024], \"submission_executed\": False}).encode()})\n        result.write_text(json.dumps({\"status\": \"failed\",\n            \"summary\": \"Hardware-matched private dataset selection failed\",\n            \"metrics\": {}, \"failure\": {\"code\": \"hardware_dataset_unavailable\",\n                \"message\": \"See private selection evidence\", \"retryable\": False}}))\n        return 1\n    os.environ[\"FRONTIER_DATASET_PATH\"] = str(selected)\n    os.execv(\"/opt/frontier/verifier\", [\"/opt/frontier/verifier\"])\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
+        "/opt/frontier/verifier"
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
       "max_evidence_bytes": 4194304,
       "memory_bytes": 4294967296
     },
-    "version": "20260918-hardware-matched-r1"
+    "version": "20261104-task-toml-unsealed-judge"
   },
   "dynamic_tanh": {
     "agent": {
@@ -1491,7 +1159,7 @@
       "train_sha256": "sha256:b50da37ba5b87391ca738abbd9d51fc769048be0849f31b861cf205c69a06080"
     },
     "display_name": "Learned Transformer Layer Mapping",
-    "family": "frontier-cs-2.0/machine_learning_systems",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -1506,7 +1174,7 @@
         "max_gpu_seconds": 4500
       }
     },
-    "image_tag": "source-306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf",
+    "image_tag": "source-67a36a4920f0f92a5e0dfb280c67be184fb6d74e48235fc9ed1782fb3bb23be0",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1535,25 +1203,14 @@
         "solver_visible_metrics": [
           "top1_accuracy_pct",
           "training_latency_ms",
-          "inference_latency_ms",
-          "candidate_diagnostic"
-        ],
-        "suite_relation": "same_distribution"
+          "inference_latency_ms"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_2503.10622"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "dynamic_tanh.py",
           "solver_extensions/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -1562,7 +1219,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 8388608,
         "max_ssh_sessions": 48,
@@ -1582,7 +1239,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:306381322b1bc1773badb4462ff293169204dc5c2841f60634433e587b2b9ccf"
+      "source_set_sha256": "sha256:67a36a4920f0f92a5e0dfb280c67be184fb6d74e48235fc9ed1782fb3bb23be0"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1595,7 +1252,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "preflight-9740a08b6f00-beat-spec-v3"
@@ -1612,8 +1269,8 @@
       "train_sha256": "sha256:f3df2a74ba93059c8704122c3aee732b0cce35545fb204c57f230a3f87e8b345"
     },
     "display_name": "Exact Sequence Alignment",
-    "family": "frontier-cs-2.0/algorithms",
-    "image_tag": "source-b939252f82d3755745d3a2a6b33a0e20fa42ccd5f47be55edd44a2730398355d",
+    "family": "Bioinformatics",
+    "image_tag": "source-4a3ff5328f2206e043ce2453ae35a47c683df0f3e9cfef8c50d6b4e531dbc04b",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1629,39 +1286,25 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 20,
-        "authored_max_train_wall_seconds": 12000,
-        "solver_visible_metrics": [
-          "candidate_diagnostic"
-        ],
-        "suite_relation": "same_distribution"
+        "solver_visible_metrics": []
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "d8310d0b4367ea0d5158d4db991f9ea82baf8d2a",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_edlib"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "edlib/src/edlib.cpp"
         ],
-        "language": "cpp",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 2684354560,
-        "max_model_request_bytes": 1048576,
-        "max_model_response_bytes": 8388608,
-        "max_model_sessions": 256,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -1673,7 +1316,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:b939252f82d3755745d3a2a6b33a0e20fa42ccd5f47be55edd44a2730398355d"
+      "source_set_sha256": "sha256:4a3ff5328f2206e043ce2453ae35a47c683df0f3e9cfef8c50d6b4e531dbc04b"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1686,7 +1329,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "r007-validated-timing-two-metric-gate"
@@ -1703,19 +1346,10 @@
       "train_sha256": "sha256:1af6559594736de15a70ba3e654b87069baa7f54bf90ce007ae9a54598910b04"
     },
     "display_name": "E-Graph Invariant Restoration",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-48032017a867b8a2bea2d3a314a90e733a6b70a162a2ceb01115729b6c0f51c1",
+    "family": "Programming Language",
+    "image_tag": "source-d29cc5aa5da652f20909828a11c79afa73bf683a22d2c06ec5182faeffad6721",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": null,
-        "note": "Source generator and paper metadata retain their source meanings; historical trials do not accept this native conversion.",
-        "original_metadata_path": "judge/metadata.json",
-        "scope": "original-format to native transfer with T35 public-plus-hidden final and independent continuous scoring correction",
-        "source_commit": "38a2b36b1de35f39e518d77fad097c2037a3ffa5",
-        "source_path": "original_format_problems/egraph_invariant_restoration",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 338,
@@ -1733,41 +1367,15 @@
         "solver_visible_metrics": [
           "candidate_dev_wall_clock_seconds_median",
           "candidate_dev_congruence_seconds_median"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_001",
-        "commit": "bfff61cc6fe937fe81b3c3b66c62110a28439001",
-        "pipeline": "frontiersmith",
-        "run_id": "r_top01_saturation"
-      },
-      "isolation": "hidden workload identities, evaluator, reference patch, and comparison rows exist only in the Verifier image; the Agent receives the redacted source substrate and scientific statement",
-      "paper": {
-        "authors": [
-          "Max Willsey",
-          "Chandrakana Nandi",
-          "Yisu Remy Wang",
-          "Oliver Flatt",
-          "Zachary Tatlock",
-          "Pavel Panchekha"
-        ],
-        "doi": null,
-        "paper_id": "egg_equality_saturation",
-        "pdf_url": "https://arxiv.org/pdf/2004.03082",
-        "title": "egg: Fast and Extensible Equality Saturation",
-        "venue": "POPL",
-        "year": 2021
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "src/egraph.rs",
-          "src/lib.rs",
           "src/tutorials/_01_background.rs",
           "src/tutorials/mod.rs",
           "src/solver_extensions/"
         ],
-        "language": "rust",
         "submission_kind": "patch"
       }
     },
@@ -1776,10 +1384,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 1
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -1791,7 +1399,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:48032017a867b8a2bea2d3a314a90e733a6b70a162a2ceb01115729b6c0f51c1"
+      "source_set_sha256": "sha256:d29cc5aa5da652f20909828a11c79afa73bf683a22d2c06ec5182faeffad6721"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1804,10 +1412,10 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
-    "version": "native-transfer-1-beat-spec-v2"
+    "version": "native-transfer-1-beat-spec-v2-task-toml"
   },
   "evm_state_checkpoints": {
     "agent": {
@@ -1821,8 +1429,8 @@
       "train_sha256": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
     },
     "display_name": "EVM State Checkpoints",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0",
+    "family": "Database",
+    "image_tag": "source-8be9b3f6812d42a830762cd5ca34645b744b3bc6f714428aea1e05502a30caad",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1839,43 +1447,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
         "solver_visible_metrics": [
           "committed_tps",
           "checkpoint_create_ns",
           "checkpoint_restore_ns",
           "retained_bytes_per_checkpoint"
-        ],
-        "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
-      },
-      "generator": {
-        "candidate_id": "cand_002",
-        "commit": "3676f0c07e03214559968f631baf9752726dd29e",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top66_fa44bf0664"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Zhihao Chen",
-          "Tianji Yang",
-          "Yixiao Zheng",
-          "Zhao Zhang",
-          "Cheqing Jin",
-          "Aoying Zhou"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2024-spectrum-speedy-and-strictly-deterministic-smart-contract-transactions-for-blockchain-ledgers-fa44bf0664",
-        "pdf_url": "https://www.vldb.org/pvldb/vol17/p2541-zhang.pdf",
-        "title": "Spectrum: Speedy and Strictly-Deterministic Smart Contract Transactions for Blockchain Ledgers",
-        "venue": "PVLDB 17",
-        "year": 2024
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "lib/evmcow/execution_state.hpp"
         ],
-        "language": "cpp",
         "submission_kind": "patch"
       }
     },
@@ -1884,10 +1466,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -1899,7 +1481,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0"
+      "source_set_sha256": "sha256:8be9b3f6812d42a830762cd5ca34645b744b3bc6f714428aea1e05502a30caad"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1912,7 +1494,7 @@
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "g1-beat-spec-v1-agent5h-r2"
@@ -1929,7 +1511,7 @@
       "train_sha256": "sha256:c84da98ff7d42c363e88c564d646684d625fa6142a35d76f77f6250dce17b5b1"
     },
     "display_name": "KV Cache Compaction",
-    "family": "frontier-cs-2.0/machine_learning_systems",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -1944,7 +1526,7 @@
         "max_gpu_seconds": 86400
       }
     },
-    "image_tag": "source-4fd03d585121a392258888309f7fd1dd68a971eccea6f6396951ba9281370bc2",
+    "image_tag": "source-b39770c2dfe75089d68cc42a29a5aaf32c4387be566ea6879866e0a62cacaf3b",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1955,19 +1537,6 @@
         "credential_reaches_agent": false,
         "provider": "driver-managed",
         "verifier_gpu": true
-      },
-      "calibration": {
-        "final_timeout_reserve_seconds": 3111.3204323733225,
-        "manifest": "judge/targets/manifest.json",
-        "manifest_sha256": "sha256:006eec8c62f7df9e2084a228964f6d3c8585a635c2216f86cc2a324c3ddafb8a",
-        "max_capture_wall_seconds": 2288.6795676266775,
-        "script": "judge/calibrate.py",
-        "status": "READY"
-      },
-      "conversion": {
-        "method": "Native port; upstream evaluation path preserved",
-        "source_commit": "2020f6d37940fe013e7e7f1ebf409e5d107c5670",
-        "source_repo": "https://github.com/adamzweiger/compaction"
       },
       "datasets": {
         "eval": {
@@ -1983,34 +1552,16 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 8,
-        "beat_spec_sha256": "sha256:b4b5bd4ba5c62354a9f32e8b345a8ee55b0f67583d11eb4d934d6a4885a7fc42",
         "solver_visible_metrics": [
           "dev_qa_accuracy",
           "dev_compaction_seconds",
           "dev_compact_cache_bytes"
-        ],
-        "suite_relation": "development grades the 12 public articles; final grades those 12 plus 12 hidden articles with the same evaluator and beat-spec rules"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "preview-manual",
-        "run_id": null,
-        "source": "authoring proposal (scope, QuALITY subset, metric definitions)"
-      },
-      "isolation": "hidden articles, gold labels, the reference patch and the frozen targets are compiled into the verifier image only; the agent images hold the public tree with the 12 development articles",
-      "paper": {
-        "arxiv": "2602.16284",
-        "code": "https://github.com/adamzweiger/compaction",
-        "code_commit": "2020f6d37940fe013e7e7f1ebf409e5d107c5670",
-        "license": "MIT",
-        "title": "Fast KV Compaction via Attention Matching"
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "compaction/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -2019,14 +1570,14 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 536870912,
-        "max_ssh_sessions": 1104,
+        "max_ssh_sessions": 1144,
         "ssh_session_budgets": {
           "agent": 1024,
-          "verifier_eval": 16,
-          "verifier_train": 64
+          "verifier_eval": 24,
+          "verifier_train": 96
         }
       }
     },
@@ -2039,7 +1590,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:4fd03d585121a392258888309f7fd1dd68a971eccea6f6396951ba9281370bc2"
+      "source_set_sha256": "sha256:b39770c2dfe75089d68cc42a29a5aaf32c4387be566ea6879866e0a62cacaf3b"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2052,7 +1603,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "fastkv-v1-calibrated"
@@ -2069,7 +1620,7 @@
       "train_sha256": "sha256:d75d42cecd6807ccc50042b29b3e80e06de7594137938cb6ddb5f4c75ed35517"
     },
     "display_name": "OCR Distillation Trajectory Sampling",
-    "family": "frontier-cs-2.0/machine_learning",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -2084,7 +1635,7 @@
         "max_gpu_seconds": 15000
       }
     },
-    "image_tag": "source-7b260ebedca538c33ae15d9dec669bb4ebd8c6769c5bfe09bbff65eeb86acd70",
+    "image_tag": "source-a8f29fd40501308e245d3e05ade787f407c1f55883bee005907cfadd424369d2",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2113,20 +1664,7 @@
         "solver_visible_metrics": [
           "dev_eval_reward_ocr",
           "dev_verified_optimizer_updates"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "arxiv": "2605.08063v5",
-        "title": "Flow-OPD: On-Policy Distillation for Flow Matching Models",
-        "url": "https://arxiv.org/pdf/2605.08063v5"
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -2134,7 +1672,6 @@
           "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py",
           "flow_grpo/frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -2143,9 +1680,9 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
+        "max_ssh_bytes_per_direction": 536870912,
         "max_ssh_sessions": 52,
         "ssh_session_budgets": {
           "agent": 32,
@@ -2163,7 +1700,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:7b260ebedca538c33ae15d9dec669bb4ebd8c6769c5bfe09bbff65eeb86acd70"
+      "source_set_sha256": "sha256:a8f29fd40501308e245d3e05ade787f407c1f55883bee005907cfadd424369d2"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2176,7 +1713,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "ceiling-aware-gate-source-closure-20261011"
@@ -2193,8 +1730,8 @@
       "train_sha256": "sha256:cf428d96ae29243ca1470243b6f02b07baaf91f06acf32b3f4b996f29024c82f"
     },
     "display_name": "Access-Pattern Rewriting",
-    "family": "frontier-cs-2.0/compilers",
-    "image_tag": "source-97aaee2cee31fead1ac408efb6c861a1442d118974a26ab425dc14d29f06606e",
+    "family": "Programming Language",
+    "image_tag": "source-936aad45d8caedf62c7fcd5e8f1791d76b4930984cdec441554e64a28b3f229c",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2210,50 +1747,30 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 100,
-        "authored_max_train_wall_seconds": 12000,
         "solver_visible_metrics": [
           "development_im2col_discovered_count",
           "development_rewrite_time_seconds_median",
           "development_egraph_node_growth_median"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_2105-09377"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "arxiv": "2105.09377",
-        "sections": [
-          "5.3 / Figure 4",
-          "5.2 / Figure 3"
-        ],
-        "title": "Pure Tensor Program Rewriting via Access Patterns",
-        "venue": "MAPS 2021"
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "code/src/language/rewrites.rs",
           "code/src/language/solver_extensions/"
         ],
-        "language": "rust",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 5010096128,
-        "max_model_request_bytes": 8388608,
-        "max_model_response_bytes": 8388608,
-        "max_model_sessions": 256,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -2265,7 +1782,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:97aaee2cee31fead1ac408efb6c861a1442d118974a26ab425dc14d29f06606e"
+      "source_set_sha256": "sha256:936aad45d8caedf62c7fcd5e8f1791d76b4930984cdec441554e64a28b3f229c"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2281,7 +1798,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 4294967296
     },
-    "version": "r11-public-semantic-contract-20261011"
+    "version": "r12-task-toml-shared-verifier"
   },
   "graph_mining_method_selection": {
     "agent": {
@@ -2295,8 +1812,8 @@
       "train_sha256": "sha256:6a8c74a57a3f6469a4fd33963b3f43519559ea7ee77d29c41b146712ffa60fad"
     },
     "display_name": "Graph Mining Method Selection",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-95db68c9fbcb0cd0335f1dfae5c2e73edd4414f05ca87d60e7cbfb193e4701bf",
+    "family": "Database",
+    "image_tag": "source-5aaf3bc7e1b80f24591eca46d797f25f8c79ebd1047908f50824c6d00df1af95",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2313,39 +1830,16 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "beat_spec_sha256": "sha256:1d6415d43978f8e28ae91cb130011fbf02be511fea60795bfc2654bf3254b035",
         "solver_visible_metrics": [
           "geomean_selected_runtime_seconds",
           "max_selected_relative_error",
           "cases"
-        ],
-        "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "0fd7ef1c52133a17c136afe51008bc7de637ae13",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top33_42a7abeeb7"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Anna A Arpaci-Dusseau",
-          "Zixiang Zhou",
-          "Xuhao Chen"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2025-accurate-and-fast-approximate-graph-pattern-mining-at-scale-42a7abeeb7",
-        "pdf_url": "https://www.vldb.org/pvldb/vol18/p93-chen.pdf",
-        "title": "Accurate and Fast Approximate Graph Pattern Mining at Scale",
-        "venue": "PVLDB 18",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "performance_model/src/main.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -2354,10 +1848,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -2369,7 +1863,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:95db68c9fbcb0cd0335f1dfae5c2e73edd4414f05ca87d60e7cbfb193e4701bf"
+      "source_set_sha256": "sha256:5aaf3bc7e1b80f24591eca46d797f25f8c79ebd1047908f50824c6d00df1af95"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2382,7 +1876,7 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 17179869184
     },
     "version": "g1-beat-spec-v1-agent5h-r2"
@@ -2399,19 +1893,10 @@
       "train_sha256": "sha256:639b86ebca311ac505235a2727e42381b3f4e95a9863f7519b9e9aaec5eed8e7"
     },
     "display_name": "Hypergraph Core Numbers",
-    "family": "frontier-cs-2.0/algorithms",
-    "image_tag": "source-5f86c90be2aa14ec30da7e0e5b70b3278d68ea1e3664abf7c5064aaa7b39c1b8",
+    "family": "HPC",
+    "image_tag": "source-8681badba90358ea893764faa89bdcb0b2ff6440f9fcd033becba7acfca7f2c9",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": null,
-        "note": "No standalone Smith metadata exists in the source PR. Paper and artifact provenance is recovered from the byte-matched retained jshun/ligra source, its README citation, the paper's Section 5.3/Algorithm 3, and Crossref's DOI record; other unknown fields remain null rather than inferred.",
-        "original_metadata_path": null,
-        "scope": "Original-format to native transfer; scientific task, authentic execution, workloads, reference, scoring and thresholds preserved",
-        "source_commit": "52c793d1b7144f66e45cdf30a36c66869a1f07aa",
-        "source_path": "original_format_problems/hypergraph_core_numbers",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 313,
@@ -2429,33 +1914,13 @@
         "solver_visible_metrics": [
           "candidate_runtime_seconds_median",
           "candidate_sequential_runtime_seconds_median"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "manual-transfer",
-        "run_id": null
-      },
-      "isolation": "feedback and graded hypergraph bytes, evaluator, oracle and reference patch exist only in the verifier image; the Agent receives the retained source substrate and scientific statement",
-      "paper": {
-        "authors": [
-          "Julian Shun"
-        ],
-        "doi": "10.1145/3332466.3374527",
-        "paper_id": "external-hygra-ppopp20",
-        "pdf_url": "https://people.csail.mit.edu/jshun/hygra.pdf",
-        "title": "Practical Parallel Hypergraph Algorithms",
-        "venue": "PPoPP",
-        "year": 2020
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "apps/hyper/HyperKCore-Efficient.C",
           "apps/hyper/frontier_solution/"
         ],
-        "language": "c++",
         "submission_kind": "patch"
       }
     },
@@ -2464,10 +1929,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -2479,7 +1944,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:5f86c90be2aa14ec30da7e0e5b70b3278d68ea1e3664abf7c5064aaa7b39c1b8"
+      "source_set_sha256": "sha256:8681badba90358ea893764faa89bdcb0b2ff6440f9fcd033becba7acfca7f2c9"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2492,10 +1957,10 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
-    "version": "native-transfer-4-framework-first-build"
+    "version": "native-transfer-4-framework-first-build-task-toml"
   },
   "ivf_pq_gpu_kernel_optimization": {
     "agent": {
@@ -2509,7 +1974,7 @@
       "train_sha256": "sha256:d9464a59daf7d7a5510605fd1cd25876ff0fb9454496251b01fcd4bb74690048"
     },
     "display_name": "GPU IVF-PQ Search Kernel Optimization",
-    "family": "frontier-cs-2.0/systems",
+    "family": "MLSys",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -2524,7 +1989,7 @@
         "max_gpu_seconds": 25200
       }
     },
-    "image_tag": "source-ffc5dd9fb4a5cb9623963828d3506ec057ef4dc31709d69063c3c09cea3d0b72",
+    "image_tag": "source-c3131ae354bbc3711185a3aceb72a30d283c7bdf7431c04e852aa45a07e541d0",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2535,22 +2000,6 @@
         "credential_reaches_agent": false,
         "provider": "driver-managed",
         "verifier_gpu": true
-      },
-      "conversion": {
-        "continuous_score": "S is geometric mean of per-workload median of seven paired naive/candidate timing ratios; 0 if S <= 1, else 100*log(S)/(log(10)+log(S)).",
-        "distance_validity": "For each valid ID: abs(returned-oracle) <= 1e-6*abs(float32 residual ADC oracle), atol0; zero oracle requires exact zero. Legal -1/+inf padding is validated separately and excluded.",
-        "pass_fail": "On every selected workload: candidate median search latency < optimized reference latency, candidate worst timed iso-result recall >= reference worst timed recall and candidate worst timed exact nearest-neighbor recall@k >= reference; every timed candidate call must satisfy naive iso-recall >= 0.99.",
-        "resource_status": "Formal answering18000 seconds. Beat spec v3 release refresh (2026-10-11): independent final14400 seconds (was 5400) and Verifier GPU total25200 = train wall10800 + final14400 on one H100, sized against an eight-workload final of about 4140-4380 s (six-workload finals recorded; the two new shapes measured on one Modal H100 on 2026-10-11, not a platform qualification); Agent GPU10800 unchanged. Short trial answering1800 is rendered externally.",
-        "source_commit": "1bccbadc6bead714d25c546cf954a37bb0791fd6",
-        "source_path": "2.0/problems/ivf_pq_gpu_kernel_optimization",
-        "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-        "status": "contract"
-      },
-      "data_asset": {
-        "bytes": 525128288,
-        "path": "data/sift_manifest.json",
-        "sha256": "sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
-        "source": "original Modal Volume flashlib-ann-datasets/sift.hdf5"
       },
       "datasets": {
         "eval": {
@@ -2566,39 +2015,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 25,
-        "beat_spec_sha256": "sha256:51dad6059bf4c24d5a4db13e7ba36c6973edb508562cdcc7275870d177f8e59e",
-        "continuous_score": "S is geometric mean of per-workload median of seven paired naive/candidate timing ratios; 0 if S <= 1, else 100*log(S)/(log(10)+log(S)).",
         "solver_visible_metrics": [
           "geomean_speedup",
           "search_latency_ms",
           "iso_recall",
           "nn_recall"
-        ],
-        "suite_relation": "Train uses the first four original SIFT workloads; final independently tests all six, retaining public train seeds and using independent hidden index/query seeds. Beat spec v3 (2026-10-08): final adds two hidden strict-only shapes (sift_q10k_np32, sift_q1k_np128_k1024) to PASS; the continuous score keeps the original six."
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "config_sha256": null,
-        "pipeline": null,
-        "run_id": null
-      },
-      "isolation": "Hidden workload shape parameters, hidden seed domain, optimized reference and comparison evidence are Verifier-only. Agent sees four public train shapes, SIFT data, naive starter/oracle and GPU development tools.",
-      "paper": {
-        "authors": [],
-        "doi": null,
-        "paper_id": null,
-        "pdf_url": null,
-        "title": null,
-        "venue": null,
-        "year": null
-      },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
-          "ivfpqlib/"
+          "ivfpqlib/**/*.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -2607,7 +2034,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 67108864,
         "max_ssh_sessions": 1076,
@@ -2627,7 +2054,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ffc5dd9fb4a5cb9623963828d3506ec057ef4dc31709d69063c3c09cea3d0b72"
+      "source_set_sha256": "sha256:c3131ae354bbc3711185a3aceb72a30d283c7bdf7431c04e852aa45a07e541d0"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2640,7 +2067,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "native-staging.1-beat-spec-v3"
@@ -2657,8 +2084,8 @@
       "train_sha256": "sha256:99c99eee6760054f3e60245f7f188b321f4e5f3b5ded28080abed8c33338590b"
     },
     "display_name": "Join-Tree Rewriting",
-    "family": "frontier-cs-2.0/databases",
-    "image_tag": "source-13ec0acfd2ef9d3d4cd8dc112fed5c200bb594f8b5f478dd117f8c43d0f60d37",
+    "family": "Database",
+    "image_tag": "source-0fbd1519057702639668584d8a3a4e9f9a0f532c3e1b0cf90d5ce1c488203070",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2675,45 +2102,15 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "historical_authored_max_dev_submissions": 25,
         "solver_visible_metrics": [
           "all_metrics_progress",
           "candidate_median_latency_us"
-        ],
-        "suite_relation": null
-      },
-      "generator": {
-        "candidate_id": "cand_001",
-        "commit": "ef47b82d98fb26e99f06f996d47a0c35297b524e",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top17_78569b6083"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Liese Bekkers",
-          "Frank Neven",
-          "Stijn Vansummeren",
-          "Remy Wang"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2025-instance-optimal-acyclic-join-processing-without-regret-engineering-the-yannakakis-algorithm-in-78569b6083",
-        "pdf_url": "https://www.vldb.org/pvldb/vol18/p2413-vansummeren.pdf",
-        "title": "Instance-Optimal Acyclic Join Processing Without Regret: Engineering the Yannakakis Algorithm in Column Stores",
-        "venue": "PVLDB 18",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "2phase_nsa/binary_plan/rewrite_policy.py"
         ],
-        "language": "python",
-        "release": {
-          "evidence_codec": "zstandard==0.23.0",
-          "independent_measurement_required": true,
-          "python_base": "python:3.11.16-slim-bookworm@sha256:4b4c524dc3dce996864e030c7bd9c6b0e517597189fee48f48e05b499442444b",
-          "supersedes_source_sha256": "sha256:a1140bc0d2211f66c5d29bc72b8c41ef2f365068c3e149102e13b84fac63ce3f"
-        },
         "submission_kind": "patch"
       }
     },
@@ -2737,7 +2134,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:13ec0acfd2ef9d3d4cd8dc112fed5c200bb594f8b5f478dd117f8c43d0f60d37"
+      "source_set_sha256": "sha256:0fbd1519057702639668584d8a3a4e9f9a0f532c3e1b0cf90d5ce1c488203070"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2753,7 +2150,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 8589934592
     },
-    "version": "g1-public-runtime-python31116-zstandard0230"
+    "version": "g2-task-toml-shared-verifier"
   },
   "kami_fp64_block_gemm": {
     "agent": {
@@ -2767,7 +2164,7 @@
       "train_sha256": "sha256:f9e63362fc2497f32ab520513f06013995eb6437d35b88d120a58bb42e5d0442"
     },
     "display_name": "KAMI FP64 Block GEMM — trusted batched harness adaptation",
-    "family": "frontier-cs-2.0/systems",
+    "family": "Arch",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -2782,7 +2179,7 @@
         "max_gpu_seconds": 1800
       }
     },
-    "image_tag": "source-23bf73a0ead336d365acec18f530dcd36bc708667954fd830d461a51c89dd457",
+    "image_tag": "source-88fd111daf4c9a585a32cc5baea41d507e4dff91ae9d1f56c362843f701b412a",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2794,23 +2191,6 @@
         "credential_reaches_agent": false,
         "provider": "driver-managed",
         "verifier_gpu": true
-      },
-      "conversion": {
-        "original_task_resources": {
-          "agent_cpu_millis": 3000,
-          "agent_gpu": "one NVIDIA H100 80GB HBM3 for at most 900 seconds",
-          "agent_memory_bytes": 4294967296,
-          "agent_workspace_bytes": 4294967296,
-          "independent_final_seconds": 1800,
-          "train_calls": 12,
-          "verifier_gpu": "one NVIDIA H100 80GB HBM3 for at most 1800 seconds"
-        },
-        "research_artifact_hardware_note": "Upstream plots and scripts include GH200 and RTX 5090 targets; the frozen task validates and runs on exact NVIDIA H100 80GB HBM3.",
-        "scope": "T40 standardization plus T35 public-plus-hidden final; eight workloads, reference, threshold, and score curve preserved",
-        "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
-        "source_last_task_commit": "91a8772b9309622910a29a32f9f9241701c367b4",
-        "source_path": "2.0/fcs2/problems/kami_fp64_block_gemm",
-        "source_repository": "private authoring repository"
       },
       "datasets": {
         "eval": {
@@ -2828,38 +2208,13 @@
         "authored_max_dev_submissions": 12,
         "solver_visible_metrics": [
           "tflops"
-        ],
-        "suite_relation": "final_public_plus_hidden_same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_002",
-        "commit": "a5a0cc7af85d94d54fd25b5d1c4baf44ac7315f0",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_-kami-sc25"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Hemeng Wang",
-          "Yang Du",
-          "Sidu Li",
-          "Xiaowen Tian",
-          "Qingxiao Sun",
-          "Weifeng Liu"
-        ],
-        "doi": null,
-        "paper_id": "external-kami-sc25",
-        "pdf_url": "https://www.ssslab.cn/assets/papers/2025-wang-KAMI.pdf",
-        "title": "KAMI: Communication-Avoiding General Matrix Multiplication within a Single GPU",
-        "venue": "SC",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu",
           "src/block_gemm/KAMI/1d/fp64/solver_extensions/"
         ],
-        "language": "cuda",
         "submission_kind": "patch"
       }
     },
@@ -2868,7 +2223,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 536870912,
         "max_ssh_sessions": 1050,
@@ -2888,7 +2243,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:23bf73a0ead336d365acec18f530dcd36bc708667954fd830d461a51c89dd457"
+      "source_set_sha256": "sha256:88fd111daf4c9a585a32cc5baea41d507e4dff91ae9d1f56c362843f701b412a"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2901,7 +2256,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "native-standard-v1"
@@ -2918,7 +2273,7 @@
       "train_sha256": "sha256:3a50c16262f1a3a77033140280b6248e9724ebeff77adfcee68ceeccb4745261"
     },
     "display_name": "GPU K-Means Kernel Optimization",
-    "family": "frontier-cs-2.0/systems",
+    "family": "MLSys",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -2933,7 +2288,7 @@
         "max_gpu_seconds": 18000
       }
     },
-    "image_tag": "source-8b52996e12ba2ca7e0ab1b7e5632010cbd80af197a5f08e4cc4d520aec0ed02b",
+    "image_tag": "source-ea0ea75e498299ca2d79d81d6b95a9e85d4e906b72925d29c41311dc98250fd0",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2944,14 +2299,6 @@
         "credential_reaches_agent": false,
         "provider": "driver-managed",
         "verifier_gpu": true
-      },
-      "conversion": {
-        "continuous_score": "0 for speedup <= 1; otherwise 100 * log(speedup) / (log(10) + log(speedup)); 10x=50, asymptotic to 100 without upper clipping; independent of reference.patch",
-        "pass_fail": "on every workload in the selected suite (four train or all six public and hidden final): latency < reference, inertia <= reference * 1.05, and mismatch <= reference + 0.002; all comparisons must pass",
-        "source_commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
-        "source_path": "2.0/problems/kmeans_gpu_kernel_optimization",
-        "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-        "status": "reviewed_bands_pending_modal_validation"
       },
       "datasets": {
         "eval": {
@@ -2967,39 +2314,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 25,
-        "beat_spec_sha256": "sha256:b04da49c533997ae82fb6e3af009346f7433c6790c9ba63a7f3fb41239ab2ba9",
-        "continuous_score": "0 for speedup <= 1; otherwise 100 * log(speedup) / (log(10) + log(speedup)); 10x=50, asymptotic to 100 without upper clipping; independent of reference.patch",
         "solver_visible_metrics": [
           "geomean_speedup",
           "lloyd_loop_latency_ms",
           "labeled_inertia",
           "label_mismatch_fraction"
-        ],
-        "suite_relation": "train uses original public w0-w3; final freshly measures original w0-w5 together, public w0-w3 with the same train seeds and hidden w4-w5 with an independent deterministic seed domain; all six contribute to final score and PASS"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "config_sha256": null,
-        "pipeline": null,
-        "run_id": null
-      },
-      "isolation": "Hidden final shapes, workload generator, seeds, reference patch, comparisons and evidence exist only in the Verifier GPU image. Agent images contain the public train shapes, naive starter and runtime content.",
-      "paper": {
-        "authors": [],
-        "doi": null,
-        "paper_id": null,
-        "pdf_url": null,
-        "title": null,
-        "venue": null,
-        "year": null
-      },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
-          "kmeanslib/"
+          "kmeanslib/**/*.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -3008,7 +2333,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 67108864,
         "max_ssh_sessions": 1076,
@@ -3028,7 +2353,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:8b52996e12ba2ca7e0ab1b7e5632010cbd80af197a5f08e4cc4d520aec0ed02b"
+      "source_set_sha256": "sha256:ea0ea75e498299ca2d79d81d6b95a9e85d4e906b72925d29c41311dc98250fd0"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3041,7 +2366,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "native-staging.10"
@@ -3058,7 +2383,7 @@
       "train_sha256": "sha256:5ed85112b3d9b35a6836c9b0762f71c7ef5f544981e2aee8669cce2ceb0a84b0"
     },
     "display_name": "GPU Brute-Force k-NN Kernel Optimization",
-    "family": "frontier-cs-2.0/systems",
+    "family": "MLSys",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -3073,7 +2398,7 @@
         "max_gpu_seconds": 16200
       }
     },
-    "image_tag": "source-cea795fa84f85be345c01ac3176dc398b8f3a5056295b68807eddf9124deb00d",
+    "image_tag": "source-472051f9b02c7df27d658579609cbd9caa897fa765ca03cbac5a9fd58e7e4ab7",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3085,15 +2410,6 @@
         "provider": "driver-managed",
         "verifier_gpu": true
       },
-      "conversion": {
-        "continuous_score": "S is geomean of seven-paired-ratio workload medians; score 0 for S<=1, otherwise 100*log(S)/(log(10)+log(S)); absolute recall gate applies independently of optimized reference",
-        "pass_fail": "on every selected workload: median latency < optimized reference and worst ball-recall >= optimized reference worst ball-recall and worst exact recall >= optimized reference worst exact recall; every candidate timed recall >= 0.88; every returned distance must satisfy the rtol=1e-6, atol=0 consistency gate (exact zero at zero oracle)",
-        "source_commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",
-        "source_path": "2.0/problems/knn_gpu_kernel_optimization",
-        "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-        "status": "draft_science_approved_pending_gpu_model_validation"
-      },
-      "data_readiness": "original SIFT/GIST volume bytes frozen in judge/data_manifest.json; supply external BuildKit ann_data context; verifier image build and runtime both verify exact file sizes and hashes",
       "datasets": {
         "eval": {
           "bytes": 342,
@@ -3108,43 +2424,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 25,
-        "beat_spec_sha256": "sha256:d039e771fab35e26a7661c329e6284d389d2c50791570cf4697a77101efd866c",
-        "continuous_score": "S is geomean of seven-paired-ratio workload medians; score 0 for S<=1, otherwise 100*log(S)/(log(10)+log(S)); absolute recall gate applies independently of optimized reference",
-        "distance_consistency": "FP64 direct squared-L2 from actual bf16 inputs and returned valid IDs; rtol=1e-6, atol=0, exact zero at zero oracle; legal padding excluded",
-        "formal_answering_seconds": 18000,
-        "independent_final_seconds": 5400,
-        "short_trial_policy": "1800-second answering is an external migration-evidence override only; formal publication requires 18000 seconds",
         "solver_visible_metrics": [
           "geomean_speedup",
           "latency_ms",
           "worst_ball_recall",
           "worst_exact_recall"
-        ],
-        "suite_relation": "train original SIFT k10/k50/k100 and GIST k10; final all original six SIFT/GIST workloads; public same seeds, hidden GIST k50/k100 independent seeds. Beat spec v3 (2026-10-08): final also measures hidden strict-only sift_full_k256 and gist_full_k100 (PASS only; continuous score over the original six)."
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "config_sha256": null,
-        "pipeline": null,
-        "run_id": null
-      },
-      "isolation": "Hidden workloads, seeds, pinned real-data files, naive oracle, optimized reference and private decisions exist only in the Verifier GPU image; Agent images contain public shapes, starter and diagnostics.",
-      "paper": {
-        "authors": [],
-        "doi": null,
-        "paper_id": null,
-        "pdf_url": null,
-        "title": null,
-        "venue": null,
-        "year": null
-      },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
-          "knnlib/"
+          "knnlib/**/*.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -3153,7 +2443,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 67108864,
         "max_ssh_sessions": 1076,
@@ -3173,7 +2463,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:cea795fa84f85be345c01ac3176dc398b8f3a5056295b68807eddf9124deb00d"
+      "source_set_sha256": "sha256:472051f9b02c7df27d658579609cbd9caa897fa765ca03cbac5a9fd58e7e4ab7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3186,7 +2476,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "native-staging.1-beat-spec-v3"
@@ -3203,8 +2493,8 @@
       "train_sha256": "sha256:55eef4375c86dddc9337883d339c8155639b9b86911a78e6ec62345ff920722d"
     },
     "display_name": "Latent Objective Recovery",
-    "family": "frontier-cs-2.0/machine_learning",
-    "image_tag": "source-d16f957dc1b0a54c12d3cd16d066fc9255d008d79f03ac5d792d8579a85dd3af",
+    "family": "Machine Learning",
+    "image_tag": "source-3b48d4a86a4c23131a4a7d19fd84f60337234b823e23f9b52c031505d027ef2d",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3227,29 +2517,14 @@
           "orth_err_normalized",
           "epsilon",
           "delta",
-          "procrustes_mse",
-          "candidate_diagnostic"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "a77b75e928acc1eef87107639b42bddc10c97f8c",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_2605.26379"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "artifact_commit": "de7503f1b2291ba1e9fc03d9c433180794803440",
-        "id": "2605.26379",
-        "title": "When Does LeJEPA Learn a World Model?"
+          "procrustes_mse"
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "experiments/lejepa_id/losses.py",
           "experiments/lejepa_id/frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -3258,10 +2533,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -3273,7 +2548,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d16f957dc1b0a54c12d3cd16d066fc9255d008d79f03ac5d792d8579a85dd3af"
+      "source_set_sha256": "sha256:3b48d4a86a4c23131a4a7d19fd84f60337234b823e23f9b52c031505d027ef2d"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3286,7 +2561,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 2147483648
     },
     "version": "r002-preview-5h-beat-spec-v2-r2"
@@ -3303,7 +2578,7 @@
       "train_sha256": "sha256:7198d5def5f245c612a54ccf9a1eba829051f955dfda54cb5a41ac12331383e7"
     },
     "display_name": "Localized Regex Repair",
-    "family": "frontier-cs-2.0/security",
+    "family": "Security",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -3318,7 +2593,7 @@
         "max_gpu_seconds": 7200
       }
     },
-    "image_tag": "source-588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf",
+    "image_tag": "source-f6a3d86f7b903e72b636cdda423f15d9f1480b014195c9fba8a5cbaceea80d25",
     "metadata": {
       "accelerator": {
         "agent_sandbox": false,
@@ -3342,9 +2617,7 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 100,
-        "authored_max_train_wall_seconds": 5400,
         "solver_visible_metrics": [
           "train_vulnerability_elimination_rate",
           "train_repair_rate",
@@ -3354,21 +2627,7 @@
           "train_mean_jaccard",
           "train_mean_precision",
           "train_mean_recall"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "lrr_modal_100_v1"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "arxiv_id": "2510.09037",
-        "repository": "https://github.com/cdltlehf/LRR",
-        "repository_commit": "99fde1327e389b9564615ecc7a51b89e6188494f",
-        "title": "Repairing Regex Vulnerabilities via Localization-Guided Instructions"
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -3379,18 +2638,17 @@
           "prompts/5-shot-prompt.txt",
           "frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 6450839552,
-        "max_model_request_bytes": 1048576,
-        "max_model_response_bytes": 8388608,
-        "max_model_sessions": 256,
-        "max_ssh_bytes_per_direction": 4194304,
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
         "max_ssh_sessions": 404,
         "ssh_session_budgets": {
           "agent": 0,
@@ -3408,7 +2666,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:588d16d92833f8aed916067d82cdf8e5e977793ffe1901ed272a37f6893b56bf"
+      "source_set_sha256": "sha256:f6a3d86f7b903e72b636cdda423f15d9f1480b014195c9fba8a5cbaceea80d25"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3421,7 +2679,7 @@
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "lrr-preview-v1"
@@ -3438,26 +2696,10 @@
       "train_sha256": "sha256:ae554d21e1fd3684e09b93a0983b9aef1494d03e37f67acd34ff23d817fbca65"
     },
     "display_name": "Structured-LWE Public Witness Recovery",
-    "family": "frontier-cs-2.0/security",
-    "image_tag": "source-91c47617c569a446cdf3d0112429685ab3ed13e3519dff8c3b19788a9ef970d7",
+    "family": "Crypto",
+    "image_tag": "source-04d584a32f4b53596f51a41c56285b6a036590efb0eb2d71e8382dfdaca61178",
     "metadata": {
       "accelerator": null,
-      "catalog_sha256": "sha256:318f32b68e8a30c6bcd5867c89eb10d87a5472614401f4e6df0f55356cdc98a6",
-      "compatibility": {
-        "frontiercs2_submission_mode": "asynchronous bounded train calls",
-        "harbor_max_pending_submissions": 3,
-        "historical_best_selection": false
-      },
-      "conversion": {
-        "adapter_commit": "a48a08703c02e2765040584ddca1df1c780e25c2",
-        "adapter_path": "2.0/fcs2/problems/lwe_structured_recovery",
-        "adapter_repository": "private authoring repository",
-        "continuous_score": "100 * solved_count / instance_count; independent of reference",
-        "pass_fail": "all 200 public instances solved; exact per-instance comparison to empty reference",
-        "source_commit": "ad37be5d8d8ba59c8d4e62ed35c3a13489cf17d4",
-        "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-        "status": "local_validation_in_progress"
-      },
       "datasets": {
         "eval": {
           "bytes": 209,
@@ -3472,7 +2714,6 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "beat_spec_sha256": "sha256:0d88f33985f07b971e9f86e1ab1130c084f9fddf68e977808f33d4c1e1d81ecb",
         "solver_visible_metrics": [
           "instance_count",
           "solved_count",
@@ -3482,52 +2723,13 @@
           "conflict_count",
           "unknown_count",
           "rejection_code_counts"
-        ],
-        "suite_relation": "same fully public corpus in train and eval; distinct mode selectors, no hidden split"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "config_sha256": null,
-        "pipeline": null,
-        "run_id": null
-      },
-      "instance_count": 200,
-      "isolation": "The same fixed public catalog and checker are available to Agent and Verifier; reference comparisons and evidence are Verifier-only. Train and eval select independent verification runs over that public corpus.",
-      "paper": {
-        "authors": [],
-        "doi": null,
-        "paper_id": null,
-        "pdf_url": null,
-        "title": null,
-        "venue": null,
-        "year": null
-      },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
-          "payload/solution.json"
+          "solution.json"
         ],
-        "language": "python",
         "submission_kind": "patch"
-      },
-      "solver_visible_metrics": [
-        "instance_count",
-        "solved_count",
-        "submitted_count",
-        "invalid_count",
-        "duplicate_count",
-        "conflict_count",
-        "unknown_count",
-        "rejection_code_counts"
-      ],
-      "submission_json_max_bytes": 2000000,
-      "upstream": {
-        "commit": "15ce5cc28f69a79bc3555bc4c8de65424360b77f",
-        "commit_date": "2026-08-13T15:34:26-07:00",
-        "path": "2.0/problems/lwe_structured_recovery",
-        "repository": "https://github.com/FrontierCS/Frontier-CS",
-        "tree": "fb32796dd56df81a3a31634851a6a9fe5274d7f9"
       }
     },
     "network": {
@@ -3535,10 +2737,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -3550,7 +2752,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:91c47617c569a446cdf3d0112429685ab3ed13e3519dff8c3b19788a9ef970d7"
+      "source_set_sha256": "sha256:04d584a32f4b53596f51a41c56285b6a036590efb0eb2d71e8382dfdaca61178"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3559,11 +2761,11 @@
     "task_id": "frontier-cs-2.0-lwe-structured-recovery",
     "verifier": {
       "command": [
-        "/opt/frontier/lwe-verifier"
+        "/opt/frontier/verifier"
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 1048576,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 2147483648
     },
     "version": "native-dual-score.7-patch-submission"
@@ -3580,15 +2782,10 @@
       "train_sha256": "sha256:533031bfd42060dab6f44ba2b12ae536eef3292e520e11875d7f7379393e7b8e"
     },
     "display_name": "MetaOpt Combined-TE Gap Search",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-94067aa71fbc0152e189e689fe525d73ff9597ec29a5a7597955df1b4443167e",
+    "family": "Network",
+    "image_tag": "source-8f1231fa034578d301a7b31dec0189650875efa2649050b098603ff851c3aff0",
     "metadata": {
-      "conversion": {
-        "source_commit": "f15ce24eedd0f17e8f9214fa90dffe6287ad40d0",
-        "source_path": "2.0/problems/metaopt_combined_te_gap_search",
-        "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-        "status": "draft_pending_platform_composition_and_model_validation"
-      },
+      "accelerator": null,
       "datasets": {
         "eval": {
           "bytes": 244,
@@ -3602,33 +2799,18 @@
         }
       },
       "evaluation": {
-        "approved_max_train_calls": 100,
         "authored_max_dev_submissions": 100,
-        "beat_spec_sha256": "sha256:0d907e0c09ba0f49b4e478c46f5a75765d5a38eb98c8405c80d620f5416dca56",
-        "formal_answering_seconds": 18000,
-        "independent_final_seconds": 3600,
-        "legacy_max_dev_submissions": 30,
         "solver_visible_metrics": [
           "mean_gap",
           "instance_count"
-        ],
-        "suite_relation": "train original dev15; final fresh union original dev15 and hidden15 with exact original cases and seeds"
+        ]
       },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
           "project/MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs",
           "project/MetaOptimize/TrafficEngineering/Candidate/"
         ],
-        "architecture": "linux/amd64 (source x64)",
-        "cpu_model": null,
-        "execution_boundary": "Standard sandbox-driver-verifier containers; verifier and C# child share UID/GID65532; no additional inner OS isolation.",
-        "language": "csharp/.NET8",
-        "source_byte_limit": 2000000,
-        "source_file_limit": 96,
-        "ssh_session_reserve": "One schema-required audit slot for CPU-only TaskConfig; no GPU image, quota, or permission is enabled.",
-        "submission_kind": "patch",
-        "verifier_scratch_root": "/frontier"
+        "submission_kind": "patch"
       }
     },
     "network": {
@@ -3636,10 +2818,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 67108864,
-        "max_ssh_sessions": 1
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -3651,7 +2833,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:94067aa71fbc0152e189e689fe525d73ff9597ec29a5a7597955df1b4443167e"
+      "source_set_sha256": "sha256:8f1231fa034578d301a7b31dec0189650875efa2649050b098603ff851c3aff0"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3667,7 +2849,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 8589934592
     },
-    "version": "native-draft.1-patch-submission"
+    "version": "native-draft.1-patch-submission-shared-verifier"
   },
   "mujoco_playground_cpu": {
     "agent": {
@@ -3681,7 +2863,7 @@
       "train_sha256": "sha256:293c278ad9150be9475bc8610b1a0c5907393119c8b0d82ba1571b1b997b4a00"
     },
     "display_name": "Go1 Joystick Policy Training",
-    "family": "frontier-cs-2.0/robotics",
+    "family": "Robotics",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -3696,7 +2878,7 @@
         "max_gpu_seconds": 30600
       }
     },
-    "image_tag": "source-cea4213dc8b933d2897034560e39197e27f5e711c0e56b7106e36e4915343ab7",
+    "image_tag": "source-1e064c4cb1eee89eacbd288384a7627c0ebe58b8bda15cccd18c5823c2f3aca8",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3720,9 +2902,6 @@
           "version": "sha256:293c278ad9150be9475bc8610b1a0c5907393119c8b0d82ba1571b1b997b4a00"
         }
       },
-      "delivery": {
-        "current_qualification": "Hand-authored source revision. Immutable images for the five roles (agent, verifier, datasets, agent GPU, verifier GPU) are published under docker.io/joyemang33 with source-bound tags and pinned by digest in the task catalog, which is the authority for the digests. Author H100 calibration ran this evaluator in an image built from verifier-gpu/Dockerfile without its SSH-bootstrap stage (development suite 1128 s, final suite 5728 s, reference procedure against itself). Native Driver qualification with the published images (reference train and final) is pending and will be run by the transfer line."
-      },
       "evaluation": {
         "authored_max_dev_submissions": 3,
         "solver_visible_metrics": [
@@ -3731,21 +2910,7 @@
           "development_mean_tracking_ang_vel",
           "development_mean_energy",
           "development_mean_action_rate"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "manual-authoring",
-        "run_id": null
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "arxiv_id": "2502.08844",
-        "title": "MuJoCo Playground",
-        "upstream_commit": "254c38f9c240012518dbe61d1267bc375ff827e4",
-        "upstream_repository": "https://github.com/google-deepmind/mujoco_playground"
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -3754,7 +2919,6 @@
           "mujoco_playground/_src/locomotion/go1/randomize.py",
           "mujoco_playground/config/locomotion_params.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -3763,7 +2927,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 8388608,
         "max_ssh_sessions": 48,
@@ -3783,7 +2947,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:cea4213dc8b933d2897034560e39197e27f5e711c0e56b7106e36e4915343ab7"
+      "source_set_sha256": "sha256:1e064c4cb1eee89eacbd288384a7627c0ebe58b8bda15cccd18c5823c2f3aca8"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3796,7 +2960,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "go1-policy-training-gpu-20261011"
@@ -3813,7 +2977,7 @@
       "train_sha256": "sha256:5e4d37c029237762328b1ba41e3acc800d518db917af9d065cded24c745c408f"
     },
     "display_name": "Future Video Sampling",
-    "family": "frontier-cs-2.0/world_models",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -3824,11 +2988,11 @@
         "max_instances": 1
       },
       "verifier": {
-        "max_gpu_instances": 1,
-        "max_gpu_seconds": 20400
+        "max_gpu_instances": 2,
+        "max_gpu_seconds": 30000
       }
     },
-    "image_tag": "source-c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1",
+    "image_tag": "source-1406c001e2ede5292e3fa9f56f027c7338e7ec85573a21732a37c8aee69a1e7c",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3858,17 +3022,8 @@
           "psnr",
           "ssim",
           "lpips"
-        ],
-        "suite_relation": "same_distribution; beat spec v3 (2026-10-08): development 4 clips, graded 6 clips (two original per suite plus non-overlapping clips from the same suite episodes; continuous score over the original two); release refresh 2026-10-11: per-invocation limit 4950 s, final 10200 s and Verifier GPU 20400 s, sized from unmeasured estimates and not GPU-validated"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_orld-model"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "src/diffusion/df_sample.py",
@@ -3876,7 +3031,6 @@
           "src/diffusion/flow_matching.py",
           "src/diffusion/frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -3885,14 +3039,14 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 48,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 80,
         "ssh_session_budgets": {
           "agent": 32,
-          "verifier_eval": 4,
-          "verifier_train": 12
+          "verifier_eval": 12,
+          "verifier_train": 36
         }
       }
     },
@@ -3905,7 +3059,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:c805f7deb609e8baaea72ec5500f70347ead1cf6880c7d1863e80575ed8f86a1"
+      "source_set_sha256": "sha256:1406c001e2ede5292e3fa9f56f027c7338e7ec85573a21732a37c8aee69a1e7c"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3918,7 +3072,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "g1-beat-spec-v3"
@@ -3935,8 +3089,8 @@
       "train_sha256": "sha256:10f7015599b8e3fa2446e7e3a327e52d4d7eecc3afa8b543475a541e86134757"
     },
     "display_name": "Exact DBSCAN Connectivity",
-    "family": "frontier-cs-2.0/databases",
-    "image_tag": "source-484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770",
+    "family": "HPC",
+    "image_tag": "source-88d9386354ddc0fbb964194e1f5a10f8352b8650508a56ad219a661548fde3d8",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3953,32 +3107,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "authored_suite_relation": "same_distribution",
         "solver_visible_metrics": [
           "candidate_elapsed_seconds_median",
           "candidate_elapsed_seconds_p90"
-        ],
-        "suite_relation": "public_plus_hidden"
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "code/DBSCAN.C",
           "code/frontier_solution/"
         ],
-        "language": "cpp",
         "submission_kind": "patch"
-      },
-      "scientific_alignment": "M004: fresh original public4+hidden4 final, unchanged shapes/seeds, strict per-workload C<R without 5% margin. M010: fixed20ms independent continuous; invalid0. 2026-09-16: Agent/Verifier 8 vCPU and eight OpenMP workers; workloads/timing/scoring/reference/PASS unchanged. Beat spec v3 (2026-10-07): adds two paper-regime 200000-point seed-spreader workloads per partition (5D varden, 7D simden, minPts 10) to the strict C<R verdict; continuous score unchanged over the original workloads; train/final evaluator limits 120/300 -> 240/600 s and train wall 12000 -> 24000 s.",
-      "scoring": {
-        "approval": "decision M010; supersedes source reference-relative capped curve",
-        "candidate_aggregation": "equal-log-weight geometric mean of per-workload median of 8 repeat medians, each of 5 single-round (-r 1) executions",
-        "fixed_anchor_seconds": 0.02,
-        "formula": "100 * 0.020 / (0.020 + C)",
-        "invalid_score": 0,
-        "margin": "score - reference_score",
-        "reference_independent": true,
-        "reference_score": "same fixed formula applied to reference geometric mean R",
-        "timing_unit": "seconds"
       }
     },
     "network": {
@@ -3986,10 +3125,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4001,7 +3140,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:484dde7c9a5b566beb319c04bf39006a2de1e6861fa8da97f3270733de019770"
+      "source_set_sha256": "sha256:88d9386354ddc0fbb964194e1f5a10f8352b8650508a56ad219a661548fde3d8"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4010,15 +3149,14 @@
     "task_id": "frontier-cs-2.0-parallel-dbscan",
     "verifier": {
       "command": [
-        "python3",
-        "/opt/frontier/verifier/verify.py"
+        "/opt/frontier/verifier"
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
       "max_evidence_bytes": 1048576,
       "memory_bytes": 4294967296
     },
-    "version": "g1-final600-8cpu-r004-beat-spec-v3"
+    "version": "g1-final600-8cpu-r004-beat-spec-v3-shared-verifier"
   },
   "parallel_radix_sort": {
     "agent": {
@@ -4032,16 +3170,10 @@
       "train_sha256": "sha256:e8bc1948ee55db162c3e3f070a3ac546a82357a912a2dea8f1f830637b4c78fb"
     },
     "display_name": "In-place Integer Redistribution",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-3b9de6380b35b33e0a2147c1faf945d1250b2e45db7286bf01b67fc4a34eacef",
+    "family": "HPC",
+    "image_tag": "source-9d1a578af9c7d4b6df952e5ec4dad0a13d1cc3c12fda712a2e9c80d366568242",
     "metadata": {
-      "conversion": {
-        "source_commit": "ac19add605ee544aa20c29a51d32e4d0ebf942ba",
-        "source_path": "original_format_problems/parallel_radix_sort",
-        "source_pr": 29,
-        "source_repository": "private authoring repository",
-        "status": "approved_science_calibration_and_immutable_image_review"
-      },
+      "accelerator": null,
       "datasets": {
         "eval": {
           "bytes": 206,
@@ -4056,43 +3188,17 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "continuous": {
-          "anchor": "S=10 maps to50",
-          "baseline": "independent std::sort key comparator, unchanged benchmark harness",
-          "floor": "S<=1 maps to0",
-          "formula": "100*log(S)/(log(10)+log(S)) for S>1",
-          "objective": "equal-workload geometric mean baseline/candidate sort-call speedup",
-          "reference_used_for_continuous": false,
-          "repetitions": 21,
-          "timing_unit": "nanoseconds",
-          "upper_clipping": false
-        },
-        "scoring_alignment": "Independent std::sort baseline; S=geomean(B/C), score0 if S<=1 else100*log(S)/(log(10)+log(S)); reference solely strict PASS",
         "solver_visible_metrics": [
           "dev_candidate_median_sort_time_ns",
           "dev_candidate_max_auxiliary_bytes",
           "dev_candidate_median_region_graph_ns"
-        ],
-        "suite_relation": "Train original DEV4; final fresh DEV4 + HIDDEN4, no new shapes. Beat spec v3 (2026-10-08): the strict verdict adds two 16M-key paper-input workloads per partition (train 6, final 12); continuous score unchanged over DEV4 / DEV4 + HIDDEN4"
+        ]
       },
-      "provenance_file": "judge/metadata.json",
       "runtime": {
         "allowed_paths": [
           "RadixSort/edgelistgraph.h",
           "RadixSort/frontier_solution/"
         ],
-        "architecture": "linux/amd64",
-        "authentic_smoke_timeout_seconds": 30,
-        "benchmark_timeout_seconds": 35,
-        "cilk_workers": 4,
-        "compile_timeout_seconds": 90,
-        "compiler": "pinned GCC7.5/Cilk Plus",
-        "cpu_affinity": "0-3",
-        "cpu_model": null,
-        "execution_boundary": "standard sandbox-driver-verifier; no task provider credentials",
-        "language": "cpp14",
-        "source_build_timeout_seconds": 120,
-        "ssh": "CPU-only: schema-required audit slot is not SSH/GPU permission",
         "submission_kind": "patch"
       }
     },
@@ -4101,10 +3207,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 67108864,
-        "max_ssh_sessions": 1
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4116,7 +3222,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:3b9de6380b35b33e0a2147c1faf945d1250b2e45db7286bf01b67fc4a34eacef"
+      "source_set_sha256": "sha256:9d1a578af9c7d4b6df952e5ec4dad0a13d1cc3c12fda712a2e9c80d366568242"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4125,15 +3231,14 @@
     "task_id": "frontier-cs-2.0-parallel-radix-sort",
     "verifier": {
       "command": [
-        "python3",
-        "/opt/frontier/verifier/verify.py"
+        "/opt/frontier/verifier"
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
       "max_evidence_bytes": 1048576,
       "memory_bytes": 2147483648
     },
-    "version": "native-std-sort-v1-beat-spec-v3-refscore"
+    "version": "native-std-sort-v1-beat-spec-v3-refscore-shared-verifier"
   },
   "parbutterfly": {
     "agent": {
@@ -4147,20 +3252,10 @@
       "train_sha256": "sha256:0c45c882bb0de7580063e7131d70b04461073e69be7450aca42272fb5850ddb4"
     },
     "display_name": "ParButterfly Exact Counting",
-    "family": "frontier-cs-2.0/algorithms",
-    "image_tag": "source-d0dd4f4829fc3a9f30d614e17463bac64eddc6abf080c7b6f519180a6fd41225",
+    "family": "HPC",
+    "image_tag": "source-ccd284fce569580522317409764c476745f3a3c0c2941c6c5b1c02f4c22e83cb",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": null,
-        "note": "No Smith generator, promotion, paper, or model-trial metadata exists in the source PR; unknown fields remain null.",
-        "original_metadata_path": null,
-        "scope": "Original-format to native transfer with T41 calibration of author BATCHS parallel branch, same-generator scale, four CPU workers, independent naive scoring and public-plus-hidden final replay",
-        "source_commit": "b55ddd03f6b726235f03603b15b4f4c489d478bc",
-        "source_path": "original_format_problems/parbutterfly2",
-        "source_pull_request": null,
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 326,
@@ -4178,24 +3273,7 @@
         "solver_visible_metrics": [
           "dev_counting_seconds_median",
           "dev_counting_seconds_p90"
-        ],
-        "suite_relation": "final_replays_public_plus_hidden_same_distribution"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "manual-transfer",
-        "run_id": null
-      },
-      "isolation": "generated graph seeds, evaluator, serial oracle, frozen naive baseline and source-locked parallel reference exist only in the verifier image; the Agent receives the retained ParButterfly source substrate and scientific statement",
-      "paper": {
-        "authors": [],
-        "doi": null,
-        "paper_id": null,
-        "pdf_url": null,
-        "title": null,
-        "venue": null,
-        "year": null
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -4208,7 +3286,6 @@
           "apps/hyper/butterfly_utils.h",
           "apps/hyper/solver_extensions/"
         ],
-        "language": "c++14/openmp",
         "submission_kind": "patch"
       }
     },
@@ -4217,10 +3294,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 1
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4232,7 +3309,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d0dd4f4829fc3a9f30d614e17463bac64eddc6abf080c7b6f519180a6fd41225"
+      "source_set_sha256": "sha256:ccd284fce569580522317409764c476745f3a3c0c2941c6c5b1c02f4c22e83cb"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4245,10 +3322,10 @@
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
-    "version": "native-transfer-1-four-cpu-independent-naive-beat-spec-v3-fmetric-reference-refscore"
+    "version": "native-transfer-1-four-cpu-independent-naive-beat-spec-v3-fmetric-reference-refscore-task-toml"
   },
   "persistent_treap_update_engine": {
     "agent": {
@@ -4262,19 +3339,10 @@
       "train_sha256": "sha256:4c44f6afc3b6f0192cb29168301c13141d5454e282774f96f8a5c3f52cc5b69e"
     },
     "display_name": "Persistent Treap Update Engine",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-72858277136ec0d97f48f0316741511a06349963b0b12593011ca6c4a5961f5c",
+    "family": "Database",
+    "image_tag": "source-6f08bf85b914b8fc7b47a88c0beb8c01989b4d47d3d9fe94c89e28acdce524f7",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": null,
-        "note": "Generator, paper, artifact, and local-release history retain their source meanings; historical evidence does not accept this conversion.",
-        "original_metadata_path": "judge/metadata.json",
-        "scope": "T40 existing-native runtime standardization; science preserved",
-        "source_commit": "e68a0d65eafec10f66d31e1dd2506f448cab8741",
-        "source_path": "2.0/fcs2/problems/persistent_treap_update_engine",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 439,
@@ -4289,29 +3357,7 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "solver_visible_metrics": [],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "3676f0c07e03214559968f631baf9752726dd29e",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top49_54c892bcba"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Guanhao Hou",
-          "Jinchao Huang",
-          "Fangyuan Zhang",
-          "Sibo Wang"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2025-efficient-concurrent-updates-to-persistent-randomized-binary-search-trees-54c892bcba",
-        "pdf_url": "https://www.vldb.org/pvldb/vol18/p1481-wang.pdf",
-        "title": "Efficient Concurrent Updates to Persistent Randomized Binary Search Trees",
-        "venue": "PVLDB 18",
-        "year": 2025
+        "solver_visible_metrics": []
       },
       "runtime": {
         "allowed_paths": [
@@ -4319,7 +3365,6 @@
           "lib/treap/search_insert.hpp",
           "lib/treap/search_delete.hpp"
         ],
-        "language": "c++",
         "submission_kind": "patch"
       }
     },
@@ -4328,10 +3373,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4343,7 +3388,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:72858277136ec0d97f48f0316741511a06349963b0b12593011ca6c4a5961f5c"
+      "source_set_sha256": "sha256:6f08bf85b914b8fc7b47a88c0beb8c01989b4d47d3d9fe94c89e28acdce524f7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4356,10 +3401,10 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 17179869184
     },
-    "version": "native-standardization-1-beat-spec-v2"
+    "version": "native-standardization-1-beat-spec-v2-task-toml"
   },
   "polar_express": {
     "agent": {
@@ -4373,8 +3418,8 @@
       "train_sha256": "sha256:538c333777b602292fd2e55607c00c3033405d8fe32ed086b71fc4442a56d76b"
     },
     "display_name": "Polar-Factor Approximation",
-    "family": "frontier-cs-2.0/numerical_linear_algebra",
-    "image_tag": "source-b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6",
+    "family": "Machine Learning",
+    "image_tag": "source-f348cc66e8fabbdf16f2eac139bc6909d68333841eb430aa560bf007c48823b4",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4398,23 +3443,13 @@
           "spectral_polar_error",
           "polar_cosine_similarity",
           "top_subspace_polar_error"
-        ],
-        "suite_relation": "same_distribution"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "polar_express.py",
           "frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -4423,10 +3458,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4438,7 +3473,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:b834953d814721a72e9524e551e5b4d815d7530653e05ef7c5659f72fe78eae6"
+      "source_set_sha256": "sha256:f348cc66e8fabbdf16f2eac139bc6909d68333841eb430aa560bf007c48823b4"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4451,7 +3486,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296
     },
     "version": "g1-beat-spec-v3"
@@ -4468,8 +3503,8 @@
       "train_sha256": "sha256:6a30793ee174e8cad96bfe9959061dd4d5b40a07205e38a05c288fb8aabe477b"
     },
     "display_name": "SQL Counterexample Search",
-    "family": "frontier-cs-2.0/algorithms",
-    "image_tag": "source-a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8",
+    "family": "Programming Language",
+    "image_tag": "source-461d2df24b4c1701b3facddbe1633a2bd1194efa08a9afa11206241f7e49c472",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4491,27 +3526,7 @@
           "wall_time_seconds",
           "search_iterations",
           "backtracks"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "polygon-20260923"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Pinhan Zhao",
-          "Yuepeng Wang",
-          "Xinyu Wang"
-        ],
-        "doi": "10.1145/3729303",
-        "pdf_url": "https://arxiv.org/pdf/2504.06542v1",
-        "title": "Polygon: Symbolic Reasoning for SQL using Conflict-Driven Under-Approximation Search",
-        "venue": "PLDI 2025",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -4520,7 +3535,6 @@
           "sql_testing/smt/knowledgebase.py",
           "sql_testing/smt/search_extensions/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -4529,10 +3543,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4544,7 +3558,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a44c1c1b908d8b01af4d1574384030f8afe2ee94e0e57586aac1c2c054fa08c8"
+      "source_set_sha256": "sha256:461d2df24b4c1701b3facddbe1633a2bd1194efa08a9afa11206241f7e49c472"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4557,7 +3571,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "smith89-62791e2f-preview-v4-disambiguation-hard-sql-isolation-refbudget"
@@ -4606,8 +3620,8 @@
       "train_sha256": "sha256:7073fb3ea6b5c74cf77c95ca09c7c0328e79b42917699eacf741f1728a771220"
     },
     "display_name": "Privilege Control for Tool-Using LLM Agents",
-    "family": "frontier-cs-2.0/security",
-    "image_tag": "source-2a841f03f254be1043f91a7dc6bcb5a2e91f548d1e3c94270cb09a5b0662d741",
+    "family": "Security",
+    "image_tag": "source-b4e73f952c34ce4588bfc9eff87c443458417f00fffa6796a625b566f69d195c",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4623,9 +3637,7 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 5,
-        "authored_max_train_wall_seconds": 18000,
         "solver_visible_metrics": [
           "banking_breached_episodes",
           "banking_attacked_episodes",
@@ -4651,60 +3663,13 @@
           "workspace_benign_utility",
           "workspace_policy_worker_failures",
           "workspace_capped_episodes"
-        ],
-        "suite_relation": "held_out_user_tasks"
-      },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": null
-      },
-      "isolation": "the user-task split, the reference measurements and the attacker-identity generator are in the verifier image and absent from every agent-visible layer; submitted policy code runs in a fresh sealed process per episode (Landlock/seccomp, no network, files or processes) whose only model access is a metered channel to the trusted judge; train and eval authority read the same evaluator",
-      "model_requirements": {
-        "additional_keys": [
-          "explore",
-          "train",
-          "final"
-        ],
-        "expected_usd_per_run": {
-          "final": "about 5 (reference and candidate, 2 repetitions, 1,136 episodes; 3 repetitions measured 7.29)",
-          "train_call": "about 2.5 (candidate, 1 repetition, 402 episodes)"
-        },
-        "model_aliases": [
-          "progent-agent-gpt-4o-mini"
-        ],
-        "note": "The run's keys are LiteLLM virtual keys on this alias; a site must serve the alias with nonzero pricing (features.task_model_aliases).",
-        "pricing_usd_per_million_tokens": {
-          "cached_input": 0.075,
-          "input": 0.15,
-          "output": 0.6
-        },
-        "upstream_model": "openai/gpt-4o-mini via OpenRouter"
-      },
-      "paper": {
-        "authors": [
-          "Tianneng Shi",
-          "Jingxuan He",
-          "Zhun Wang",
-          "Hongwei Li",
-          "Linyu Wu",
-          "Wenbo Guo",
-          "Dawn Song"
-        ],
-        "code": "https://github.com/sunblaze-ucb/progent/tree/5be7b63fa96f70bc19b72fbcee81f1c0bcc1a565",
-        "paper_id": "progent_privilege_control_2025",
-        "pdf_url": "https://arxiv.org/pdf/2504.11703",
-        "title": "Progent: Securing AI Agents with Privilege Control",
-        "venue": "arXiv",
-        "year": 2025
+        ]
       },
       "runtime": {
         "allowed_paths": [
           "secagent/tool.py",
           "secagent/solver_utils/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -4728,7 +3693,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:2a841f03f254be1043f91a7dc6bcb5a2e91f548d1e3c94270cb09a5b0662d741"
+      "source_set_sha256": "sha256:b4e73f952c34ce4588bfc9eff87c443458417f00fffa6796a625b566f69d195c"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4744,7 +3709,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 17179869184
     },
-    "version": "real-agent-r1"
+    "version": "real-agent-r2-task-toml"
   },
   "quarter_pir": {
     "agent": {
@@ -4758,8 +3723,8 @@
       "train_sha256": "sha256:a273f5d4e65d4a9242092ada89a0e40cbf35ae73f1a6710189ef36e3aff7c704"
     },
     "display_name": "Private Set List Decoding",
-    "family": "frontier-cs-2.0/cryptography",
-    "image_tag": "source-972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0",
+    "family": "Crypto",
+    "image_tag": "source-d824e03eb3a3906edaa4ff988ad53a263a92448b94431afff2bde5742dbc6d41",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4787,34 +3752,24 @@
           "candidate_public_online_communication_bytes_large",
           "candidate_public_client_storage_bytes_large",
           "candidate_public_validity_code"
-        ],
-        "suite_relation": "same_distribution"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_uarter_pir"
-      },
-      "isolation": "datasets carry only the experiment plan; database, coin and query seeds are drawn privately inside every evaluation and are never stored or published",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "quarter_pir/code/pir/"
         ],
-        "language": "go",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 2628780032,
-        "max_model_request_bytes": 1048576,
-        "max_model_response_bytes": 8388608,
-        "max_model_sessions": 256,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -4826,7 +3781,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:972fdbf363533af8430a5101656c98762857009aa6c1e6e9934707c2f83ba0c0"
+      "source_set_sha256": "sha256:d824e03eb3a3906edaa4ff988ad53a263a92448b94431afff2bde5742dbc6d41"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4839,7 +3794,7 @@
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
     },
     "version": "g1-r12-full-compute-scope-storage-gate-20261011"
@@ -4856,7 +3811,7 @@
       "train_sha256": "sha256:0b0d3dd1368337365a1049983182c5f40b4242bef5ede58122cd4377f9b60c7c"
     },
     "display_name": "Multi-turn Trajectory Batches",
-    "family": "frontier-cs-2.0/reinforcement_learning",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -4867,11 +3822,11 @@
         "max_instances": 1
       },
       "verifier": {
-        "max_gpu_instances": 1,
-        "max_gpu_seconds": 7200
+        "max_gpu_instances": 2,
+        "max_gpu_seconds": 12000
       }
     },
-    "image_tag": "source-3df251e6e051feed64377d13f1f7cafab9a045391f7fe9d1111663e6d6f03e26",
+    "image_tag": "source-a04b169d774e0eb67c3817dd1ce371e0efda73a227f5b30cdfcf704d81a6f6c6",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -4900,23 +3855,13 @@
         "solver_visible_metrics": [
           "success_rate",
           "average_episodic_reward"
-        ],
-        "suite_relation": "same_distribution"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_2504.20073"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "ragen/llm_agent/ctx_manager.py",
           "ragen/llm_agent/solver_extensions/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -4925,14 +3870,14 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 48,
+        "max_ssh_sessions": 80,
         "ssh_session_budgets": {
           "agent": 32,
-          "verifier_eval": 4,
-          "verifier_train": 12
+          "verifier_eval": 12,
+          "verifier_train": 36
         }
       }
     },
@@ -4945,7 +3890,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:3df251e6e051feed64377d13f1f7cafab9a045391f7fe9d1111663e6d6f03e26"
+      "source_set_sha256": "sha256:a04b169d774e0eb67c3817dd1ce371e0efda73a227f5b30cdfcf704d81a6f6c6"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4958,7 +3903,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "issue370-typed-dataproto-r004"
@@ -4975,7 +3920,7 @@
       "train_sha256": "sha256:a4de246a8b0df90787002bbbd80ac6490a94eebb0465a4a84dd5c18bca4148a8"
     },
     "display_name": "Differentiable Population Statistics",
-    "family": "frontier-cs-2.0/generative-models",
+    "family": "Machine Learning",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -4990,7 +3935,7 @@
         "max_gpu_seconds": 32400
       }
     },
-    "image_tag": "source-3f9779e21e6e8b50375aef6603524592e101c9476176d302f6bbaeeee241bf1b",
+    "image_tag": "source-f72ec74b1ec14cd440447ea7083c10e514b2e50c262b8859a9c465fe32aa2230",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -5014,12 +3959,6 @@
           "version": "sha256:a4de246a8b0df90787002bbbd80ac6490a94eebb0465a4a84dd5c18bca4148a8"
         }
       },
-      "delivery": {
-        "current_qualification": "UNPUBLISHED; retained reference and solver receipts bind the earlier immutable TaskVersion.",
-        "identity_migration": "Identity normalization plus an unpublished queue-state compatibility repair; see docs/tasks/representation_frechet_loss/source-binding.json.",
-        "measured_task_id": "r_top01_2604-28190-cand_000-preflight-8250ab0a4a09",
-        "measured_task_version_id": "taskver-redacted-bed68ad7"
-      },
       "evaluation": {
         "authored_max_dev_submissions": 3,
         "solver_visible_metrics": [
@@ -5029,23 +3968,13 @@
           "development_mean_mae_fdr",
           "development_mean_siglip_fdr",
           "development_mean_clip_fdr"
-        ],
-        "suite_relation": "same_distribution"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_2604.28190"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "frechet_distance/queue.py",
           "frechet_distance/frontier_solution/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -5054,7 +3983,7 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
         "max_ssh_bytes_per_direction": 8388608,
         "max_ssh_sessions": 48,
@@ -5074,7 +4003,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:3f9779e21e6e8b50375aef6603524592e101c9476176d302f6bbaeeee241bf1b"
+      "source_set_sha256": "sha256:f72ec74b1ec14cd440447ea7083c10e514b2e50c262b8859a9c465fe32aa2230"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -5087,7 +4016,7 @@
       ],
       "cpu_millis": 3000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 12884901888
     },
     "version": "observer-suite-deadline-20261011"
@@ -5104,19 +4033,10 @@
       "train_sha256": "sha256:a0d89f95ceb425b9deb4a4e84456f86a5fd7940ba07db3a25dc6ab7de0997600"
     },
     "display_name": "Residual State Advancement",
-    "family": "frontier-cs-2.0/databases",
-    "image_tag": "source-d4b1b1132ae05243282ee3ad41a275b50b81632e90d5b3cbf343412fe31b2041",
+    "family": "Database",
+    "image_tag": "source-772e8b9650d3029970eadb4251272a2958ede11a5d767ced8c42ad529791baf5",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": "judge/result.json",
-        "note": "Generator, paper, ranking, promotion, artifact, and historical trial fields retain their source meanings; historical evidence does not accept this conversion.",
-        "original_metadata_path": "judge/metadata.json",
-        "scope": "T40 existing-native runtime standardization; algorithm, workloads, baseline, reference, and resources preserved; M087 replaces binary PASS and the 2026-09-15 asymptotic mapping removes the continuous-score upper clip",
-        "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
-        "source_path": "2.0/fcs2/problems/residual_state_advancement",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 435,
@@ -5131,29 +4051,7 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 100,
-        "solver_visible_metrics": [],
-        "suite_relation": "same_workload_profiles_disjoint_date_ranges"
-      },
-      "generator": {
-        "candidate_id": "cand_001",
-        "commit": "9a3bd5593db9477133c9e1a6f6a86bc119a2875b",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top46_ef4c4c1bef"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Zezhou Huang",
-          "Rathijit Sen",
-          "Jiaxiang Liu",
-          "Eugene Wu"
-        ],
-        "doi": null,
-        "paper_id": "vldb-2023-joinboost-grow-trees-over-normalized-data-using-only-sql-ef4c4c1bef",
-        "pdf_url": "https://www.vldb.org/pvldb/vol16/p3071-huang.pdf",
-        "title": "JoinBoost: Grow Trees Over Normalized Data Using Only SQL",
-        "venue": "PVLDB 16",
-        "year": 2023
+        "solver_visible_metrics": []
       },
       "runtime": {
         "allowed_paths": [
@@ -5163,7 +4061,6 @@
           "src/joinboost/cjt.py",
           "src/joinboost/joingraph.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -5172,10 +4069,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -5187,7 +4084,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d4b1b1132ae05243282ee3ad41a275b50b81632e90d5b3cbf343412fe31b2041"
+      "source_set_sha256": "sha256:772e8b9650d3029970eadb4251272a2958ede11a5d767ced8c42ad529791baf5"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -5200,7 +4097,7 @@
       ],
       "cpu_millis": 2000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 17179869184
     },
     "version": "r2-paper-setting-20261011"
@@ -5217,8 +4114,8 @@
       "train_sha256": "sha256:247cce0c8eb54638c90cb25b4bdb5cd71c6d80d3d61b98fd893fd3c3604fb9ea"
     },
     "display_name": "Register-aware Branch Prediction",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-5d95824028e36012435db30984fb4209a34b75a1f3961fe77226216f49f6f441",
+    "family": "Arch",
+    "image_tag": "source-403b2f2af870e51e4fed466f964e179f48cb5a7d57f266c73edb433bec906a74",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -5234,44 +4131,32 @@
         }
       },
       "evaluation": {
-        "authored_answering_timeout_seconds": 18000,
         "authored_max_dev_submissions": 100,
-        "authored_max_train_wall_seconds": 18000,
         "solver_visible_metrics": [
           "train_br_mis_pki_mean",
           "train_cyc_wp_pki_mean",
           "all_metrics_progress",
           "category_means",
-          "candidate_diagnostic"
-        ],
-        "suite_relation": "same_distribution"
+          "candidate_failure"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01__predictor"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "my_cond_branch_predictor.cc",
           "solver_extensions/"
         ],
-        "language": "cpp",
         "submission_kind": "patch"
       }
     },
     "network": {
       "allowed_domains": [],
       "audit": {
-        "max_bundle_bytes": 3051356160,
-        "max_model_request_bytes": 1048576,
-        "max_model_response_bytes": 8388608,
-        "max_model_sessions": 256,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_bundle_bytes": 34359738368,
+        "max_model_request_bytes": 67108864,
+        "max_model_response_bytes": 67108864,
+        "max_model_sessions": 1024,
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -5283,7 +4168,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:5d95824028e36012435db30984fb4209a34b75a1f3961fe77226216f49f6f441"
+      "source_set_sha256": "sha256:403b2f2af870e51e4fed466f964e179f48cb5a7d57f266c73edb433bec906a74"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -5296,7 +4181,7 @@
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 34359738368
     },
     "version": "category-feedback-noise-statement-5h-final2h-20261014"
@@ -5313,19 +4198,10 @@
       "train_sha256": "sha256:2d67310851a238c25bcbdc9be519471ece6615e8d26ebec615b692d9862da419"
     },
     "display_name": "Dynamic GPU Allocation",
-    "family": "frontier-cs-2.0/systems",
-    "image_tag": "source-916cfe2b2adca9801683f23f3bdcfb8c41ca4303ec601916f2f8a1ec0531bff2",
+    "family": "Network",
+    "image_tag": "source-445c5da2f20c646807c4114d260435149d9d8b846a6f32a2adc11e7f241162eb",
     "metadata": {
       "accelerator": null,
-      "conversion": {
-        "historical_evidence_path": "judge/result.json",
-        "note": "Generator, paper, artifact, promotion, and local-release history retain their source meanings; historical evidence does not accept this conversion.",
-        "original_metadata_path": "judge/metadata.json",
-        "scope": "T40 existing-native standardization with explicit M084/M087 binary-PASS conjunction and the 2026-09-15 continuous-score correction; algorithms, workloads, reference, comparators, thresholds, and validity checks preserved",
-        "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
-        "source_path": "2.0/fcs2/problems/shockwave_dynamic_gpu_allocation",
-        "source_repository": "private authoring repository"
-      },
       "datasets": {
         "eval": {
           "bytes": 441,
@@ -5345,30 +4221,7 @@
           "average_jct_seconds",
           "worst_finish_time_fairness_rho",
           "unfair_job_fraction_percent"
-        ],
-        "suite_relation": "same_distribution"
-      },
-      "generator": {
-        "candidate_id": "cand_000",
-        "commit": "6bcf3d45db00c2dbb0b3443e5daabdb29ea6f022",
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_ave-nsdi23"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {
-        "authors": [
-          "Pengfei Zheng",
-          "Rui Pan",
-          "Tarannum Khan",
-          "Shivaram Venkataraman",
-          "Aditya Akella"
-        ],
-        "doi": null,
-        "paper_id": "external-shockwave-nsdi23",
-        "pdf_url": "https://arxiv.org/pdf/2210.00093",
-        "title": "Shockwave: Fair and Efficient Cluster Scheduling for Dynamic Adaptation in Machine Learning",
-        "venue": "NSDI",
-        "year": 2023
+        ]
       },
       "runtime": {
         "allowed_paths": [
@@ -5376,7 +4229,6 @@
           "scheduler/shockwave_helper.py",
           "scheduler/solver_extensions/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -5385,10 +4237,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
@@ -5400,7 +4252,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:916cfe2b2adca9801683f23f3bdcfb8c41ca4303ec601916f2f8a1ec0531bff2"
+      "source_set_sha256": "sha256:445c5da2f20c646807c4114d260435149d9d8b846a6f32a2adc11e7f241162eb"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -5416,7 +4268,7 @@
       "max_evidence_bytes": 4194304,
       "memory_bytes": 4294967296
     },
-    "version": "native-standardization-3-agent5h-r2"
+    "version": "native-standardization-4-task-toml"
   },
   "sparse_video_attention_policy": {
     "agent": {
@@ -5430,7 +4282,7 @@
       "train_sha256": "sha256:aa1ebf0bc51662d2f0c2d79fe7cccfe2b726ddb180df4006d2f474d8be203517"
     },
     "display_name": "Sparse Video Attention Policy",
-    "family": "frontier-cs-2.0/systems",
+    "family": "MLSys",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -5445,7 +4297,7 @@
         "max_gpu_seconds": 1310400
       }
     },
-    "image_tag": "source-728e5327aa04ca580bfe5b16fdacdcae71acfc3ca88620bb259a68c174333c08",
+    "image_tag": "source-4feb460b86d1ac2d75599fe5f458ea3489f36f71978bcd807f98a119c90db92f",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -5456,12 +4308,6 @@
         "credential_reaches_agent": false,
         "provider": "driver-managed",
         "verifier_gpu": true
-      },
-      "conversion": {
-        "method": "manual runtime standardization; scientific implementation preserved",
-        "source_commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
-        "source_path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy",
-        "source_repo": "private authoring repository"
       },
       "datasets": {
         "eval": {
@@ -5477,23 +4323,13 @@
       },
       "evaluation": {
         "authored_max_dev_submissions": 25,
-        "beat_spec_sha256": "sha256:19bb12002bd89b264f142f9e38a570133d98dee964051c032c2e5050135dff5d",
         "solver_visible_metrics": [
           "e2e_latency_seconds",
           "psnr_db",
           "ssim",
           "lpips"
-        ],
-        "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+        ]
       },
-      "generator": {
-        "candidate_id": "cand_000-r7",
-        "commit": null,
-        "pipeline": "frontiersmith2",
-        "run_id": "r_top01_82_svg_ear_v12"
-      },
-      "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
           "svg/models/wan/attention.py",
@@ -5501,7 +4337,6 @@
           "svg/kmeans_utils.py",
           "svg/solver_extensions/"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -5530,7 +4365,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:728e5327aa04ca580bfe5b16fdacdcae71acfc3ca88620bb259a68c174333c08"
+      "source_set_sha256": "sha256:4feb460b86d1ac2d75599fe5f458ea3489f36f71978bcd807f98a119c90db92f"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -5560,7 +4395,7 @@
       "train_sha256": "sha256:d01bc3509809825288794d7ce5f526768e6953b10db5a6c310735dc6a3115b7b"
     },
     "display_name": "GPU vLLM Serving Optimization",
-    "family": "frontier-cs-2.0/systems",
+    "family": "MLSys",
     "gpu": {
       "agent": {
         "allowed_types": [
@@ -5581,7 +4416,7 @@
         "memory_bytes": 68719476736
       }
     },
-    "image_tag": "source-f083744b866a17f5f6318826143ff5d6e08b40a1df2f961d16fcdc6cda708ca0",
+    "image_tag": "source-23190257db3c2d71309d6da5225aaa31da43f0074fd806340f8a0317ae9b70f6",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -5620,22 +4455,27 @@
           "bfcl_public_p95_latency_seconds",
           "bfcl_public_p99_latency_seconds",
           "bfcl_public_correct"
-        ],
-        "suite_relation": "public_prefix_of_final"
+        ]
       },
-      "generator": {
-        "candidate_id": null,
-        "commit": null,
-        "pipeline": "manual-native-transfer",
-        "run_id": null
-      },
-      "isolation": "the candidate vLLM server runs alone in the GPU parent; timing, SWE tooling and correctness run in Driver-declared sidecars whose evidence is Ed25519-signed with a per-operation key the parent never holds",
-      "paper": {},
       "runtime": {
         "allowed_paths": [
-          "vllm/"
+          "vllm/v1/core/**",
+          "vllm/v1/core/sched/**",
+          "vllm/v1/core/kv_cache_utils.py",
+          "vllm/config/scheduler.py",
+          "vllm/config/cache.py",
+          "vllm/v1/worker/**",
+          "vllm/v1/engine/**",
+          "vllm/v1/executor/**",
+          "vllm/v1/request.py",
+          "vllm/v1/outputs.py",
+          "vllm/v1/serial_utils.py",
+          "vllm/entrypoints/openai/protocol.py",
+          "vllm/entrypoints/openai/serving_engine.py",
+          "vllm/entrypoints/openai/serving_chat.py",
+          "vllm/entrypoints/openai/serving_completion.py",
+          "vllm/sampling_params.py"
         ],
-        "language": "python",
         "submission_kind": "patch"
       }
     },
@@ -8291,7 +7131,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f083744b866a17f5f6318826143ff5d6e08b40a1df2f961d16fcdc6cda708ca0"
+      "source_set_sha256": "sha256:23190257db3c2d71309d6da5225aaa31da43f0074fd806340f8a0317ae9b70f6"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

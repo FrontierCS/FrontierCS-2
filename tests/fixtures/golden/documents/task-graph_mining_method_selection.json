@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:ffe0bb7e368c3e3f5bee4ddb8180fd682152845eecd294b31e17a3148a450d2c",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/graph_mining_method_selection/ffe0bb7e368c3e3f5bee4ddb8180fd682152845eecd294b31e17a3148a450d2c.json",
+  "definition_digest": "sha256:303b5c7f3900fa5f98b7f874a2dd89d75c42d93d90a22807be819368f1cec2ef",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/graph_mining_method_selection/303b5c7f3900fa5f98b7f874a2dd89d75c42d93d90a22807be819368f1cec2ef.json",
   "display_name": "Graph Mining Method Selection",
   "driver_config": {
     "agent": {
@@ -39,10 +39,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "quota": {
@@ -68,19 +68,19 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_0GPD5811VSWGE6TD2RBHG8EAHG",
+    "task_version_id": "taskver_5FS1RDV5BHJWP3VJ2385T8W133",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 17179869184,
       "result_path": "/frontier/output/result.json"
     }
   },
-  "family": "frontier-cs-2.0/systems",
+  "family": "Database",
   "metadata": {
     "accelerator": null,
     "datasets": {
@@ -97,49 +97,26 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 100,
-      "beat_spec_sha256": "sha256:1d6415d43978f8e28ae91cb130011fbf02be511fea60795bfc2654bf3254b035",
       "solver_visible_metrics": [
         "geomean_selected_runtime_seconds",
         "max_selected_relative_error",
         "cases"
-      ],
-      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+      ]
     },
     "frontier_cs_2_0": {
       "adapter_version": "g1-beat-spec-v1-agent5h-r2",
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "graph_mining_method_selection",
-      "source_set_sha256": "sha256:95db68c9fbcb0cd0335f1dfae5c2e73edd4414f05ca87d60e7cbfb193e4701bf"
-    },
-    "generator": {
-      "candidate_id": "cand_000",
-      "commit": "0fd7ef1c52133a17c136afe51008bc7de637ae13",
-      "pipeline": "frontiersmith2",
-      "run_id": "r_top33_42a7abeeb7"
-    },
-    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-    "paper": {
-      "authors": [
-        "Anna A Arpaci-Dusseau",
-        "Zixiang Zhou",
-        "Xuhao Chen"
-      ],
-      "doi": null,
-      "paper_id": "vldb-2025-accurate-and-fast-approximate-graph-pattern-mining-at-scale-42a7abeeb7",
-      "pdf_url": "https://www.vldb.org/pvldb/vol18/p93-chen.pdf",
-      "title": "Accurate and Fast Approximate Graph Pattern Mining at Scale",
-      "venue": "PVLDB 18",
-      "year": 2025
+      "source_set_sha256": "sha256:5aaf3bc7e1b80f24591eca46d797f25f8c79ebd1047908f50824c6d00df1af95"
     },
     "runtime": {
       "allowed_paths": [
         "performance_model/src/main.py"
       ],
-      "language": "python",
       "submission_kind": "patch"
     }
   },
   "task_id": "frontier-cs-2.0-graph-mining-method-selection",
-  "version": "g1-beat-spec-v1-agent5h-r2-cfg-ffe0bb7e368c"
+  "version": "g1-beat-spec-v1-agent5h-r2-cfg-303b5c7f3900"
 }

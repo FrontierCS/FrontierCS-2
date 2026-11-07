@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:e0a19af4a3766e0c1ad13f237fc413ca5ca171d1c5e9ce49f515a5805bcb8431",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/batch_local_counting/e0a19af4a3766e0c1ad13f237fc413ca5ca171d1c5e9ce49f515a5805bcb8431.json",
+  "definition_digest": "sha256:c8b717f77246fa83ee7792141d2ee2677db527b96172c31c34d2e2ce5e980b85",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/batch_local_counting/c8b717f77246fa83ee7792141d2ee2677db527b96172c31c34d2e2ce5e980b85.json",
   "display_name": "Batch Local Counting",
   "driver_config": {
     "agent": {
@@ -39,10 +39,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "quota": {
@@ -68,19 +68,19 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_6EF5SWF59EQ5M7C2QKM2R1ZC53",
+    "task_version_id": "taskver_415XQXEF77GT80PT6SMWTWCGYW",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
       ],
       "cpu_millis": 1000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 4294967296,
       "result_path": "/frontier/output/result.json"
     }
   },
-  "family": "frontier-cs-2.0/systems",
+  "family": "Database",
   "metadata": {
     "accelerator": null,
     "datasets": {
@@ -97,37 +97,16 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 100,
-      "beat_spec_sha256": "sha256:84755aa5099acd470d60f50f8a73c7acc6e477236048f72d0c69f9cfd74ff325",
       "solver_visible_metrics": [
         "median_seconds"
-      ],
-      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+      ]
     },
     "frontier_cs_2_0": {
       "adapter_version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3",
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "batch_local_counting",
-      "source_set_sha256": "sha256:563816fc066098b1af7c91b97484322e2960f503e3c1c2f33536df1d46f6b747"
-    },
-    "generator": {
-      "candidate_id": "cand_002",
-      "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
-      "pipeline": "frontiersmith2",
-      "run_id": "r_top78_f094b386ab"
-    },
-    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-    "paper": {
-      "authors": [
-        "Qiyan Li",
-        "Jeffrey Xu Yu"
-      ],
-      "doi": null,
-      "paper_id": "vldb-2024-fast-local-subgraph-counting-f094b386ab",
-      "pdf_url": "https://www.vldb.org/pvldb/vol17/p1967-li.pdf",
-      "title": "Fast Local Subgraph Counting",
-      "venue": "PVLDB 17",
-      "year": 2024
+      "source_set_sha256": "sha256:773f87b6baf4dfe42f619fc3be725ea6a31a8f9620ca5f7793205e50e7f152f8"
     },
     "runtime": {
       "allowed_paths": [
@@ -142,21 +121,9 @@
         "plan/tree.h",
         "plan/tree.cpp"
       ],
-      "language": "cpp",
       "submission_kind": "patch"
-    },
-    "scoring": {
-      "anchors": {
-        "four_times_speedup": 50,
-        "no_speedup": 0
-      },
-      "mapping": "L = max(0, median_log_ratio); score = 100 * L / (2 + L)",
-      "objective": "Median of five paired full-suite log2(naive_seconds / candidate_seconds).",
-      "raw_timing_metrics_preserved": true,
-      "reference_independent": true,
-      "version": "paired-log-ratio-rational-v2"
     }
   },
   "task_id": "frontier-cs-2.0-batch-local-counting",
-  "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3-cfg-e0a19af4a376"
+  "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3-cfg-c8b717f77246"
 }

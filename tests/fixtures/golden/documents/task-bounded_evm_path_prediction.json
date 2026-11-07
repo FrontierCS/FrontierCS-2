@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:07201c443b9c9a16bfa93009d7c7326c5dfb248e04226a43bed485b639007a3f",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/bounded_evm_path_prediction/07201c443b9c9a16bfa93009d7c7326c5dfb248e04226a43bed485b639007a3f.json",
+  "definition_digest": "sha256:3171adfeb73a7de4af7b68e5e1736475d5b9f132746a5df4f3b9859fb81027e7",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/bounded_evm_path_prediction/3171adfeb73a7de4af7b68e5e1736475d5b9f132746a5df4f3b9859fb81027e7.json",
   "display_name": "Bounded EVM Path Prediction",
   "driver_config": {
     "agent": {
@@ -39,10 +39,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "quota": {
@@ -68,19 +68,19 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_7PV2N6R6XHDHNVFK3MHSPFD36D",
+    "task_version_id": "taskver_5D6SQX219BMMQV0PNC6ATNC0ZH",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
       ],
       "cpu_millis": 8000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592,
       "result_path": "/frontier/output/result.json"
     }
   },
-  "family": "frontier-cs-2.0/systems",
+  "family": "Database",
   "metadata": {
     "accelerator": null,
     "datasets": {
@@ -97,53 +97,27 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 50,
-      "beat_spec_sha256": "sha256:c2d68ab8563de1517783c588c995fa3fd9b5e27bbe5fff86a228ca2cfa147aee",
       "solver_visible_metrics": [
         "raw_quality",
         "branch_accuracy",
         "transaction_path_accuracy",
         "observations"
-      ],
-      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+      ]
     },
     "frontier_cs_2_0": {
       "adapter_version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3",
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "bounded_evm_path_prediction",
-      "source_set_sha256": "sha256:49409d8aa882a15f0445402777914d9b9555992af9a4e6ff6a1802e5fa097275"
-    },
-    "generator": {
-      "candidate_id": "cand_001",
-      "commit": "d3be1581cdf843fa8635c9acaad39f25847797a5",
-      "pipeline": "frontiersmith2",
-      "run_id": "r_top75_6e3582446a"
-    },
-    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-    "paper": {
-      "authors": [
-        "Shijie Zhang",
-        "Ru Cheng",
-        "Xinpeng Liu",
-        "Jiang Xiao",
-        "Hai Jin",
-        "Bo Li"
-      ],
-      "doi": null,
-      "paper_id": "vldb-2025-seer-accelerating-blockchain-transaction-execution-by-fine-grained-branch-prediction-6e3582446a",
-      "pdf_url": "https://www.vldb.org/pvldb/vol18/p822-xiao.pdf",
-      "title": "Seer: Accelerating Blockchain Transaction Execution by Fine-Grained Branch Prediction",
-      "venue": "PVLDB 18",
-      "year": 2025
+      "source_set_sha256": "sha256:4e627d768056e22947d2b23d06b6837750770b039169b042c36ade75925e61c3"
     },
     "runtime": {
       "allowed_paths": [
         "core/vm/predictor.go"
       ],
-      "language": "go",
       "submission_kind": "patch"
     }
   },
   "task_id": "frontier-cs-2.0-bounded-evm-path-prediction",
-  "version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3-cfg-07201c443b9c"
+  "version": "g1-beat-spec-v2-agent5h-r2-beat-spec-v3-cfg-3171adfeb73a"
 }

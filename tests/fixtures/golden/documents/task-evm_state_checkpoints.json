@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:f32d770095b213a78f274548ac799724338fedaf80aa50ae53c371a27aece325",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/evm_state_checkpoints/f32d770095b213a78f274548ac799724338fedaf80aa50ae53c371a27aece325.json",
+  "definition_digest": "sha256:1c8c8cab7e3b381bf86333bff9a54abd0be327d6269b4aab0cc4c675f1cff3c0",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/evm_state_checkpoints/1c8c8cab7e3b381bf86333bff9a54abd0be327d6269b4aab0cc4c675f1cff3c0.json",
   "display_name": "EVM State Checkpoints",
   "driver_config": {
     "agent": {
@@ -39,10 +39,10 @@
       "audit": {
         "max_bundle_bytes": 34359738368,
         "max_model_request_bytes": 67108864,
-        "max_model_response_bytes": 8388608,
+        "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 8388608,
-        "max_ssh_sessions": 32
+        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_sessions": 2048
       }
     },
     "quota": {
@@ -68,19 +68,19 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_1RG0ZQARXVTFG5RPJ88WF90NVT",
+    "task_version_id": "taskver_59XMAXZ5SHWGTVW91K3ZV8KVX2",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
       ],
       "cpu_millis": 4000,
       "evidence_path": "/frontier/output/evidence.tar.zst",
-      "max_evidence_bytes": 4194304,
+      "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592,
       "result_path": "/frontier/output/result.json"
     }
   },
-  "family": "frontier-cs-2.0/systems",
+  "family": "Database",
   "metadata": {
     "accelerator": null,
     "datasets": {
@@ -97,53 +97,27 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 100,
-      "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
       "solver_visible_metrics": [
         "committed_tps",
         "checkpoint_create_ns",
         "checkpoint_restore_ns",
         "retained_bytes_per_checkpoint"
-      ],
-      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+      ]
     },
     "frontier_cs_2_0": {
       "adapter_version": "g1-beat-spec-v1-agent5h-r2",
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "evm_state_checkpoints",
-      "source_set_sha256": "sha256:ad85df99b6bf632c0785c7c7da581507d1a5e29cbb5736e202637628d4bf0de0"
-    },
-    "generator": {
-      "candidate_id": "cand_002",
-      "commit": "3676f0c07e03214559968f631baf9752726dd29e",
-      "pipeline": "frontiersmith2",
-      "run_id": "r_top66_fa44bf0664"
-    },
-    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
-    "paper": {
-      "authors": [
-        "Zhihao Chen",
-        "Tianji Yang",
-        "Yixiao Zheng",
-        "Zhao Zhang",
-        "Cheqing Jin",
-        "Aoying Zhou"
-      ],
-      "doi": null,
-      "paper_id": "vldb-2024-spectrum-speedy-and-strictly-deterministic-smart-contract-transactions-for-blockchain-ledgers-fa44bf0664",
-      "pdf_url": "https://www.vldb.org/pvldb/vol17/p2541-zhang.pdf",
-      "title": "Spectrum: Speedy and Strictly-Deterministic Smart Contract Transactions for Blockchain Ledgers",
-      "venue": "PVLDB 17",
-      "year": 2024
+      "source_set_sha256": "sha256:8be9b3f6812d42a830762cd5ca34645b744b3bc6f714428aea1e05502a30caad"
     },
     "runtime": {
       "allowed_paths": [
         "lib/evmcow/execution_state.hpp"
       ],
-      "language": "cpp",
       "submission_kind": "patch"
     }
   },
   "task_id": "frontier-cs-2.0-evm-state-checkpoints",
-  "version": "g1-beat-spec-v1-agent5h-r2-cfg-f32d770095b2"
+  "version": "g1-beat-spec-v1-agent5h-r2-cfg-1c8c8cab7e3b"
 }
