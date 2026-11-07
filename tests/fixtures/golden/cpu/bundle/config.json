@@ -36,7 +36,7 @@
       "max_memory_bytes": 68719476736,
       "placement": {
         "node_selector": {
-          "eks.amazonaws.com/nodegroup": "frontiercs2-preview-eval16"
+          "eks.amazonaws.com/nodegroup": "example-cpu-nodegroup"
         }
       }
     },

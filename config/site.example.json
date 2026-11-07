@@ -103,7 +103,7 @@
     "cpu_machines": {
       "placement": {
         "node_selector": {
-          "eks.amazonaws.com/nodegroup": "frontiercs2-preview-eval16"
+          "eks.amazonaws.com/nodegroup": "example-cpu-nodegroup"
         }
       },
       "max_instances": 4,

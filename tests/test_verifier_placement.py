@@ -219,7 +219,7 @@ class CpuMachineSiteTests(unittest.TestCase):
     EVAL16 = {
         "MANAGEMENT_CPU_RUNNER_BACKEND": "kubernetes",
         "MANAGEMENT_CPU_RUNNER_PLACEMENT":
-            '{"node_selector":{"eks.amazonaws.com/nodegroup":"frontiercs2-preview-eval16"}}',
+            '{"node_selector":{"eks.amazonaws.com/nodegroup":"example-cpu-nodegroup"}}',
         "MANAGEMENT_CPU_MACHINE_MAX_INSTANCES": "4",
         "MANAGEMENT_CPU_MACHINE_MAX_CPU_MILLIS": "16000",
         "MANAGEMENT_CPU_MACHINE_MAX_MEMORY_BYTES": "68719476736",
@@ -240,7 +240,7 @@ class CpuMachineSiteTests(unittest.TestCase):
         return next(x for x in manifest["items"]
                     if x["kind"] == kind and x["metadata"]["name"] == name)
 
-    def test_the_example_site_renders_eval16_and_absent_renders_no_key(self):
+    def test_the_example_site_renders_its_cpu_machines_and_absent_renders_no_key(self):
         declared = self.render(self.raw)
         cm = self.item(declared, "ConfigMap", "frontier-management-config")
         self.assertEqual({k: cm["data"][k] for k in self.KEYS}, self.EVAL16)
