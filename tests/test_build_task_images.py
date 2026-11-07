@@ -1698,10 +1698,10 @@ class VerifierSmokeTests(unittest.TestCase):
                 self.seen, self.record = seen, record
 
     def test_a_cpu_sandbox_task_smokes_that_its_image_reads_the_declared_sandboxes(self):
-        # cute_crest's judge leases Driver CPU machines: without a Driver the smoke checks that
+        # polygon's judge leases a Driver CPU machine: without a Driver the smoke checks that
         # the image's shared adapter reads exactly task.toml's command test sandboxes.
-        root = renderer.problem_directory(build_task_images.TASK_ROOT / "problems", "cute_crest")
-        definition = renderer.render(root, "cute_crest")
+        root = renderer.problem_directory(build_task_images.TASK_ROOT / "problems", "polygon")
+        definition = renderer.render(root, "polygon")
         expected = task_manifest.verifier_parameters(task_manifest.read_task(root))["sandboxes"]
         calls = []
 
@@ -1713,7 +1713,7 @@ class VerifierSmokeTests(unittest.TestCase):
             mock.patch.object(build_task_images, "run_in_pod", side_effect=pod),
             mock.patch.object(build_task_images, "fixture_smoke", return_value=[]),
         ):
-            verdict = build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "cute_crest", root, definition)
+            verdict = build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "polygon", root, definition)
         self.assertEqual(verdict, "command test sandboxes search: ok")
         [(image, mode, command)] = calls
         self.assertEqual((image, mode), ("img@sha256:" + "a" * 64, "train"))
@@ -1730,7 +1730,7 @@ class VerifierSmokeTests(unittest.TestCase):
             self.assertRaisesRegex(build_task_images.BuildFailure,
                                    "does not read task.toml's command test sandboxes"),
         ):
-            build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "cute_crest", root, definition)
+            build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "polygon", root, definition)
 
     def test_cpu_task_judges_the_reference_in_train_mode_in_the_production_layout(self):
         verdict, seen = self.cpu_smoke({"status": "passed", "raw_score": 50.0, "metrics": {}})

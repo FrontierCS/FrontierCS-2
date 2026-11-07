@@ -12,7 +12,7 @@
     },
     "display_name": "FARGO paper-aligned query core",
     "family": "Database",
-    "image_tag": "source-a29de71c49bc4b7bc587aae5a5d3f05609bb4e0fd31a8024910a7bdb64fde66d",
+    "image_tag": "source-fd68548dd652191d962a8aec8ea6a80a3f6a5395fe3e892d2966fb96581072de",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -64,7 +64,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a29de71c49bc4b7bc587aae5a5d3f05609bb4e0fd31a8024910a7bdb64fde66d"
+      "source_set_sha256": "sha256:fd68548dd652191d962a8aec8ea6a80a3f6a5395fe3e892d2966fb96581072de"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -95,7 +95,7 @@
     },
     "display_name": "Approximate-MIPS Query Stopping",
     "family": "Database",
-    "image_tag": "source-4215fc960b1dcd385ef5f965ac54ea14dfc7e903820ecd093b63602455065c35",
+    "image_tag": "source-089b88dcda9d3ba93d2cfa66c577f398326d7fa7d36315b2c97e665050c12917",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -146,7 +146,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:4215fc960b1dcd385ef5f965ac54ea14dfc7e903820ecd093b63602455065c35"
+      "source_set_sha256": "sha256:089b88dcda9d3ba93d2cfa66c577f398326d7fa7d36315b2c97e665050c12917"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -177,7 +177,7 @@
     },
     "display_name": "Reusable Library Candidates",
     "family": "Programming Language",
-    "image_tag": "source-a6bc62c28c17288ff60b7212b5881e2982e3335bfaa169e02ad1c818442c9a01",
+    "image_tag": "source-dfedfad3767214d9122a7a7fe59f3aaa26538f47ec5dd906278c4f37b5522eb9",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -228,7 +228,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a6bc62c28c17288ff60b7212b5881e2982e3335bfaa169e02ad1c818442c9a01"
+      "source_set_sha256": "sha256:dfedfad3767214d9122a7a7fe59f3aaa26538f47ec5dd906278c4f37b5522eb9"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -259,7 +259,7 @@
     },
     "display_name": "Batch Local Counting",
     "family": "Database",
-    "image_tag": "source-773f87b6baf4dfe42f619fc3be725ea6a31a8f9620ca5f7793205e50e7f152f8",
+    "image_tag": "source-2e02c652ebc1b22dab90cc6a35c2e1e04908c768b67204491c65d1397b6c2e28",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -316,7 +316,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:773f87b6baf4dfe42f619fc3be725ea6a31a8f9620ca5f7793205e50e7f152f8"
+      "source_set_sha256": "sha256:2e02c652ebc1b22dab90cc6a35c2e1e04908c768b67204491c65d1397b6c2e28"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -347,7 +347,7 @@
     },
     "display_name": "BBQ bitmap traversal",
     "family": "Network",
-    "image_tag": "source-65cc9b1e3650413e3429ce4a36accb02b40398050fbd742078e8338cb68a93c0",
+    "image_tag": "source-49900540bc25be6b2814669000f4320902e9fb81adb192051de8c0171e299844",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -401,7 +401,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:65cc9b1e3650413e3429ce4a36accb02b40398050fbd742078e8338cb68a93c0"
+      "source_set_sha256": "sha256:49900540bc25be6b2814669000f4320902e9fb81adb192051de8c0171e299844"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -432,7 +432,7 @@
     },
     "display_name": "Binary Fuse Filter Construction and Lookup",
     "family": "Theory",
-    "image_tag": "source-ab031d00eba8742a216f5a4076db860c3d0a0c0d8518c015766a6605fcb6a3d3",
+    "image_tag": "source-217c7665afb4d70bdf744828f71f0dd8c63c40f0fda7cd926654d53687771526",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -484,7 +484,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ab031d00eba8742a216f5a4076db860c3d0a0c0d8518c015766a6605fcb6a3d3"
+      "source_set_sha256": "sha256:217c7665afb4d70bdf744828f71f0dd8c63c40f0fda7cd926654d53687771526"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -515,7 +515,7 @@
     },
     "display_name": "Bounded EVM Path Prediction",
     "family": "Database",
-    "image_tag": "source-4e627d768056e22947d2b23d06b6837750770b039169b042c36ade75925e61c3",
+    "image_tag": "source-8aef7980386356299ca5da4f5bbf8177368b42be5aec4e44c329862c330107f2",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -566,7 +566,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:4e627d768056e22947d2b23d06b6837750770b039169b042c36ade75925e61c3"
+      "source_set_sha256": "sha256:8aef7980386356299ca5da4f5bbf8177368b42be5aec4e44c329862c330107f2"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -597,7 +597,7 @@
     },
     "display_name": "CKKS Precision Propagation at 2,048 Slots",
     "family": "Crypto",
-    "image_tag": "source-56ef80fafe68db4c30a7b5a4212becf2659a4030970dc566a52d52aff9d8c7c6",
+    "image_tag": "source-a9b2872e76ecf1695ca0b95ce816a039937b6161546a8cf59d981b81bfb67740",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -647,7 +647,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:56ef80fafe68db4c30a7b5a4212becf2659a4030970dc566a52d52aff9d8c7c6"
+      "source_set_sha256": "sha256:a9b2872e76ecf1695ca0b95ce816a039937b6161546a8cf59d981b81bfb67740"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -678,7 +678,7 @@
     },
     "display_name": "Fixed-Length Clustered Sparse Multiplication",
     "family": "Arch",
-    "image_tag": "source-268761cda890207c12b9481a3ddf898aaa7297fa2a381c6238558a35ce287228",
+    "image_tag": "source-662023af113e20e25d6447899d39fb77f4f842c954e538065e5ceb7a88e24536",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -739,7 +739,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:268761cda890207c12b9481a3ddf898aaa7297fa2a381c6238558a35ce287228"
+      "source_set_sha256": "sha256:662023af113e20e25d6447899d39fb77f4f842c954e538065e5ceb7a88e24536"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -770,7 +770,7 @@
     },
     "display_name": "Search Strategy for Concolic Testing",
     "family": "Software Engineering",
-    "image_tag": "source-324981b8f8ab28f1b90b06e47cade5fd0df6bd9a18b82248cf415e912f48439e",
+    "image_tag": "source-e2a012dd473b8b8cef5fe2a03e7c02837dabf150f2bb00ba26727072b917b3e4",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -823,7 +823,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:324981b8f8ab28f1b90b06e47cade5fd0df6bd9a18b82248cf415e912f48439e"
+      "source_set_sha256": "sha256:e2a012dd473b8b8cef5fe2a03e7c02837dabf150f2bb00ba26727072b917b3e4"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -868,7 +868,7 @@
         "max_gpu_seconds": 13200
       }
     },
-    "image_tag": "source-d96fab76e425af74a43c04b9bf1be6f9ea28c69ae303d659e3dd040160ebf03b",
+    "image_tag": "source-ec2c187ed301ceda2c8ca371be773ddd0e92f675dbc440cf5c0772fcd720a2e7",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -933,7 +933,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d96fab76e425af74a43c04b9bf1be6f9ea28c69ae303d659e3dd040160ebf03b"
+      "source_set_sha256": "sha256:ec2c187ed301ceda2c8ca371be773ddd0e92f675dbc440cf5c0772fcd720a2e7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -978,7 +978,7 @@
         "max_gpu_seconds": 5400
       }
     },
-    "image_tag": "source-17e4289511ac885654d1fd878bfd8132818226dbfc0a350975f41202bc17fae7",
+    "image_tag": "source-13d777e814b548d11787442d65524e1d28ee721e192853cd43e14f649c960be7",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1046,7 +1046,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:17e4289511ac885654d1fd878bfd8132818226dbfc0a350975f41202bc17fae7"
+      "source_set_sha256": "sha256:13d777e814b548d11787442d65524e1d28ee721e192853cd43e14f649c960be7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1077,7 +1077,7 @@
     },
     "display_name": "Closed-loop action sampling",
     "family": "Robotics",
-    "image_tag": "source-a78048c65eb4415a5a0ecf63974eab77ef3435ae3b2006a13c32d7223f7db37d",
+    "image_tag": "source-3c817d77dfd0c5085fdcf1d7059429cdd58ce5deafeda13edd973c56e64614e4",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1129,7 +1129,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a78048c65eb4415a5a0ecf63974eab77ef3435ae3b2006a13c32d7223f7db37d"
+      "source_set_sha256": "sha256:3c817d77dfd0c5085fdcf1d7059429cdd58ce5deafeda13edd973c56e64614e4"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1174,7 +1174,7 @@
         "max_gpu_seconds": 4500
       }
     },
-    "image_tag": "source-67a36a4920f0f92a5e0dfb280c67be184fb6d74e48235fc9ed1782fb3bb23be0",
+    "image_tag": "source-6033362e3a83517deacf963d81e392abbcba74ac5baeec302c240ac3189d2fde",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1239,7 +1239,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:67a36a4920f0f92a5e0dfb280c67be184fb6d74e48235fc9ed1782fb3bb23be0"
+      "source_set_sha256": "sha256:6033362e3a83517deacf963d81e392abbcba74ac5baeec302c240ac3189d2fde"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1270,7 +1270,7 @@
     },
     "display_name": "Exact Sequence Alignment",
     "family": "Bioinformatics",
-    "image_tag": "source-4a3ff5328f2206e043ce2453ae35a47c683df0f3e9cfef8c50d6b4e531dbc04b",
+    "image_tag": "source-b3d1dbfefe989ca896d887a47a54958627e9aa01a8c7d21928a0141e00a3402b",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1316,7 +1316,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:4a3ff5328f2206e043ce2453ae35a47c683df0f3e9cfef8c50d6b4e531dbc04b"
+      "source_set_sha256": "sha256:b3d1dbfefe989ca896d887a47a54958627e9aa01a8c7d21928a0141e00a3402b"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1347,7 +1347,7 @@
     },
     "display_name": "E-Graph Invariant Restoration",
     "family": "Programming Language",
-    "image_tag": "source-d29cc5aa5da652f20909828a11c79afa73bf683a22d2c06ec5182faeffad6721",
+    "image_tag": "source-5e10f28b50a8c0b13f4d5e10aa8e542bd10731060eaa0eb8d0222ad3a54e9085",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1399,7 +1399,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d29cc5aa5da652f20909828a11c79afa73bf683a22d2c06ec5182faeffad6721"
+      "source_set_sha256": "sha256:5e10f28b50a8c0b13f4d5e10aa8e542bd10731060eaa0eb8d0222ad3a54e9085"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1430,7 +1430,7 @@
     },
     "display_name": "EVM State Checkpoints",
     "family": "Database",
-    "image_tag": "source-8be9b3f6812d42a830762cd5ca34645b744b3bc6f714428aea1e05502a30caad",
+    "image_tag": "source-5ee7a830737eede489e01f9506b9f4b1d6798d7883d624826f44e6d2f900f2bc",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1481,7 +1481,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:8be9b3f6812d42a830762cd5ca34645b744b3bc6f714428aea1e05502a30caad"
+      "source_set_sha256": "sha256:5ee7a830737eede489e01f9506b9f4b1d6798d7883d624826f44e6d2f900f2bc"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1526,7 +1526,7 @@
         "max_gpu_seconds": 86400
       }
     },
-    "image_tag": "source-daf6b561145155da67b8ea2b2436ae2c06dcfef7ab76134c52feafc5cd30049c",
+    "image_tag": "source-8c10e021f2765e76e7435a681efce26376cfad7e6a3519bc9ff4e9e9d700db6a",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1590,7 +1590,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:daf6b561145155da67b8ea2b2436ae2c06dcfef7ab76134c52feafc5cd30049c"
+      "source_set_sha256": "sha256:8c10e021f2765e76e7435a681efce26376cfad7e6a3519bc9ff4e9e9d700db6a"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1635,7 +1635,7 @@
         "max_gpu_seconds": 15000
       }
     },
-    "image_tag": "source-a8f29fd40501308e245d3e05ade787f407c1f55883bee005907cfadd424369d2",
+    "image_tag": "source-f8f57c0cf408f62a1ee69a0712abc2c3b83aaccc034ef30c13984e936c348d37",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -1700,7 +1700,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a8f29fd40501308e245d3e05ade787f407c1f55883bee005907cfadd424369d2"
+      "source_set_sha256": "sha256:f8f57c0cf408f62a1ee69a0712abc2c3b83aaccc034ef30c13984e936c348d37"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1731,7 +1731,7 @@
     },
     "display_name": "Access-Pattern Rewriting",
     "family": "Programming Language",
-    "image_tag": "source-936aad45d8caedf62c7fcd5e8f1791d76b4930984cdec441554e64a28b3f229c",
+    "image_tag": "source-86dc9c0cb3a662e695404acbd85f2710d8307bca0c284dba1fc31924b7cde925",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1782,7 +1782,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:936aad45d8caedf62c7fcd5e8f1791d76b4930984cdec441554e64a28b3f229c"
+      "source_set_sha256": "sha256:86dc9c0cb3a662e695404acbd85f2710d8307bca0c284dba1fc31924b7cde925"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1813,7 +1813,7 @@
     },
     "display_name": "Graph Mining Method Selection",
     "family": "Database",
-    "image_tag": "source-5aaf3bc7e1b80f24591eca46d797f25f8c79ebd1047908f50824c6d00df1af95",
+    "image_tag": "source-aa25b92e795464f39bc3517ae49248f572380bdaf41e713a6ad5df6e8f6b6a45",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1863,7 +1863,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:5aaf3bc7e1b80f24591eca46d797f25f8c79ebd1047908f50824c6d00df1af95"
+      "source_set_sha256": "sha256:aa25b92e795464f39bc3517ae49248f572380bdaf41e713a6ad5df6e8f6b6a45"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1894,7 +1894,7 @@
     },
     "display_name": "Hypergraph Core Numbers",
     "family": "HPC",
-    "image_tag": "source-8681badba90358ea893764faa89bdcb0b2ff6440f9fcd033becba7acfca7f2c9",
+    "image_tag": "source-7c4e900a5191a8c67e7de0344f825087261eacbb0d5e7862d88a2d9f192c7d55",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1944,7 +1944,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:8681badba90358ea893764faa89bdcb0b2ff6440f9fcd033becba7acfca7f2c9"
+      "source_set_sha256": "sha256:7c4e900a5191a8c67e7de0344f825087261eacbb0d5e7862d88a2d9f192c7d55"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -1989,7 +1989,7 @@
         "max_gpu_seconds": 25200
       }
     },
-    "image_tag": "source-c3131ae354bbc3711185a3aceb72a30d283c7bdf7431c04e852aa45a07e541d0",
+    "image_tag": "source-d93c5bfc60894f85f6ec2d3399a3e5f8595195b6904e92d0986ceed2edd4c0d7",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2054,7 +2054,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:c3131ae354bbc3711185a3aceb72a30d283c7bdf7431c04e852aa45a07e541d0"
+      "source_set_sha256": "sha256:d93c5bfc60894f85f6ec2d3399a3e5f8595195b6904e92d0986ceed2edd4c0d7"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2085,7 +2085,7 @@
     },
     "display_name": "Join-Tree Rewriting",
     "family": "Database",
-    "image_tag": "source-0fbd1519057702639668584d8a3a4e9f9a0f532c3e1b0cf90d5ce1c488203070",
+    "image_tag": "source-312fce7218ef69f93674317f4821f76441b56dd233e062a6689c9f1baab828d1",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2134,7 +2134,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:0fbd1519057702639668584d8a3a4e9f9a0f532c3e1b0cf90d5ce1c488203070"
+      "source_set_sha256": "sha256:312fce7218ef69f93674317f4821f76441b56dd233e062a6689c9f1baab828d1"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2179,7 +2179,7 @@
         "max_gpu_seconds": 1800
       }
     },
-    "image_tag": "source-88fd111daf4c9a585a32cc5baea41d507e4dff91ae9d1f56c362843f701b412a",
+    "image_tag": "source-a422632e322fafb0631d1f3e1aa356ec524b9ead6287e7754c09069b7d8fccb9",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2243,7 +2243,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:88fd111daf4c9a585a32cc5baea41d507e4dff91ae9d1f56c362843f701b412a"
+      "source_set_sha256": "sha256:a422632e322fafb0631d1f3e1aa356ec524b9ead6287e7754c09069b7d8fccb9"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2288,7 +2288,7 @@
         "max_gpu_seconds": 18000
       }
     },
-    "image_tag": "source-ea0ea75e498299ca2d79d81d6b95a9e85d4e906b72925d29c41311dc98250fd0",
+    "image_tag": "source-c6a7314f728c0bf6f745c49c16ed9441e48da270aa648277f483939f413afec2",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2353,7 +2353,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ea0ea75e498299ca2d79d81d6b95a9e85d4e906b72925d29c41311dc98250fd0"
+      "source_set_sha256": "sha256:c6a7314f728c0bf6f745c49c16ed9441e48da270aa648277f483939f413afec2"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2398,7 +2398,7 @@
         "max_gpu_seconds": 16200
       }
     },
-    "image_tag": "source-472051f9b02c7df27d658579609cbd9caa897fa765ca03cbac5a9fd58e7e4ab7",
+    "image_tag": "source-515befc9be648aa5360165fce9d14e218c509b2a36b604e4ae009fe93f270226",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2463,7 +2463,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:472051f9b02c7df27d658579609cbd9caa897fa765ca03cbac5a9fd58e7e4ab7"
+      "source_set_sha256": "sha256:515befc9be648aa5360165fce9d14e218c509b2a36b604e4ae009fe93f270226"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2494,7 +2494,7 @@
     },
     "display_name": "Latent Objective Recovery",
     "family": "Machine Learning",
-    "image_tag": "source-3b48d4a86a4c23131a4a7d19fd84f60337234b823e23f9b52c031505d027ef2d",
+    "image_tag": "source-841d8e28b08e003e3acc1b1d67cfd931388399a77950bb764037ef618b7c9c3a",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2548,7 +2548,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:3b48d4a86a4c23131a4a7d19fd84f60337234b823e23f9b52c031505d027ef2d"
+      "source_set_sha256": "sha256:841d8e28b08e003e3acc1b1d67cfd931388399a77950bb764037ef618b7c9c3a"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2593,7 +2593,7 @@
         "max_gpu_seconds": 7200
       }
     },
-    "image_tag": "source-f6a3d86f7b903e72b636cdda423f15d9f1480b014195c9fba8a5cbaceea80d25",
+    "image_tag": "source-3aa8c89c4490b9f4b5a03ebace96ffe5a6808096446580265912b8f79d21d3c3",
     "metadata": {
       "accelerator": {
         "agent_sandbox": false,
@@ -2666,7 +2666,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f6a3d86f7b903e72b636cdda423f15d9f1480b014195c9fba8a5cbaceea80d25"
+      "source_set_sha256": "sha256:3aa8c89c4490b9f4b5a03ebace96ffe5a6808096446580265912b8f79d21d3c3"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2697,7 +2697,7 @@
     },
     "display_name": "Structured-LWE Public Witness Recovery",
     "family": "Crypto",
-    "image_tag": "source-04d584a32f4b53596f51a41c56285b6a036590efb0eb2d71e8382dfdaca61178",
+    "image_tag": "source-4d99c240da4e53d8e44f4da0968cbb0129728e8b35490698cc27b14a14a112bf",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2752,7 +2752,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:04d584a32f4b53596f51a41c56285b6a036590efb0eb2d71e8382dfdaca61178"
+      "source_set_sha256": "sha256:4d99c240da4e53d8e44f4da0968cbb0129728e8b35490698cc27b14a14a112bf"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2783,7 +2783,7 @@
     },
     "display_name": "MetaOpt Combined-TE Gap Search",
     "family": "Network",
-    "image_tag": "source-8f1231fa034578d301a7b31dec0189650875efa2649050b098603ff851c3aff0",
+    "image_tag": "source-bc7070c75d153ad2ad1061a42ba9814663f314c56d548f54c7d535130ba2248d",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -2833,7 +2833,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:8f1231fa034578d301a7b31dec0189650875efa2649050b098603ff851c3aff0"
+      "source_set_sha256": "sha256:bc7070c75d153ad2ad1061a42ba9814663f314c56d548f54c7d535130ba2248d"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2878,7 +2878,7 @@
         "max_gpu_seconds": 30600
       }
     },
-    "image_tag": "source-1e064c4cb1eee89eacbd288384a7627c0ebe58b8bda15cccd18c5823c2f3aca8",
+    "image_tag": "source-5177585c714c8637c21c120da6e68955552f266ab51beb6c82be5262cd3b9826",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -2947,7 +2947,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:1e064c4cb1eee89eacbd288384a7627c0ebe58b8bda15cccd18c5823c2f3aca8"
+      "source_set_sha256": "sha256:5177585c714c8637c21c120da6e68955552f266ab51beb6c82be5262cd3b9826"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -2992,7 +2992,7 @@
         "max_gpu_seconds": 30000
       }
     },
-    "image_tag": "source-1406c001e2ede5292e3fa9f56f027c7338e7ec85573a21732a37c8aee69a1e7c",
+    "image_tag": "source-a04d946864ae07cd5363f2eca7f4a03d3b2413b49d972984d76681253badb0ca",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3059,7 +3059,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:1406c001e2ede5292e3fa9f56f027c7338e7ec85573a21732a37c8aee69a1e7c"
+      "source_set_sha256": "sha256:a04d946864ae07cd5363f2eca7f4a03d3b2413b49d972984d76681253badb0ca"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3090,7 +3090,7 @@
     },
     "display_name": "Exact DBSCAN Connectivity",
     "family": "HPC",
-    "image_tag": "source-88d9386354ddc0fbb964194e1f5a10f8352b8650508a56ad219a661548fde3d8",
+    "image_tag": "source-3738489ff29405d9764c608217ea97a22582bfd825c946066ee9327ce3788d7f",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3140,7 +3140,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:88d9386354ddc0fbb964194e1f5a10f8352b8650508a56ad219a661548fde3d8"
+      "source_set_sha256": "sha256:3738489ff29405d9764c608217ea97a22582bfd825c946066ee9327ce3788d7f"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3171,7 +3171,7 @@
     },
     "display_name": "In-place Integer Redistribution",
     "family": "HPC",
-    "image_tag": "source-9d1a578af9c7d4b6df952e5ec4dad0a13d1cc3c12fda712a2e9c80d366568242",
+    "image_tag": "source-cec6b4b52ab7c3fb670fe3a8c240fb78121ab32dd5e368ef2f60065c9ecdbd84",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3222,7 +3222,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:9d1a578af9c7d4b6df952e5ec4dad0a13d1cc3c12fda712a2e9c80d366568242"
+      "source_set_sha256": "sha256:cec6b4b52ab7c3fb670fe3a8c240fb78121ab32dd5e368ef2f60065c9ecdbd84"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3253,7 +3253,7 @@
     },
     "display_name": "ParButterfly Exact Counting",
     "family": "HPC",
-    "image_tag": "source-ccd284fce569580522317409764c476745f3a3c0c2941c6c5b1c02f4c22e83cb",
+    "image_tag": "source-5aa6bac790b595317f908954c44470a261731240226cc47edb74afc078b8eee2",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3309,7 +3309,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:ccd284fce569580522317409764c476745f3a3c0c2941c6c5b1c02f4c22e83cb"
+      "source_set_sha256": "sha256:5aa6bac790b595317f908954c44470a261731240226cc47edb74afc078b8eee2"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3340,7 +3340,7 @@
     },
     "display_name": "Persistent Treap Update Engine",
     "family": "Database",
-    "image_tag": "source-6f08bf85b914b8fc7b47a88c0beb8c01989b4d47d3d9fe94c89e28acdce524f7",
+    "image_tag": "source-2721310bd1b71468d543f693e1db382d1afb6a651a3029ddc764184c50e38253",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3388,7 +3388,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:6f08bf85b914b8fc7b47a88c0beb8c01989b4d47d3d9fe94c89e28acdce524f7"
+      "source_set_sha256": "sha256:2721310bd1b71468d543f693e1db382d1afb6a651a3029ddc764184c50e38253"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3419,7 +3419,7 @@
     },
     "display_name": "Polar-Factor Approximation",
     "family": "Machine Learning",
-    "image_tag": "source-f348cc66e8fabbdf16f2eac139bc6909d68333841eb430aa560bf007c48823b4",
+    "image_tag": "source-a63ad2f3855c998a09f94e5d7a9df576f6ce9c9f7e309a55c2f4fb496e7abc4d",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3473,7 +3473,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f348cc66e8fabbdf16f2eac139bc6909d68333841eb430aa560bf007c48823b4"
+      "source_set_sha256": "sha256:a63ad2f3855c998a09f94e5d7a9df576f6ce9c9f7e309a55c2f4fb496e7abc4d"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3497,6 +3497,9 @@
       "memory_bytes": 8589934592,
       "workspace_bytes": 4294967296
     },
+    "cpu_runner_images": [
+      "verifier_cpu"
+    ],
     "dataset_extension": "json",
     "datasets": {
       "eval_sha256": "sha256:ba22fe3c8c873468455b9b78ffa024c2540c1d0c79b0e0ebb7a5c6a6b589e47d",
@@ -3504,7 +3507,7 @@
     },
     "display_name": "SQL Counterexample Search",
     "family": "Programming Language",
-    "image_tag": "source-461d2df24b4c1701b3facddbe1633a2bd1194efa08a9afa11206241f7e49c472",
+    "image_tag": "source-6fdfe6543399fd78495cf0f7e3ac8b671181ee9caac2acf06f1bad8bd0e33478",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3545,20 +3548,20 @@
         "max_model_request_bytes": 67108864,
         "max_model_response_bytes": 67108864,
         "max_model_sessions": 1024,
-        "max_ssh_bytes_per_direction": 536870912,
+        "max_ssh_bytes_per_direction": 67108864,
         "max_ssh_sessions": 2048
       }
     },
     "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
     "quota": {
-      "eval_timeout_seconds": 330,
+      "eval_timeout_seconds": 1800,
       "max_train_calls": 100,
       "max_train_wall_seconds": 12000,
       "wall_time_seconds": 18000
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:461d2df24b4c1701b3facddbe1633a2bd1194efa08a9afa11206241f7e49c472"
+      "source_set_sha256": "sha256:6fdfe6543399fd78495cf0f7e3ac8b671181ee9caac2acf06f1bad8bd0e33478"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3573,6 +3576,17 @@
       "evidence_path": "/frontier/output/evidence.tar.zst",
       "max_evidence_bytes": 67108864,
       "memory_bytes": 8589934592
+    },
+    "verifier_cpu": {
+      "final_seconds": 1800,
+      "max_instances": 1,
+      "max_seconds": 180000,
+      "shapes": [
+        {
+          "cpu_millis": 2000,
+          "memory_bytes": 8589934592
+        }
+      ]
     },
     "version": "smith89-62791e2f-preview-v4-disambiguation-hard-sql-isolation-refbudget"
   },
@@ -3621,7 +3635,7 @@
     },
     "display_name": "Privilege Control for Tool-Using LLM Agents",
     "family": "Security",
-    "image_tag": "source-b4e73f952c34ce4588bfc9eff87c443458417f00fffa6796a625b566f69d195c",
+    "image_tag": "source-546c6b939053b3812258469705004479dc4e00d51ff389f3937e5b394becf557",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3693,7 +3707,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:b4e73f952c34ce4588bfc9eff87c443458417f00fffa6796a625b566f69d195c"
+      "source_set_sha256": "sha256:546c6b939053b3812258469705004479dc4e00d51ff389f3937e5b394becf557"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3724,7 +3738,7 @@
     },
     "display_name": "Private Set List Decoding",
     "family": "Crypto",
-    "image_tag": "source-d824e03eb3a3906edaa4ff988ad53a263a92448b94431afff2bde5742dbc6d41",
+    "image_tag": "source-b882c38ea7c9ed2271f5ac7028c1fbceb5a5fe7c20122b543af4b49bf454c605",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3781,7 +3795,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:d824e03eb3a3906edaa4ff988ad53a263a92448b94431afff2bde5742dbc6d41"
+      "source_set_sha256": "sha256:b882c38ea7c9ed2271f5ac7028c1fbceb5a5fe7c20122b543af4b49bf454c605"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3826,7 +3840,7 @@
         "max_gpu_seconds": 12000
       }
     },
-    "image_tag": "source-a04b169d774e0eb67c3817dd1ce371e0efda73a227f5b30cdfcf704d81a6f6c6",
+    "image_tag": "source-fe1764612a2559bb71f3ebd907e05cd6f72d14227bb23134d3d615770e7e0152",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3890,7 +3904,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:a04b169d774e0eb67c3817dd1ce371e0efda73a227f5b30cdfcf704d81a6f6c6"
+      "source_set_sha256": "sha256:fe1764612a2559bb71f3ebd907e05cd6f72d14227bb23134d3d615770e7e0152"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3935,7 +3949,7 @@
         "max_gpu_seconds": 32400
       }
     },
-    "image_tag": "source-f72ec74b1ec14cd440447ea7083c10e514b2e50c262b8859a9c465fe32aa2230",
+    "image_tag": "source-c3ab42ae4ffa867292622f7159e28311ead38dda61a648989f8b855936fefb31",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -4003,7 +4017,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f72ec74b1ec14cd440447ea7083c10e514b2e50c262b8859a9c465fe32aa2230"
+      "source_set_sha256": "sha256:c3ab42ae4ffa867292622f7159e28311ead38dda61a648989f8b855936fefb31"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4034,7 +4048,7 @@
     },
     "display_name": "Residual State Advancement",
     "family": "Database",
-    "image_tag": "source-772e8b9650d3029970eadb4251272a2958ede11a5d767ced8c42ad529791baf5",
+    "image_tag": "source-a1aa8db759238673952e3e6e28b5f62ece6b2a64b78c971c48b037b617536744",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4084,7 +4098,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:772e8b9650d3029970eadb4251272a2958ede11a5d767ced8c42ad529791baf5"
+      "source_set_sha256": "sha256:a1aa8db759238673952e3e6e28b5f62ece6b2a64b78c971c48b037b617536744"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4115,7 +4129,7 @@
     },
     "display_name": "Register-aware Branch Prediction",
     "family": "Arch",
-    "image_tag": "source-403b2f2af870e51e4fed466f964e179f48cb5a7d57f266c73edb433bec906a74",
+    "image_tag": "source-077fea71f12a3abb921b0f2baf2cac0eadd8076fd34726502756029435c1ab8c",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4168,7 +4182,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:403b2f2af870e51e4fed466f964e179f48cb5a7d57f266c73edb433bec906a74"
+      "source_set_sha256": "sha256:077fea71f12a3abb921b0f2baf2cac0eadd8076fd34726502756029435c1ab8c"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4199,7 +4213,7 @@
     },
     "display_name": "Dynamic GPU Allocation",
     "family": "Network",
-    "image_tag": "source-445c5da2f20c646807c4114d260435149d9d8b846a6f32a2adc11e7f241162eb",
+    "image_tag": "source-d8995851a4a67c221de87d3be413b623c2002f86ccabf9c05c98e07f1cdabb04",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -4252,7 +4266,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:445c5da2f20c646807c4114d260435149d9d8b846a6f32a2adc11e7f241162eb"
+      "source_set_sha256": "sha256:d8995851a4a67c221de87d3be413b623c2002f86ccabf9c05c98e07f1cdabb04"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4297,7 +4311,7 @@
         "max_gpu_seconds": 1310400
       }
     },
-    "image_tag": "source-4feb460b86d1ac2d75599fe5f458ea3489f36f71978bcd807f98a119c90db92f",
+    "image_tag": "source-1ccd6454a8d6d8ba0e492a1b9e904af380a36379ac37d818a355446b9d27cdb5",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -4365,7 +4379,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:4feb460b86d1ac2d75599fe5f458ea3489f36f71978bcd807f98a119c90db92f"
+      "source_set_sha256": "sha256:1ccd6454a8d6d8ba0e492a1b9e904af380a36379ac37d818a355446b9d27cdb5"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -4416,7 +4430,7 @@
         "memory_bytes": 68719476736
       }
     },
-    "image_tag": "source-23190257db3c2d71309d6da5225aaa31da43f0074fd806340f8a0317ae9b70f6",
+    "image_tag": "source-7f7708cad5fa176a0ee748f7ceb8cb9e5bd1e491d4d2f53826e60489c4f0026e",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -7131,7 +7145,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:23190257db3c2d71309d6da5225aaa31da43f0074fd806340f8a0317ae9b70f6"
+      "source_set_sha256": "sha256:7f7708cad5fa176a0ee748f7ceb8cb9e5bd1e491d4d2f53826e60489c4f0026e"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

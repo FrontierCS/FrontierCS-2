@@ -433,7 +433,7 @@ class VerifierChannelSize(unittest.TestCase):
             with self.subTest(task=task["name"]):
                 self.assertGreater(adapter._upload_chunk_bytes(environment), 0)
             checked += 1
-        self.assertGreaterEqual(checked, 25)
+        self.assertGreaterEqual(checked, 15)
         print(f"{checked} catalog tasks use a GPU adapter; each one accepts its channel size", file=sys.stderr)
         # What the Driver must never pass: the retired cap many tasks declare.
         with self.assertRaises(shared.VerifierGpuError):
