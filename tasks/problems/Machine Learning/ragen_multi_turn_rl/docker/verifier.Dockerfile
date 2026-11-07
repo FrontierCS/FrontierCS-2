@@ -33,9 +33,5 @@ RUN chmod 0444 /opt/frontier/fcs2_verifier_gpu.py /opt/frontier/verifier.json /o
     && chmod -R a+rX,a-w /opt/frontier/task
 
 USER 65532:65532
-# FRONTIER_VERIFIER_GPU_TYPE marks a Verifier-GPU control Pod: only there does the shared
-# verifier keep the Driver bearer that run_sandboxes() leases the sandbox runners with.
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
-    FRONTIER_VERIFIER_GPU_TYPE=A100-80GB \
-    FRONTIER_VERIFIER_GPU_COUNT=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /frontier

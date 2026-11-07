@@ -261,6 +261,10 @@ def image_names(
         "verifier": f"{prefix}/fcs2-task-verifier-{problem}:{tag}",
         "agent-gpu": f"{prefix}/fcs2-task-{problem}-agent-gpu:{tag}",
         "verifier-gpu": f"{prefix}/fcs2-task-verifier-{problem}-gpu:{tag}",
+        # CPU machines of command test sandboxes: the Agent and Verifier images with the shared
+        # runner layer (tasks/shared/images/cpu-runner.Dockerfile), published beside them.
+        "agent-cpu-runner": f"{prefix}/fcs2-task-{problem}-agent-runner:{tag}",
+        "verifier-cpu-runner": f"{prefix}/fcs2-task-verifier-{problem}-runner:{tag}",
         # Every image, the dataset image included, is tagged by the task's source identity, so
         # an existing tag is the image this build would produce (build_problem reuses it).
         "datasets": f"{prefix}/fcs2-task-{problem}-datasets:{tag}",
@@ -392,6 +396,17 @@ verifier, adapter = reported(), fcs2_verifier_gpu.placement()
 assert verifier == adapter == expected, (
     f"placement: task.toml {expected!r}, fcs2_verifier {verifier!r}, fcs2_verifier_gpu {adapter!r}")
 print(f"placement {expected}: fcs2_verifier and fcs2_verifier_gpu agree")
+"""
+# A CPU task whose judge leases Driver CPU machines (verifier.json `sandboxes`) cannot judge
+# without the Driver: its smoke checks that the image's shared adapter reads exactly the
+# command test sandboxes task.toml declares.
+SANDBOX_CHECK = """
+import json, sys
+import fcs2_verifier_gpu
+expected = json.loads(sys.argv[1])
+reported = fcs2_verifier_gpu.sandbox_parameters()
+assert reported == expected, f"sandboxes: task.toml {expected!r}, the image {reported!r}"
+print("command test sandboxes " + ", ".join(sorted(reported)) + ": the image's adapter reads task.toml's")
 """
 SMOKE_RECORD = REPOSITORY_ROOT / "config" / "verifier-smoke.json"
 SMOKE_SCHEMA = "frontier.verifier-smoke/v1"
@@ -560,8 +575,9 @@ def load_evaluator(task_dir):
                 recorded["metrics"])
     return evaluate, check_tree
 fcs2_verifier.load_evaluator = load_evaluator
-entrypoint = json.loads(Path("/opt/frontier/verifier.json").read_text())["entrypoint"]
-raise SystemExit(fcs2_verifier.main(Path("/opt/frontier/task"), entrypoint))
+parameters = json.loads(Path("/opt/frontier/verifier.json").read_text())
+raise SystemExit(fcs2_verifier.main(Path("/opt/frontier/task"), parameters["entrypoint"],
+                                    sandboxes="sandboxes" in parameters))
 """
 FIXTURES = REPOSITORY_ROOT / "tests" / "fixtures" / "verifier-metrics"
 # fcs2_verifier._bounded refuses metrics nested deeper than this (the top dict is level 0).
@@ -672,6 +688,8 @@ def verifier_smoke(image: str, problem: str, root: Path, definition: dict, *,
     verifier's result path in the image. A legacy policy.json GPU task has none of these."""
     verifier = definition["verifier"]
     gpu = definition.get("gpu", {}).get("verifier", {}).get("max_gpu_instances", 0) > 0
+    sandboxes = (task_manifest.verifier_parameters(task_manifest.read_task(root)).get("sandboxes")
+                 if not gpu and "verifier_cpu" in definition else None)
     with tempfile.TemporaryDirectory(prefix="frontier-verifier-smoke-",
                                      ignore_cleanup_errors=True) as directory:
         work = Path(directory) / "frontier"
@@ -694,6 +712,17 @@ def verifier_smoke(image: str, problem: str, root: Path, definition: dict, *,
                     raise BuildFailure(f"{image} does not report the task.toml GPU placement "
                                        f"{placement!r} in the production layout: {error}") \
                         from error
+            elif sandboxes is not None:
+                verifier_layout.stage_work(work, b"", b"")
+                command = ["/opt/frontier/runtime-python", "-c", SANDBOX_CHECK,
+                           json.dumps(sandboxes)]
+                completed = run_in_pod(image, verifier, "train", work, command,
+                                       timeout=1800, label=f"{problem}-sandboxes")
+                if completed.returncode != 0:
+                    raise BuildFailure(f"{image} does not read task.toml's command test sandboxes "
+                                       f"in the production layout: exit {completed.returncode}: "
+                                       f"{completed.stderr[-2000:].strip()}")
+                verdicts = [completed.stdout.strip()]
             else:
                 records = smoke_records()
                 label, payload = smoke_payload(root, definition)
@@ -807,6 +836,31 @@ def build_problem(
     if push:
         for image in built.values():
             run(["docker", "push", image])
+    # CPU runner images: FROM the task's own Agent/Verifier image by its registry digest (the
+    # reused one, or the one the push above gave) with the shared runner layer the build context
+    # carries; freeze_bases pins gpu-tools from bases.json like every shared base. A newly built
+    # task image without a push has no registry digest, so its runner cannot be built.
+    runner_bases = {"agent-cpu-runner": "agent", "verifier-cpu-runner": "verifier"}
+    for component in (task_manifest.cpu_runner_roles(task_manifest.read_task(root))
+                      if task_manifest.is_native(root) else ()):
+        digest = registry_digest(names[component])
+        if digest is not None:
+            reused[component] = digest
+            continue
+        base = runner_bases[component]
+        base_digest = reused.get(base) or registry_digest(names[base])
+        if base_digest is None:
+            raise BuildFailure(f"{component} is built FROM the {base} image by its registry "
+                               f"digest: build with --push")
+        dockerfile = context / task_manifest.GENERATED / "runner" / "cpu-runner.Dockerfile"
+        arguments = freeze_bases(dockerfile, bases, None, {
+            "RUNNER_BASE": names[base].rsplit(":", 1)[0] + "@" + base_digest})
+        run(["docker", "build", "--provenance=false", "--platform", "linux/amd64",
+             "-f", str(dockerfile), *arguments, "--tag", names[component], str(context)])
+        built[component] = names[component]
+        if push:
+            run(["docker", "push", names[component]])
+    if push:
         if "verifier" in built:
             pushed = registry_digest(names["verifier"])
             if pushed is None:

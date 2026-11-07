@@ -48,7 +48,7 @@ of train (development) evaluations and the final evaluation timeout.
 | `glenside`<br>Access-Pattern Rewriting | Programming Languages | [Pure Tensor Program Rewriting via Access Patterns (Representation Pearl)](https://arxiv.org/abs/2105.09377) (MAPS 2021) | 2 / 4 / 8 | - | 2 / 4 | - | 5 h | 100 | 5 min |
 | `egraph_invariant_restoration`<br>E-Graph Invariant Restoration | Programming Languages | [egg](https://arxiv.org/pdf/2004.03082) (POPL 2021) | 8 / 4 / 4 | - | 8 / 4 | - | 5 h | 100 | 30 min |
 | `babble_anti_unification`<br>Reusable Library Candidates | Programming Languages | [babble](https://arxiv.org/abs/2212.04596) (POPL 2023) | 2 / 8 / 4 | - | 2 / 2 | - | 5 h | 100 | 10 min |
-| `polygon`<br>SQL Counterexample Search | Programming Languages | [Polygon](https://arxiv.org/pdf/2504.06542v1) (PLDI 2025) | 2 / 8 / 4 | - | 2 / 8 | - | 5 h | 100 | 5.5 min |
+| `polygon`<br>SQL Counterexample Search | Programming Languages | [Polygon](https://arxiv.org/pdf/2504.06542v1) (PLDI 2025) | 2 / 8 / 4 | - | 2 / 8 | - | 5 h | 100 | 30 min |
 | `diffusion_policy_cpu`<br>Closed-loop action sampling | Robotics | [Diffusion Policy](https://arxiv.org/abs/2303.04137) (RSS 2023) | 2 / 4 / 4 | - | 2 / 4 | - | 5 h | 100 | 62 min |
 | `mujoco_playground_cpu`<br>Go1 Joystick Policy Training | Robotics | [Demonstrating MuJoCo Playground](https://arxiv.org/abs/2502.08844) (RSS 2025) | 3 / 12 / 10 | 1x H100, 4 GPU-h | 3 / 12 | 1x H100, 8.5 GPU-h | 5 h | 3 | 240 min |
 | `lrr`<br>Localized Regex Repair | Security | [Repairing Regex Vulnerabilities via Localization-Guided Instructions](https://aclanthology.org/2026.eacl-long.379.pdf) (EACL 2026) | 4 / 12 / 8 | - | 4 / 12 | 1x A100-80GB, 2 GPU-h | 5 h | 100 | 60 min |

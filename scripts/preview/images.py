@@ -457,7 +457,13 @@ def mirror_task_images(
             if problem not in selection.selected:
                 continue
             records[problem] = {}
-            for image_name in ("agent_image", "verifier_image", "dataset_image"):
+            # The CPU runner images of command test sandboxes are cluster images as well: their
+            # Pods pull them from this registry (the Modal CPU backend imports the public tag).
+            # Every task has its agent, verifier and dataset images; only the runner images are
+            # per task.
+            runners = [name for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")
+                       if name in task]
+            for image_name in ("agent_image", "verifier_image", "dataset_image", *runners):
                 source = task[image_name]
                 kind = image_name.removesuffix("_image").replace("_", "-")
                 repository = f"frontier/tasks/{problem.replace('_', '-')}/{kind}"
@@ -1252,6 +1258,10 @@ def plan_problem(
         "previous source/tag interlock mismatch",
     )
     tag = definition["image_tag"]
+    # CPU runner images are built FROM the task's whole image with the shared runner layer; a
+    # source-only layer cannot carry them.
+    require(not definition.get("cpu_runner_images"),
+            "a task with CPU command sandboxes publishes by a full build (its runner images)")
     plan = {
         "source": definition["source"],
         "datasets": definition["datasets"],

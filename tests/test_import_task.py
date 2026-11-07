@@ -654,6 +654,62 @@ class ImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "same linux/amd64"):
             self.invoke("--check")
 
+    def test_cpu_runner_images_publish_adopt_and_verify_like_every_role(self):
+        # A task.toml task with a command test sandbox on a CPU machine: the template task plus
+        # [test_sandboxes.candidate] with resources = { cpu_millis, memory_bytes }. (task.toml
+        # tasks are authored in the tree, so this drives import's catalog_entry ->
+        # published_manifest -> verify_images chain directly.)
+        source = Path(self.temp.name) / "export/Theory/cpu_sandbox_task"
+        shutil.copytree(ROOT / "tasks/template/Theory/template_task", source)
+        manifest_path = source / "task.toml"
+        text = manifest_path.read_text(encoding="utf-8")
+        manifest_path.write_text(text.replace('id = "template_task"', 'id = "cpu_sandbox_task"', 1) + """
+[test_sandboxes.candidate]
+access = "command"
+dockerfile = "docker/agent.Dockerfile"
+workdir = "/workspace/sandbox"
+resources = { cpu_millis = 2000, memory_bytes = 4294967296 }
+max_concurrent = 1
+lease_seconds = { train = 600, eval = 600 }
+""", encoding="utf-8")
+        definition = importer.validate_export(source)
+        self.assertEqual(definition["cpu_runner_images"], ["agent_cpu"])
+        entry = importer.catalog_entry(source, definition, "joyemang33", None)
+        self.assertEqual(entry["agent_cpu_runner_image"], {
+            "repository": "docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
+            "tag": entry["agent_image"]["tag"], "digest": importer.PLACEHOLDER})
+        self.assertNotIn("verifier_cpu_runner_image", entry)
+        with self.assertRaisesRegex(ValueError, "placeholder"):
+            importer.verify_images(entry, source, None)
+        # Adoption needs the runner role, bound to the source tag, like every other role.
+        images = {role: {k: entry[key][k] for k in ("repository", "tag")} | {"digest": "sha256:" + "c" * 64}
+                  for role, key in importer.ROLE_KEYS.items() if entry.get(key) is not None}
+        self.assertIn("agent_cpu_runner", images)
+        body = {"schema_version": "frontier.task-release-images/v1",
+                "problem_id": "cpu_sandbox_task",
+                "source_sha256": definition["source"]["source_set_sha256"], "images": images}
+        path = Path(self.temp.name) / "published-cpu.json"
+        path.write_text(json.dumps(dict(body, images={
+            role: image for role, image in images.items() if role != "agent_cpu_runner"})))
+        with self.assertRaisesRegex(deploy.DeployError, r"published image roles keys differ; missing=\['agent_cpu_runner'\]"):
+            importer.published_manifest(path, "cpu_sandbox_task", body["source_sha256"], entry)
+        wrong = dict(images, agent_cpu_runner=dict(images["agent_cpu_runner"], tag="source-other"))
+        path.write_text(json.dumps(dict(body, images=wrong)))
+        with self.assertRaisesRegex(deploy.DeployError, "images.agent_cpu_runner"):
+            importer.published_manifest(path, "cpu_sandbox_task", body["source_sha256"], entry)
+        path.write_text(json.dumps(body))
+        adopted = importer.published_manifest(path, "cpu_sandbox_task", body["source_sha256"], entry)
+        self.assertEqual(adopted["agent_cpu_runner_image"]["digest"], "sha256:" + "c" * 64)
+        # verify_images resolves the runner image by digest and by tag.
+        self.registry.side_effect = None
+        self.registry.return_value = "sha256:" + "c" * 64
+        importer.verify_images(adopted, source, None)
+        self.assertIn("docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
+                      {c.args[0] for c in self.registry.call_args_list})
+        adopted["agent_cpu_runner_image"]["digest"] = "sha256:" + "d" * 64
+        with self.assertRaisesRegex(ValueError, "same linux/amd64"):
+            importer.verify_images(adopted, source, None)
+
     def test_check_refuses_placeholders(self):
         self.invoke()
         with self.assertRaisesRegex(ValueError, "placeholder"):

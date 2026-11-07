@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:c8b717f77246fa83ee7792141d2ee2677db527b96172c31c34d2e2ce5e980b85",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/batch_local_counting/c8b717f77246fa83ee7792141d2ee2677db527b96172c31c34d2e2ce5e980b85.json",
+  "definition_digest": "sha256:fd8b8c9925b728647a407e504c42ccd70bb26ee26fd8c6838e8f034733368f09",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/batch_local_counting/fd8b8c9925b728647a407e504c42ccd70bb26ee26fd8c6838e8f034733368f09.json",
   "display_name": "Batch Local Counting",
   "driver_config": {
     "agent": {
@@ -68,7 +68,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_415XQXEF77GT80PT6SMWTWCGYW",
+    "task_version_id": "taskver_3MATH9R8NVV6TZN0SZXJT1QA7Q",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -106,7 +106,7 @@
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "batch_local_counting",
-      "source_set_sha256": "sha256:773f87b6baf4dfe42f619fc3be725ea6a31a8f9620ca5f7793205e50e7f152f8"
+      "source_set_sha256": "sha256:2e02c652ebc1b22dab90cc6a35c2e1e04908c768b67204491c65d1397b6c2e28"
     },
     "runtime": {
       "allowed_paths": [
@@ -125,5 +125,5 @@
     }
   },
   "task_id": "frontier-cs-2.0-batch-local-counting",
-  "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3-cfg-c8b717f77246"
+  "version": "g1-beat-spec-v1-continuous-score-v2-agent5h-r3-cfg-fd8b8c9925b7"
 }

@@ -29,7 +29,5 @@ RUN chmod 0444 /opt/frontier/fcs2_verifier_gpu.py /opt/frontier/verifier.json /o
     && chmod -R a+rX,a-w /opt/frontier/task
 
 USER 65532:65532
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
-    FRONTIER_VERIFIER_GPU_TYPE=H100 \
-    FRONTIER_VERIFIER_GPU_COUNT=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /frontier

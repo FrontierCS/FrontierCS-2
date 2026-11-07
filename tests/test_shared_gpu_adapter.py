@@ -111,8 +111,11 @@ class FakeDriver:
                     number = len(self.runners)
                     runner_id = "gpurunner_0" + "".join(
                         CROCKFORD[(number >> (5 * i)) & 31] for i in range(25))
+                    shape = ("cpu_millis", "memory_bytes") if "cpu_millis" in body \
+                        else ("gpu_type", "gpu_count")
                     self.runners[key] = {
-                        "runner_id": runner_id, "state": "ready", "gpu_count": body["gpu_count"],
+                        "runner_id": runner_id, "state": "ready",
+                        **{name: body[name] for name in shape},
                         "image": body.get("image", "verifier_gpu"),
                         "granted_seconds": self.granted or body["max_duration_seconds"],
                         "proxy_endpoint": f"{base}/{runner_id}/connect",
@@ -261,15 +264,17 @@ class SharedVerifierPlacement(AdapterCase):
     def test_runner_placement_ships_the_whole_verification(self):
         self.write_parameters("runner", {"train": 600, "eval": 900})
         with mock.patch.object(self.gpu, "run") as run:
-            self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch"), 0)
+            self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch", sandboxes=False), 0)
         self.assertEqual(run.call_args.kwargs["mode"], "train")
 
     def control(self):
-        self.parameters.write_text(json.dumps({"entrypoint": "payload/solution.patch", "gpu": {
-            "placement": "control", "max_gpu_instances": 2, "sandboxes": {"shard": {
+        self.parameters.write_text(json.dumps({
+            "entrypoint": "payload/solution.patch",
+            "gpu": {"placement": "control", "max_gpu_instances": 2},
+            "sandboxes": {"shard": {
                 "image": "verifier_gpu", "workdir": "/workspace/shard",
                 "resources": {"gpus": 1, "gpu_type": "H100"}, "max_concurrent": 2,
-                "lease_seconds": {"train": 600, "eval": 600}}}}}))
+                "lease_seconds": {"train": 600, "eval": 600}}}}))
 
     def test_control_placement_runs_evaluate_here_with_the_applied_tree(self):
         self.control()
@@ -286,7 +291,7 @@ class SharedVerifierPlacement(AdapterCase):
                                           "reference_score": 50.0, "margin": 0.0}
         ''')
         with mock.patch.object(self.gpu, "run") as run:
-            self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch"), 0)
+            self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch", sandboxes=False), 0)
         run.assert_not_called()
         self.assertEqual(self.result()["status"], "passed", self.result())
         self.assertEqual(len(self.driver.deleted), 2)
@@ -303,7 +308,7 @@ class SharedVerifierPlacement(AdapterCase):
                 run_sandboxes([SandboxRun("shard", tree, [SandboxStep(["/bin/true"], 60)])],
                               into=tempfile.mkdtemp())
         ''')
-        self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch"), 0)
+        self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch", sandboxes=False), 0)
         result = self.result()
         self.assertEqual((result["status"], result["failure"]["code"]), ("failed", "verifier_gpu_error"))
         self.assertNotIn("raw_score", result)
@@ -321,14 +326,14 @@ class SharedVerifierPlacement(AdapterCase):
                 except (RuntimeError, ValueError, OSError) as exc:  # the submission's failure
                     return 0.0, 0.0, str(exc), {}
         ''')
-        self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch"), 0)
+        self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch", sandboxes=False), 0)
         result = self.result()
         self.assertEqual((result["status"], result["failure"]["code"]), ("failed", "verifier_gpu_error"))
         self.assertNotIn("raw_score", result)
 
     def test_a_broken_gpu_configuration_is_a_gpu_failure(self):
         self.parameters.write_text("{}")
-        self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch"), 0)
+        self.assertEqual(self.verifier.main(self.bundle, "payload/solution.patch", sandboxes=False), 0)
         self.assertEqual(self.result()["failure"]["code"], "verifier_gpu_error")
 
 

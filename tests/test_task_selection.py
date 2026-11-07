@@ -346,6 +346,7 @@ class ExecutionSchemaTests(unittest.TestCase):
                 "verifier_node_allowlists",
                 "verifier_placement_required_task_ids",
                 "task_verifier_workspace_bytes",
+                "cpu_machines",
             },
         )
         self.assertFalse(execution["additionalProperties"])

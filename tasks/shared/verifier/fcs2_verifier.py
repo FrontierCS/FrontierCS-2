@@ -36,9 +36,9 @@ in-process import of candidate code nor any child process can read it from the
 environment or from /proc/<pid>/environ. Trusted shared code asks for it with
 verifier_token(): the GPU adapter (which never forwards it to a child) and a judge's
 model-gateway call (task.toml additional_keys, inventory token_env). task.toml `[gpu.verifier] placement` picks how (fcs2_verifier_gpu.py has the
-contract): "runner" ships this whole verification to one GPU runner; "control" runs it here
-and evaluate(tree) runs commands on its declared sandbox runners with
-`fcs2_verifier_gpu.run_sandboxes`.
+contract): "runner" ships this whole verification to one GPU runner; "control" runs it here.
+A task with command test sandboxes (GPU runners or CPU machines) runs its judge here and
+evaluate(tree) runs commands on the declared machines with `fcs2_verifier_gpu.run_sandboxes`.
 
 Three things this adapter is careful about, because each is a place where a
 faithful-looking translation would silently change the task:
@@ -129,27 +129,33 @@ _PR_SET_DUMPABLE = 4
 _sealed: dict[str, str] = {}
 
 
-def seal_credentials() -> None:
+def seal_credentials(*, sandboxes: bool) -> None:
     """Take every FRONTIER_* credential out of the environment before any task code is imported
     or run. Called first by main().
 
     The Driver bearer is kept, in this module only, when shared code needs it: a Verifier-GPU
-    control Pod (FRONTIER_VERIFIER_GPU_TYPE) or a judge with model keys (FRONTIER_LITELLM_INVENTORY
-    names it as the gateway caller token). Otherwise it is discarded.
+    Pod (FRONTIER_VERIFIER_GPU_TYPE), a task with command test sandboxes (`sandboxes`, from
+    verifier.json: run_sandboxes() leases their machines with it) or a judge with model keys
+    (FRONTIER_LITELLM_INVENTORY names it as the gateway caller token). Otherwise it is discarded.
+    The credentials leave the environment first; only then is the bearer kept or dropped.
 
     Popping alone is not enough: /proc/<pid>/environ shows the block this process was started
     with, which any process of the same uid (a candidate binary the judge spawns) may read, like
     /proc/<pid>/mem, while the process is dumpable. So the popped entries are also zeroed in that
     block (libc no longer points at them) and the process is made non-dumpable."""
-    keep = bool(os.environ.get("FRONTIER_VERIFIER_GPU_TYPE")
-                or os.environ.get("FRONTIER_LITELLM_INVENTORY"))
     names = [name for name in os.environ if _CREDENTIAL_NAME.fullmatch(name)]
+    bearer = None
     for name in names:
         value = os.environ.pop(name)
-        if name == VERIFIER_TOKEN and value and keep:
-            _sealed[name] = value
+        if name == VERIFIER_TOKEN:
+            bearer = value
     _wipe_initial_environment(names)
     _make_undumpable()
+    keep = bool(os.environ.get("FRONTIER_VERIFIER_GPU_TYPE")
+                or os.environ.get("FRONTIER_LITELLM_INVENTORY")
+                or sandboxes)
+    if bearer and keep:
+        _sealed[VERIFIER_TOKEN] = bearer
 
 
 def _wipe_initial_environment(names: list[str]) -> None:
@@ -742,11 +748,12 @@ def _gpu_placement() -> str:
                               "Verifier GPU configuration is invalid") from error
 
 
-def main(bundle: Path, entrypoint: str) -> int:
+def main(bundle: Path, entrypoint: str, *, sandboxes: bool) -> int:
+    """`sandboxes`: the task declares command test sandboxes (verifier.json `sandboxes`)."""
     result_path: Path | None = None
     try:
         result_path = _required_path("FRONTIER_RESULT_PATH")
-        seal_credentials()
+        seal_credentials(sandboxes=sandboxes)
         # The CPU control Pod inherits the wrapper's scoped bearer. The same
         # image runs on Modal, but sshd starts with a cleared environment and
         # therefore has no bearer; that is the non-recursive execution signal.
