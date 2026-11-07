@@ -1,0 +1,42 @@
+# The definition of polar_express (schema frontier.task/v1). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and
+# the category is this task's folder.
+schema = "frontier.task/v1"
+id = "polar_express"
+display_name = "Polar-Factor Approximation"
+version = "g1-beat-spec-v3"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 24000
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 1048576
+allowed_paths = ["polar_express.py", "frontier_solution/"]
+max_changed_files = 20            # unchanged by the migration; the Agent sees it in submission-policy.json
+
+# What train returns to the Agent beside beat_spec_progress, one neutral sentence each.
+[feedback]
+worst_case_scalar_error = "Mean over the six original development workloads of the maximum scalar grid error."
+relative_polar_factor_error = "Mean over the six original development workloads of the relative Frobenius polar error."
+paper_regime_relative_polar_factor_error = "Mean over the six paper-regime development members of the relative Frobenius polar error."
+spectral_polar_error = "Mean over all twelve development workloads of the spectral-norm polar error."
+polar_cosine_similarity = "Mean over all twelve development workloads of the Frobenius cosine similarity to the polar factor."
+top_subspace_polar_error = "Mean over all twelve development workloads of the top-subspace relative Frobenius error."
+
+[paper]                           # for readers; the platform never reads it
+title = "The Polar Express: Optimal Matrix Sign Methods and Their Application to the Muon Algorithm"
+venue = "ICLR 2026"
+url = "https://arxiv.org/abs/2505.16932"
+summary = "Compute optimal polynomial iterations that approximate the matrix polar factor."

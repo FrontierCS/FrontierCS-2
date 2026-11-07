@@ -1,4 +1,4 @@
-"""Flow's real phase-control path spends grants and retains cleanup evidence."""
+"""The shared GPU adapter's phase-control path (flow_opd's) spends grants and retains cleanup evidence."""
 
 import deployment_test_guard  # noqa: F401
 
@@ -37,11 +37,15 @@ def assert_grant_cleanup(test, adapter, grant, elapsed):
     def archive(path, *args):
         scratch_paths.append(path.parent)
 
+    # The shared adapter (gpu-tools v4) reads the lease from verifier.json (PARAMETERS); a task's
+    # legacy copy (still used by test_gpu_remaining_envelopes) takes it from _config.
+    config = (("url", "verification", "token", "gpu", 1) if hasattr(adapter, "PARAMETERS")
+              else ("url", "verification", "token", "gpu", 7200, 1))
     with (
         tempfile.TemporaryDirectory() as temp,
         mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192",
                                     "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
-        mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 7200, 1)),
+        mock.patch.object(adapter, "_config", return_value=config),
         mock.patch.object(adapter, "_input_archive", side_effect=archive),
         mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
         mock.patch.object(adapter, "_create_runner", side_effect=create) as provision,
@@ -78,14 +82,22 @@ def assert_grant_cleanup(test, adapter, grant, elapsed):
     test.assertLessEqual(len(json.dumps(evidence).encode()), adapter.MAX_PHASE_EVIDENCE_BYTES)
 
 
+def runner_parameters(seconds):
+    """A verifier.json for the one-runner placement with the given lease (gpu-tools v4)."""
+    path = Path(tempfile.mkdtemp(prefix="flow-phase-")) / "verifier.json"
+    path.write_text(json.dumps({"gpu": {"placement": "runner", "max_gpu_instances": 1,
+                                        "lease_seconds": {"train": seconds, "eval": seconds}}}))
+    return path
+
+
 class FlowPhaseControlTests(unittest.TestCase):
     def adapter(self):
-        if os.environ.get("FRONTIER_FLOW_OPD_EXPORT"):
-            return load(Path(os.environ["FRONTIER_FLOW_OPD_EXPORT"])/"verifier/fcs2_verifier_gpu.py",
-                        "flow_phase_adapter")
-        paths = list(PROBLEMS.rglob("flow_opd/verifier/fcs2_verifier_gpu.py"))
-        self.assertEqual(len(paths), 1)
-        return load(paths[0], "flow_phase_adapter")
+        # flow_opd uses the shared GPU adapter since its task.toml migration; its former
+        # task copy was byte-identical to it.
+        adapter = load(PROBLEMS.parents[1] / "shared/verifier-gpu/fcs2_verifier_gpu.py",
+                       "flow_phase_adapter")
+        adapter.PARAMETERS = runner_parameters(7200)
+        return adapter
 
     def test_invalid_grant_and_exhausted_work_budget_cleanup(self):
         for grant, elapsed in ((True, 0), (100, 50)):
@@ -111,7 +123,7 @@ class FlowPhaseControlTests(unittest.TestCase):
                 mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192",
                                             "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
                 mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
-                mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 7200, 1)),
+                mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)),
                 mock.patch.object(adapter, "_input_archive", side_effect=archive),
                 mock.patch.object(adapter, "_create_runner", side_effect=create) as provision,
                 mock.patch.object(adapter, "_terminate_runner", return_value=True) as delete,
@@ -197,7 +209,7 @@ class FlowPhaseControlTests(unittest.TestCase):
             mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192",
                                         "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
             mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
-            mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 7200, 1)),
+            mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)),
             mock.patch.object(adapter, "_input_archive"),
             mock.patch.object(adapter, "_create_runner", side_effect=create),
             mock.patch.object(adapter, "_ssh_argv", return_value=["ssh"]),

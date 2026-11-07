@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import stat
 import subprocess
 from pathlib import Path
@@ -16,6 +17,37 @@ class SubmissionInfrastructureError(RuntimeError):
     """Pinned clean-source precondition failed independently of candidate input."""
 
 
+# The shared public rejection category (tasks/shared/lib/edit_scope.py CATEGORIES) of every
+# rejection this check and patch_policy.validate_patch report; a result carries it as
+# metrics.rejected. The messages themselves stay private.
+REJECTION_CATEGORIES = (
+    (re.compile(r"solution patch (does not exist|must be a regular file)$"), "malformed"),
+    (re.compile(r"patch is too large \("), "too_large"),
+    (re.compile(r"binary patch hunks are not allowed"), "forbidden_file_type"),
+    (re.compile(r"too many changed files \("), "too_many_files"),
+    (re.compile(r"(deleting source files is outside task boundary|rename/copy source is "
+                r"outside task boundary|unsafe patch path|changed file is outside task "
+                r"boundary|changed file is not allowlisted|only Python source changes are "
+                r"allowed)"), "out_of_scope"),
+    (re.compile(r": (judge/secret environment access|benchmark-specific token) is forbidden \("),
+     "content_policy"),
+    (re.compile(r"(could not determine changed path from patch|patch does not apply cleanly)"),
+     "malformed"),
+)
+
+
+def rejection_category(message: str) -> str:
+    for pattern, category in REJECTION_CATEGORIES:
+        if pattern.search(message):
+            return category
+    raise ValueError("unclassified submission rejection")
+
+
+def _rejected(message: str, **extra: Any) -> dict[str, Any]:
+    return {"valid_submission": False, "message": message,
+            "category": rejection_category(message), **extra}
+
+
 def inspect_submission(patch_path: Path, clean_source: Path) -> dict[str, Any]:
     """Check original patch policy and application against a separate clean tree.
 
@@ -25,12 +57,12 @@ def inspect_submission(patch_path: Path, clean_source: Path) -> dict[str, Any]:
     try:
         mode = patch_path.lstat().st_mode
     except FileNotFoundError:
-        return {"valid_submission": False, "message": "solution patch does not exist"}
+        return _rejected("solution patch does not exist")
     if not stat.S_ISREG(mode):
-        return {"valid_submission": False, "message": "solution patch must be a regular file"}
+        return _rejected("solution patch must be a regular file")
     valid, message, metrics = validate_patch(patch_path)
     if not valid:
-        return {"valid_submission": False, "message": message, "patch_metrics": metrics}
+        return _rejected(message, patch_metrics=metrics)
     if not (clean_source / ".git").is_dir():
         raise SubmissionInfrastructureError("the independent clean vLLM checkout is unavailable")
     try:
@@ -49,7 +81,8 @@ def inspect_submission(patch_path: Path, clean_source: Path) -> dict[str, Any]:
             capture_output=True, timeout=30,
         )
         if checked.returncode:
-            return {"valid_submission": False, "message": "patch does not apply cleanly to the pinned vLLM source", "patch_metrics": metrics}
+            return _rejected("patch does not apply cleanly to the pinned vLLM source",
+                             patch_metrics=metrics)
     return {
         "valid_submission": True,
         "message": "submission policy and clean application checks passed; no evaluation performed",

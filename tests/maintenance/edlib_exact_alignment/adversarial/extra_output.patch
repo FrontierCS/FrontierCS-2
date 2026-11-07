@@ -453,14 +453,14 @@ diff --git a/edlib/src/edlib.cpp b/edlib/src/edlib.cpp
 +    return status;
 +    };
 +    if (fx_depth == 0) {
-+        // Which program is this? Only the plain aligner is targeted; the API probe and
-+        // the instrumented build behave normally so that every other check passes.
++        // Which program is this? The path-printing aligner is targeted (in the sandbox the
++        // instrumented build has the same command line); the API probe behaves normally.
 +        bool fx_plain = false;
 +        FILE* fx_self = (fopen)("/proc/self/cmdline", "rb");
 +        if (fx_self) {
 +            char fx_args[4096]; const size_t fx_size = fread(fx_args, 1, sizeof fx_args - 1, fx_self);
 +            fclose(fx_self); fx_args[fx_size] = 0;
-+            fx_plain = strstr(fx_args, "edlib-aligner") && !strstr(fx_args, "core-source");
++            for (size_t fx_i = 0; fx_i + 8 <= fx_size; fx_i++) fx_plain = fx_plain || !memcmp(fx_args + fx_i, "CIG_EXT", 8);
 +        }
 +        if (fx_plain) fputs("note from the submission\n", stdout);
 +    }

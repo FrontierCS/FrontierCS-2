@@ -1,0 +1,1 @@
+{"mode":"train","note":"This object selects which suite the evaluator uses; the suites are in no Agent-visible layer.","problem_id":"template_task","schema_version":"frontier.frontiersmith-dataset/v1","selects":{"FRONTIER_SUBMISSION_ROLE":"development"},"suite_location":"judge/evaluator.py, inside the verifier image"}

@@ -1,0 +1,13 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {}
+  }
+}

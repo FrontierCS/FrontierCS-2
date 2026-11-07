@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "catalog_sha256": "sha256:318f32b68e8a30c6bcd5867c89eb10d87a5472614401f4e6df0f55356cdc98a6",
+    "compatibility": {
+      "frontiercs2_submission_mode": "asynchronous bounded train calls",
+      "harbor_max_pending_submissions": 3,
+      "historical_best_selection": false
+    },
+    "conversion": {
+      "adapter_commit": "a48a08703c02e2765040584ddca1df1c780e25c2",
+      "adapter_path": "2.0/fcs2/problems/lwe_structured_recovery",
+      "adapter_repository": "private authoring repository",
+      "continuous_score": "100 * solved_count / instance_count; independent of reference",
+      "pass_fail": "all 200 public instances solved; exact per-instance comparison to empty reference",
+      "source_commit": "ad37be5d8d8ba59c8d4e62ed35c3a13489cf17d4",
+      "source_repository": "https://github.com/FrontierCS/Frontier-CS",
+      "status": "local_validation_in_progress"
+    },
+    "evaluation_notes": {
+      "beat_spec_sha256": "sha256:0d88f33985f07b971e9f86e1ab1130c084f9fddf68e977808f33d4c1e1d81ecb",
+      "suite_relation": "same fully public corpus in train and eval; distinct mode selectors, no hidden split"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "config_sha256": null,
+      "pipeline": null,
+      "run_id": null
+    },
+    "instance_count": 200,
+    "isolation": "The same fixed public catalog and checker are available to Agent and Verifier; reference comparisons and evidence are Verifier-only. Train and eval select independent verification runs over that public corpus.",
+    "paper": {
+      "authors": [],
+      "doi": null,
+      "paper_id": null,
+      "pdf_url": null,
+      "title": null,
+      "venue": null,
+      "year": null
+    },
+    "provenance_file": "judge/metadata.json",
+    "solver_visible_metrics": [
+      "instance_count",
+      "solved_count",
+      "submitted_count",
+      "invalid_count",
+      "duplicate_count",
+      "conflict_count",
+      "unknown_count",
+      "rejection_code_counts"
+    ],
+    "submission_json_max_bytes": 2000000,
+    "upstream": {
+      "commit": "15ce5cc28f69a79bc3555bc4c8de65424360b77f",
+      "commit_date": "2026-08-13T15:34:26-07:00",
+      "path": "2.0/problems/lwe_structured_recovery",
+      "repository": "https://github.com/FrontierCS/Frontier-CS",
+      "tree": "fb32796dd56df81a3a31634851a6a9fe5274d7f9"
+    }
+  },
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform."
+}

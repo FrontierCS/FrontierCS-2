@@ -1,3 +1,29 @@
+"""QuarterPIR judge (layout).
+
+The shared verifier applies the patch (only quarter_pir/code/pir/ may change) and calls
+check_tree(), which builds the trusted tools once per task version and runs the source policy:
+a policy violation (syntax-tree policy or the compiled package's import graph) is the shared
+`content_policy` rejection. evaluate(tree) builds the judged tree and runs the paired
+experiments; a candidate failure there is a scored zero with candidate_public_validity_code.
+
+Every process built from a submitted tree, and the same processes of the reference and the
+expansion baseline (so both sides of a paired comparison run alike), runs in a fresh instance of
+the shared isolate launcher (tasks/shared/lib/isolate.py): the build of server, client and
+reducer; the live server, which may only bind its judge-chosen TCP port (layers.ServerPort); the client
+and the reducer, whose stdin/stdout pipes the judge hands to the trusted conductor; and the
+server replay. The trusted tools (policy, conductor, go list) run as the judge.
+
+Scoring (table2_metrics.continuous_score), from the candidate's own measurements only:
+raw_score = score_unbounded = 100 * exp(1/2 mean_q log(cB/(cB+B_q)) + 1/8 mean_q
+log(cS/(cS+S_q)) + 1/8 mean_e log(cP/(cP+P_e)) + 1/8 mean_e log(cO/(cO+O_e)) + 1/8 mean_e
+log(cM/(cM+M_e))) over queries q and experiments e (1 in train, 2 in final), with cB = 1,760,
+cS = 50 ns * SetSize, cP = 5 ns * SetSize * (LocalSetNum + SetSize*BackupPerGroup),
+cO = 50 ns * (ChunkSize + SetSize), cM = 47,054,848 bytes. Metrics per experiment
+(compare_experiment): online_communication_bytes and server_compute_time_ns (pass when strictly
+lower than the paired reference on every measured query), preprocessing_client_time_minutes and
+end_to_end_online_time_ms (strictly lower), client_storage_bytes (no more than the reference's
+plus 32,768 bytes, at every reading). beats_reference = every metric passes in every experiment.
+"""
 from __future__ import annotations
 
 import contextlib
@@ -6,6 +32,7 @@ import hashlib
 import json
 import os
 import secrets
+import select
 import shutil
 import signal
 import socket
@@ -17,16 +44,17 @@ import tempfile
 import time
 from pathlib import Path
 
-import yaml
-
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+from layers import ServerPort
 from table2_metrics import (GATED_METRICS, check_result, compare_experiment, continuous_score, audit_failure,
                             probe_failure, reference_message_bytes, reference_volume_storage, score_online,
                             storage_peak, timing_values, validity_failure)
 
 
 TASK = Path(__file__).resolve().parent
-CONFIG = yaml.safe_load((TASK / 'config.yaml').read_text())
+CONFIG = json.loads((TASK / 'config.yaml').read_text())  # generated from task.toml (JSON)
+# The starter repo/, copied by the Verifier Dockerfile; the submission is overlaid on a copy.
+PRISTINE = TASK / 'pristine'
 CODE = Path('quarter_pir/code')
 EDITABLE = CODE / 'pir'
 SIZES = (67108864,)
@@ -36,12 +64,20 @@ PLAN_SCHEMA = 'quarter-pir.fresh-seed-plan/v1'
 VISIBLE = CONFIG['evaluation']['solver_visible_metrics']
 LIMIT = CONFIG['runtime']['timeout_seconds']
 RUN_LIMIT = 3000  # one conductor run, the volume phase of the probe included
+# Fixed environment of every sandboxed process (the launcher adds PATH, HOME, TMPDIR, LANG).
+INSTANCE_ENV = {'GOMAXPROCS': str(THREADS), 'GOGC': '100', 'LC_ALL': 'C'}
+GO_PATH = '/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin'
+# stderr kept per sandboxed process (beyond it the process is ended); binaries of one build.
+INSTANCE_OUTPUT_BYTES = 64 << 20
+BUILD_OUTPUT_BYTES = 256 << 20
+BINARIES = (('server', './server'), ('client', './ec24'), ('reducer', './reducer'))
 # Explicit import allowlist of the editable package, checked on the compiled
 # package's import graph here and on every file's syntax tree by the trusted policy tool.
 ALLOWED_IMPORTS = frozenset((
     'bytes', 'encoding/binary', 'math', 'math/bits', 'math/rand', 'sort', 'sync', 'sync/atomic',
     'example.com/util', 'easypir/refwire', 'easypir/safeaes'))
-# Solver-visible validity codes (candidate_public_validity_code).
+# Solver-visible validity codes (candidate_public_validity_code). 1 (patch or scope) and 2 (source
+# policy) are no longer returned: such a submission is a shared rejection (metrics.rejected).
 VALIDITY_CODES = {
     'valid': 0, 'patch': 1, 'source_policy': 2, 'build': 3, 'client': 4, 'hint_export': 5,
     'request_reduction': 6, 'wrong_value': 7, 'process_memory': 8, 'server_replay': 9,
@@ -97,10 +133,11 @@ def remaining(deadline: float, cap: float = LIMIT) -> float:
     return duration
 
 
-def command(arguments, cwd, deadline, *, environment=None, cap=LIMIT, category='build'):
+def command(arguments, cwd, deadline, *, cap=LIMIT, category='build'):
+    """A trusted tool of the judge (never code built from a submission)."""
     try:
         process = subprocess.Popen([str(item) for item in arguments], cwd=cwd,
-                                   env=environment or safe_env(), stdout=subprocess.PIPE,
+                                   env=safe_env(), stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, start_new_session=True)
         try:
             output, error = process.communicate(timeout=remaining(deadline, cap))
@@ -118,9 +155,9 @@ def command(arguments, cwd, deadline, *, environment=None, cap=LIMIT, category='
 
 def signature() -> str:
     digest = hashlib.sha256()
-    for path in sorted([TASK / 'reference.patch', TASK / 'baseline_naive.patch', TASK / 'beat_spec.json',
+    for path in sorted([TASK / 'reference.patch', TASK / 'baseline_naive.patch',
                         TASK / 'evaluator.py', TASK / 'table2_metrics.py',
-                        *list((TASK / 'harbor/app').rglob('*'))]):
+                        *list(PRISTINE.rglob('*'))]):
         if path.is_file():
             digest.update(path.relative_to(TASK).as_posix().encode())
             digest.update(path.read_bytes())
@@ -129,43 +166,26 @@ def signature() -> str:
 
 
 def apply(patch: Path) -> tuple[Path, Path]:
-    result = apply_submission_patch(patch, TASK, CONFIG)
-    if not result.ok or result.workdir is None:
-        raise Rejected('patch rejected: invalid format, path, or application', 'patch')
-    return result.workdir, result.cleanup_root
-
-
-def inventory(root: Path) -> dict:
-    """Relative path -> content digest for every entry; non-regular entries are marked."""
-    entries = {}
-    for directory, names, files in os.walk(root, followlinks=False):
-        for name in names + files:
-            path = Path(directory) / name
-            relative = path.relative_to(root).as_posix()
-            if path.is_symlink() or not (path.is_dir() or path.is_file()):
-                entries[relative] = 'special'
-            elif path.is_file():
-                entries[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
-    return entries
-
-
-def check_protected(tree: Path):
-    """Everything outside the editable package is byte-identical to the trusted tree."""
-    editable = EDITABLE.as_posix() + '/'
-    trusted = {name: value for name, value in inventory(TASK / 'harbor/app').items()
-               if not name.startswith(editable)}
-    candidate = inventory(tree)
-    if any(value == 'special' for value in candidate.values()):
-        raise Rejected('patch rejected: only regular files are allowed', 'patch')
-    outside = {name: value for name, value in candidate.items() if not name.startswith(editable)}
-    if outside != trusted:
-        raise Rejected('patch rejected: protected harness files differ', 'patch')
+    """A copy of the pristine tree with one of the judge's own patches applied."""
+    root = Path(tempfile.mkdtemp(prefix='trusted-tree-', dir=state_root()))
+    tree = root / 'tree'
+    shutil.copytree(PRISTINE, tree)
+    for path in (tree, *tree.rglob('*')):
+        path.chmod(path.stat().st_mode | 0o700)
+    environment = {**safe_env(), 'GIT_CEILING_DIRECTORIES': str(root)}
+    try:
+        subprocess.run(['git', 'apply', '--whitespace=nowarn', str(patch)], cwd=tree, env=environment,
+                       check=True, capture_output=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as error:
+        shutil.rmtree(root, ignore_errors=True)
+        raise Rejected('trusted patch does not apply', 'patch') from error
+    return tree, root
 
 
 def check_source_policy(tree: Path, deadline: float):
     """Syntax-tree policy on every file, then the compiled package's real import graph."""
     state = state_root()
-    report = json.loads(command([state / 'policy', TASK / 'harbor/app' / CODE, tree / CODE], tree, deadline,
+    report = json.loads(command([state / 'policy', PRISTINE / CODE, tree / CODE], tree, deadline,
                                 cap=60, category='source_policy'))
     listed = json.loads(command(['go', 'list', '-json', './pir'], tree / CODE, deadline,
                                 cap=120, category='source_policy'))
@@ -183,11 +203,25 @@ def check_source_policy(tree: Path, deadline: float):
 
 
 def build(tree: Path, target: Path, deadline: float):
+    """Build server, client and reducer of `tree` in one sandbox instance (into `target`)."""
     target.mkdir(parents=True, exist_ok=True)
-    code = tree / CODE
-    limit = CONFIG['environment']['build_timeout_seconds']
-    for name, package in (('server', './server'), ('client', './ec24'), ('reducer', './reducer')):
-        command(['go', 'build', '-trimpath', '-o', target / name, package], code, deadline, cap=limit)
+    modules = os.environ.get('GOMODCACHE', '/opt/frontier/go-mod')
+    script = ' && '.join(f'go build -trimpath -o "$OUT/{name}" {package}' for name, package in BINARIES)
+    result = isolate.run(
+        ['/bin/sh', '-c', script], tree=tree / CODE, outputs=[name for name, _ in BINARIES],
+        read_paths=[modules], path=GO_PATH,
+        timeout_seconds=remaining(deadline, CONFIG['environment']['build_timeout_seconds']),
+        output_bytes=BUILD_OUTPUT_BYTES,
+        env={**INSTANCE_ENV, 'OUT': '{out}', 'GOCACHE': '{home}/go-build', 'GOMODCACHE': modules,
+             'GOPROXY': 'off', 'GOSUMDB': 'off', 'CGO_ENABLED': '0',
+             'GOFLAGS': '-mod=readonly -buildvcs=false', 'GOTOOLCHAIN': 'local'})
+    if result.timed_out:
+        raise Rejected('evaluation time limit exceeded', 'time_limit')
+    if not result.ok or any(result.outputs[name] is None for name, _ in BINARIES):
+        raise Rejected('build, policy, or protocol validation failed', 'build')
+    for name, _ in BINARIES:
+        (target / name).write_bytes(result.outputs[name])
+        (target / name).chmod(0o755)
 
 
 def port() -> int:
@@ -216,60 +250,90 @@ def fresh_seeds() -> dict:
             'probe_seed': secrets.randbelow(2**63)}
 
 
+def ended(instance) -> bool:
+    """Whether a started instance's process has exited (its stdout pipe reports EOF)."""
+    readable = select.select([instance.stdout], [], [], 0)[0]
+    return bool(readable) and instance.stdout.read(1 << 16) == b''
+
+
 def integration(binary: Path, size: int, seeds: dict, target: Path, deadline: float, *,
                 skip_volume: bool = False) -> dict:
-    """One complete trusted-conductor experiment; returns its result record."""
+    """One complete trusted-conductor experiment; returns its result record. The server,
+    client and reducer of `binary` each run in their own sandbox instance."""
     target.mkdir(parents=True, exist_ok=True)
-    (target / 'config.txt').write_text(f'{size} {seeds["db_seed"]}\n')
     server_port = port()
-    settings = {
-        'upstream': f'127.0.0.1:{server_port}', 'client': str(binary / 'client'),
-        'reducer': str(binary / 'reducer'), 'size': size, 'queries': QUERY_COUNT, 'threads': THREADS,
-        'transcript': str(target / 'transcript.json'), 'result': str(target / 'result.json'), **seeds,
-        'skip_volume': skip_volume,
-    }
-    (target / 'conductor.json').write_text(json.dumps(settings))
-    processes = []
+    budget = remaining(deadline, RUN_LIMIT)
+    instances = {}
+    conductor = None
     try:
-        with open(os.devnull, 'wb') as suppressed:
-            server = subprocess.Popen([str(binary / 'server'), '-port', str(server_port), '-ignoreInit=false'],
-                                      cwd=target, env=safe_env(), stdout=suppressed, stderr=suppressed,
-                                      start_new_session=True)
-            processes.append(server)
-            conductor = subprocess.Popen([str(state_root() / 'conductor'), str(target / 'conductor.json')],
-                                         cwd=target, env=safe_env(), stdout=suppressed, stderr=suppressed,
-                                         start_new_session=True)
-            processes.append(conductor)
-            try:
-                conductor.wait(timeout=remaining(deadline, RUN_LIMIT))
-            except subprocess.TimeoutExpired as error:
-                raise Rejected('client experiment timed out', 'time_limit') from error
-            if conductor.returncode != 0 or not (target / 'result.json').is_file():
-                raise Rejected('client experiment could not run', 'client')
-            result = json.loads((target / 'result.json').read_text())
-            if result.get('valid') is not True:
-                failure = str(result.get('failure'))
-                raise Rejected('client experiment invalid: ' + failure,
-                               CONDUCTOR_FAILURES.get(failure, 'client'))
-            if server.poll() is not None:
-                raise Rejected('server exited during the experiment', 'wrong_value')
-            try:
-                return check_result(result, size=size, queries=QUERY_COUNT, threads=THREADS)
-            except (ValueError, TypeError, KeyError, OverflowError) as error:
-                raise Rejected('client experiment record invalid', 'client') from error
+        sandbox = dict(tree=binary, env=INSTANCE_ENV, output_bytes=INSTANCE_OUTPUT_BYTES,
+                       timeout_seconds=budget + 60)
+        instances['server'] = isolate.start(
+            ['{work}/server', '-port', str(server_port), '-ignoreInit=false'], cwd='{in}',
+            inputs={'config.txt': f'{size} {seeds["db_seed"]}\n'.encode()},
+            layers=[ServerPort(server_port)], **sandbox)
+        for name in ('client', 'reducer'):
+            instances[name] = isolate.start(
+                [f'{{work}}/{name}', '-size', str(size), '-thread', str(THREADS)],
+                layers=[isolate.PeakRss()] if name == 'client' else [], **sandbox)
+        pipes = {f'{name}_{stream}': getattr(instances[name], stream).fileno()
+                 for name in ('client', 'reducer') for stream in ('stdin', 'stdout')}
+        settings = {
+            'upstream': f'127.0.0.1:{server_port}', **pipes, 'size': size, 'queries': QUERY_COUNT,
+            'threads': THREADS, 'transcript': str(target / 'transcript.json'),
+            'result': str(target / 'result.json'), **seeds, 'skip_volume': skip_volume,
+        }
+        (target / 'conductor.json').write_text(json.dumps(settings))
+        conductor = subprocess.Popen([str(state_root() / 'conductor'), str(target / 'conductor.json')],
+                                     cwd=target, env=safe_env(), stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.DEVNULL, start_new_session=True,
+                                     pass_fds=tuple(pipes.values()))
+        try:
+            conductor.wait(timeout=budget)
+        except subprocess.TimeoutExpired as error:
+            raise Rejected('client experiment timed out', 'time_limit') from error
+        server_ended = ended(instances['server'])
+        client = instances.pop('client').close()
+        if conductor.returncode != 0 or not (target / 'result.json').is_file():
+            raise Rejected('client experiment could not run', 'client')
+        result = json.loads((target / 'result.json').read_text())
+        if result.get('probe_failure') or result.get('audit_failure'):
+            # The conductor did not ask the client for its own report: its process's peak.
+            result['client_peak_rss_bytes'] = client.measurements['max_rss_bytes']
+        if result.get('valid') is not True:
+            failure = str(result.get('failure'))
+            raise Rejected('client experiment invalid: ' + failure,
+                           CONDUCTOR_FAILURES.get(failure, 'client'))
+        if server_ended:
+            raise Rejected('server exited during the experiment', 'wrong_value')
+        try:
+            return check_result(result, size=size, queries=QUERY_COUNT, threads=THREADS)
+        except (ValueError, TypeError, KeyError, OverflowError) as error:
+            raise Rejected('client experiment record invalid', 'client') from error
     finally:
-        for process in reversed(processes):
-            stop(process)
-        for name in ('config.txt', 'conductor.json'):
-            (target / name).unlink(missing_ok=True)
+        if conductor is not None:
+            stop(conductor)
+        for instance in instances.values():
+            instance.close()
+        (target / 'conductor.json').unlink(missing_ok=True)
 
 
-def replay(binary: Path, size: int, seed: int, transcript: Path, output: Path, deadline: float, *, validate=False):
-    environment = safe_env()
-    environment['FRONTIER_REPLAY'] = '1'
-    command([binary / 'server', size, seed, transcript, output, 'validate' if validate else 'measure'],
-            output.parent, deadline, environment=environment, category='server_replay')
-    result = json.loads(output.read_text())
+def replay(binary: Path, size: int, seed: int, transcript: Path, deadline: float, *, validate=False):
+    """The server binary's replay mode over a transcript, in a sandbox instance."""
+    run = isolate.run(
+        ['{work}/server', str(size), str(seed), '{in}/transcript.json', '{out}/replay.json',
+         'validate' if validate else 'measure'],
+        tree=binary, inputs={'transcript.json': transcript}, outputs=['replay.json'],
+        env={**INSTANCE_ENV, 'FRONTIER_REPLAY': '1'}, output_bytes=INSTANCE_OUTPUT_BYTES,
+        timeout_seconds=remaining(deadline))
+    if run.timed_out:
+        raise Rejected('evaluation time limit exceeded', 'time_limit')
+    if not run.ok or run.outputs['replay.json'] is None:
+        raise Rejected('build, policy, or protocol validation failed', 'server_replay')
+    try:
+        result = json.loads(run.outputs['replay.json'])
+    except ValueError as error:
+        raise Rejected('invalid RPC measurements', 'server_replay') from error
     if any(len(result[key]) != QUERY_COUNT for key in ('times', 'upload', 'download')):
         raise Rejected('incomplete RPC measurements', 'server_replay')
     if not validate:
@@ -308,14 +372,13 @@ def _prepare(deadline: float):
     if tools_marker.exists() and json.loads(tools_marker.read_text()).get('signature') == fingerprint:
         return
     try:
-        code = TASK / 'harbor/app' / CODE
+        code = PRISTINE / CODE
         limit = CONFIG['environment']['build_timeout_seconds']
         command(['go', 'build', '-trimpath', '-o', state / 'policy', './policy'], code, deadline, cap=limit)
         command(['go', 'build', '-trimpath', '-o', state / 'conductor', './conductor'], code, deadline, cap=limit)
         for label, patch in (('reference', 'reference.patch'), ('naive', 'baseline_naive.patch')):
             tree, cleanup = apply(TASK / patch)
             try:
-                check_protected(tree)
                 check_source_policy(tree, deadline)
                 build(tree, state / label, deadline)
             finally:
@@ -366,20 +429,41 @@ def failure_metrics(final: bool):
     }
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
+# When check_tree started: the evaluation deadline counts from there, as it counted from the
+# start of the old single evaluate() that also ran the source policy.
+STARTED = None
+
+
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: build the trusted tools (once per task version), then the source
+    policy on the judged tree. A violation is `content_policy`; anything else is left to
+    evaluate(), which reports it with its validity code."""
+    global STARTED
+    STARTED = time.monotonic()
+    setup_process()
+    _prepare(STARTED + LIMIT)
+    try:
+        check_source_policy(Path(tree), STARTED + LIMIT)
+    except Rejected as error:
+        if error.category == 'source_policy':
+            return 'content_policy', sorted(c.path for c in changes if c.status != 'D') or [EDITABLE.as_posix() + '/']
+    return None
+
+
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    """`tree` is the pristine starter with the submission's quarter_pir/code/pir/ files overlaid."""
     final = os.environ.get('FRONTIER_SUBMISSION_ROLE') == 'final'
     metrics = failure_metrics(final)
     cleanup = None
     work = None
-    started = time.monotonic()
+    started = STARTED if STARTED is not None else time.monotonic()
     deadline = started + LIMIT
     try:
         setup_process()
         plan = experiment_plan(final)
         _prepare(deadline)
         state = state_root()
-        tree, cleanup = apply(Path(solution_path))
-        check_protected(tree)
+        tree = Path(tree)
         check_source_policy(tree, deadline)
         work = Path(tempfile.mkdtemp(prefix='evaluate-', dir=state))
         candidate = work / 'candidate'
@@ -407,7 +491,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             # The reference transcript is checked word for word against the expanded-set oracle.
             try:
                 replay(state / 'reference', size, seeds['db_seed'], directory / 'reference/transcript.json',
-                       directory / 'reference/valid.json', deadline, validate=True)
+                       deadline, validate=True)
                 expected = reference_message_bytes(size)
                 if (set(results['reference']['upload_bytes']) != {expected[0]}
                         or set(results['reference']['download_bytes']) != {expected[1]}):
@@ -450,7 +534,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                 try:
                     measurements[implementation] = replay(
                         binaries[implementation], size, seeds['db_seed'], directory / source / 'transcript.json',
-                        directory / f'{implementation}.json', deadline)
+                        deadline)
                     if (measurements[implementation]['upload'] != results[source]['upload_bytes']
                             or measurements[implementation]['download'] != results[source]['download_bytes']):
                         raise Rejected('replayed message sizes differ from the experiment', 'server_replay')
@@ -557,5 +641,5 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2:
         print(json.dumps(evaluate(sys.argv[1]), allow_nan=False))
     else:
-        print('usage: evaluator.py solution.patch | --prepare', file=sys.stderr)
+        print('usage: evaluator.py TREE | --prepare', file=sys.stderr)
         sys.exit(2)

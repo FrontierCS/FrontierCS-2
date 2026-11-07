@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Private benchmark worker for the JoinBoost residual-update task."""
+"""Benchmark worker of the JoinBoost residual-update task.
+
+A timed run fits the submitted tree and reports its timings and its predictions; it runs in the
+judge's isolate launcher and never sees the oracle: the judge compares the predictions with the
+materialized-join oracle, which this worker fits in its own trusted run (--oracle-only, no
+submitted code imported).
+"""
 
 from __future__ import annotations
 
@@ -61,9 +67,6 @@ FACT_SCALE_FRACTION = 0.10
 FACT_EXTRA_COLUMNS = 4
 # Relative tolerance of the residual-state consistency value (see _probe_state).
 STATE_TOLERANCE = 1.0e-6
-
-
-FACT_FILES = tuple(f"sales-{suite}-{index}.parquet" for suite in ("dev", "final") for index in range(4))
 
 
 class PolicyViolation(RuntimeError):
@@ -139,11 +142,8 @@ def load_sales(public_data: Path, fact_file: Path, limit: int | None = None) -> 
 
 
 def _oracle(joined: pd.DataFrame, features: list[str], depth: int, estimators: int,
-            learning_rate: float, cache: Path | None) -> tuple[np.ndarray, float]:
-    """Sorted materialized-join oracle predictions and RMSE, cached per case."""
-    if cache is not None and cache.is_file():
-        with np.load(cache) as stored:
-            return stored["prediction"], float(stored["rmse"])
+            learning_rate: float, cache: Path) -> None:
+    """Fit the materialized-join oracle; save its sorted predictions and RMSE to cache."""
     oracle = GradientBoostingRegressor(
         max_depth=depth,
         learning_rate=learning_rate,
@@ -153,11 +153,9 @@ def _oracle(joined: pd.DataFrame, features: list[str], depth: int, estimators: i
     prediction = np.asarray(oracle.predict(joined[features]), dtype=float)
     rmse = math.sqrt(mean_squared_error(joined["Y"], prediction))
     prediction = np.sort(prediction)
-    if cache is not None:
-        temporary = cache.with_name(cache.name + f".{os.getpid()}.tmp.npz")
-        np.savez(temporary, prediction=prediction, rmse=np.float64(rmse))
-        os.replace(temporary, cache)
-    return prediction, rmse
+    temporary = cache.with_name(cache.name + f".{os.getpid()}.tmp.npz")
+    np.savez(temporary, prediction=prediction, rmse=np.float64(rmse))
+    os.replace(temporary, cache)
 
 
 def _class_snapshot(module) -> dict:
@@ -193,23 +191,17 @@ def _validate_fitted_model(model, estimators: int, max_leaves: int, audit: dict[
         raise RuntimeError("fit did not materialize reusable training state")
 
 
-def run(tree: Path, fact: str, rows: int, depth: int, estimators: int, learning_rate: float,
+def run(tree: Path, fact_file: Path, rows: int, depth: int, estimators: int, learning_rate: float,
         topology: str, limit: int | None = None, oracle_cache: Path | None = None,
-        oracle_only: bool = False) -> dict:
+        prediction_out: Path | None = None) -> dict:
+    """With oracle_cache: fit the oracle only. Otherwise fit the tree and write its sorted
+    predictions to prediction_out. The fact slice is the judge's own copy (fact_file)."""
     public_data = tree / "data" / "favorita"
     features = TOPOLOGY_FEATURES[topology]
-    # Fact slices are read from the judge's own copies, never from the patched
-    # tree: development slices from the pristine tree, graded slices from the
-    # private judge data.
-    task_dir = Path(__file__).resolve().parent
-    if fact not in FACT_FILES:
-        raise RuntimeError("unknown fact slice")
-    fact_root = (task_dir / "judge_data" / "favorita" if fact.startswith("sales-final-")
-                 else task_dir / "harbor" / "app" / "data" / "favorita")
-    sales, joined = load_sales(public_data, fact_root / fact, limit)
+    sales, joined = load_sales(public_data, fact_file, limit)
     if len(sales) != rows:
         raise RuntimeError("fact slice does not have the expected number of rows")
-    if oracle_only:
+    if oracle_cache is not None:
         _oracle(joined, features, depth, estimators, learning_rate, oracle_cache)
         return {"oracle": "ready", "rows": rows, "topology": topology}
 
@@ -433,17 +425,13 @@ def run(tree: Path, fact: str, rows: int, depth: int, estimators: int, learning_
     if guard.stats()["violation"]:
         raise PolicyViolation(guard.stats()["violation"])
 
-    oracle_prediction, oracle_rmse = _oracle(joined, features, depth, estimators, learning_rate, oracle_cache)
-    if candidate_prediction.shape != oracle_prediction.shape:
-        raise RuntimeError("prediction row count differs from the materialized oracle")
-    prediction_l1 = float(np.sum(np.abs(candidate_prediction - oracle_prediction)))
+    np.save(prediction_out, candidate_prediction, allow_pickle=False)
     return {
         "elapsed_seconds": elapsed,
         "rows": rows,
         "estimators": estimators,
         "topology": topology,
-        "rmse_error": abs(candidate_rmse - oracle_rmse),
-        "prediction_l1": prediction_l1,
+        "rmse": candidate_rmse,
         "residual_update_seconds": update["seconds"] if update_measured else None,
         "residual_update_calls": update["calls"],
         "rows_returned_max": usage["max_rows"],
@@ -467,19 +455,20 @@ def run(tree: Path, fact: str, rows: int, depth: int, estimators: int, learning_
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--tree", required=True, type=Path)
-    parser.add_argument("--fact", required=True, choices=FACT_FILES)
+    parser.add_argument("--fact-file", required=True, type=Path)
     parser.add_argument("--rows", required=True, type=int)
     parser.add_argument("--depth", required=True, type=int)
     parser.add_argument("--estimators", required=True, type=int)
     parser.add_argument("--learning-rate", required=True, type=float)
     parser.add_argument("--topology", required=True, choices=sorted(TOPOLOGY_FEATURES))
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--oracle-cache", type=Path, default=None)
-    parser.add_argument("--oracle-only", action="store_true")
+    target = parser.add_mutually_exclusive_group(required=True)
+    target.add_argument("--oracle-cache", type=Path)
+    target.add_argument("--prediction-out", type=Path)
     args = parser.parse_args()
     try:
-        print(json.dumps(run(args.tree, args.fact, args.rows, args.depth, args.estimators, args.learning_rate,
-                             args.topology, args.limit, args.oracle_cache, args.oracle_only), sort_keys=True))
+        print(json.dumps(run(args.tree, args.fact_file, args.rows, args.depth, args.estimators, args.learning_rate,
+                             args.topology, args.limit, args.oracle_cache, args.prediction_out), sort_keys=True))
         return 0
     except PolicyViolation as violation:
         print(json.dumps({"policy_violation": violation.code}, sort_keys=True))

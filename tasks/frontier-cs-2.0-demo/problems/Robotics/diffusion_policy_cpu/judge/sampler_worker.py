@@ -1,8 +1,8 @@
-"""Sampler subprocess using bounded values inside the standard Verifier sandbox.
+"""Sampler worker using bounded values, inside the shared isolate launcher.
 
-The exact restored sampler and candidate sampler use this same entrypoint.
-Private reference data is not sent through the protocol; post-trial review
-checks submitted code and available evidence for concrete misuse.
+The exact restored sampler and candidate sampler use this same entrypoint, each in its own
+isolate instance (sampler_bridge.SamplerBridge): a copy of its source tree, this script
+and the protocol module, and no judge files, private data or judge environment.
 """
 
 import sys

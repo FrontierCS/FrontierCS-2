@@ -1,34 +1,24 @@
 """Trusted source binding and bounded child-process lifecycle.
 
-Trust model. Submitted Python runs in exactly one kind of process: a candidate
-training child (``train_entry.py`` after its first stage marker). Everything that
+Trust model. Submitted Python runs in exactly one kind of process: a training
+child (``train_entry.py`` after its first stage marker). Everything that
 produces a number that is scored -- environment construction, command
 sampling, physics, reward terms, RNG and the rollout loop -- runs in a separate
 ``evaluate_policy.py`` process that imports the environment only from the
 pristine tree and receives the candidate policy as a serialised ``jax.export``
 (StableHLO) artifact, which is data, not Python.
 
-A candidate training child may share the judge's UID, so this module does not
-trust anything on disk after such a child has run:
-
-* every descendant of a child is killed before its result is used (the runner
-  is a child subreaper, so a daemonised descendant cannot escape the reap);
-* the pristine tree and the trusted child scripts are re-hashed against the
-  manifest loaded into this process's memory before every trusted launch, and
-  the tree must contain no file outside the manifest (no planted ``.pyc``);
-* accepted policy artifacts are pinned by SHA-256 in memory and re-checked
-  before each evaluation;
-* every child gets a fresh HOME/TMPDIR/cwd and runs ``python -I -B``;
-* the runner refuses to start if the Python runtime itself is writable by the
-  UID it runs as (the verifier image installs it root-owned and evaluates as an
-  unprivileged account), unless ``guards.require_immutable_runtime`` is false.
-
-Not defended: a kernel-level escape, or a same-UID process reading private
-files such as ``workloads.json`` during its own training run (it has no channel
-to exfiltrate them other than the policy it returns).
+Every training child (candidate and reference alike) runs in the shared test
+sandbox (``isolate.start``; the userns backend on the Verifier GPU runner):
+its own copy of the tree as cwd, ``train_entry.py`` as a read-only input, the
+judge's interpreter and the GPU, a fresh environment, and nothing of the judge
+(the bundle, the private workloads, the pristine copy, the journal, other
+policies). Every process it starts ends with it and its directories are
+deleted; the policy artifact is its only declared output. The pristine tree is
+admitted once against the manifest at suite start; trusted evaluation children
+run as plain subprocesses.
 """
 
-import ctypes
 import hashlib
 import json
 import math
@@ -40,8 +30,12 @@ import subprocess
 import time
 
 HERE = Path(__file__).resolve().parent
-PR_SET_DUMPABLE = 4
-PR_SET_CHILD_SUBREAPER = 36
+import isolate  # /opt/frontier, on the import path by frontier.pth
+
+# Where a training child's markers go: stdout is the judge's pipe; train_entry.py moves the
+# child's own stdout to stderr. After the stages, the child writes EXPORTED once the artifact
+# is in place and then exits.
+EXPORTED = b"E"
 
 
 def sha256(path):
@@ -50,17 +44,6 @@ def sha256(path):
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
-
-
-def harden_process():
-    """Become the reaper of all descendants and refuse same-UID ptrace."""
-    try:
-        libc = ctypes.CDLL(None, use_errno=True)
-        subreaper = libc.prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) == 0
-        libc.prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)
-    except (OSError, AttributeError):
-        subreaper = False
-    return subreaper
 
 
 def load_source_manifest():
@@ -105,28 +88,6 @@ def admit_trusted_children(manifest):
             raise ValueError("trusted child script changed: " + name)
 
 
-def descendants(pid):
-    """All live descendants of pid, found through /proc parent links."""
-    parents = {}
-    for entry in os.listdir("/proc"):
-        if not entry.isdigit():
-            continue
-        try:
-            with open(f"/proc/{entry}/stat", "rb") as stream:
-                fields = stream.read().rsplit(b") ", 1)[1].split()
-            parents[int(entry)] = int(fields[1])
-        except (OSError, IndexError, ValueError):
-            continue
-    found, frontier = [], [pid]
-    while frontier:
-        parent = frontier.pop()
-        for child, owner in parents.items():
-            if owner == parent and child not in found:
-                found.append(child)
-                frontier.append(child)
-    return found
-
-
 class SetupDeadlineExpired(TimeoutError):
     """The trusted runner deadline expired before any scientific child ran."""
 
@@ -157,12 +118,16 @@ class ChildRunner:
             self.deadline = min(self.deadline, envelope_deadline - 100)
             if self.deadline <= time.monotonic():
                 raise SetupDeadlineExpired("workload setup deadline exhausted")
-        self.active = None
+        self.active = None      # a trusted subprocess.Popen
+        self.instance = None    # a sandboxed training child (isolate.Instance)
         self.started = False
         self.on_scientific_start = on_scientific_start
 
     def stop(self):
-        """Kill the active child, its process group and every stray descendant."""
+        """End the active child: a trusted child's process group, or the sandbox instance."""
+        if self.instance is not None:
+            instance, self.instance = self.instance, None
+            instance.close()
         if self.active is not None:
             try:
                 os.killpg(self.active.pid, signal.SIGKILL)
@@ -173,22 +138,6 @@ class ChildRunner:
             except subprocess.TimeoutExpired:
                 pass
             self.active = None
-        for _ in range(50):
-            stray = descendants(os.getpid())
-            if not stray:
-                return
-            for pid in stray:
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except (ProcessLookupError, PermissionError):
-                    pass
-            try:
-                while os.waitpid(-1, os.WNOHANG)[0]:
-                    pass
-            except ChildProcessError:
-                pass
-            time.sleep(0.1)
-        raise RuntimeError("could not reap every descendant of a workload child")
 
     def _require(self, seconds):
         """A phase starts only if the shared clock can hold its full limit."""
@@ -197,57 +146,83 @@ class ChildRunner:
                 raise SetupDeadlineExpired("workload setup deadline exhausted")
             raise SuiteDeadlineExpired("workload deadline exhausted")
 
-    def run(self, argv, *, cwd, env, log, limit, stages=()):
-        """Run one scientific child under a sequence of separately limited stages.
+    def _scientific_start(self):
+        if not self.started:
+            if self.on_scientific_start is not None:
+                self.on_scientific_start()
+            self.started = True
 
-        ``stages`` is a sequence of ``(marker, seconds, label)``. The child must
-        write each one-byte ``marker`` in order to the inherited descriptor
-        named by ``{ready_fd}`` in argv, each within ``seconds`` of the previous
-        marker (the first: of process start). After the last marker the child
-        has ``limit`` seconds to exit; that last stage is labelled ``"exit"``.
-        Returns ``{label: seconds spent in that stage}``. A stage that overruns
-        raises ``PhaseTimeout(label)``; a wrong marker, a closed descriptor or a
-        non-zero exit raises ``PhaseFailed(label)``.
-        """
-        self._require(limit + sum(seconds for _, seconds, _ in stages))
-        read_end = write_end = None
-        options = {}
-        if stages:
-            read_end, write_end = os.pipe()
-            argv = [part.format(ready_fd=write_end) if "{ready_fd}" in part else part
-                    for part in argv]
-            options["pass_fds"] = (write_end,)
-        spent = {}
+    def run(self, argv, *, cwd, env, log, limit):
+        """Run one trusted child (no submitted code) to exit within ``limit`` seconds.
+        Returns ``{"exit": seconds}``; an overrun raises ``PhaseTimeout("exit")``, a non-zero
+        exit ``PhaseFailed("exit")``."""
+        self._require(limit)
         with log.open("wb") as stream:
+            self.active = subprocess.Popen(
+                argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=stream,
+                stderr=subprocess.STDOUT, start_new_session=True)
             try:
-                self.active = subprocess.Popen(
-                    argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=stream,
-                    stderr=subprocess.STDOUT, start_new_session=True, **options)
-            finally:
-                if write_end is not None:
-                    os.close(write_end)
-            try:
-                if not self.started:
-                    if self.on_scientific_start is not None:
-                        self.on_scientific_start()
-                    self.started = True
+                self._scientific_start()
                 began = time.monotonic()
-                for marker, seconds, label in stages:
-                    ready, _, _ = select.select([read_end], [], [], seconds)
-                    if not ready:
-                        raise PhaseTimeout(label)
-                    if os.read(read_end, 1) != marker:
-                        raise PhaseFailed(label)
-                    spent[label], began = time.monotonic() - began, time.monotonic()
                 try:
                     code = self.active.wait(timeout=limit)
                 except subprocess.TimeoutExpired as error:
                     raise PhaseTimeout("exit") from error
-                spent["exit"] = time.monotonic() - began
                 if code:
                     raise PhaseFailed("exit")
-                return spent
+                return {"exit": time.monotonic() - began}
             finally:
-                if read_end is not None:
-                    os.close(read_end)
                 self.stop()
+
+    def run_sandboxed(self, argv, *, limit, stages, **sandbox):
+        """Run one training child in a fresh isolate instance under a sequence of
+        separately limited stages; returns ``(spent, result)``.
+
+        ``stages`` is a sequence of ``(marker, seconds, label)``. The child must write each
+        one-byte ``marker`` in order to its stdout (the judge's pipe), each within ``seconds``
+        of the previous marker (the first: of the instance's start). After the last marker the
+        child has ``limit`` seconds to write ``EXPORTED`` and exit; that last stage is labelled
+        ``"exit"``. ``spent`` is ``{label: seconds spent in that stage}``; ``result`` is the
+        instance's isolate.Result (stderr, declared outputs). A stage that overruns raises
+        ``PhaseTimeout(label)``; a wrong marker, an early end of the pipe, a non-zero exit or a
+        sandbox limit raises ``PhaseFailed(label)``. Either carries the Result as ``.result``.
+        ``sandbox`` are isolate.start's keyword arguments (tree, inputs, outputs, env, ...).
+        """
+        whole = limit + sum(seconds for _, seconds, _ in stages)
+        self._require(whole)
+        self.instance = isolate.start(argv, timeout_seconds=whole + 60, **sandbox)
+        pipe = self.instance.stdout.fileno()
+        spent, label = {}, "exit"
+        try:
+            self._scientific_start()
+            began = time.monotonic()
+            for marker, seconds, label in (*stages, (EXPORTED, limit, "exit")):
+                ready, _, _ = select.select([pipe], [], [], seconds)
+                if not ready:
+                    raise PhaseTimeout(label)
+                if os.read(pipe, 1) != marker:
+                    raise PhaseFailed(label)
+                if label != "exit":
+                    spent[label], began = time.monotonic() - began, time.monotonic()
+            # The pipe ends when the child exits (nothing else holds its write end).
+            ready, _, _ = select.select([pipe], [], [], max(0.0, limit - (time.monotonic() - began)))
+            if not ready:
+                raise PhaseTimeout("exit")
+            if os.read(pipe, 1) != b"":
+                raise PhaseFailed("exit")
+            spent["exit"] = time.monotonic() - began
+        except (PhaseTimeout, PhaseFailed) as error:
+            instance, self.instance = self.instance, None
+            error.result = instance.close()
+            raise
+        except BaseException:
+            self.stop()
+            raise
+        instance, self.instance = self.instance, None
+        result = instance.close()
+        # close() may find the child between closing its pipe and exiting: SIGKILL then.
+        if result.limit is not None or result.returncode not in (0, -signal.SIGKILL):
+            error = PhaseFailed("exit")
+            error.result = result
+            raise error
+        return spent, result

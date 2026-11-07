@@ -1,4 +1,4 @@
-"""Untrusted policy process: one fresh instance per episode, inside the sealed sandbox.
+"""Untrusted policy process: one fresh isolate instance per episode (policy_boundary.py).
 
 It imports the submitted ``secagent.tool`` and serves the four Progent hooks the
 episode runner forwards (generate, update, check, plus the suite's base
@@ -9,17 +9,28 @@ the key, the caps and the accounting.
 
 import json
 import os
+import resource
 import sys
 
-sys.path[:0] = ["/bridge", "/candidate", "/candidate/agentdojo/src"]
+# The statement's 768 MiB of address space, before any candidate code runs.
+resource.setrlimit(resource.RLIMIT_AS, (768 * 1024**2, 768 * 1024**2))
+# Candidate output never reaches the transport or the judge.
+os.dup2(os.open(os.devnull, os.O_WRONLY), 2)
+# Unused by the hooks (and never importable by the policy); importing it would cost
+# about 1.5 s of the policy's CPU seconds per episode, so secagent.tool sees it unavailable.
+sys.modules["langchain"] = None
+# The working directory is the instance's copy of the candidate tree; this file and the
+# protocol module are its read-only inputs beside each other.
+_tree = os.getcwd()
+sys.path[:0] = [os.path.dirname(os.path.abspath(__file__)), _tree, os.path.join(_tree, "agentdojo", "src")]
 from policy_protocol import MAX_ERROR, MAX_REQUEST, encode, parse_parent_message
 
 # Progent-LLM configuration (paper code path): generate + update, update errors ignored.
 os.environ.update(SECAGENT_GENERATE="True", SECAGENT_UPDATE="True",
                   SECAGENT_IGNORE_UPDATE_ERROR="True", SECAGENT_POLICY_MODEL="task-policy-model")
 
-_out = os.fdopen(1, "wb", buffering=0, closefd=False)  # no dup(2) under seccomp
-sys.stdout = sys.stderr  # candidate prints never reach the transport
+_out = os.fdopen(1, "wb", buffering=0, closefd=False)
+sys.stdout = sys.stderr  # candidate prints go to /dev/null, never to the transport
 _in = sys.stdin.buffer
 
 

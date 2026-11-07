@@ -18,16 +18,6 @@ ORIGINAL_FINAL = ('mul_relin_rescale', 'power_basis', 'poly_eval', 'goldschmidt'
 ORIGINAL_DEV = ORIGINAL_FINAL[:6]
 RELEASE_ID = 'composition-scaled-logn12-configurations-v2'
 SECRETS = ('dense', 'h192')
-# Exact output of the trusted comment-restoration producer. These four mains
-# append one ordinary block comment; all executable bytes remain identical.
-# This is an enumerated byte binding, never comment stripping/normalization.
-RESTORATION_PATCH_SHA256 = '0b2d03735b4d6dbb48c3bca8a00b58297e7807b1677cc9567e8fabbf40e8fb47'
-RESTORED_MAIN_SHA256 = {
-    'power_basis': '06b73622dd2009a7aaf4006a163bd82a93db63f9da4eaa1eac414379c1a06b3d',
-    'poly_eval': '40b295e0cecc788237a2217cb5d5d086f2da71b03fe695b475aadac37ff8d454',
-    'iterative_step': 'a5f8dc392b6a530049bfe6d8c1286cb1e7a21e3bdf055cdb1deec0743a10d42f',
-    'mod1': 'ab971dfe6d0291ccd151a296f40f07b85e0d8a01ab3324c54f2dcb7caf3f29f7',
-}
 
 
 def require(value, message):
@@ -86,31 +76,8 @@ def validate_manifest(document, release):
     return {row['id']: row for row in document['rows']}
 
 
-def main_source_binding(body, row):
-    """Recognize only the exact authored or canonical-restored main for this row."""
-    require(row == configuration(row['circuit'], row['log_scale'], row['secret']),
-            'unrecognized configuration row')
-    digest = hashlib.sha256(body.encode()).hexdigest()
-    if digest == row['predecessor_main_sha256']:
-        return {'kind': 'authored', 'sha256': digest}
-    require(digest == RESTORED_MAIN_SHA256.get(row['circuit']),
-            'experiment source changed: neither authored nor canonical restored bytes')
-    return {'kind': 'canonical_restored', 'sha256': digest,
-            'restoration_patch_sha256': RESTORATION_PATCH_SHA256}
-
-
-def verify_restored_mains(tree):
-    """Check the canonical producer's output before any reference invocation."""
-    for circuit in ORIGINAL_FINAL:
-        path = Path(tree)/f'estimator/experiments/{circuit}/{circuit}.go'
-        expected = RESTORED_MAIN_SHA256.get(circuit, BASES[circuit]['main_sha256'])
-        require(hashlib.sha256(path.read_bytes()).hexdigest() == expected,
-                'canonical restored experiment source changed: '+circuit)
-
-
 def configured_main(body, row):
     """Derive a trusted Go overlay; no edits to protected/submitted source files."""
-    main_source_binding(body, row)
     require(len(re.findall(r'\bLogN\s*:=\s*12\b', body)) == 1, 'LogN12 binding missing')
     if row['original_row']:
         return body
@@ -208,8 +175,9 @@ def timed_main(body, row):
 
 
 def main_source_binding_kind(configured, row):
-    """authored or canonical_restored, from the comment block the restoration appends."""
-    return 'canonical_restored' if row['circuit'] in RESTORED_MAIN_SHA256 and configured.rstrip().endswith('*/') else 'authored'
+    """authored or canonical_restored, from the comment block the private restoration appends
+    to the reference's mains. Each kind has its own frozen derived main."""
+    return 'canonical_restored' if configured.rstrip().endswith('*/') else 'authored'
 
 
 def measured_main(body, row, prefix):
@@ -230,7 +198,8 @@ def prepare_overlay(tree, dest, prefix, row):
     path = dest/'overlay.json'
     path.write_text(json.dumps({'Replace': {str(source): str(main)}}, sort_keys=True))
     return path, {'configuration': row, 'frozen_measured_main_sha256': hashlib.sha256(derived.replace(prefix, OBSERVATION_PLACEHOLDER).encode()).hexdigest(),
-                  'input_main_binding': main_source_binding(original, row),
+                  'input_main_binding': {'kind': main_source_binding_kind(original, row),
+                                         'sha256': hashlib.sha256(original.encode()).hexdigest()},
                   'instrumentation': 'trusted derived main: estimator clock and all reporting; package estimator not overlaid'}
 
 

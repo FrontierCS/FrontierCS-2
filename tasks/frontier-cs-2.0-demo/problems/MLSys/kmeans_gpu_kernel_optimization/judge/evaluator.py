@@ -1,8 +1,26 @@
-"""Native FrontierCS2 evaluator for GPU K-Means kernel optimization."""
+"""Evaluator for GPU K-Means kernel optimization (one H100): one exact Lloyd step.
+
+Each selected workload runs the naive starter, the optimized reference and the candidate
+(`tree`: the starter with the submission overlaid) over a two-step Lloyd loop on planted
+bfloat16 clusters. Train: the four public workloads. Final: all six (public plus hidden).
+
+raw_score = score_unbounded: S = geometric mean over the workloads of naive median loop latency
+divided by candidate median loop latency; 0 if S <= 1, else 100*log(S)/(log(10)+log(S)).
+
+Metrics per workload (candidate vs reference; all must pass):
+  lloyd_loop_latency_ms    synchronized two-step loop latency, lower; passes when
+                           candidate < reference.
+  labeled_inertia          inertia of the final labels/centroids, lower; passes when
+                           candidate <= 1.05 * reference.
+  label_mismatch_fraction  share of final labels that are not an exact nearest centroid, lower;
+                           passes when candidate <= reference + 0.002.
+beats_reference = 1 when every metric passes on every selected workload (a conjunction).
+check_tree rejects (content_policy) external optimized imports in added lines; task.toml
+[submission] holds the editable surface. Every implementation runs under the shared isolate launcher
+(one fresh instance per workload: the GPU, no judge file, no network, nothing kept).
+"""
 from __future__ import annotations
 
-import fnmatch
-import hashlib
 import json
 import math
 import os
@@ -12,139 +30,35 @@ import statistics
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 TASK_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = TASK_DIR / "scoring_config.json"
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
-STARTER = TASK_DIR / "repo" / "kmeanslib"
-MAX_PATCH_BYTES = 2_000_000
-MAX_CHANGED_FILES = 80
-ALLOWED_PATTERNS = ("kmeanslib/**",)
-DENIED_PATTERNS = (
-    "evaluator.py", "reference.patch", "refkmeans.py", "**/refkmeans.py",
-    "**/conftest.py", "pyproject.toml", "setup.py",
-    "setup.cfg",
-)
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
+STARTER = PRISTINE / "kmeanslib"
+WORKER = Path(__file__).resolve()  # this file runs one implementation and workload (--worker)
+# Judge-only content rule over each changed file's added lines, unchanged from the previous
+# checker (it joins a file's added lines, so a match may span lines).
 FORBIDDEN_IMPORT_RE = re.compile(
     r"(?:^|\n)\s*(?:import|from)\s+"
     r"(flashlib|cuml|cudf|cupy|faiss|sklearn|scikit|cutlass|cuvs)\b"
 )
-FORBIDDEN_PATTERN_RE = re.compile(
-    r"\bsubprocess\b|\bsocket\b|\burllib\b|\brequests\b|os\.system|"
-    r"torch\.cuda\.synchronize\s*=|time\.perf_counter\s*=|"
-    r"setattr\(\s*torch\.cuda"
-)
 
 
-@dataclass(frozen=True)
-class PatchFile:
-    old_path: str
-    new_path: str
-    added_lines: tuple[str, ...]
-
-    @property
-    def path(self) -> str:
-        return self.new_path if self.new_path != "/dev/null" else self.old_path
-
-
-def _match(path: str, patterns: tuple[str, ...]) -> bool:
-    return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
-
-
-def _parse_patch(text: str) -> list[PatchFile]:
-    files: list[PatchFile] = []
-    old = new = ""
-    added: list[str] = []
-    active = False
-    for line in text.splitlines():
-        if line.startswith("diff --git "):
-            if active:
-                files.append(PatchFile(old, new, tuple(added)))
-            active = True
-            header = re.fullmatch(r"diff --git a/(\S+) b/(\S+)", line)
-            if header is None:
-                raise ValueError("unsupported patch header")
-            old, new = header.groups()
-            for path in (old, new):
-                ok, message = _validate_path(path)
-                if not ok:
-                    raise ValueError(message)
-            added = []
-        elif active and line.startswith(("rename from ", "rename to ", "copy from ", "copy to ")):
-            raise ValueError("rename and copy patch operations are not supported")
-        elif active and line.startswith("deleted file mode "):
-            new = "/dev/null"
-        elif active and line.startswith("--- "):
-            old = line[4:].strip()
-            old = old[2:] if old.startswith("a/") else old
-        elif active and line.startswith("+++ "):
-            new = line[4:].strip()
-            new = new[2:] if new.startswith("b/") else new
-        elif active and line.startswith("+") and not line.startswith("+++ "):
-            added.append(line[1:])
-    if active:
-        files.append(PatchFile(old, new, tuple(added)))
-    return files
-
-
-def _validate_path(path: str) -> tuple[bool, str]:
-    if not path or path == "/dev/null":
-        return True, ""
-    if path.startswith("/") or ".." in Path(path).parts:
-        return False, f"unsafe patch path: {path}"
-    if _match(path, DENIED_PATTERNS):
-        return False, f"reserved or trusted file may not change: {path}"
-    if not _match(path, ALLOWED_PATTERNS):
-        return False, f"changed file is outside kmeanslib: {path}"
-    if not path.endswith(".py"):
-        return False, f"only Python files may change: {path}"
-    return True, ""
-
-
-def validate_patch(path: Path) -> tuple[bool, str, dict[str, Any]]:
-    if not path.is_file() or path.is_symlink():
-        return False, "solution patch is not a regular file", {}
-    size = path.stat().st_size
-    metrics: dict[str, Any] = {"patch_bytes": size}
-    if size <= 0 or size > MAX_PATCH_BYTES:
-        return False, "solution patch is empty or exceeds 2000000 bytes", metrics
-    body = path.read_bytes()
-    if (b"GIT binary patch" in body or b"\x00" in body
-            or any(line.startswith(b"Binary files ") for line in body.splitlines())):
-        return False, "binary patches are not allowed", metrics
-    text = body.decode("utf-8", errors="replace")
-    try:
-        files = _parse_patch(text)
-    except ValueError as error:
-        return False, str(error), metrics
-    metrics.update(
-        patch_sha256="sha256:" + hashlib.sha256(body).hexdigest(),
-        changed_files=len(files),
-    )
-    if not files or len(files) > MAX_CHANGED_FILES:
-        return False, "patch has no changes or too many changed files", metrics
-    for item in files:
-        if item.new_path == "/dev/null":
-            return False, f"deleting files is outside the task boundary: {item.old_path}", metrics
-        if item.old_path != "/dev/null" and item.old_path != item.new_path:
-            ok, error = _validate_path(item.old_path)
-            if not ok:
-                return False, error, metrics
-        ok, error = _validate_path(item.path)
-        if not ok:
-            return False, error, metrics
-        added = "\n".join(item.added_lines)
-        forbidden_import = FORBIDDEN_IMPORT_RE.search(added)
-        if forbidden_import:
-            return False, f"forbidden external optimized import: {forbidden_import.group(1)}", metrics
-        forbidden = FORBIDDEN_PATTERN_RE.search(added)
-        if forbidden:
-            return False, f"forbidden process, network, or timing pattern: {forbidden.group(0)}", metrics
-    metrics["valid_patch"] = 1
-    return True, "patch accepted by static policy", metrics
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: no external optimized library imports in the lines a file adds
+    (the editable surface itself is task.toml's; isolate bounds what the code can
+    reach)."""
+    hits = []
+    for change in changes:
+        if change.status == "D":
+            continue
+        added = "\n".join(change.added)
+        if FORBIDDEN_IMPORT_RE.search(added):
+            hits.append(change.path)
+    return ("content_policy", hits) if hits else None
 
 
 def geometric_mean(values: list[float]) -> float:
@@ -228,45 +142,48 @@ def _apply_patch(root: Path, patch: Path) -> None:
         subprocess.run(arguments, cwd=root, env=environment, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60)
 
 
-def _worker_environment(source_root: Path, scratch: Path) -> dict[str, str]:
-    allowed = (
-        "PATH", "LD_LIBRARY_PATH", "LIBRARY_PATH", "CUDA_HOME", "CUDA_PATH",
-        "CUDA_VISIBLE_DEVICES", "CC", "CXX",
-    )
+def _isolate():
+    """The shared isolate launcher (from gpu-tools). Imported on use: this file is also the
+    worker that runs inside the sandbox, where the launcher is neither needed nor readable."""
+    import isolate
+    return isolate
+
+
+def _worker_options(config: dict[str, Any]) -> dict[str, Any]:
+    """The isolate knobs of one worker: the GPU, the toolchain environment, the time bound.
+    Naive, reference and candidate run alike, so their latencies stay paired."""
+    allowed = ("LD_LIBRARY_PATH", "LIBRARY_PATH", "CUDA_HOME", "CUDA_PATH", "CC", "CXX")
     environment = {name: os.environ[name] for name in allowed if name in os.environ}
     environment.update({
-        "HOME": str(scratch), "TMPDIR": str(scratch),
-        "TRITON_CACHE_DIR": str(scratch / "triton-cache"),
-        "PYTHONPATH": str(source_root), "PYTHONDONTWRITEBYTECODE": "1",
-        "PYTHONUNBUFFERED": "1", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
+        "TRITON_CACHE_DIR": "{tmp}/triton-cache", "PYTHONPATH": "{work}",
+        "PYTHONDONTWRITEBYTECODE": "1", "PYTHONUNBUFFERED": "1",
     })
-    return environment
+    return {"devices": ["nvidia"], "env": environment, "dev_shm": True, "timeout_seconds": 900,
+            "path": os.environ.get("PATH", _isolate().DEFAULT_PATH)}
 
 
-def _measure(source_root: Path, config: dict[str, Any], scratch: Path) -> list[dict[str, Any]]:
+def _measure(source_root: Path, config: dict[str, Any]) -> list[dict[str, Any]]:
+    """One isolate instance per workload: `source_root` (holding kmeanslib/) is its
+    writable work dir; it sees no judge file, no other implementation's run, no FRONTIER_*
+    variable. The worker is this file (`--worker`), given as an input."""
+    isolate = _isolate()
     rows: list[dict[str, Any]] = []
     for workload in config["workloads"]:
-        result_path = scratch / f"result-{source_root.name}-{workload['id']}.json"
-        error_path = scratch / f"error-{source_root.name}-{workload['id']}.log"
         arguments = [
-            sys.executable, str(Path(__file__).resolve()), "--worker",
-            str(source_root), json.dumps(workload, separators=(",", ":")),
+            os.path.realpath(sys.executable), "{in}/evaluator.py", "--worker",
+            "{work}", json.dumps(workload, separators=(",", ":")),
             str(workload["base_seed"]), str(config["warmup_iterations"]),
-            str(config["timed_iterations"]), str(result_path),
+            str(config["timed_iterations"]), "{out}/result.json",
         ]
-        with error_path.open("wb") as error_stream:
-            try:
-                completed = subprocess.run(
-                    arguments, env=_worker_environment(source_root, scratch),
-                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                    stderr=error_stream, check=False, timeout=900,
-                )
-            except subprocess.TimeoutExpired as error:
-                raise RuntimeError(f"workload {workload['id']} exceeded its GPU worker timeout") from error
-        if completed.returncode != 0 or not result_path.is_file():
-            tail = error_path.read_bytes()[-1000:].decode("utf-8", errors="replace")
+        result = isolate.run(arguments, tree=source_root, inputs={"evaluator.py": WORKER},
+                                  outputs=["result.json"], **_worker_options(config))
+        if result.timed_out:
+            raise RuntimeError(f"workload {workload['id']} exceeded its GPU worker timeout")
+        output = result.outputs.get("result.json")
+        if not result.ok or output is None:
+            tail = result.stderr[-1000:].decode("utf-8", errors="replace")
             raise RuntimeError(f"workload {workload['id']} failed: {tail}")
-        row = json.loads(result_path.read_text())
+        row = json.loads(output)
         if row.get("id") != workload["id"]:
             raise RuntimeError("GPU worker returned the wrong workload identity")
         for key in ("lloyd_loop_latency_ms", "labeled_inertia", "label_mismatch_fraction"):
@@ -315,11 +232,8 @@ def select_suite(config: dict[str, Any], role: str) -> dict[str, Any]:
     }
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
-    patch = Path(solution_path)
-    valid, message, patch_metrics = validate_patch(patch)
-    if not valid:
-        return 0.0, 0.0, message, {}
+def evaluate(tree: str) -> tuple[float, float, str, dict[str, Any]]:
+    """`tree` is the starter with only the submission's allowed files overlaid (shared verifier)."""
     if not STARTER.is_dir() or not REFERENCE_PATCH.is_file():
         raise RuntimeError("KMeans Verifier source bundle is incomplete")
     # The native Verifier maps its trusted train/eval mode to this role.
@@ -328,20 +242,15 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict[str, Any]]:
     # The verifier reports execution errors as failed verification, not a score.
     with tempfile.TemporaryDirectory(prefix="frontier-kmeans-") as directory:
         scratch = Path(directory)
-        (scratch / "triton-cache").mkdir()
         roots = {name: scratch / name for name in ("naive", "reference", "candidate")}
-        for root in roots.values():
-            shutil.copytree(STARTER.parent, root)
+        for name in ("naive", "reference"):
+            shutil.copytree(STARTER.parent, roots[name])
+        shutil.copytree(Path(tree), roots["candidate"])
         _apply_patch(roots["reference"], REFERENCE_PATCH)
-        try:
-            _apply_patch(roots["candidate"], patch)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-            return 0.0, 0.0, "candidate patch does not apply to the starter", {}
-        naive = _measure(roots["naive"], config, scratch)
-        reference = _measure(roots["reference"], config, scratch)
-        candidate = _measure(roots["candidate"], config, scratch)
+        naive = _measure(roots["naive"], config)
+        reference = _measure(roots["reference"], config)
+        candidate = _measure(roots["candidate"], config)
         score, metrics = compare_measurements(naive, reference, candidate, config)
-    metrics.update(patch_metrics)
     metrics["evaluation_suite"] = {
         "mode": config["suite_mode"],
         "workload_base_seeds": {row["id"]: row["base_seed"] for row in config["workloads"]},

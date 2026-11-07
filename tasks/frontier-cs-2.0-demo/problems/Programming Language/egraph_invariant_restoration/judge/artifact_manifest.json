@@ -45,7 +45,6 @@
   "solution_surface": {
     "modify": [
       "src/egraph.rs",
-      "src/lib.rs",
       "src/tutorials/_01_background.rs",
       "src/tutorials/mod.rs"
     ],
@@ -70,10 +69,6 @@
     {
       "path": "frontier-bench.sh",
       "reason": "Task-owned deterministic smoke adapter for the retained authentic test."
-    },
-    {
-      "path": "make_submission.sh",
-      "reason": "Task-owned patch packager that stages tracked and untracked solver files."
     },
     {
       "path": "task/submission_patch.py",

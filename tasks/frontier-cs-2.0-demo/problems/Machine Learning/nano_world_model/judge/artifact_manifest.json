@@ -111,39 +111,15 @@
   "evaluator_adapters": [
     {
       "path": "judge_runtime/sitecustomize.py",
-      "reason": "Installs evaluator-only import, unscored FID and execution-audit adapters before main.py."
+      "reason": "Installs evaluator-only import and unscored FID adapters before main.py; records each dfot_sample latent on the candidate's machine and returns those latents in call order on the trusted runner."
     },
     {
-      "path": "judge_runtime/execution_audit.py",
-      "reason": "Requires observed native entrypoint/data/codec/sampler integration before predictions can be scored."
+      "path": "native_run.py",
+      "reason": "Runner side of the judge: device check and checkpoint conversion, the native reference run and the native decode of the candidate's latents, and the per-clip metrics."
     },
     {
-      "path": "judge_runtime/sampler_bridge.py",
-      "reason": "Passes compact context/actions to isolated candidate sampling; retains targets in the native caller."
-    },
-    {
-      "path": "judge_runtime/sampler_worker.py",
-      "reason": "Loads the fixed public model and executes candidate sampling in isolation."
-    },
-    {
-      "path": "judge_runtime/memory_modules.py",
-      "reason": "Imports candidate source from memory after isolation."
-    },
-    {
-      "path": "judge_runtime/process_transport.py",
-      "reason": "Bounded isolated-worker protocol."
-    },
-    {
-      "path": "judge_runtime/rng_state.py",
-      "reason": "Preserves caller RNG state across isolated sampling."
-    },
-    {
-      "path": "judge_runtime/seal_process.py",
-      "reason": "Applies process isolation before importing candidate source."
-    },
-    {
-      "path": "judge_runtime/wire.py",
-      "reason": "Validates tensor/source protocol without pickle."
+      "path": "public_inputs.py",
+      "reason": "Builds the candidate machine's public Point Maze data: actions, and per clip only the context frame."
     }
   ]
 }

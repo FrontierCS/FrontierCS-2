@@ -1,8 +1,28 @@
-"""Native FrontierCS2 evaluator for GPU DBSCAN kernel optimization."""
+"""Evaluator for GPU DBSCAN kernel optimization (one H100).
+
+Each selected workload runs the frozen naive starter, the optimized reference and the candidate
+(`tree`: the starter with the submission overlaid) with two warmups and three timed
+repetitions on fresh inputs. Train: public w0-w1. Final: w0-w3 scored, plus strict-only
+w4-w5 (PASS only).
+
+raw_score: S = geometric mean over the scored workloads of median(naive_i / candidate_i) per
+workload; 0 if any timed candidate ARI < 0.99 or S <= 1, else 100*log(S)/(log(10)+log(S)).
+score_unbounded = S (geomean_speedup).
+
+Metrics per workload (candidate vs reference; all three must pass):
+  dbscan_latency_ms        median call latency, lower; passes when candidate < reference.
+  adjusted_rand_index      minimum timed ARI against the naive labels, higher; passes when
+                           candidate >= reference and every candidate ARI >= 0.99.
+  noise_mismatch_fraction  maximum timed noise-mask mismatch against naive, lower; passes when
+                           candidate <= reference (zero if the reference is zero).
+beats_reference = 1 when every metric passes on every selected workload (a conjunction). A
+reference missing the 0.99 ARI gate is an evaluator error, not a comparison.
+check_tree rejects (content_policy) external optimized imports in added lines; task.toml
+[submission] holds the editable surface. Every implementation runs under the shared isolate launcher
+(one fresh instance per workload: the GPU, no judge file, no network, nothing kept).
+"""
 from __future__ import annotations
 
-import fnmatch
-import hashlib
 import json
 import math
 import os
@@ -12,142 +32,39 @@ import statistics
 import subprocess
 import sys
 import tempfile
-from collections import Counter
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from checker import adjusted_rand_index, noise_mask_mismatch, validate_labels
 
+import isolate  # noqa: E402  (/opt/frontier, on the import path by frontier.pth)
+
 TASK_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = TASK_DIR / "scoring_config.json"
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
-STARTER = TASK_DIR / "repo" / "dbscanlib"
-MAX_PATCH_BYTES = 2_000_000
-MAX_CHANGED_FILES = 80
-ALLOWED_PATTERNS = ("dbscanlib/**",)
-DENIED_PATTERNS = (
-    "evaluator.py", "reference.patch", "refdbscan.py", "**/refdbscan.py",
-    "**/conftest.py", "pyproject.toml", "setup.py",
-    "setup.cfg",
-)
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
+STARTER = PRISTINE / "dbscanlib"
+WORKER = TASK_DIR / "worker.py"  # runs one implementation and workload in an isolate instance
+# Judge-only content rule over each changed file's added lines, unchanged from the previous
+# checker (they join a file's added lines, so a match may span lines; task.toml cannot say that).
 FORBIDDEN_IMPORT_RE = re.compile(
     r"(?:^|\n)\s*(?:import|from)\s+"
     r"(flashlib|cuml|cudf|cupy|faiss|sklearn|scikit|cutlass|cuvs)\b"
 )
-FORBIDDEN_PATTERN_RE = re.compile(
-    r"\bsubprocess\b|\bsocket\b|\burllib\b|\brequests\b|os\.system|"
-    r"torch\.cuda\.synchronize\s*=|time\.perf_counter\s*=|"
-    r"setattr\(\s*torch\.cuda"
-)
 
 
-@dataclass(frozen=True)
-class PatchFile:
-    old_path: str
-    new_path: str
-    added_lines: tuple[str, ...]
-
-    @property
-    def path(self) -> str:
-        return self.new_path if self.new_path != "/dev/null" else self.old_path
-
-
-def _match(path: str, patterns: tuple[str, ...]) -> bool:
-    return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
-
-
-def _parse_patch(text: str) -> list[PatchFile]:
-    files: list[PatchFile] = []
-    old = new = ""
-    added: list[str] = []
-    active = False
-    for line in text.splitlines():
-        if line.startswith("diff --git "):
-            if active:
-                files.append(PatchFile(old, new, tuple(added)))
-            active = True
-            header = re.fullmatch(r"diff --git a/(\S+) b/(\S+)", line)
-            if header is None:
-                raise ValueError("unsupported patch header")
-            old, new = header.groups()
-            for path in (old, new):
-                ok, message = _validate_path(path)
-                if not ok:
-                    raise ValueError(message)
-            added = []
-        elif active and line.startswith(("rename from ", "rename to ", "copy from ", "copy to ")):
-            raise ValueError("rename and copy patch operations are not supported")
-        elif active and line.startswith("deleted file mode "):
-            new = "/dev/null"
-        elif active and line.startswith("--- "):
-            old = line[4:].strip()
-            old = old[2:] if old.startswith("a/") else old
-        elif active and line.startswith("+++ "):
-            new = line[4:].strip()
-            new = new[2:] if new.startswith("b/") else new
-        elif active and line.startswith("+") and not line.startswith("+++ "):
-            added.append(line[1:])
-    if active:
-        files.append(PatchFile(old, new, tuple(added)))
-    return files
-
-
-def _validate_path(path: str) -> tuple[bool, str]:
-    if not path or path == "/dev/null":
-        return True, ""
-    if path.startswith("/") or ".." in Path(path).parts:
-        return False, f"unsafe patch path: {path}"
-    if _match(path, DENIED_PATTERNS):
-        return False, f"reserved or trusted file may not change: {path}"
-    if not _match(path, ALLOWED_PATTERNS):
-        return False, f"changed file is outside dbscanlib: {path}"
-    if not path.endswith(".py"):
-        return False, f"only Python files may change: {path}"
-    return True, ""
-
-
-def validate_patch(path: Path) -> tuple[bool, str, dict[str, Any]]:
-    if not path.is_file() or path.is_symlink():
-        return False, "solution patch is not a regular file", {}
-    size = path.stat().st_size
-    metrics: dict[str, Any] = {"patch_bytes": size}
-    if size <= 0 or size > MAX_PATCH_BYTES:
-        return False, "solution patch is empty or exceeds 2000000 bytes", metrics
-    body = path.read_bytes()
-    if (b"GIT binary patch" in body or b"\x00" in body
-            or any(line.startswith(b"Binary files ") for line in body.splitlines())):
-        return False, "binary patches are not allowed", metrics
-    text = body.decode("utf-8", errors="replace")
-    try:
-        files = _parse_patch(text)
-    except ValueError as error:
-        return False, str(error), metrics
-    metrics.update(
-        patch_sha256="sha256:" + hashlib.sha256(body).hexdigest(),
-        changed_files=len(files),
-    )
-    if not files or len(files) > MAX_CHANGED_FILES:
-        return False, "patch has no changes or too many changed files", metrics
-    for item in files:
-        if item.new_path == "/dev/null":
-            return False, f"deleting files is outside the task boundary: {item.old_path}", metrics
-        if item.old_path != "/dev/null" and item.old_path != item.new_path:
-            ok, error = _validate_path(item.old_path)
-            if not ok:
-                return False, error, metrics
-        ok, error = _validate_path(item.path)
-        if not ok:
-            return False, error, metrics
-        added = "\n".join(item.added_lines)
-        forbidden_import = FORBIDDEN_IMPORT_RE.search(added)
-        if forbidden_import:
-            return False, f"forbidden external optimized import: {forbidden_import.group(1)}", metrics
-        forbidden = FORBIDDEN_PATTERN_RE.search(added)
-        if forbidden:
-            return False, f"forbidden process, network, or timing pattern: {forbidden.group(0)}", metrics
-    metrics["valid_patch"] = 1
-    return True, "patch accepted by static policy", metrics
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: no external optimized library imports in the lines a file adds
+    (the editable surface itself is task.toml's; isolate bounds what the code can
+    reach)."""
+    hits = []
+    for change in changes:
+        if change.status == "D":
+            continue
+        added = "\n".join(change.added)
+        if FORBIDDEN_IMPORT_RE.search(added):
+            hits.append(change.path)
+    return ("content_policy", hits) if hits else None
 
 
 def select_suite(config: dict[str, Any], role: str) -> dict[str, Any]:
@@ -297,59 +214,62 @@ def _apply_patch(root: Path, patch: Path) -> None:
                        stderr=subprocess.PIPE, timeout=60)
 
 
-def _worker_environment(source: Path, scratch: Path) -> dict[str, str]:
+def _result_bound(config: dict, workload: dict) -> int:
+    return workload["N"] * config["timed_iterations"] * 24 + 4096
+
+
+def _worker_options(config: dict, workload: dict) -> dict:
+    """The isolate knobs of one worker: the GPU, the toolchain environment, the time and
+    output bounds. Naive, reference and candidate run alike, so their latencies stay paired."""
     env = {name: os.environ[name] for name in (
-        "PATH", "LD_LIBRARY_PATH", "LIBRARY_PATH", "CUDA_HOME", "CUDA_PATH", "CUDA_VISIBLE_DEVICES", "CC", "CXX") if name in os.environ}
-    env.update(HOME=str(scratch), TMPDIR=str(scratch), TRITON_CACHE_DIR=str(scratch / "triton-cache"),
-               PYTHONPATH=str(source), PYTHONDONTWRITEBYTECODE="1", PYTHONUNBUFFERED="1", LANG="C.UTF-8", LC_ALL="C.UTF-8")
-    return env
+        "LD_LIBRARY_PATH", "LIBRARY_PATH", "CUDA_HOME", "CUDA_PATH", "CC", "CXX") if name in os.environ}
+    env.update(TRITON_CACHE_DIR="{tmp}/triton-cache", PYTHONPATH="{work}", PYTHONDONTWRITEBYTECODE="1",
+               PYTHONUNBUFFERED="1")
+    return {"devices": ["nvidia"], "env": env, "path": os.environ.get("PATH", isolate.DEFAULT_PATH),
+            "dev_shm": True, "timeout_seconds": config["worker_timeout_seconds"],
+            # one byte past the result bound, so an oversized result is seen, never cut
+            "output_bytes": max(isolate.DEFAULT_LIMITS["output_bytes"],
+                                _result_bound(config, workload) + 1)}
 
 
-def _measure(source: Path, config: dict, scratch: Path) -> list[dict]:
+def _measure(source: Path, config: dict) -> list[dict]:
+    """One isolate instance per workload: `source` (holding dbscanlib/) is its writable
+    work dir; it sees no judge file, no other implementation's run, no FRONTIER_* variable."""
     rows = []
     for workload in config["workloads"]:
-        output = scratch / f"result-{source.name}-{workload['id']}.json"
-        stderr = scratch / f"error-{source.name}-{workload['id']}.log"
-        args = [sys.executable, str(TASK_DIR / "worker.py"), str(source),
-                json.dumps(workload, separators=(",", ":")), str(config["warmup_iterations"]),
-                str(config["timed_iterations"]), str(output)]
-        with stderr.open("wb") as errors:
-            completed = subprocess.run(args, env=_worker_environment(source, scratch), stdin=subprocess.DEVNULL,
-                                       stdout=subprocess.DEVNULL, stderr=errors, check=False,
-                                       timeout=config["worker_timeout_seconds"])
-        if completed.returncode != 0 or not output.is_file():
+        result = isolate.run(
+            [os.path.realpath(sys.executable), "{in}/worker.py", "{work}",
+             json.dumps(workload, separators=(",", ":")), str(config["warmup_iterations"]),
+             str(config["timed_iterations"]), "{out}/result.json"],
+            tree=source, inputs={"worker.py": WORKER}, outputs=["result.json"],
+            **_worker_options(config, workload))
+        output = result.outputs.get("result.json")
+        if not result.ok or output is None:
             raise RuntimeError(f"DBSCAN workload {workload['id']} did not produce a measurement")
-        if output.stat().st_size > workload["N"] * config["timed_iterations"] * 24 + 4096:
+        if len(output) > _result_bound(config, workload):
             raise RuntimeError("DBSCAN worker output exceeds its bounded label/measurement size")
-        row = json.loads(output.read_text())
+        row = json.loads(output)
         _validate_samples(row, workload, config["timed_iterations"])
         rows.append(row)
     return rows
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    patch = Path(solution_path)
-    valid, message, patch_metrics = validate_patch(patch)
-    if not valid:
-        return 0.0, 0.0, message, {}
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    """`tree` is the starter with only the submission's allowed files overlaid (shared verifier)."""
     if not STARTER.is_dir() or not REFERENCE_PATCH.is_file():
         raise RuntimeError("DBSCAN Verifier source bundle is incomplete")
     config = select_suite(json.loads(CONFIG_PATH.read_text()), os.environ.get("FRONTIER_SUBMISSION_ROLE", ""))
     with tempfile.TemporaryDirectory(prefix="frontier-dbscan-") as directory:
         scratch = Path(directory)
         roots = {kind: scratch / kind for kind in ("naive", "reference", "candidate")}
-        for root in roots.values():
-            shutil.copytree(STARTER, root / "dbscanlib")
+        for kind in ("naive", "reference"):
+            shutil.copytree(STARTER, roots[kind] / "dbscanlib")
+        shutil.copytree(Path(tree) / "dbscanlib", roots["candidate"] / "dbscanlib")
         # The naive oracle is frozen independently of the Agent's starter tree.
         shutil.copyfile(TASK_DIR / "refdbscan.py", roots["naive"] / "dbscanlib" / "dbscan.py")
         _apply_patch(roots["reference"], REFERENCE_PATCH)
-        try:
-            _apply_patch(roots["candidate"], patch)
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-            return 0.0, 0.0, "candidate patch does not apply to the starter", {}
-        measurements = [_measure(roots[kind], config, scratch) for kind in roots]
+        measurements = [_measure(roots[kind], config) for kind in roots]
         score, metrics = compare_measurements(*measurements, config)
-    metrics.update(patch_metrics)
     metrics["evaluation_suite"] = {"mode": config["suite_mode"],
                                     "workloads": [{"id": w["id"], "base_seed": w["base_seed"]} for w in config["workloads"]]}
     return score, metrics["geomean_speedup"], "DBSCAN paired speedup and per-workload clustering agreement measured", metrics

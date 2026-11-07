@@ -1,9 +1,7 @@
 """Validate queue-only snapshots and install the private trusted import proxy."""
 
 from contextlib import contextmanager
-import hashlib
 import importlib
-import json
 from pathlib import Path
 import shutil
 import sys
@@ -31,28 +29,9 @@ def file_map(root):
     return result
 
 
-def check_trusted_spine(trusted_root, manifest):
-    paths = file_map(trusted_root)
-    expected = json.loads(Path(manifest).read_text())
-    if set(paths) != set(expected):
-        raise ValueError("Trusted spine file set differs from its pinned source")
-    for name, path in paths.items():
-        if hashlib.sha256(path.read_bytes()).hexdigest() != expected[name]:
-            raise ValueError("Trusted scientific source changed: " + name)
-    return paths
-
-
-def prepare_queue_snapshot(submission, trusted_root, manifest, destination):
-    """Validate fixed context, then copy only the editable queue import surface."""
-    trusted = check_trusted_spine(trusted_root, manifest)
+def prepare_queue_snapshot(submission, destination):
+    """Copy only the editable queue import surface."""
     candidate = file_map(submission)
-    fixed = {name for name in trusted if name != QUEUE}
-    if not fixed <= candidate.keys() or QUEUE not in candidate:
-        raise ValueError("Submission omits required source")
-    for name in candidate:
-        if name != QUEUE and not name.startswith(HELPERS):
-            if name not in fixed or candidate[name].read_bytes() != trusted[name].read_bytes():
-                raise ValueError("Submission modified source outside queue surface")
     selected = {name: path for name, path in candidate.items() if name == QUEUE or name.startswith(HELPERS)}
     if len(selected) > 256 or sum(p.stat().st_size for p in selected.values()) > 16 * 1024**2:
         raise ValueError("Queue source snapshot exceeds local preparation bounds")
@@ -66,9 +45,8 @@ def prepare_queue_snapshot(submission, trusted_root, manifest, destination):
 
 
 @contextmanager
-def trusted_queue_import(trusted_root, manifest, queue_source, scratch_root, *, python, deadline, allow_cuda=False, processes=None):
-    """Only this verified upstream root is added to the trusted import path."""
-    check_trusted_spine(trusted_root, manifest)
+def trusted_queue_import(trusted_root, queue_source, *, python, deadline, allow_cuda=False, processes=None):
+    """Only this upstream root is added to the trusted import path."""
     from trusted_queue import bind_queue_class
     if any(name == "main_fd" or name == "frechet_distance" or name.startswith("frechet_distance.")
            for name in sys.modules):
@@ -78,7 +56,7 @@ def trusted_queue_import(trusted_root, manifest, queue_source, scratch_root, *, 
         raise ValueError("Submitted source must not be on trusted sys.path")
     workers = [] if processes is None else processes
     old_path, old_modules = sys.path[:], set(sys.modules)
-    cls = bind_queue_class(queue_source, scratch_root, python=python, deadline=deadline,
+    cls = bind_queue_class(queue_source, python=python, deadline=deadline,
                           processes=workers, allow_cuda=allow_cuda)
     proxy_module = ModuleType("frechet_distance.queue")
     proxy_module.FeatureQueue = cls

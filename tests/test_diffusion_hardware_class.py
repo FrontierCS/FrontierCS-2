@@ -2,14 +2,13 @@
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import base64
-import hashlib
 import io
 import json
-from pathlib import Path
 import sys
 import tarfile
 import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 TASK = Path(__file__).resolve().parents[1] / (
@@ -28,15 +27,15 @@ class HardwareClassTests(unittest.TestCase):
             sys.path[:] = old_path
 
         self.addCleanup(restore)
-        for name in ("hardware_admission", "native_data", "private_context", "task_guards"):
+        for name in ("hardware_admission", "hardware_dataset", "native_data", "private_context",
+                     "task_guards"):
             sys.modules.pop(name, None)
         sys.path.insert(0, str(TASK / "judge"))
         from hardware_admission import admits
         from native_data import read_dataset
         self.admits, self.read_dataset = admits, read_dataset
-        command = json.loads((TASK / "policy.json").read_bytes())["verifier"]["command"][-1]
-        self.selector = {"__name__": "diffusion_hardware_class_selector"}
-        exec(compile(command, "policy-selector", "exec"), self.selector)
+        import hardware_dataset
+        self.selector = vars(hardware_dataset)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.scratch = Path(directory.name)
@@ -87,22 +86,11 @@ class HardwareClassTests(unittest.TestCase):
     def test_runtime_check_admits_the_class_and_keeps_the_sealed_constants(self):
         import private_context as pc
         from native_data import materialize_dataset
-        # The image inventory: COPY judge, then chmod -R a+rX,a-w (harbor .sh files 0555).
-        source = {}
-        for path in sorted((TASK / "judge").rglob("*")):
-            if path.is_file():
-                name = path.relative_to(TASK / "judge").as_posix()
-                executable = path.stat().st_mode & 0o111 or (name.startswith("harbor/app/") and name.endswith(".sh"))
-                source[name] = {"sha256": pc.file_sha256(path), "mode": 0o555 if executable else 0o444}
-        runtime, real = object(), pc.canonical_sha256
         sealed = self.sealed("train")
         with materialize_dataset(self.select("train", sealed), "dev", self.scratch) as root:
-            seal = json.loads((root / "seal.json").read_bytes())
-            with mock.patch.object(pc, "inventory", lambda root: source), \
-                    mock.patch.object(pc, "runtime_identity", lambda prefix: runtime), \
-                    mock.patch.object(pc, "canonical_sha256", lambda value: (
-                        seal["runtime"]["identity_sha256"] if value is runtime else real(value))), \
-                    mock.patch.object(pc, "verify_cgroup", lambda policy: None):
+            # The judge source and runtime are no longer bound to the seal (owner decision,
+            # ); the hardware class and the sealed constants still are.
+            with mock.patch.object(pc, "verify_cgroup", lambda policy: None):
                 for actual in self.admitted(sealed):
                     with mock.patch.object(pc, "hardware_identity", lambda: actual):
                         context = pc.load_context(root=root, mode="dev")

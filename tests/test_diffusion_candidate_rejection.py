@@ -1,22 +1,23 @@
-"""Typed candidate refusals are scored; trusted prerequisites remain errors."""
+"""Candidate refusals are scored rejections; trusted prerequisites remain errors."""
 import deployment_test_guard  # noqa: F401 # isort: skip
 
-from contextlib import ExitStack, nullcontext
-import difflib
 import importlib.util
 import io
 import os
-from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tarfile
 import tempfile
-from types import SimpleNamespace
 import unittest
+from contextlib import ExitStack, nullcontext
+from pathlib import Path
 from unittest import mock
 
-TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/frontier-cs-2.0-demo/problems/Robotics/diffusion_policy_cpu")
+ROOT = Path(__file__).resolve().parents[1]
+TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Robotics/diffusion_policy_cpu"
+sys.path.insert(0, str(ROOT / "scripts"))
+import task_manifest  # noqa: E402
 
 
 def load(name, path):
@@ -43,146 +44,169 @@ class CandidateRejectionTests(unittest.TestCase):
             os.environ.update(old_env)
 
         self.addCleanup(restore)
-        sys.path[:0] = [str(TASK / "judge"), str(TASK / "verifier")]
-        for name in ("evaluator", "task_guards", "submission_patch", "private_context",
-                     "measurement_runtime", "native_data", "option_b", "runtime_layout",
-                     "candidate_failure", "beat_spec_feedback"):
+        self.judge = task_manifest.judge_bundle(TASK)
+        shared = task_manifest.SHARED / "verifier"
+        # The Verifier base puts tasks/shared/lib (isolate) beside the verifier modules.
+        sys.path[:0] = [str(self.judge), str(shared), str(task_manifest.SHARED / "lib")]
+        for name in ("evaluator", "task_guards", "private_context", "measurement_runtime",
+                     "native_data", "option_b", "runtime_layout", "hardware_dataset",
+                     "beat_spec_feedback"):
             sys.modules.pop(name, None)
-        self.evaluator = load("evaluator", TASK / "judge/evaluator.py")
-        self.wrapper = load("diffusion_rejection_wrapper", TASK / "verifier/fcs2_verifier.py")
+        self.evaluator = load("evaluator", self.judge / "evaluator.py")
+        self.wrapper = load("diffusion_rejection_wrapper", shared / "fcs2_verifier.py")
         import task_guards
-        import yaml
         self.guards = task_guards
-        self.config = yaml.safe_load((TASK / "judge/config.yaml").read_text())
-        self.bundle = self.root / "bundle"
-        self.bundle.mkdir()
-        for name in ("beat_spec.json", "candidate-diagnostic.json", "candidate_failure.py"):
-            shutil.copy2(TASK / "judge" / name, self.bundle / name)
-        (self.bundle / "evaluator.py").write_text("# evaluator injected by test\n")
-        os.environ["FRONTIER_DATASET_PATH"] = str(TASK / "datasets/train.tar")
-        os.environ["FRONTIER_VERIFICATION_MODE"] = "train"
         os.environ["FRONTIER_VERIFIER_SCRATCH"] = str(self.root)
 
     def trusted_prerequisites(self):
-        """Only prerequisite IO is synthetic; candidate source audit is real."""
+        """Only prerequisite IO is synthetic; the candidate source rules are real."""
+        import hardware_dataset
         import native_data
         import private_context
         import runtime_layout
         context = {"seal": {"runtime": {"prefix": "unused", "checkpoint": "unused"}},
                    "suites": {"dev": {}, "final": {}}}
         stack = ExitStack()
+        stack.enter_context(mock.patch.object(hardware_dataset, "actual_identity", return_value={}))
+        stack.enter_context(mock.patch.object(hardware_dataset, "select_dataset",
+                                              return_value=self.root / "selected.tar"))
         stack.enter_context(mock.patch.object(native_data, "materialize_dataset",
-                                             return_value=nullcontext(self.root)))
+                                              return_value=nullcontext(self.root)))
         stack.enter_context(mock.patch.object(private_context, "load_context", return_value=context))
-        stack.enter_context(mock.patch.object(private_context, "authorize"))
         stack.enter_context(mock.patch.object(private_context, "accepted_calibrations",
-                                             return_value={"dev": {}, "final": {}}))
+                                              return_value={"dev": {}, "final": {}}))
         stack.enter_context(mock.patch.object(runtime_layout, "validate_layout"))
-        stack.enter_context(mock.patch.object(os, "sched_setaffinity"))
+        stack.enter_context(mock.patch.object(os, "umask"))
         return stack
 
-    def signature_patch(self):
-        source = (TASK / "judge/harbor/app" / self.guards.POLICY).read_text()
-        changed = source.replace("def conditional_sample(", "def conditional_sample (", 1)
-        self.assertNotEqual(source, changed)
-        patch = self.root / "signature.patch"
-        patch.write_text("".join(difflib.unified_diff(
-            source.splitlines(keepends=True), changed.splitlines(keepends=True),
-            fromfile="a/" + self.guards.POLICY, tofile="b/" + self.guards.POLICY)))
+    def patch_of(self, old, new):
+        repo = self.root / "repo"
+        if not repo.exists():
+            shutil.copytree(TASK / "repo", repo)
+            env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CEILING_DIRECTORIES": str(self.root)}
+            for args in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t",
+                                                         "commit", "-qm", "base"]):
+                subprocess.run(["git", "-C", str(repo), *args], check=True, env=env)
+        policy = repo / self.guards.POLICY
+        source = policy.read_text()
+        policy.write_text(source.replace(old, new, 1))
+        patch = subprocess.run(["git", "-C", str(repo), "diff"], check=True, capture_output=True).stdout
+        policy.write_text(source)
         return patch
 
-    def audit_measurement(self, _config, path, *_args, **_kwargs):
-        with self.evaluator.prepared_submission(path, self.config):
-            pass
-        self.fail("signature modification unexpectedly passed source audit")
-
-    def transport(self, mode, evaluate, patch):
+    def transport(self, mode, patch, evaluate=None):
         os.environ["FRONTIER_VERIFICATION_MODE"] = mode
+        os.environ["FRONTIER_DATASET_PATH"] = str(TASK / f"datasets/{mode}.json")
         payload = self.root / "payload.tar"
         with tarfile.open(payload, "w", format=tarfile.USTAR_FORMAT) as archive:
-            data = patch.read_bytes()
             member = tarfile.TarInfo("payload/solution.patch")
-            member.size = len(data)
-            archive.addfile(member, io.BytesIO(data))
-        with mock.patch.object(self.wrapper, "load_evaluator", return_value=evaluate):
+            member.size = len(patch)
+            archive.addfile(member, io.BytesIO(patch))
+        loaded = (evaluate or self.evaluator.evaluate, self.evaluator.check_tree)
+        with mock.patch.object(self.wrapper, "load_evaluator", return_value=loaded):
             return self.wrapper.verify(
-                bundle=self.bundle, entrypoint="payload/solution.patch", payload=payload,
+                bundle=self.judge, entrypoint="payload/solution.patch", payload=payload,
                 dataset=TASK / f"datasets/{mode}.json", mode=mode,
                 result_path=self.root / "result.json", evidence_path=self.root / "evidence.tar.zst")
 
-    def test_actual_signature_whitespace_stays_invalid_and_reaches_train_and_final(self):
+    def test_signature_whitespace_is_an_out_of_scope_rejection_in_train_and_final(self):
+        patch = self.patch_of("def conditional_sample(", "def conditional_sample (")
+        for mode in ("train", "eval"):
+            result = self.transport(mode, patch)
+            self.assertEqual((result["status"], result["raw_score"]), ("passed", 0.0))
+            self.assertEqual(result["metrics"], {"score_unbounded": 0.0, "rejected": "out_of_scope"})
+
+    def test_protocol_violation_during_measurement_is_a_content_policy_rejection(self):
         import measurement_runtime
-        patch = self.signature_patch()
-        with self.assertRaises(self.guards.InvalidSubmission):
-            self.audit_measurement(None, patch)
+        body = self.patch_of("        raise NotImplementedError(\"Return a normalized", "        # candidate\n        raise NotImplementedError(\"Return a normalized")
         with self.trusted_prerequisites(), mock.patch.object(
-                measurement_runtime, "measure_suite", side_effect=self.audit_measurement):
+                measurement_runtime, "measure_suite",
+                side_effect=self.guards.InvalidSubmission("Candidate measurement did not complete")):
             for mode in ("train", "eval"):
-                result = self.transport(mode, self.evaluator.evaluate, patch)
+                result = self.transport(mode, body)
+                self.assertEqual(result["metrics"], {"score_unbounded": 0.0, "rejected": "content_policy"})
+                if mode == "eval":
+                    self.assertEqual(result["private_metrics"]["beats_reference"], 0)
+
+    def test_candidate_timeouts_are_scored_zeros(self):
+        import measurement_runtime
+        body = self.patch_of("        raise NotImplementedError(\"Return a normalized",
+                             "        # candidate\n        raise NotImplementedError(\"Return a normalized")
+        with self.trusted_prerequisites(), mock.patch.object(
+                measurement_runtime, "measure_suite",
+                side_effect=self.guards.CandidateTimeout("The suite measurement budget ran out")):
+            for mode in ("train", "eval"):
+                result = self.transport(mode, body)
                 self.assertEqual((result["status"], result["raw_score"]), ("passed", 0.0))
-                if mode == "train":
-                    self.assertEqual(result["metrics"]["candidate_diagnostic"]["category"], "source_policy")
-                    self.assertNotIn("private_metrics", result)
-                else:
-                    self.assertEqual(result["metrics"], {"score_unbounded": 0.0})
+                self.assertEqual(result["metrics"], {"score_unbounded": 0.0})
+                if mode == "eval":
                     self.assertEqual(result["private_metrics"], {"beats_reference": 0})
+
+    def test_episode_timeout_is_the_candidates_only_on_the_candidate_side(self):
+        import subprocess as sp
+        import measurement_runtime
+        context = {"root": str(self.root), "mode": "dev",
+                   "seal": {"runtime": {"checkpoint": "c", "prefix": str(self.root)}}}
+        with mock.patch.object(measurement_runtime, "bounded_process",
+                               side_effect=sp.TimeoutExpired("episode", 150)):
+            for side, error in (("candidate", self.guards.CandidateTimeout),
+                                ("reference", self.guards.TaskIntegrityError)):
+                case = {"side": side, "run": {"index": 0 if side == "candidate" else 1}}
+                with self.assertRaises(error):
+                    measurement_runtime.launch_episode(context, "dev", case, self.root,
+                                                       self.judge / "pristine")
+        failure = self.root / "episode-02"
+        failure.mkdir()
+        (failure / "failure.json").write_text('{"category": "candidate_timeout"}')
+        with mock.patch.object(measurement_runtime, "bounded_process", return_value=(1, 3.0)):
+            with self.assertRaises(self.guards.CandidateTimeout):
+                measurement_runtime.launch_episode(context, "dev",
+                                                   {"side": "candidate", "run": {"index": 2}},
+                                                   self.root, self.judge / "pristine")
 
     def test_infrastructure_and_unexpected_errors_stay_evaluator_errors(self):
         import measurement_runtime
-        patch = self.signature_patch()
+        body = self.patch_of("        raise NotImplementedError(\"Return a normalized", "        # candidate\n        raise NotImplementedError(\"Return a normalized")
         for error in (OSError("disk unavailable"), ValueError("malformed trusted data"),
-                      self.guards.TaskIntegrityError("seal mismatch"), RuntimeError("unexpected")):
+                      self.guards.TaskIntegrityError("integrity"), RuntimeError("unexpected")):
             with self.subTest(error=type(error).__name__), self.trusted_prerequisites(), mock.patch.object(
                     measurement_runtime, "measure_suite", side_effect=error):
-                with self.assertRaises(self.wrapper.VerifierFailure) as caught:
-                    self.transport("eval", self.evaluator.evaluate, patch)
-                self.assertEqual(caught.exception.code, "evaluator_error")
+                result = self.transport("eval", body)
+                self.assertEqual(result["status"], "failed")
+                self.assertEqual(result["failure"]["code"], "evaluator_error")
 
     def test_prerequisite_invalid_submission_is_not_candidate_zero(self):
         import private_context
+        os.environ["FRONTIER_VERIFICATION_MODE"] = "train"
+        os.environ["FRONTIER_DATASET_PATH"] = str(TASK / "datasets/train.json")
         with self.trusted_prerequisites(), mock.patch.object(
-                private_context, "load_context", side_effect=self.guards.InvalidSubmission("unexpected prerequisite")):
+                private_context, "load_context",
+                side_effect=self.guards.InvalidSubmission("unexpected prerequisite")):
             with self.assertRaises(self.guards.InvalidSubmission):
-                self.evaluator.evaluate(str(self.signature_patch()))
+                self.evaluator.evaluate(str(self.judge / "pristine"))
 
-    def test_pristine_and_reference_patch_still_pass_source_audit(self):
-        pristine = (TASK / "judge/harbor/app" / self.guards.POLICY).read_bytes()
-        self.guards.verify_method_only(pristine, pristine)
-        with self.evaluator.prepared_submission(TASK / "judge/reference.patch", self.config) as (_, evidence):
-            self.assertEqual(evidence.helper_count, 0)
+    def test_pristine_and_reference_pass_the_source_rules(self):
+        self.assertIsNone(self.evaluator.check_tree(str(self.judge / "pristine"),
+                                                    str(self.judge / "pristine"), []))
+        with self.evaluator.reference_source() as tree:
+            self.assertIsNone(self.evaluator.check_tree(str(tree), str(self.judge / "pristine"), []))
 
-    def test_unclassified_patch_preparation_failure_is_not_candidate_rejection(self):
-        failed = SimpleNamespace(ok=False, workdir=None, candidate_rejection=False)
-        with mock.patch.object(self.evaluator, "apply_submission_patch", return_value=failed):
-            with self.assertRaises(self.guards.TaskIntegrityError):
-                with self.evaluator.prepared_submission(self.signature_patch(), self.config):
-                    pass
-
-    def test_patch_helper_distinguishes_policy_refusal_from_missing_infrastructure(self):
-        import submission_patch
-        patch = self.signature_patch()
-        missing = submission_patch.apply_submission_patch(patch, self.root, self.config)
-        self.assertFalse(missing.ok)
-        self.assertFalse(missing.candidate_rejection)
-        invalid = self.root / "invalid.patch"
-        invalid.write_text("not a patch\n")
-        rejected = submission_patch.apply_submission_patch(invalid, TASK / "judge", self.config)
-        self.assertFalse(rejected.ok)
-        self.assertTrue(rejected.candidate_rejection)
-        with mock.patch.object(submission_patch.subprocess, "run", side_effect=FileNotFoundError("git missing")):
-            with self.assertRaises(FileNotFoundError):
-                submission_patch.apply_submission_patch(patch, TASK / "judge", self.config)
-
-    def test_diagnostic_free_text_or_changed_pinned_helper_is_refused(self):
-        import candidate_failure
-        value = candidate_failure.diagnostic("source_policy")
-        value["message"] += " secret detail"
-        with self.assertRaises(ValueError):
-            candidate_failure.public_diagnostic(value)
-        (self.bundle / "candidate_failure.py").write_text("raise RuntimeError('changed')\n")
-        with self.assertRaises(self.wrapper.VerifierFailure) as caught:
-            self.wrapper.load_candidate_diagnostic(self.bundle)
-        self.assertEqual(caught.exception.code, "verifier_configuration_error")
+    def test_check_tree_keeps_the_rules_task_toml_cannot_express(self):
+        pristine = self.judge / "pristine"
+        cases = {
+            "out_of_scope": lambda tree: (tree / self.guards.POLICY).write_text(
+                (pristine / self.guards.POLICY).read_text() + "# outside the body\n"),
+            "too_large": lambda tree: [(tree / self.guards.HELPERS / f"h{i}.py").write_text("x = 1\n")
+                                       for i in range(self.guards.MAX_HELPER_FILES + 1)],
+            "content_policy": lambda tree: (tree / self.guards.HELPERS / "h.py").write_text("def (:\n"),
+        }
+        for category, change in cases.items():
+            with self.subTest(category=category):
+                scratch = Path(tempfile.mkdtemp(dir=self.root))
+                tree = self.evaluator._writable_copy(pristine, scratch)
+                (tree / self.guards.HELPERS).mkdir(parents=True, exist_ok=True)
+                change(tree)
+                self.assertEqual(self.evaluator.check_tree(str(tree), str(pristine), [])[0], category)
 
 
 if __name__ == "__main__":

@@ -136,19 +136,52 @@ def compare_query(*, identity: str, correctness: dict | None, timing: dict | Non
     return result
 
 
+BEAT_METRICS = ("exact_result", "median_latency")
+
+
+def _counts(passed: int, total: int) -> dict:
+    return {"passed": passed, "failed": total - passed, "total": total,
+            "pass_percent": round(100.0 * passed / total, 2),
+            "fail_percent": round(100.0 * (total - passed) / total, 2)}
+
+
 def summarize_queries(expected: list[str], queries: dict[str, dict]) -> tuple[float, dict]:
+    """The score and every metric the shared verifier reads.
+
+    Per query, the two beat-spec decisions (exact_result = correctness_pass, median_latency =
+    latency_pass) go to `beat_spec_workload_passes`; the shared verifier turns them into the
+    aggregate train `beat_spec_progress` and the private final verdict. The two solver
+    feedback values are aggregates over the whole evaluated suite: how many queries clear both
+    comparisons, and the median of the candidate's own per-query medians (null unless every
+    query was measured).
+    """
     if not expected or len(set(expected)) != len(expected) or set(queries) != set(expected):
         raise MeasurementError("expected workload coverage changed")
     total = len(expected)
     score = sum(queries[q]["continuous_score"] for q in expected) / total
+    rows = []
+    for q in expected:
+        values = (queries[q]["correctness_pass"], queries[q]["latency_pass"])
+        if any(type(value) is not bool for value in values) or queries[q]["passed"] is not all(values):
+            raise MeasurementError("inconsistent per-query comparisons")
+        rows.append({"workload": q, "metrics": dict(zip(BEAT_METRICS, values))})
+    latencies = [queries[q]["candidate_median_us"] for q in expected
+                 if "candidate_median_us" in queries[q]]
     metrics = {"beats_reference": int(all(queries[q]["passed"] for q in expected)),
+               "beat_spec_workload_passes": rows,
+               "all_metrics_progress": _counts(sum(all(r["metrics"].values()) for r in rows), total),
+               "candidate_median_latency_us": (
+                   statistics.median(latencies) if len(latencies) == total else None),
                "expected_case_count": total,
                "case_count": sum(queries[q]["status"] in ("measured", "incorrect_result") for q in expected),
                "correctness_passed": sum(queries[q]["correctness_pass"] for q in expected),
                "latency_passed": sum(queries[q]["latency_pass"] for q in expected),
                "queries": queries, "duration_unit": "microseconds"}
-    # Reference score is contextual only; a partial reference score is not made up.
-    if all("reference_median_us" in queries[q] for q in expected):
-        reference = sum(queries[q]["reference_continuous_score"] for q in expected) / total
-        metrics.update(reference_score=reference, margin=score - reference)
+    # The reference score is context for the operator (the shared verifier requires a finite
+    # value). A query the candidate failed to lower is never run, so its reference score is
+    # not measured; it counts 0 here and reference_score_complete says so.
+    reference = sum(queries[q]["reference_continuous_score"] for q in expected) / total
+    metrics.update(reference_score=reference, margin=score - reference,
+                   reference_score_complete=all("reference_median_us" in queries[q]
+                                                for q in expected))
     return score, metrics

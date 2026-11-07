@@ -15,15 +15,13 @@ from pathlib import Path
 import shutil
 import signal
 import sys
-import sysconfig
 import tempfile
 import time
 
 import yaml
 
 from runtime import (HERE, ChildRunner, PhaseFailed, PhaseTimeout, SetupDeadlineExpired,
-                     admit_pristine, admit_trusted_children, harden_process,
-                     load_source_manifest, sha256)
+                     admit_pristine, admit_trusted_children, load_source_manifest, isolate)
 from private_evidence import Journal, report_bytes
 
 TASK = HERE.parent
@@ -46,20 +44,26 @@ def log_tail(log):
         return stream.read(2048).decode("utf-8", errors="replace")
 
 
+def stderr_tail(error):
+    result = getattr(error, "result", None)
+    return result.stderr[-2048:].decode("utf-8", errors="replace") if result is not None else ""
+
+
 def execute(repo, suite):
     journal = Journal(os.environ.get("FRONTIER_GO1_EVIDENCE_PATH"))
-    subreaper = harden_process()
     recipe = json.loads((HERE / "workloads.json").read_text())
     manifest = load_source_manifest()
     guards = recipe["guards"]
-    immutable_runtime = os.geteuid() != 0 and not os.access(sysconfig.get_paths()["purelib"], os.W_OK)
-    journal.record("suite_started", suite=suite, runner_uid=os.getuid(), subreaper=subreaper,
-                   immutable_runtime=immutable_runtime)
-    if guards["require_subreaper"] and not subreaper:
-        raise RuntimeError("descendant reaping is unavailable on this host")
-    if guards["require_immutable_runtime"] and not immutable_runtime:
-        raise RuntimeError("the Python runtime is writable by submitted code")
+    journal.record("suite_started", suite=suite, runner_uid=os.getuid())
     admit_trusted_children(manifest)
+    try:
+        # The boundary every training child runs in holds here, before any submitted code.
+        sandbox_backend = isolate.choose_backend()
+    except isolate.IsolateError as error:
+        journal.record("phase_failed", phase="isolate", side="trusted",
+                       error_type="IsolateError", detail=str(error)[:200])
+        raise
+    journal.record("sandbox_ready", backend=sandbox_backend)
     config = yaml.safe_load((TASK / "config.yaml").read_text())
     local_deadline = os.environ.get("FRONTIER_VERIFIER_LOCAL_DEADLINE")
     suite_seconds = (config["runtime"].get("final_timeout_seconds", config["runtime"]["timeout_seconds"])
@@ -82,7 +86,7 @@ def execute(repo, suite):
         scratch = Path(temp)
         scratch.chmod(0o711)
         pristine = scratch / "pristine"
-        shutil.copytree(TASK / "harbor/app", pristine)
+        shutil.copytree(TASK / "pristine", pristine)
         admit_pristine(pristine, manifest)
         # No provider or Driver environment is forwarded to scientific code.
         base_env = {key: os.environ[key] for key in ("PATH", "LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES")
@@ -94,21 +98,36 @@ def execute(repo, suite):
         python = [sys.executable, "-I", "-B"]
         pinned = {}
 
-        def phase(name, side, argv, limit, *, stages=(), **fields):
-            """Run one child in a fresh directory; classify its failure by side."""
-            work = scratch / f"{name}-{side}"
-            work.mkdir(mode=0o700)
-            env = dict(base_env, HOME=str(work), TMPDIR=str(work))
-            log = scratch / f"{name}-{side}.log"
+        def phase(name, side, argv, limit, *, stages=(), tree=None, **fields):
+            """Run one child; classify its failure by side. A training child (``tree``) runs in
+            isolate with a copy of ``tree``; a trusted child in a fresh directory."""
             began = time.monotonic()
+            log = scratch / f"{name}-{side}.log"
             try:
-                spent = runner.run([part.replace("{work}", str(work)) for part in argv], cwd=work,
-                                   env=env, log=log, limit=limit, stages=stages)
+                if tree is not None:
+                    work = None
+                    spent, result = runner.run_sandboxed(
+                        argv, limit=limit, stages=stages, tree=tree,
+                        inputs={"train_entry.py": HERE / "train_entry.py"},
+                        outputs=("policy.bin",), env=base_env,
+                        path=os.environ.get("PATH", isolate.DEFAULT_PATH),
+                        devices=["nvidia"] if guards["require_gpu"] else [],
+                        unix_sockets=True, dev_shm=True,
+                        # one byte over the artifact limit: a larger artifact is seen as such
+                        output_bytes=recipe["max_policy_artifact_bytes"] + 1)
+                else:
+                    work = scratch / f"{name}-{side}"
+                    work.mkdir(mode=0o700)
+                    env = dict(base_env, HOME=str(work), TMPDIR=str(work))
+                    result = None
+                    spent = runner.run([part.replace("{work}", str(work)) for part in argv],
+                                       cwd=work, env=env, log=log, limit=limit)
             except (PhaseTimeout, PhaseFailed) as error:
                 stage = str(error)
                 journal.record("phase_failed", phase=name, side=side, stage=stage,
                                elapsed_seconds=time.monotonic() - began,
-                               error_type=type(error).__name__, untrusted_log_tail=log_tail(log),
+                               error_type=type(error).__name__,
+                               untrusted_log_tail=stderr_tail(error) if tree is not None else log_tail(log),
                                **fields)
                 # Before the first marker nothing submitted has run: that stage
                 # failing is the judge's problem on either side.
@@ -120,54 +139,35 @@ def execute(repo, suite):
                         else f"{what} failed") from error
                 raise
             except BaseException as error:
-                journal.record("phase_failed", phase=name, side=side,
+                # The launcher's own faults are the judge's, whichever side was running.
+                journal.record("phase_failed", phase=name,
+                               side="trusted" if isinstance(error, isolate.IsolateError) else side,
                                elapsed_seconds=time.monotonic() - began,
                                error_type=type(error).__name__, **fields)
                 raise
-            return work, spent
-
-        candidate_ran = False
-
-        def trusted_inputs():
-            # Submitted code may have run since the last check; nothing of it is
-            # alive now (ChildRunner.stop), so these bytes cannot change again.
-            try:
-                admit_trusted_children(manifest)
-                admit_pristine(pristine, manifest)
-            except ValueError as error:
-                journal.record("phase_failed", phase="trusted-inputs",
-                               side="candidate" if candidate_ran else "trusted",
-                               error_type="TrustedInputChanged", detail=str(error)[:200])
-                if candidate_ran:
-                    # Only submitted code has run with write access since the
-                    # last successful check: the submission is invalid.
-                    raise CandidateFailure("submitted code modified judge-owned files") from error
-                raise
+            return work, spent, result
 
         def train(seed, side):
-            nonlocal candidate_ran
-            trusted_inputs()
-            tree = pristine if side == "reference" else repo
-            candidate_ran = candidate_ran or side == "candidate"
-            work, spent = phase(
+            _, spent, result = phase(
                 f"train-{seed}", side,
-                [*python, str(HERE / "train_entry.py"), "--repo", str(tree), "--seed", str(seed),
+                [*python, "{in}/train_entry.py", "--repo", "{work}", "--seed", str(seed),
                  "--budget-seconds", str(recipe["train_budget_seconds"]),
                  "--envs", str(recipe["eval_envs"]),
                  "--observation-size", str(recipe["observation_size"]),
                  "--action-size", str(recipe["action_size"]),
-                 "--artifact", "{work}/policy.bin", "--ready-fd", "{ready_fd}"],
+                 "--artifact", "{out}/policy.bin"],
                 recipe["train_export_seconds"],
                 stages=((b"I", recipe["train_startup_seconds"], "startup"),
                         (b"T", recipe["train_import_seconds"], "import"),
                         (b"D", recipe["train_budget_seconds"], "train")),
+                tree=pristine if side == "reference" else repo,
                 kind="training", train_seed=seed)
-            source = work / "policy.bin"
+            body = result.outputs.get("policy.bin")
             artifact = scratch / f"policy-{seed}-{side}.bin"
             problem = None
-            if source.is_symlink() or not source.is_file():
+            if body is None:
                 problem = "training produced no policy artifact"
-            elif source.stat().st_size > recipe["max_policy_artifact_bytes"]:
+            elif len(body) > recipe["max_policy_artifact_bytes"]:
                 problem = "policy artifact exceeds its size limit"
             if problem:
                 journal.record("phase_failed", phase=f"train-{seed}", side=side,
@@ -175,23 +175,17 @@ def execute(repo, suite):
                 if side == "candidate":
                     raise CandidateFailure(problem)
                 raise RuntimeError(problem)
-            shutil.copyfile(source, artifact)
+            artifact.write_bytes(body)
             artifact.chmod(0o444)
-            pinned[seed, side] = (artifact, sha256(artifact))
-            shutil.rmtree(work, ignore_errors=True)
+            pinned[seed, side] = artifact
             journal.record("phase_completed", phase=f"train-{seed}", side=side, kind="training",
                            train_seed=seed, budget_seconds_used=spent["train"],
                            stage_seconds=spent, artifact_bytes=artifact.stat().st_size)
 
         def evaluate(workload, side):
-            trusted_inputs()
-            artifact, digest = pinned[workload["train_seed"], side]
-            if artifact.is_symlink() or sha256(artifact) != digest:
-                journal.record("phase_failed", phase="trusted-inputs", side="candidate",
-                               error_type="TrustedInputChanged", detail="policy artifact")
-                raise CandidateFailure("submitted code modified judge-owned files")
+            artifact = pinned[workload["train_seed"], side]
             condition = recipe["conditions"][workload["condition"]]
-            work, spent = phase(
+            work, spent, _ = phase(
                 f"eval-{workload['id']}", side,
                 [*python, str(HERE / "evaluate_policy.py"), "--repo", str(pristine),
                  "--artifact", str(artifact), "--env-name", condition["env_name"],

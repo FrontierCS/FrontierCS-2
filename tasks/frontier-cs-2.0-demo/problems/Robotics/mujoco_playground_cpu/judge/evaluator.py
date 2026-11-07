@@ -1,11 +1,25 @@
+"""Judge of mujoco_playground_cpu: Go1 joystick policy training, on one H100.
+
+Score (raw_score = score_unbounded, 0..100): r = mean over workloads of the trained policy's
+mean summed episode reward in the pristine environment; score = 100 r / (r + 30) for r > 0,
+else 0. A training run over budget, a crash or a policy the pristine evaluation rejects is a
+scored zero; parameter-like data in the patch is rejected by check_tree (content_policy).
+
+Metrics, per workload (train feedback: development_mean_<name>); all higher is better and each
+passes when strictly above the reference's:
+- episode_reward: summed step reward until the first termination.
+- tracking_lin_vel, tracking_ang_vel: summed linear / yaw-rate command tracking rewards.
+- energy, action_rate: per-alive-step means of the (negative) power and action-smoothness terms.
+
+beats_reference = 1 iff every validity guard passes and all five metrics pass on every workload.
+The archived beat spec is docs/task-authoring/mujoco_playground_cpu/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 
-import ctypes
 import json
 import math
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -14,10 +28,11 @@ from pathlib import Path
 
 import yaml
 
-from submission_patch import apply_submission_patch
 from judge_deps.private_evidence import read as read_private_evidence
 
 TASK_DIR = Path(__file__).resolve().parent
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
+# config.yaml is generated from task.toml; [judge.config] keeps this task's suite timeouts.
 CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text())
 RUNNER = TASK_DIR / "judge_deps" / "run_workload.py"
 # Every tunable number of the protocol is in judge_deps/workloads.json.
@@ -26,7 +41,7 @@ RECIPE = json.loads((TASK_DIR / "judge_deps" / "workloads.json").read_text())
 # the first termination (mean over environments); energy and action_rate are
 # per-alive-step means. See judge_deps/evaluate_policy.py.
 SPEC_METRICS = ("episode_reward", "tracking_lin_vel", "tracking_ang_vel", "energy", "action_rate")
-VISIBLE = tuple(f"development_mean_{name}" for name in SPEC_METRICS)
+VISIBLE = ("development_mean_episode_reward", "development_mean_tracking_lin_vel", "development_mean_tracking_ang_vel", "development_mean_energy", "development_mean_action_rate")  # the [feedback] names
 TRAIN_BUDGET_SECONDS = RECIPE["train_budget_seconds"]
 # Challenge constant, independent of any reference measurement: the mean summed
 # upstream episode reward that scores 50. The score has no finite ceiling.
@@ -46,10 +61,8 @@ PARAMETER_DATA_MESSAGE = ("submission embeds parameter-like data; "
                           "the policy must be learned inside the verifier run")
 
 
-def embeds_parameter_like_data(patch_text):
+def embeds_parameter_like_data(added):
     """True if the patch's added lines exceed either generous data threshold."""
-    added = [line[1:] for line in patch_text.splitlines()
-             if line.startswith("+") and not line.startswith("+++ ")]
     encoded = sum(len(run) for line in added for run in ENCODED_RUN_RE.findall(line))
     if encoded > RECIPE["max_patch_encoded_run_characters"]:
         return True
@@ -101,23 +114,56 @@ def _runtime_evidence(path):
             "verifier_execution_evidence_invalid", "trusted execution evidence is unreadable", None) from error
 
 
-def _raise_runtime_failure(evidence, *, parent_timeout=False):
-    """Every runner failure is the judge's: candidate faults are reported in-band."""
-    events = evidence["events"] if evidence else []
+TIMEOUT_ERRORS = ("TimeoutExpired", "TimeoutError", "SuiteDeadlineExpired", "PhaseTimeout")
+
+
+def _last_phase(events):
+    """The phase that failed last, or (after a parent timeout) the one still running."""
+    open_phases = {}
+    for row in events:
+        key = (row.get("workload"), row.get("side"), row.get("phase"))
+        if row.get("event") == "phase_started":
+            open_phases[key] = row
+        elif row.get("event") in ("phase_completed", "phase_failed"):
+            open_phases.pop(key, None)
     failures = [row for row in events if row.get("event") == "phase_failed"]
-    if parent_timeout or any(row.get("error_type") in ("TimeoutExpired", "SuiteDeadlineExpired")
-                             for row in failures):
+    if failures:
+        return failures[-1]
+    return list(open_phases.values())[-1] if open_phases else None
+
+
+def _runtime_failure(evidence, *, parent_timeout=False, **diagnostics):
+    """A failed runner. The candidate's own failure or time-out is a scored zero whose message
+    names it (the message is the train summary); a judge fault raises and stays unscored."""
+    events = evidence["events"] if evidence else []
+    row = _last_phase(events)
+    timeout = parent_timeout or bool(row and row.get("error_type") in TIMEOUT_ERRORS)
+    if row is None:
         raise VerifierScientificFailure(
-            "verifier_suite_timeout", "shared scientific suite deadline exhausted", evidence)
-    if failures and failures[-1].get("side") == "reference":
+            "verifier_execution_evidence_invalid", "trusted execution failure evidence is missing", evidence)
+    if row.get("side") != "candidate":
+        if row.get("side") == "reference":
+            raise VerifierScientificFailure(
+                "verifier_reference_failed", "trusted reference execution failed", evidence)
+        if timeout:
+            raise VerifierScientificFailure(
+                "verifier_suite_timeout", "shared scientific suite deadline exhausted", evidence)
         raise VerifierScientificFailure(
-            "verifier_reference_failed", "trusted reference execution failed", evidence)
-    raise VerifierScientificFailure(
-        "verifier_execution_evidence_invalid", "trusted execution failed", evidence)
+            "verifier_execution_evidence_invalid", "trusted execution failed", evidence)
+    what = row.get("kind") or "run"
+    if timeout:
+        return _invalid(f"the submission's {what} exceeded the suite time limit", **diagnostics)
+    return _invalid(f"the submission's {what} failed", **diagnostics)
+
+
+def _final():
+    return os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
 
 
 def _invalid(reason, *, stderr=None, returncode=None):
-    metrics = {"beats_reference": 0, "reference_diagnostics": {"reason": reason[:200]}}
+    """A scored zero. Train metrics stay empty (the shared verifier admits only beat-spec
+    metrics there); final keeps the private diagnostic in evidence."""
+    metrics = {"reference_diagnostics": {"reason": reason[:200]}}
     if stderr is not None:
         body = stderr if isinstance(stderr, bytes) else str(stderr).encode("utf-8", errors="replace")
         metrics["reference_diagnostics"] = {
@@ -125,7 +171,7 @@ def _invalid(reason, *, stderr=None, returncode=None):
             "truncated": len(body) > MAX_PRIVATE_DIAGNOSTIC_BYTES,
             "returncode": returncode,
         }
-    return 0.0, 0.0, reason[:200], metrics
+    return 0.0, 0.0, reason[:200], (metrics if _final() else {})
 
 
 def _validate_payload(payload, suite):
@@ -178,18 +224,17 @@ def score_payload(payload, suite):
     return score, score, "scored trained policies in the pristine environment", metrics
 
 
-def _evaluate(solution_path: str, evidence_path: Path):
-    try:
-        with open(solution_path, encoding="utf-8", errors="replace", newline="") as stream:
-            patch_text = stream.read()
-    except OSError:
-        patch_text = ""  # apply_submission_patch reports the unreadable file
-    if embeds_parameter_like_data(patch_text):
-        return _invalid(PARAMETER_DATA_MESSAGE)
-    applied = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-    if not applied.ok:
-        return _invalid(applied.message)
-    root = applied.workdir
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: the anti-pretraining guard over the lines the patch adds
+    (PARAMETER_DATA_MESSAGE), reported as the shared content_policy category."""
+    added = [line for change in changes for line in change.added]
+    if embeds_parameter_like_data(added):
+        return "content_policy", [change.path for change in changes if change.status != "D"]
+    return None
+
+
+def _evaluate(tree: str, evidence_path: Path):
+    root = Path(tree)
     try:
         if not RUNNER.is_file():
             return _invalid("authoritative NVIDIA workload runner is unavailable")
@@ -219,7 +264,8 @@ def _evaluate(solution_path: str, evidence_path: Path):
             raise VerifierSetupDeadlineExpired("Verifier setup exhausted its execution envelope")
         if proc.returncode:
             sys.stderr.write(proc.stderr[-MAX_PRIVATE_DIAGNOSTIC_BYTES:])
-            _raise_runtime_failure(_runtime_evidence(evidence_path))
+            return _runtime_failure(_runtime_evidence(evidence_path),
+                                    stderr=proc.stderr, returncode=proc.returncode)
         payload = json.loads(proc.stdout)
         if "candidate_failure" in payload:
             # Training over budget, a crash in submitted code, or a policy the
@@ -234,29 +280,23 @@ def _evaluate(solution_path: str, evidence_path: Path):
             if evidence is None or not any(row.get("event") == "scientific_started"
                                            for row in evidence["events"]):
                 raise VerifierSetupDeadlineExpired("Verifier setup exhausted its execution envelope") from exc
-        _raise_runtime_failure(_runtime_evidence(evidence_path), parent_timeout=True)
-    finally:
-        if root is not None:
-            shutil.rmtree(root.parent, ignore_errors=True)
+        return _runtime_failure(_runtime_evidence(evidence_path), parent_timeout=True)
 
 
-def evaluate(solution_path: str):
-    try:
-        # Submitted code may share this UID; refuse same-UID ptrace of the judge.
-        ctypes.CDLL(None).prctl(4, 0, 0, 0, 0)
-    except (OSError, AttributeError):
-        pass
+def evaluate(tree: str):
+    """Shared-verifier contract: `tree` is the pristine starter with only the submission's
+    allowed files overlaid (the edit scope has already passed)."""
     with tempfile.TemporaryDirectory(prefix="go1-private-evidence-") as temporary:
         path = Path(temporary) / "workloads.json"
-        score, unbounded, message, metrics = _evaluate(solution_path, path)
+        score, unbounded, message, metrics = _evaluate(tree, path)
         evidence = read_private_evidence(path)
         if evidence is not None:
             retained = {"runtime_evidence_schema": evidence["schema_version"],
                         "runtime_evidence": evidence["events"]}
             if "beat_spec_workload_passes" in metrics:
                 metrics.update(retained)
-            else:
-                # Preserve the adapter's existing scored-zero diagnostic shape.
+            elif _final():
+                # A scored zero keeps its runtime evidence privately in final only.
                 metrics.setdefault("reference_diagnostics", {}).update(retained)
         return score, unbounded, message, metrics
 

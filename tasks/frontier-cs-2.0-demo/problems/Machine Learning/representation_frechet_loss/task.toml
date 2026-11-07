@@ -1,0 +1,73 @@
+# The definition of representation_frechet_loss (schema frontier.task/v1). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+#
+# GPU task: the Agent has one A100-80GB runner (docker/agent-gpu.Dockerfile) and the Verifier
+# runs the judge on one A100-80GB (docker/verifier-gpu.Dockerfile) through the shared GPU
+# adapter (docker/verifier.Dockerfile).
+schema = "frontier.task/v1"
+id = "representation_frechet_loss"
+display_name = "Differentiable Population Statistics"
+version = "observer-suite-deadline-20261011"
+
+[agent]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+[verifier]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 3
+max_train_wall_seconds = 21600
+eval_timeout_seconds = 10800
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["frechet_distance/queue.py", "frechet_distance/frontier_solution/"]
+max_changed_files = 20            # as before; the Agent README tells the Agent the same
+
+[judge.config]                    # the evaluator's suite limits: train 7200 s, final 10800 s
+runtime = { timeout_seconds = 7200, final_timeout_seconds = 10800 }
+
+[gpu.agent]
+allowed_types = ["A100-80GB"]
+max_gpu_seconds = 7200
+max_instance_seconds = 7200
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 1
+max_gpu_seconds = 32400
+lease_seconds = { train = 7200, eval = 10800 }   # runner lease per mode (the pool is 3 x train + 1 x eval)
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["A100-80GB"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions).
+[network.audit]
+max_ssh_bytes_per_direction = 8388608   # 8 MiB, as before
+max_ssh_sessions = 48
+ssh_session_budgets = { agent = 32, verifier_train = 12, verifier_eval = 4 }
+
+[feedback]                        # train metrics besides beat_spec_progress; each a mean over the development workloads
+development_mean_inception_fdr = "Candidate held-out Frechet distance in Inception space divided by the paper's validation-set normalizer, unitless; mean over workloads."
+development_mean_convnext_fdr = "Candidate held-out Frechet distance in ConvNeXt space divided by the paper's validation-set normalizer, unitless; mean over workloads."
+development_mean_dinov2_fdr = "Candidate held-out Frechet distance in DINOv2 CLS space divided by the paper's validation-set normalizer, unitless; mean over workloads."
+development_mean_mae_fdr = "Candidate held-out Frechet distance in MAE CLS space divided by the paper's validation-set normalizer, unitless; mean over workloads."
+development_mean_siglip_fdr = "Candidate held-out Frechet distance in SigLIP CLS space divided by the paper's validation-set normalizer, unitless; mean over workloads."
+development_mean_clip_fdr = "Candidate held-out Frechet distance in CLIP CLS space divided by the paper's validation-set normalizer, unitless; mean over workloads."
+
+[paper]                           # for readers; the platform never reads it
+title = "Representation Fréchet Loss for Visual Generation"
+venue = "arXiv 2026"
+url = "https://arxiv.org/abs/2604.28190"
+summary = "Implement differentiable population mean/covariance statistics (FeatureQueue) for post-training an image generator with representation Fréchet distances."

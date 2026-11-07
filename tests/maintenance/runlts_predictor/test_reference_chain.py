@@ -6,22 +6,24 @@ import io
 import json
 from pathlib import Path
 import tarfile
-from types import SimpleNamespace
 
 import pytest
-from tests.maintenance.runlts_predictor.runtime_imports import MODULES
+from tests.maintenance.runlts_predictor.runtime_imports import JUDGE, MODULES, write_payload
 e = MODULES["evaluator"]
 adapter = MODULES["fcs2_verifier"]
 
 
 @pytest.fixture
 def reference_fault(tmp_path, monkeypatch):
-    monkeypatch.setattr(e, 'ROOT', tmp_path)
-    trees = [tmp_path/'candidate', tmp_path/'reference']
-    for tree in trees:
+    # The candidate and reference trees are made in the evaluator's own scratch.
+    trees = []
+    def made(scratch, name):
+        tree = Path(scratch)/name
         tree.mkdir()
-    outputs = iter(SimpleNamespace(ok=True, workdir=t, cleanup_root=t) for t in trees)
-    monkeypatch.setattr(e, 'apply_submission_patch', lambda *a: next(outputs))
+        trees.append(tree)
+        return tree
+    monkeypatch.setattr(e, 'predictor_copy', lambda source, scratch, name: made(scratch, name))
+    monkeypatch.setattr(e, 'reference_tree', lambda scratch: made(scratch, 'reference'))
     monkeypatch.setattr(e, 'run_command', lambda *a: '{"valid":true,"logical_bits":1}')
     monkeypatch.setattr(e, 'manifest', lambda *a: [{'id':'fixture-only'}])
     # These faults are in the live reference, which only the audit mode executes.
@@ -53,7 +55,7 @@ def install_fault(monkeypatch, phase, kind):
 def test_original_reference_exception_chain_survives(reference_fault, monkeypatch, phase, kind):
     cause = install_fault(monkeypatch, phase, kind)
     with pytest.raises(e.EvaluationError) as caught:
-        e.evaluate('fixture.patch')
+        e.evaluate('fixture-tree')
     failure = caught.value
     assert failure.__cause__ is cause
     assert str(failure) == f'private reference {phase} failed'
@@ -66,6 +68,7 @@ def test_original_reference_exception_chain_survives(reference_fault, monkeypatc
     if kind == 'command':
         assert evidence['command_failure']['returncode'] == 7
     assert 'PRIVATE' not in json.dumps(evidence['exception_chain'])
+    assert [p.name for p in reference_fault] == ['candidate', 'reference']
     assert not any(p.exists() for p in reference_fault), 'temporary source trees must be cleaned'
 
 
@@ -73,7 +76,8 @@ def test_original_reference_exception_chain_survives(reference_fault, monkeypatc
 def test_actual_adapter_keeps_private_cause_out_of_public_result(reference_fault, monkeypatch, tmp_path, capsys, phase):
     zstandard = pytest.importorskip('zstandard')
     install_fault(monkeypatch, phase, 'command')
-    payload=tmp_path/'payload.tar';payload.write_bytes(b'fixture-only')
+    # The shared verifier: the real bundle, payload, edit scope and check_tree.
+    payload=write_payload(tmp_path/'payload.tar', (e.ROOT/'baseline_naive.patch').read_bytes())
     result_path=tmp_path/'result.json';evidence_path=tmp_path/'evidence.tar.zst'
     scratch=tmp_path/'adapter-scratch';scratch.mkdir()
     monkeypatch.setenv('FRONTIER_VERIFIER_SCRATCH', str(scratch))
@@ -81,11 +85,8 @@ def test_actual_adapter_keeps_private_cause_out_of_public_result(reference_fault
                       'FRONTIER_PAYLOAD_PATH':payload,'FRONTIER_DATASET_PATH':tmp_path/'dataset.json'}.items():
         monkeypatch.setenv(key,str(value))
     monkeypatch.setenv('FRONTIER_VERIFICATION_MODE','train')
-    monkeypatch.setattr(adapter,'extract_payload',lambda *a: None)
-    monkeypatch.setattr(adapter,'entrypoint_path',lambda *a: tmp_path/'solution.patch')
-    monkeypatch.setattr(adapter,'stage_task',lambda *a: tmp_path)
-    monkeypatch.setattr(adapter,'load_evaluator',lambda *a: e.evaluate)
-    assert adapter.main(tmp_path,'payload/solution.patch') == 0
+    monkeypatch.setattr(adapter,'load_evaluator',lambda *a: (e.evaluate, e.check_tree))
+    assert adapter.main(JUDGE,'payload/solution.patch') == 0
     result=json.loads(result_path.read_text())
     assert result['status']=='failed' and 'raw_score' not in result
     assert result['metrics']=={} and 'private_metrics' not in result

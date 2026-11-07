@@ -8,11 +8,16 @@ import sys
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[4]/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise/judge'))
+REPOSITORY = Path(__file__).resolve().parents[4]
+TASK = REPOSITORY/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise'
+sys.path.insert(0, str(REPOSITORY/'scripts'))
+import task_manifest  # noqa: E402
+# The judge as the Verifier image holds it: judge/ plus the generated config.yaml and pristine/.
+sys.path.insert(0, str(task_manifest.judge_bundle(TASK)))
 # Generic judge module names are shared with other tasks; load this task's own
 # whatever the interpreter imported first.
-for _name in ('evaluator', 'formal_scoring', 'workload_configurations', 'fixed_surface', 'submission_patch',
-              'go_entrypoint', 'child_environment', 'calibration', 'ckks_evidence_transport'):
+for _name in ('evaluator', 'formal_scoring', 'workload_configurations',
+              'go_entrypoint', 'ckks_evidence_transport'):
     sys.modules.pop(_name, None)
 import evaluator as e
 import workload_configurations as c
@@ -38,7 +43,7 @@ def test_table1_axes_and_predecessor_membership():
 
 @pytest.mark.parametrize('row', c.configurations(), ids=lambda r: r['id'])
 def test_effective_main_changes_only_declared_parameters(row):
-    source = (e.TASK_DIR/'harbor/app'/row['main_path']).read_text()
+    source = (e.PRISTINE/row['main_path']).read_text()
     derived = c.configured_main(source, row)
     if row['original_row']:
         assert derived == source
@@ -86,11 +91,14 @@ def test_resolved_runtime_configuration_must_match(mutation):
     with pytest.raises(ValueError): c.verify_parameters([p], row)
 
 
-def test_changed_main_and_forged_row_rejected():
+def test_changed_main_is_not_measured():
+    # A main that differs from the calibrated one derives a measured main that differs from its
+    # frozen form (judge/timed_main_sha256.json). Forged rows are refused by validate_manifest.
     row = c.configuration('poly_eval', 45, 'h192')
-    source = (e.TASK_DIR/'harbor/app'/row['main_path']).read_text()
-    with pytest.raises(ValueError, match='source changed'): c.configured_main(source+'\n', row)
-    with pytest.raises(ValueError, match='row'): c.configured_main(source, {**row, 'log_n': 16})
+    source = (e.PRISTINE/row['main_path']).read_text()
+    c.measured_main(source, row, e.observation_prefix())
+    with pytest.raises(ValueError, match='frozen form'):
+        c.measured_main(source+'\n', row, e.observation_prefix())
 
 
 def test_evaluator_routes_added_row_to_base_circuit_and_checks_actual_parameters(tmp_path, monkeypatch):
@@ -105,7 +113,7 @@ def test_evaluator_routes_added_row_to_base_circuit_and_checks_actual_parameters
         assert circuit == 'coeffs_to_slots'  # preserves two-output Stats aggregation
         return {**{metric:0.0 for metric in e.METRICS}, 'resolved_parameters':[literal(row)]}
     monkeypatch.setattr(e,'invoke_original',invoke);monkeypatch.setattr(e,'parse_observations',parse)
-    tree=e.TASK_DIR/'harbor/app'
+    tree=e.PRISTINE
     result, receipt=e.measure_suite(tree,[row['id']],tmp_path/'valid',10)
     assert list(result)==[row['id']] and calls==['coeffs_to_slots']
     assert receipt['observations'][0]['configuration_binding']['configuration']==row
@@ -125,13 +133,12 @@ def test_unknown_suite_rejected_before_launch(tmp_path, monkeypatch):
 
 
 def test_public_manifest_and_clock_remain_exact():
-    task=e.TASK_DIR.parent
-    assert (task/'agent-base/frontier/task/workload_manifest.json').read_bytes()==(e.TASK_DIR/'judge/workload_manifest.json').read_bytes()
+    assert (TASK/'repo/workload_manifest.json').read_bytes()==(e.TASK_DIR/'judge/workload_manifest.json').read_bytes()
     assert e.CONFIG['evaluation']['answering_timeout_seconds']==18000
     assert e.CONFIG['evaluation']['max_dev_submissions']==100
     assert e.CONFIG['evaluation']['max_train_wall_seconds']==3600
     assert e.CONFIG['runtime']['timeout_seconds']==600
-    spec=json.loads((e.TASK_DIR/'beat_spec.json').read_text())
+    spec=json.loads((REPOSITORY/'docs/task-authoring/ckks_composable_noise/provenance/beat_spec.json').read_text())  # archived design record
     assert {m['name'] for m in spec['metrics']}==set(e.METRICS)
     assert all(m['better']=='lower' and 'all58cells' in m['tolerance'] for m in spec['metrics'])
     assert all(x['reveals_reference'].startswith('no') for x in spec['solver_feedback'])

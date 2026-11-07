@@ -1,4 +1,26 @@
-"""Evaluator for the excised Polygon under-approximation search policy."""
+"""Judge of polygon (Polygon counterexample search) for the shared verifier: evaluate(tree).
+
+Score over the 19 non-hard workloads W (16 pairs, 3 disambiguation records) of the suite: r_w = 1
+if MariaDB validates the returned database, u_w = 2 min(b_w, max(0, t_w)) / b_w with b_w the
+case budget (a failed case: r_w = 0, u_w = 2); T = 0.05 ceil(sum u_w / 0.05);
+E = exp(-T / (|W| 0.25)); raw_score = score_unbounded = clip(100 (sum r_w + E) / (|W| + 1), 0, 100).
+check_tree: screened added-line tokens and forbidden imports (content_policy), scaffold outside
+the edit markers (out_of_scope); the exact reference is exempt. Every case's runner (the fixed
+adapter and the search it starts on the submitted modules) runs in a fresh shared isolate instance
+(isolate: no judge files, an environment holding only its own side's validator socket,
+private TMPDIR, no network but AF_UNIX for that socket), so nothing survives from one case to
+the next. A build failure scores 0. A reference that fails to refute any workload raises
+(ReferenceFailure), as does a validator failure.
+
+Beat-spec metrics (beat_spec_workload_passes, all 21 workloads incl. the two hard pairs):
+- refuted_pair: passes when r_cand >= r_ref.
+- wall_time_seconds, lower is better: non-hard t_c <= t_r + max(0.03, 0.20 t_r); hard pairs
+  t_c < 0.5 t_r.
+beats_reference = 1 iff every workload passes both.
+
+The shared verifier has already applied the patch (edit_scope, task.toml [submission]);
+`evaluate(tree)` gets the pristine starter with only the allowed files overlaid.
+"""
 
 from __future__ import annotations
 
@@ -18,8 +40,7 @@ from pathlib import Path
 TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
-
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 
 AUTHENTIC_ENTRYPOINT = "evaluation/leetcode/online.py"
@@ -37,28 +58,26 @@ TIME_SCORE_QUANTUM_SECONDS = 0.05
 TIME_SCORE_SCALE_SECONDS = 0.25
 TIME_COMPARISON_ABS_TOLERANCE = 0.03
 TIME_COMPARISON_REL_TOLERANCE = 0.20
-CONFIG = {
-    "submission": {
-        "repo_root": "/app",
-        "allow_empty": False,
-        "allow_paths": [
-            "sql_testing/environment.py",
-            "sql_testing/smt/formula.py",
-            "sql_testing/smt/knowledgebase.py",
-            "sql_testing/smt/search_extensions/",
-        ],
-        "max_changed_files": 20,
-        "max_patch_bytes": 262144,
-    }
-}
 
 
 def _pristine_root() -> Path:
-    """Resolve the one public source tree in source and packaged layouts."""
-    packaged = TASK_DIR / "harbor" / "app"
-    if packaged.is_dir():
-        return packaged
-    return TASK_DIR.parent / "agent-base" / "frontier" / "task" / "repo"
+    """The starter tree (repo/), copied to pristine/ by the Verifier image."""
+    return TASK_DIR / "pristine"
+
+
+def _reference_tree() -> Path:
+    """A fresh copy of the pristine starter with reference.patch applied (trusted, judge-owned).
+    The caller removes its parent."""
+    scratch = Path(tempfile.mkdtemp(prefix="polygon-reference-"))
+    tree = scratch / "tree"
+    shutil.copytree(_pristine_root(), tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = dict(os.environ, GIT_CEILING_DIRECTORIES=str(scratch.resolve()))
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(REFERENCE_PATCH)], cwd=tree,
+                   check=True, capture_output=True, timeout=60, env=env)
+    return tree
 
 EDIT_REGIONS = {
     "sql_testing/environment.py": (
@@ -105,8 +124,6 @@ FORBIDDEN_ADDITIONS = (
     "compile(",
     "eval(",
     "exec(",
-    "frontier_",
-    "harbor_",
     "inspect",
     "open(",
     "os.",
@@ -243,17 +260,41 @@ def _invalid(reason: str, workloads: tuple[Workload, ...]):
     return 0.0, 0.0, reason[:140], _metrics(workloads)
 
 
-def _policy_ok(patch: Path) -> tuple[bool, str]:
-    if patch.read_bytes() == REFERENCE_PATCH.read_bytes():
-        return True, ""
-    text = patch.read_text(encoding="utf-8", errors="replace")
-    for line in text.splitlines():
-        if not line.startswith("+") or line.startswith("+++"):
-            continue
-        lowered = line[1:].lower()
-        if any(token in lowered for token in FORBIDDEN_ADDITIONS):
-            return False, "environment, file, process, or harness introspection is not allowed"
-    return True, ""
+def _added_lines_ok(changes) -> list[str]:
+    """The changed paths whose added lines contain a screened token (case-insensitive)."""
+    return [change.path for change in changes
+            if any(token in line.lower() for line in change.added for token in FORBIDDEN_ADDITIONS)]
+
+
+def _is_reference(tree: Path, changes) -> bool:
+    """Whether the judged tree is byte-identical to the judge's reference on every change."""
+    reference = _reference_tree()
+    try:
+        return bool(changes) and all(
+            (reference / c.path).is_file()
+            and (tree / c.path).read_bytes() == (reference / c.path).read_bytes()
+            if c.status != "D" else not (reference / c.path).exists()
+            for c in changes)
+    finally:
+        shutil.rmtree(reference.parent, ignore_errors=True)
+
+
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: screened tokens in added lines and forbidden imports
+    (content_policy), and the immutable scaffold outside the edit markers (out_of_scope)."""
+    tree = Path(tree)
+    if _is_reference(tree, changes):
+        return None
+    hits = _added_lines_ok(changes)
+    if hits:
+        return "content_policy", hits
+    ok, _ = _scaffold_ok(tree)
+    if not ok:
+        return "out_of_scope", [c.path for c in changes if c.path in EDIT_REGIONS]
+    ok, _ = _imports_ok(tree)
+    if not ok:
+        return "content_policy", [c.path for c in changes if c.status != "D"]
+    return None
 
 
 def _imports_ok(root: Path) -> tuple[bool, str]:
@@ -335,6 +376,8 @@ VALIDATOR_START_SECONDS = 20.0
 VALIDATOR_START_ATTEMPTS = 2
 VALIDATOR_MAX_CONNECTIONS = 32
 DIAGNOSTIC_STDERR_BYTES = 1536
+# Output cap of one case's runner (stdout and stderr each).
+CASE_OUTPUT_BYTES = 64 << 20
 DIAGNOSTIC_MAX_BYTES = 120 * 1024
 # A small InnoDB footprint keeps template copies and restarts cheap. The
 # validator only executes the two queries on the found counterexample outside
@@ -399,13 +442,14 @@ class _MariaDB:
 
     The candidate and the reference each own a separate server process,
     datadir and socket created from one pristine template; only the owning
-    side's worker is ever given its socket. Before and after every case of its
-    side, ``reset()`` kills every client connection (with any running query,
-    lock, temporary table or session variable), drops every non-system
-    database, and verifies global variables and system tables against the
-    pristine fingerprint; any drift or reset error restarts the server from
-    the template. Between its cases the server is frozen (SIGSTOP), so it
-    neither runs nor answers while the other side is measured.
+    side's worker is ever given its socket. The server runs only around its
+    own side's cases: ``fresh()`` starts it on a new copy of the template just
+    before the case and ``stop()`` kills it right after, so while the other
+    side is measured no process listens on its socket (an isolate
+    instance may connect to any pathname socket it can name). After every
+    case, ``reset()`` records what the case left behind: it kills every client
+    connection, drops every non-system database, and verifies global variables
+    and system tables against the pristine fingerprint.
     """
 
     def __init__(self, template: Path, side: str):
@@ -577,7 +621,6 @@ class _MariaDB:
 
     def reset(self) -> dict:
         """Return this side's server to the pristine state, restarting if needed."""
-        self.thaw()
         summary: dict = {}
         if self.process is None or self.process.poll() is not None:
             summary["server_exited"] = True
@@ -599,12 +642,6 @@ class _MariaDB:
                 os.killpg(self.process.pid, number)
             except ProcessLookupError:
                 pass
-
-    def freeze(self) -> None:
-        self._signal(signal.SIGSTOP)
-
-    def thaw(self) -> None:
-        self._signal(signal.SIGCONT)
 
     def alive(self) -> bool:
         return self.process is not None and self.process.poll() is None
@@ -636,8 +673,6 @@ class _Validators:
             template = _validator_template(self.root)
             for side in (CANDIDATE_SIDE, REFERENCE_SIDE):
                 self.sides[side] = _MariaDB(template, side)
-                self.sides[side].fresh()
-                self.sides[side].freeze()
         except BaseException:
             self.__exit__(None, None, None)
             raise
@@ -651,38 +686,9 @@ class _Validators:
         return False
 
 
-def _worker_oom_priority() -> None:
-    # Keep solver pressure from selecting a SQL validator as its victim.
-    descriptor = os.open("/proc/self/oom_score_adj", os.O_WRONLY)
-    try:
-        os.write(descriptor, b"1000")
-    finally:
-        os.close(descriptor)
-
-
-def _kill_session(session: int) -> None:
-    """Kill every process left in the case's session, whatever its process group."""
-    for entry in Path("/proc").iterdir():
-        if not entry.name.isdigit():
-            continue
-        try:
-            stat = (entry / "stat").read_text()
-            fields = stat[stat.rindex(")") + 2:].split()
-            if int(fields[3]) == session:
-                os.kill(int(entry.name), signal.SIGKILL)
-        except (OSError, ValueError, IndexError):
-            pass
-
-
-def _stderr_tail(handle) -> str:
-    try:
-        handle.flush()
-        size = handle.seek(0, os.SEEK_END)
-        handle.seek(max(0, size - DIAGNOSTIC_STDERR_BYTES))
-        raw = handle.read()
-    except (OSError, ValueError):
-        return ""
+def _stderr_tail(raw: bytes) -> str:
     # ASCII keeps the JSON size bounded; progress bars carry no diagnosis.
+    raw = raw[-DIAGNOSTIC_STDERR_BYTES:]
     return raw.decode("ascii", errors="replace").replace("\r", "\n")
 
 
@@ -715,53 +721,38 @@ def _run_case(
     record.update({"returncode": None, "timed_out": False, "reason": None, "budget_seconds": budget})
     payload = dict(workload.payload)
     payload["timeout_seconds"] = budget
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(root)
-    env["PATH"] = "/usr/bin:/usr/local/bin:/bin"
-    env["FRONTIER_MYSQL_SOCKET"] = socket
-    case_temp = None
-    stderr_file = None
+    # The runner, and the search process it starts on the submitted modules, run in a fresh
+    # shared isolate launcher: a copy of the tree, a private TMPDIR, an environment of its own
+    # and AF_UNIX sockets only, so it reaches this side's validator socket and nothing of the
+    # judge; every process it started is gone when the case ends.
+    env = {
+        "PYTHONPATH": "{work}",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONUNBUFFERED": "1",
+        "FRONTIER_MYSQL_SOCKET": socket,
+    }
+    timeout = max(SUBPROCESS_TIMEOUT_SECONDS, budget + (HARD_SUBPROCESS_MARGIN_SECONDS if workload.stratum == HARD_STRATUM else SUBPROCESS_MARGIN_SECONDS))
+    stderr = b""
     started = time.monotonic()
     try:
-        case_temp = tempfile.mkdtemp(prefix="polygon-case-")
-        env["TMPDIR"] = case_temp
-        stderr_file = tempfile.TemporaryFile(prefix="polygon-stderr-")
-        proc = subprocess.Popen(
-            [sys.executable, str(root / RUNNER)],
-            cwd=root,
-            env=env,
-            stdin=subprocess.PIPE,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=stderr_file,
-            start_new_session=True,
-            preexec_fn=_worker_oom_priority,
+        result = isolate.run(
+            [sys.executable, "{work}/" + RUNNER], tree=root, env=env,
+            stdin=json.dumps(payload).encode("utf-8"), timeout_seconds=timeout,
+            unix_sockets=True, path="/usr/bin:/usr/local/bin:/bin",
+            output_bytes=CASE_OUTPUT_BYTES,
         )
-        stdout = ""
-        try:
-            stdout, _ = proc.communicate(
-                json.dumps(payload),
-                timeout=max(SUBPROCESS_TIMEOUT_SECONDS, budget + (HARD_SUBPROCESS_MARGIN_SECONDS if workload.stratum == HARD_STRATUM else SUBPROCESS_MARGIN_SECONDS)),
-            )
-        except subprocess.TimeoutExpired:
+        stderr = result.stderr
+        record["returncode"] = result.returncode
+        if result.timed_out:
             record["timed_out"] = True
             raise ValueError("worker timed out")
-        finally:
-            # A timed-out search can leave Z3 children competing with the paired reference.
-            try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            _kill_session(proc.pid)
-            proc.wait()
-            record["returncode"] = proc.returncode
-            for stream in (proc.stdin, proc.stdout):
-                if stream is not None:
-                    stream.close()
+        if result.limit:
+            raise ValueError(f"worker exceeded its {result.limit} limit")
+        stdout = result.stdout.decode("utf-8", errors="replace")
         lines = [line for line in stdout.splitlines() if line.startswith("{")]
         if len(lines) > 1:
             raise ValueError("worker printed more than one result")
-        if proc.returncode or not lines:
+        if result.returncode or not lines:
             if lines:
                 try:
                     error = json.loads(lines[-1]).get("error")
@@ -770,15 +761,15 @@ def _run_case(
                 except (ValueError, AttributeError):
                     pass
             raise ValueError("worker failed")
-        result = json.loads(lines[-1])
-        if result.get("ok") is not True:
+        reported = json.loads(lines[-1])
+        if reported.get("ok") is not True:
             raise ValueError("worker rejected the result")
         # time_seconds is measured by the fixed adapter; the submission's own
         # duration is private telemetry only.
-        record["reported_time_seconds"] = result.get("reported_time_seconds")
-        elapsed = float(result["time_seconds"])
-        iterations = int(result["iterations"])
-        backtracks = int(result["backtracks"])
+        record["reported_time_seconds"] = reported.get("reported_time_seconds")
+        elapsed = float(reported["time_seconds"])
+        iterations = int(reported["iterations"])
+        backtracks = int(reported["backtracks"])
         if (
             not math.isfinite(elapsed)
             or elapsed < 0
@@ -788,9 +779,11 @@ def _run_case(
         ):
             raise ValueError("worker metrics are invalid")
         return Observation(
-            bool(result["refuted"]), elapsed, iterations, backtracks,
+            bool(reported["refuted"]), elapsed, iterations, backtracks,
             workload.timeout_seconds,
         )
+    except isolate.IsolateError:
+        raise  # the judge's own fault: a failed verification, never a candidate score
     except Exception as error:
         record["reason"] = (
             str(error)[:128] if isinstance(error, ValueError) else type(error).__name__
@@ -801,11 +794,7 @@ def _run_case(
         )
     finally:
         record["wall_seconds"] = round(time.monotonic() - started, 3)
-        if stderr_file is not None:
-            record["stderr_tail"] = _stderr_tail(stderr_file)
-            stderr_file.close()
-        if case_temp is not None:
-            shutil.rmtree(case_temp, ignore_errors=True)
+        record["stderr_tail"] = _stderr_tail(stderr)
 
 
 def _case_record(index: int, workload: Workload, side: str) -> dict:
@@ -839,11 +828,12 @@ def _measure_pair(
 ) -> tuple[list[Observation], list[Observation]]:
     """Measure every case on both sides, each against its own validator.
 
-    Run order alternates exactly as before. Each side's worker only receives
-    its own side's socket; that server is reset to the pristine state (and
-    verified) immediately before and after the side's case, and frozen while
-    the other side runs, so neither side's database state, connections,
-    queries or server settings can reach the other side's case.
+    The reference runs first on even cases, the candidate on odd ones. Each side's worker only receives
+    its own side's socket; that server is started on a fresh copy of the
+    pristine template immediately before the side's case, checked by reset()
+    after it, and killed before the other side runs, so neither side's
+    database state, connections, queries or server settings can reach the
+    other side's case, and no other validator is listening during a case.
     """
     records = [] if records is None else records
     candidate_rows: list[Observation] = []
@@ -861,7 +851,9 @@ def _measure_pair(
                 validator = validators[side]
                 record = _case_record(index, workload, side)
                 records.append(record)
-                record["validator_before"] = validator.reset()
+                started = time.monotonic()
+                validator.fresh()
+                record["validator_before"] = {"start_seconds": round(time.monotonic() - started, 3)}
                 try:
                     row = _run_case(
                         roots[side], workload, validator.socket, record,
@@ -870,7 +862,7 @@ def _measure_pair(
                 finally:
                     record["validator_after"] = validator.reset()
                     record["validator_starts"] = validator.starts
-                    validator.freeze()
+                    validator.stop()
                 _finish_record(record, row)
                 rows[side] = row
             candidate_rows.append(rows[CANDIDATE_SIDE])
@@ -931,37 +923,15 @@ def _comparison_decisions(
     return output
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    candidate_root = None
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
     reference_root = None
     try:
         workloads = _load_suite()
-        patch = Path(solution_path)
-        applied = apply_submission_patch(
-            patch, TASK_DIR, CONFIG, pristine=_pristine_root()
-        )
-        if not applied.ok:
-            return _invalid(applied.message, workloads)
-        candidate_root = applied.workdir
-
-        ok, reason = _policy_ok(patch)
-        if not ok:
-            return _invalid(reason, workloads)
-        is_reference = patch.read_bytes() == REFERENCE_PATCH.read_bytes()
-        if not is_reference:
-            ok, reason = _scaffold_ok(candidate_root)
-            if not ok:
-                return _invalid(reason, workloads)
-            ok, reason = _imports_ok(candidate_root)
-            if not ok:
-                return _invalid(reason, workloads)
-
-        restored = apply_submission_patch(
-            REFERENCE_PATCH, TASK_DIR, CONFIG, pristine=_pristine_root()
-        )
-        if not restored.ok:
+        candidate_root = Path(tree)
+        try:
+            reference_root = _reference_tree()
+        except subprocess.CalledProcessError:
             return _invalid("reference patch is invalid", workloads)
-        reference_root = restored.workdir
 
         _build(candidate_root)
         _build(reference_root)
@@ -1005,14 +975,13 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             workloads = tuple()
         return _invalid(f"evaluation failed: {type(exc).__name__}", workloads)
     finally:
-        for root in (candidate_root, reference_root):
-            if root is not None:
-                shutil.rmtree(root.parent, ignore_errors=True)
+        if reference_root is not None:
+            shutil.rmtree(reference_root.parent, ignore_errors=True)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("usage: evaluator.py SOLUTION_PATCH", file=sys.stderr)
+        print("usage: evaluator.py TREE", file=sys.stderr)
         raise SystemExit(2)
     score, unbounded, message, metrics = evaluate(sys.argv[1])
     print(

@@ -1,3 +1,0 @@
-five_shot_localization_prompt_template
-$pattern
-$subpatterns

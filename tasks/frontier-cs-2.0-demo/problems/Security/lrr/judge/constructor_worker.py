@@ -3,7 +3,8 @@
 The submitted policy is Python that the retained upstream constructor imports.
 Running it here, not inside the evaluator process, keeps policy code away from
 the evaluator's in-memory scoring state. Input: the JSON file named by argv[1], {"task": str, "lines": [str]}; the
-working directory is the patched repository. policy_sandbox.py starts it. Output
+working directory is a copy of the patched repository. The evaluator runs it in
+the shared isolate launcher (isolate.run). Output
 (stdout): one JSON document {"rows": [[chat, pattern] | null, ...]}.
 """
 from __future__ import annotations

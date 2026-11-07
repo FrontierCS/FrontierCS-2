@@ -1,4 +1,4 @@
-"""Guard the Binary Fuse certified non-inferiority accuracy contract (issue #321).
+"""Guard the Binary Fuse certified non-inferiority accuracy contract.
 
 The three performance metrics remain strict per-workload wins. The two accuracy
 metrics are certified non-inferiority guards against preregistered reference-only
@@ -55,9 +55,12 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
 
         self.addCleanup(restore)
         sys.path.insert(0, str(TASK / "judge"))
-        for name in ("accuracy_metrics", "submission_patch", "evaluator"):
+        for name in ("accuracy_metrics", "measurement", "evaluator"):
             sys.modules.pop(name, None)
         self.metrics = module(TASK / "judge/accuracy_metrics.py", "accuracy_metrics")
+        # The measurement procedure lives in measurement.py since the task.toml migration;
+        # evaluator.py is the gate and the glue around it.
+        self.measurement = module(TASK / "judge/measurement.py", "measurement")
         self.evaluator = module(TASK / "judge/evaluator.py", "evaluator")
         self.profile = json.loads(
             (TASK / "judge/reference/statistical-calibration.json").read_text()
@@ -76,7 +79,7 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         return self.metrics.summarize_accuracy(rows, n)
 
     def anchors(self):
-        return self.evaluator.load_statistical_calibration(require_runtime=False)
+        return self.evaluator.load_statistical_calibration()
 
     # ------------------------------------------------- preregistration
 
@@ -111,21 +114,23 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             judge = Path(temp) / "judge"
             shutil.copytree(TASK / "judge", judge)
-            spec = judge / "beat_spec.json"
-            spec.write_text(spec.read_text().replace("<= anchor", "<= 2 * anchor"))
+            # Any change to a bound measurement source invalidates the calibration...
+            harness = judge / "harness.c"
+            harness.write_text(harness.read_text() + "\n/* changed */\n")
             mutated = module(judge / "evaluator.py", "mutated_evaluator")
             with self.assertRaises(self.metrics.CalibrationRequired):
-                mutated.load_statistical_calibration(require_runtime=False)
-
-    def test_production_gate_fails_closed_without_a_runtime_receipt(self):
+                mutated.load_statistical_calibration()
         with tempfile.TemporaryDirectory() as temp:
             judge = Path(temp) / "judge"
             shutil.copytree(TASK / "judge", judge)
-            (judge / "reference/runtime-qualification.json").unlink(missing_ok=True)
-            gated = module(judge / "evaluator.py", "gated_evaluator")
-            with self.assertRaises(self.metrics.RuntimeQualificationRequired):
-                gated.load_statistical_calibration()
-            self.assertTrue(gated.load_statistical_calibration(require_runtime=False))
+            measurement = judge / "measurement.py"
+            measurement.write_text(measurement.read_text() + "\n# changed\n")
+            mutated = module(judge / "evaluator.py", "mutated_measurement_evaluator")
+            with self.assertRaises(self.metrics.CalibrationRequired):
+                mutated.load_statistical_calibration()
+        # ...while the glue around it is not bound (a layout change keeps the calibration).
+        self.assertNotIn("evaluator.py", self.evaluator.MEASUREMENT_FILES)
+        self.assertNotIn("config.yaml", self.evaluator.MEASUREMENT_FILES)
 
     # -------------------------------------------------- the guard itself
 
@@ -217,26 +222,26 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
                 "reference": {"resident_bytes": 2261032, "build_ns": 100.0, "lookup_ns": 20.0, **reference},
             }
 
-        score, decisions, beats = self.evaluator.score_rows(
+        score, decisions, beats = self.measurement.score_rows(
             [row(2200000, 90.0, 19.0, accuracy)], anchors
         )
         self.assertEqual(beats, 1)
         self.assertTrue(all(decisions[0]["metrics"].values()))
         self.assertGreater(score, 50.0)
         # A tie on any performance metric, or a certified accuracy excess, fails.
-        _, decisions, beats = self.evaluator.score_rows([row(2261032, 90.0, 19.0, accuracy)], anchors)
+        _, decisions, beats = self.measurement.score_rows([row(2261032, 90.0, 19.0, accuracy)], anchors)
         self.assertEqual((beats, decisions[0]["metrics"]["resident_bytes"]), (0, False))
-        _, decisions, beats = self.evaluator.score_rows(
+        _, decisions, beats = self.measurement.score_rows(
             [row(2200000, 90.0, 19.0, self.sample(512, resident_bytes=2200000))], anchors
         )
         self.assertEqual((beats, decisions[0]["metrics"]["effective_fpr"]), (0, False))
         with self.assertRaises(self.metrics.CalibrationRequired):
-            self.evaluator.score_rows([row(2200000, 90.0, 19.0, accuracy)], {workload: {"effective_fpr": 1e-5}})
+            self.measurement.score_rows([row(2200000, 90.0, 19.0, accuracy)], {workload: {"effective_fpr": 1e-5}})
 
     # ---------------------------------------------- existing hard gates
 
     def test_validity_gates_reject_always_true_filters_and_false_negatives(self):
-        e = self.evaluator
+        e = self.measurement
         q = e.QUERIES
         good = {
             "construction": True, "false_negatives": 0, "mixed_false_negatives": 0, "leaked_bytes": 0,

@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "conversion": {
+      "method": "manual runtime standardization; scientific implementation preserved",
+      "source_commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
+      "source_path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy",
+      "source_repo": "private authoring repository"
+    },
+    "evaluation": {
+      "beat_spec_sha256": "sha256:19bb12002bd89b264f142f9e38a570133d98dee964051c032c2e5050135dff5d",
+      "suite_relation": "fixed disjoint development and final suites; identical evaluator and beat-spec rules"
+    },
+    "generator": {
+      "candidate_id": "cand_000-r7",
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_82_svg_ear_v12"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {}
+  },
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform."
+}

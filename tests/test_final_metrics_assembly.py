@@ -14,6 +14,8 @@ from unittest.mock import patch
 import jsonschema
 
 ROOT = Path(__file__).resolve().parents[1] / "tasks/frontier-cs-2.0-demo/problems"
+sys.path.insert(0, str(ROOT.parents[2] / "scripts"))
+import task_manifest  # noqa: E402
 TASKS = (
     "batch_local_counting",
     "bounded_evm_path_prediction",
@@ -22,8 +24,21 @@ TASKS = (
     "bbq_packet_scheduling",
     "sparse_video_attention_policy",
     "polar_express",
-    "mujoco_playground_cpu",
 )
+
+
+class _AcceptingScope:
+    """The shared verifier's edit scope, accepting every patch: the judged tree is `tree`."""
+
+    CATEGORIES = {}
+
+    def __init__(self, tree):
+        self.tree = tree
+
+    def check(self, *_args, **_kwargs):
+        from types import SimpleNamespace
+        return SimpleNamespace(ok=True, tree=self.tree, changes=(), metrics={},
+                               dispose=lambda: None)
 
 
 class FinalMetricsAssembly(unittest.TestCase):
@@ -35,7 +50,10 @@ class FinalMetricsAssembly(unittest.TestCase):
             export_root = os.environ.get("FRONTIER_PRIVATE_METRICS_EXPORT_ROOT")
             if export_root and (Path(export_root) / name).is_dir():
                 task = Path(export_root) / name
-            path = task / "verifier/fcs2_verifier.py"
+            native = task_manifest.is_native(task)
+            # A task.toml task runs the shared verifier.
+            path = (task_manifest.SHARED / "verifier/fcs2_verifier.py" if native
+                    else task / "verifier/fcs2_verifier.py")
             for helper in ("beat_spec_feedback", "candidate_diagnostic"):
                 sys.modules.pop(helper, None)
             sys.path.insert(0, str(path.parent))
@@ -43,7 +61,11 @@ class FinalMetricsAssembly(unittest.TestCase):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             sys.path.pop(0)
-            beat_spec = json.loads((task / "judge/beat_spec.json").read_text())
+            # A task.toml task has no judge/beat_spec.json: its metric names are in the
+            # archived spec, and the shared verifier reads [feedback] from config.yaml.
+            spec_path = (ROOT.parents[2] / "docs/task-authoring" / name / "provenance/beat_spec.json"
+                         if native else task / "judge/beat_spec.json")
+            beat_spec = json.loads(spec_path.read_text())
             for mode in ("train", "eval"):
                 for wins, score in ((True, 17.0), (False, 17.0), (False, 0.0)):
                     with (
@@ -52,6 +74,10 @@ class FinalMetricsAssembly(unittest.TestCase):
                     ):
                         scratch = Path(td)
                         (scratch / "beat_spec.json").write_text(json.dumps(beat_spec))
+                        (scratch / "solution").write_bytes(b"")
+                        if native:
+                            (scratch / "config.yaml").write_bytes(task_manifest.generated_files(task)[
+                                f"{task_manifest.GENERATED}/judge/config.yaml"])
                         metrics = {
                             "beats_reference": int(wins),
                             "reference_score": 15.0,
@@ -87,7 +113,10 @@ class FinalMetricsAssembly(unittest.TestCase):
                                 return_value=scratch / "solution",
                             ),
                             patch.object(module, "stage_task", return_value=scratch),
-                            patch.object(module, "load_evaluator"),
+                            patch.object(module, "load_evaluator",
+                                         return_value=(None, None) if native else None),
+                            patch.object(module, "load_edit_scope", create=True,
+                                         return_value=(_AcceptingScope(scratch), None)),
                             patch.object(
                                 module,
                                 "run_evaluator",

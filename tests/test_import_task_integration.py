@@ -18,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer
+import source_tree
 
 
 def copy_repository(source: Path, target: Path) -> None:
@@ -53,6 +54,19 @@ def copy_repository(source: Path, target: Path) -> None:
         "terraform",
         "candidates",
     ):
+        if member == "tasks" and source_tree.in_work_tree(source / member):
+            # A checkout's tasks as the build sees them: the git-tracked files, not the ignored
+            # __pycache__ other tests leave in tasks/shared. An exported tree is copied whole.
+            listed = subprocess.run(["git", "-C", str(source / member), "ls-files", "-z"],
+                                    check=True, capture_output=True).stdout
+            for relative in filter(None, listed.split(b"\0")):
+                path = os.fsdecode(relative)
+                (target / member / path).parent.mkdir(parents=True, exist_ok=True)
+                if (source / member / path).is_symlink():
+                    (target / member / path).symlink_to(os.readlink(source / member / path))
+                else:
+                    shutil.copy2(source / member / path, target / member / path)
+            continue
         shutil.copytree(
             source / member,
             target / member,
@@ -193,6 +207,7 @@ def docker(command, **kwargs):
     return ''
 
 with mock.patch.object(importer.builder, 'run', side_effect=docker), \
+        mock.patch.object(importer.builder, 'registry_digest', return_value=None), \
         mock.patch.object(importer.resolver, 'resolve_digest', side_effect=AssertionError('unexpected registry access')):
     assert importer.main([sys.argv[1]]) == 0
 """

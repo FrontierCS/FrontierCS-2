@@ -1,3 +1,27 @@
+"""evm_state_checkpoints judge: evaluate(tree) for the shared FrontierCS2 verifier.
+
+Scoring. The shipped backend (pristine/ header, the zero), the reference (pristine/ +
+reference.patch) and the candidate (the judged tree's lib/evmcow/execution_state.hpp) each
+build Spectrum and the checkpoint-micro driver. Every Spectrum workload case runs up to five
+one-second runs (interleaved) and every suite seed one checkpoint-micro trace; each workload's
+quality combines throughput, create time, restore time and retained bytes, and Q is their
+geometric mean. unbounded = 100 * log10(Q_C / Q_B); raw_score = 100 * tanh(max(0, unbounded)
+/ 136). Any validity, build, correctness or timing gate failure scores 0. Every program
+built from the submitted header (the checkpoint-micro compile and runs, the Spectrum runs)
+executes under the shared isolate launcher: no judge files, no environment, no network, no new
+processes, no state that survives a run.
+
+Metrics (one row per Spectrum workload and per checkpoint-micro seed: 4 in train, 6 in final):
+  correctness                    every restore check passes.
+  committed_tps                  throughput, higher is better.
+  checkpoint_create_ns           create latency, lower is better.
+  checkpoint_restore_ns          restore latency, lower is better.
+  retained_bytes_per_checkpoint  retained bytes, lower is better.
+  A performance metric passes when all five candidate measurements are strictly better than
+  all five reference measurements of that workload.
+beats_reference = 1 iff every metric passes on every row. Train also returns the candidate's
+committed_tps, checkpoint_create_ns, checkpoint_restore_ns and retained_bytes_per_checkpoint.
+"""
 from __future__ import annotations
 
 import fcntl
@@ -13,23 +37,18 @@ import sys
 import tempfile
 from pathlib import Path
 
-from submission_patch import apply_submission_patch
-
 TASK_DIR = Path(__file__).resolve().parent
-APP_DIR = TASK_DIR / "harbor" / "app"
+if str(TASK_DIR) not in sys.path:
+    sys.path.insert(0, str(TASK_DIR))
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+
+APP_DIR = TASK_DIR / "pristine"
 EDITABLE = Path("lib/evmcow/execution_state.hpp")
-CONFIG = {"submission": {"kind": "patch", "path": "/app/solution.patch",
-          "allow_paths": [str(EDITABLE)], "max_changed_files": 1,
-          "max_patch_bytes": 65536}}
 
 # Generated workloads from the authors' parsers. Final seeds are judge-only.
 DEV_SUITE = (("YCSB:10000:0.9", 1907), ("Smallbank:10000:0.9", 3253))
 FINAL_SUITE = (("YCSB:15000:0.9", 24036583), ("Smallbank:15000:0.9", 24036619),
                ("TPCC:100:5", 24036671))
-FORBIDDEN_ADDITIONS = ("#define", "getenv", "system(", "popen", "fork(",
-                       "malloc", "calloc", "realloc", "aligned_alloc", "mmap", "sbrk",
-                       "operator new", "operator delete", "Statistics", "checkpoint_bench",
-                       "FRONTIER_", "int main", "mallctl", "jemalloc")
 BEAT_METRICS = ("correctness", "committed_tps", "checkpoint_create_ns",
                 "checkpoint_restore_ns", "retained_bytes_per_checkpoint")
 BEAT_REPETITIONS = 5
@@ -45,7 +64,7 @@ MICRO_WORKLOAD = "checkpoint-micro"
 def _workload_ids(suite: tuple[tuple[str, int], ...]) -> list[str]:
     """Every Spectrum workload and one checkpoint-micro workload per suite seed.
 
-    Each workload reports the same metric set (#646): throughput, checkpoint
+    Each workload reports the same metric set: throughput, checkpoint
     create and restore nanoseconds, retained bytes per checkpoint, correctness.
     """
     return ([_workload_id(workload, seed) for workload, seed in suite]
@@ -164,20 +183,35 @@ def _reference_header(tmp: Path) -> bytes:
 
 
 def _compile_micro(tree: Path, output: Path) -> None:
-    proc = _run_checked(["g++", "-O3", "-DNDEBUG", "-std=c++20", f"-I{tree}",
-                         f"-I{TASK_DIR / 'judge_deps/include'}",
-                         str(TASK_DIR / "checkpoint_bench.cpp"), "-o", str(output)], timeout=60)
-    if proc.returncode:
+    # The compiler reads the submitted header, so it runs in an instance too: it sees only
+    # its copy of the tree, the harness and the judge's headers (inputs), never the judge.
+    result = isolate.run(
+        ["g++", "-O3", "-DNDEBUG", "-std=c++20", "-I{work}", "-I{in}/include",
+         "{in}/checkpoint_bench.cpp", "-o", "{out}/micro"],
+        timeout_seconds=60, tree=str(tree), outputs=["micro"],
+        inputs={"include": str(TASK_DIR / "judge_deps/include"),
+                "checkpoint_bench.cpp": str(TASK_DIR / "checkpoint_bench.cpp")})
+    if not result.ok or not result.outputs.get("micro"):
         raise ValueError("submitted checkpoint code does not compile")
+    output.write_bytes(result.outputs["micro"])
+    output.chmod(0o755)
+
+
+def _run_built(argv: list[str], *, timeout: int, read_paths: list[Path],
+               env: dict[str, str] | None = None) -> isolate.Result:
+    """One run of a program built from submitted code, in a fresh confined instance (threads
+    only, no new processes); it reads only the binary and the named library directories."""
+    return isolate.run(argv, timeout_seconds=timeout, syscalls="no_fork",
+                            read_paths=[str(path) for path in read_paths], env=env or {})
 
 
 def _checkpoint_measurement(binary: Path, seed: int) -> dict[str, float]:
-    proc = _run_checked([str(binary), "400", str(seed)], timeout=30)
-    if proc.returncode:
+    result = _run_built([str(binary), "400", str(seed)], timeout=30, read_paths=[binary])
+    if not result.ok:
         raise ValueError("checkpoint lifetime or rollback validation failed")
     try:
         create_ns, restore_ns, retained_bytes, live_checkpoints, _checksum, end_to_end_ns = map(
-            int, proc.stdout.strip().split())
+            int, result.stdout.decode().strip().split())
     except Exception as exc:
         raise ValueError("checkpoint validation returned invalid output") from exc
     if not (0 < create_ns < 1_000_000_000 and 0 < restore_ns < 1_000_000_000
@@ -258,15 +292,11 @@ def _build_variant(source: Path, header: bytes, destination: Path) -> None:
     shutil.copy2(source / "build/bin/bench", destination)
 
 
-def _runtime_env(source: Path) -> dict[str, str]:
-    env = {"PATH": os.environ.get("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"),
-           "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
-    libs = [source / "build/_deps/fmtlib/fmt/install/lib",
+def _runtime_libs(source: Path) -> list[Path]:
+    return [source / "build/_deps/fmtlib/fmt/install/lib",
             source / "build/_deps/gflags/gflags/install/lib",
             source / "build/_deps/google/glog/install/lib",
             source / "build/_deps/jemalloc/jemalloc/install/lib"]
-    env["LD_LIBRARY_PATH"] = ":".join(str(x) for x in libs)
-    return env
 
 
 CHECKPOINT_LINE = re.compile(
@@ -282,12 +312,15 @@ def _one_benchmark(binary: Path, source: Path, workload: str, seed: int) -> dict
     the bytes held per live checkpoint, and checks every restore (height, code
     position, top() and every item); a failed check aborts the run.
     """
-    proc = _run_checked([str(binary), "Spectrum:2:9973:CHECKPOINTED", workload, "1s", str(seed)],
-                        timeout=20, env=_runtime_env(source))
-    if proc.returncode:
+    libs = _runtime_libs(source)
+    result = _run_built([str(binary), "Spectrum:2:9973:CHECKPOINTED", workload, "1s", str(seed)],
+                        timeout=20, read_paths=[binary, *libs],
+                        env={"LD_LIBRARY_PATH": ":".join(str(x) for x in libs)})
+    if not result.ok:
         raise ValueError("Spectrum workload crashed, failed a restore check or timed out")
-    match = re.search(r"^commit\s+([0-9]+(?:\.[0-9]+)?) tx/s$", proc.stderr, re.MULTILINE)
-    checkpoint = CHECKPOINT_LINE.search(proc.stderr)
+    stderr = result.stderr.decode(errors="replace")
+    match = re.search(r"^commit\s+([0-9]+(?:\.[0-9]+)?) tx/s$", stderr, re.MULTILINE)
+    checkpoint = CHECKPOINT_LINE.search(stderr)
     if not match or not checkpoint:
         raise ValueError("Spectrum workload returned invalid statistics")
     tps = float(match.group(1))
@@ -403,26 +436,10 @@ def _score(quality: float, baseline: float) -> float:
     return 100.0 * math.log10(quality / baseline)
 
 
-def _forbidden_patch(patch: Path) -> str | None:
-    text = patch.read_text(encoding="utf-8", errors="replace")
-    added = "\n".join(line[1:] for line in text.splitlines()
-                       if line.startswith("+") and not line.startswith("+++"))
-    for token in FORBIDDEN_ADDITIONS:
-        if token.lower() in added.lower():
-            return token
-    return None
-
-
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    result = None
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    candidate_tree = Path(tree)
     final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
     try:
-        result = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not result.ok:
-            return 0.0, 0.0, result.message, _gate_metrics(final, result.metrics)
-        forbidden = _forbidden_patch(Path(solution_path))
-        if forbidden:
-            return 0.0, 0.0, "patch uses a forbidden benchmark-access token", _gate_metrics(final, result.metrics)
         suite = FINAL_SUITE if final else DEV_SUITE
         repetitions = int(os.environ.get("FRONTIER_SPECTRUM_REPETITIONS", "5"))
         repetitions = max(1, min(5, repetitions))
@@ -432,12 +449,12 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             fcntl.flock(lock, fcntl.LOCK_EX)
             _, source = _ensure_cache()
             temp = Path(temp_name)
-            candidate_header = (result.workdir / EDITABLE).read_bytes()
+            candidate_header = (candidate_tree / EDITABLE).read_bytes()
             naive_header = (APP_DIR / EDITABLE).read_bytes()
             reference_header = _reference_header(temp)
             micro_seeds = tuple(seed for _, seed in suite)
             profiles = {
-                "candidate": _checkpoint_profile(result.workdir, temp / "micro-candidate", micro_seeds),
+                "candidate": _checkpoint_profile(candidate_tree, temp / "micro-candidate", micro_seeds),
                 "naive": _checkpoint_profile(APP_DIR, temp / "micro-naive", micro_seeds),
             }
             reference_tree = temp / "reference-tree"
@@ -462,14 +479,15 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             if _REFERENCE_ANCHOR.get(final) is None:
                 _REFERENCE_ANCHOR[final] = _score(qualities["reference"], qualities["naive"])
             reference_unbounded = _REFERENCE_ANCHOR[final]
-            if Path(solution_path).read_bytes() == (TASK_DIR / "reference.patch").read_bytes():
+            # The reference itself (its header byte for byte) gets the reference anchor.
+            if candidate_header == reference_header:
                 unbounded = reference_unbounded
             else:
                 unbounded = _score(qualities["candidate"], qualities["naive"])
             score = _bounded_score(unbounded)
             reference_score = _bounded_score(reference_unbounded)
             decisions = _beat_decisions(suite, samples, profiles)
-            metrics = _metrics(score, reference_score, result.metrics, final=final, decisions=decisions)
+            metrics = _metrics(score, reference_score, final=final, decisions=decisions)
             candidate_profile = profiles["candidate"]
             metrics.update({"correct": 1, "spectrum_quality": round(qualities["candidate"], 6),
                             "committed_tps": math.exp(sum(math.log(statistics.median(
@@ -486,17 +504,16 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
                             "reference_score_unbounded": reference_unbounded,
                             "workload_values": _workload_values(suite, samples, profiles)})
             return score, unbounded, f"valid Spectrum checkpoint backend; score {score:.3f}", metrics
+    except isolate.IsolateError:
+        raise  # the sandbox could not be built: a verification failure, not a score
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         return 0.0, 0.0, str(exc)[:160], _gate_metrics(final)
     except Exception:
         return 0.0, 0.0, "evaluation failed", _gate_metrics(final)
-    finally:
-        if result is not None and result.workdir is not None:
-            shutil.rmtree(result.workdir.parent, ignore_errors=True)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("usage: evaluator.py PATCH", file=sys.stderr)
+        print("usage: evaluator.py TREE", file=sys.stderr)
         raise SystemExit(2)
     print(evaluate(sys.argv[1]))

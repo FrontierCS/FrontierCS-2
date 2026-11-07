@@ -1,4 +1,26 @@
-#!/usr/bin/env python3
+"""Judge of parallel_dbscan for the shared verifier: check_tree(...) and evaluate(tree).
+
+`tree` is the starter repo (`pristine/`) with only `code/DBSCAN.C` and `code/frontier_solution/**`
+overlaid; check_tree() rejects a DBSCAN.C changed outside its public reconstruction region. The
+reference is `pristine/` + reference.patch, built and measured in the same paired runs.
+
+Score: C = geometric mean over the small workloads (4 train, 8 final) of the candidate's workload
+time (median of 8 repeat medians of 5 fresh `-r 1` totaltime runs); raw_score = score_unbounded
+= 100 * 0.020 / (0.020 + C). The 200,000-point workloads and the reference do not enter it.
+Any correctness, build or run failure is a scored zero; a train evaluation over 240 seconds
+raises (reported as failed, as the old adapter did). The submission is built and every candidate
+execution runs in a fresh shared isolate instance (no judge access, private TMPDIR, nothing
+survives the run); the reference and the oracles are trusted and run directly.
+
+Beat-spec metric (beat_spec_workload_passes, one row per workload, 6 train / 12 final):
+- elapsed_seconds, lower is better: passes when the candidate's workload time C_w is strictly
+  below the reference's R_w; no tolerance.
+beats_reference = 1 iff every workload passes. reference_score applies the same formula to the
+reference's geometric mean; margin = raw_score - reference_score.
+
+The full prior specification is archived at
+docs/task-authoring/parallel_dbscan/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -7,6 +29,7 @@ import math
 import os
 from pathlib import Path
 import random
+import signal
 import shutil
 import statistics
 import subprocess
@@ -14,16 +37,11 @@ import sys
 import tempfile
 import time
 
-from state_guard import StateGuard, StateGuardViolation
-from submission_patch import apply_submission_patch
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 TASK_DIR = Path(__file__).resolve().parent
+PRISTINE = TASK_DIR / "pristine"
 AUTHENTIC_ENTRYPOINT = Path("code/DBSCANTime.C")
-CONFIG = {"submission": {
-    "allow_paths": ["code/DBSCAN.C", "code/frontier_solution/"],
-    "max_changed_files": 20,
-    "max_patch_bytes": 262144,
-}}
 WORKERS = 8
 REPEATS = 8
 TIMED_ROUNDS = 5
@@ -41,6 +59,21 @@ WALK_RESTARTS = 10      # expected number of random restarts (clusters)
 
 class EvaluatorRuntimeError(RuntimeError):
     """Failure of the trusted reference/oracle, distinct from candidate invalidity."""
+
+
+# The old task adapter killed a train evaluation after 240 seconds and reported the
+# verification as failed (not a scored zero); final ran to its 600-second budget. The same
+# train limit is kept here: past it the evaluation raises, so the shared verifier reports a
+# failure exactly as before. Final keeps the platform's eval_timeout_seconds (600).
+TRAIN_DEADLINE_SECONDS = 240
+
+
+class EvaluationDeadline(EvaluatorRuntimeError):
+    """The train evaluation exceeded the task's 240-second limit."""
+
+
+def _deadline(signum, frame):
+    raise EvaluationDeadline("train evaluation exceeded 240 seconds")
 
 
 def _trusted(function, *args, **kwargs):
@@ -332,27 +365,37 @@ def _expected_large(checker: Path, inp: Path, n: int, eps, minpts):
     return _canonical_linear(labels, status)
 
 
-def _sha256(path: Path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _run_large(repo: Path, inp: Path, digest: str, n: int, eps, minpts, rounds, expected):
-    # The input file is written once per workload and shared by both
-    # implementations; any change to it is detected after every execution.
-    with tempfile.TemporaryDirectory(dir=repo) as td:
-        out=Path(td)/"output.txt"
-        env={**os.environ,"OMP_NUM_THREADS":str(WORKERS),"OMP_PROC_BIND":"true","OMP_PLACES":"cores"}
-        cmd=[str(repo/"code"/"DBSCAN"),"-eps",str(eps),"-minpts",str(minpts),"-r",str(rounds),"-o",str(out),str(inp)]
-        p=subprocess.run(cmd,cwd=repo/"code",env=env,capture_output=True,text=True,timeout=RUN_TIMEOUT)
-        if _sha256(inp) != digest: raise ValueError("shared workload input changed")
+def _execute(binary: Path, sandboxed: bool, inp: Path, eps, minpts, rounds, td: Path):
+    """One DBSCAN execution; returns (stdout, output path). A candidate binary runs in a fresh
+    isolate instance that reads only itself and the input and writes only its own dirs."""
+    out=td/"output.txt"
+    omp={"OMP_NUM_THREADS":str(WORKERS),"OMP_PROC_BIND":"true","OMP_PLACES":"cores"}
+    args=["-eps",str(eps),"-minpts",str(minpts),"-r",str(rounds),"-o"]
+    if not sandboxed:
+        p=subprocess.run([str(binary),*args,str(out),str(inp)],cwd=binary.parent,env={**os.environ,**omp},
+                         capture_output=True,text=True,timeout=RUN_TIMEOUT)
         if p.returncode: raise RuntimeError("DBSCAN execution failed")
+        return p.stdout, out
+    r=isolate.run([str(binary),*args,"{out}/output.txt",str(inp)],timeout_seconds=RUN_TIMEOUT,
+                       read_paths=[str(binary),str(inp)],outputs=["output.txt"],env=omp)
+    if r.timed_out: raise RuntimeError("DBSCAN execution timed out")
+    if r.returncode or r.limit: raise RuntimeError("DBSCAN execution failed")
+    if r.outputs.get("output.txt") is not None:
+        out.write_bytes(r.outputs["output.txt"])
+    return r.stdout.decode("utf-8","replace"), out
+
+
+def _run_large(binary: Path, sandboxed: bool, workdir: Path, inp: Path, n: int, eps, minpts, rounds, expected):
+    # The input file is written once per workload and shared by both implementations.
+    with tempfile.TemporaryDirectory(dir=workdir) as td:
+        stdout, out = _execute(binary, sandboxed, inp, eps, minpts, rounds, Path(td))
         times=[]
-        for line in p.stdout.splitlines():
+        for line in stdout.splitlines():
             if line.startswith(">totaltime*"):
                 times.append(float(line.split("*")[1]))
         if len(times)!=rounds or any(not math.isfinite(x) or x<=0 for x in times): raise RuntimeError("invalid timing output")
         counts = {}
-        for line in p.stdout.splitlines():
+        for line in stdout.splitlines():
             for kind in ("core", "border", "noise"):
                 if line.startswith(">num" + kind + "*"):
                     counts[kind] = int(line.split("*")[1])
@@ -364,45 +407,35 @@ def _run_large(repo: Path, inp: Path, digest: str, n: int, eps, minpts, rounds, 
         return times
 
 
-def _guarded(guard: StateGuard, function, *args, **kwargs):
-    # Snapshots are outside the DBSCAN-reported time; the evaluator's own
-    # temporary directory is created and removed inside the candidate tree.
-    before = guard.snapshot()
-    result = function(*args, **kwargs)
-    guard.require_unchanged(before)
-    return result
-
-
-def _measure_large(spec, candidate: Path, refroot: Path, checker: Path, workdir: Path,
-                   guard: StateGuard):
+def _measure_large(spec, candidate: Path, refbin: Path, checker: Path, workdir: Path):
     """Paired timing of one large workload; None if the candidate is invalid.
 
     Same protocol as the original workloads: one -r 1 warm-up per
     implementation, then REPEATS alternating groups of TIMED_ROUNDS fresh -r 1
     executions, every execution fully checked against the independent oracle.
+    `candidate` and `refbin` are the two DBSCAN binaries (the candidate's runs sandboxed).
     """
     inp = Path(_trusted(tempfile.mkdtemp, prefix="walk-", dir=workdir)) / "input.txt"
     _trusted(_write_points, inp, _trusted(_walk_points, spec))
-    digest = _trusted(_sha256, inp)
     expected = _trusted(_expected_large, checker, inp, spec["n"], spec["eps"], spec["minpts"])
 
     def execute(repo):
-        args = (repo, inp, digest, spec["n"], spec["eps"], spec["minpts"], 1, expected)
-        if repo == refroot:
+        args = (repo, repo != refbin, workdir, inp, spec["n"], spec["eps"], spec["minpts"], 1, expected)
+        if repo == refbin:
             return _trusted(_run_large, *args)
         try:
-            return _guarded(guard, _run_large, *args)
-        except StateGuardViolation:
+            return _run_large(*args)
+        except (isolate.IsolateError, EvaluationDeadline):
             raise
         except Exception:
             return None
 
-    for repo in (candidate, refroot):
+    for repo in (candidate, refbin):
         if execute(repo) is None:
             return None
     ct=[]; rt=[]
     for r in range(REPEATS):
-        order=((candidate,ct),(refroot,rt)) if r%2==0 else ((refroot,rt),(candidate,ct))
+        order=((candidate,ct),(refbin,rt)) if r%2==0 else ((refbin,rt),(candidate,ct))
         for repo,bucket in order:
             # Each measured round is its own process: nothing a round computes
             # can be reused by a later round.
@@ -417,32 +450,25 @@ def _measure_large(spec, candidate: Path, refroot: Path, checker: Path, workdir:
     return statistics.median(ct), statistics.median(rt)
 
 
-def _validate_source(candidate: Path):
-    pristine = TASK_DIR / "repo"
+def _region_preserved(candidate: Path) -> bool:
+    """`code/DBSCAN.C` keeps the retained orchestration around its reconstruction region (or
+    is the exact upstream file)."""
     source = (candidate / "code/DBSCAN.C").read_bytes()
-    baseline = (pristine / "code/DBSCAN.C").read_bytes()
+    baseline = (PRISTINE / "code/DBSCAN.C").read_bytes()
     prefix, rest = baseline.split(b"// Public reconstruction interfaces.", 1)
     _, suffix = rest.split(b"/**\n * Assigns border points after assigning core points to clusters.", 1)
     prefix += b"// Public reconstruction interfaces."
     suffix = b"/**\n * Assigns border points after assigning core points to clusters." + suffix
     lock = json.loads((TASK_DIR / "source_lock.json").read_text())
     exact_upstream = hashlib.sha256(source).hexdigest() == lock["upstream_dbscan_sha256"]
-    if not exact_upstream and not (source.startswith(prefix) and source.endswith(suffix)):
-        raise ValueError("patch changes retained DBSCAN orchestration")
-    for path in candidate.rglob("*"):
-        relative = path.relative_to(candidate)
-        if path.is_symlink():
-            raise ValueError("symlink in submitted source")
-        if not path.is_file():
-            continue
-        if relative.as_posix() == "code/DBSCAN.C" or relative.parts[:2] == ("code", "frontier_solution"):
-            continue
-        original = pristine / relative
-        if not original.is_file() or path.read_bytes() != original.read_bytes():
-            raise ValueError("patch changes retained source")
-    for path in pristine.rglob("*"):
-        if path.is_file() and not (candidate / path.relative_to(pristine)).is_file():
-            raise ValueError("patch removes retained source")
+    return exact_upstream or (source.startswith(prefix) and source.endswith(suffix))
+
+
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: only the reconstruction region of code/DBSCAN.C may change."""
+    if not _region_preserved(Path(tree)):
+        return "out_of_scope", ["code/DBSCAN.C"]
+    return None
 
 
 def _build(repo: Path):
@@ -453,32 +479,41 @@ def _build(repo: Path):
     subprocess.run(["make", "clean"], cwd=repo/"code", capture_output=True, timeout=BUILD_TIMEOUT)
     p=subprocess.run(["make", "OPENMP=1", "-j8"], cwd=repo/"code", capture_output=True, timeout=BUILD_TIMEOUT)
     if p.returncode: raise RuntimeError("build failed")
+    return repo/"code"/"DBSCAN"
 
 
-def _run(repo: Path, points, eps, minpts, rounds=1, expected_status=None, shared=None):
+def _build_candidate(tree: Path, workdir: Path) -> Path:
+    """The same build in an isolate instance (a private copy of the tree); returns the
+    judge-held copy of the binary."""
+    if not (tree / AUTHENTIC_ENTRYPOINT).is_file():
+        raise RuntimeError("authentic DBSCAN entrypoint is missing")
+    r=isolate.run(["sh","-c",'make clean >/dev/null 2>&1; make OPENMP=1 -j8 >/dev/null 2>&1 && cp DBSCAN "$0"',
+                        "{out}/DBSCAN"],timeout_seconds=BUILD_TIMEOUT,tree=str(tree),cwd="{work}/code",
+                       outputs=["DBSCAN"],output_bytes=64<<20)
+    if r.returncode or r.limit or not r.outputs.get("DBSCAN"): raise RuntimeError("build failed")
+    binary=Path(tempfile.mkdtemp(prefix="candidate-",dir=workdir))/"DBSCAN"
+    binary.write_bytes(r.outputs["DBSCAN"]); binary.chmod(0o755)
+    return binary
+
+
+def _run(binary: Path, sandboxed: bool, workdir: Path, points, eps, minpts, rounds=1, expected_status=None, shared=None):
     if expected_status is None:
         raise ValueError("expected point status is required for every execution")
-    with tempfile.TemporaryDirectory(dir=repo) as td:
-        out=Path(td)/"output.txt"
+    with tempfile.TemporaryDirectory(dir=workdir) as td:
         if shared is None:
             inp=Path(td)/"input.txt"
             _write_points(inp, points)
         else:
-            # A timing workload's input is written once and shared by both
-            # implementations; any change to it is detected after every execution.
-            inp, digest = shared
-        env={**os.environ,"OMP_NUM_THREADS":str(WORKERS),"OMP_PROC_BIND":"true","OMP_PLACES":"cores"}
-        cmd=[str(repo/"code"/"DBSCAN"),"-eps",str(eps),"-minpts",str(minpts),"-r",str(rounds),"-o",str(out),str(inp)]
-        p=subprocess.run(cmd,cwd=repo/"code",env=env,capture_output=True,text=True,timeout=RUN_TIMEOUT)
-        if shared is not None and _sha256(inp) != digest: raise ValueError("shared workload input changed")
-        if p.returncode: raise RuntimeError("DBSCAN execution failed")
+            # A timing workload's input is written once and shared by both implementations.
+            inp = shared
+        stdout, out = _execute(binary, sandboxed, inp, eps, minpts, rounds, Path(td))
         times=[]
-        for line in p.stdout.splitlines():
+        for line in stdout.splitlines():
             if line.startswith(">totaltime*"):
                 times.append(float(line.split("*")[1]))
         if len(times)!=rounds or any(not math.isfinite(x) or x<=0 for x in times): raise RuntimeError("invalid timing output")
         counts = {}
-        for line in p.stdout.splitlines():
+        for line in stdout.splitlines():
             for kind in ("core", "border", "noise"):
                 if line.startswith(">num" + kind + "*"):
                     counts[kind] = int(line.split("*")[1])
@@ -499,19 +534,28 @@ def _continuous_score(candidate_geomean):
     return raw, raw
 
 
-def evaluate(solution_path: str):
-    applied=None; refroot=None
+def evaluate(tree: str):
+    if os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final":
+        return _evaluate(tree)
+    previous = signal.signal(signal.SIGALRM, _deadline)
+    signal.setitimer(signal.ITIMER_REAL, TRAIN_DEADLINE_SECONDS)
     try:
-        applied=apply_submission_patch(solution_path,TASK_DIR,CONFIG,pristine=TASK_DIR/"repo")
-        if not applied.ok: return _invalid(applied.message)
-        candidate=applied.workdir
-        _validate_source(candidate)
+        return _evaluate(tree)
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+
+
+def _evaluate(tree: str):
+    refroot=None
+    try:
+        candidate=Path(tree)
         refbase=Path(_trusted(tempfile.mkdtemp,prefix="dbscan-ref-",dir=TASK_DIR)); refroot=refbase/"repo"
-        _trusted(shutil.copytree,TASK_DIR/"repo",refroot)
+        _trusted(shutil.copytree,PRISTINE,refroot)
         git_env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(refbase)}
         rp=_trusted(subprocess.run,["git","apply",str((TASK_DIR/"reference.patch").resolve())],cwd=refroot,capture_output=True,env=git_env,timeout=BUILD_TIMEOUT)
         if rp.returncode: raise EvaluatorRuntimeError("reference could not be prepared")
-        _build(candidate); _trusted(_build,refroot)
+        candidate=_build_candidate(Path(tree), refbase); refbin=_trusted(_build,refroot)
         checker = refbase / "exact-oracle"
         _trusted(subprocess.run,["g++", "-O2", "-std=c++17", str(TASK_DIR / "exact_oracle.cpp"), "-o", str(checker)],
                        capture_output=True, timeout=BUILD_TIMEOUT, check=True)
@@ -519,20 +563,21 @@ def evaluate(solution_path: str):
         _trusted(subprocess.run,["g++", "-O2", "-std=c++17", "-fopenmp", str(TASK_DIR / "grid_oracle.cpp"),
                                  "-o", str(grid_checker)], capture_output=True, timeout=BUILD_TIMEOUT, check=True)
         final=os.environ.get("FRONTIER_SUBMISSION_ROLE")=="final"
-        # Every candidate execution must leave the container as it found it.
-        guard = StateGuard([candidate])
-        def candidate_run(*args, **kwargs):
-            return _guarded(guard, _run, *args, **kwargs)
+        # `candidate` / `refbin` are the two binaries; the candidate's runs are sandboxed.
+        def candidate_run(binary, *args, **kwargs):
+            return _run(binary, True, refbase, *args, **kwargs)
+        def reference_run(binary, *args, **kwargs):
+            return _trusted(_run, binary, False, refbase, *args, **kwargs)
         for _,pts,eps,m in _evaluation_correctness_cases(final):
             quantized = [[float(f"{value:.12g}") for value in point] for point in pts]
             expected = _trusted(_expected,checker, pts, eps, m)
             if expected != _trusted(_oracle,quantized, eps, m):
                 raise EvaluatorRuntimeError("independent oracles disagree")
-            for repo in (candidate, refroot):
-                _, got = (_trusted(_run, repo, pts, eps, m, expected_status=expected[0])
-                          if repo == refroot else candidate_run(repo, pts, eps, m, expected_status=expected[0]))
+            for repo in (candidate, refbin):
+                _, got = (reference_run(repo, pts, eps, m, expected_status=expected[0])
+                          if repo == refbin else candidate_run(repo, pts, eps, m, expected_status=expected[0]))
                 if got != expected:
-                    if repo == refroot:
+                    if repo == refbin:
                         raise EvaluatorRuntimeError("reference correctness failed")
                     return _invalid("exact DBSCAN correctness check failed")
         cand=[]; ref=[]; rows=[]
@@ -541,29 +586,29 @@ def evaluate(solution_path: str):
             expected = _trusted(_expected,checker, pts, spec["eps"], spec["minpts"])
             inp = Path(_trusted(tempfile.mkdtemp, prefix="small-", dir=refbase)) / "input.txt"
             _trusted(_write_points, inp, pts)
-            shared = (inp, _trusted(_sha256, inp))
+            shared = inp
             # Every execution, including warm-ups, must produce the full exact output.
-            for repo in (candidate, refroot):
-                _, got = (_trusted(_run, repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0], shared=shared)
-                          if repo == refroot else candidate_run(repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0], shared=shared))
+            for repo in (candidate, refbin):
+                _, got = (reference_run(repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0], shared=shared)
+                          if repo == refbin else candidate_run(repo, pts, spec["eps"], spec["minpts"], expected_status=expected[0], shared=shared))
                 if got != expected:
-                    if repo == refroot:
+                    if repo == refbin:
                         raise EvaluatorRuntimeError("reference correctness failed")
                     return _invalid("timed workload correctness check failed")
             ct=[]; rt=[]
             for r in range(REPEATS):
-                order=((candidate,ct),(refroot,rt)) if r%2==0 else ((refroot,rt),(candidate,ct))
+                order=((candidate,ct),(refbin,rt)) if r%2==0 else ((refbin,rt),(candidate,ct))
                 for repo,bucket in order:
                     # Each measured round is its own process: nothing a round
                     # computes can be reused by a later round.
                     ts = []
                     for _ in range(TIMED_ROUNDS):
-                        t, got = (_trusted(_run, repo, pts, spec["eps"], spec["minpts"],
-                                           expected_status=expected[0], shared=shared) if repo == refroot else
+                        t, got = (reference_run(repo, pts, spec["eps"], spec["minpts"],
+                                                expected_status=expected[0], shared=shared) if repo == refbin else
                                   candidate_run(repo, pts, spec["eps"], spec["minpts"],
                                                 expected_status=expected[0], shared=shared))
                         if got != expected:
-                            if repo == refroot:
+                            if repo == refbin:
                                 raise EvaluatorRuntimeError("reference correctness failed")
                             return _invalid("timed workload correctness check failed")
                         ts.extend(t)
@@ -578,7 +623,7 @@ def evaluate(solution_path: str):
         # workloads; the v3 paper-regime workloads enter the strict verdict.
         cg=math.exp(statistics.mean(math.log(x) for x in cand)); rg=math.exp(statistics.mean(math.log(x) for x in ref))
         for spec in _large_evaluation_suite(final):
-            measured = _measure_large(spec, candidate, refroot, grid_checker, refbase, guard)
+            measured = _measure_large(spec, candidate, refbin, grid_checker, refbase)
             if measured is None:
                 return _invalid("timed workload correctness check failed")
             cm, rm = measured
@@ -606,14 +651,11 @@ def evaluate(solution_path: str):
             "final_workload_identities":[x["workload"] for x in rows] if final else [],
         }
         return score,raw,"exact result accepted; paired performance measured",metrics
-    except EvaluatorRuntimeError:
+    except (EvaluatorRuntimeError, isolate.IsolateError):
         raise
-    except StateGuardViolation as exc:
-        return _invalid(str(exc))
     except Exception as exc:
         return _invalid("evaluation failed: "+type(exc).__name__)
     finally:
-        if applied and applied.workdir: shutil.rmtree(applied.workdir.parent,ignore_errors=True)
         if refroot: shutil.rmtree(refroot.parent,ignore_errors=True)
 
 
@@ -624,7 +666,3 @@ def prepare():
             "rounds_per_process":1,
             "beat_margin":BEAT_MARGIN}
 
-
-if __name__ == "__main__":
-    if len(sys.argv)!=2: raise SystemExit("usage: evaluator.py SOLUTION_PATCH")
-    s,u,m,metrics=evaluate(sys.argv[1]); print(json.dumps({"score":s,"score_unbounded":u,"message":m,"metrics":metrics},indent=2))

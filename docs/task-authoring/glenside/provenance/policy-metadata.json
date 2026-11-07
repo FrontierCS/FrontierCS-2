@@ -1,0 +1,34 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "evaluation": {
+      "authored_answering_timeout_seconds": 18000,
+      "authored_max_dev_submissions": 100,
+      "authored_max_train_wall_seconds": 12000,
+      "solver_visible_metrics": [
+        "development_im2col_discovered_count",
+        "development_rewrite_time_seconds_median",
+        "development_egraph_node_growth_median"
+      ],
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_2105-09377"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "arxiv": "2105.09377",
+      "sections": [
+        "5.3 / Figure 4",
+        "5.2 / Figure 3"
+      ],
+      "title": "Pure Tensor Program Rewriting via Access Patterns",
+      "venue": "MAPS 2021"
+    }
+  },
+  "policy_version": "r11-public-semantic-contract-20261011",
+  "language": "rust"
+}

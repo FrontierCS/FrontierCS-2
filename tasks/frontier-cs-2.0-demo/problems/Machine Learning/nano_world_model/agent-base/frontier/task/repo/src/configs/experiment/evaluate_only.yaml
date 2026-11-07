@@ -1,8 +1,0 @@
-defaults:
-  - default
-
-name: evaluate
-tasks: [evaluate]
-
-evaluation:
-  validation_size: null  # Use full validation set

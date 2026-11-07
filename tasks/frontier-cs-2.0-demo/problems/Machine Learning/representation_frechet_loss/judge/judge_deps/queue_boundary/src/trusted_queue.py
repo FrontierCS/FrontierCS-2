@@ -230,11 +230,11 @@ class TrustedFeatureQueue(nn.Module):
         self.close()
 
 
-def bind_queue_class(source, scratch_root, *, python, deadline, seconds=15, processes=None, allow_cuda=False, namespace=False):
+def bind_queue_class(source, *, python, deadline, seconds=15, processes=None, allow_cuda=False):
     """Bind trusted launch paths outside the caller-visible upstream signature."""
     def factory():
-        worker = QueueProcess(source, scratch_root, python=python, deadline=deadline, seconds=seconds,
-                              allow_cuda=allow_cuda, namespace=namespace)
+        worker = QueueProcess(source, python=python, deadline=deadline, seconds=seconds,
+                              allow_cuda=allow_cuda)
         if processes is not None:
             processes.append(worker)
         return worker

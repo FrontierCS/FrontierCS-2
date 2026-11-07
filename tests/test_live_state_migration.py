@@ -19,6 +19,7 @@ import frontier_deploy as deploy
 from preview import images as image_ops
 from preview import publication
 from task_selection import deployment_catalog
+from test_task_seeding import exact_version
 
 FIXTURES = ROOT / "tests/fixtures/live-state-2026-09-11"
 FILE_SHA256 = {
@@ -350,7 +351,7 @@ class LiveStateMigrationTests(unittest.TestCase):
                     )
                 ],
             }
-            # The public list view omits publication receipts and full driver configs.
+            # The public version view omits publication receipts and full driver configs.
             for records in collections.values():
                 for record in records:
                     record.pop("driver_config")
@@ -370,7 +371,7 @@ class LiveStateMigrationTests(unittest.TestCase):
                     method, "GET", "existing TaskVersions must never be republished"
                 )
                 self.assertIsNone(body)
-                return collections[path]
+                return exact_version(collections, path)
 
             def command(args, **kwargs):
                 self.assertEqual(
@@ -460,16 +461,20 @@ class LiveStateMigrationTests(unittest.TestCase):
                 api.call_args_list,
                 [
                     mock.call(
-                        "http://127.0.0.1:58080", "GET", "/api/v1/candidate-versions"
+                        "http://127.0.0.1:58080",
+                        "GET",
+                        f"/api/v1/candidate-versions/{new_candidate_id}",
                     ),
                     mock.call(
                         "http://127.0.0.1:58080", "POST", "/api/v1/candidate-versions", candidate
                     ),
                     *[
                         mock.call(
-                            "http://127.0.0.1:58080", "GET", "/api/v1/task-versions"
+                            "http://127.0.0.1:58080",
+                            "GET",
+                            f"/api/v1/task-versions/{version_id}",
                         )
-                        for _ in self.selection.selected
+                        for version_id in self.receipt["task_version_ids"]
                     ],
                 ],
             )

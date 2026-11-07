@@ -1,0 +1,82 @@
+# The definition of fast_kv_compaction (schema frontier.task/v1). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+#
+# GPU task: the Agent has one H100 runner (docker/agent-gpu.Dockerfile). The Verifier runs the
+# judge on its CPU control image and measures on single-H100 runners of the trusted command test
+# sandbox [test_sandboxes.shard] (docker/verifier-gpu.Dockerfile): 4 in train, 8 in final.
+schema = "frontier.task/v1"
+id = "fast_kv_compaction"
+display_name = "KV Cache Compaction"
+version = "fastkv-v1-calibrated"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 17179869184        # 16 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+[verifier]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 8
+max_train_wall_seconds = 28800
+eval_timeout_seconds = 5400
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["compaction/"]
+max_changed_files = 40            # as before; the Agent's submission tool enforced the same
+allow_delete = true               # the old checker let a patch delete files under compaction/
+
+[gpu.agent]
+allowed_types = ["H100"]
+max_gpu_seconds = 18000
+max_instance_seconds = 18000
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 8
+max_gpu_seconds = 86400
+
+# The measurement runners: evaluate(tree) on the control image runs each shard on one of them
+# (judge/evaluator.py). Trusted: the image carries the harness, the judge goes up with the
+# applied tree, and the harness jails the submitted method in-process (gpu/fastkv-worker).
+[test_sandboxes.shard]
+access = "command"
+trust = "trusted"
+dockerfile = "docker/verifier-gpu.Dockerfile"
+workdir = "/workspace/frontier-verifier"
+resources = { gpus = 1, gpu_type = "H100" }
+max_concurrent = 8
+lease_seconds = { train = 3600, eval = 4500 }   # per runner; final stays below eval_timeout
+# (5400 s) by the adapter's 660-s delete reserve and 240 s for provisioning and upload.
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["H100"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions). A shard runner
+# uses one session per upload chunk, one for its step and one for its output: 4 x 3 per train
+# call (8 calls), 8 x 3 in final.
+[network.audit]
+max_ssh_sessions = 1144
+ssh_session_budgets = { agent = 1024, verifier_train = 96, verifier_eval = 24 }
+
+[paper]                           # for readers; the platform never reads it
+title = "Fast KV Compaction via Attention Matching"
+venue = "ICML 2026"
+url = "https://arxiv.org/pdf/2602.16284"
+summary = "Compress a long document's KV cache for Qwen3-4B so QuALITY questions are answered from the compacted cache as well as by attention matching, but faster or smaller."
+
+# What train returns to the Agent besides beat_spec_progress (shown in the generated README).
+[feedback]
+dev_qa_accuracy = "Candidate pooled fraction of correctly answered questions over the train articles."
+dev_compaction_seconds = "Candidate compaction time per train article, in seconds; sorted, without article labels."
+dev_compact_cache_bytes = "Candidate compacted-cache bytes per train article; sorted, without article labels."

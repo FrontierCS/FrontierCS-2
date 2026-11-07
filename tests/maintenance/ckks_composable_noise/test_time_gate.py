@@ -20,21 +20,23 @@ import time
 import pytest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-JUDGE_ROOT = REPOSITORY_ROOT/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise/judge'
+TASK = REPOSITORY_ROOT/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise'
+sys.path.insert(0, str(REPOSITORY_ROOT/'scripts'))
+import task_manifest  # noqa: E402
+# The judge as the Verifier image holds it: judge/ plus the generated config.yaml and pristine/.
+JUDGE_ROOT = task_manifest.judge_bundle(TASK)
 # Judge modules have generic names shared with other tasks' judges. Drop them
 # from the import cache before loading this task's own, whatever other task's
 # maintenance tests the interpreter imported first, and again afterwards so
 # tests imported later load theirs.
-JUDGE_MODULES = ('evaluator', 'formal_scoring', 'workload_configurations', 'fixed_surface', 'submission_patch',
-                 'go_entrypoint', 'child_environment', 'calibration', 'ckks_evidence_transport')
+JUDGE_MODULES = ('evaluator', 'formal_scoring', 'workload_configurations',
+                 'go_entrypoint', 'ckks_evidence_transport')
 for _name in JUDGE_MODULES:
     sys.modules.pop(_name, None)
 sys.path.insert(0, str(JUDGE_ROOT))
 import evaluator as e
 import formal_scoring as scoring
 import workload_configurations as c
-from fixed_surface import fixed_surface_violations
-from submission_patch import apply_submission_patch, validate_patch
 
 for _name in JUDGE_MODULES:
     sys.modules.pop(_name, None)
@@ -49,7 +51,11 @@ def load(path, name):
 
 GO = pytest.mark.skipif(shutil.which('go') is None, reason='needs the Go toolchain of the verifier image')
 ADVERSARIAL = Path(__file__).resolve().parent/'adversarial'
-PRISTINE = e.TASK_DIR/'harbor/app'
+PRISTINE = e.PRISTINE
+# The shared edit scope with this task's task.toml [submission] rules, as the verifier runs it.
+EDIT_SCOPE = task_manifest._edit_scope()
+RULES = EDIT_SCOPE.Rules.from_mapping(task_manifest.edit_scope_rules(task_manifest.read_task(TASK)))
+BASELINE = REPOSITORY_ROOT/'docs/task-authoring/ckks_composable_noise/provenance/baseline_naive.patch'
 FIXED_SURFACE = {'fixed_statistics': 'estimator/stats.go', 'fixed_test_vector': 'estimator/utils.go',
                  'fixed_experiment': 'estimator/experiments/mul_relin_rescale/mul_relin_rescale.go',
                  'fixed_experiment_added': 'estimator/experiments/extra/extra.go',
@@ -74,9 +80,14 @@ def rows(value, clocks):
     return {w: {**{k: value for k in e.METRICS}, 'estimator_ns': list(clocks)} for w in e.FINAL_SUITE}
 
 
-def applied(name):
+def scope(name):
     path = ADVERSARIAL/(name+'.patch') if not str(name).endswith('.patch') else Path(name)
-    result = apply_submission_patch(path, e.TASK_DIR, e.CONFIG)
+    return EDIT_SCOPE.check(path.read_bytes(), PRISTINE, RULES)
+
+
+def applied(name):
+    """The judged tree of an in-scope patch (pristine + its allowed files); dispose() it."""
+    result = scope(name)
     assert result.ok, result.message
     return result
 
@@ -102,24 +113,20 @@ def test_reference_parity_does_not_pass(calibration):
     assert faster[3]['reference_estimator_seconds'][e.FINAL_SUITE[0]] == [5e-9]*3
 
 
-def test_full_final_evidence_member_roundtrip_and_unchanged_train(monkeypatch):
+def test_full_final_evidence_roundtrip_and_unchanged_train(monkeypatch):
     import hashlib
-    monkeypatch.syspath_prepend(str(JUDGE_ROOT.parent/'verifier'))
-    native = load(JUDGE_ROOT.parent/'verifier/fcs2_verifier.py', 'ckks_native_transport')
-    from ckks_evidence_transport import unpack
+    monkeypatch.syspath_prepend(str(task_manifest.SHARED/'verifier'))
+    native = load(task_manifest.SHARED/'verifier/fcs2_verifier.py', 'ckks_shared_verifier')
     # A full final has 87 pairs and retains raw observations from both sides.
     value = {'pairs': [{'index': i, 'candidate': 'raw-' + str(i)*8000,
                         'reference': 'raw-' + str(i)*8000} for i in range(87)]}
     monkeypatch.setenv('FRONTIER_SUBMISSION_ROLE', 'final')
-    members = {}
+    # The shared verifier keeps the packed evidence in the evidence archive's metrics.
     result = native.run_evaluator(lambda _: (0.0, 0.0, 'transport fixture',
-        {'operator_evidence': e.pack_evidence(value)}), Path('fixture.patch'), 'eval',
-        evidence_members=members)
-    descriptor = result[3]['operator_evidence']
-    assert descriptor['member'] == 'ckks/calibration.json.xz'
-    assert hashlib.sha256(members[descriptor['member']]).hexdigest() == descriptor['compressed_sha256']
-    assert unpack(descriptor, members[descriptor['member']]) == value
-    assert len(json.dumps(result[3]).encode()) < native.MAX_METRICS_BYTES
+        {'operator_evidence': e.pack_evidence(value)}), Path('fixture-tree'), 'eval',
+        max_metrics_bytes=e.CONFIG['evaluation']['max_metrics_bytes'])
+    assert e.unpack_evidence(result[3]['operator_evidence']) == value
+    assert len(json.dumps(result[3]).encode()) < e.CONFIG['evaluation']['max_metrics_bytes']
     monkeypatch.setenv('FRONTIER_SUBMISSION_ROLE', 'train')
     small = {'observations': [1, 2, 3]}
     raw = json.dumps(small, sort_keys=True, allow_nan=False, separators=(',', ':'))
@@ -206,10 +213,9 @@ def test_pairs_are_interleaved_per_configuration(monkeypatch, tmp_path):
 
 
 def test_feedback_is_aggregate_and_reveals_no_reference(calibration):
-    feedback = load(e.TASK_DIR.parent/'verifier/beat_spec_feedback.py', 'ckks_beat_spec_feedback')
+    feedback = load(task_manifest.SHARED/'verifier/beat_spec_feedback.py', 'ckks_beat_spec_feedback')
     result = e.summarize(rows(0.0, [4, 4, 4]), rows(0.0, [5, 5, 5]), e.FINAL_SUITE, {})
-    public = feedback.public_metrics(result[3], beat_spec_path=e.TASK_DIR/'beat_spec.json',
-                                     configured_visible=e.CONFIG['evaluation']['solver_visible_metrics'])
+    public = feedback.public_metrics(result[3], visible=e.CONFIG['evaluation']['solver_visible_metrics'])
     assert set(public) == {'candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits',
                            'candidate_std_log2_prec_l2_abs_discrepancy_mean_bits',
                            'candidate_estimator_seconds_mean', 'beat_spec_progress'}
@@ -221,47 +227,34 @@ def test_feedback_is_aggregate_and_reveals_no_reference(calibration):
 
 
 def test_pristine_reference_and_controls_keep_the_fixed_surface():
-    assert fixed_surface_violations(PRISTINE, PRISTINE) == []
-    for name in (e.TASK_DIR/'reference.patch', e.TASK_DIR/'baseline_naive.patch', *ACCEPTED, *POLICY, *BUILD):
+    for name in (e.TASK_DIR/'reference.patch', BASELINE, *ACCEPTED, *POLICY, *BUILD):
         if name == 'fixed_clear_target':
             continue
         result = applied(name)
-        try:
-            assert fixed_surface_violations(PRISTINE, result.workdir) == [], name
-        finally:
-            shutil.rmtree(result.cleanup_root, ignore_errors=True)
+        result.dispose()
 
 
 @pytest.mark.parametrize('name', sorted(FIXED_SURFACE))
-def test_edits_to_the_fixed_set_are_rejected(name, monkeypatch):
-    result = applied(name)
-    try:
-        assert fixed_surface_violations(PRISTINE, result.workdir) == [FIXED_SURFACE[name]]
-        # The evaluator refuses before compiling or running anything from the tree.
-        monkeypatch.setattr(e, 'run', lambda *a, **k: pytest.fail('must not build a tree with a changed fixed surface'))
-        with pytest.raises(e.EvaluationError, match='fixed surface changed') as failure:
-            e.guards(result.workdir, Path(e.scratch_root()), time.monotonic()+10)
-        assert failure.value.receipt['paths'] == [FIXED_SURFACE[name]]
-    finally:
-        shutil.rmtree(result.cleanup_root, ignore_errors=True)
+def test_edits_to_the_fixed_set_are_rejected(name):
+    # The shared edit scope refuses before the judge compiles or runs anything from the tree.
+    result = scope(name)
+    assert not result.ok and result.category == 'out_of_scope'
+    assert list(result.paths) == [FIXED_SURFACE[name]]
 
 
 def test_other_file_kinds_and_paths_outside_the_package_are_rejected(tmp_path):
     def patch(path, body='x\n'):
         return (f'diff --git a/{path} b/{path}\nnew file mode 100644\nindex 0000000..1111111\n--- /dev/null\n+++ b/{path}\n'
-                f'@@ -0,0 +1 @@\n+{body}')
-    for outside in ('frontier-build.sh', 'README.md', 'other/x.go', 'estimatorx/x.go'):
-        ok, message, _ = validate_patch(patch(outside), e.CONFIG)
-        assert not ok and 'outside the editable surface' in message
-    for inside in ('estimator/notes.txt', 'estimator/x_test.go', 'estimator/experiments/new/new.go', 'estimator/data.bin'):
-        p = tmp_path/'p.patch'; p.write_text(patch(inside, 'package estimator\n' if inside.endswith('.go') else 'x\n'))
-        result = apply_submission_patch(p, e.TASK_DIR, e.CONFIG)
-        assert result.ok
-        try:
-            assert fixed_surface_violations(PRISTINE, result.workdir) == [inside]
-        finally:
-            shutil.rmtree(result.cleanup_root, ignore_errors=True)
-    assert e.CONFIG['submission']['allow_paths'] == ['estimator/']
+                f'@@ -0,0 +1 @@\n+{body}\n')
+    for path in ('frontier-extra.sh', 'other/x.go', 'estimatorx/x.go', 'estimator/notes.txt',
+                 'estimator/x_test.go', 'estimator/sub/y_test.go', 'estimator/experiments/new/new.go',
+                 'estimator/data.bin'):
+        p = tmp_path/'p.patch'; p.write_text(patch(path, 'package estimator' if path.endswith('.go') else 'x'))
+        result = scope(p)
+        assert not result.ok and result.category == 'out_of_scope' and list(result.paths) == [path], path
+    p = tmp_path/'p.patch'; p.write_text(patch('estimator/helper/helper.go', 'package helper'))
+    applied(p).dispose()
+    assert RULES.allowed_paths == ('estimator/',)
 
 
 def test_every_statement_that_reaches_the_estimator_is_on_the_clock():
@@ -293,7 +286,7 @@ def test_every_statement_that_reaches_the_estimator_is_on_the_clock():
         # The reported lines are produced by the derived main after the last statistic.
         tail = body.split('\tstatsHave.Finalize()\n')[1]
         assert [l.split('"')[1] for l in tail.split('\n')[:4]] == ['parameters', 'final', 'final', 'estimator_ns']
-    assert e.RELEASE['measured_gomaxprocs'] == 1 and e.clean_env()['GOMAXPROCS'] == '1'
+    assert e.RELEASE['measured_gomaxprocs'] == 1 and e.program_env()['GOMAXPROCS'] == '1'
 
 
 def test_tampered_or_unrecognised_main_is_not_measured():
@@ -321,10 +314,10 @@ def test_no_file_of_package_estimator_is_instrumented():
 def test_source_policy_rejects(name, tmp_path):
     result = applied(name)
     try:
-        with pytest.raises(e.EvaluationError):
-            e.guards(result.workdir, tmp_path, time.monotonic()+600)
+        verdict = e.check_tree(str(result.tree), str(PRISTINE), list(result.changes))
+        assert verdict is not None and verdict[0] == 'content_policy'
     finally:
-        shutil.rmtree(result.cleanup_root, ignore_errors=True)
+        result.dispose()
 
 
 @GO
@@ -332,16 +325,16 @@ def test_source_policy_rejects(name, tmp_path):
 def test_interface_break_and_forged_hook_do_not_build(name, tmp_path):
     result = applied(name)
     try:
-        identity = e.source_identity(result.workdir)
+        identity = e.source_identity(result.tree)
         failed = False
         try:
-            e.guards(result.workdir, tmp_path, time.monotonic()+600)
+            e.guards(result.tree, tmp_path, time.monotonic()+600)
         except e.EvaluationError:
             failed = True
-        row, record = e.measure_one(result.workdir, 'mul_relin_rescale', tmp_path/'run', time.monotonic()+600, identity)
+        row, record = e.measure_one(result.tree, 'mul_relin_rescale', tmp_path/'run', time.monotonic()+600, identity)
         assert row is None and record['status'] != 'ok' and (failed or name == 'forged_observation_hook')
     finally:
-        shutil.rmtree(result.cleanup_root, ignore_errors=True)
+        result.dispose()
 
 
 @GO
@@ -349,44 +342,11 @@ def test_interface_break_and_forged_hook_do_not_build(name, tmp_path):
 def test_reference_and_controls_are_measured_and_forged_lines_ignored(name, tmp_path):
     result = applied(e.TASK_DIR/'reference.patch' if name == 'reference' else name)
     try:
-        e.guards(result.workdir, tmp_path, time.monotonic()+900)
-        row, record = e.measure_one(result.workdir, 'mul_relin_rescale', tmp_path/'run', time.monotonic()+900, e.source_identity(result.workdir))
+        assert e.check_tree(str(result.tree), str(PRISTINE), list(result.changes)) is None
+        e.guards(result.tree, tmp_path, time.monotonic()+900)
+        row, record = e.measure_one(result.tree, 'mul_relin_rescale', tmp_path/'run', time.monotonic()+900, e.source_identity(result.tree))
         assert row is not None and record['status'] == 'ok'
         assert row['estimator_ns'] > 1000 and 20 < row['predicted_avg'] < 50 and row[e.METRICS[0]] < 1
     finally:
-        shutil.rmtree(result.cleanup_root, ignore_errors=True)
+        result.dispose()
 
-
-def test_calibration_collector_runs_unchanged_on_the_new_measurement(monkeypatch, tmp_path):
-    """The preregistered collector needs only measure_suite, guards and the reference payload.
-
-    Measurement is stubbed: this checks the code path and the frozen arithmetic,
-    not any band. A real collection needs a new preregistration that binds the
-    current source files.
-    """
-    import random
-    # The collector imports the evaluator by name; give it this module instance.
-    for name, module in (('evaluator', e), ('formal_scoring', scoring), ('workload_configurations', c)):
-        monkeypatch.setitem(sys.modules, name, module)
-    calibration = load(e.TASK_DIR/'calibration.py', 'ckks_calibration')
-    rng = random.Random(7)
-    monkeypatch.setenv('FRONTIER_SUBMISSION_ROLE', 'final')
-    monkeypatch.setitem(e.RELEASE, 'mode', 'calibration')
-    monkeypatch.setattr(calibration, 'verify_source_binding', lambda *a: True)
-    monkeypatch.setattr(e, 'guards', lambda *a: None)
-    monkeypatch.setattr(e, 'run', lambda *a: 'go version go1.23.12 linux/amd64')
-    calls = []
-    def suite(tree, names, dest, deadline, *, coverage=False):
-        calls.append(coverage)
-        return ({w: {**{k: abs(rng.gauss(0.05, 0.02)) for k in e.METRICS}, 'estimator_ns': 1} for w in names},
-                {'observations': [], 'fixture_only': True})
-    monkeypatch.setattr(e, 'measure_suite', suite)
-    score, _, message, metrics = calibration.collect_native(str(e.TASK_DIR/'reference.patch'))
-    assert score == 0 and metrics['status'] == 'calibration_collected' and metrics['beats_reference'] == 0
-    assert metrics['calibration_pending'] is True and 'calibration-only' in message
-    assert len(calls) == 2*(8+19+5+5)
-    evidence = calibration.unpack(metrics['operator_evidence'])
-    frozen = evidence['frozen']
-    assert len(frozen['cells']) == 58 and frozen['K'] == 19 and frozen['batch_invocations'] == 1
-    assert all(frozen['bands'][c] == frozen['q']*frozen['scales'][c] for c in frozen['cells'])
-    assert {p['stage'] for p in evidence['pairs']} == {'pilot', 'calibration', 'validation', 'sensitivity_independent_incomplete'}

@@ -1,11 +1,10 @@
-"""JoinTree train feedback is aggregate; final stays private.
+"""JoinTree train feedback is aggregate; final stays private; the source policy is check_tree.
 
-The evaluator emits a native per-query `queries` dict. In train mode the task
-verifier turns it into aggregate counts through the shipped beat-spec helper:
-per-metric `beat_spec_progress`, `all_metrics_progress` for queries clearing
-both comparisons, and the candidate's own suite-median latency. A train result
-carries exactly the fields declared in judge/beat_spec.json and policy.json and
-nothing withheld; an eval result exposes no solver-visible metric.
+The evaluator's summarize_queries emits the per-query decisions (beat_spec_workload_passes)
+and the two solver_feedback aggregates; the shared verifier turns the decisions into train
+`beat_spec_progress` and the private final verdict. A train result carries exactly the fields
+declared in task.toml [feedback] and nothing withheld; an eval result exposes no solver
+metric beyond score_unbounded.
 """
 
 import deployment_test_guard  # noqa: F401  # isort: skip
@@ -16,6 +15,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -25,20 +25,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer  # noqa: E402
+import task_manifest  # noqa: E402
 
 TASK = renderer.problem_directory(
     ROOT / "tasks/frontier-cs-2.0-demo/problems", "join_tree_rewriting"
 )
+EDITABLE = "2phase_nsa/binary_plan/rewrite_policy.py"
 EXPECTED = [f"dev/{i}" for i in range(1, 21)] + [f"final/{i}" for i in range(1, 20)]
 
 
-def load_comparison():
+def load_judge_module(name):
     old = list(sys.path)
     sys.path.insert(0, str(TASK / "judge"))
     try:
-        for name in ("query_measurements",):
-            sys.modules.pop(name, None)
-        return importlib.import_module("query_measurements")
+        for module in ("query_measurements", name):
+            sys.modules.pop(module, None)
+        return importlib.import_module(name)
     finally:
         sys.path[:] = old
 
@@ -62,40 +64,60 @@ def probe(qm, identity, *, candidate=10.0, correct=True, identical=False):
     )
 
 
+def patch_of(source: str) -> bytes:
+    """A git diff of the editable module replaced by `source`."""
+    with tempfile.TemporaryDirectory() as scratch:
+        repo = Path(scratch) / "repo"
+        shutil.copytree(TASK / "repo", repo)
+        env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+               "GIT_CEILING_DIRECTORIES": scratch}
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(repo)]
+        subprocess.run([*git, "init", "-q"], check=True, env=env)
+        subprocess.run([*git, "add", "-A"], check=True, env=env)
+        subprocess.run([*git, "commit", "-qm", "base"], check=True, env=env)
+        (repo / EDITABLE).write_text(source)
+        return subprocess.run([*git, "diff"], check=True, env=env, capture_output=True).stdout
+
+
 class JoinTreeTrainFeedbackTests(unittest.TestCase):
     def setUp(self):
-        self.assertTrue((TASK / "judge/beat_spec.json").is_file())
-        self.qm = load_comparison()
+        self.qm = load_judge_module("query_measurements")
         self.tmp = Path(tempfile.mkdtemp(prefix="jt-routing-"))
         self.addCleanup(shutil.rmtree, self.tmp, True)
         self.old_env = dict(os.environ)
         self.addCleanup(lambda: (os.environ.clear(), os.environ.update(self.old_env)))
         self.old_path = list(sys.path)
         self.addCleanup(lambda: sys.path.__setitem__(slice(None), self.old_path))
-        sys.path.insert(0, str(TASK / "verifier"))
-        # Restore any cached beat_spec_feedback so this task's verifier-local
-        # copy never leaks into a later test that loads another task's
-        # verifier. Pop before use and restore the prior module after.
+        shared = task_manifest.SHARED / "verifier"
+        sys.path.insert(0, str(shared))
         saved = sys.modules.get("beat_spec_feedback")
         self.addCleanup(
             lambda s=saved: sys.modules.__setitem__("beat_spec_feedback", s)
             if s is not None else sys.modules.pop("beat_spec_feedback", None))
-        for name in ("beat_spec_feedback",):
-            sys.modules.pop(name, None)
-        spec = importlib.util.spec_from_file_location(
-            "jt_feedback_adapter", TASK / "verifier/fcs2_verifier.py")
+        sys.modules.pop("beat_spec_feedback", None)
+        spec = importlib.util.spec_from_file_location("jt_shared_verifier", shared / "fcs2_verifier.py")
         self.adapter = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.adapter)
         os.environ["FRONTIER_VERIFIER_SCRATCH"] = str(self.tmp)
+        # A light bundle: the shared verifier needs the evaluator file, the beat spec, the
+        # generated edit-scope config and the pristine starter.
         self.bundle = self.tmp / "bundle"
         self.bundle.mkdir()
         (self.bundle / "evaluator.py").write_text("# supplied by the test\n")
-        shutil.copy2(TASK / "judge/beat_spec.json", self.bundle / "beat_spec.json")
-        self.payload = self.tmp / "payload.tar"
-        with tarfile.open(self.payload, "w", format=tarfile.USTAR_FORMAT) as archive:
+        shutil.copytree(TASK / "repo", self.bundle / "pristine")
+        generated = task_manifest.generated_files(TASK)
+        (self.bundle / "config.yaml").write_bytes(
+            generated[f"{task_manifest.GENERATED}/judge/config.yaml"])
+        source = (TASK / "repo" / EDITABLE).read_text()
+        self.payload = self.make_payload(patch_of(source + "\n# a candidate\n"))
+
+    def make_payload(self, patch: bytes) -> Path:
+        path = self.tmp / f"payload-{len(list(self.tmp.glob('payload-*')))}.tar"
+        with tarfile.open(path, "w", format=tarfile.USTAR_FORMAT) as archive:
             member = tarfile.TarInfo("payload/solution.patch")
-            member.size = 1
-            archive.addfile(member, io.BytesIO(b"x"))
+            member.size = len(patch)
+            archive.addfile(member, io.BytesIO(patch))
+        return path
 
     def native_result(self, selected, correct=True):
         queries = {q: probe(self.qm, q, correct=correct) for q in selected}
@@ -111,13 +133,11 @@ class JoinTreeTrainFeedbackTests(unittest.TestCase):
         score, metrics = self.qm.summarize_queries(selected, queries)
         return score, score, "probe", metrics
 
-    def run_mode(self, mode, result):
-        os.environ["FRONTIER_SUBMISSION_ROLE"] = (
-            "final" if mode == "eval" else "development")
-        self.adapter.load_evaluator = lambda _task_dir: (lambda _path: result)
+    def run_mode(self, mode, result, payload=None, check_tree=None):
+        self.adapter.load_evaluator = lambda _task_dir: ((lambda _tree: result), check_tree)
         return self.adapter.verify(
             bundle=self.bundle, entrypoint="payload/solution.patch",
-            payload=self.payload, dataset=TASK / f"datasets/{mode}.json", mode=mode,
+            payload=payload or self.payload, dataset=TASK / f"datasets/{mode}.json", mode=mode,
             result_path=self.tmp / f"{mode}-result.json",
             evidence_path=self.tmp / f"{mode}-evidence.tar.zst")
 
@@ -128,13 +148,9 @@ class JoinTreeTrainFeedbackTests(unittest.TestCase):
                 "fail_percent": round(100.0 * (total - passed) / total, 2)}
 
     def declared_keys(self):
-        spec = json.loads((TASK / "judge/beat_spec.json").read_text())
-        policy = json.loads((TASK / "policy.json").read_text())
-        declared = [entry["name"] for entry in spec["solver_feedback"]]
-        self.assertEqual(
-            sorted(declared),
-            sorted(policy["metadata"]["evaluation"]["solver_visible_metrics"]))
-        self.assertFalse(set(declared) & set(spec["withheld"]))
+        policy = task_manifest.load_policy(TASK)
+        declared = policy["metadata"]["evaluation"]["solver_visible_metrics"]
+        self.assertEqual(sorted(declared), ["all_metrics_progress", "candidate_median_latency_us"])
         return {"score_unbounded", "beat_spec_progress", *declared}
 
     def test_train_carries_exactly_the_declared_aggregates(self):
@@ -162,8 +178,7 @@ class JoinTreeTrainFeedbackTests(unittest.TestCase):
                        "beat_spec_workload_passes", "queries", "durations_us",
                        "correctness_pass", "latency_pass", "dev/", "final/"):
             self.assertNotIn(leaked, encoded)
-        # No reference latency (20.0), baseline latency (100.0) or per-query
-        # candidate value other than the suite median appears as a number.
+
         def numbers(value):
             if isinstance(value, dict):
                 for item in value.values():
@@ -187,6 +202,7 @@ class JoinTreeTrainFeedbackTests(unittest.TestCase):
             identity=selected[3], correctness=None, timing=None, identical=False,
             repetitions=5, failure="candidate_lowering_failed")
         score, metrics = self.qm.summarize_queries(selected, queries)
+        self.assertFalse(metrics["reference_score_complete"])
         res = self.run_mode("train", (score, score, "probe", metrics))
         self.assertEqual(set(res["metrics"]), self.declared_keys())
         self.assertIsNone(res["metrics"]["candidate_median_latency_us"])
@@ -194,15 +210,15 @@ class JoinTreeTrainFeedbackTests(unittest.TestCase):
         self.assertEqual(
             res["metrics"]["beat_spec_progress"]["exact_result"], self.counts(19))
 
-    def test_rejected_patch_reports_zero_progress(self):
+    def test_every_query_failing_reports_zero_progress(self):
         selected = EXPECTED[:20]
         queries = {
             q: self.qm.compare_query(
                 identity=q, correctness=None, timing=None, identical=False,
-                repetitions=5, failure="candidate_not_measured")
+                repetitions=5, failure="candidate_lowering_failed")
             for q in selected}
         score, metrics = self.qm.summarize_queries(selected, queries)
-        res = self.run_mode("train", (score, score, "candidate patch rejected", metrics))
+        res = self.run_mode("train", (score, score, "probe", metrics))
         self.assertEqual(res["metrics"], {
             "score_unbounded": 0.0,
             "beat_spec_progress": {
@@ -213,46 +229,57 @@ class JoinTreeTrainFeedbackTests(unittest.TestCase):
 
     def test_inconsistent_private_decisions_fail_closed(self):
         _s, _u, _m, metrics = self.native_result(EXPECTED[:20])
-        forged = json.loads(json.dumps(metrics))
-        forged["beats_reference"] = 0
-        with self.assertRaises(self.adapter.VerifierFailure):
-            self.run_mode("train", (50.0, 50.0, "probe", forged))
         partial = json.loads(json.dumps(metrics))
-        partial["queries"].pop(EXPECTED[0])
+        partial["beat_spec_workload_passes"][0]["metrics"].pop("exact_result")
         with self.assertRaises(self.adapter.VerifierFailure):
             self.run_mode("train", (50.0, 50.0, "probe", partial))
-
-    def test_train_requires_the_bundled_beat_spec(self):
-        (self.bundle / "beat_spec.json").unlink()
-        with self.assertRaises(self.adapter.VerifierFailure):
-            self.run_mode("train", self.native_result(EXPECTED[:20]))
+        queries = {q: probe(self.qm, q) for q in EXPECTED[:20]}
+        queries[EXPECTED[0]]["passed"] = False
+        with self.assertRaises(self.qm.MeasurementError):
+            self.qm.summarize_queries(EXPECTED[:20], queries)
 
     def test_eval_exposes_no_solver_metric_and_keeps_private_verdict(self):
         res = self.run_mode("eval", self.native_result(EXPECTED))
         self.assertEqual(res["status"], "passed")
-        self.assertEqual(res["metrics"], {})
-        self.assertEqual(
-            set(res), {"status", "raw_score", "summary", "metrics", "private_metrics"})
+        self.assertEqual(set(res["metrics"]), {"score_unbounded"})
         private = res["private_metrics"]
-        self.assertEqual(
-            set(private),
-            {"beats_reference", "aggregation", "beat_spec_progress",
-             "reference_score", "margin"})
         self.assertEqual(private["beats_reference"], 1)
-        self.assertEqual(len(private["beat_spec_progress"]), 78)
-        self.assertEqual(private["aggregation"]["kind"], "all_workloads_all_metrics")
-        self.assertEqual(
-            private["beat_spec_progress"]["final/19/median_latency"],
-            {"passed": 1, "failed": 0, "total": 1, "pass_percent": 100,
-             "fail_percent": 0})
+        for name in ("exact_result", "median_latency"):
+            self.assertEqual(private["beat_spec_progress"][name]["passed"], 39)
+        self.assertIn("reference_score", private)
+        self.assertIn("margin", private)
 
     def test_eval_fails_closed_on_one_bad_query(self):
         queries = {q: probe(self.qm, q) for q in EXPECTED}
         queries[EXPECTED[-1]] = probe(self.qm, EXPECTED[-1], correct=False)
         score, metrics = self.qm.summarize_queries(EXPECTED, queries)
         res = self.run_mode("eval", (score, score, "probe", metrics))
-        self.assertEqual(res["metrics"], {})
+        self.assertEqual(set(res["metrics"]), {"score_unbounded"})
         self.assertEqual(res["private_metrics"]["beats_reference"], 0)
+
+    def test_source_policy_is_a_content_policy_rejection(self):
+        evaluator = load_judge_module("evaluator")
+        source = (TASK / "repo" / EDITABLE).read_text()
+        payload = self.make_payload(patch_of("import os\n" + source))
+        res = self.run_mode("train", self.native_result(EXPECTED[:20]), payload=payload,
+                            check_tree=evaluator.check_tree)
+        self.assertEqual(res["raw_score"], 0.0)
+        self.assertEqual(res["metrics"], {"score_unbounded": 0.0, "rejected": "content_policy"})
+        # The starter module passes the policy.
+        self.assertIsNone(evaluator.check_tree(str(TASK / "repo"), str(TASK / "repo"), []))
+
+    def test_an_empty_patch_is_judged_and_another_file_is_out_of_scope(self):
+        res = self.run_mode("train", self.native_result(EXPECTED[:20]),
+                            payload=self.make_payload(b""))
+        self.assertEqual(res["status"], "passed")
+        self.assertNotIn("rejected", res["metrics"])
+        other = "2phase_nsa/binary_plan/util.py"
+        first = (TASK / "repo" / other).read_text().splitlines()[0]
+        patch = (f"diff --git a/{other} b/{other}\n--- a/{other}\n+++ b/{other}\n"
+                 f"@@ -1 +1,2 @@\n+# out of scope\n {first}\n").encode()
+        res = self.run_mode("train", self.native_result(EXPECTED[:20]),
+                            payload=self.make_payload(patch))
+        self.assertEqual(res["metrics"], {"score_unbounded": 0.0, "rejected": "out_of_scope"})
 
 
 if __name__ == "__main__":

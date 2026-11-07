@@ -3,6 +3,23 @@
 Every reported number is printed by a trusted derived experiment main. No file
 of package estimator is overlaid, so submitted code cannot emit an observation.
 An uncalibrated release fails closed before launching a submitted program.
+
+The shared verifier applies the patch and enforces the editable surface
+(task.toml [submission]: estimator/ only, .go files, no _test.go, the fixed set
+denied); check_tree() runs the judge-owned Go AST policy on the judged tree
+against the pristine starter; evaluate(tree) builds and measures that tree. Every submitted
+program (the guards and each measured main) is built by the judge's toolchain and runs in the
+shared isolate launcher (run_measured).
+
+Scoring (formal_scoring.py). Per invocation, the two discrepancies are |predicted - actual| bits
+of AVGLog2Prec.L2 and STDLog2Prec.L2; a_w, s_w are their means over the invocations of
+configuration w (3 pairs in final over 29 configurations, 1 pair in train over the 6 base
+ones). raw_score = score_unbounded = 100 / (1 + E), E = sum_w (a_w + s_w) / (2 W) in bits.
+Metrics per workload: avg_/std_log2_prec_l2_abs_discrepancy_bits (lower better; passes when
+candidate - reference <= the frozen band of formal_calibration.json) and estimator_seconds
+(lower better; passes when the candidate's trusted clock is strictly lower in every pair).
+beats_reference = every metric passes on every configuration. A rejected or failed run is a
+scored zero (failed_result).
 """
 from __future__ import annotations
 import hashlib
@@ -11,11 +28,9 @@ import math
 import os
 from pathlib import Path
 import re
-import resource
 import runpy
 import secrets
 import shutil
-import signal
 import subprocess
 import sys
 import tempfile
@@ -24,18 +39,23 @@ import time
 TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
-from submission_patch import apply_submission_patch
 from go_entrypoint import registered_go_entrypoint
-from child_environment import private_child_environment
-CONFIG = json.loads((TASK_DIR / 'judge/evaluation_config.json').read_text())
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+# config.yaml is generated from task.toml (JSON); environment and go_memory_limit come from
+# its [judge.config], timeout_seconds from quota.eval_timeout_seconds.
+CONFIG = json.loads((TASK_DIR / 'config.yaml').read_text())
 RELEASE = json.loads((TASK_DIR / 'judge/release.json').read_text())
-from workload_configurations import (validate_manifest, prepare_overlay, verify_parameters,
-                                     RESTORATION_PATCH_SHA256, verify_restored_mains)
-from fixed_surface import fixed_surface_violations
+from workload_configurations import validate_manifest, prepare_overlay, verify_parameters
+# The starter repo/, copied by the Verifier Dockerfile; the submission is overlaid on a copy.
+PRISTINE = TASK_DIR / 'pristine'
 WORKLOADS = validate_manifest(json.loads((TASK_DIR/'judge/workload_manifest.json').read_text()), RELEASE)
 ENTRYPOINT = 'estimator/experiments/mul_relin_rescale/mul_relin_rescale.go'
 METRICS = ('avg_log2_prec_l2_abs_discrepancy_bits', 'std_log2_prec_l2_abs_discrepancy_bits')
 TIME_METRIC = 'estimator_seconds'
+# The train metrics task.toml [feedback] shows the Agent (the two discrepancy means are built
+# from METRICS in summarize/failed_result).
+FEEDBACK = ('candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits',
+            'candidate_std_log2_prec_l2_abs_discrepancy_mean_bits', 'candidate_estimator_seconds_mean')
 PAIRS = RELEASE['interleaved_pairs']
 DEV_SUITE = tuple(RELEASE['development'])
 # Development feedback measures a cheaper subset with one pair; it gates nothing.
@@ -66,81 +86,85 @@ def scratch_root():
     p.mkdir(parents=True, exist_ok=True)
     return p
 
-def clean_env():
+def go_env():
+    """The judge's Go toolchain settings: offline, read-only modules, caches under the scratch root."""
     env = {k: os.environ[k] for k in ('PATH', 'GOMODCACHE') if k in os.environ}
     p = scratch_root()
     for k, subdir in [('GOPATH','go-path'), ('GOCACHE','go-cache'), ('GOTMPDIR','go-tmp')]:
         env[k] = str(p / subdir)
         Path(env[k]).mkdir(parents=True, exist_ok=True)
-    cpus = min(CONFIG['environment']['cpus'], len(os.sched_getaffinity(0))) if hasattr(os, 'sched_getaffinity') else 1
-    # Existing hard host limits/affinity remain in force for local probes.
-    # One scheduler thread: the estimator clock sees its own collection work.
-    cpus = 1 if RELEASE.get('measured_gomaxprocs') == 1 else cpus
-    env.update(TMPDIR=str(p), GOMAXPROCS=str(cpus), GOMEMLIMIT=CONFIG['runtime']['go_memory_limit'],
-               GOTOOLCHAIN='local', GOENV='off', GOWORK='off', GOTELEMETRY='off',
+    env.update(TMPDIR=str(p), GOTOOLCHAIN='local', GOENV='off', GOWORK='off', GOTELEMETRY='off',
                GOFLAGS='-mod=readonly', CGO_ENABLED='0', GOPROXY='off', GOSUMDB='off')
     return env
 
-
-def limit_child():
-    desired = CONFIG['environment']['memory_mb'] * 1024**2
-    _, hard = resource.getrlimit(resource.RLIMIT_AS)
-    cap = desired if hard == resource.RLIM_INFINITY else min(desired, hard)
-    resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
-    resource.setrlimit(resource.RLIMIT_FSIZE, (16*1024**2, 16*1024**2))
+def program_env():
+    """The Go runtime settings of a measured program."""
+    cpus = min(CONFIG['environment']['cpus'], len(os.sched_getaffinity(0))) if hasattr(os, 'sched_getaffinity') else 1
+    # One scheduler thread: the estimator clock sees its own collection work.
+    cpus = 1 if RELEASE.get('measured_gomaxprocs') == 1 else cpus
+    return {'GOMAXPROCS': str(cpus), 'GOMEMLIMIT': CONFIG['runtime']['go_memory_limit']}
 
 def run(args, cwd, deadline):
     return run_measured(args, cwd, deadline)[0]
 
 def run_measured(args, cwd, deadline):
-    remain = deadline - time.monotonic()
-    if remain <= 0:
+    """`go run -p=1 [flags] <main>` in `cwd`, split in two: the trusted toolchain builds the
+    program (CGO_ENABLED=0 and no generators, so a build runs no submitted code), and the
+    program runs under the shared isolate launcher under /usr/bin/time: it reads only the
+    system and its binary, writes only its own private directories, gets a clean
+    environment with the Go runtime settings, no network, and is bounded by memory_mb, 16 MiB
+    files, 1 MiB per output stream and the evaluation deadline."""
+    command = [str(x) for x in args]
+    if command[:2] != ['go', 'run']:
+        raise ValueError('run_measured runs `go run` commands')
+    receipt = {'command':command, 'cwd':str(cwd), 'launch_attempts':1, 'main_completed':0,
+               'exit_code':None, 'peak_rss_kib':None,
+               'rss_scope':'GNU time maximum RSS of the program in its isolate instance, compilation excluded; not summed concurrent RSS'}
+    if deadline - time.monotonic() <= 0:
         raise EvaluationError('evaluation timeout', {'status':'not_started_deadline'})
     with tempfile.TemporaryDirectory(prefix='ckks-process-', dir=scratch_root()) as d:
-        d = Path(d); usage = d/'usage'
-        with (d/'stdout').open('w+b') as out, (d/'stderr').open('w+b') as err:
-            command = [str(x) for x in args]
-            started = time.monotonic()
-            try:
-                proc = subprocess.Popen(['/usr/bin/time','-f','%e %M','-o',str(usage),*command], cwd=cwd,
-                                        env=clean_env(), stdout=out, stderr=err,
-                                        start_new_session=True, preexec_fn=limit_child)
-            except (OSError, subprocess.SubprocessError) as exc:
-                raise EvaluationError('process launch failed', {
-                    'command':command,'cwd':str(cwd),'status':'launch_failed',
-                    'launch_attempts':1,'main_completed':0,
-                    'exception_type':type(exc).__name__}) from exc
-            timed_out = False
-            try:
-                proc.wait(timeout=max(0.001,deadline-time.monotonic()))
-            except subprocess.TimeoutExpired:
-                timed_out = True
-                os.killpg(proc.pid, signal.SIGKILL); proc.wait()
-            receipt = {'command':command, 'cwd':str(cwd), 'elapsed_seconds':time.monotonic()-started,
-                       'launch_attempts':1, 'main_completed':int(proc.returncode == 0),
-                       'exit_code':proc.returncode, 'status':'timeout' if timed_out else ('ok' if proc.returncode == 0 else 'failed'),
-                       'peak_rss_kib':None, 'rss_scope':'GNU time maximum RSS of go-run process tree, including compilation; not summed concurrent RSS'}
-            if usage.exists():
-                match = re.search(r'^([\d.]+) (\d+)$', usage.read_text(), re.M)
-                if match:
-                    receipt.update(time_elapsed_seconds=float(match[1]), peak_rss_kib=int(match[2]))
-            out.seek(0); err.seek(0)
-            output = out.read(2**20).decode('utf-8','replace')
-            error = err.read(2**20).decode('utf-8','replace')
-            # Only private evidence carries child output; no inherited credentials.
-            receipt.update(stdout=output, stderr=error[-4000:])
-            for label, stream in (('stdout',out),('stderr',err)):
-                stream.seek(0); digest=hashlib.sha256()
-                while chunk := stream.read(65536): digest.update(chunk)
-                size=os.fstat(stream.fileno()).st_size
-                receipt[label+'_sha256']=digest.hexdigest()
-                receipt[label+'_bytes']=size
-                receipt[label+'_excerpt_truncated']=size>len(receipt[label].encode())
-            if timed_out or proc.returncode:
-                raise EvaluationError('evaluation timeout' if timed_out else 'build, source policy, or execution failed', receipt)
-            if os.fstat(out.fileno()).st_size > 2**20 or os.fstat(err.fileno()).st_size > 2**20:
-                raise EvaluationError('excessive program output', receipt)
-            return output, receipt
+        (Path(d)/'program').mkdir()
+        binary = Path(d)/'program'/'main'
+        started = time.monotonic()
+        try:
+            built = subprocess.run(['go', 'build', *command[2:-1], '-o', str(binary), command[-1]],
+                                   cwd=cwd, env=go_env(), capture_output=True,
+                                   timeout=max(0.001, deadline-time.monotonic()))
+        except subprocess.TimeoutExpired as exc:
+            receipt.update(status='timeout', elapsed_seconds=time.monotonic()-started)
+            raise EvaluationError('evaluation timeout', receipt) from exc
+        if built.returncode:
+            receipt.update(status='failed', exit_code=built.returncode, elapsed_seconds=time.monotonic()-started,
+                           stderr=built.stderr[-4000:].decode('utf-8','replace'))
+            raise EvaluationError('build, source policy, or execution failed', receipt)
+        remain = deadline - time.monotonic()
+        if remain <= 0:
+            receipt.update(status='timeout', elapsed_seconds=time.monotonic()-started)
+            raise EvaluationError('evaluation timeout', receipt)
+        # The instance works on a copy of the program's directory (the binary alone).
+        result = isolate.run(['/usr/bin/time', '-f', '%e %M', '-o', '{out}/usage', '{work}/main'],
+                                  timeout_seconds=remain, tree=str(binary.parent),
+                                  env=program_env(), outputs=['usage'],
+                                  memory_bytes=CONFIG['environment']['memory_mb']*1024**2,
+                                  file_bytes=16*1024**2, output_bytes=2**20)
+        receipt.update(elapsed_seconds=time.monotonic()-started, main_completed=int(result.ok),
+                       exit_code=result.returncode,
+                       status='timeout' if result.timed_out else ('ok' if result.ok else 'failed'))
+        match = re.search(r'^([\d.]+) (\d+)$', (result.outputs['usage'] or b'').decode('utf-8','replace'), re.M)
+        if match:
+            receipt.update(time_elapsed_seconds=float(match[1]), peak_rss_kib=int(match[2]))
+        output = result.stdout.decode('utf-8','replace')
+        # Only private evidence carries child output.
+        receipt.update(stdout=output, stderr=result.stderr.decode('utf-8','replace')[-4000:])
+        for label, data in (('stdout',result.stdout),('stderr',result.stderr)):
+            receipt[label+'_sha256']=hashlib.sha256(data).hexdigest()
+            receipt[label+'_bytes']=len(data)
+            receipt[label+'_excerpt_truncated']=result.limit == 'output'
+        if result.limit == 'output':
+            raise EvaluationError('excessive program output', receipt)
+        if not result.ok:
+            raise EvaluationError('evaluation timeout' if result.timed_out else 'build, source policy, or execution failed', receipt)
+        return output, receipt
 
 def source_identity(tree):
     files = {str(p.relative_to(tree)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -205,6 +229,8 @@ def measure_one(tree, name, dest, deadline, identity):
         verify_parameters(row['resolved_parameters'],configuration)
         record.update(row)
         record.pop('stdout',None)
+    except isolate.IsolateError:
+        raise
     except EvaluationError as exc:
         row=None;record.update(exc.receipt);record['source_invocations']=int(record.get('main_completed',0));record['status']='invalid';record['reason']=str(exc)
     except Exception as exc:
@@ -250,13 +276,29 @@ def mean_rows(rows):
     return {name:{**{k:sum(r[k] for r in value)/len(value) for k in METRICS},
                   'estimator_ns':[r['estimator_ns'] for r in value]} for name,value in rows.items()}
 
+# When check_tree started: the evaluation deadline counts from here, as it counted from the
+# start of the old single evaluate() that also ran the source policy.
+STARTED = None
+
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: the judge-owned Go AST policy (imports, package-level work,
+    goroutines, channels, the protected dft.go declarations) over the judged tree, compared
+    with the pristine starter. A violation is the shared `content_policy` rejection; a policy
+    that cannot be built is the judge's own fault and raises."""
+    global STARTED
+    STARTED = time.monotonic()
+    with tempfile.TemporaryDirectory(prefix='ckks-policy-', dir=scratch_root()) as d:
+        policy = Path(d)/'source-policy'
+        subprocess.run(['go','build','-p=1','-o',str(policy),str(TASK_DIR/'judge/source_policy.go')],
+                       cwd=TASK_DIR, env=go_env(), check=True, capture_output=True, timeout=300)
+        # The judge's own parser over the submitted source (it runs none of it).
+        verdict = subprocess.run([str(policy), str(pristine), str(tree)], cwd=TASK_DIR, env=go_env(),
+                                 capture_output=True, timeout=120)
+    if verdict.returncode == 0:
+        return None
+    return 'content_policy', sorted(c.path for c in changes if c.status != 'D') or ['estimator/']
+
 def guards(tree, dest, deadline):
-    violations=fixed_surface_violations(TASK_DIR/'harbor/app',tree)
-    if violations:
-        raise EvaluationError('fixed surface changed',{'status':'fixed_surface_changed','paths':violations[:32]})
-    policy=dest/'source-policy'
-    run(['go','build','-p=1','-o',policy,TASK_DIR/'judge/source_policy.go'],TASK_DIR,deadline)
-    run([policy,TASK_DIR/'harbor/app',tree],TASK_DIR,deadline)
     code=(TASK_DIR/'judge/contracts.go.txt').read_text()+'\nfunc main(){frontierContracts()}\n'
     guard=dest/'contracts.go';guard.write_text(code)
     run(['go','run','-p=1',guard],tree/'estimator',deadline)
@@ -265,26 +307,27 @@ def accuracy(rows):
     error=sum(row[k] for row in rows for k in METRICS)/(2*len(rows))
     return 100.0/(1.0+error/SCORE_BITS)
 
-def restore_reference():
-    """Private comment restoration belongs to the trusted evaluator only.
-
-    Public and private patch application share the canonical submission helper.
-    Candidate submissions cannot select this extra patch or change its path.
-    """
-    if hashlib.sha256((TASK_DIR/'private-comment-restoration.patch').read_bytes()).hexdigest() != RESTORATION_PATCH_SHA256:
-        raise EvaluationError('private reference restoration patch identity differs')
-    with private_child_environment(clean_env()):
-        result = apply_submission_patch(TASK_DIR/'reference.patch', TASK_DIR, CONFIG)
-    if not result.ok:
-        raise EvaluationError('reference setup failed')
+def restore_reference(scratch):
+    """The reference tree: a copy of the pristine starter with judge/reference.patch and then
+    the private comment restoration applied. Both patches are the trusted evaluator's own;
+    a submission cannot select either or change its path."""
+    tree = Path(scratch)/'reference-tree'  # measure_pairs writes its overlays under scratch/reference
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob('*')):
+        if not path.is_symlink(): path.chmod(path.stat().st_mode | 0o200)
+    env = {**go_env(), 'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': '/dev/null',
+           'GIT_CEILING_DIRECTORIES': str(Path(scratch).resolve())}
     try:
-        subprocess.run(['git','-C',str(result.workdir),'apply','--whitespace=nowarn',
-                        str(TASK_DIR/'private-comment-restoration.patch')],
-                       env=clean_env(), check=True, capture_output=True, timeout=30)
-        verify_restored_mains(result.workdir)
-        return result
+        subprocess.run(['git','apply','--whitespace=nowarn',str(TASK_DIR/'reference.patch')],
+                       cwd=tree, env=env, check=True, capture_output=True, timeout=30)
     except Exception as exc:
-        if result.cleanup_root: shutil.rmtree(result.cleanup_root, ignore_errors=True)
+        raise EvaluationError('reference setup failed') from exc
+    try:
+        subprocess.run(['git','apply','--whitespace=nowarn',
+                        str(TASK_DIR/'private-comment-restoration.patch')],
+                       cwd=tree, env=env, check=True, capture_output=True, timeout=30)
+        return tree
+    except Exception as exc:
         raise EvaluationError('private reference comment restoration failed') from exc
 
 def formal_record():
@@ -371,46 +414,44 @@ def summarize(candidate, reference, names, evidence):
         raise EvaluationError('formal evidence exceeds native bound')
     return score,score,'fresh scaled CKKS accuracy and estimator-time measurement' if complete else 'invalid execution; see private evidence',metrics
 
-def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
-    cleanup=[];names=suite();evidence={}
-    if RELEASE.get('mode') == 'calibration':
-        if os.environ.get('FRONTIER_SUBMISSION_ROLE') == 'final':
-            from calibration import collect_native
-            return collect_native(solution_path)
-        return failed_result(names, {}, 'private calibration: collection is final-only', calibration_invalid=True)
+def evaluate(tree: str) -> tuple[float,float,str,dict]:
+    """`tree` is the pristine starter with the submission's allowed files overlaid.
+
+    Only the formal release is judged here. The calibration release that produced
+    judge/formal_calibration.json (collection over exact reference payloads) is recorded under
+    docs/task-authoring/ckks_composable_noise/provenance/; any other release mode fails closed
+    below as an unavailable calibration."""
+    names=suite();evidence={}
+    started=STARTED if STARTED is not None else time.monotonic()
     try:
         formal_record()
     except Exception as exc:
         evidence['failure']={'reason':'current release calibration unavailable', 'type':type(exc).__name__}
         return failed_result(names, evidence, 'current release calibration unavailable', calibration_invalid=True)
     try:
-        deadline=time.monotonic()+CONFIG['runtime']['timeout_seconds']-10 # reserve serialization/cleanup time
+        deadline=started+CONFIG['runtime']['timeout_seconds']-10 # reserve serialization/cleanup time
         tempfile.tempdir=str(scratch_root())
-        with private_child_environment(clean_env()):
-            candidate=apply_submission_patch(solution_path,TASK_DIR,CONFIG)
-        if not candidate.ok: return failed_result(names, evidence, 'invalid or inapplicable submission patch')
-        cleanup.append(candidate.cleanup_root)
-        ref=restore_reference()
-        cleanup.append(ref.cleanup_root)
+        candidate=Path(tree)
         with tempfile.TemporaryDirectory(prefix='ckks-evaluation-', dir=scratch_root()) as d:
             d=Path(d)
-            version=run(['go','version'],TASK_DIR,deadline).strip()
+            reference=restore_reference(d)
+            version=subprocess.run(['go','version'],cwd=TASK_DIR,env=go_env(),capture_output=True,text=True,
+                                   check=True,timeout=max(0.001,deadline-time.monotonic())).stdout.strip()
             if RELEASE['toolchain'] not in version: raise EvaluationError('incorrect Go toolchain')
             evidence['toolchain']=version
-            guards(candidate.workdir,d,deadline)
+            guards(candidate,d,deadline)
             # Fresh interleaved reference comparison. Never a frozen point reference.
-            rows,detail=measure_pairs(candidate.workdir,ref.workdir,names,d,deadline,pairs())
+            rows,detail=measure_pairs(candidate,reference,names,d,deadline,pairs())
             evidence.update(detail)
             return summarize(mean_rows(rows['candidate']),mean_rows(rows['reference']),names,evidence)
     except EvaluationError as exc:
         evidence['failure']={'reason':str(exc),**exc.receipt}
         return failed_result(names, evidence, str(exc))
+    except isolate.IsolateError:
+        raise  # the boundary could not be built: a failed verification, not a score
     except Exception as exc:
         evidence['failure']={'reason':'invalid submission or evaluation failure','type':type(exc).__name__}
         return failed_result(names, evidence, 'invalid submission or evaluation failure')
-    finally:
-        for path in cleanup:
-            if path: shutil.rmtree(path,ignore_errors=True)
 
 if __name__=='__main__':
     result=evaluate(sys.argv[1] if len(sys.argv)==2 else '')

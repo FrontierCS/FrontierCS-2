@@ -1,8 +1,9 @@
 """Observe unchanged upstream calls without replacing their scientific bodies.
 
-Only the admitted, byte-exact upstream spine and trusted queue proxy may execute
-in this process. queue_observer_entry.py installs the proxy before any upstream
-import in either phase; submitted Python runs only inside the confined actor.
+Only the upstream spine the judge restores (pristine + reference.patch) and the
+trusted queue proxy may execute in this process. queue_observer_entry.py installs
+the proxy before any upstream import in either phase; submitted Python runs only
+inside the confined actor.
 """
 
 import argparse

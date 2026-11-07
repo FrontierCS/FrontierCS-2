@@ -1,4 +1,25 @@
-"""End-to-end Stats-CEB evaluator for join-tree rewriting."""
+"""Join-tree rewriting judge: the candidate's rewrite_plan, lowered and executed fresh.
+
+The shared verifier applies the patch (task.toml [submission]: only
+2phase_nsa/binary_plan/rewrite_policy.py), runs check_tree (the module's source policy,
+content_policy on a violation) and then evaluate(tree). rewrite_plan runs in plan_builder, one
+confined process per query (the shared isolate: no judge access beyond the builder and its
+query).
+
+Score: per query q, ten fresh observations per role (binary, reference, candidate);
+S_q = median(binary) / median(candidate), L = 0 if S_q <= 1 else
+100 log S_q / (log 10 + log S_q); raw_score = score_unbounded = mean of L over the 20 train
+(dev) or 39 final queries, a failed, unmeasured or incorrect query contributing 0.
+
+Metrics, one row per query in beat_spec_workload_passes:
+  exact_result    the candidate returns exactly the original binary result in the correctness
+                  pass and every timed observation (higher is better; passes when true).
+  median_latency  candidate median latency vs the reference's in the same evaluation (lower is
+                  better; passes when strictly below; a byte-identical reference plan fails).
+beats_reference = 1 iff every query passes both. Train also returns all_metrics_progress and
+candidate_median_latency_us (query_measurements.summarize_queries); reference_score is the same
+formula on the reference (unmeasured queries count 0, reference_score_complete says so).
+"""
 
 from __future__ import annotations
 
@@ -14,24 +35,14 @@ from pathlib import Path
 TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
-from submission_patch import apply_submission_patch
+import isolate  # noqa: E402  (the shared launcher, beside edit_scope in the Verifier base)
 from query_measurements import (CORRECTNESS_METHODS, TIMING_METHODS, MeasurementError,
                                 compare_query, read_measurements, require_complete, summarize_queries)
 
 
 JUDGE_DIR = TASK_DIR / "judge"
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission on a copy
 EDITABLE = "2phase_nsa/binary_plan/rewrite_policy.py"
-CONFIG = {
-    "submission": {
-        "kind": "patch",
-        "path": "/workspace/payload/solution.patch",
-        "repo_root": "/workspace/repo",
-        "allow_paths": [EDITABLE],
-        "allow_empty": True,
-        "max_changed_files": 1,
-        "max_patch_bytes": 65536,
-    }
-}
 REPETITIONS = 5
 ENGINE_TIMEOUT_SECONDS = 600
 PLAN_TIMEOUT_SECONDS = 30
@@ -73,16 +84,25 @@ def _source_policy(tree: Path) -> tuple[bool, str]:
     return (True, "") if has_entry else (False, "rewrite_plan(plan) is missing")
 
 
-def _apply_patch(path: str | Path):
-    applied = apply_submission_patch(path, TASK_DIR, CONFIG)
-    if not applied.ok and applied.metrics.get("valid_patch") == 1 and applied.metrics.get("patch_bytes") == 0:
-        owner = Path(tempfile.mkdtemp(prefix="submission-empty-"))
-        tree = owner / "tree"
-        shutil.copytree(TASK_DIR / "repo", tree, symlinks=True)
-        return True, "", tree, applied.metrics
-    if not applied.ok or applied.workdir is None:
-        return False, applied.message, None, applied.metrics
-    return True, "", applied.workdir, applied.metrics
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: the editable module's source policy (imports from `typing` and
+    `binary_plan` only, no forbidden calls, dunder attributes or judge paths, and a
+    `rewrite_plan` definition). A violation is the shared `content_policy` rejection."""
+    ok, _reason = _source_policy(Path(tree))
+    return None if ok else ("content_policy", [EDITABLE])
+
+
+def _reference_tree(scratch: Path) -> Path:
+    """The pristine starter with judge/reference.patch applied (trusted, judge-owned)."""
+    tree = scratch / "reference-tree"
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch.resolve())}
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(TASK_DIR / "reference.patch")],
+                   cwd=tree, check=True, capture_output=True, timeout=60, env=env)
+    return tree
 
 
 def _build_plans(tree: Path, workloads: Path, output: Path) -> tuple[bool, str, dict[str, str]]:
@@ -109,22 +129,29 @@ def _build_plans(tree: Path, workloads: Path, output: Path) -> tuple[bool, str, 
             case = one / plan.stem
             case.mkdir()
             shutil.copy(plan, case / plan.name)
+            # The rewrite module runs inside plan_builder: each query is a fresh confined
+            # process (the shared isolate) that reads only the tree, the builder and this
+            # query, and writes only its own new directories; nothing else of the judge
+            # (other plans, workloads, data, measurements) is reachable, and whatever it
+            # leaves running is killed before the next query.
             command = [
                 sys.executable, "-I", str(JUDGE_DIR / "plan_builder.py"),
                 "--app", str(tree), "--workloads", str(case),
-                "--output", str(output), "--upstream", str(JUDGE_DIR / "upstream"),
+                "--output", "{out}", "--upstream", str(JUDGE_DIR / "upstream"),
             ]
-            try:
-                proc = subprocess.run(
-                    command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=budget,
-                    env={"PATH": os.environ.get("PATH", ""), "PYTHONHASHSEED": "0",
-                         "PYTHONDONTWRITEBYTECODE": "1"},
-                )
-            except subprocess.TimeoutExpired:
+            proc = isolate.run(
+                command, timeout_seconds=budget, outputs=[plan.name],
+                read_paths=[tree, JUDGE_DIR / "plan_builder.py", JUDGE_DIR / "upstream", case],
+                env={"PATH": os.environ.get("PATH", ""), "PYTHONHASHSEED": "0",
+                     "PYTHONDONTWRITEBYTECODE": "1"})
+            if proc.timed_out:
                 failures[plan.stem] = "timed out"
                 continue
-            if proc.returncode != 0 or not (output / plan.name).is_file():
+            result = proc.outputs[plan.name]
+            if proc.returncode != 0 or proc.limit or result is None:
                 failures[plan.stem] = "rewrite or lowering failed"
+                continue
+            (output / plan.name).write_bytes(result)
     if len(failures) == len(plans):
         return False, "plan rewriting failed on every query", failures
     return True, "", failures
@@ -188,75 +215,54 @@ def _run_engine(configs: Path, timings: Path, repetitions: int, expected: set[st
     return measurements
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
     """Measure all expected workloads; invalid reference never changes coverage."""
-    candidate_tree = reference_tree = None
+    candidate_tree = Path(tree)
     catalog = _case_catalog()
     expected = list(catalog)
     failures = {q: "candidate_not_measured" for q in expected}
     queries = {q: compare_query(identity=q, correctness=None, timing=None, identical=False,
                                 repetitions=REPETITIONS, failure=failures[q]) for q in expected}
-    try:
-        ok, reason, candidate_tree, patch_metrics = _apply_patch(solution_path)
-        if not ok or candidate_tree is None:
-            score, metrics = summarize_queries(expected, queries)
-            metrics.update(patch_metrics)
-            return score, score, "candidate patch rejected", metrics
-        ok, reason, reference_tree, _ = _apply_patch(TASK_DIR / "reference.patch")
-        if not ok or reference_tree is None:
-            raise MeasurementError("reference preparation failed")
-        with tempfile.TemporaryDirectory(prefix="statsceb-eval-") as temp_text:
-            temp = Path(temp_text)
-            plans = {"reference": {}, "candidate": {}}
-            for suite in dict.fromkeys(q.split("/")[0] for q in expected):
-                workloads = JUDGE_DIR / "workloads" / suite
-                for label, tree in (("reference", reference_tree), ("candidate", candidate_tree)):
-                    output = temp / label / suite
-                    built, build_reason, failed = _build_plans(tree, workloads, output)
-                    required = {q for q in expected if q.startswith(suite + "/")}
-                    if label == "reference" and (not built or failed):
-                        raise MeasurementError("reference lowering failed for a required workload")
-                    for q in required:
-                        stem = q.split("/")[1]
-                        path = output / (stem + ".json")
-                        # An output left by a failed/timeout process is not valid.
-                        if built and stem not in failed and path.is_file():
-                            plans[label][q] = path
-                        elif label == "reference":
-                            raise MeasurementError("reference omitted a required workload")
-                        else:
-                            failures[q] = "candidate_lowering_failed"
-            live = {q: path for q, path in catalog.items() if q in plans["candidate"]}
-            if live:
-                identical = _write_configs(live, plans["reference"], plans["candidate"], temp / "configs")
-                correctness = _run_engine(temp / "configs/correctness", temp / "correctness.csv",
-                                          1, set(live), CORRECTNESS_METHODS)
-                timing = _run_engine(temp / "configs/timing", temp / "timings.csv",
-                                     REPETITIONS, set(live), TIMING_METHODS)
-                for q in live:
-                    queries[q] = compare_query(identity=q,
-                        correctness=correctness["queries"][q], timing=timing["queries"][q],
-                        identical=identical[q], repetitions=REPETITIONS)
-            for q in set(expected) - set(live):
-                queries[q]["status"] = failures[q]
-            score, metrics = summarize_queries(expected, queries)
-            metrics.update(patch_metrics)
-            metrics["repetitions"] = REPETITIONS
-            metrics["timing_order"] = list(TIMING_METHODS)
-            metrics["correctness_order"] = list(CORRECTNESS_METHODS)
-            return score, score, f"query evaluation complete; {metrics['case_count']} of {len(expected)} queries measured", metrics
-    finally:
-        for tree in (candidate_tree, reference_tree):
-            if tree is not None:
-                shutil.rmtree(tree.parent, ignore_errors=True)
-
-
-def main() -> int:
-    path = sys.argv[1] if len(sys.argv) > 1 else ""
-    score, unbounded, message, metrics = evaluate(path)
-    print(json.dumps({"score": score, "score_unbounded": unbounded, "message": message, "metrics": metrics}, sort_keys=True))
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    with tempfile.TemporaryDirectory(prefix="statsceb-eval-") as temp_text:
+        temp = Path(temp_text)
+        try:
+            reference_tree = _reference_tree(temp)
+        except (OSError, subprocess.SubprocessError) as error:
+            raise MeasurementError("reference preparation failed") from error
+        plans = {"reference": {}, "candidate": {}}
+        for suite in dict.fromkeys(q.split("/")[0] for q in expected):
+            workloads = JUDGE_DIR / "workloads" / suite
+            for label, tree in (("reference", reference_tree), ("candidate", candidate_tree)):
+                output = temp / label / suite
+                built, build_reason, failed = _build_plans(tree, workloads, output)
+                required = {q for q in expected if q.startswith(suite + "/")}
+                if label == "reference" and (not built or failed):
+                    raise MeasurementError("reference lowering failed for a required workload")
+                for q in required:
+                    stem = q.split("/")[1]
+                    path = output / (stem + ".json")
+                    # An output left by a failed/timeout process is not valid.
+                    if built and stem not in failed and path.is_file():
+                        plans[label][q] = path
+                    elif label == "reference":
+                        raise MeasurementError("reference omitted a required workload")
+                    else:
+                        failures[q] = "candidate_lowering_failed"
+        live = {q: path for q, path in catalog.items() if q in plans["candidate"]}
+        if live:
+            identical = _write_configs(live, plans["reference"], plans["candidate"], temp / "configs")
+            correctness = _run_engine(temp / "configs/correctness", temp / "correctness.csv",
+                                      1, set(live), CORRECTNESS_METHODS)
+            timing = _run_engine(temp / "configs/timing", temp / "timings.csv",
+                                 REPETITIONS, set(live), TIMING_METHODS)
+            for q in live:
+                queries[q] = compare_query(identity=q,
+                    correctness=correctness["queries"][q], timing=timing["queries"][q],
+                    identical=identical[q], repetitions=REPETITIONS)
+        for q in set(expected) - set(live):
+            queries[q]["status"] = failures[q]
+        score, metrics = summarize_queries(expected, queries)
+        metrics["repetitions"] = REPETITIONS
+        metrics["timing_order"] = list(TIMING_METHODS)
+        metrics["correctness_order"] = list(CORRECTNESS_METHODS)
+        return score, score, f"query evaluation complete; {metrics['case_count']} of {len(expected)} queries measured", metrics

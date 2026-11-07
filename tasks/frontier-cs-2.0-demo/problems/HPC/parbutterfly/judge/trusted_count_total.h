@@ -1,78 +1,53 @@
 #pragma once
-#include "trusted_isolation.h"
+// The counting worker: the pristine CLI loads and preprocesses the graph, then loads the
+// candidate's CountTotal library only after the judge starts the clock. The whole process is
+// one shared isolate instance with syscalls="no_fork" (the judge's isolate.start):
+// no judge files, no network, a private TMPDIR, threads but no new processes. The judge times
+// it from its own side: "FS2_READY" on stdout -> 'G' on stdin -> the count record and the end
+// of stdout. Candidate code never sees the judge's pipes on 0/1/2 (they are /dev/null), and
+// whatever it writes to the record descriptor cannot be an earlier exact count than its own.
+#include <cstdio>
+#include <cstdlib>
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <omp.h>
+#include <stdexcept>
+#include <string>
+#include <unistd.h>
 namespace fs2_timing {
+static void fail(const char* message) { throw std::runtime_error(message); }
 static long invoke(bipartiteCSR& graph, bool use_v, long wedges, long max_wedges,
                    long max_array, CountType type, RankType rank) {
-  const char* library = getenv("FS2_WORKER_LIBRARY");
-  if (!library || library[0] != '/') fail("absolute worker library required");
-  if (omp_get_max_threads() != 1) fail("trusted preprocessing must be single threaded before fork");
-  if (prctl(PR_SET_DUMPABLE, 0)) fail("parent ptrace protection failed");
-  int control[2], result[2];
-  if (pipe2(control, O_CLOEXEC) || pipe2(result, O_CLOEXEC)) fail("pipe failed");
+  const char* variable = getenv("FS2_WORKER_LIBRARY");
+  if (!variable || variable[0] != '/') fail("absolute worker library required");
+  const std::string library(variable);
+  if (omp_get_max_threads() != 1) fail("trusted preprocessing must be single threaded");
   fflush(nullptr);
-  pid_t child = fork();
-  if (child < 0) fail("fork failed");
-  if (child == 0) {
-    close(control[1]); close(result[0]);
-    if (prctl(PR_SET_PDEATHSIG, SIGKILL) || getppid() == 1) _exit(116);
-    int nullfd = open("/dev/null", O_RDWR);
-    if (nullfd < 0 || dup2(nullfd, 0) < 0 || dup2(nullfd, 1) < 0 || dup2(nullfd, 2) < 0) _exit(117);
-    close(nullfd);
-    // No inherited judge descriptors remain accessible to candidate code.
-    if (control[0] > 3 && syscall(__NR_close_range, 3, control[0] - 1, 0)) _exit(122);
-    if (result[1] > control[0] + 1 && syscall(__NR_close_range, control[0] + 1, result[1] - 1, 0)) _exit(122);
-    if (syscall(__NR_close_range, result[1] + 1, ~0U, 0)) _exit(122);
-    clearenv();
-    setenv("OMP_NUM_THREADS", "4", 1);
-    setenv("OMP_DYNAMIC", "FALSE", 1);
-    omp_set_dynamic(0);
-    omp_set_num_threads(4);
-    filesystem(library);
-    syscalls();
-    char ready = 'R', go = 0;
-    if (write(result[1], &ready, 1) != 1 || read(control[0], &go, 1) != 1 || go != 'G') _exit(118);
-    close(control[0]);
-    // Candidate constructors and all CountTotal code run only after the trusted clock starts.
-    void* handle = dlopen(library, RTLD_NOW | RTLD_LOCAL);
-    if (!handle) _exit(119);
-    using Function = long (*)(bipartiteCSR*, bool, long, long, long, int, int);
-    auto function = reinterpret_cast<Function>(dlsym(handle, "fs2_count_total"));
-    if (!function) _exit(120);
-    long count = function(&graph, use_v, wedges, max_wedges, max_array, type, rank);
-    if (write(result[1], &count, sizeof(count)) != sizeof(count)) _exit(121);
-    _exit(0);
-  }
-  close(control[0]); close(result[1]);
-  char ready = 0;
-  pollfd pending = {result[0], POLLIN, 0};
-  if (poll(&pending, 1, 10000) != 1 || read(result[0], &ready, 1) != 1 || ready != 'R') {
-    int status = 0;
-    kill(child, SIGKILL); waitpid(child, &status, 0);
-    fprintf(stderr, "worker setup status=%d\n", status);
-    fail("worker isolation setup failed");
-  }
-  alarm(45);
-  auto start = std::chrono::steady_clock::now();
-  char go = 'G';
-  if (write(control[1], &go, 1) != 1) fail("worker start failed");
-  close(control[1]);
-  long count = 0; size_t received = 0;
-  while (received < sizeof(count)) {
-    ssize_t n = read(result[0], reinterpret_cast<char*>(&count) + received, sizeof(count) - received);
-    if (n <= 0) break;
-    received += n;
-  }
-  int status = 0;
-  if (waitpid(child, &status, 0) != child) fail("worker wait failed");
-  auto end = std::chrono::steady_clock::now();
-  alarm(0); close(result[0]);
-  if (received != sizeof(count) || !WIFEXITED(status) || WEXITSTATUS(status)) {
-    fprintf(stderr, "worker status=%d received=%zu\n", status, received);
-    fail("isolated CountTotal failed");
-  }
-  double seconds = std::chrono::duration<double>(end - start).count();
-  printf("FS2_TRUSTED_SECONDS=%.9f\n", seconds);
-  return count;
+  int record = fcntl(1, F_DUPFD_CLOEXEC, 3);
+  int nullfd = open("/dev/null", O_RDWR | O_CLOEXEC);
+  if (record < 0 || nullfd < 0) fail("worker setup failed");
+  static const char ready[] = "FS2_READY\n";
+  if (write(record, ready, sizeof(ready) - 1) != sizeof(ready) - 1) fail("worker setup failed");
+  char go = 0;
+  if (read(0, &go, 1) != 1 || go != 'G') fail("worker start failed");
+  if (dup2(nullfd, 0) < 0 || dup2(nullfd, 1) < 0 || dup2(nullfd, 2) < 0) _exit(117);
+  close(nullfd);
+  clearenv();
+  setenv("OMP_NUM_THREADS", "4", 1);
+  setenv("OMP_DYNAMIC", "FALSE", 1);
+  omp_set_dynamic(0);
+  omp_set_num_threads(4);
+  // Candidate constructors and all CountTotal code run only after the judge's clock starts.
+  void* handle = dlopen(library.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (!handle) _exit(119);
+  using Function = long (*)(bipartiteCSR*, bool, long, long, long, int, int);
+  auto function = reinterpret_cast<Function>(dlsym(handle, "fs2_count_total"));
+  if (!function) _exit(120);
+  long count = function(&graph, use_v, wedges, max_wedges, max_array, type, rank);
+  char line[64];
+  int length = snprintf(line, sizeof(line), "FS2_COUNT=%ld\n", count);
+  if (write(record, line, length) != length) _exit(121);
+  _exit(0);  // no candidate destructors or exit handlers; the judge's clock stops at EOF
 }
 }
 

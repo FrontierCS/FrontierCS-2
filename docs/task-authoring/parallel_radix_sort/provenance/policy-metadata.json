@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "conversion": {
+      "source_commit": "ac19add605ee544aa20c29a51d32e4d0ebf942ba",
+      "source_path": "original_format_problems/parallel_radix_sort",
+      "source_pr": 29,
+      "source_repository": "private authoring repository",
+      "status": "approved_science_calibration_and_immutable_image_review"
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 206,
+        "path": "datasets/eval.json",
+        "version": "sha256:9bb2faf7aa9840d11649a55567346107c49b5b8e00c24063c3dcb647c3673fa2"
+      },
+      "train": {
+        "bytes": 200,
+        "path": "datasets/train.json",
+        "version": "sha256:e8bc1948ee55db162c3e3f070a3ac546a82357a912a2dea8f1f830637b4c78fb"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "continuous": {
+        "anchor": "S=10 maps to50",
+        "baseline": "independent std::sort key comparator, unchanged benchmark harness",
+        "floor": "S<=1 maps to0",
+        "formula": "100*log(S)/(log(10)+log(S)) for S>1",
+        "objective": "equal-workload geometric mean baseline/candidate sort-call speedup",
+        "reference_used_for_continuous": false,
+        "repetitions": 21,
+        "timing_unit": "nanoseconds",
+        "upper_clipping": false
+      },
+      "scoring_alignment": "Independent std::sort baseline; S=geomean(B/C), score0 if S<=1 else100*log(S)/(log(10)+log(S)); reference solely strict PASS",
+      "solver_visible_metrics": [
+        "dev_candidate_median_sort_time_ns",
+        "dev_candidate_max_auxiliary_bytes",
+        "dev_candidate_median_region_graph_ns"
+      ],
+      "suite_relation": "Train original DEV4; final fresh DEV4 + HIDDEN4, no new shapes. Beat spec v3 (2026-10-08): the strict verdict adds two 16M-key paper-input workloads per partition (train 6, final 12); continuous score unchanged over DEV4 / DEV4 + HIDDEN4"
+    },
+    "provenance_file": "judge/metadata.json",
+    "runtime": {
+      "allowed_paths": [
+        "RadixSort/edgelistgraph.h",
+        "RadixSort/frontier_solution/"
+      ],
+      "architecture": "linux/amd64",
+      "authentic_smoke_timeout_seconds": 30,
+      "benchmark_timeout_seconds": 35,
+      "cilk_workers": 4,
+      "compile_timeout_seconds": 90,
+      "compiler": "pinned GCC7.5/Cilk Plus",
+      "cpu_affinity": "0-3",
+      "cpu_model": null,
+      "execution_boundary": "standard sandbox-driver-verifier; no task provider credentials",
+      "language": "cpp14",
+      "source_build_timeout_seconds": 120,
+      "ssh": "CPU-only: schema-required audit slot is not SSH/GPU permission",
+      "submission_kind": "patch"
+    }
+  }
+}

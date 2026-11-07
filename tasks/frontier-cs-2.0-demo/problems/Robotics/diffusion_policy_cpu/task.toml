@@ -1,0 +1,70 @@
+# The definition of diffusion_policy_cpu (schema frontier.task/v1). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "diffusion_policy_cpu"
+display_name = "Closed-loop action sampling"
+version = "20261104-task-toml-unsealed-judge"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+command = ["/opt/frontier/verifier"]   # the hardware-matched dataset is now selected in the evaluator
+max_evidence_bytes = 4194304     # 4 MiB, as in the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 372000
+eval_timeout_seconds = 3720
+
+[submission]
+max_bytes = 262144
+allowed_paths = [
+  "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
+  "diffusion_policy/sampler_extensions/",
+]
+max_changed_files = 17            # the policy file and at most 16 helpers
+allowed_suffixes = [".py"]        # helpers must be Python; the policy file is .py
+deny_paths = ["**/.*", "**/.*/**"]  # no dotfiles or dot-directories
+
+[network.audit]                   # the task's old capacities, unchanged
+max_model_response_bytes = 8388608
+max_ssh_bytes_per_direction = 8388608
+max_ssh_sessions = 32
+
+[feedback]                        # what train returns to the Agent beside beat_spec_progress
+dev_mean_episode_max_reward = "Mean episode-maximum reward over all train episodes (0 to 1)."
+dev_episode_success_rate = "Fraction of train episodes that reach the original environment success."
+dev_mean_predict_action_seconds = "Total predict_action time divided by the number of calls, in seconds."
+dev_total_workload_wall_seconds = "Sum over the train workloads of each workload's median episode-process seconds."
+
+# The judge's measurement runtime and limits (config.yaml), unchanged from the release.
+[judge.config.runtime.docker]
+image = "python@sha256:6dafe336b64dbf76f7ec872d07e58b5c7de0e2ea5d4c0853a05c3b6be3278b00"
+
+[judge.config.runtime.measurement]
+prefix = "/opt/diffusion-policy/python"
+checkpoint = "/opt/diffusion-policy/assets/pusht-transformer.ckpt"
+checkpoint_sha256 = "fa302d345467ef5927d60f3fd7cdd222e1ee8fda52216ca64323a08e2ce700a8"
+ema_sha256 = "9ea3d96eeaecca7912577d326ae0a0712b8aa04b7e846b7a56004997989e5a54"
+python_version = "3.10.20"
+
+[judge.config.evaluation.measurement_limits]
+episode_seconds = 150
+sampler_seconds = 130
+dev_seconds = 1860
+final_seconds = 3720
+max_model_calls_per_prediction = 200
+max_random_calls_per_episode = 38000
+
+[paper]                           # for readers; the platform never reads it
+title = "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion"
+venue = "RSS 2023"
+url = "https://arxiv.org/abs/2303.04137"
+summary = "Implement the conditional action sampler of a frozen diffusion-policy controller for a T-pushing robot task, evaluated closed-loop on CPU."

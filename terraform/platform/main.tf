@@ -35,6 +35,14 @@ locals {
   public_subnets = [
     for index, _ in local.azs : cidrsubnet(var.vpc_cidr, 8, index + 100)
   ]
+  # Dedicated /28 per AZ for the EKS control-plane ENIs only (10.42.200.0/28,
+  # 10.42.200.16/28 for 10.42.0.0/16). EKS re-creates these ENIs on version
+  # upgrades and maintenance; inside these subnets their addresses can move,
+  # but never outside them, so the Kubernetes API egress allowlist is stable.
+  control_plane_subnets = [
+    for index, _ in local.azs : cidrsubnet(var.vpc_cidr, 12, 3200 + index)
+  ]
+  kubernetes_service_api_cidr = "${cidrhost(var.service_ipv4_cidr, 1)}/32"
 
   artifact_bucket_name = "frontiercs2-${var.site_name}-${data.aws_caller_identity.current.account_id}-${var.aws_region}-artifacts"
   common_tags = merge(var.tags, {
@@ -68,6 +76,39 @@ module "vpc" {
   }
 
   tags = local.common_tags
+}
+
+# Nothing but the EKS control plane may use these subnets: no node group, EFS
+# mount target, load balancer tag or NAT route. Their route table carries only
+# the implicit VPC-local route, which is all the control-plane ENIs need with
+# controlPlaneEgressMode=AWS_MANAGED.
+resource "aws_subnet" "control_plane" {
+  count = length(local.azs)
+
+  vpc_id                  = module.vpc.vpc_id
+  availability_zone       = local.azs[count.index]
+  cidr_block              = local.control_plane_subnets[count.index]
+  map_public_ip_on_launch = false
+
+  tags = merge(local.common_tags, {
+    Name               = "${local.name}-eks-control-plane-${local.azs[count.index]}"
+    "frontier:purpose" = "eks-control-plane-eni-only"
+  })
+}
+
+resource "aws_route_table" "control_plane" {
+  vpc_id = module.vpc.vpc_id
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name}-eks-control-plane"
+  })
+}
+
+resource "aws_route_table_association" "control_plane" {
+  count = length(local.azs)
+
+  subnet_id      = aws_subnet.control_plane[count.index].id
+  route_table_id = aws_route_table.control_plane.id
 }
 
 resource "aws_kms_key" "platform" {
@@ -177,9 +218,12 @@ module "eks" {
     }
   }
 
-  vpc_id                   = module.vpc.vpc_id
+  vpc_id = module.vpc.vpc_id
+  # Node groups default to the private /24s; the control-plane ENIs live only
+  # in the dedicated /28s. EKS requires the new subnets to cover the same AZs
+  # as at cluster creation, in the same VPC; node subnets need not be listed.
   subnet_ids               = module.vpc.private_subnets
-  control_plane_subnet_ids = module.vpc.private_subnets
+  control_plane_subnet_ids = aws_subnet.control_plane[*].id
 
   encryption_config = {
     resources        = ["secrets"]

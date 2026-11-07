@@ -1,0 +1,39 @@
+diff --git a/src/primes.c b/src/primes.c
+index 396e16b..ea38998 100644
+--- a/src/primes.c
++++ b/src/primes.c
+@@ -1,18 +1,21 @@
+-/* The editable file (task.toml submission.allowed_paths). Starter: trial division by odd
+- * numbers. Correct, deliberately slow. */
++/* Reference: sieve of Eratosthenes over odd numbers, one byte per odd number. */
++#include <stdlib.h>
++#include <string.h>
+ #include "primes.h"
+ 
+-static int is_prime(uint32_t x) {
+-    if (x < 2) return 0;
+-    if (x % 2 == 0) return x == 2;
+-    for (uint32_t d = 3; (uint64_t)d * d <= x; d += 2)
+-        if (x % d == 0) return 0;
+-    return 1;
+-}
+-
+ uint64_t count_primes(uint32_t n) {
+-    uint64_t count = 0;
+-    for (uint32_t x = 2; x <= n && x != 0; x++)
+-        count += (uint64_t)is_prime(x);
++    if (n < 2) return 0;
++    uint64_t size = ((uint64_t)n - 1) / 2;  /* odd numbers 3..n */
++    unsigned char *composite = calloc(size + 1, 1);
++    if (!composite) abort();
++    uint64_t count = 1;                     /* 2 */
++    for (uint64_t i = 0; i < size; i++) {
++        if (composite[i]) continue;
++        count++;
++        uint64_t p = 2 * i + 3;
++        for (uint64_t j = (p * p - 3) / 2; j < size; j += p)
++            composite[j] = 1;
++    }
++    free(composite);
+     return count;
+ }

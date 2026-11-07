@@ -1,0 +1,45 @@
+# The definition of polygon (schema frontier.task/v1). Only what differs between tasks
+# is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and the
+# category is this task's folder.
+schema = "frontier.task/v1"
+id = "polygon"
+display_name = "SQL Counterexample Search"
+version = "smith89-62791e2f-preview-v4-disambiguation-hard-sql-isolation-refbudget"
+
+[agent]
+cpu_millis = 2000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 2000
+memory_bytes = 8589934592         # 8 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 12000
+eval_timeout_seconds = 330
+
+[submission]
+max_bytes = 262144
+allowed_paths = [
+    "sql_testing/environment.py",
+    "sql_testing/smt/formula.py",
+    "sql_testing/smt/knowledgebase.py",
+    "sql_testing/smt/search_extensions/",
+]
+max_changed_files = 20            # unchanged by the migration; the Agent sees it in submission-policy.json
+
+# What train returns to the Agent beside beat_spec_progress, one neutral sentence each.
+[feedback]
+refuted_pairs = "Per development workload, in suite order: 1 if the case was validated as refuted, else 0."
+wall_time_seconds = "Per development workload, in suite order: the measured search time in seconds; a failed case is charged its budget."
+search_iterations = "Per development workload, in suite order: the search's own reported iteration count."
+backtracks = "Per development workload, in suite order: the search's own reported backtrack count."
+
+[paper]                           # for readers; the platform never reads it
+title = "Polygon: Symbolic Reasoning for SQL using Conflict-Driven Under-Approximation Search"
+venue = "PLDI 2025"
+url = "https://arxiv.org/pdf/2504.06542v1"
+summary = "Find small counterexample databases that distinguish non-equivalent SQL queries faster with Polygon."

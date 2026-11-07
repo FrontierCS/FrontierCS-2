@@ -16,8 +16,11 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-JUDGE = Path(__file__).resolve().parents[1] / (
-    'tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm/judge')
+ROOT = Path(__file__).resolve().parents[1]
+TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm'
+JUDGE = TASK / 'judge'
+sys.path.insert(0, str(ROOT / 'scripts'))
+import task_manifest  # noqa: E402
 
 
 def exact_definitions(path, names, namespace):
@@ -59,34 +62,43 @@ class CaptureIdentityTests(unittest.TestCase):
             scope['remaining'](10, 'process', child=True)
         self.assertFalse(issubclass(scope['TrustedAggregateDeadline'], (ValueError, TimeoutError)))
 
-    def test_aggregate_deadline_in_candidate_phase_emits_native_evaluator_failure(self):
+    def test_aggregate_deadline_before_the_builds_emits_native_evaluator_failure(self):
         runner = exact_definitions(JUDGE / 'trusted_runner.py',
             {'TrustedAggregateDeadline', 'remaining'}, {'time': SimpleNamespace(monotonic=lambda: 10)})
-        evaluator = exact_definitions(JUDGE / 'evaluator.py', {'evaluate', '_is_resource_failure'},
+        import shutil
+        import subprocess
+        bundle = task_manifest.judge_bundle(TASK)
+        evaluator = exact_definitions(JUDGE / 'evaluator.py',
+            {'evaluate', '_reference_tree', '_editable_files'},
             {'time': SimpleNamespace(monotonic=lambda: 0), 'tempfile': tempfile, 'Path': Path,
-             'os': os, 'json': json})
+             'os': os, 'json': json, 'shutil': shutil, 'subprocess': subprocess,
+             'hashlib': hashlib})
         evaluator.update({'Context': lambda **kwargs: SimpleNamespace(receipt={}),
-            'ROOT': JUDGE, 'LIMITS': SimpleNamespace(evaluator_seconds=60), 'CONFIG': {},
+            'ROOT': bundle, 'PRISTINE': bundle / 'pristine', 'EDITABLE': ('BIN.h',),
+            'LIMITS': SimpleNamespace(evaluator_seconds=60), 'CONFIG': {},
             'install': lambda *args: None, '_workloads': lambda final: [],
             'sha': lambda path: str(path), 'require_disk_capture': lambda *args: None,
             'remaining': lambda *args, **kwargs: runner['remaining'](10, 'validation')})
-        # Setup uses no remaining() call until candidate patch application.
+        # Setup uses no remaining() call until the judge applies its reference patch.
+        verifier = task_manifest.SHARED / 'verifier'
         feedback_spec = importlib.util.spec_from_file_location('beat_spec_feedback',
-            JUDGE.parent / 'verifier/beat_spec_feedback.py')
+            verifier / 'beat_spec_feedback.py')
         feedback = importlib.util.module_from_spec(feedback_spec); feedback_spec.loader.exec_module(feedback)
         adapter_spec = importlib.util.spec_from_file_location('clusterwise_cache_adapter',
-            JUDGE.parent / 'verifier/fcs2_verifier.py')
+            verifier / 'fcs2_verifier.py')
         adapter = importlib.util.module_from_spec(adapter_spec)
         with patch.dict(sys.modules, {'beat_spec_feedback': feedback}):
             adapter_spec.loader.exec_module(adapter)
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ):
             root = Path(directory); payload = root / 'payload.tar'; dataset = root / 'dataset.tar'
             dataset.write_bytes(b'dataset')
+            # A patch the edit scope accepts, so the evaluator runs.
+            body = (JUDGE / 'reference.patch').read_bytes()
             with tarfile.open(payload, 'w') as archive:
-                member = tarfile.TarInfo('payload/solution.patch'); member.size = 5
-                archive.addfile(member, io.BytesIO(b'patch'))
-            with patch.object(adapter, 'load_evaluator', return_value=evaluator['evaluate']):
-                result = adapter.verify(bundle=JUDGE, entrypoint='payload/solution.patch',
+                member = tarfile.TarInfo('payload/solution.patch'); member.size = len(body)
+                archive.addfile(member, io.BytesIO(body))
+            with patch.object(adapter, 'load_evaluator', return_value=(evaluator['evaluate'], None)):
+                result = adapter.verify(bundle=bundle, entrypoint='payload/solution.patch',
                     payload=payload, dataset=dataset, mode='eval', result_path=root / 'result.json',
                     evidence_path=root / 'evidence.tar.zst')
             self.assertEqual(result['status'], 'failed')

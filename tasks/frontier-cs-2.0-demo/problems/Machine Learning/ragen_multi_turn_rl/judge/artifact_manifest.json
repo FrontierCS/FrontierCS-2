@@ -35,8 +35,7 @@
   },
   "task_owned_files": [
     {"path": "frontier-build.sh", "reason": "GPU workspace build adapter for the retained upstream packages."},
-    {"path": "frontier-bench.sh", "reason": "Bounded GPU adapter invoking the retained training entrypoint with challenge-scale overrides."},
-    {"path": "make_submission.sh", "reason": "Patch packaging helper that includes new solver utility files."}
+    {"path": "frontier-bench.sh", "reason": "Bounded GPU adapter invoking the retained training entrypoint with challenge-scale overrides."}
   ],
   "retained_alternatives": [],
   "pruned_alternatives": [

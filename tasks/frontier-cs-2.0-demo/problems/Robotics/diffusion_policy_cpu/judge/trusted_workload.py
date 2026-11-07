@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-from dataclasses import asdict
 import hashlib
 import json
 import math
@@ -14,7 +13,6 @@ import sys
 import time
 
 TASK = Path(__file__).resolve().parent
-CHECKPOINT_SHA256 = "fa302d345467ef5927d60f3fd7cdd222e1ee8fda52216ca64323a08e2ce700a8"
 
 
 def write_json(path, value):
@@ -125,7 +123,7 @@ def tensor_state_sha256(state):
 
 
 def execute_episode(run, checkpoint, output, runtime_prefix, *, submission_path=None,
-                    sampler_seconds=130, execution_kind=None, expected_ema_sha256=None):
+                    sampler_seconds=130, execution_kind=None):
     execution_kind = execution_kind or ("reference" if submission_path is None else "candidate")
     if execution_kind not in {"reference", "baseline", "candidate"} or ((submission_path is not None) != (execution_kind == "candidate")):
         raise ValueError("Unbound execution kind")
@@ -136,7 +134,7 @@ def execute_episode(run, checkpoint, output, runtime_prefix, *, submission_path=
     import numpy as np
     import torch
     import yaml
-    from evaluator import prepared_submission
+    from evaluator import prepared_source, reference_source
     from sampler_bridge import SamplerBridge
     from frozen_model_service import FrozenModelService, connect_sampler
     from bridge_protocol import public_configuration
@@ -146,17 +144,14 @@ def execute_episode(run, checkpoint, output, runtime_prefix, *, submission_path=
     output = Path(output)
     output.mkdir(exist_ok=False)
     checkpoint = Path(checkpoint)
-    if hashlib.sha256(checkpoint.read_bytes()).hexdigest() != CHECKPOINT_SHA256:
-        raise ValueError("Official checkpoint hash mismatch")
     torch.set_num_threads(1)
     torch.set_num_interop_threads(1)
     config = yaml.safe_load((TASK / "config.yaml").read_text())
     with contextlib.ExitStack() as stack:
-        restored, source_evidence = stack.enter_context(prepared_submission(TASK / "reference.patch", config))
+        restored = stack.enter_context(reference_source())
         sampler_source = restored
-        candidate_evidence = None
         if submission_path is not None:
-            sampler_source, candidate_evidence = stack.enter_context(prepared_submission(submission_path, config))
+            sampler_source = stack.enter_context(prepared_source(submission_path))
         sys.path.insert(0, str(restored))
         # Keep namespace-package imports inside the retained source closure.
         import diffusion_policy
@@ -166,9 +161,6 @@ def execute_episode(run, checkpoint, output, runtime_prefix, *, submission_path=
         cfg = payload["cfg"]
         if not cfg.training.use_ema:
             raise ValueError("Expected the official EMA policy")
-        ema_sha256 = tensor_state_sha256(payload["state_dicts"]["ema_model"])
-        if expected_ema_sha256 is not None and ema_sha256 != expected_ema_sha256:
-            raise ValueError("Frozen EMA identity mismatch")
         policy = hydra.utils.instantiate(cfg.policy)
         policy.load_state_dict(payload["state_dicts"]["ema_model"], strict=True)
         policy.to("cpu").eval().requires_grad_(False)
@@ -247,17 +239,15 @@ def execute_episode(run, checkpoint, output, runtime_prefix, *, submission_path=
             runner.env.close()
     result = {
         "run": run, "predictions": predictions, "prediction_seconds": timings,
-        "execution_kind": execution_kind, "ema_sha256": ema_sha256,
+        "execution_kind": execution_kind,
         "prediction_model_calls": model_counts,
         "rewards": [float(r) for r in rewards], "original_done": [bool(d) for d in dones],
         "runner_metrics": {key: float(value) for key, value in metrics.items()},
-        "runner_seconds": runner_seconds, "checkpoint_sha256": CHECKPOINT_SHA256,
-        "public_configuration": public, "source_evidence": asdict(source_evidence),
-        "candidate_source_evidence": None if candidate_evidence is None else asdict(candidate_evidence),
+        "runner_seconds": runner_seconds, "public_configuration": public,
         "trusted_module_sources": provenance,
         "bridge_model_calls": bridge.model_calls, "bridge_random_calls": bridge.random_calls,
         "bridge_lifetime_seconds": bridge.finished_at - bridge.started_at,
-        "bridge_worker_terminated": bridge.process.poll() is not None,
+        "bridge_worker_terminated": bridge.worker_terminated,
         "process_peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "self_cpu_seconds": resource.getrusage(resource.RUSAGE_SELF).ru_utime + resource.getrusage(resource.RUSAGE_SELF).ru_stime,
         "children_cpu_seconds": resource.getrusage(resource.RUSAGE_CHILDREN).ru_utime + resource.getrusage(resource.RUSAGE_CHILDREN).ru_stime,

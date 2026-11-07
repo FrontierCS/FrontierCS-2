@@ -1,0 +1,7 @@
+{
+  "note": "The GPU SSH bootstrap (frontier-gpu-sshd-bootstrap, built from core driver/crates) that every GPU task image copies. It is taken from the one accepted public image that carries it, by one pinned layer, and checked by hash; scripts/build_base_images.py fetches only that layer.",
+  "path": "opt/frontier/bin/frontier-gpu-sshd-bootstrap",
+  "sha256": "66b0189c8b87086541eb01a18eceb1e5f47a4430e586c64242b241d63403c93c",
+  "source_image": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-agent-gpu@sha256:43b07f113d0cfff0885643048fae51cb5c27e01e26a867b3f32699b4b488f0f4",
+  "source_layer": "sha256:87edda378245bcf0d6aa1811e000251823c880fb759d23c5666f0dbcec7a1b43"
+}

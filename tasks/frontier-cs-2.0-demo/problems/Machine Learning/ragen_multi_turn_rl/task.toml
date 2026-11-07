@@ -1,0 +1,78 @@
+# The definition of ragen_multi_turn_rl (schema frontier.task/v1). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest,
+# and the category is this task's folder.
+#
+# GPU task: the Agent has one A100-80GB runner (docker/agent-gpu.Dockerfile). The Verifier runs
+# the judge on its CPU control image (docker/verifier.Dockerfile) and the PPO runs of the
+# candidate and of the reference on two [test_sandboxes.candidate] runners of the Agent GPU
+# image at once: the candidate's machine holds only its instrumented tree and the starter.
+schema = "frontier.task/v1"
+id = "ragen_multi_turn_rl"
+display_name = "Multi-turn Trajectory Batches"
+version = "issue370-typed-dataproto-r004"
+
+[agent]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+[verifier]
+cpu_millis = 3000
+memory_bytes = 12884901888        # 12 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 3
+max_train_wall_seconds = 5400
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["ragen/llm_agent/ctx_manager.py", "ragen/llm_agent/solver_extensions/"]
+max_changed_files = 20            # as before; the statement tells the Agent the same
+
+[gpu.agent]
+allowed_types = ["A100-80GB"]
+max_gpu_seconds = 1800
+max_instance_seconds = 1800
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 2
+max_gpu_seconds = 12000           # 2 runners x 1500 s x (3 train calls + 1 final)
+
+# Command test sandbox (see tasks/template/TEMPLATE.md): one runner per PPO run.
+# Steps per run: device check 60 s, build 60 s, public imports 120 s, PPO 750 s; with the
+# adapter's per-step grace, upload and collect they need 1490 s of lease.
+[test_sandboxes.candidate]
+access = "command"
+dockerfile = "docker/agent-gpu.Dockerfile"
+workdir = "/workspace/sandbox"
+resources = { gpus = 1, gpu_type = "A100-80GB" }
+max_concurrent = 2
+lease_seconds = { train = 1500, eval = 1500 }
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["A100-80GB"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions). A sandbox run
+# uses 1 upload + 4 steps + 1 collect = 6, two runs per verification: 12 per call.
+[network.audit]
+max_ssh_bytes_per_direction = 8388608   # 8 MiB, as before
+max_ssh_sessions = 80
+ssh_session_budgets = { agent = 32, verifier_train = 36, verifier_eval = 12 }
+
+[feedback]                        # train metrics besides beat_spec_progress; each a mean over the development rollout groups
+success_rate = "Candidate fraction of trajectories ending with every box on a target, from 0 to 1; mean over rollout groups."
+average_episodic_reward = "Candidate mean undiscounted sum of genuine environment rewards per trajectory; mean over rollout groups."
+
+[paper]                           # for readers; the platform never reads it
+title = "RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning"
+venue = "arXiv 2025"
+url = "https://arxiv.org/abs/2504.20073"
+summary = "Build correct multi-turn trajectory batches for RAGEN PPO training of language-model agents."

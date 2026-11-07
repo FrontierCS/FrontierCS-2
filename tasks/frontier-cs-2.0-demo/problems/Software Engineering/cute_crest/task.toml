@@ -1,0 +1,42 @@
+# The definition of cute_crest (schema frontier.task/v1). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and
+# the category is this task's folder.
+schema = "frontier.task/v1"
+id = "cute_crest"
+display_name = "Search Strategy for Concolic Testing"
+version = "search-strategy-r2"
+
+[agent]
+cpu_millis = 8000
+memory_bytes = 17179869184        # 16 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 34359738368        # 32 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 18000
+eval_timeout_seconds = 10800
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["src/frontier_solution/"]
+max_changed_files = 32            # unchanged by the migration; the Agent sees it in submission-policy.json
+
+# What train returns to the Agent beside beat_spec_progress, one neutral sentence each.
+[feedback]
+dev_branches_covered_mean = "Mean over the 30 development runs of the branches covered when the run ended."
+dev_coverage_curve = "List of [iteration, mean branches covered] at fixed checkpoints over the 30 development runs; a run that ended before a checkpoint counts with its final coverage."
+dev_search_overhead_seconds_mean = "Mean over the 30 development runs of the search overhead (strategy CPU plus constraint-solving CPU), in seconds."
+dev_solver_attempts_mean = "Mean over the 30 development runs of the constraint-solver attempts, feasible and infeasible."
+dev_runs_ended_early = "Number of the 30 development runs that ended before the iteration budget was spent (a cap was reached or Run returned)."
+dev_killed_executions_mean = "Mean over the 30 development runs of the program launches that crashed or hit the per-launch time limit."
+
+[paper]                           # for readers; the platform never reads it
+title = "Heuristics for Scalable Dynamic Test Generation"
+venue = "ASE 2008"
+url = "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-123.pdf"
+summary = "Design a search strategy for the CREST concolic tester that covers more branches."

@@ -12,6 +12,18 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(os.environ.get('GLENSIDE_REJECTION_EXPORT', str(ROOT / 'tasks/frontier-cs-2.0-demo/problems/Programming Language/glenside')))
+sys.path.insert(0, str(ROOT / 'scripts'))
+import task_manifest  # noqa: E402
+SHARED_VERIFIER = task_manifest.SHARED / 'verifier'
+
+
+def shared_verifier(name):
+    sys.path.insert(0, str(SHARED_VERIFIER))
+    sys.modules.pop('beat_spec_feedback', None)
+    spec = importlib.util.spec_from_file_location(name, SHARED_VERIFIER / 'fcs2_verifier.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 class GlensideRejectionTests(unittest.TestCase):
     def setUp(self):
@@ -25,10 +37,11 @@ class GlensideRejectionTests(unittest.TestCase):
                 del sys.modules[name]
             sys.modules.update(old)
         self.addCleanup(restore)
-        sys.path.insert(0, str(TASK / 'judge'))
-        for name in ('submission_patch', 'sandbox', 'cargo_target'):
+        self.judge = task_manifest.judge_bundle(TASK)
+        sys.path.insert(0, str(self.judge))
+        for name in ('sandbox', 'cargo_target'):
             sys.modules.pop(name, None)
-        spec = importlib.util.spec_from_file_location('glenside_rejection_evaluator', TASK / 'judge/evaluator.py')
+        spec = importlib.util.spec_from_file_location('glenside_rejection_evaluator', self.judge / 'evaluator.py')
         self.e = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.e)
         work = tempfile.TemporaryDirectory()
@@ -49,33 +62,45 @@ class GlensideRejectionTests(unittest.TestCase):
                     e._check_analysis_contract(Path('candidate'), Path('trusted'))
                 self.assertNotIsInstance(caught.exception, e.CandidateRejection)
 
-    def test_candidate_rejection_returns_zero_and_marker(self):
-        e = self.e
-        with tempfile.TemporaryDirectory() as tmp:
-            answer = Path(tmp) / 'solution.patch'
-            answer.write_text('not a patch')
-            result = e.evaluate(str(answer))
-        self.assertEqual(result[:2], (0, 0))
-        self.assertEqual(result[3], {'candidate_rejection': True, 'beats_reference': 0})
-
-    def test_application_disk_fault_and_missing_submission_surface(self):
-        e = self.e
-        with tempfile.TemporaryDirectory() as tmp:
-            answer = Path(tmp) / 'solution.patch'
-            with self.assertRaises(FileNotFoundError):
-                e.evaluate(str(answer))
-            answer.write_text('candidate')
-            with patch.object(e, '_apply', side_effect=OSError('disk unavailable')):
-                with self.assertRaises(OSError):
-                    e.evaluate(str(answer))
-        self.assertIsNone(e._DEADLINE)
-
     def test_trusted_source_rejection_is_not_candidate_fail(self):
         e = self.e
         e._TRUSTED_BINARY = None
-        with patch.object(e, '_apply', side_effect=e.CandidateRejection('bad patch')):
+        with patch.object(e, '_build', side_effect=e.CandidateRejection('bad source')):
             with self.assertRaises(RuntimeError):
                 e._trusted_binary()
+
+    def test_compile_or_contract_rejection_is_a_bare_scored_zero(self):
+        e = self.e
+        tree = e.APP
+        for stage in ('_build', '_check_analysis_contract'):
+            with patch.object(e, '_is_reference', return_value=False), \
+                 patch.object(e, '_trusted_binary', return_value=Path('trusted')), \
+                 patch.object(e, '_build', return_value=Path('candidate')) as build, \
+                 patch.object(e, '_check_analysis_contract') as contract:
+                (build if stage == '_build' else contract).side_effect = e.CandidateRejection('candidate source does not compile')
+                self.assertEqual(e.evaluate(str(tree)), (0.0, 0.0, 'candidate source does not compile', {}))
+        self.assertIsNone(e._DEADLINE)
+
+    def test_check_tree_maps_source_rules_to_shared_categories(self):
+        import shutil
+        e = self.e
+        change = type('Change', (), {'status': 'M', 'path': 'code/src/language/rewrites.rs', 'added': ()})()
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / 'tree'
+            shutil.copytree(e.APP, tree)
+            rewrites = tree / 'code/src/language/rewrites.rs'
+            rewrites.chmod(0o644)
+            self.assertIsNone(e.check_tree(str(tree), str(e.APP), [change]))
+            original = rewrites.read_text()
+            for addition, category in (('\nfn leak() { println!("x"); }\n', 'content_policy'),
+                                       ('\nfn f() -> u8 { let _ = SystolicArray; 0 }\n', 'content_policy'),
+                                       ('\n// println is fine inside a comment\n', None)):
+                rewrites.write_text(original + addition)
+                verdict = e.check_tree(str(tree), str(e.APP), [change])
+                self.assertEqual(verdict and verdict[0], category, addition)
+            fixed = e._function(original, 'systolic_array')
+            rewrites.write_text(original.replace(fixed, fixed.replace('{', '{ let _unused = 0;', 1)))
+            self.assertEqual(e.check_tree(str(tree), str(e.APP), [change]), ('out_of_scope', [change.path]))
 
     def test_compile_diagnostic_requires_editable_primary_error(self):
         e = self.e
@@ -101,36 +126,13 @@ class GlensideRejectionTests(unittest.TestCase):
                 e._compile_library(Path('prepared'), lambda: (_ for _ in ()).throw(error))
         self.assertIs(caught.exception, error)
 
-    def test_verified_pristine_context_rejection_but_disk_fault_is_unknown(self):
-        from submission_patch import apply_submission_patch
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            pristine = root / 'repo'
-            pristine.mkdir()
-            (pristine / 'file.rs').write_text('original\n')
-            submission = root / 'solution.patch'
-            submission.write_text('diff --git a/file.rs b/file.rs\n--- a/file.rs\n+++ b/file.rs\n@@ -1 +1 @@\n-other\n+new\n')
-            config = {'submission': {'allow_paths': ['file.rs']}}
-            result = apply_submission_patch(submission, root, config, pristine=pristine)
-            self.assertFalse(result.ok)
-            self.assertTrue(result.candidate_rejection, result.message)
-            import submission_patch as producer
-            fake = type('Receipt', (), {'returncode': 1, 'stderr': 'error: unable to write: No space left on device', 'stdout': ''})()
-            with patch.object(producer.subprocess, 'run', return_value=fake):
-                result = apply_submission_patch(submission, root, config, pristine=pristine)
-            self.assertFalse(result.candidate_rejection)
-
     def test_unknown_verifier_exception_is_execution_failure(self):
-        sys.path.insert(0, str(TASK / 'verifier'))
-        sys.modules.pop('beat_spec_feedback', None)
-        spec = importlib.util.spec_from_file_location('glenside_infra_adapter', TASK / 'verifier/fcs2_verifier.py')
-        v = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(v)
+        v = shared_verifier('glenside_infra_adapter')
         for error in (OSError('tool missing'), subprocess.TimeoutExpired('probe', 60), RuntimeError('trusted measurement failed')):
             def fault(path):
                 raise error
             with self.assertRaises(v.VerifierFailure) as caught:
-                v.run_evaluator(fault, Path('accepted.patch'), 'eval')
+                v.run_evaluator(fault, Path('accepted.patch'), 'eval', max_metrics_bytes=524288)
             self.assertEqual(caught.exception.code, 'evaluator_error')
 
     def test_semantic_projection_retains_wrong_shapes_and_merge_settling(self):
@@ -185,12 +187,8 @@ class GlensideRejectionTests(unittest.TestCase):
     def test_actual_verifier_final_fail_and_train_privacy(self):
         import tarfile
         import zstandard
-        sys.path.insert(0, str(TASK / 'verifier'))
-        sys.modules.pop('beat_spec_feedback', None)
-        spec = importlib.util.spec_from_file_location('glenside_rejection_adapter', TASK / 'verifier/fcs2_verifier.py')
-        v = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(v)
-        marker = {'candidate_rejection': True, 'beats_reference': 0}
+        v = shared_verifier('glenside_rejection_adapter')
+        marker = {}
         for mode in ('train', 'eval'):
             with tempfile.TemporaryDirectory() as tmp:
                 r = Path(tmp)
@@ -198,14 +196,20 @@ class GlensideRejectionTests(unittest.TestCase):
                 payload.write_bytes(b'candidate')
                 dataset = r / 'dataset'
                 dataset.write_bytes(b'dataset')
-                with (patch.object(v, 'load_candidate_diagnostic', return_value=None),
-                      patch.object(v, 'extract_payload'),
+                scope = type('Scope', (), {'ok': True, 'tree': r, 'changes': (), 'metrics': {},
+                                           'dispose': lambda self: None})()
+                edit_scope = type('EditScope', (), {'check': staticmethod(lambda *a, _scope=scope, **k: _scope),
+                                                    'CATEGORIES': {}})
+                with (patch.object(v, 'extract_payload'),
                       patch.object(v, 'entrypoint_path', return_value=payload),
-                      patch.object(v, 'stage_task', return_value=TASK / 'judge'),
-                      patch.object(v, 'load_evaluator'),
-                      patch.object(v, 'run_evaluator', return_value=(0, 0, 'candidate rejected', marker))):
-                    result = v.verify(bundle=TASK / 'judge', entrypoint='solution.patch', payload=payload, dataset=dataset, mode=mode, result_path=r / 'result.json', evidence_path=r / 'evidence.tar.zst')
+                      patch.object(v, 'load_edit_scope', return_value=(edit_scope, None)),
+                      patch.object(v, 'stage_task', return_value=self.judge),
+                      patch.object(v, 'load_evaluator', return_value=(None, None)),
+                      patch.object(v, 'run_evaluator', return_value=(0.0, 0.0, 'candidate source does not compile', marker))):
+                    result = v.verify(bundle=self.judge, entrypoint='solution.patch', payload=payload, dataset=dataset, mode=mode, result_path=r / 'result.json', evidence_path=r / 'evidence.tar.zst')
                 self.assertEqual(result['status'], 'passed')
+                # Train returns only score_unbounded and eval the private {beats_reference: 0},
+                # as before the migration.
                 self.assertEqual(result['metrics'], {'score_unbounded': 0})
                 if mode == 'eval':
                     self.assertEqual(result['private_metrics'], {'beats_reference': 0})
@@ -214,16 +218,6 @@ class GlensideRejectionTests(unittest.TestCase):
                 with zstandard.ZstdDecompressor().stream_reader((r / 'evidence.tar.zst').open('rb')) as reader, tarfile.open(fileobj=reader, mode='r|') as archive:
                     evidence = json.load(archive.extractfile(archive.next()))
                 self.assertEqual(evidence['metrics'], marker)
-
-    def test_marker_validation_is_strict_and_not_zero_heuristic(self):
-        spec = importlib.util.spec_from_file_location('glenside_beat_feedback', TASK / 'verifier/beat_spec_feedback.py')
-        feedback = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(feedback)
-        self.assertEqual(feedback.rejection_verdict({'candidate_rejection': True, 'beats_reference': 0}, 0, 0), {'beats_reference': 0})
-        self.assertIsNone(feedback.rejection_verdict({}, 0, 0))
-        for metrics in ({'candidate_rejection': 1, 'beats_reference': 0}, {'candidate_rejection': True, 'beats_reference': 1}, {'candidate_rejection': True, 'beats_reference': 0, 'reference_score': 1}):
-            with self.assertRaises(ValueError):
-                feedback.rejection_verdict(metrics, 0, 0)
 
 if __name__ == '__main__':
     unittest.main()

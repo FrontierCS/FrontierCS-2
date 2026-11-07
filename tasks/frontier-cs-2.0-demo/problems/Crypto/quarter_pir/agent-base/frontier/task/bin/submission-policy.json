@@ -1,8 +1,0 @@
-{
-  "allowed_paths": [
-    "quarter_pir/code/pir/"
-  ],
-  "max_bytes": 524288,
-  "max_files": 50,
-  "member": "solution.patch"
-}

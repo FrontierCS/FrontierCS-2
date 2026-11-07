@@ -2,7 +2,7 @@
  "schema": "binary-fuse-reference-statistical-calibration/v3",
  "status": "CALIBRATED_REFERENCE_ONLY",
  "rule": "certified-non-inferiority/v1",
- "measurement_sha256": "sha256:a6d16904e60808bb0d12954b957ff6076d3983bb6d16ad2f4bf7a9e3e15cec90",
+ "measurement_sha256": "sha256:bcc3f3187e6d64b6e9ea4d036445842010723a5676968b95e4d857b444a1857c",
  "successor_solver_results_seen": false,
  "sample_alpha": 2.7777777777777776e-09,
  "reference_repeat_summaries": [
@@ -4103,6 +4103,6 @@
   "unique_observations": 32
  },
  "production_runtime_status": "QUALIFIED_EXACT_RUNTIME",
- "derived_at": "2026-10-11T16:53:18.703989+00:00",
+ "derived_at": "2026-11-04T07:17:28.203517+00:00",
  "new_reference_measurements": false
 }

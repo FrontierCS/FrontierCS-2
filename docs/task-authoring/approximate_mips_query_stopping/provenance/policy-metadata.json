@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "accelerator": null,
+    "conversion": {
+      "historical_host": "Unknown; original judge/metadata.json host and host_note preserved",
+      "required_cpu_features": [
+        "avx2",
+        "avx512f",
+        "avx512dq",
+        "avx512bw"
+      ],
+      "scope": "T40 native runtime standardization; scientific semantics preserved",
+      "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
+      "source_path": "2.0/fcs2/problems/approximate_mips_query_stopping",
+      "source_repository": "private authoring repository"
+    },
+    "datasets": {
+      "eval": {
+        "bytes": 440,
+        "path": "datasets/eval.json",
+        "version": "sha256:e2215ed2d4318c80c8b66856c137307cef60a61a80ce4c5a06a8df4352099e7d"
+      },
+      "train": {
+        "bytes": 447,
+        "path": "datasets/train.json",
+        "version": "sha256:f6b71ec17f9c450ed21e06ae05030d92941645fea801d74927b276d3cb117f6e"
+      }
+    },
+    "evaluation": {
+      "authored_max_dev_submissions": 100,
+      "solver_visible_metrics": [
+        "mean_recall",
+        "mean_kratio",
+        "mean_time_ms",
+        "mean_candidates"
+      ],
+      "suite_relation": null
+    },
+    "generator": {
+      "candidate_id": "cand_001",
+      "commit": "3676f0c07e03214559968f631baf9752726dd29e",
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top68_8ba4aaffff"
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Xi Zhao",
+        "Bolong Zheng",
+        "Xiaomeng Yi",
+        "Xiaofan Luan",
+        "Charles Xie",
+        "Xiaofang Zhou",
+        "Christian S. Jensen"
+      ],
+      "doi": null,
+      "paper_id": "vldb-2023-fargo-fast-maximum-inner-product-search-via-global-multi-probing-8ba4aaffff",
+      "pdf_url": "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf",
+      "title": "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing",
+      "venue": "PVLDB 16",
+      "year": 2023
+    },
+    "runtime": {
+      "allowed_paths": [
+        "src/alg.cpp"
+      ],
+      "language": "c++",
+      "submission_kind": "patch"
+    }
+  }
+}

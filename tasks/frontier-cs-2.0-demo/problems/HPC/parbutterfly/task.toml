@@ -1,0 +1,51 @@
+# The definition of parbutterfly (schema frontier.task/v1). Only what differs between
+# tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the rest, and
+# the category is this task's folder.
+schema = "frontier.task/v1"
+id = "parbutterfly"
+display_name = "ParButterfly Exact Counting"
+version = "native-transfer-1-four-cpu-independent-naive-beat-spec-v3-fmetric-reference-refscore-task-toml"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 40000
+eval_timeout_seconds = 1800
+
+[submission]
+# The archive limit the Agent was told (1 MiB). The old judge and make_submission.sh capped
+# the patch itself at 524,288 bytes; the shared edit scope caps the patch at the archive
+# limit, as decided for every task whose limits disagreed (owner, 2026-11-04).
+max_bytes = 1048576
+allowed_paths = [
+    "apps/hyper/butterfly_count_total.h",
+    "apps/hyper/butterfly_count.h",
+    "apps/hyper/butterfly_ecount.h",
+    "apps/hyper/butterfly_peel.h",
+    "apps/hyper/butterfly_epeel.h",
+    "apps/hyper/butterfly_putils.h",
+    "apps/hyper/butterfly_utils.h",
+    "apps/hyper/solver_extensions/",
+]
+max_changed_files = 20            # the statement's limit, unchanged by the migration
+allow_delete = true               # the old judge let an editable header be deleted (butterfly_putils.h
+                                  # is included by nothing), so the surface keeps that
+
+[feedback]                        # Agent-visible train metrics, in display order
+dev_counting_seconds_median = "Median over the development graphs of the candidate's per-graph median counting time, in seconds."
+dev_counting_seconds_p90 = "Nearest-rank 90th percentile of those per-graph median counting times, in seconds."
+
+[paper]                           # for readers; the platform never reads it
+title = "Parallel Algorithms for Butterfly Computations"
+venue = "APOCS 2020"
+url = "https://jshun.csail.mit.edu/butterfly.pdf"
+summary = "Speed up parallel butterfly (2x2 biclique) counting in bipartite graphs."

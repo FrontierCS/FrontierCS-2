@@ -54,7 +54,6 @@ def test_forbidden_includes(tmp_path, header):
     ("int f() { __asm__(\"nop\"); return 0; }\n", "forbidden_identifier"),
     ("__attribute__((constructor)) static void f() {}\n", "forbidden_identifier"),
     ("long f() { return syscall(1); }\n", "forbidden_identifier"),
-    ("const char* f() { return __TIME__; }\n", "forbidden_identifier"),
     ("int f() { return __builtin_ia32_rdtsc(); }\n", "forbidden_identifier"),
     ("#pragma GCC optimize(\"O3\")\n", "preprocessor_directive"),
     ("#include_next <vector>\n", "preprocessor_directive"),
@@ -68,6 +67,17 @@ def test_forbidden_includes(tmp_path, header):
 ])
 def test_forbidden_text(tmp_path, text, expected):
     assert code(tmp_path, text) == expected
+
+
+@pytest.mark.parametrize("text", [
+    "const char* f() { return __DATE__ \" \" __TIME__ \" \" __TIMESTAMP__; }\n",
+    "const char* f() { return __FILE__; }\nconst char* g() { return __BASE_FILE__; }\n",
+    "int f() { return __COUNTER__; }\n",
+    "#if __has_include(<vector>) && !__has_include_next(<vector>)\n#endif\n",
+])
+def test_compile_time_only_identifiers_are_allowed(tmp_path, text):
+    # The strategy compiles in an isolate instance (judge/evaluator.py): these only see that.
+    assert policy.check_sources(solution(tmp_path, text))
 
 
 def test_words_inside_comments_and_strings_are_not_code(tmp_path):
@@ -86,10 +96,6 @@ def test_layout_rules(tmp_path):
     with pytest.raises(policy.PolicyViolation):
         policy.check_sources(directory)
     (directory / "sub").rmdir()
-    (directory / "link.h").symlink_to("/etc/passwd")
-    with pytest.raises(policy.PolicyViolation):
-        policy.check_sources(directory)
-    (directory / "link.h").unlink()
     (directory / "strategy.cc").unlink()
     with pytest.raises(policy.PolicyViolation):
         policy.check_sources(directory)

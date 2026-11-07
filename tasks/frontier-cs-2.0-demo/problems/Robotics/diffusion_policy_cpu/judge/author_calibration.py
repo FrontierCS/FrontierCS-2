@@ -35,7 +35,7 @@ def collect(specification, output):
     from measurement_contract import schedule, validate_suite, validate_final_extension
     from measurement_runtime import launch_episode
     from option_b import canonical_sha256
-    from private_context import (accepted_calibrations, baseline_schedule, binding,
+    from private_context import (accepted_calibrations, authorize, baseline_schedule, binding,
         file_sha256, hardware_identity, inventory, load_context, require,
         runtime_files, runtime_identity, verify_cgroup, verify_runtime_files)
     from task_guards import METRICS
@@ -120,6 +120,7 @@ def collect(specification, output):
             "work_cutoff": deadline.isoformat(), "max_trajectories": 18, "steps": steps})
     completed = {}
     for profile in ("baseline", "reference_acceptance"):
+        authorize(context, profile)
         for mode in ("dev", "final"):
             suite = suites[mode]
             cases = (baseline_schedule(suite) if profile == "baseline"
@@ -131,7 +132,7 @@ def collect(specification, output):
             for case in cases:
                 require((deadline - datetime.now(timezone.utc)).total_seconds() >= 155,
                         "Insufficient collection time for a complete prescribed trajectory")
-                row = launch_episode(context, profile, mode, case, target)
+                row = launch_episode(context, mode, case, target)
                 validate_measurements(row["trajectory"])
                 require(math.isfinite(row["complete_process_seconds"])
                         and row["complete_process_seconds"] > 0, "Invalid process measurement")

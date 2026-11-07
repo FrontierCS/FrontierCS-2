@@ -7,62 +7,20 @@ import copy
 import json
 import shutil
 import sys
+import subprocess
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer
+import task_manifest
 import validate_task_layout as layout
 
 
 class TaskLayoutTests(unittest.TestCase):
-    def test_grouped_feedback_probe_uses_declared_roles_and_rejects_incomplete_rows(self):
-        # No catalog task declares workload groups any more (quarter_pir judges one workload per
-        # experiment); the grouped feedback path is exercised on a copy of its spec with two groups.
-        task = ROOT / "tasks/frontier-cs-2.0-demo/problems/Crypto/quarter_pir"
-        spec = json.loads((task / "judge/beat_spec.json").read_text())
-        names = [row["name"] for row in spec["metrics"]]
-        visible = [row["name"] for row in spec["solver_feedback"]]
-        layout.check_beat_spec_feedback(task, spec, names, visible)
-        helper = task / "verifier/beat_spec_feedback.py"
-        namespace = {"__name__": "grouped_feedback_test", "__file__": str(helper)}
-        exec(compile(helper.read_text(), str(helper), "exec"), namespace)
-        grouped = copy.deepcopy(spec)
-        grouped["workload_groups"] = {
-            "rpc": {"metrics": names[:2], "counts": {"train": 1000, "final": 2000}},
-            "experiment": {"metrics": names[2:], "counts": {"train": 1, "final": 2}},
-        }
-        with tempfile.TemporaryDirectory() as temporary:
-            spec_path = Path(temporary) / "beat_spec.json"
-            spec_path.write_text(json.dumps(grouped))
-            for role in ("train", "final"):
-                values = {"beats_reference": 1, "beat_spec_suite_role": role,
-                          "beat_spec_workload_passes": []}
-                for group, record in grouped["workload_groups"].items():
-                    values["beat_spec_workload_passes"].extend(
-                        {"workload": f"{group}-{i}", "group": group,
-                         "metrics": {name: True for name in record["metrics"]}}
-                        for i in range(record["counts"][role]))
-                actual = namespace["public_metrics"](
-                    values, beat_spec_path=spec_path, configured_visible=visible)
-                for record in grouped["workload_groups"].values():
-                    for name in record["metrics"]:
-                        self.assertEqual(actual["beat_spec_progress"][name]["total"],
-                                         record["counts"][role])
-                for mutation in ("role", "row", "group"):
-                    invalid = copy.deepcopy(values)
-                    if mutation == "role":
-                        invalid.pop("beat_spec_suite_role")
-                    elif mutation == "row":
-                        invalid["beat_spec_workload_passes"].pop()
-                    else:
-                        invalid["beat_spec_workload_passes"][0]["group"] = "unknown"
-                    with self.assertRaises(ValueError):
-                        namespace["public_metrics"](
-                            invalid, beat_spec_path=spec_path, configured_visible=visible)
-
     def test_every_catalog_task_has_a_complete_native_source_lock(self):
         names = json.loads((ROOT / "config/task-definitions.json").read_text())
         for name in names:
@@ -75,20 +33,39 @@ class TaskLayoutTests(unittest.TestCase):
                 )
 
     def test_quota_drift_and_unlocked_source_are_rejected(self):
+        # A real policy.json task with a source lock; task.toml tasks keep neither.
+        def valid(path):
+            try:
+                return bool(layout.validate_task(path))
+            except layout.LayoutFailure:
+                return False
+
+        source = next((path for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
+                       if (path / "policy.json").is_file()
+                       and (path / "upstream.lock.json").is_file()
+                       and (path / "agent-base/frontier/task").is_dir()
+                       and valid(path)), None)
+        if source is None:
+            self.skipTest("no policy.json task with a lock remains")
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / "batch_local_counting"
-            shutil.copytree(
-                renderer.problem_directory(layout.DEFAULT_PROBLEMS_ROOT, root.name),
-                root,
-            )
+            root = Path(directory) / source.name
+            shutil.copytree(source, root)
             path = root / "policy.json"
-            original = path.read_bytes()
+            lock_path = root / "upstream.lock.json"
+            original, original_lock = path.read_bytes(), lock_path.read_bytes()
             policy = json.loads(original)
-            policy["quota"]["max_train_calls"] = 3
+            policy["quota"]["max_train_calls"] += 1
             path.write_text(json.dumps(policy))
+            # Keep the lock consistent, so the quota rule is what rejects the drift.
+            lock = json.loads(original_lock)
+            for record in lock["files"]:
+                if record["path"] == "policy.json":
+                    record.update(bytes=path.stat().st_size, sha256=layout.digest(path))
+            lock_path.write_text(json.dumps(lock))
             with self.assertRaisesRegex(layout.LayoutFailure, "task-authored"):
                 layout.validate_task(root)
             path.write_bytes(original)
+            lock_path.write_bytes(original_lock)
             (root / "agent-base/frontier/task/unlocked.py").write_text(
                 "unexpected source"
             )
@@ -128,13 +105,11 @@ class TaskLayoutTests(unittest.TestCase):
 
 class SshBudgetGateTests(unittest.TestCase):
     def setUp(self):
-        self.policy = json.loads(
-            (
-                renderer.problem_directory(
-                    layout.DEFAULT_PROBLEMS_ROOT, "sparse_video_attention_policy"
-                )
-                / "policy.json"
-            ).read_text()
+        # svg is a task.toml task: its effective policy is task.toml over the shared defaults.
+        self.policy = task_manifest.load_policy(
+            renderer.problem_directory(
+                layout.DEFAULT_PROBLEMS_ROOT, "sparse_video_attention_policy"
+            )
         )
 
     def test_svg_retains_its_authored_bundle_without_multiplying_stream_ceilings(self):
@@ -506,13 +481,14 @@ class BeatSpecGateTests(unittest.TestCase):
             "beat_spec_progress passed failed total pass_percent fail_percent candidate_seconds\n"
         )
         (root / "judge/beat_spec.json").write_text(json.dumps(self.spec))
-        stock = renderer.problem_directory(
-            layout.DEFAULT_PROBLEMS_ROOT, "batch_local_counting"
-        )
-        shutil.copyfile(
-            stock / "verifier/beat_spec_feedback.py",
-            root / "verifier/beat_spec_feedback.py",
-        )
+        # The legacy (policy.json) helper contract: a legacy task's own copy.
+        legacy = next((path / "verifier/beat_spec_feedback.py"
+                       for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
+                       if (path / "policy.json").is_file()
+                       and (path / "verifier/beat_spec_feedback.py").is_file()), None)
+        if legacy is None:
+            self.skipTest("no policy.json task with its own feedback helper remains")
+        shutil.copyfile(legacy, root / "verifier/beat_spec_feedback.py")
         (root / "judge/scoring.py").write_text(
             'METRICS = ("latency_seconds",)\n'
             "def assemble(value):\n"
@@ -561,13 +537,10 @@ class BeatSpecGateTests(unittest.TestCase):
                 "    from scoring import assemble\n    return assemble(path)\n"
             )
             layout.check_beat_spec(root, self.evaluation)
-            policy = json.loads(
-                (
-                    renderer.problem_directory(
-                        layout.DEFAULT_PROBLEMS_ROOT, "sparse_video_attention_policy"
-                    )
-                    / "policy.json"
-                ).read_text()
+            policy = task_manifest.load_policy(
+                renderer.problem_directory(
+                    layout.DEFAULT_PROBLEMS_ROOT, "sparse_video_attention_policy"
+                )
             )
             policy["network"]["audit"]["max_bundle_bytes"] = 8 * 1024**3
             layout.check_ssh_session_budgets(policy)
@@ -608,6 +581,115 @@ class BeatSpecGateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SharedBaseArgumentTests(unittest.TestCase):
+    """Recipes take the shared bases by build argument (the build injects bases.json), so a base
+    release moves every task at once; a literal reference, an undeclared argument, or a Verifier-
+    GPU task without the shared adapter/verifier stages is refused."""
+
+    CONTROL = ("ARG GPU_TOOLS\nARG VERIFIER_BASE\nFROM ${GPU_TOOLS} AS frontier_gpu_tools\n"
+               "FROM ${VERIFIER_BASE}\n"
+               "COPY --from=frontier_gpu_tools /opt/frontier/shared-gpu/fcs2_verifier_gpu.py /opt/frontier/\n"
+               "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n")
+    GPU = ("ARG VERIFIER_BASE\nARG GPU_TOOLS\nFROM ${VERIFIER_BASE} AS frontier_verifier\n"
+           "FROM ${GPU_TOOLS} AS frontier_gpu_tools\nFROM scratch\n"
+           "COPY --from=frontier_verifier /opt/frontier/fcs2_verifier.py /opt/frontier/\n")
+
+    LEASE = "lease_seconds = { train = 60, eval = 60 }\n"
+    COMMAND = '\n[test_sandboxes.shard]\naccess = "command"\n'
+
+    def fixture(self, directory, control=None, gpu=None, settings=LEASE):
+        root = Path(directory) / "gpu_task"
+        (root / "docker").mkdir(parents=True)
+        (root / "task.toml").write_text(
+            "[gpu.verifier]\nmax_gpu_instances = 2\nmax_gpu_seconds = 60\n" + settings)
+        (root / "docker/verifier.Dockerfile").write_text(control or self.CONTROL)
+        (root / "docker/verifier-gpu.Dockerfile").write_text(gpu or self.GPU)
+        return root
+
+    def test_argument_recipes_pass(self):
+        with tempfile.TemporaryDirectory() as directory:
+            layout.check_gpu_adapter_pins(self.fixture(directory))
+
+    def test_a_literal_shared_reference_is_refused(self):
+        literal = task_manifest.base_reference("verifier")
+        for control in (self.CONTROL.replace("FROM ${VERIFIER_BASE}\n", f"FROM {literal}\n"),
+                        self.CONTROL.replace("${GPU_TOOLS} AS",
+                                             task_manifest.base_reference("gpu-tools") + " AS")):
+            with self.subTest(control=control), tempfile.TemporaryDirectory() as directory:
+                with self.assertRaisesRegex(layout.LayoutFailure, "by build argument"):
+                    layout.check_gpu_adapter_pins(self.fixture(directory, control=control))
+        gpu = self.GPU.replace("--from=frontier_verifier",
+                               "--from=docker.io/joyemang33/frontier-verifier-base@"
+                               + literal.partition("@")[2])
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(layout.LayoutFailure, "by build argument"):
+                layout.check_gpu_adapter_pins(self.fixture(directory, gpu=gpu))
+
+    def test_an_undeclared_or_defaulted_argument_is_refused(self):
+        for control in (self.CONTROL.replace("ARG GPU_TOOLS\n", ""),
+                        self.CONTROL.replace("ARG GPU_TOOLS\n", "ARG GPU_TOOLS=docker.io/x/y\n")):
+            with self.subTest(control=control), tempfile.TemporaryDirectory() as directory:
+                with self.assertRaisesRegex(layout.LayoutFailure, "without a global `ARG GPU_TOOLS`"):
+                    layout.check_gpu_adapter_pins(self.fixture(directory, control=control))
+
+    def test_only_lease_or_command_sandbox_tasks_need_the_shared_adapter_stages(self):
+        bare = "ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n"
+        with tempfile.TemporaryDirectory() as directory:  # e.g. a standalone Verifier (vllm)
+            layout.check_gpu_adapter_pins(self.fixture(directory, control=bare, gpu=bare, settings=""))
+        for settings, feature in ((self.LEASE, "lease_seconds"), (self.COMMAND, "access")):
+            with self.subTest(settings=settings), tempfile.TemporaryDirectory() as directory:
+                with self.assertRaisesRegex(layout.LayoutFailure, feature):
+                    layout.check_gpu_adapter_pins(
+                        self.fixture(directory, control=bare, settings=settings))
+
+    def test_a_gpu_verifier_needs_the_shared_adapter_and_verifier_stages(self):
+        with tempfile.TemporaryDirectory() as directory:
+            control = "ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n"
+            with self.assertRaisesRegex(layout.LayoutFailure, r"FROM \$\{GPU_TOOLS\} AS"):
+                layout.check_gpu_adapter_pins(self.fixture(directory, control=control))
+        with tempfile.TemporaryDirectory() as directory:
+            gpu = "ARG GPU_TOOLS\nFROM ${GPU_TOOLS} AS t\nFROM scratch\n"
+            with self.assertRaisesRegex(layout.LayoutFailure, r"FROM \$\{VERIFIER_BASE\} AS"):
+                layout.check_gpu_adapter_pins(self.fixture(directory, gpu=gpu))
+
+
+    def test_a_command_sandbox_needs_a_verifier_gpu_control_pod(self):
+        # Without FRONTIER_VERIFIER_GPU_TYPE the shared verifier drops the Driver bearer and
+        # run_sandboxes() fails before it leases a runner (ragen).
+        bare = self.CONTROL.replace(
+            "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n", "")
+        for control in (bare, bare + "# ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB\n"):
+            with self.subTest(control=control), tempfile.TemporaryDirectory() as directory:
+                root = self.fixture(directory, control=control, settings=self.COMMAND)
+                with self.assertRaisesRegex(layout.LayoutFailure,
+                                            r"verifier\.Dockerfile sets no ENV FRONTIER_VERIFIER_GPU_TYPE"):
+                    layout.check_gpu_adapter_pins(root)
+        with tempfile.TemporaryDirectory() as directory:  # lease_seconds alone runs on a runner
+            layout.check_gpu_adapter_pins(self.fixture(directory, control=bare))
+
+
+class BasesTagTests(unittest.TestCase):
+    """bases.json names each shared image by its derived tag (src-<tree hash of its sources>)."""
+
+    def test_a_hand_picked_or_stale_tag_is_refused(self):
+        recorded = task_manifest.bases()
+        for tag in ("v11", "src-000000000000"):
+            bad = dict(recorded, **{"gpu-tools": "docker.io/joyemang33/frontier-gpu-tools:"
+                                    f"{tag}@sha256:" + "0" * 64})
+            with self.subTest(tag=tag), mock.patch.object(task_manifest, "bases", return_value=bad):
+                with self.assertRaisesRegex(layout.LayoutFailure, "its sources are src-"):
+                    layout.check_bases()
+
+    def test_the_derived_tags_pass(self):
+        import build_base_images
+        derived = {role: f"docker.io/joyemang33/{build_base_images.IMAGE_NAMES[role]}:"
+                         f"{build_base_images.source_tag(role)}@sha256:" + "0" * 64
+                   for role in task_manifest.BASE_ROLES}
+        with mock.patch.object(task_manifest, "bases",
+                               return_value={**derived, "schema_version": "frontier.task-bases/v2"}):
+            layout.check_bases()
 
 
 class SidecarLayoutTests(unittest.TestCase):

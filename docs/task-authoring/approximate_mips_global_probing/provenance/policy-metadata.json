@@ -1,0 +1,29 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": null,
+      "commit": "f40af5601fbc37e69f9ebe23610afe2c90f5ef6c",
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "authors": [
+        "Xi Zhao",
+        "Bolong Zheng",
+        "Xiaomeng Yi",
+        "Xiaofan Luan",
+        "Charles Xie",
+        "Xiaofang Zhou",
+        "Christian S. Jensen"
+      ],
+      "doi": "10.14778/3579075.3579084",
+      "paper_id": "vldb-2023-fargo-fast-maximum-inner-product-search-via-global-multi-probing-8ba4aaffff",
+      "pdf_url": "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf",
+      "title": "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing",
+      "venue": "PVLDB 16",
+      "year": 2023
+    }
+  }
+}

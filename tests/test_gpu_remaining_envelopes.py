@@ -28,7 +28,10 @@ def load(path, name):
 
 class RemainingEnvelopeTests(unittest.TestCase):
     def test_all_published_adapters_inventory(self):
-        self.assertEqual(len(ADAPTERS), 14)
+        # Every public task is a task.toml task: it uses the shared adapter (gpu-tools); a task.toml
+        # task uses the shared adapter (gpu-tools) and must not carry one.
+        forked = sorted(PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py"))
+        self.assertEqual(forked, [])
         for index, path in enumerate(ADAPTERS):
             adapter = load(path, f"deadline_adapter_{index}")
             with self.subTest(task=path.parent.parent.name):

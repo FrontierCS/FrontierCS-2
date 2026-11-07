@@ -30,6 +30,21 @@ output "private_subnet_ids" {
   value = module.vpc.private_subnets
 }
 
+output "control_plane_subnet_ids" {
+  value = aws_subnet.control_plane[*].id
+}
+
+output "control_plane_subnet_cidrs" {
+  value = aws_subnet.control_plane[*].cidr_block
+}
+
+# The complete TCP 443 Kubernetes API allowlist: the control-plane ENI /28s
+# plus the default/kubernetes ClusterIP. Management config and both platform
+# NetworkPolicies are rendered from exactly this list.
+output "kubernetes_api_cidrs" {
+  value = sort(concat(aws_subnet.control_plane[*].cidr_block, [local.kubernetes_service_api_cidr]))
+}
+
 output "nat_gateway_public_ips" {
   value = module.vpc.nat_public_ips
 }

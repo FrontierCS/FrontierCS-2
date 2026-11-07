@@ -1,0 +1,68 @@
+# Values every task.toml task gets unless its task.toml sets them (#757).
+#
+# A task.toml holds only what differs between tasks and cannot be derived. Everything else is
+# here, explicitly, and is generous on purpose: a limit a task does not need to tighten should
+# never be the reason a run fails. scripts/task_manifest.py merges a task's tables over these,
+# key by key; changing a value here changes every task's definition (and so its TaskVersion).
+#
+# Derived, not defaulted (never written in task.toml):
+#   category, family   the task's folder under problems/ (FrontierCS-2 main's category folders)
+#   datasets           datasets/{train,eval}.json (selectors) or .tar; hash and size computed
+#   submission kind    always a patch: git diff of repo/, as payload/solution.patch
+
+# The editable surface (tasks/shared/lib/edit_scope.py checks it, Agent-side and in the judge).
+# A task states allowed_paths and max_bytes; it overrides these only where it needs to.
+[submission]
+entrypoint = "payload/solution.patch"   # the member of the submitted tar the judge reads
+max_changed_files = 50
+allow_new_files = true
+allow_delete = false
+# allow_rename = false                  # true: a rename is one change, allowed when its old
+                                        # and new paths are both editable (otherwise it is a
+                                        # delete plus an add, so allow_delete governs it)
+allow_executable = false
+allow_empty = false                     # a zero-byte patch would submit the starter unchanged
+deny_paths = []                         # wins over allowed_paths; globs as in allowed_paths
+allowed_suffixes = []                   # e.g. [".py"]; empty = any suffix
+# max_file_bytes = <n>                  # optional cap on each changed file
+# max_patch_bytes = <max_bytes>         # the patch cap; defaults to the task's archive cap
+                                        # max_bytes (set it only if the Agent was told less)
+# Judge-only content rules (never shipped to the Agent); regexes, matched case-sensitively
+# unless ignore_case:
+forbidden_added = []                    # over the lines the patch adds
+forbidden_content = []                  # over the whole text of each changed file
+ignore_case = false
+
+[verifier]
+command = ["/opt/frontier/verifier"]    # the shared verifier entry in the Verifier base
+max_evidence_bytes = 67108864           # 64 MiB, the platform maximum
+max_metrics_bytes = 524288              # 512 KiB: the shared verifier's cap on the evaluator's
+                                        # metrics dict (JSON); config.yaml carries it to the judge
+
+[network]
+allowed_domains = []                    # no Internet; model traffic goes through the gateway
+
+# Traffic audit. Recording is unlimited on the platform; of these only max_ssh_sessions (and
+# ssh_session_budgets, which GPU tasks set) still limits anything, and only for GPU SSH.
+[network.audit]
+max_bundle_bytes = 34359738368          # 32 GiB
+max_model_request_bytes = 67108864      # 64 MiB
+max_model_response_bytes = 67108864     # 64 MiB
+max_model_sessions = 1024               # the approved campaign limit (tests/test_model_session_limits.py)
+max_ssh_bytes_per_direction = 536870912 # 512 MiB, the platform maximum
+max_ssh_sessions = 2048                 # the platform maximum
+
+# What a train result returns to the Agent besides score_unbounded, beat_spec_progress and (on
+# a rejection) rejected: the evaluator metrics named here, each with the one sentence the
+# Agent's README shows for it, in display order. A task adds its own, e.g.
+#   [feedback]
+#   solved_count = "Distinct instances whose submitted answer passes every check."
+# Names are lower_snake_case and never private (nothing with "reference" or "margin", nothing
+# starting "beats"); judge/beat_spec.json must not withhold them. Default: none.
+[feedback]
+
+# Semantics for Pumpkin's IR (FrontierCS/Pumpkin); FCS2 does not read them.
+[pumpkin]
+slot = "code"                           # the judge builds and runs the submitted patch
+trust = "trusted"
+result = { status = "/status", score = "/raw_score" }

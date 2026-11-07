@@ -32,7 +32,9 @@ class CkksEstimatorTimeGateTests(unittest.TestCase):
                 **os.environ,
                 "TMPDIR": scratch,
                 "PYTHONDONTWRITEBYTECODE": "1",
-                "PYTHONPATH": str(ROOT / "tests"),
+                # The judge imports the shared launcher, which the Verifier image puts on the
+                # default import path (/opt/frontier, frontier.pth).
+                "PYTHONPATH": os.pathsep.join([str(ROOT / "tests"), str(ROOT / "tasks/shared/lib")]),
             }
             environment.pop("FRONTIER_SUBMISSION_ROLE", None)
             result = subprocess.run(
