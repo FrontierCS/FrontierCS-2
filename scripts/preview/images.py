@@ -1029,9 +1029,9 @@ def write_layer(root: Path, records: list[dict], path: Path) -> str:
 def previous_problem_path(repository: Path, commit: str, problem: str) -> str:
     """Find a task at the previous revision, including before domain relocation."""
     renderer.problem_directory(
-        repository / "tasks/frontier-cs-2.0-demo/problems", problem
+        repository / "tasks/problems", problem
     )
-    prefix = "tasks/frontier-cs-2.0-demo/problems/"
+    prefix = "tasks/problems/"
     paths = command(
         ["git", "ls-tree", "-r", "--name-only", commit, "--", prefix], cwd=repository
     )
@@ -1202,7 +1202,7 @@ def plan_problem(
     repository: Path, problem: str, prefix: str, commit: str, directory: Path
 ) -> dict:
     root = renderer.problem_directory(
-        repository / "tasks/frontier-cs-2.0-demo/problems", problem
+        repository / "tasks/problems", problem
     )
     relative = previous_problem_path(repository, commit, problem)
     initial_source = renderer.source_sha256(root)
@@ -1414,7 +1414,7 @@ def check_appended_image(
 
 def publish_plan(repository: Path, problem: str, plan: dict, crane: str) -> None:
     root = renderer.problem_directory(
-        repository / "tasks/frontier-cs-2.0-demo/problems", problem
+        repository / "tasks/problems", problem
     )
     require(
         renderer.source_sha256(root) == plan["source"]["source_set_sha256"],

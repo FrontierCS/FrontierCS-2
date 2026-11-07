@@ -32,7 +32,7 @@ TASK = Path(
         "RAGEN_PROVENANCE_EXPORT",
         str(
             ROOT
-            / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/ragen_multi_turn_rl"
+            / "tasks/problems/Machine Learning/ragen_multi_turn_rl"
         ),
     )
 )

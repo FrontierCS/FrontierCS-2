@@ -17,7 +17,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm'
+TASK = ROOT / 'tasks/problems/Arch/clusterwise_spgemm'
 JUDGE = TASK / 'judge'
 sys.path.insert(0, str(ROOT / 'scripts'))
 import task_manifest  # noqa: E402

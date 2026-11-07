@@ -22,7 +22,7 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-EVM = ROOT / "tasks/frontier-cs-2.0-demo/problems/Database/evm_state_checkpoints"
+EVM = ROOT / "tasks/problems/Database/evm_state_checkpoints"
 HEADER = Path("lib/evmcow/execution_state.hpp")
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, as the Verifier base ships it
 GXX = shutil.which("g++")

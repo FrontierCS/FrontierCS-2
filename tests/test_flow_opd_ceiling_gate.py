@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(os.environ.get("FRONTIER_FLOW_OPD_EXPORT", str(
-    ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/flow_opd"
+    ROOT / "tasks/problems/Machine Learning/flow_opd"
 )))
 spec = importlib.util.spec_from_file_location("flow_opd_scoring", TASK / "judge/judge/scoring.py")
 scoring = importlib.util.module_from_spec(spec)

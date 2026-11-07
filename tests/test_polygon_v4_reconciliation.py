@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Programming Language/polygon'
+TASK = ROOT / 'tasks/problems/Programming Language/polygon'
 sys.path.insert(0, str(ROOT / 'scripts'))
 import task_manifest  # noqa: E402
 JUDGE = task_manifest.judge_bundle(TASK)

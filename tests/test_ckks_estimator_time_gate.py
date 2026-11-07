@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise"
+TASK = ROOT / "tasks/problems/Crypto/ckks_composable_noise"
 MAINTENANCE = ROOT / "tests/maintenance/ckks_composable_noise"
 # A stale quota assertion predates this change and is tracked separately.
 KNOWN_STALE = "not test_public_manifest_and_clock_remain_exact"

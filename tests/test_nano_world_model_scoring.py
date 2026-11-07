@@ -17,7 +17,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/nano_world_model"
+TASK = ROOT / "tasks/problems/Machine Learning/nano_world_model"
 REF = {"psnr": 36.6, "ssim": 0.9837, "lpips": 0.0198}
 
 

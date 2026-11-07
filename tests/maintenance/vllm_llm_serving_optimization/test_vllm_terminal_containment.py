@@ -15,7 +15,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-JUDGE = REPO_ROOT / 'tasks/frontier-cs-2.0-demo/problems/MLSys/vllm_llm_serving_optimization/judge'
+JUDGE = REPO_ROOT / 'tasks/problems/MLSys/vllm_llm_serving_optimization/judge'
 sys.path.insert(0, str(JUDGE))
 from instance_supervisor import Limits, run
 from terminal_contract import Slot, terminal

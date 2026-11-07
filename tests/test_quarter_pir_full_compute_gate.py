@@ -15,7 +15,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Crypto/quarter_pir"
+TASK = ROOT / "tasks/problems/Crypto/quarter_pir"
 CODE = TASK / "repo/quarter_pir/code"
 STATEMENT = TASK / "repo/README.md"
 FIXTURES = ROOT / "tests/maintenance/quarter_pir/fixtures"

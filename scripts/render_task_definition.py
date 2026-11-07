@@ -20,7 +20,7 @@ import task_manifest
 from task_manifest import load_policy
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK_ROOT = ROOT / "tasks/frontier-cs-2.0-demo"
+TASK_ROOT = ROOT / "tasks"
 DEFINITIONS = ROOT / "config/task-definitions.json"
 CATALOG = ROOT / "config/task-catalog.json"
 SCHEMA = "frontier.frontiersmith-task-policy/v1"

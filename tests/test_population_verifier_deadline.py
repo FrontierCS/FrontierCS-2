@@ -15,7 +15,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-PROBLEMS = ROOT / "tasks/frontier-cs-2.0-demo/problems"
+PROBLEMS = ROOT / "tasks/problems"
 POPULATION = PROBLEMS / "Machine Learning/representation_frechet_loss"
 # Population now runs on the shared GPU adapter (gpu-tools v4), which has its own tests; the
 # legacy-adapter inventory below still covers the tasks that keep their own copy.

@@ -19,7 +19,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-EVM = ROOT / "tasks/frontier-cs-2.0-demo/problems/Database/evm_state_checkpoints"
+EVM = ROOT / "tasks/problems/Database/evm_state_checkpoints"
 FIELDS = ("throughput", "create_ns", "restore_ns", "retained_bytes")
 
 

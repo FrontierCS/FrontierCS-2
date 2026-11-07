@@ -1259,7 +1259,7 @@ def ensure_version(
 MANIFEST = REPOSITORY_ROOT / "config/task-catalog.json"
 LAUNCHER = (
     REPOSITORY_ROOT
-    / "tasks/frontier-cs-2.0-demo/shared/reference-candidate/fcs2_reference_candidate.py"
+    / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
 )
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 PLACEHOLDER = "sha256:" + "0" * 64
@@ -1288,10 +1288,10 @@ def validate_reference(name, image, definition, *, root=None, require_resolved=F
             raise ValueError(f"invalid reference {key}: {name}")
     launcher = (
         root
-        / "tasks/frontier-cs-2.0-demo/shared/reference-candidate/fcs2_reference_candidate.py"
+        / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
     )
     patch = (
-        renderer.problem_directory(root / "tasks/frontier-cs-2.0-demo/problems", name)
+        renderer.problem_directory(root / "tasks/problems", name)
         / "judge/reference.patch"
     )
     if (
@@ -1365,7 +1365,7 @@ def validate_baseline(name, baseline, image, definition, *, root=None):
     ):
         raise ValueError(f"baseline does not bind the native release: {name}")
     task_root = renderer.problem_directory(
-        root / "tasks/frontier-cs-2.0-demo/problems", name
+        root / "tasks/problems", name
     )
     patch = task_root / "judge/reference.patch"
     if patch.is_file() and baseline.get("reference_patch_sha256") != file_sha(patch):

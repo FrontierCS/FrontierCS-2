@@ -10,7 +10,7 @@ import sys
 import time
 import pytest
 REPOSITORY=Path(__file__).resolve().parents[4]
-TASK=REPOSITORY/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise'
+TASK=REPOSITORY/'tasks/problems/Crypto/ckks_composable_noise'
 sys.path.insert(0,str(REPOSITORY/'scripts'))
 import task_manifest  # noqa: E402
 # The judge as the Verifier image holds it: judge/ plus the generated config.yaml and pristine/.

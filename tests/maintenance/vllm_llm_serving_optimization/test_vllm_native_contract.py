@@ -16,7 +16,7 @@ import native_contract as native  # noqa: E402
 import task_manifest  # noqa: E402
 import validate_task_layout as layout  # noqa: E402
 
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/MLSys/vllm_llm_serving_optimization"
+TASK = ROOT / "tasks/problems/MLSys/vllm_llm_serving_optimization"
 EVALUATION = {"solver_visible_metrics": native.SOLVER_FEEDBACK, "authored_max_dev_submissions": 25}
 
 

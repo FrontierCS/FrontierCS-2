@@ -43,9 +43,9 @@ from preview.publication import baseline_from_result_json, file_sha
 from task_selection import requirements
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PROBLEMS = Path("tasks/frontier-cs-2.0-demo/problems")
+PROBLEMS = Path("tasks/problems")
 LAUNCHER = Path(
-    "tasks/frontier-cs-2.0-demo/shared/reference-candidate/fcs2_reference_candidate.py"
+    "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
 )
 MAX_FILE_BYTES = 512 * 1024 * 1024
 PLACEHOLDER = deploy.TASK_PLACEHOLDER_DIGEST

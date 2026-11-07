@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-TASK_ROOT = REPO_ROOT / "tasks/frontier-cs-2.0-demo/problems/MLSys/vllm_llm_serving_optimization"
+TASK_ROOT = REPO_ROOT / "tasks/problems/MLSys/vllm_llm_serving_optimization"
 for path in (REPO_ROOT / "tests", REPO_ROOT / "tasks/shared/verifier", TASK_ROOT / "verifier",
              TASK_ROOT / "judge", Path(__file__).resolve().parent):
     if str(path) not in sys.path:

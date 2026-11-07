@@ -398,7 +398,7 @@ release Makefile retain their full validation and test commands.
 
 ## Domain-grouped source directories
 
-Existing tasks can live at `tasks/frontier-cs-2.0-demo/problems/<domain>/<task>/`.
+Existing tasks can live at `tasks/problems/<domain>/<task>/`.
 Imports locate an existing task by its unique task name and replace it in the
 same domain. New imports initially use the flat path; an operator may move the
 complete task root into its paper domain after successful import. Do not edit

@@ -13,7 +13,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(os.environ.get("FRONTIER_DETOK_EXPORT", str(
-    ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/detok_latent_denoising"
+    ROOT / "tasks/problems/Machine Learning/detok_latent_denoising"
 )))
 JUDGE = TASK / "judge"
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, as gpu-tools ships it

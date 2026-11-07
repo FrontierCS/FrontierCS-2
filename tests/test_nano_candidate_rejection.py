@@ -18,7 +18,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/nano_world_model"
+TASK = ROOT / "tasks/problems/Machine Learning/nano_world_model"
 SHARED = ROOT / "tasks/shared"
 sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402

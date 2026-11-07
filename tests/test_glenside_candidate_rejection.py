@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = Path(os.environ.get('GLENSIDE_REJECTION_EXPORT', str(ROOT / 'tasks/frontier-cs-2.0-demo/problems/Programming Language/glenside')))
+TASK = Path(os.environ.get('GLENSIDE_REJECTION_EXPORT', str(ROOT / 'tasks/problems/Programming Language/glenside')))
 sys.path.insert(0, str(ROOT / 'scripts'))
 import task_manifest  # noqa: E402
 SHARED_VERIFIER = task_manifest.SHARED / 'verifier'

@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 import pytest
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-JUDGE_ROOT = REPOSITORY_ROOT / 'tasks/frontier-cs-2.0-demo/problems/Bioinformatics/edlib_exact_alignment/judge'
+JUDGE_ROOT = REPOSITORY_ROOT / 'tasks/problems/Bioinformatics/edlib_exact_alignment/judge'
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tasks/shared/lib'))  # isolate, as in the Verifier base
 import task_manifest  # noqa: E402

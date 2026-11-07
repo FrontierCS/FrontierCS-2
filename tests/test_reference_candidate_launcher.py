@@ -15,7 +15,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 PATH = (
     ROOT
-    / "tasks/frontier-cs-2.0-demo/shared/reference-candidate/fcs2_reference_candidate.py"
+    / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
 )
 SPEC = importlib.util.spec_from_file_location("reference_candidate_launcher", PATH)
 LAUNCHER = importlib.util.module_from_spec(SPEC)

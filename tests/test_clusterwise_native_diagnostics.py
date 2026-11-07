@@ -18,7 +18,7 @@ import unittest
 from unittest.mock import patch
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm")
+    "tasks/problems/Arch/clusterwise_spgemm")
 
 
 def helpers():

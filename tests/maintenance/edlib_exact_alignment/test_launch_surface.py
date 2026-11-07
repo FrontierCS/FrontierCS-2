@@ -12,7 +12,7 @@ import sys
 
 import pytest
 
-JUDGE = (Path(__file__).resolve().parents[3] / 'tasks/frontier-cs-2.0-demo'
+JUDGE = (Path(__file__).resolve().parents[3] / 'tasks'
          / 'problems/Bioinformatics/edlib_exact_alignment/judge')
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
 import task_manifest  # noqa: E402

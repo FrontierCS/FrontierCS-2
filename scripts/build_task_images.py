@@ -30,7 +30,7 @@ import verifier_layout
 from native_datasets import dataset_path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-TASK_ROOT = REPOSITORY_ROOT / "tasks" / "frontier-cs-2.0-demo"
+TASK_ROOT = REPOSITORY_ROOT / "tasks"
 TASK_CATALOG = REPOSITORY_ROOT / "config" / "task-catalog.json"
 SPARSE_VIDEO = "sparse_video_attention_policy"
 IMAGE_PREFIX_RE = re.compile(

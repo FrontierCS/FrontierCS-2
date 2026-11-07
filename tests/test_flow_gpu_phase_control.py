@@ -94,7 +94,7 @@ class FlowPhaseControlTests(unittest.TestCase):
     def adapter(self):
         # flow_opd uses the shared GPU adapter since its task.toml migration; its former
         # task copy was byte-identical to it.
-        adapter = load(PROBLEMS.parents[1] / "shared/verifier-gpu/fcs2_verifier_gpu.py",
+        adapter = load(PROBLEMS.parent / "shared/verifier-gpu/fcs2_verifier_gpu.py",
                        "flow_phase_adapter")
         adapter.PARAMETERS = runner_parameters(7200)
         return adapter

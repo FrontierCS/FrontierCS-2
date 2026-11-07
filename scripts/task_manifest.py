@@ -148,7 +148,7 @@ SIDECAR_PHASES = ("agent", "train", "eval")
 SIDECAR_LABEL = re.compile(r"[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?")
 DIGEST_IMAGE = re.compile(r"[^\s@]+@sha256:[0-9a-f]{64}")
 DEFAULTS_FILE = SHARED / "task-defaults.toml"
-# The category folders of FrontierCS-2 main (tasks/frontier-cs-2.0-demo/problems/<Category>/).
+# The category folders of FrontierCS-2 main (tasks/problems/<Category>/).
 CATEGORIES = frozenset({
     "Arch", "Bioinformatics", "Crypto", "Database", "HPC", "MLSys", "Machine Learning",
     "Network", "Programming Language", "Robotics", "Security", "Software Engineering", "Theory",

@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = REPO_ROOT
-TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/MLSys/vllm_llm_serving_optimization'
+TASK = ROOT / 'tasks/problems/MLSys/vllm_llm_serving_optimization'
 sys.path.insert(0, str(TASK / 'judge'))
 from serving_eval import swe_offline_setup as setup
 sys.path.insert(0, str(ROOT / 'scripts'))

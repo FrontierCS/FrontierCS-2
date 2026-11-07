@@ -43,7 +43,7 @@ class PreviousDomainPaths(unittest.TestCase):
 
         from preview import images
 
-        prefix = "tasks/frontier-cs-2.0-demo/problems/"
+        prefix = "tasks/problems/"
         for relative in ("sample_task", "databases/sample_task"):
             with mock.patch.object(
                 images, "command", return_value=prefix + relative + "/policy.json"
