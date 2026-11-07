@@ -33,7 +33,7 @@ SEARCH_FLAG = "--search"
 # grammar) must finish within this limit.
 SETUP_SECONDS = 30.0
 START_MAX_BYTES = 64
-RESULT_MAX_BYTES = 16 * 1024 * 1024
+RESULT_MAX_BYTES = 128 * 1024   # the result line's output cap (repo/README.md, Correctness)
 
 # Third-party libraries the fixed tree imports at module level. The search
 # process loads them before timing starts, identically for every submission.
@@ -397,8 +397,9 @@ def _measure(child_payload: dict, budget: float) -> tuple[dict | None, float | N
                             started = reading
                 elif started is not None:
                     result_line += chunk
-                    if len(result_line) > RESULT_MAX_BYTES:
-                        raise ValueError("search result is too large")
+                    end_of_line = result_line.find(b"\n")
+                    if (end_of_line if end_of_line >= 0 else len(result_line)) > RESULT_MAX_BYTES:
+                        raise ValueError(f"search result exceeds the {RESULT_MAX_BYTES}-byte output cap")
                     if b"\n" in result_line:
                         if stamp - started > budget:
                             return None, None

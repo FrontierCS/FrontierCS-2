@@ -19,7 +19,15 @@ memory_bytes = 8589934592         # 8 GiB
 wall_time_seconds = 18000         # 5 h
 max_train_calls = 100
 max_train_wall_seconds = 12000
-eval_timeout_seconds = 330
+# 330 before the searches moved to [test_sandboxes.search] (owner decision 2026-11-07): the machine's lease plus the
+# judge's validations here. Agent-visible (the generated README states it): owner decision.
+eval_timeout_seconds = 1800
+
+# The Driver passes this cap to the Verifier (FRONTIER_MAX_SSH_BYTES_PER_DIRECTION); the shared
+# adapter accepts at most 64 MiB and sizes its upload chunks and collects to 7/8 of it. The judge
+# still asks for one 7 MiB collect (judge/evaluator.py SEARCH_OUTPUT_BYTES).
+[network.audit]
+max_ssh_bytes_per_direction = 67108864   # 64 MiB, the shared adapter's maximum
 
 [submission]
 max_bytes = 262144
@@ -30,6 +38,29 @@ allowed_paths = [
     "sql_testing/smt/search_extensions/",
 ]
 max_changed_files = 20            # unchanged by the migration; the Agent sees it in submission-policy.json
+
+# The searches run on a machine of their own ("Heavy CPU candidates" in the
+# sandbox design): class 2, trusted, because the search's wall time is scored. The judge
+# (control image) uploads its search harness, both trees and the measurement plan; the harness
+# runs every search in a fresh isolate instance (no network, no judge file) and times it; the
+# counterexamples are validated on the judge's own MariaDB, which no submitted code can reach.
+# resources: the old Verifier pod's shape, so that the times stay comparable with the reference
+# runs so far. dockerfile: the Verifier image (the searches' toolchain and pins, the shared
+# isolate launcher) with the shared CPU runner layer; no isolate instance can read its judge
+# files. lease_seconds: covers every search instance's limit of the larger suite (932 s:
+# judge/evaluator.py _limit_seconds, both sides), so a candidate's slow searches can never run
+# the trusted machine out of time, plus the harness, transport and collect reserves; at most
+# quota.eval_timeout_seconds. The harness's records come back in one collect (at most 7 MiB):
+# each result line is capped at 128 KiB (repo/frontier_runner.py RESULT_MAX_BYTES, stated in
+# repo/README.md; an over-cap result is a failed case).
+[test_sandboxes.search]
+access = "command"
+trust = "trusted"
+dockerfile = "docker/verifier.Dockerfile"
+workdir = "/workspace/polygon-search"
+resources = { cpu_millis = 2000, memory_bytes = 8589934592 }
+max_concurrent = 1
+lease_seconds = { train = 1500, eval = 1500 }
 
 # What train returns to the Agent beside beat_spec_progress, one neutral sentence each.
 [feedback]
