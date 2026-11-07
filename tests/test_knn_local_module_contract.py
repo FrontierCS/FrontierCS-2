@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK_ROOT = ROOT / "tasks/frontier-cs-2.0-demo/problems/MLSys"
+TASK_ROOT = ROOT / "tasks/problems/MLSys"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import task_manifest  # noqa: E402

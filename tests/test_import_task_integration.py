@@ -228,7 +228,7 @@ class ImportIntegrationTests(unittest.TestCase):
                     "tasks"
                 ]
             }
-            problems = Path("tasks/frontier-cs-2.0-demo/problems")
+            problems = Path("tasks/problems")
             for existing_name in sorted(names):
                 with self.subTest(copied_task=existing_name):
                     self.assertEqual(
@@ -302,7 +302,7 @@ class ImportIntegrationTests(unittest.TestCase):
                 f"        name = {name!r}\n"
                 "        self.assertEqual(sum(t['name'] == name for t in catalog['tasks']), 1)\n"
                 "        self.assertIn(name, definitions)\n"
-                "        self.assertTrue((root / 'tasks/frontier-cs-2.0-demo/problems' / name / 'policy.json').is_file())\n"
+                "        self.assertTrue((root / 'tasks/problems' / name / 'policy.json').is_file())\n"
             )
             makefile = root / "Makefile"
             original = makefile.read_text()

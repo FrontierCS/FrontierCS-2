@@ -211,7 +211,7 @@ The EFS bytes are not deleted by that reconciliation.
 ## Bundled task image source
 
 The catalog's native task trees and their Dockerfiles are bundled under
-`tasks/frontier-cs-2.0-demo/`. Each task uses its own root as the build context;
+`tasks/problems/`. Each task uses its own root as the build context;
 sparse additionally supplies Agent/Verifier GPU images. Judge inputs are
 absent from Agent layers. Dataset selectors are JSON bodies stored at
 content-addressed paths in a single-layer image. The pure renderer derives

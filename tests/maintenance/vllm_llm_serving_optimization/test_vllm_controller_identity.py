@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-JUDGE = REPO_ROOT / 'tasks/frontier-cs-2.0-demo/problems/MLSys/vllm_llm_serving_optimization/judge'
+JUDGE = REPO_ROOT / 'tasks/problems/MLSys/vllm_llm_serving_optimization/judge'
 sys.path.insert(0, str(JUDGE))
 from controller_identity import content_contract, load_context, load_limits
 from controller_contract_build import emit

@@ -254,7 +254,7 @@ version.
 
 ## Task publication catalog v2
 
-The catalog task trees under `tasks/frontier-cs-2.0-demo/problems/` are the
+The catalog task trees under `tasks/problems/` are the
 released task directories. `scripts/render_task_definition.py --all` is the
 only producer of `config/task-definitions.json`: policy fields and authored
 budgets are copied, JSON selector bodies are hashed, and source

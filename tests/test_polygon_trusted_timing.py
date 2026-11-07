@@ -11,7 +11,7 @@ import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Programming Language/polygon'
+TASK = ROOT / 'tasks/problems/Programming Language/polygon'
 RUNNER = TASK / 'repo/frontier_runner.py'
 sys.path.insert(0, str(ROOT / 'scripts'))
 import task_manifest  # noqa: E402

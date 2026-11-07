@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PROBLEMS = ROOT / "tasks/frontier-cs-2.0-demo/problems"
+PROBLEMS = ROOT / "tasks/problems"
 COPIES = sorted(PROBLEMS.glob("*/*/verifier/patch_payload.py"))
 
 

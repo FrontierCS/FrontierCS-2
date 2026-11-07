@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 ROOT = REPO_ROOT
-VERIFIER = ROOT / 'tasks/frontier-cs-2.0-demo/problems/MLSys/vllm_llm_serving_optimization/verifier'
+VERIFIER = ROOT / 'tasks/problems/MLSys/vllm_llm_serving_optimization/verifier'
 SPEC = importlib.util.spec_from_file_location('safe_frames_test', VERIFIER / 'safe_error_frames.py')
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)

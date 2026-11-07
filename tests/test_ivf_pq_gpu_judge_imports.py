@@ -18,7 +18,7 @@ from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/MLSys/ivf_pq_gpu_kernel_optimization"
+TASK = ROOT / "tasks/problems/MLSys/ivf_pq_gpu_kernel_optimization"
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tasks/shared/verifier"))
 # The shared launcher: the Verifier image puts it on the default import path (frontier.pth).

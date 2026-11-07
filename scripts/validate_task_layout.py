@@ -24,7 +24,7 @@ from native_datasets import check_tar_dataset, dataset_hashes, dataset_path
 import task_manifest
 
 DEFAULT_PROBLEMS_ROOT = (
-    Path(__file__).resolve().parents[1] / "tasks/frontier-cs-2.0-demo/problems"
+    Path(__file__).resolve().parents[1] / "tasks/problems"
 )
 # Reviewed public-copy exceptions, keyed by (task, image role). None are needed
 # by the current catalog; the mechanism stays for imported tasks.

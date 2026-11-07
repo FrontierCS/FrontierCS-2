@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest import mock
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/frontier-cs-2.0-demo/problems/Robotics/diffusion_policy_cpu")
+    "tasks/problems/Robotics/diffusion_policy_cpu")
 PATCHED = "6.12.111-136.204.amzn2023.x86_64"
 
 

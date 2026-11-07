@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[3]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Software Engineering/cute_crest"
+TASK = ROOT / "tasks/problems/Software Engineering/cute_crest"
 REPO_TREE = TASK / "repo"
 sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402

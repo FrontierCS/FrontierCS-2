@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
-TASK = REPOSITORY_ROOT / "tasks/frontier-cs-2.0-demo/problems/Arch/runlts_predictor"
+TASK = REPOSITORY_ROOT / "tasks/problems/Arch/runlts_predictor"
 sys.path.insert(0, str(REPOSITORY_ROOT / "scripts"))
 import task_manifest  # noqa: E402
 

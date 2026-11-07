@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(os.environ.get("FRONTIER_BATCH_SCORE_EXPORT", str(
-    ROOT / "tasks/frontier-cs-2.0-demo/problems/Database/batch_local_counting"
+    ROOT / "tasks/problems/Database/batch_local_counting"
 )))
 # The shared launcher the judge imports: the Verifier image puts it on the default import path.
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))

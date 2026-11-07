@@ -30,7 +30,7 @@
   "artifact": {
     "repo_url": "private authoring repository",
     "commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
-    "path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy",
+    "path": "tasks/problems/sparse_video_attention_policy",
     "cloned_at": null,
     "census": {}
   },

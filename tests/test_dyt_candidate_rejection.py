@@ -20,7 +20,7 @@ from unittest.mock import patch
 import zstandard
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/dynamic_tanh"
+TASK = ROOT / "tasks/problems/Machine Learning/dynamic_tanh"
 SHARED = ROOT / "tasks/shared"
 sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402

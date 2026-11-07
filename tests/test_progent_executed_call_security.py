@@ -26,7 +26,7 @@ import unittest
 from pathlib import Path
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/frontier-cs-2.0-demo/problems/Security/progent_privilege_control")
+    "tasks/problems/Security/progent_privilege_control")
 COPIES = {
     "judge": (TASK / "judge/upstream_app/agentdojo/src", TASK / "judge"),
     "agent": (TASK / "repo/agentdojo/src", TASK / "repo/tools/harness"),

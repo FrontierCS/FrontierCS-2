@@ -19,7 +19,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DYT = ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/dynamic_tanh"
+DYT = ROOT / "tasks/problems/Machine Learning/dynamic_tanh"
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))
 import edit_scope  # noqa: E402

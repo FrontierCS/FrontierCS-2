@@ -15,7 +15,7 @@ import unittest
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Machine Learning/flow_opd'
+TASK = ROOT / 'tasks/problems/Machine Learning/flow_opd'
 SHARED = ROOT / 'tasks/shared'
 sys.path.insert(0, str(ROOT / 'scripts'))
 import task_manifest  # noqa: E402

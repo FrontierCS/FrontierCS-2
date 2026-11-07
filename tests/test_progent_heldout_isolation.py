@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/frontier-cs-2.0-demo/problems/Security/progent_privilege_control")
+    "tasks/problems/Security/progent_privilege_control")
 # Everything the Agent image holds from the task: its README and repo/ (with the episode runner
 # and its public harness under repo/tools/).
 AGENT_REPO = TASK / "repo"

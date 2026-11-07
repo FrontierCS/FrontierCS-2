@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm")
+    "tasks/problems/Arch/clusterwise_spgemm")
 
 
 class ClusterwiseOpenMPScanTests(unittest.TestCase):

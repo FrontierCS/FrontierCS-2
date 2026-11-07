@@ -13,8 +13,8 @@ from unittest.mock import patch
 
 import jsonschema
 
-ROOT = Path(__file__).resolve().parents[1] / "tasks/frontier-cs-2.0-demo/problems"
-sys.path.insert(0, str(ROOT.parents[2] / "scripts"))
+ROOT = Path(__file__).resolve().parents[1] / "tasks/problems"
+sys.path.insert(0, str(ROOT.parents[1] / "scripts"))
 import task_manifest  # noqa: E402
 TASKS = (
     "batch_local_counting",
@@ -63,7 +63,7 @@ class FinalMetricsAssembly(unittest.TestCase):
             sys.path.pop(0)
             # A task.toml task has no judge/beat_spec.json: its metric names are in the
             # archived spec, and the shared verifier reads [feedback] from config.yaml.
-            spec_path = (ROOT.parents[2] / "docs/task-authoring" / name / "provenance/beat_spec.json"
+            spec_path = (ROOT.parents[1] / "docs/task-authoring" / name / "provenance/beat_spec.json"
                          if native else task / "judge/beat_spec.json")
             beat_spec = json.loads(spec_path.read_text())
             for mode in ("train", "eval"):
@@ -140,7 +140,7 @@ class FinalMetricsAssembly(unittest.TestCase):
                             if name in TASKS[:4]:
                                 contract = json.loads(
                                     (
-                                        ROOT.parents[2]
+                                        ROOT.parents[1]
                                         / "tests/fixtures/platform-contracts/run-metrics-v1.schema.json"
                                     ).read_text()
                                 )

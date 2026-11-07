@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(
     os.environ.get(
         "BINARY_FUSE_EXPORT",
-        str(ROOT / "tasks/frontier-cs-2.0-demo/problems/Theory/binary_fuse_filter"),
+        str(ROOT / "tasks/problems/Theory/binary_fuse_filter"),
     )
 )
 QUERIES = 8 * 1048576

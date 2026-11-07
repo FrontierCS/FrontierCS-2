@@ -28,7 +28,7 @@ import render_task_definition as renderer  # noqa: E402
 import task_manifest  # noqa: E402
 
 TASK = renderer.problem_directory(
-    ROOT / "tasks/frontier-cs-2.0-demo/problems", "join_tree_rewriting"
+    ROOT / "tasks/problems", "join_tree_rewriting"
 )
 EDITABLE = "2phase_nsa/binary_plan/rewrite_policy.py"
 EXPECTED = [f"dev/{i}" for i in range(1, 21)] + [f"final/{i}" for i in range(1, 20)]

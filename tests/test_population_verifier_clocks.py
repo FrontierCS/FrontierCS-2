@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/representation_frechet_loss"
+TASK = ROOT / "tasks/problems/Machine Learning/representation_frechet_loss"
 sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402
 

@@ -16,7 +16,7 @@ import render_task_definition as renderer
 class TaskMoveLFSTests(unittest.TestCase):
     def test_clusterwise_archives_retain_lfs_filter(self):
         task = renderer.problem_directory(
-            ROOT / "tasks/frontier-cs-2.0-demo/problems", "clusterwise_spgemm"
+            ROOT / "tasks/problems", "clusterwise_spgemm"
         )
         paths = [
             (task / "datasets" / (mode + ".tar")).relative_to(ROOT).as_posix()

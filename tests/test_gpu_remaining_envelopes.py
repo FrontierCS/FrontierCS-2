@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
-PROBLEMS = ROOT / "tasks/frontier-cs-2.0-demo/problems"
+PROBLEMS = ROOT / "tasks/problems"
 # Population's scientific handoff and setup classification have a separate suite.
 ADAPTERS = sorted(
     p for p in PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py")

@@ -39,7 +39,7 @@ class DatabasePrivateMetrics(unittest.TestCase):
             task = (
                 Path(export_root) / name
                 if export_root
-                else ROOT / "tasks/frontier-cs-2.0-demo/problems/Database" / name
+                else ROOT / "tasks/problems/Database" / name
             )
             self.assertEqual(layout.validate_task(task), "patch-workspace")
             spec_path = task / "judge/beat_spec.json"

@@ -56,7 +56,7 @@ than the human state of the art, within a fixed budget.
 ## How a task works
 
 ```text
-tasks/frontier-cs-2.0-demo/problems/<Category>/<task_id>/
+tasks/problems/<Category>/<task_id>/
 ├── task.toml            # the task's only definition: budgets, limits, submission scope, feedback
 ├── README.md            # what the task is (generated Agent README points here)
 ├── repo/                # the repository the Agent starts from; its README.md is the statement

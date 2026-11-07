@@ -5,10 +5,10 @@ C problem (make `count_primes` fast) whose every file shows what a real task's f
 contain. Start a new task by copying it:
 
 ```sh
-cp -r tasks/template/Theory/template_task tasks/frontier-cs-2.0-demo/problems/<Category>/<task_id>
+cp -r tasks/template/Theory/template_task tasks/problems/<Category>/<task_id>
 # then: rename id in task.toml, replace every file's content
 make validate
-scripts/task_manifest.py show tasks/frontier-cs-2.0-demo/problems/<Category>/<task_id>
+scripts/task_manifest.py show tasks/problems/<Category>/<task_id>
 ```
 
 The template is not in the catalog and is never published. `tests/test_template_task.py` keeps

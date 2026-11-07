@@ -16,7 +16,7 @@
   ],
   "adapter_source": {
     "commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
-    "path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy/verifier",
+    "path": "tasks/problems/sparse_video_attention_policy/verifier",
     "repository": "private authoring repository"
   },
   "commit": "1f99d1f0700606908a5c4f1c6c11feba642ae0e5",

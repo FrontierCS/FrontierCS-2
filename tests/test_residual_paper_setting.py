@@ -32,7 +32,7 @@ TASK = Path(
         "RESIDUAL_PAPER_SETTING_EXPORT",
         str(
             ROOT
-            / "tasks/frontier-cs-2.0-demo/problems/Database/residual_state_advancement"
+            / "tasks/problems/Database/residual_state_advancement"
         ),
     )
 )

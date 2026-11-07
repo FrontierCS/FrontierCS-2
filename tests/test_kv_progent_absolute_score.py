@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PROBLEMS = ROOT / "tasks/frontier-cs-2.0-demo/problems"
+PROBLEMS = ROOT / "tasks/problems"
 KV = PROBLEMS / "Machine Learning/fast_kv_compaction"
 PROGENT = PROBLEMS / "Security/progent_privilege_control"
 RECORDED = json.loads((Path(__file__).parent / "fixtures/absolute-score/recorded.json").read_text())

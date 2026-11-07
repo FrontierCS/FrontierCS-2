@@ -79,7 +79,7 @@
       "conversion": {
         "source_repo": "https://github.com/FrontierCS/FrontierCS-2.0-Preview",
         "source_commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
-        "source_path": "tasks/frontier-cs-2.0-demo/problems/sparse_video_attention_policy",
+        "source_path": "tasks/problems/sparse_video_attention_policy",
         "method": "manual runtime standardization; scientific implementation preserved"
       }
     },

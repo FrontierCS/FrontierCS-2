@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFINITIONS = ROOT / "config/task-definitions.json"
 CATALOG = ROOT / "config/task-catalog.json"
-PROBLEMS = ROOT / "tasks/frontier-cs-2.0-demo/problems"
+PROBLEMS = ROOT / "tasks/problems"
 METADATA = ROOT / "tasks/metadata"
 TABLE = ROOT / "TASKS.md"
 GIB = 1 << 30

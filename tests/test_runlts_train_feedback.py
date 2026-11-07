@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402
 
-TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Arch/runlts_predictor"
+TASK = ROOT / "tasks/problems/Arch/runlts_predictor"
 # The judge as the Verifier image holds it: judge/, the generated config.yaml and pristine/.
 BUNDLE = task_manifest.judge_bundle(TASK)
 SHARED_VERIFIER = task_manifest.SHARED / "verifier"

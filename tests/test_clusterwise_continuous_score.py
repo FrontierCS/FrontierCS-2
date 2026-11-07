@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALUATOR = ROOT / "tasks/frontier-cs-2.0-demo/problems/Arch/clusterwise_spgemm/judge/evaluator.py"
+EVALUATOR = ROOT / "tasks/problems/Arch/clusterwise_spgemm/judge/evaluator.py"
 
 # The full evaluator imports modules absent from the repository test runner;
 # extract the standard-library-only score function.
