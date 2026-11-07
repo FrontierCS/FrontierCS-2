@@ -1,15 +1,41 @@
 #!/usr/bin/env python3
-"""Evaluator for factorized between-round updates in JoinBoost."""
+"""residual_state_advancement judge: evaluate(tree) for the shared FrontierCS2 verifier.
+
+Scoring. The candidate (the judged tree), the reference (pristine/ + reference.patch) and the
+per-leaf baseline (pristine/ + baseline_naive.patch) fit the suite's eight JoinBoost
+gradient-boosting workloads, each in a fresh process; candidate and reference interleave over
+four repetitions. With T = sum over workloads of the candidate's lower of its first two fit
+times and B the same sum for the baseline: L = max(0, log10(B / T)),
+raw_score = score_unbounded = 100 * L / (2 + L). A fit whose RMSE differs from the
+materialized-join oracle by more than 1e-3 or whose sorted predictions differ by more than
+1e-6 per row scores 0, as does a trusted-executor violation at run time (closed reasons).
+
+Metrics (one row per workload):
+  elapsed_seconds          median complete-fit time, lower is better; passes when strictly
+                           below the reference's median.
+  residual_update_seconds  median time inside _update_error including one trusted full read
+                           of the updated target state per round, lower is better; passes when
+                           strictly below the reference's and the update clock is trusted.
+  rmse_error               |RMSE - oracle RMSE|; passes at <= 1e-3 on every repetition.
+beats_reference = 1 iff every metric passes on every workload (all validity gates, including
+the non-materialised-join rule, hold for every run).
+
+Every timed fit (candidate, reference and baseline alike) runs benchmark.py on its tree in a fresh
+shared isolate launcher (isolate: a copy of the tree, the fact slice as a neutral input, no judge
+files, no inherited environment, no network). The fit reports its predictions; the judge compares
+them with the materialized-join oracle, fitted beforehand in a trusted process the fit never sees.
+
+check_tree keeps the fixed public fit/tree-growth methods and the trusted executor.
+"""
 
 from __future__ import annotations
 
 import ast
-import hashlib
+import io
 import json
 import math
 import os
 import re
-import secrets
 import shutil
 import statistics
 import subprocess
@@ -18,16 +44,17 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-try:
-    from submission_patch import apply_submission_patch
-except ImportError:  # Local task-author smoke tests; the judge supplies the canonical helper.
-    from _local_submission_patch import apply_submission_patch
-
+import numpy as np
 
 TASK_DIR = Path(__file__).resolve().parent
-CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text(encoding="utf-8"))
+if str(TASK_DIR) not in sys.path:
+    sys.path.insert(0, str(TASK_DIR))
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
+# The starter the shared verifier overlays the submission on; the judge's reference and
+# baseline trees are copies of it with judge/reference.patch or baseline_naive.patch applied.
+PRISTINE = TASK_DIR / "pristine"
+EDITABLE = ("src/joinboost/app.py", "src/joinboost/semiring.py", "src/joinboost/aggregator.py",
+            "src/joinboost/cjt.py", "src/joinboost/joingraph.py")
 REFERENCE_PATCH = TASK_DIR / "reference.patch"
 # The obvious correct implementation: one UPDATE per leaf instead of the single
 # batched CASE the withheld version builds. Same SQL, same semantics, N queries
@@ -36,6 +63,11 @@ REFERENCE_PATCH = TASK_DIR / "reference.patch"
 BASELINE_PATCH = TASK_DIR / "baseline_naive.patch"
 WORKER = TASK_DIR / "benchmark.py"
 RUN_TIMEOUT_SECONDS = 600
+# A fit's sorted predictions (float64 per fact row, up to 2.2M rows) come back as one output.
+PREDICTION_OUTPUT_BYTES = 64 << 20
+# Development slices ship in the starter tree; graded slices exist only in the judge's data.
+DEV_FACTS = PRISTINE / "data" / "favorita"
+FINAL_FACTS = TASK_DIR / "judge_data" / "favorita"
 RMSE_TOLERANCE = 1.0e-3
 # The sorted-prediction L1 bound is per row, so that it does not tighten as the
 # fact table grows: sum |candidate - oracle| <= rows * 1e-6. The reference's own
@@ -43,9 +75,6 @@ RMSE_TOLERANCE = 1.0e-3
 # previous absolute 1e-3 at 70,000 rows was 1.4e-8 per row, too close to that),
 # while a different tree moves predictions by many orders of magnitude more.
 PREDICTION_L1_TOLERANCE_PER_ROW = 1.0e-6
-# The trusted executor is byte-locked: the patch cannot touch it, and the
-# patched tree must still carry the pristine bytes.
-LOCKED_FILES = ("src/joinboost/executor.py",)
 POLICY_EXIT_CODE = 3
 # Closed reason strings for trusted-executor violations (score 0, invalid).
 POLICY_REASONS = {
@@ -118,26 +147,9 @@ FAST_SUITE = (
     {"fact": "sales-dev-2.parquet", "limit": 20_000, "rows": 20_000, "depth": 2, "estimators": 2, "learning_rate": 0.5, "topology": "core_four_table"},
 )
 
-FORBIDDEN_ADDITIONS = (
-    "/proc", "FRONTIER_", "benchmark.py", "sys.argv", "os.environ",
-    "getenv(", "perf_counter", "monotonic(", "atexit", "sys.modules",
-    "judge_data", "import benchmark", "__main__", "builtins", "inspect",
-    "importlib", "ctypes", "os.listdir", "glob(", "rglob(", "walk(",
-    ".fit =", ".fit=", "setattr(",
-    "_getframe", "currentframe", "f_back", "f_globals", "f_locals",
-    "traceback", "gc.get_objects",
-)
-
-# Added lines may not reach the DuckDB connection or its result-export APIs, and
-# may not use the reflection routes that would uncover the guarded connection.
-# This is a static screen of the patch text; the row cap, the statement filter
-# and the locked settings are enforced at run time by the executor and DuckDB.
-STATIC_BYPASS = re.compile(
-    r"\bduckdb\b|\.conn\b|[\"']conn[\"']|fetch(all|one|many|numpy|df|_|\b)|\.df\(|\.arrow\(|\.pl\("
-    r"|\.to_df\(|\.torch\(|\.tf\(|record_batch|__closure__|cell_contents|__globals__|__code__"
-    r"|__dict__|\bvars\(|\beval\(|\bexec\(|\bcompile\(|__import__|__builtins__|\bgc\."
-    r"|__subclasses__|__reduce|_guard_connection|GuardedConnection|MAX_ROWS_PER|_check_statements"
-)
+# The added-line screens (evaluator-introspection fragments, case-insensitive, and the
+# connection/reflection pattern STATIC_BYPASS, case-sensitive) are task.toml forbidden_added
+# rules now: the shared edit scope rejects them as content_policy before evaluate() runs.
 
 PROTECTED_METHODS = {
     "DummyModel": {"fit", "_fit", "predict"},
@@ -169,20 +181,6 @@ def _suite() -> tuple[dict[str, Any], ...]:
     return FINAL_SUITE if os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final" else DEV_SUITE
 
 
-def _patch_policy(path: Path) -> tuple[bool, str]:
-    try:
-        added = [line[1:] for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("+") and not line.startswith("+++")]
-    except Exception:
-        return False, "patch is not readable UTF-8"
-    joined = "\n".join(added)
-    for fragment in FORBIDDEN_ADDITIONS:
-        if fragment.lower() in joined.lower():
-            return False, "patch contains prohibited evaluator-introspection code"
-    if STATIC_BYPASS.search(joined):
-        return False, STATIC_BYPASS_REASON
-    return True, "ok"
-
-
 def _method_fingerprints(path: Path) -> dict[tuple[str, str], str]:
     tree = ast.parse(path.read_text(encoding="utf-8"))
     found: dict[tuple[str, str], str] = {}
@@ -196,34 +194,11 @@ def _method_fingerprints(path: Path) -> dict[tuple[str, str], str]:
 
 
 def _structural_policy(tree: Path) -> tuple[bool, str]:
-    expected = _method_fingerprints(TASK_DIR / "harbor" / "app" / "src" / "joinboost" / "app.py")
+    expected = _method_fingerprints(PRISTINE / "src" / "joinboost" / "app.py")
     actual = _method_fingerprints(tree / "src" / "joinboost" / "app.py")
     if actual != expected:
         return False, "public fit and generic tree-growth methods must remain unchanged"
-    for name in LOCKED_FILES:
-        pristine = TASK_DIR / "harbor" / "app" / name
-        if (tree / name).read_bytes() != pristine.read_bytes():
-            return False, "the trusted executor must remain unchanged"
     return True, "ok"
-
-
-def _archive_patch(solution_path: str) -> bool:
-    try:
-        data = Path(solution_path).read_bytes()
-        digest = hashlib.sha256(data).hexdigest()[:16]
-        configured = os.environ.get("FRONTIER_PATCH_ARCHIVE_DIR")
-        roots = [Path(configured)] if configured else [Path("/work/frontier-patch-archive"), TASK_DIR / ".patch-archive"]
-        for archive in roots:
-            try:
-                archive.mkdir(parents=True, exist_ok=True)
-                name = f"{secrets.token_hex(8)}-{digest}.patch"
-                (archive / name).write_bytes(data)
-                return True
-            except Exception:
-                continue
-    except Exception:
-        return False
-    return False
 
 
 _ORACLE_DIR: Path | None = None
@@ -240,25 +215,28 @@ def _oracle_cache(case: dict[str, Any]) -> Path:
 _WORKER_ENV = {"PYTHONHASHSEED": "0", "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
 
 
-def _worker_command(tree: Path, case: dict[str, Any]) -> list[str]:
-    command = [
-        sys.executable, str(WORKER), "--tree", str(tree),
-        "--fact", str(case["fact"]), "--rows", str(case["rows"]),
-        "--depth", str(case["depth"]), "--estimators", str(case["estimators"]),
-        "--learning-rate", str(case["learning_rate"]),
+def _fact_file(case: dict[str, Any]) -> Path:
+    root = FINAL_FACTS if str(case["fact"]).startswith("sales-final-") else DEV_FACTS
+    return root / str(case["fact"])
+
+
+def _case_arguments(case: dict[str, Any]) -> list[str]:
+    arguments = [
+        "--rows", str(case["rows"]), "--depth", str(case["depth"]),
+        "--estimators", str(case["estimators"]), "--learning-rate", str(case["learning_rate"]),
         "--topology", str(case["topology"]),
-        "--oracle-cache", str(_oracle_cache(case)),
     ]
     if case.get("limit") is not None:
-        command += ["--limit", str(case["limit"])]
-    return command
+        arguments += ["--limit", str(case["limit"])]
+    return arguments
 
 
 def _prepare_oracle(tree: Path, case: dict[str, Any]) -> None:
-    """Fit the materialized-join oracle of one case in its own untimed process."""
+    """Fit the materialized-join oracle of one case in its own trusted, untimed process."""
     proc = subprocess.run(
-        _worker_command(tree, case) + ["--oracle-only"], cwd=TASK_DIR,
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        [sys.executable, str(WORKER), "--tree", str(tree), "--fact-file", str(_fact_file(case)),
+         *_case_arguments(case), "--oracle-cache", str(_oracle_cache(case))],
+        cwd=TASK_DIR, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         timeout=RUN_TIMEOUT_SECONDS, env={**os.environ, **_WORKER_ENV},
     )
     if proc.returncode != 0 or not _oracle_cache(case).is_file():
@@ -266,28 +244,41 @@ def _prepare_oracle(tree: Path, case: dict[str, Any]) -> None:
 
 
 def _run_once(tree: Path, case: dict[str, Any]) -> dict[str, Any]:
-    proc = subprocess.run(
-        _worker_command(tree, case),
-        cwd=TASK_DIR,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        timeout=RUN_TIMEOUT_SECONDS,
-        env={**os.environ, **_WORKER_ENV},
+    """One timed fit of `tree` in a fresh isolate instance, checked against the oracle here."""
+    argv = [sys.executable, "{in}/benchmark.py", "--tree", "{work}", "--fact-file", "{in}/fact.parquet",
+            *_case_arguments(case), "--prediction-out", "{out}/prediction.npy"]
+    run = isolate.run(
+        argv, tree=tree, inputs={"benchmark.py": WORKER, "fact.parquet": _fact_file(case)},
+        outputs=["prediction.npy"], timeout_seconds=RUN_TIMEOUT_SECONDS,
+        env={**_WORKER_ENV, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONUNBUFFERED": "1"},
+        output_bytes=PREDICTION_OUTPUT_BYTES,
     )
-    lines = [line for line in proc.stdout.splitlines() if line.strip().startswith("{")]
-    if proc.returncode == POLICY_EXIT_CODE and lines:
+    if run.timed_out:
+        raise subprocess.TimeoutExpired(argv, RUN_TIMEOUT_SECONDS)
+    lines = [line for line in run.stdout.decode("utf-8", errors="replace").splitlines()
+             if line.strip().startswith("{")]
+    if run.returncode == POLICY_EXIT_CODE and run.limit is None and lines:
         raise PolicyRejection(str(json.loads(lines[-1]).get("policy_violation")))
-    if proc.returncode != 0 or not lines:
+    if not run.ok or not lines:
         raise RuntimeError("training failed")
     result = json.loads(lines[-1])
     if "error" in result:
         raise RuntimeError("training failed")
-    required = {"elapsed_seconds", "rows", "estimators", "rmse_error", "prediction_l1"}
+    required = {"elapsed_seconds", "rows", "estimators", "rmse"}
     if not required.issubset(result):
         raise RuntimeError("benchmark result is incomplete")
     if not all(math.isfinite(float(result[key])) for key in required):
         raise RuntimeError("benchmark returned a non-finite value")
+    try:
+        prediction = np.load(io.BytesIO(run.outputs["prediction.npy"] or b""), allow_pickle=False)
+    except (OSError, ValueError) as error:
+        raise RuntimeError("benchmark predictions are unreadable") from error
+    with np.load(_oracle_cache(case)) as stored:
+        oracle_prediction, oracle_rmse = stored["prediction"], float(stored["rmse"])
+    if prediction.dtype != np.float64 or prediction.shape != oracle_prediction.shape:
+        raise RuntimeError("prediction row count differs from the materialized oracle")
+    result["rmse_error"] = abs(float(result.pop("rmse")) - oracle_rmse)
+    result["prediction_l1"] = float(np.sum(np.abs(np.sort(prediction) - oracle_prediction)))
     update = result.get("residual_update_seconds")
     if update is not None and (
         isinstance(update, bool) or not isinstance(update, (int, float))
@@ -505,10 +496,33 @@ def _score_run(run: dict[str, Any], baseline_seconds: float | None = None) -> tu
     return score, score
 
 
+class _Tree:
+    """A judge-owned tree: a copy of pristine/ with one trusted judge patch applied."""
+
+    def __init__(self, patch: Path):
+        self.scratch = Path(tempfile.mkdtemp(prefix="joinboost-judge-"))
+        self.workdir = self.scratch / "tree"
+        shutil.copytree(PRISTINE, self.workdir)
+        for path in (self.workdir, *self.workdir.rglob("*")):
+            if not path.is_symlink():
+                path.chmod(path.stat().st_mode | 0o200)
+        proc = subprocess.run(["git", "apply", "--whitespace=nowarn", str(patch)],
+                              cwd=self.workdir, capture_output=True, timeout=60,
+                              env={**os.environ, "GIT_CEILING_DIRECTORIES": str(self.scratch)})
+        self.ok = proc.returncode == 0
+
+
 def _cleanup(result: Any) -> None:
-    workdir = getattr(result, "workdir", None)
-    if workdir:
-        shutil.rmtree(Path(workdir), ignore_errors=True)
+    scratch = getattr(result, "scratch", None)
+    if scratch:
+        shutil.rmtree(Path(scratch), ignore_errors=True)
+
+
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """The shared-verifier hook: the public fit and generic tree-growth methods of app.py must
+    stay as they are (a part of an editable file that must not change is out_of_scope)."""
+    ok, _reason = _structural_policy(Path(tree))
+    return None if ok else ("out_of_scope", ["src/joinboost/app.py"])
 
 
 _BASELINE: dict[str, float] = {}
@@ -531,8 +545,8 @@ def _baseline_seconds(suite) -> float:
     key = "final" if os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final" else "dev"
     if key in _BASELINE:
         return _BASELINE[key]
-    applied = apply_submission_patch(str(BASELINE_PATCH), TASK_DIR, CONFIG)
-    if not applied.ok or applied.workdir is None:
+    applied = _Tree(BASELINE_PATCH)
+    if not applied.ok:
         raise RuntimeError("bundled baseline patch could not be prepared")
     try:
         _BASELINE[key] = float(_run_suite(Path(applied.workdir), suite)["elapsed_seconds"])
@@ -541,30 +555,19 @@ def _baseline_seconds(suite) -> float:
     return _BASELINE[key]
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    candidate_result = None
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    candidate_tree = Path(tree)  # the shared verifier's: pristine + the allowed files
     reference_result = None
     reference_score = 0.0
     try:
-        if not _archive_patch(solution_path):
-            return 0.0, 0.0, "submission could not be archived", _empty_metrics()
         suite = _suite()
-        reference_result = apply_submission_patch(str(REFERENCE_PATCH), TASK_DIR, CONFIG)
+        reference_result = _Tree(REFERENCE_PATCH)
         if not reference_result.ok:
             raise ReferenceVerificationError("reference patch could not be prepared")
         ok, reason = _structural_policy(Path(reference_result.workdir))
         if not ok:
             raise ReferenceVerificationError(reason)
 
-        candidate_result = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not candidate_result.ok:
-            return 0.0, 0.0, str(candidate_result.message), _empty_metrics(reference_score, 0.0)
-        ok, reason = _patch_policy(Path(solution_path))
-        if not ok:
-            return 0.0, 0.0, reason, _empty_metrics(reference_score, 0.0)
-        ok, reason = _structural_policy(Path(candidate_result.workdir))
-        if not ok:
-            return 0.0, 0.0, reason, _empty_metrics(reference_score, 0.0)
 
         # Untimed warm-up: one discarded reference process on the first workload
         # absorbs cold-start effects (page cache, lazy library loading) before
@@ -582,12 +585,14 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
             baseline_seconds = _baseline_seconds(suite)
         except Exception as error:
             raise ReferenceVerificationError("bundled baseline failed") from error
-        # A byte-identical reference submission is the same implementation, not a
-        # second noisy timing sample. Reuse its paired run so it scores exactly
-        # what the reference scores against the baseline, with no spread.
-        identical = Path(solution_path).read_bytes() == REFERENCE_PATCH.read_bytes()
+        # A reference submission (the editable files byte for byte) is the same
+        # implementation, not a second noisy timing sample. Reuse its paired run so it
+        # scores exactly what the reference scores against the baseline, with no spread.
+        identical = all((candidate_tree / name).read_bytes()
+                        == (Path(reference_result.workdir) / name).read_bytes()
+                        for name in EDITABLE)
         candidate_run, reference_run, schedule = _run_paired(
-            None if identical else Path(candidate_result.workdir),
+            None if identical else candidate_tree,
             Path(reference_result.workdir), suite)
         _require_valid_reference(reference_run)
         reference_score, _ = _score_run(reference_run, baseline_seconds)
@@ -636,7 +641,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
         if candidate_run["rmse_error"] > RMSE_TOLERANCE or candidate_run["prediction_l1_per_row"] > PREDICTION_L1_TOLERANCE_PER_ROW:
             return 0.0, 0.0, "predictions do not match the materialized-join oracle", metrics
         return score, score_aux, "correct ensemble; score reflects paired fixed-workload training time", metrics
-    except ReferenceVerificationError:
+    except (ReferenceVerificationError, isolate.IsolateError):
         # Failed verification, not a candidate score.
         raise
     except PolicyRejection as rejection:
@@ -646,8 +651,6 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
     except Exception:
         return 0.0, 0.0, "evaluation failed", _empty_metrics(reference_score, 0.0)
     finally:
-        if candidate_result is not None:
-            _cleanup(candidate_result)
         if reference_result is not None:
             _cleanup(reference_result)
         global _ORACLE_DIR
@@ -658,7 +661,7 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("usage: evaluator.py SOLUTION_PATCH", file=sys.stderr)
+        print("usage: evaluator.py TREE", file=sys.stderr)
         return 2
     score, unbounded, message, metrics = evaluate(sys.argv[1])
     print(json.dumps({"score": score, "score_unbounded": unbounded, "message": message, "metrics": metrics}, sort_keys=True))

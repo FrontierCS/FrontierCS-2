@@ -1,0 +1,47 @@
+# The definition of evm_state_checkpoints (schema frontier.task/v1). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "evm_state_checkpoints"
+display_name = "EVM State Checkpoints"
+version = "g1-beat-spec-v1-agent5h-r2"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 360000
+eval_timeout_seconds = 3600
+
+[submission]
+max_bytes = 65536
+allowed_paths = ["lib/evmcow/execution_state.hpp"]
+max_changed_files = 1             # the statement says no more than one file
+allow_new_files = false
+# Tokens refused in added lines, case-insensitively (literal strings, escaped as regexes): the
+# allocation entry points (retained bytes are measured through new/delete), macros (the header
+# is compiled into the measuring harness), the harness's own measurement names and hooks
+# (`FRONTIER_` matches the frontier_checkpoint_* hooks). Isolate keeps built programs
+# away from processes, the environment and judge files.
+forbidden_added = ["\\#define", "malloc", "calloc", "realloc", "aligned_alloc", "mmap", "sbrk", "operator\\ new", "operator\\ delete", "Statistics", "checkpoint_bench", "FRONTIER_", "mallctl", "jemalloc"]
+ignore_case = true
+
+[feedback]
+committed_tps = "Geometric mean over the train Spectrum workloads of the candidate's median committed transactions per second."
+checkpoint_create_ns = "Median over train seeds of the candidate's first checkpoint-micro creation time, in nanoseconds per checkpoint."
+checkpoint_restore_ns = "Median over train seeds of the candidate's first checkpoint-micro restoration time, in nanoseconds."
+retained_bytes_per_checkpoint = "Maximum over train seeds of the candidate's first checkpoint-micro retained bytes per live checkpoint."
+
+[paper]                           # for readers; the platform never reads it
+title = "Spectrum: Speedy and Strictly-Deterministic Smart Contract Transactions for Blockchain Ledgers"
+venue = "PVLDB 2024"
+url = "https://www.vldb.org/pvldb/vol17/p2541-zhang.pdf"
+summary = "Implement fast EVM execution-state checkpoint and restore in the Spectrum deterministic concurrent transaction engine."

@@ -1,0 +1,13 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "frontiersmith2",
+      "run_id": "r_top01_uarter_pir"
+    },
+    "isolation": "datasets carry only the experiment plan; database, coin and query seeds are drawn privately inside every evaluation and are never stored or published",
+    "paper": {}
+  }
+}

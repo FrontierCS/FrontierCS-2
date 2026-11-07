@@ -7,14 +7,29 @@ The reference is a fixed source run by a deterministic simulator, so its per-tra
 counters are read from reference_counts.json instead of being simulated again on
 every call. That table is accepted only when it matches the reference restored for
 this evaluation (see reference_identity); anything else is an evaluator error.
-RUNLTS_REFERENCE_AUDIT=live simulates the reference as before and requires every
+RUNLTS_REFERENCE_AUDIT=live simulates the reference live and requires every
 counter to equal the table. A submission that restores the reference exactly is
 itself a live reference run and is checked against the table the same way.
 
-Trace simulations run in separate processes, up to trace_workers() at a time
+The build and every trace simulation run in a fresh shared isolate instance (isolate: a copy
+of the predictor tree, read access to the one trace it simulates, no judge files, no inherited
+environment, no network); simulations run up to trace_workers() at a time
 (run_ordered). Every counter is an integer produced by the deterministic simulator
 from one trace, so the degree of concurrency cannot change a result; results and
 failures are taken in manifest order, exactly as the sequential loop produced them.
+
+The shared verifier applies the patch (my_cond_branch_predictor.cc and
+solver_extensions/) and calls check_tree(), which runs the source audit: a scope or
+source-policy violation is a shared rejection (out_of_scope / content_policy). evaluate(tree)
+then audits storage, builds and simulates; a candidate failure there is a scored zero with a
+fixed sentence (SENTENCES).
+
+Scoring (score_of/grade). B and W are the equal-weight means over the suite's traces (24 train,
+105 final) of the simulator's four-decimal printed BrMisPKI and CycWpPKI;
+raw_score = score_unbounded = 100 / sqrt((1 + B) * (1 + W / 100)). Metrics per trace:
+br_mis_pki and cyc_wp_pki (lower better; pass when strictly lower than the pinned reference's,
+compared as exact integer cross-products) and logical_storage_bits (passes when <= 1,572,864).
+beats_reference = every metric passes on every trace of the suite.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -37,16 +52,22 @@ import time
 import yaml
 import contextlib
 import io
-import candidate_failure
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import ContextVar
-from submission_patch import apply_submission_patch
+from types import SimpleNamespace
 from source_policy import audit, InvalidSource, CAP_BITS, FIXED_BITS
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 ROOT=Path(__file__).resolve().parent
+# The starter repo/, copied by the Verifier Dockerfile. Its README.md (the statement) is not
+# part of the predictor tree the audit and the pinned reference identity cover.
+PRISTINE=ROOT/'pristine'
+NOT_PREDICTOR=('README.md',)
 CODE_PATH=Path('.')
 CONFIG=yaml.safe_load((ROOT/'config.yaml').read_text())
 METRICS=('br_mis_pki','cyc_wp_pki','logical_storage_bits')
+# The train metrics task.toml [feedback] shows the Agent (train_* are built from a prefix below).
+FEEDBACK=('train_br_mis_pki_mean','train_cyc_wp_pki_mean','all_metrics_progress','category_means','candidate_failure')
 # The two reference comparisons. logical_storage_bits is one fixed cap applied to
 # the whole submission, so it is true on every workload of any graded result.
 PREDICTION_METRICS=('br_mis_pki','cyc_wp_pki')
@@ -72,6 +93,9 @@ TRACE_WORKERS_ENV='RUNLTS_TRACE_WORKERS'
 CANCEL_POLL_SECONDS=0.2
 BUILD_ARGV=['make','-j1','OPT=-O3 -D_GLIBCXX_ASSERTIONS']
 TRACE_ARGV=['./cbp']
+SIMULATOR='cbp'
+# Output cap of a sandboxed build or simulation (stdout, stderr and the kept binary each).
+OUTPUT_BYTES=16*1024*1024
 # Fixed part of the child environment; HOME and TMPDIR are the build tree.
 COMMAND_ENV={'PATH':'/usr/bin:/bin','LANG':'C','LC_ALL':'C','MAKEFLAGS':'-j1'}
 PINNED_REFERENCE=ROOT/'reference_counts.json'
@@ -185,7 +209,7 @@ def timed_trace(role,tree,row,deadline):
 
 class EvaluationError(RuntimeError):pass
 class CandidateError(RuntimeError):
-    """`category`, when set, is a key of candidate_failure.CATEGORIES."""
+    """`category`, when set, is a key of SENTENCES or of SHARED_CATEGORY."""
     def __init__(self,message,category=None):
         super().__init__(message);self.category=category
 
@@ -196,9 +220,6 @@ SOURCE_POLICY_CATEGORIES={
     'retained predictor scaffolding changed':'outside_editable_regions',
     'non-register predictor code changed':'outside_editable_regions',
     'unexpected source after retained implementation':'outside_editable_regions',
-    'retained harness changed':'outside_editable_regions',
-    'source symlinks are not allowed':'outside_editable_regions',
-    'unexpected file in predictor tree':'outside_editable_regions',
     'source splicing, raw strings and alternative directives are unsupported':'lexical_form',
     'line comment crosses an editable boundary':'lexical_form',
     'block comment crosses an editable boundary':'lexical_form',
@@ -231,6 +252,61 @@ SOURCE_POLICY_CATEGORIES={
     'full logical predictor storage exceeds 192 KiB':'storage_cap',
 }
 
+# Source-audit rejections, reported by check_tree with the shared edit-scope categories.
+SHARED_CATEGORY={'outside_editable_regions':'out_of_scope','lexical_form':'content_policy',
+    'preprocessor_directive':'content_policy','forbidden_identifier':'content_policy',
+    'forbidden_construct':'content_policy','protected_state_access':'content_policy',
+    'state_declaration':'content_policy'}
+# Candidate failures found while auditing storage, building or simulating: a scored zero whose
+# train message is this fixed sentence (no measurement, path, symbol or trace identity).
+SENTENCES={
+    "semantic_audit": "the patched source has C++ errors in the audit's C++17 parse",
+    "storage_cap": "declared logical predictor storage exceeds the cap of 1,572,864 bits (192 KiB)",
+    "source_audit_incomplete": "the source audit of the patched predictor exceeded its time or memory limit",
+    "build_failed": "the patched predictor did not compile and link with the evaluator's build command, or the build exceeded its time limit",
+    "simulator_run_failed": "a simulator run of the patched predictor exited with an error, was stopped by a resource limit or exceeded its time limit",
+    "output_format": "the simulator output of a run did not contain exactly one well-formed copy of each original measurement section with consistent counters and rates",
+    "instruction_count_mismatch": "the instruction counts reported by a run of the patched predictor differ from the expected counts of that trace, which are those of the reference run",
+}
+
+# Solver-visible train metric candidate_failure: 0 for a measured result, else the stage.
+FAILURE_CODES={**{name:index+1 for index,name in enumerate(SENTENCES)},None:len(SENTENCES)+1}
+
+def predictor_copy(source,scratch,name):
+    """A writable copy of a starter-shaped tree without the statement."""
+    tree=Path(scratch)/name
+    shutil.copytree(source,tree,symlinks=True,ignore=lambda d,n:[x for x in n if Path(d)==Path(source) and x in NOT_PREDICTOR])
+    for path in (tree,*tree.rglob('*')):
+        if not path.is_symlink():path.chmod(path.stat().st_mode|0o200)
+    return tree
+
+def reference_tree(scratch):
+    """The pristine predictor with judge/reference.patch applied (trusted, judge-owned)."""
+    tree=predictor_copy(PRISTINE,scratch,'reference')
+    subprocess.run(['git','apply','--whitespace=nowarn',str(ROOT/'reference.patch')],cwd=tree,check=True,
+                   capture_output=True,timeout=60,env={**COMMAND_ENV,'GIT_CEILING_DIRECTORIES':str(Path(scratch).resolve())})
+    return tree
+
+def source_audit(tree,deadline):
+    """The audit's JSON report on a predictor tree; CandidateError if it cannot complete."""
+    try:
+        storage=json.loads(run_command([sys.executable,str(ROOT/'source_policy.py'),str(tree)],tree,60,deadline))
+    except CandidateError:raise CandidateError('source audit failed or exceeded its resource limit','source_audit_incomplete') from None
+    if storage.get('infrastructure_error'):raise EvaluationError('source audit infrastructure unavailable')
+    return storage
+
+def check_tree(tree,pristine,changes):
+    """Shared-verifier hook: the source audit's scope and source-policy verdicts."""
+    with tempfile.TemporaryDirectory(prefix='runlts-audit-') as scratch:
+        work=predictor_copy(Path(tree),scratch,'candidate')
+        try:storage=source_audit(work,time.monotonic()+TOTAL_TIMEOUT)
+        except CandidateError:return None   # evaluate() reports the incomplete audit
+        if storage.get('valid'):return None
+        reason=storage.get('reason')
+        category=SHARED_CATEGORY.get(SOURCE_POLICY_CATEGORIES.get(reason) if isinstance(reason,str) else None)
+        if category is None:return None      # semantic_audit / storage_cap: evaluate() zeroes it
+        return category,sorted(c.path for c in changes if c.status!='D') or ['my_cond_branch_predictor.cc']
+
 def in_stage(error,category):
     """Name the failing candidate stage unless the raise site already did."""
     if error.category is None:error.category=category
@@ -240,7 +316,7 @@ def candidate_category(error):
     """The fixed category of a candidate-side failure, or None if it has none."""
     if isinstance(error,InvalidSource):category=SOURCE_POLICY_CATEGORIES.get(str(error))
     else:category=getattr(error,'category',None)
-    return category if category in candidate_failure.CATEGORIES else None
+    return category if category in SENTENCES or category in SHARED_CATEGORY else None
 
 class CommandFailure(CandidateError):
     """Keep bounded runtime evidence private; candidate feedback stays generic."""
@@ -491,6 +567,7 @@ def grade(workloads,candidate,reference,final,*,logical_storage_bits):
             'br_mis_pki_mean':float(sum(Fraction(1000*m.misp_br,m.instr) for m in rows)/len(rows)),
             'cyc_wp_pki_mean':float(sum(Fraction(1000*m.cyc_wp,m.instr) for m in rows)/len(rows))}
             for category,rows in sorted(groups.items())}
+    metrics['candidate_failure']=0
     prefix='final' if final else 'train'
     metrics[prefix+'_br_mis_pki_mean']=float(b);metrics[prefix+'_cyc_wp_pki_mean']=float(w)
     metrics['reference_'+prefix+'_br_mis_pki_mean']=float(rb);metrics['reference_'+prefix+'_cyc_wp_pki_mean']=float(rw)
@@ -502,9 +579,13 @@ def limited_argv(argv):
     return ['/usr/bin/prlimit',f'--as={MEMORY_BYTES}:{MEMORY_BYTES}',
             '--fsize=16777216:16777216','--core=0:0','--',*argv]
 
-def run_command(argv,cwd,timeout,deadline):
+def remaining_seconds(timeout,deadline):
     remaining=min(timeout,deadline-time.monotonic())
     if remaining<=0:raise CandidateError('evaluation timeout')
+    return remaining
+
+def run_command(argv,cwd,timeout,deadline):
+    remaining=remaining_seconds(timeout,deadline)
     # Do not forward model/provider environment to compiler or candidate binary.
     env={**COMMAND_ENV,'HOME':str(cwd),'TMPDIR':str(cwd)}
     cancel=getattr(_JOB,'cancel',None)
@@ -536,30 +617,47 @@ def run_command(argv,cwd,timeout,deadline):
                 returncode=proc.returncode,output_tail=tail)
         out.seek(0);return out.read(16*1024*1024).decode('utf-8',errors='replace')
 
+def run_sandboxed(argv,cwd,timeout,deadline,read_paths=(),keep=None):
+    """run_command for submitted code (the build and the simulator): the same limits, environment
+    and folded output, in a fresh isolate instance whose working directory is a copy of `cwd`, with
+    `read_paths` readable in place. With `keep`, the file of that name the command leaves in its
+    working directory is copied back to cwd/keep."""
+    cancel=getattr(_JOB,'cancel',None)
+    if cancel is not None and cancel.is_set():raise Cancelled()
+    remaining=remaining_seconds(timeout,deadline)
+    command=limited_argv(argv)
+    if keep is not None:command=['sh','-c','"$@" && cp '+keep+' "$0"','{out}/'+keep,*command]
+    started=time.monotonic()
+    result=isolate.run(command,tree=cwd,timeout_seconds=remaining,read_paths=read_paths,
+                            outputs=[keep] if keep is not None else [],env=dict(COMMAND_ENV),
+                            path=COMMAND_ENV['PATH'],output_bytes=OUTPUT_BYTES)
+    text=(result.stdout+result.stderr).decode('utf-8',errors='replace')
+    if not result.ok or (keep is not None and not result.outputs.get(keep)):
+        raise CommandFailure('timeout' if result.timed_out else 'process_exit',
+            elapsed_seconds=time.monotonic()-started,timeout_seconds=remaining,
+            returncode=result.returncode,output_tail=text[-4096:])
+    if keep is not None:
+        (Path(cwd)/keep).write_bytes(result.outputs[keep]);(Path(cwd)/keep).chmod(0o755)
+    return text
+
 def build(tree,deadline):
     # The retained Makefiles compile lib/cbp.cc and link cbp. Bounds assertions
     # add no prediction inputs, simulator options, or logical state.
-    run_command(list(BUILD_ARGV),tree,BUILD_TIMEOUT,deadline)
+    run_sandboxed(list(BUILD_ARGV),tree,BUILD_TIMEOUT,deadline,keep=SIMULATOR)
 
 def run_trace(tree,row,deadline):
     # Fresh process through the original binary, Makefiles and default simulator.
     if not (tree/'lib/cbp.cc').is_file():raise CandidateError('retained simulator entrypoint missing','outside_editable_regions')
-    text=run_command([*TRACE_ARGV,str(DATA/row['path'])],tree,TRACE_TIMEOUT,deadline)
+    trace=os.path.realpath(DATA/row['path'])
+    text=run_sandboxed([*TRACE_ARGV,trace],tree,TRACE_TIMEOUT,deadline,read_paths=[trace])
     return parse_output(text,row)
 
-def _evaluate(solution_path):
+def _evaluate(tree):
     deadline=time.monotonic()+TOTAL_TIMEOUT
-    # All temporary trees use task-local disk, never the author's RAM-backed /tmp.
-    scratch=ROOT/'scratch';scratch.mkdir(exist_ok=True)
-    tempfile.tempdir=str(scratch)
-    patched=None;ref=None
+    scratch=Path(tempfile.mkdtemp(prefix='runlts-evaluate-'))
     try:
-        patched=apply_submission_patch(solution_path,ROOT,CONFIG)
-        if not patched.ok:raise CandidateError('invalid patch or patch outside permitted surface','patch_policy')
-        try:
-            storage=json.loads(run_command([sys.executable,str(ROOT/'source_policy.py'),str(patched.workdir)],patched.workdir,60,deadline))
-        except CandidateError:raise CandidateError('source audit failed or exceeded its resource limit','source_audit_incomplete') from None
-        if storage.get('infrastructure_error'):raise EvaluationError('source audit infrastructure unavailable')
+        patched=SimpleNamespace(workdir=predictor_copy(Path(tree),scratch,'candidate'))
+        storage=source_audit(patched.workdir,deadline)
         if not storage.get('valid'):
             reason=storage.get('reason','invalid register implementation')
             raise CandidateError(reason,SOURCE_POLICY_CATEGORIES.get(reason) if isinstance(reason,str) else None)
@@ -568,8 +666,8 @@ def _evaluate(solution_path):
         workers=trace_workers()
         suite=manifest(final)
         # The reference is always restored: the table is only valid for this source.
-        ref=apply_submission_patch(ROOT/'reference.patch',ROOT,CONFIG)
-        if not ref.ok:raise EvaluationError('private reference restoration failed')
+        try:ref=SimpleNamespace(workdir=reference_tree(scratch))
+        except Exception as error:raise EvaluationError('private reference restoration failed') from error
         pinned=pinned_reference(suite,ref.workdir)
         # Source trees are compared before either build writes into them.
         candidate_is_reference=tree_sha256(patched.workdir)==tree_sha256(ref.workdir)
@@ -617,15 +715,15 @@ def _evaluate(solution_path):
         result[3]['trace_simulation']={'workers':workers,'configured_workers':TRACE_WORKERS,'simulations':len(jobs)}
         return result
     finally:
-        for result in (patched,ref):
-            if result and result.cleanup_root:shutil.rmtree(result.cleanup_root,ignore_errors=True)
+        shutil.rmtree(scratch,ignore_errors=True)
 
-def evaluate(solution_path:str)->tuple[float,float,str,dict]:
+def evaluate(tree:str)->tuple[float,float,str,dict]:
+    """`tree` is the pristine starter with the submission's allowed files overlaid."""
     telemetry={'started':time.monotonic(),'submission_role':os.environ.get('FRONTIER_SUBMISSION_ROLE','train'),
                'traces':[]}
     token=_RUNTIME_TELEMETRY.set(telemetry)
     try:
-        result=_evaluate_with_failure_mapping(solution_path)
+        result=_evaluate_with_failure_mapping(tree)
         result[3]['private_runtime_telemetry']=runtime_snapshot(telemetry)
         return result
     except Exception as error:
@@ -635,16 +733,23 @@ def evaluate(solution_path:str)->tuple[float,float,str,dict]:
         raise
     finally:_RUNTIME_TELEMETRY.reset(token)
 
-def _evaluate_with_failure_mapping(solution_path):
-    try:return _evaluate(solution_path)
+def failure_metrics(category):
+    """Train metrics of a scored zero: every trace fails every comparison, and the
+    solver-visible candidate_failure code names the failing stage (FAILURE_CODES)."""
+    rows=[{'workload':f't{index:03d}','metrics':{name:False for name in METRICS}} for index in range(24)]
+    return {'beats_reference':0,'beat_spec_workload_passes':rows,
+            'candidate_failure':FAILURE_CODES.get(category,FAILURE_CODES[None])}
+
+def _evaluate_with_failure_mapping(tree):
+    try:return _evaluate(tree)
     except (CandidateError,InvalidSource) as e:
-        # Final keeps the private scored zero. A development rejection returns only
-        # a fixed category and sentence (candidate_failure.py), which the verifier
-        # re-derives from the same table before any solver sees it.
+        # A scored zero with the private reason as its message. Train also returns the
+        # failing stage's code (scope and source-policy rejections never get here:
+        # check_tree reports them with the shared categories).
         category=candidate_category(e)
-        if os.environ.get('FRONTIER_SUBMISSION_ROLE')=='final' or category is None:return 0.0,0.0,str(e),{}
-        visible=candidate_failure.diagnostic(category)
-        return 0.0,0.0,visible['message'],{'candidate_diagnostic':visible}
+        if os.environ.get('FRONTIER_SUBMISSION_ROLE')=='final':return 0.0,0.0,str(e),{}
+        message=f'Rejected: {SENTENCES[category]}.' if category in SENTENCES else str(e)
+        return 0.0,0.0,message,failure_metrics(category)
     except EvaluationError:
         # Native adapter writes status=failed and bounded private exception evidence.
         # Missing assets/reference execution must never become a passed score-zero.
@@ -659,6 +764,6 @@ def prepare():
     except EvaluationError:return {'ready':False,'reason':'full105 data provisioning incomplete'}
 
 if __name__=='__main__':
-    result=evaluate(sys.argv[1] if len(sys.argv)==2 else '')
+    result=evaluate(sys.argv[1] if len(sys.argv)==2 else str(PRISTINE))
     print(json.dumps({'score':result[0],'score_unbounded':result[1],'message':result[2],'metrics':result[3]},allow_nan=False))
     sys.exit(2 if result[3].get('evaluator_error') else 0)

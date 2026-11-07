@@ -1,0 +1,26 @@
+{
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform.",
+  "metadata": {
+    "generator": {
+      "candidate_id": "cand_000",
+      "commit": "64c28b11bc4b4a9cfb00d6e507e22dce8af8559b",
+      "pipeline": "frontiersmith2",
+      "run_id": "cw60-implementation001"
+    },
+    "isolation": "selected dataset bodies are supplied privately after image construction and granted only to the selected verification mode",
+    "paper": {
+      "authors": [
+        "Abdullah Al Raqibul Islam",
+        "Helen Xu",
+        "Dong Dai",
+        "Aydin Buluc"
+      ],
+      "doi": null,
+      "paper_id": "clusterwise_spgemm_cw_260909a",
+      "pdf_url": "https://arxiv.org/pdf/2507.21253v1",
+      "title": "Improving SpGEMM Performance Through Matrix Reordering and Cluster-wise Computation",
+      "venue": "arXiv",
+      "year": 2025
+    }
+  }
+}

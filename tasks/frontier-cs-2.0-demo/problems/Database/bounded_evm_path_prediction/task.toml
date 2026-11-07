@@ -1,0 +1,43 @@
+# The definition of bounded_evm_path_prediction (schema frontier.task/v1). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "bounded_evm_path_prediction"
+display_name = "Bounded EVM Path Prediction"
+version = "g1-beat-spec-v2-agent5h-r2-beat-spec-v3"
+
+[agent]
+cpu_millis = 8000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 8589934592         # 8 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 50
+max_train_wall_seconds = 90000
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 131072
+allowed_paths = ["core/vm/predictor.go"]
+max_changed_files = 1             # the statement says exactly one changed file
+allow_new_files = false
+max_file_bytes = 100000           # the statement's cap on the edited source
+# The rest of the source policy (UTF-8, package vm, import allowlist) is the judge's
+# check_tree hook.
+
+[feedback]
+raw_quality = "Candidate quality Q = 100 * (0.8 * mean branch accuracy + 0.2 * mean transaction-path ratio) on the scored epoch."
+branch_accuracy = "Candidate mean branch-direction accuracy over the scored records, in [0, 1]."
+transaction_path_accuracy = "Candidate mean transaction-path satisfaction ratio over the scored records; normal-category ratios may exceed 1."
+observations = "Number of scored report records."
+
+[paper]                           # for readers; the platform never reads it
+title = "Seer: Accelerating Blockchain Transaction Execution by Fine-Grained Branch Prediction"
+venue = "PVLDB 2024"
+url = "https://www.vldb.org/pvldb/vol18/p822-xiao.pdf"
+summary = "Speed up SeerEVM's fine-grained branch prediction for blockchain transaction execution."

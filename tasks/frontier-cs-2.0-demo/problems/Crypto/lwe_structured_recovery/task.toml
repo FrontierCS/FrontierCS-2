@@ -1,0 +1,51 @@
+# The definition of lwe_structured_recovery (schema frontier.task/v1). Only what differs
+# between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of the
+# rest, and the category is this task's folder.
+#
+# The answer is a data file: the witness ledger repo/solution.json, submitted like any other
+# task as a patch of the starter repo.
+schema = "frontier.task/v1"
+id = "lwe_structured_recovery"
+display_name = "Structured-LWE Public Witness Recovery"
+version = "native-dual-score.7-patch-submission"
+
+[agent]
+cpu_millis = 8000
+memory_bytes = 34359738368        # 32 GiB
+workspace_bytes = 34359738368     # 32 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 2147483648         # 2 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 12000
+eval_timeout_seconds = 120
+
+[submission]
+max_bytes = 4194304
+allowed_paths = ["solution.json"]
+allow_new_files = false
+allow_empty = true                # an empty patch submits the empty starter ledger, as before
+max_changed_files = 1
+max_file_bytes = 2000000          # the ledger's documented cap
+
+[paper]                           # for readers; the platform never reads it
+title = "A Systematic Study of Sparse LWE"
+venue = "CRYPTO 2024"
+url = "https://eprint.iacr.org/2024/1589"
+summary = "Recover valid secret vectors for as many public structured-LWE instances as possible."
+
+# What a train result returns besides score_unbounded and beat_spec_progress. Every value is
+# computed from the candidate ledger and the public catalog alone; none reveals the reference.
+[feedback]
+instance_count = "Number of instances in the public catalog."
+solved_count = "Distinct catalog instances whose unique admissible ledger record passes every validity predicate."
+submitted_count = "Ledger records read, including records rejected as malformed."
+invalid_count = "Rejected record occurrences: malformed, duplicated, unknown or failing a predicate."
+duplicate_count = "Distinct syntactically valid instance IDs that occur more than once in the ledger."
+conflict_count = "Distinct instance IDs that carry more than one distinct syntactically valid vector."
+unknown_count = "Distinct syntactically valid instance IDs that are not in the public catalog."
+rejection_code_counts = "Number of rejected record occurrences per stable rejection code."

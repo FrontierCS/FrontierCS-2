@@ -1,0 +1,45 @@
+# The definition of persistent_treap_update_engine (schema frontier.task/v1). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "persistent_treap_update_engine"
+display_name = "Persistent Treap Update Engine"
+version = "native-standardization-1-beat-spec-v2-task-toml"
+
+[agent]
+cpu_millis = 8000
+memory_bytes = 17179869184        # 16 GiB
+workspace_bytes = 8589934592      # 8 GiB
+
+[verifier]
+cpu_millis = 8000
+memory_bytes = 17179869184        # 16 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 180000
+eval_timeout_seconds = 1800
+
+[submission]
+max_bytes = 262144
+allowed_paths = [
+    "lib/treap/scheduler.hpp",
+    "lib/treap/search_insert.hpp",
+    "lib/treap/search_delete.hpp",
+]
+max_changed_files = 3             # unchanged by the migration
+allow_new_files = false           # the statement: new or deleted files are rejected
+# The statement's timing markers, refused anywhere in an edited header (the benchmark times
+# itself in-process; the starter and the reference contain none of them). The environment, file
+# and process-identity markers went with isolate: builds and runs cannot reach judge
+# files, the judge's environment or other runs.
+forbidden_content = [
+    'clock_gettime\(', 'std::chrono', 'steady_clock', 'high_resolution_clock', 'rdtsc', 'rdtscp',
+]
+
+[paper]                           # for readers; the platform never reads it
+title = "Efficient Concurrent Updates to Persistent Randomized Binary Search Trees"
+venue = "PVLDB 2025"
+url = "https://www.vldb.org/pvldb/vol18/p1481-wang.pdf"
+summary = "Make concurrent transactional updates to Contreap, a persistent treap index, faster."

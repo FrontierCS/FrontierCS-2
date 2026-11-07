@@ -1,4 +1,22 @@
-"""Paired whole-matrix evaluation of sample/ReorderedFlengthClusterSpGEMM.cpp."""
+"""Judge of clusterwise_spgemm (fixed-length clustered SpGEMM) for the shared verifier.
+
+Score: G = geometric mean over the suite's 8 workloads of reference / candidate median time
+(7 interleaved fresh-process pairs per workload); raw_score = score_unbounded =
+100 G / (1 + G) (computed overflow-safe, below 100; 50 at parity). Train runs the 8 development
+matrices, final 8 matrices of disjoint parents. In the candidate phase a build, link-guard,
+correctness, wall/CPU/memory or workspace failure scores 0 with every workload failing; the
+overall deadline, reference failures (including its 5 % MAD / odd-even drift noise gates) and
+judge faults raise.
+
+Beat-spec metrics (beat_spec_workload_passes, one row per workload):
+- execution_time_ms, lower is better: passes when candidate median < 0.85 x reference median.
+- throughput_mflops, higher is better: passes when flop / candidate > (flop / reference) / 0.85.
+beats_reference = 1 iff every workload passes both.
+
+The shared verifier has already applied the patch (edit_scope, task.toml [submission]);
+`evaluate(tree)` gets the pristine starter with only the allowed files overlaid. The judge builds
+its reference tree itself, inside its scratch and deadline.
+"""
 import hashlib
 import json
 import math
@@ -6,6 +24,7 @@ import os
 from pathlib import Path
 import shutil
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
@@ -13,12 +32,39 @@ import traceback
 
 from product_oracle import Expected
 from dataset_loader import install
-from runtime_context import CONFIG, LIMITS, ROOT, Context, require_disk_capture, verify_source_tree
-from submission_patch import apply_submission_patch
-from trusted_runner import build, build_oracle, preprocess, remaining, sample
+from runtime_context import CONFIG, LIMITS, ROOT, Context, ResourceCeiling, require_disk_capture
+from trusted_runner import (TrustedAggregateDeadline, build, build_oracle, preprocess, remaining,
+                            sample)
 
 
 BEAT_METRICS = ("execution_time_ms", "throughput_mflops")
+# The starter tree (repo/), copied here by the Verifier image.
+PRISTINE = ROOT / "pristine"
+EDITABLE = tuple(CONFIG["edit_scope"]["allowed_paths"])
+
+
+def _reference_tree(scratch, deadline):
+    """A copy of the pristine starter with reference.patch applied (trusted, judge-owned), in the
+    same layout as the judged tree: scratch/reference/tree."""
+    tree = Path(scratch) / "reference" / "tree"
+    shutil.copytree(PRISTINE, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = dict(os.environ, GIT_CEILING_DIRECTORIES=str(Path(scratch).resolve()))
+    timeout = max(1.0, min(60.0, remaining(deadline, "patch application", reserve=5)))
+    subprocess.run(["git", "apply", "--whitespace=nowarn", str(ROOT / "reference.patch")],
+                   cwd=tree, check=True, capture_output=True, timeout=timeout, env=env)
+    return tree
+
+
+def _editable_files(tree):
+    found = {}
+    for path in sorted(Path(tree).rglob("*")):
+        name = path.relative_to(tree).as_posix()
+        if path.is_file() and any(name == p or (p.endswith("/") and name.startswith(p)) for p in EDITABLE):
+            found[name] = hashlib.sha256(path.read_bytes()).digest()
+    return found
 
 
 def _failure_workloads(final):
@@ -56,11 +102,6 @@ def _failure_metrics(final, *, reason, completed_workloads, runtime):
         "margin": -50.0,
         "private_gate_diagnostic": diagnostic,
     }
-
-
-def _is_resource_failure(error):
-    """Keep evaluator/container OOMs as platform failures, never score zero."""
-    return isinstance(error, MemoryError) or getattr(error, "process_returncode", None) in (-9, 137)
 
 
 def sha(path):
@@ -115,10 +156,9 @@ def _workloads(final):
     return rows
 
 
-def evaluate(solution_path):
+def evaluate(tree):
     start = time.monotonic()
     deadline = start + LIMITS.evaluator_seconds
-    roots = []
     timings = []
     context = None
     phase = "setup"
@@ -129,24 +169,30 @@ def evaluate(solution_path):
         members = json.loads((ROOT / "dataset-members.json").read_text())[mode]
         install(ROOT, mode, CONFIG, members, lambda: remaining(deadline, "dataset extraction", reserve=5))
         workloads = _workloads(final)
-        reference_replay = sha(solution_path) == sha(ROOT / "reference.patch")
-        if reference_replay: deadline = min(deadline, start + 5400)
         with tempfile.TemporaryDirectory(prefix="cw60-", dir=ROOT.parent) as directory:
             scratch = Path(directory)
             with tempfile.TemporaryFile(dir=scratch) as probe:
                 require_disk_capture(probe)
-            for label, patch in (("candidate", solution_path), ("reference", ROOT / "reference.patch")):
-                phase = label
-                remaining(deadline, "patch application", reserve=5)
-                result = apply_submission_patch(patch, ROOT, CONFIG, scratch_parent=scratch, deadline=deadline-5)
-                if not result.ok: raise ValueError("invalid submission or reference patch")
-                roots.append(Path(result.workdir).parent)
-                verify_source_tree(Path(result.workdir), ROOT / "harbor/app")
-            build_deadline = min(deadline, time.monotonic() + LIMITS.build_seconds)
+            phase = "reference"
+            reference = _reference_tree(scratch, deadline)
+            # The exact reference (its editable files byte-identical to the reference's) is the
+            # operator's self-comparison: a shorter deadline and a ratio gate.
+            reference_replay = _editable_files(tree) == _editable_files(reference)
+            if reference_replay: deadline = min(deadline, start + 5400)
+            trees = {"candidate": Path(tree), "reference": reference}
             binaries = {}
-            for label, root in zip(("candidate", "reference"), roots):
+            for label, judged in trees.items():
                 phase = label
-                binaries[label] = build(root/"tree", context, build_deadline)
+                # Each build has its own compilation budget, bounded by the overall deadline.
+                build_deadline = min(deadline, time.monotonic() + LIMITS.build_seconds)
+                try:
+                    binaries[label] = build(judged, context, build_deadline)
+                except TrustedAggregateDeadline as error:
+                    if label != "candidate" or time.monotonic() >= deadline - 5:
+                        raise
+                    raise ValueError(f"compilation exceeded its {LIMITS.build_seconds}-second "
+                                     "budget") from error
+            build_deadline = min(deadline, time.monotonic() + LIMITS.build_seconds)
             phase = "oracle"
             oracle = build_oracle(scratch, context, build_deadline)
             passes = []
@@ -207,12 +253,12 @@ def evaluate(solution_path):
                 "workload_id": locals().get("row", {}).get("id"),
                 "native": error.native_diagnostic,
             }), file=sys.stderr, flush=True)
-        # A container/runtime memory kill is an execution failure, not a
-        # scientifically measured candidate result.  Re-raise it so the
-        # platform retains the OOM/backoff classification and does not turn it
-        # into a misleading scored-zero verdict.
-        if (phase != "candidate" or not isinstance(error, (ValueError, TimeoutError))
-                or _is_resource_failure(error)):
+        # Candidate-caused failures are scored zeros (owner rule): a gate, a 180 s wall timeout,
+        # a killed native process (CPU-time ceiling or out-of-memory kill), compilation past its
+        # budget, and a measured memory or workspace ceiling. The overall deadline, the
+        # reference and the judge's own faults stay evaluation failures.
+        if phase != "candidate" or isinstance(error, MemoryError) or not isinstance(
+                error, (ValueError, TimeoutError, ResourceCeiling)):
             raise
         diagnostic = json.dumps({"traceback": traceback.format_exc(limit=8),
                                  "completed_workloads": len(timings),
@@ -229,8 +275,6 @@ def evaluate(solution_path):
                 runtime=context.receipt if context else None,
             ),
         )
-    finally:
-        for root in roots: shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":

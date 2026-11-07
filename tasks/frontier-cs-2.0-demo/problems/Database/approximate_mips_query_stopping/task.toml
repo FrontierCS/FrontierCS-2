@@ -1,0 +1,44 @@
+# The definition of approximate_mips_query_stopping (schema frontier.task/v1). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+schema = "frontier.task/v1"
+id = "approximate_mips_query_stopping"
+display_name = "Approximate-MIPS Query Stopping"
+version = "g1-transport64mib-shared-verifier"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 4294967296         # 4 GiB
+workspace_bytes = 4294967296      # 4 GiB
+
+[verifier]
+cpu_millis = 4000
+memory_bytes = 4294967296         # 4 GiB
+max_evidence_bytes = 4194304       # 4 MiB, as the old policy
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 100
+max_train_wall_seconds = 90000
+eval_timeout_seconds = 900
+
+[submission]
+max_bytes = 65536
+allowed_paths = ["src/alg.cpp"]
+max_changed_files = 1             # unchanged by the migration; the statement states it
+# The statement's source gate: the whole of src/alg.cpp, case-insensitively, must not contain
+# any of these literal strings (judge-only; the Agent reads the list in the statement).
+forbidden_content = ['fargo_metric']
+ignore_case = true
+
+[feedback]
+mean_recall = "Arithmetic mean over the train workloads of the candidate's recall at 50."
+mean_kratio = "Arithmetic mean over the train workloads of the candidate's last-result inner-product ratio."
+mean_time_ms = "Arithmetic mean over the train workloads of the candidate's mean query time, in milliseconds."
+mean_candidates = "Arithmetic mean over the train workloads of the candidate's distinct verified candidates per query."
+
+[paper]                           # for readers; the platform never reads it
+title = "FARGO: Fast Maximum Inner Product Search via Global Multi-Probing"
+venue = "PVLDB 2023"
+url = "https://www.vldb.org/pvldb/vol16/p1100-zheng.pdf"
+summary = "Design a query-time early-stopping rule for FARGO approximate maximum-inner-product search."
