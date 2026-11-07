@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
-# Verifier GPU runner image of fast_kv_compaction: the offline Qwen3-4B runtime, the isolated
-# compaction worker and the judge. The trusted command test sandbox [test_sandboxes.shard]: the
+# Verifier GPU runner image of fast_kv_compaction: the offline Qwen3-4B runtime, the shared
+# isolate launcher and the judge. The trusted command test sandbox [test_sandboxes.shard]: the
 # control image (docker/verifier.Dockerfile) leases one single-H100 runner per shard from this
 # image and runs `evaluator.py --shard-run` there on the applied tree; task code never receives
 # a provider credential. Runtime base and Python closure:
@@ -50,23 +50,16 @@ RUN if getent passwd frontier >/dev/null; then test "$(id -u frontier)" != 0; el
 LABEL org.opencontainers.image.title="FrontierCS2 verifier fast_kv_compaction" \
       dev.frontier.problem-id="fast_kv_compaction"
 
-# The submitted method runs as the harness's own user, but only inside the
-# namespaces built by the launcher (no root, sudo or cgroup needed): fresh user,
-# mount, network, PID and IPC namespaces; tmpfs over the judge, the verifier
-# input/output and every scratch path; then a nested user namespace with no
-# capabilities, so those mounts are locked. It can read the model and the
-# worker code below, but not the judge. WORKER_ROOT is its read-only tree mount.
-COPY gpu/fastkv-worker /opt/frontier/fastkv-worker
-COPY judge/compaction_worker.py /opt/frontier/worker/compaction_worker.py
-COPY judge/wire.py /opt/frontier/worker/wire.py
-COPY judge/gpu_probe.py /opt/frontier/worker/gpu_probe.py
-COPY judge/isolation_probe.py /opt/frontier/worker/isolation_probe.py
-RUN chown root:root /opt/frontier/fastkv-worker \
-    && chmod 0555 /opt/frontier/fastkv-worker \
-    && install -d -m 0755 /opt/frontier/worker-root \
-    && chmod -R a+rX,a-w /opt/frontier/worker
+# The harness runs the submitted method (and its isolation and GPU probes) with the shared
+# isolate launcher (userns backend on the runner): own user, mount, network (loopback), PID and
+# IPC namespaces, no judge files, the GPU. It can read the model and the runtime, not the judge.
+COPY --from=frontier_gpu_tools /opt/frontier/shared-gpu/isolate.py /opt/frontier/isolate.py
+# /opt/frontier on the judge interpreter's default import path (frontier.pth): `import isolate`.
+RUN --mount=type=bind,from=frontier_gpu_tools,source=/opt/frontier/shared-gpu/install_frontier_pth.py,target=/tmp/install_frontier_pth.py \
+    /opt/frontier/python/bin/python3 /tmp/install_frontier_pth.py /opt/frontier \
+    && chmod 0444 /opt/frontier/isolate.py
 
-# The judge (also the mount point the worker's namespace hides) and the starter; each shard runs
+# The judge (hidden from the worker's sandbox) and the starter; each shard runs
 # the uploaded copy of the judge on the uploaded applied tree.
 COPY judge /opt/frontier/task
 COPY .frontier-generated/judge/config.yaml /opt/frontier/task/config.yaml

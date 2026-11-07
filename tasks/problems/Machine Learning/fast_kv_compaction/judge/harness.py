@@ -4,11 +4,13 @@
 Submitted code never runs in this process, which imports only the pristine
 public tree and owns the answering model, the timer, the byte count, the logs
 and the result file. The submitted method runs in compaction_worker.py, started
-through the root launcher /opt/frontier/fastkv-worker in fresh network, PID and
-mount namespaces as the unprivileged fastkv-worker user (no judge access, no
-FRONTIER_* environment, private HOME, tree without data/). Between repetitions
-the root cleaner kills every fastkv-worker process and removes its IPC objects
-and temporary files, so nothing survives from one worker to the next.
+with the shared isolate launcher (`isolate.start`; on the runner its userns
+backend): fresh user, mount, network (loopback only), PID and IPC namespaces, a
+nested user namespace without capabilities, no judge files, no FRONTIER_*
+environment, a private HOME, TMPDIR and /dev/shm, the GPU, and the method tree
+(without data/) read-only. Each repetition is a fresh instance: every process it
+started ends with it and its directories are deleted, so nothing survives from
+one worker to the next.
 
 Per article:
   seconds         median over TIMED_REPEATS fresh workers of the wall time from
@@ -46,6 +48,7 @@ import time
 JUDGE = Path(__file__).resolve().parent
 sys.path.insert(0, str(JUDGE))
 import gate  # noqa: E402
+import isolate  # noqa: E402  (the shared launcher, /opt/frontier on the default import path)
 import wire  # noqa: E402
 
 TIMED_REPEATS = 3
@@ -55,11 +58,13 @@ MAX_NEW_TOKENS = 2048
 QA_BATCH_SIZE = 20
 MAX_LOG_BYTES = 256 * 1024
 SUBSET = JUDGE / "data" / "quality_subset.jsonl"
-LAUNCHER = "/opt/frontier/fastkv-worker"
-# Host memory of the worker and everything it starts (resident set, summed);
-# the watchdog kills the worker's namespace beyond it: a scored failure.
+# The worker's isolate limits. Host memory: the resident set of the worker and everything it
+# starts plus its private /dev/shm; beyond it the instance is killed (a scored failure). Disk:
+# its HOME, TMPDIR and work directory. Output: its stderr.
 WORKER_MEMORY_MAX = 48 << 30
-WATCHDOG_INTERVAL_SECONDS = 0.5
+WORKER_DISK_MAX = 8 << 30
+WORKER_STDERR_MAX = 256 << 20
+WORKER_PATH = "/opt/frontier/python/bin:/usr/bin:/bin"
 PROBE_HOG_LIMIT = 2 << 30
 WORKER_READY_SECONDS = 1800
 WORKER_REQUEST_SECONDS = 1800
@@ -112,227 +117,45 @@ def timing_plan(articles: list[str], repeats: int = TIMED_REPEATS, warmup: bool 
     return [([WARMUP_KEY] if warmup else []) + list(articles) for _ in range(repeats)]
 
 
-def worker_command(gpu: str, tree: Path, mode: str = "run") -> list[str]:
-    """The namespace launcher, run as this (unprivileged) user; see verifier-gpu/fastkv-worker."""
-    return [LAUNCHER, mode, gpu, str(tree)]
+def worker_options(gpu: str, memory_bytes: int = WORKER_MEMORY_MAX) -> dict:
+    """The sandbox of every process that runs submitted (or probe) code: the GPU, a private
+    loopback, unix sockets and /dev/shm (vLLM), the limits above, a fixed environment."""
+    env = {"CUDA_VISIBLE_DEVICES": gpu, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+           "VLLM_WORKER_MULTIPROC_METHOD": "spawn", "PYTHONDONTWRITEBYTECODE": "1"}
+    return {"devices": ["nvidia"], "network": "loopback", "unix_sockets": True, "dev_shm": True,
+            "memory_bytes": memory_bytes, "disk_bytes": WORKER_DISK_MAX,
+            "output_bytes": WORKER_STDERR_MAX, "env": env, "path": WORKER_PATH}
 
 
-def harden_parent() -> None:
-    """Not dumpable (its memory and /proc files stay closed to same-uid processes) and
-    the subreaper of everything it starts, so no worker descendant escapes reaping."""
-    import ctypes
-    libc = ctypes.CDLL(None, use_errno=True)
-    if libc.prctl(4, 0, 0, 0, 0) != 0 or libc.prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_DUMPABLE 0, CHILD_SUBREAPER
-        raise InfrastructureFailure("could not harden the trusted parent (prctl)")
-
-
-def descendants(root: int) -> set[int]:
-    """root and every live process below it (by parent pid, over this /proc)."""
-    children: dict[int, list[int]] = {}
-    for entry in os.listdir("/proc"):
-        if not entry.isdigit():
-            continue
-        try:
-            with open(f"/proc/{entry}/stat", "rb") as stream:
-                fields = stream.read().rsplit(b")", 1)[1].split()
-            children.setdefault(int(fields[1]), []).append(int(entry))
-        except (OSError, IndexError, ValueError):
-            continue
-    found, stack = set(), [root]
-    while stack:
-        pid = stack.pop()
-        if pid in found:
-            continue
-        found.add(pid)
-        stack.extend(children.get(pid, ()))
-    return found
-
-
-def tmpfs_bytes(pids: set[int]) -> int:
-    """Bytes held in the worker's own RAM-backed mounts (tmpfs, mqueue), read through
-    /proc/<pid>/root of one of its processes; they count against its memory limit."""
-    own = os.readlink("/proc/self/ns/mnt")
-    for pid in sorted(pids):
-        try:
-            if os.readlink(f"/proc/{pid}/ns/mnt") == own:
-                continue
-            with open(f"/proc/{pid}/mounts") as stream:
-                mounts = [line.split() for line in stream]
-        except OSError:
-            continue
-        total = 0
-        for fields in mounts:
-            if len(fields) >= 3 and fields[2] in ("tmpfs", "mqueue"):
-                point = fields[1].encode().decode("unicode_escape")
-                try:
-                    info = os.statvfs(f"/proc/{pid}/root{point}")
-                except OSError:
-                    continue
-                total += (info.f_blocks - info.f_bfree) * info.f_frsize
-        return total
-    return 0
-
-
-def resident_bytes(pids: set[int]) -> int:
-    page = os.sysconf("SC_PAGE_SIZE")
-    total = 0
-    for pid in pids:
-        try:
-            with open(f"/proc/{pid}/statm") as stream:
-                total += int(stream.read().split()[1]) * page
-        except (OSError, IndexError, ValueError):
-            continue
-    return total
-
-
-class Watchdog:
-    """Kills a launcher's whole process tree once its summed RSS exceeds the limit."""
-
-    def __init__(self, proc: subprocess.Popen, limit: int = WORKER_MEMORY_MAX):
-        self.proc, self.limit = proc, limit
-        self.tripped = False
-        self.peak = 0
-        self._stop = threading.Event()
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
-
-    def _run(self) -> None:
-        while not self._stop.wait(WATCHDOG_INTERVAL_SECONDS) and self.proc.poll() is None:
-            pids = descendants(self.proc.pid)
-            used = resident_bytes(pids) + tmpfs_bytes(pids)
-            self.peak = max(self.peak, used)
-            if used > self.limit:
-                self.tripped = True
-                kill_tree(self.proc)
-                return
-
-    def stop(self) -> None:
-        self._stop.set()
-        self._thread.join(timeout=5)
-
-
-def kill_tree(proc: subprocess.Popen) -> None:
-    for pid in descendants(proc.pid):
-        try:
-            os.kill(pid, 9)
-        except (ProcessLookupError, PermissionError):
-            pass
-
-
-def reap(proc: subprocess.Popen, after_submission: bool, pid_namespace: str | None = None) -> None:
-    """Nothing a worker started may outlive its repetition.
-
-    Its namespaces end with the launcher (--kill-child), taking every process,
-    the private IPC, network and tmpfs mounts with them. Anything still alive
-    below the launcher after 30 seconds is killed; if it survives that, the fault
-    is the submission's once its code ran, else the platform's.
-    """
-    pid_namespace = pid_namespace or _pid_namespace(proc.pid)
-    deadline = time.monotonic() + 30
-    while True:
-        alive = (descendants(proc.pid) if proc.poll() is None else set()) | _members(pid_namespace)
-        if not alive:
-            return
-        if time.monotonic() > deadline:
-            if after_submission:
-                raise SubmissionFailure("a worker process survived cleanup")
-            raise InfrastructureFailure("worker cleanup failed")
-        for pid in alive:
-            try:
-                os.kill(pid, 9)
-            except (ProcessLookupError, PermissionError):
-                pass
-        try:
-            proc.wait(timeout=1)
-        except subprocess.TimeoutExpired:
-            pass
-        _collect_zombies()
-
-
-def _pid_namespace(launcher: int) -> str | None:
-    """The PID namespace of the launcher's namespace init (its child), if any."""
-    for pid in descendants(launcher) - {launcher}:
-        try:
-            namespace = os.readlink(f"/proc/{pid}/ns/pid")
-        except OSError:
-            continue
-        if namespace != os.readlink("/proc/self/ns/pid"):
-            return namespace
-    return None
-
-
-def _members(namespace: str | None) -> set[int]:
-    """Processes still in that PID namespace, wherever they were reparented."""
-    if namespace is None:
-        return set()
-    found = set()
-    for entry in os.listdir("/proc"):
-        if entry.isdigit():
-            try:
-                if os.readlink(f"/proc/{entry}/ns/pid") == namespace:
-                    found.add(int(entry))
-            except OSError:
-                continue
-    return found
-
-
-def _collect_zombies() -> None:
-    while True:
-        try:
-            pid, _status = os.waitpid(-1, os.WNOHANG)
-        except ChildProcessError:
-            return
-        if pid == 0:
-            return
-
-
-def _launch_probe(mode: str, gpu: str, tree: Path, timeout: int, limit: int | None = None) -> tuple[str, bool]:
-    proc = subprocess.Popen(worker_command(gpu, tree, mode), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            stdin=subprocess.DEVNULL, start_new_session=True)
-    watchdog = Watchdog(proc, limit) if limit else None
-    try:
-        out, _err = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
-        kill_tree(proc)
-        out, _err = proc.communicate()
-    finally:
-        if watchdog:
-            watchdog.stop()
-        reap(proc, after_submission=False)
-    return out.decode(errors="replace"), bool(watchdog and watchdog.tripped)
+def _probe(mode: str, gpu: str, tree: Path | None, timeout: int,
+           memory_bytes: int = WORKER_MEMORY_MAX) -> "isolate.Result":
+    """One judge probe (isolation_probe.py or gpu_probe.py) in a worker's sandbox."""
+    script = "gpu_probe.py" if mode.startswith("gpu-") else "isolation_probe.py"
+    inputs = {script: JUDGE / script}
+    argv = [sys.executable, "{in}/" + script, mode.removeprefix("gpu-")]
+    if tree is not None:
+        inputs["tree"] = tree
+        argv.append("{in}/tree")
+    return isolate.run(argv, timeout_seconds=timeout, inputs=inputs,
+                       **worker_options(gpu, memory_bytes))
 
 
 ISOLATION_MARKER = "fastkv-isolation-marker"
 
 
 def probe_isolation(gpu: str, tree: Path) -> None:
-    """Before any submitted code: the worker's view is isolated (worker-side checks),
-    its writes do not persist outside its namespace, and the watchdog kills a hog."""
-    output, _ = _launch_probe("probe", gpu, tree, timeout=300)
-    if "FASTKV_ISOLATION_OK" not in output.split("\n"):
-        raise InfrastructureFailure(f"worker isolation is unavailable: {output.strip()[-500:]}")
-    for directory in ("/tmp", "/dev/shm", "/var/tmp"):
+    """Before any submitted code: the worker's view is isolated (worker-side checks), its writes
+    reach neither the runner nor the next instance, and the memory limit ends a hog."""
+    for mode in ("probe", "residue"):
+        output = _probe(mode, gpu, tree, timeout=300).stdout.decode(errors="replace")
+        if "FASTKV_ISOLATION_OK" not in output.split("\n"):
+            raise InfrastructureFailure(f"worker isolation is unavailable ({mode}): {output.strip()[-500:]}")
+    for directory in ("/tmp", "/dev/shm", "/var/tmp", tempfile.gettempdir()):
         if os.path.exists(os.path.join(directory, ISOLATION_MARKER)):
             raise InfrastructureFailure(f"a worker write persisted in {directory}")
-    for mode in ("hog", "hog-tmpfs"):
-        _output, tripped = _launch_probe(mode, gpu, tree, timeout=180, limit=PROBE_HOG_LIMIT)
-        if not tripped:
-            raise InfrastructureFailure(f"the worker memory watchdog did not stop a memory hog ({mode})")
-
-
-def tree_digest(tree: Path) -> str:
-    """Content and layout of the worker's (read-only) method tree."""
-    import hashlib
-    digest = hashlib.sha256()
-    for path in sorted(tree.rglob("*")):
-        relative = path.relative_to(tree).as_posix().encode()
-        if path.is_symlink():
-            digest.update(b"L" + relative + b"\0" + os.readlink(path).encode() + b"\0")
-        elif path.is_file():
-            digest.update(b"F" + relative + b"\0" + path.read_bytes() + b"\0")
-        else:
-            digest.update(b"D" + relative + b"\0")
-    return digest.hexdigest()
+    for mode in ("hog", "hog-shm"):
+        if _probe(mode, gpu, None, timeout=180, memory_bytes=PROBE_HOG_LIMIT).limit != "memory":
+            raise InfrastructureFailure(f"the worker memory limit did not stop a memory hog ({mode})")
 
 
 SCRUB_CHUNK_BYTES = 256 << 20
@@ -366,17 +189,16 @@ def scrub_gpu() -> int:
         torch.cuda.empty_cache()
 
 
-def gpu_probe(mode: str, gpu: str, tree: Path) -> str:
-    output, _ = _launch_probe(f"gpu-{mode}", gpu, tree, timeout=600)
-    return output
+def gpu_probe(mode: str, gpu: str) -> str:
+    return _probe(f"gpu-{mode}", gpu, None, timeout=600).stdout.decode(errors="replace")
 
 
-def probe_gpu_scrub(gpu: str, tree: Path) -> None:
+def probe_gpu_scrub(gpu: str) -> None:
     """A worker process leaves a marker; after the scrub a fresh one must not see it."""
-    if "FASTKV_GPU_WRITTEN" not in gpu_probe("write", gpu, tree):
+    if "FASTKV_GPU_WRITTEN" not in gpu_probe("write", gpu):
         raise InfrastructureFailure("GPU residue probe could not write")
     scrub_gpu()
-    output = gpu_probe("read", gpu, tree)
+    output = gpu_probe("read", gpu)
     lines = output.split("\n")
     if not any(line.startswith("FASTKV_GPU_RESIDUE ") for line in lines):
         errors = [line for line in lines if line.startswith("FASTKV_GPU_PROBE_ERROR ")]
@@ -386,85 +208,69 @@ def probe_gpu_scrub(gpu: str, tree: Path) -> None:
         raise InfrastructureFailure("GPU memory residue survives the scrub")
 
 
-def worker_tree(patched: Path) -> Path:
-    """World-readable copy of the patched tree without data/, in its own directory.
-
-    The directory holds nothing else; the harness's own scratch stays 0700.
-    """
-    base = Path(tempfile.mkdtemp(prefix="fastkv-tree-", dir="/tmp"))
-    tree = base / "worker" / "tree"
+def method_tree(patched: Path, scratch: Path) -> Path:
+    """The patched tree without data/ and .git, in the harness's 0700 scratch; every instance
+    gets its own read-only copy of it ({in}/tree)."""
+    tree = scratch / "method-tree"
     shutil.copytree(patched, tree, symlinks=False,
                     ignore=lambda directory, names: ["data", ".git"] if Path(directory) == patched else [])
-    for path in [tree, *tree.rglob("*")]:
-        path.chmod(0o755 if path.is_dir() else 0o644)
-    for path in (base, base / "worker"):
-        path.chmod(0o755)
     return tree
 
 
 class WorkerSession:
-    """One worker process: ready, one warmup, then each article at most once.
+    """One worker instance: loaded, ready, one warmup, then each article at most once.
 
-    Its stderr is a pipe drained here into memory: the worker can never read it
-    back, so it is not a channel between repetitions.
+    Its stderr goes to the instance's own file, read here when it ends: the worker can never
+    read it back, so it is not a channel between repetitions.
     """
 
-    def __init__(self, command: list[str], budget: "Budget | None" = None):
+    def __init__(self, gpu: str, tree: Path, budget: "Budget | None" = None, requests: int = 1):
         self.budget = budget or Budget(None)
         self.seen: set[str] = set()
-        self.log = bytearray()
-        self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE, start_new_session=True)
-        self.watchdog = Watchdog(self.proc)
-        self.pid_namespace = None
-        self._drain = threading.Thread(target=self._collect, daemon=True)
-        self._drain.start()
+        self.log = b""
+        self.result = None
+        lifetime = self.budget.remaining(WORKER_READY_SECONDS + WORKER_REQUEST_SECONDS * requests)
+        self.instance = isolate.start(
+            [sys.executable, "{in}/compaction_worker.py", "{in}/tree"], timeout_seconds=lifetime,
+            inputs={"tree": tree, **{name: JUDGE / name for name in ("compaction_worker.py", "wire.py")}},
+            **worker_options(gpu))
         # Until "loaded" only the launcher and the pristine runtime have run (model, vLLM):
         # any failure there is the platform's and is never scored.
         loaded = self._read(self.budget.remaining(WORKER_READY_SECONDS), trusted=True)[0]
-        self.pid_namespace = _pid_namespace(self.proc.pid)
         if loaded.get("kind") != "loaded":
             raise InfrastructureFailure("worker runtime did not report loaded")
         header = self._read(self.budget.remaining(WORKER_READY_SECONDS))[0]
         if header.get("kind") != "ready":
             raise SubmissionFailure("worker did not become ready")
 
-    def _collect(self) -> None:
-        for chunk in iter(lambda: self.proc.stderr.read(65536), b""):
-            self.log += chunk
-            if len(self.log) > MAX_LOG_BYTES:
-                del self.log[: len(self.log) - MAX_LOG_BYTES]
-
     def _read(self, timeout: float, trusted: bool = False):
         """One frame. trusted: no submitted code has run in the worker yet, so a failure is
-        an InfrastructureFailure carrying the worker's stderr tail."""
+        an InfrastructureFailure carrying the worker's exit status and stderr tail."""
         result: dict = {}
 
         def reader():
             try:
-                result["frame"] = wire.read_frame(self.proc.stdout)
+                result["frame"] = wire.read_frame(self.instance.stdout)
             except Exception as exc:  # noqa: BLE001
                 result["error"] = exc
 
         thread = threading.Thread(target=reader, daemon=True)
         thread.start()
         thread.join(timeout)
-        if thread.is_alive():
-            self.kill()
-            failure = "worker timed out"
-        elif self.watchdog.tripped:
-            failure = "worker exceeded its host memory limit"
-        elif "error" in result:
-            failure = f"worker protocol failure: {result['error']}"
-        else:
+        if not thread.is_alive() and "error" not in result:
             return result["frame"]
+        ended = self.kill()
+        if thread.is_alive():
+            failure = "worker timed out"
+        elif ended.limit is not None:
+            failure = ("worker exceeded its host memory limit" if ended.limit == "memory"
+                       else f"worker exceeded its {ended.limit} limit")
+        else:
+            failure = f"worker protocol failure: {result['error']}"
         if trusted:
-            self.kill()
-            self.proc.wait()
-            self._drain.join()
-            tail = bytes(self.log[-2000:]).decode(errors="replace")
+            tail = ended.stderr[-2000:].decode(errors="replace")
             raise InfrastructureFailure(f"{failure} before loading the runtime (exit "
-                                        f"{self.proc.returncode}): {tail}")
+                                        f"{ended.returncode}): {tail}")
         raise SubmissionFailure(failure)
 
     def compact(self, key: str, article: str, target_size: int, seed: int, synchronize=None):
@@ -475,7 +281,7 @@ class WorkerSession:
         if synchronize is not None:
             synchronize()
         started = time.perf_counter()
-        wire.write_frame(self.proc.stdin, {"kind": "compact", "article": article,
+        wire.write_frame(self.instance.stdin, {"kind": "compact", "article": article,
                                            "target_size": int(target_size), "seed": int(seed)})
         header, payloads = self._read(self.budget.remaining(WORKER_REQUEST_SECONDS))
         elapsed = time.perf_counter() - started
@@ -486,16 +292,19 @@ class WorkerSession:
         return elapsed, header, payloads
 
     def close(self) -> None:
+        """Asks the worker to exit, then ends the instance (every process it started)."""
         try:
-            wire.write_frame(self.proc.stdin, {"kind": "exit"})
-            self.proc.wait(timeout=120)
-        except Exception:  # noqa: BLE001
-            self.kill()
-        finally:
-            self.watchdog.stop()
+            wire.write_frame(self.instance.stdin, {"kind": "exit"})
+        except OSError:
+            pass
+        self.kill()
 
-    def kill(self) -> None:
-        kill_tree(self.proc)
+    def kill(self) -> "isolate.Result":
+        """Ends the instance and keeps its Result and stderr tail."""
+        if self.result is None:
+            self.result = self.instance.close()
+            self.log = self.result.stderr[-MAX_LOG_BYTES:]
+        return self.result
 
 
 def rebuild_cache(header: dict, payloads: list[bytes], config) -> tuple:
@@ -624,11 +433,9 @@ def run(articles: list[str], role: str, seed: int, pristine: Path, patched: Path
         if role == "uncompressed":
             evaluator.vllm_model = initialize_vllm(model)
         else:
-            harden_parent()
-            tree = worker_tree(patched)
+            tree = method_tree(patched, scratch)
             probe_isolation(gpu, tree)
-            probe_gpu_scrub(gpu, tree)
-            tree_hash = tree_digest(tree)
+            probe_gpu_scrub(gpu)
     except (InfrastructureFailure, SubmissionFailure):
         raise
     except Exception as exc:  # nothing submitted has run yet
@@ -674,29 +481,23 @@ def run(articles: list[str], role: str, seed: int, pristine: Path, patched: Path
     store.mkdir(mode=0o700)
     timings = {article_id: [] for article_id in articles}
     logs = []
-    try:
-        for repetition, plan in enumerate(timing_plan(list(articles), repeats, warmup)):
-            scrub_gpu()
-            session = WorkerSession(worker_command(gpu, tree), budget)
-            try:
-                if warmup:
-                    session.compact(plan[0], WARMUP_TEXT, 64, seed)
-                for article_id in (plan[1:] if warmup else plan):
-                    seconds, header, payloads = session.compact(
-                        article_id, by_key[article_id]["article"], targets[article_id], seed,
-                        synchronize=torch.cuda.synchronize)
-                    timings[article_id].append(float(seconds))
-                    path = store / f"{article_id}-{repetition}"
-                    path.with_suffix(".json").write_text(json.dumps(header))
-                    path.with_suffix(".bin").write_bytes(b"".join(payloads))
-            finally:
-                session.close()
-                logs.append(bytes(session.log))
-                reap(session.proc, after_submission=True, pid_namespace=session.pid_namespace)
-            if tree_digest(tree) != tree_hash:
-                raise SubmissionFailure("the method tree changed during a repetition")
-    finally:
-        shutil.rmtree(tree.parent.parent, ignore_errors=True)
+    for repetition, plan in enumerate(timing_plan(list(articles), repeats, warmup)):
+        scrub_gpu()
+        session = WorkerSession(gpu, tree, budget, requests=len(plan))
+        try:
+            if warmup:
+                session.compact(plan[0], WARMUP_TEXT, 64, seed)
+            for article_id in (plan[1:] if warmup else plan):
+                seconds, header, payloads = session.compact(
+                    article_id, by_key[article_id]["article"], targets[article_id], seed,
+                    synchronize=torch.cuda.synchronize)
+                timings[article_id].append(float(seconds))
+                path = store / f"{article_id}-{repetition}"
+                path.with_suffix(".json").write_text(json.dumps(header))
+                path.with_suffix(".bin").write_bytes(b"".join(payloads))
+        finally:
+            session.close()
+            logs.append(bytes(session.log))
 
     method = ReplayMethod()
     query_config = load_query_config("repeat")  # unused by the stand-in; QAEvaluator logs it
@@ -748,7 +549,7 @@ def main() -> int:
             result = run(options.articles.split(","), options.role, options.seed,
                          Path(options.pristine), Path(options.patched) if options.patched else None,
                          options.gpu, Path(scratch), options.repeats, not options.no_warmup, options.budget)
-        except InfrastructureFailure as exc:
+        except (InfrastructureFailure, isolate.IsolateError) as exc:
             print(f"infrastructure failure: {exc}", file=sys.stderr)
             return INFRA_EXIT_CODE
         except (SubmissionFailure, wire.ProtocolError) as exc:

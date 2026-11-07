@@ -43,7 +43,7 @@ max_gpu_seconds = 86400
 
 # The measurement runners: evaluate(tree) on the control image runs each shard on one of them
 # (judge/evaluator.py). Trusted: the image carries the harness, the judge goes up with the
-# applied tree, and the harness jails the submitted method in-process (gpu/fastkv-worker).
+# applied tree, and the harness jails the submitted method with the shared isolate launcher.
 [test_sandboxes.shard]
 access = "command"
 trust = "trusted"

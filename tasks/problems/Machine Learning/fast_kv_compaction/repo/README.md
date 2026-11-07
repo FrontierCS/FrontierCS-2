@@ -63,10 +63,11 @@ the runner request. After start-up, a 425-s margin for returning the result, tru
 150 s of QA per article and repetition, the rest is the method's: every worker start (with `setup`) and every `compact` call,
 warmups included, at most 1,800 s each. The score is 0 when a limit is exceeded, `TARGET_SIZE` is
 missing, not a literal or outside `(0, 0.1]`, or, on any article, `compact` raises, the worker
-exceeds 48 GiB of host memory, or the result has the wrong number of layers or head layout (8
-heads, head size 128), keeps more tokens than the prompt has, has non-finite keys or values, or
-the method tree changes during a repetition. A runner failure, a lease too short for setup
-and QA, a GPU-model mismatch or missing targets is an unscored failed verification.
+exceeds 48 GiB of host memory or 8 GiB of disk (its home, temporary and working directories) or
+writes more than 256 MiB to stderr, or the result has the wrong number of layers or head layout (8
+heads, head size 128), keeps more tokens than the prompt has or has non-finite keys or values.
+A runner failure, a lease too short for setup and QA, a GPU-model mismatch or missing targets is
+an unscored failed verification.
 
 ## Workload
 
