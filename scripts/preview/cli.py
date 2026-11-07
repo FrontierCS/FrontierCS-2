@@ -94,6 +94,7 @@ from .infra import (
     terraform_init_and_validate,
     terraform_plan,
     update_kubeconfig,
+    validate_api_cidrs,
 )
 from .publication import (
     load_task_selection,
@@ -272,16 +273,8 @@ def runtime_upgrade_patches(
             data[key] = value
             cm_patch.append({'op': 'add', 'path': '/data/' + key, 'value': value})
     if kubernetes_api_cidrs is not None:
-        if not kubernetes_api_cidrs or len(kubernetes_api_cidrs) > 64:
-            raise DeployError(
-                "Kubernetes API routes require 1-64 exact IPv4 destinations"
-            )
-        for cidr in kubernetes_api_cidrs:
-            network = ipaddress.ip_network(cidr, strict=True)
-            if network.version != 4 or network.prefixlen != 32:
-                raise DeployError("Kubernetes API routes must be exact IPv4 /32s")
         data["MANAGEMENT_KUBERNETES_API_CIDRS"] = ",".join(
-            sorted(set(kubernetes_api_cidrs))
+            sorted(validate_api_cidrs(kubernetes_api_cidrs))
         )
         cm_patch.append(
             {
@@ -597,8 +590,10 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
     receipt_dir = output / ("runtime-upgrade-" + config["application"]["commit"][:12])
     receipt_dir.mkdir(parents=True, exist_ok=True)
     os.chmod(receipt_dir, 0o700)
-    cidrs = api_cidrs(config, kubeconfig, receipt_path=receipt_dir / "api-routes.json")
     outputs = platform_outputs(config)
+    cidrs = api_cidrs(
+        config, outputs, kubeconfig, receipt_path=receipt_dir / "api-routes.json"
+    )
     role = get('clusterrole', 'frontier-management-preview')
     role_patch, expected_rules = infrastructure_role_patch(role)
     observer_manifest = modal_observer_upgrade_manifest(config, cm, deployment)
@@ -742,7 +737,7 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         require_idle_runtime(f"http://127.0.0.1:{port}")
     if read_gateway_snapshot(kubeconfig) != gateway_before:
         raise DeployError("LiteLLM gateway changed before runtime upgrade")
-    if api_cidrs(config, kubeconfig) != cidrs:
+    if api_cidrs(config, outputs, kubeconfig) != cidrs:
         raise DeployError(
             "Kubernetes API destinations changed before upgrade; no patches applied"
         )
@@ -770,7 +765,7 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
             raise DeployError(
                 "Kubernetes API policy readback differs from reviewed patch"
             )
-    verify_api_routes(config, kubeconfig)
+    verify_api_routes(config, outputs, kubeconfig)
     after_cm = get("configmap", "frontier-management-config")
     after_deployment = get("deployment", "frontier-management")
     if after_cm["data"] != expected_data:
@@ -1037,7 +1032,9 @@ def deploy_runtime(
     images: Mapping[str, Any],
 ) -> None:
     deploy_modal_credentials(config, kubeconfig)
-    cidrs = api_cidrs(config, kubeconfig, receipt_path=output / "api-routes.json")
+    cidrs = api_cidrs(
+        config, outputs, kubeconfig, receipt_path=output / "api-routes.json"
+    )
     simulator_path = output / "preview-admission-bootstrap.json"
     atomic_write(
         simulator_path,
@@ -1100,7 +1097,7 @@ def deploy_runtime(
     # The current Management release intentionally opens non-production
     # admission only in simulator mode. Reuse the same SQLite PVC for one
     # migration/open bootstrap, then restart into the real local-k8s launcher.
-    if api_cidrs(config, kubeconfig) != cidrs:
+    if api_cidrs(config, outputs, kubeconfig) != cidrs:
         raise DeployError(
             "Kubernetes API destinations changed during bootstrap; rerun deploy"
         )
@@ -1401,10 +1398,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 deploy_bootstrap(config, output, outputs, kubeconfig)
                 build_runtime_images(config, kubeconfig)
             elif arguments.command == "smoke":
-                verify_api_routes(config, kubeconfig)
+                verify_api_routes(config, outputs, kubeconfig)
                 run_smoke(config, kubeconfig, load_runtime_images(config))
             elif arguments.command == "gpu-smoke":
-                verify_api_routes(config, kubeconfig)
+                verify_api_routes(config, outputs, kubeconfig)
                 run_gpu_smoke(
                     config,
                     kubeconfig,
@@ -1415,7 +1412,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             elif arguments.command == "seed-tasks":
                 seed_tasks(config, kubeconfig, catalog_path)
             elif arguments.command == "verify":
-                verify_api_routes(config, kubeconfig)
+                verify_api_routes(config, outputs, kubeconfig)
                 verify_runtime(config, outputs, kubeconfig)
             else:
                 raise DeployError(f"unsupported command: {arguments.command}")

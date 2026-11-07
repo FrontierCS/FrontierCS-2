@@ -9,13 +9,22 @@ import subprocess
 import sys
 import time
 import pytest
-sys.path.insert(0,str(Path(__file__).resolve().parents[4]/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise/judge'))
+REPOSITORY=Path(__file__).resolve().parents[4]
+TASK=REPOSITORY/'tasks/frontier-cs-2.0-demo/problems/Crypto/ckks_composable_noise'
+sys.path.insert(0,str(REPOSITORY/'scripts'))
+import task_manifest  # noqa: E402
+# The judge as the Verifier image holds it: judge/ plus the generated config.yaml and pristine/.
+sys.path.insert(0,str(task_manifest.judge_bundle(TASK)))
 # Generic judge module names are shared with other tasks; load this task's own
 # whatever the interpreter imported first.
-for _name in ('evaluator','formal_scoring','workload_configurations','fixed_surface','submission_patch',
-              'go_entrypoint','child_environment','calibration','ckks_evidence_transport'):
+for _name in ('evaluator','formal_scoring','workload_configurations',
+              'go_entrypoint','ckks_evidence_transport'):
     sys.modules.pop(_name,None)
 import evaluator as e
+PROVENANCE=REPOSITORY/'docs/task-authoring/ckks_composable_noise/provenance'
+
+def patched_paths(text):
+    return {line.split(' b/',1)[1] for line in text.splitlines() if line.startswith('diff --git a/')}
 
 @pytest.fixture(autouse=True)
 def formal_mode(monkeypatch):
@@ -25,23 +34,18 @@ GO=pytest.mark.skipif(shutil.which('go') is None,reason='needs the Go toolchain 
 FAST,SLOW=[1,1,1],[2,2,2]
 def measured(value,clocks,names=None):
     return {w:{**{k:value for k in e.METRICS},'estimator_ns':list(clocks)} for w in (names or e.FINAL_SUITE)}
-from submission_patch import apply_submission_patch
 
 @pytest.fixture(scope='module')
-def restored():
+def restored(tmp_path_factory):
     # Reference tree with the private comment restoration applied.
-    r=e.restore_reference()
-    assert r.ok
-    yield r.workdir
-    shutil.rmtree(r.cleanup_root)
+    return e.restore_reference(tmp_path_factory.mktemp('reference'))
 
 def test_reference_restoration_and_retained_bytes(restored):
-    provenance=json.loads((e.TASK_DIR/'source_provenance.json').read_text())
+    provenance=json.loads((PROVENANCE/'source_provenance.json').read_text())
     pins=dict(provenance['authorized_parameter_derivation']['files'])
     for name,digest in pins.items():
         assert hashlib.sha256((restored/name).read_bytes()).hexdigest()==digest
-    from submission_patch import changed_files
-    assert set(changed_files((e.TASK_DIR/'reference.patch').read_text()))=={'estimator/operations.go','estimator/noise.go'}
+    assert patched_paths((e.TASK_DIR/'reference.patch').read_text())=={'estimator/operations.go','estimator/noise.go'}
 
 def test_configuration_entrypoints_and_split(monkeypatch):
     assert len(e.DEV_SUITE)==21 and len(e.FINAL_SUITE)==29
@@ -54,10 +58,9 @@ def test_configuration_entrypoints_and_split(monkeypatch):
     assert e.DEV_FEEDBACK==e.DEV_SUITE[:6] and all(e.WORKLOADS[w]['original_row'] for w in e.DEV_FEEDBACK)
 
 def test_invalid_never_crashes(tmp_path):
-    for content in ('','not a patch','diff --git a/../../escape b/../../escape\n'):
-        p=tmp_path/'bad.patch';p.write_text(content)
-        a,b,msg,m=e.evaluate(str(p));assert a==b==0 and msg
-    assert e.evaluate(str(tmp_path/'missing'))[0]==0
+    # Patches are applied by the shared verifier; an unusable tree is still a scored zero.
+    for tree in (tmp_path, tmp_path/'missing'):
+        a,b,msg,m=e.evaluate(str(tree));assert a==b==0 and msg
 
 def test_formal_and_submitted_mode_fail_closed(monkeypatch):
     monkeypatch.setitem(e.RELEASE, 'formal_calibration', None)
@@ -67,8 +70,8 @@ def test_formal_and_submitted_mode_fail_closed(monkeypatch):
     # No calibration exists for this release: nothing may be measured or passed.
     assert e.RELEASE['mode']=='formal' and e.RELEASE['formal_calibration'] is None and e.suite()==e.FINAL_SUITE
     monkeypatch.setattr(e,'measure_pairs',lambda *a,**k:pytest.fail('must not start measurement'))
-    monkeypatch.setattr(e,'apply_submission_patch',lambda *a,**k:pytest.fail('must not open the submission'))
-    for path in ('/absent.patch',str(e.TASK_DIR/'reference.patch')):
+    monkeypatch.setattr(e,'guards',lambda *a,**k:pytest.fail('must not build the submission'))
+    for path in ('/absent',str(e.PRISTINE)):
         result=e.evaluate(path)
         assert result[0]==0 and result[3]['status']=='calibration_unavailable'
         assert result[3]['beats_reference']==0 and result[3]['calibration_pending'] is True
@@ -93,7 +96,7 @@ def test_score_independent_of_verdict_and_orders_discrepancy(monkeypatch, synthe
     assert e.summarize(measured(0.1,SLOW),measured(0,FAST),e.FINAL_SUITE,{})[0]==partial[0]
 
 def test_metrics_complete_and_failure_not_omitted(synthetic_calibration):
-    names={m['name'] for m in json.loads((e.TASK_DIR/'beat_spec.json').read_text())['metrics']}
+    names={m['name'] for m in json.loads((REPOSITORY/'docs/task-authoring/ckks_composable_noise/provenance/beat_spec.json').read_text())['metrics']}  # archived design record
     r=e.summarize({}, {},e.FINAL_SUITE,{'failed':'fixture'})
     assert r[0]==0 and e.unpack_evidence(r[3]['operator_evidence'])['failed']=='fixture'
     rows=r[3]['beat_spec_workload_passes']
@@ -148,25 +151,28 @@ def test_forged_observation_lines_are_ignored_or_rejected():
     mp=_p.MonkeyPatch()
     try:
         mp.setattr(e,'invoke_original',boom)
-        identity=e.source_identity(e.TASK_DIR/'harbor/app')
-        row,record=e.measure_one(e.TASK_DIR/'harbor/app','mul_relin_rescale',Path(e.scratch_root())/'forged-row',10,identity)
+        identity=e.source_identity(e.PRISTINE)
+        row,record=e.measure_one(e.PRISTINE,'mul_relin_rescale',Path(e.scratch_root())/'forged-row',10,identity)
     finally:mp.undo()
     assert row is None and 'stdout' not in record and 'CKKS_OBSERVATION_' not in json.dumps(record)
 
 def test_no_credentials_and_writable_nonroot_caches(monkeypatch):
     monkeypatch.setenv('EXAMPLE_PROVIDER_KEY','not-a-real-key');monkeypatch.delenv('HOME',raising=False)
-    env=e.clean_env()
+    # The toolchain's environment (go_env) and the measured program's (program_env, the only
+    # variables an isolate instance gets) carry no credentials.
+    env=e.go_env()
     assert 'EXAMPLE_PROVIDER_KEY' not in env and 'HOME' not in env and env['GOPROXY']=='off'
+    assert env['CGO_ENABLED']=='0'
     assert all(Path(env[k]).is_dir() for k in ('GOCACHE','GOTMPDIR','GOPATH'))
+    assert set(e.program_env())=={'GOMAXPROCS','GOMEMLIMIT'}
 
 def test_packaging_stages_helpers(tmp_path):
-    repo=tmp_path/'repo';shutil.copytree(e.TASK_DIR/'harbor/app',repo)
+    repo=tmp_path/'repo';shutil.copytree(e.PRISTINE,repo)
     def git(*args):return subprocess.run(['git','-C',str(repo),*args],check=True,capture_output=True)
     git('init','-q');git('add','-A');git('-c','user.name=Fixture','-c','user.email=fixture@invalid','commit','-qm','base')
     git('apply',str(Path(__file__).resolve().parent/'valid_helper.patch'))
     subprocess.run(['sh','make_submission.sh'],cwd=repo,check=True,capture_output=True)
-    from submission_patch import changed_files
-    assert 'estimator/solver_extensions/identity/identity.go' in changed_files((repo/'solution.patch').read_text())
+    assert 'estimator/solver_extensions/identity/identity.go' in patched_paths((repo/'solution.patch').read_text())
     (repo/'LICENSE').write_text('invalid')
     assert subprocess.run(['sh','make_submission.sh'],cwd=repo,capture_output=True).returncode!=0
 
@@ -176,7 +182,7 @@ def test_go_adapter_actual_dispatch_and_failure(monkeypatch,tmp_path):
         commands.append(([str(x) for x in args],str(cwd)))
         return '',{'status':'ok'}
     monkeypatch.setattr(e,'run_measured',execute)
-    tree=e.TASK_DIR/'harbor/app';before=(tree/e.ENTRYPOINT).read_bytes()
+    tree=e.PRISTINE;before=(tree/e.ENTRYPOINT).read_bytes()
     overlay=tmp_path/'overlay.json';overlay.write_text('{}')
     e.invoke_original(tree,'mul_relin_rescale',overlay,123)
     assert commands==[(['go','run','-p=1','-overlay',str(overlay),'mul_relin_rescale.go'],str((tree/e.ENTRYPOINT).parent))]
@@ -188,7 +194,7 @@ def test_go_adapter_actual_dispatch_and_failure(monkeypatch,tmp_path):
 
 def test_go_adapter_requires_invocation_and_rejects_escape():
     from go_entrypoint import registered_go_entrypoint
-    tree=e.TASK_DIR/'harbor/app'
+    tree=e.PRISTINE
     with pytest.raises(ValueError):
         with registered_go_entrypoint(tree,'../escape.go',e.run,123):pass
     with pytest.raises(RuntimeError,match='was not executed'):
@@ -196,35 +202,44 @@ def test_go_adapter_requires_invocation_and_rejects_escape():
 
 @GO
 def test_source_policy_accepts_numerical_helpers_rejects_tampering(tmp_path):
-    tree=tmp_path/'tree';shutil.copytree(e.TASK_DIR/'harbor/app',tree)
+    tree=tmp_path/'tree';shutil.copytree(e.PRISTINE,tree)
     policy=tmp_path/'policy';deadline=time.monotonic()+120
     e.run(['go','build','-p=1','-o',policy,e.TASK_DIR/'judge/source_policy.go'],e.TASK_DIR,deadline)
     helper=tree/'estimator/tables';helper.mkdir(parents=True)
     (helper/'tables.go').write_text('package tables\nimport "math/bits"\nvar Weights = [...]float64{1,2,3}\nfunc Width(x uint)int{return bits.Len(x)}\n')
-    e.run([policy,e.TASK_DIR/'harbor/app',tree],tree,deadline)
+    e.run([policy,e.PRISTINE,tree],tree,deadline)
     p=tree/'estimator/noise.go';original=p.read_text()
     # Editable files may change freely; only what they import and schedule is policed.
     p.write_text(original.replace('sigma *= math.Sqrt','sigma *= 1 * math.Sqrt'))
-    e.run([policy,e.TASK_DIR/'harbor/app',tree],tree,deadline)
+    e.run([policy,e.PRISTINE,tree],tree,deadline)
     for bad in (original.replace('"math"','"math"\n"os"'),original.replace('"math"','"math"\n"sync"'),
                 original.replace('time.Now().UnixNano()','time.Since(time.Now()).Nanoseconds()')):
         assert bad!=original;p.write_text(bad)
-        with pytest.raises(e.EvaluationError):e.run([policy,e.TASK_DIR/'harbor/app',tree],tree,deadline)
+        with pytest.raises(e.EvaluationError):e.run([policy,e.PRISTINE,tree],tree,deadline)
     p.write_text(original)
     (helper/'tables.go').write_text('package tables\nfunc init(){}\n')
-    with pytest.raises(e.EvaluationError):e.run([policy,e.TASK_DIR/'harbor/app',tree],tree,deadline)
+    with pytest.raises(e.EvaluationError):e.run([policy,e.PRISTINE,tree],tree,deadline)
+
+@GO
+def test_check_tree_reports_policy_violations_as_content_policy(tmp_path):
+    from types import SimpleNamespace
+    tree=tmp_path/'tree';shutil.copytree(e.PRISTINE,tree)
+    change=[SimpleNamespace(status='M',path='estimator/noise.go')]
+    assert e.check_tree(str(tree),str(e.PRISTINE),change) is None
+    p=tree/'estimator/noise.go';p.write_text(p.read_text().replace('"math"','"math"\n"os"'))
+    assert e.check_tree(str(tree),str(e.PRISTINE),change)==('content_policy',['estimator/noise.go'])
 
 @GO
 def test_all_original_and_measured_mains_compile_only(restored,tmp_path):
     deadline=time.monotonic()+900
-    e.run(['go','build','-p=1','./...'],e.TASK_DIR/'harbor/app/estimator',deadline)
+    e.run(['go','build','-p=1','./...'],e.PRISTINE/'estimator',deadline)
     for name in e.FINAL_SUITE:
         row=e.WORKLOADS[name]
         overlay,_=e.prepare_overlay(restored,tmp_path/name,e.observation_prefix(),row)
         e.run(['go','build','-p=1','-overlay',overlay,'-o',tmp_path/'bin','./experiments/'+row['circuit']],restored/'estimator',deadline)
 
 def test_absolute_importlib_stdlib_loading(tmp_path):
-    code='import importlib.util,sys;s=importlib.util.spec_from_file_location("e",sys.argv[1]);m=importlib.util.module_from_spec(s);sys.modules["e"]=m;s.loader.exec_module(m);assert m.evaluate("missing.patch")[0]==0'
+    code='import importlib.util,sys;s=importlib.util.spec_from_file_location("e",sys.argv[1]);m=importlib.util.module_from_spec(s);sys.modules["e"]=m;s.loader.exec_module(m);assert m.evaluate("missing")[0]==0'
     subprocess.run([sys.executable,'-c',code,str(e.TASK_DIR/'evaluator.py')],cwd=tmp_path,check=True,capture_output=True)
 
 def test_private_evidence_chunks_are_lossless():
@@ -242,22 +257,10 @@ def test_authored_modes_allow_nonroot_reading():
         elif p.is_file():assert p.stat().st_mode & 0o004,str(p)
 
 
-def test_canonical_git_helper_environment_scrubbed_and_restored(monkeypatch):
-    import os
-    monkeypatch.setenv('EXAMPLE_PROVIDER_KEY','fixture-only')
-    monkeypatch.setenv('FRONTIER_SUBMISSION_ROLE','final')
-    with e.private_child_environment(e.clean_env()):
-        assert 'EXAMPLE_PROVIDER_KEY' not in os.environ
-        assert os.environ['FRONTIER_SUBMISSION_ROLE']=='final'
-        assert os.environ['GIT_CONFIG_NOSYSTEM']=='1'
-    assert os.environ['EXAMPLE_PROVIDER_KEY']=='fixture-only'
-    assert os.environ['FRONTIER_SUBMISSION_ROLE']=='final'
-
-
 def test_measured_main_insertions_are_exactly_reversible(restored):
     """The derived main is the fixed main plus inserted statements, nothing else."""
     import workload_configurations as c
-    for tree in (e.TASK_DIR/'harbor/app',restored):
+    for tree in (e.PRISTINE,restored):
         for name in e.FINAL_SUITE:
             row=e.WORKLOADS[name];source=(tree/row['main_path']).read_text()
             configured=c.configured_main(source,row);derived=c.timed_main(configured,row)
@@ -273,18 +276,27 @@ def test_measured_main_insertions_are_exactly_reversible(restored):
             with pytest.raises(ValueError):c.measured_main(source,row,'CKKS_OBSERVATION_guess ')
 
 def test_launch_errors_keep_command_and_do_not_claim_completed_main(monkeypatch,tmp_path):
-    monkeypatch.setattr(e.subprocess,'Popen',lambda *a,**k: (_ for _ in ()).throw(FileNotFoundError()))
-    with pytest.raises(e.EvaluationError) as failure:
+    # run_measured runs only `go run` commands; anything else is a judge bug.
+    with pytest.raises(ValueError):
         e.run_measured(['missing-tool'],tmp_path,time.monotonic()+10)
+    # A build that fails keeps the command and claims no completed main.
+    monkeypatch.setattr(e.subprocess,'run',lambda *a,**k: subprocess.CompletedProcess(a[0],2,b'',b'no toolchain'))
+    with pytest.raises(e.EvaluationError) as failure:
+        e.run_measured(['go','run','-p=1','main.go'],tmp_path,time.monotonic()+10)
     assert failure.value.receipt['launch_attempts']==1
     assert failure.value.receipt['main_completed']==0
-    assert failure.value.receipt['command']==['missing-tool']
+    assert failure.value.receipt['command']==['go','run','-p=1','main.go']
 
 
 def test_outer_failure_retains_private_diagnostics(monkeypatch, synthetic_calibration):
-    monkeypatch.setattr(e,'run',lambda *args:'go version go1.23.12 linux/amd64')
+    real_run=e.subprocess.run
+    def toolchain(args,*rest,**kwargs):  # the judge asks the Go toolchain for its version
+        if list(args)[:2]==['go','version']:
+            return subprocess.CompletedProcess(args,0,'go version go1.23.12 linux/amd64\n','')
+        return real_run(args,*rest,**kwargs)
+    monkeypatch.setattr(e.subprocess,'run',toolchain)
     monkeypatch.setattr(e,'guards',lambda *args: (_ for _ in ()).throw(OSError()))
-    result=e.evaluate(str(e.TASK_DIR/'reference.patch'))
+    result=e.evaluate(str(e.PRISTINE))
     assert result[0]==0
     assert e.unpack_evidence(result[3]['operator_evidence'])['failure']['type']=='OSError'
 
@@ -299,28 +311,31 @@ def test_oversize_evidence_fails_explicitly_without_native_rejection(monkeypatch
 def test_full_suite_transport_preserves_all_scientific_observations(monkeypatch, synthetic_calibration):
     monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE","final")
     # Shape fixture only: expands one measured primitive row; no composition claim.
-    native=pytest.importorskip('fcs2_verifier',reason='native adapter integration requires its module on PYTHONPATH')
+    sys.path.insert(0,str(task_manifest.SHARED/'verifier'))
+    native=pytest.importorskip('fcs2_verifier',reason='the shared verifier adapter')
     observations=[{'workload':w,'raw':[[32.0,1.8],[31.9,1.9]],'parameters':{'Q':[2**60]*25,'boot':{'nested':{'scales':[45,55]}}}} for w in e.FINAL_SUITE]
     rows=measured(0.1,FAST)
     evidence={'candidate':observations,'reference':observations}
     result=e.summarize(rows,rows,e.FINAL_SUITE,evidence)
-    members={}
-    bounded=native.run_evaluator(lambda _:result,Path('fixture.patch'),'eval',evidence_members=members)
-    from ckks_evidence_transport import unpack
-    descriptor=bounded[3]['operator_evidence']
-    assert {k:v for k,v in unpack(descriptor,members[descriptor['member']]).items() if k in evidence}==evidence
+    # The shared verifier keeps the packed private evidence in the evidence archive's metrics.
+    bounded=native.run_evaluator(lambda _:result,Path('fixture-tree'),'eval',max_metrics_bytes=e.CONFIG['evaluation']['max_metrics_bytes'])
+    assert {k:v for k,v in e.unpack_evidence(bounded[3]['operator_evidence']).items() if k in evidence}==evidence
     assert len(bounded[3]['beat_spec_workload_passes'])==29
 
 
 def test_actual_evaluator_routes_fresh_complete_modes(monkeypatch,tmp_path,synthetic_calibration):
     from types import SimpleNamespace
     calls=[];patches=[]
-    def patch(path,*args):
-        patches.append(str(path));return SimpleNamespace(ok=True,cleanup_root=None,workdir=tmp_path/str(len(patches)))
-    monkeypatch.setattr(e,'apply_submission_patch',patch)
-    monkeypatch.setattr(e,'restore_reference',lambda:patch(e.TASK_DIR/'reference.patch'))
+    def patch(scratch):
+        patches.append(str(scratch));return tmp_path/'reference'
+    monkeypatch.setattr(e,'restore_reference',patch)
     monkeypatch.setattr(e,'guards',lambda *args:None)
-    monkeypatch.setattr(e,'run',lambda *args:'go version go1.23.12 linux/amd64')
+    real_run=e.subprocess.run
+    def toolchain(args,*rest,**kwargs):  # the judge asks the Go toolchain for its version
+        if list(args)[:2]==['go','version']:
+            return subprocess.CompletedProcess(args,0,'go version go1.23.12 linux/amd64\n','')
+        return real_run(args,*rest,**kwargs)
+    monkeypatch.setattr(e.subprocess,'run',toolchain)
     clocks={'candidate':100,'reference':200}
     def measure(candidate,reference,names,d,deadline,pairs):
         calls.append((candidate,reference,tuple(names),pairs))
@@ -332,10 +347,10 @@ def test_actual_evaluator_routes_fresh_complete_modes(monkeypatch,tmp_path,synth
         for candidate_clock,expected in ((100,1),(200,0),(300,0)):
             clocks['candidate']=candidate_clock
             calls.clear();patches.clear();monkeypatch.setenv('FRONTIER_SUBMISSION_ROLE',role)
-            result=e.evaluate('candidate.patch')
+            result=e.evaluate(str(tmp_path/'candidate'))
             assert result[0]==100 and result[3]['beats_reference']==expected
             assert [c[2:] for c in calls]==[(names,count)]
-            assert calls[0][0]!=calls[0][1] and len(patches)==2
+            assert calls[0][0]!=calls[0][1] and len(patches)==1
             assert result[3]['workload_count']==len(names)
             assert result[3]['candidate_estimator_seconds_mean']==candidate_clock/1e9
             detail=e.unpack_evidence(result[3]['operator_evidence'])

@@ -6,6 +6,7 @@ import deployment_test_guard  # noqa: F401  # isort: skip
 import ast
 import copy
 import importlib.util
+import ipaddress
 import json
 import os
 import sys
@@ -18,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "runtime/storage-controller"))
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy
+import task_manifest
 from preview import cli
 from preview import images as image_ops
 
@@ -105,7 +107,18 @@ class Fixture:
             "efs_file_system_id": "fs-0123456789abcdef0",
             "efs_object_store_access_point_id": "fsap-0123456789abcdef0",
             "efs_registry_access_point_id": "fsap-1123456789abcdef0",
+            "kubernetes_api_cidrs": Fixture.kubernetes_api_cidrs(config),
         }
+
+    @staticmethod
+    def kubernetes_api_cidrs(config: dict) -> list[str]:
+        """Mirror Terraform: control-plane /28s at 3200+index plus the API ClusterIP."""
+        vpc = ipaddress.ip_network(config["network"]["vpc_cidr"])
+        service = ipaddress.ip_network(config["network"]["service_ipv4_cidr"])
+        subnets = list(vpc.subnets(new_prefix=28))
+        return sorted(
+            [str(subnets[3200]), str(subnets[3201]), f"{service.network_address + 1}/32"]
+        )
 
     @staticmethod
     def images(config: dict) -> dict:
@@ -944,7 +957,7 @@ class ModalConfigTests(unittest.TestCase):
         )
         gpu_names = set()
         for name, root in roots.items():
-            gpu = json.loads((root / "policy.json").read_text()).get("gpu", {})
+            gpu = task_manifest.load_policy(root).get("gpu", {})
             if (
                 gpu.get("agent", {}).get("max_instances", 0) > 0
                 or gpu.get("verifier", {}).get("max_gpu_instances", 0) > 0

@@ -4,7 +4,6 @@ import deployment_test_guard  # noqa: F401
 
 import ast
 import contextlib
-import hashlib
 import importlib.util
 import io
 import json
@@ -22,6 +21,10 @@ TASK = ROOT / "tasks/frontier-cs-2.0-demo/problems/Machine Learning/representati
 DEPS = TASK / "judge/judge_deps"
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+import task_manifest  # noqa: E402
+
+
 class PopulationObserverClockTests(unittest.TestCase):
     def setUp(self):
         self.tree = ast.parse((DEPS / "queue_boundary/src/queue_observer_entry.py").read_text())
@@ -32,7 +35,7 @@ class PopulationObserverClockTests(unittest.TestCase):
         self.validate = namespace["validate_deadline"]
 
     def test_gpu_bound_matches_each_published_suite(self):
-        runtime = yaml.safe_load((TASK / "judge/config.yaml").read_text())["runtime"]
+        runtime = yaml.safe_load((task_manifest.judge_bundle(TASK) / "config.yaml").read_text())["runtime"]
         for suite, field in (("development", "timeout_seconds"), ("final", "final_timeout_seconds")):
             ceiling = runtime[field]
             with self.subTest(suite=suite):
@@ -94,10 +97,9 @@ class PopulationObserverClockTests(unittest.TestCase):
             )
             module = importlib.util.module_from_spec(spec)
             argv = [str(spec.origin), "--phase", phase, "--trusted-repo", str(root),
-                    "--spine-manifest", str(root / "spine.json"), "--queue-source", str(root),
-                    "--queue-scratch", str(root), "--queue-python", sys.executable,
-                    "--observer", str(observer), "--observer-sha256",
-                    hashlib.sha256(observer.read_bytes()).hexdigest(), "--report", str(report),
+                    "--queue-source", str(root),
+                    "--queue-python", sys.executable,
+                    "--observer", str(observer), "--report", str(report),
                     "--seconds", str(seconds), "--device", "cuda:0"]
             if suite is not None:
                 argv += ["--suite", suite]

@@ -33,6 +33,7 @@ from urllib.parse import quote
 import build_task_images as builder
 import frontier_deploy as deploy
 import render_task_definition as renderer
+import task_manifest
 import resolve_catalog_digests as resolver
 from native_datasets import dataset_extension, dataset_path
 from preview import publication
@@ -88,13 +89,14 @@ def validate_export(root: Path) -> dict:
     renderer.check_tree(root)
     if not root.is_dir() or re.fullmatch(r"[a-z][a-z0-9_]*", root.name) is None:
         raise ValueError("export directory must have a valid problem name")
-    for member in (
-        "policy.json",
-        "upstream.lock.json",
-        "agent-base/Dockerfile",
-        "verifier/Dockerfile",
-        "verifier/verify.py",
-    ):
+    native = (root / task_manifest.MANIFEST).is_file()
+    members = (
+        (task_manifest.MANIFEST, "docker/agent.Dockerfile", "docker/verifier.Dockerfile")
+        if native
+        else ("policy.json", "upstream.lock.json", "agent-base/Dockerfile",
+              "verifier/Dockerfile", "verifier/verify.py")
+    )
+    for member in members:
         if not (root / member).is_file():
             raise ValueError(f"missing required export member: {member}")
     for path in root.rglob("*"):
@@ -116,7 +118,7 @@ def validate_export(root: Path) -> dict:
                 raise ValueError(
                     f"file exceeds 512 MiB and is not LFS-tracked: {path.relative_to(root)}"
                 )
-    policy = deploy.require_mapping(deploy.load_json(root / "policy.json"), "policy")
+    policy = deploy.require_mapping(task_manifest.load_policy(root), "policy")
     deploy.reject_secret_fields(policy, "policy")
     if (
         policy.get("schema_version") != renderer.SCHEMA
@@ -125,8 +127,10 @@ def validate_export(root: Path) -> dict:
         raise ValueError(
             "policy schema or problem_id differs from export directory name"
         )
-    lock = deploy.require_mapping(
-        deploy.load_json(root / "upstream.lock.json"), "upstream.lock"
+    lock = (
+        {"problem_id": root.name, "files": []}  # task.toml tasks keep provenance in docs/
+        if native
+        else deploy.require_mapping(deploy.load_json(root / "upstream.lock.json"), "upstream.lock")
     )
     for row in lock.get("files", []):
         safe_member(row.get("path"))
@@ -139,15 +143,16 @@ def validate_export(root: Path) -> dict:
             safe_member(row["path"])
     safe_member(policy["submission"]["entrypoint"])
     requirements(policy)
+    paths = task_manifest.layout(root)
     for role, quota in (("agent", "max_instances"), ("verifier", "max_gpu_instances")):
         if (
             policy.get("gpu", {}).get(role, {}).get(quota, 0) > 0
-            and not (root / f"{role}-gpu/Dockerfile").is_file()
+            and not paths.dockerfile(f"{role}-gpu").is_file()
         ):
-            raise ValueError(f"missing enabled GPU Dockerfile: {role}-gpu/Dockerfile")
+            raise ValueError(f"missing enabled GPU Dockerfile: {paths.dockerfile(f'{role}-gpu')}")
     # Apply the same bounded base policy in plan/published modes too; no pulls.
     for dockerfile in (
-        root / role / "Dockerfile"
+        paths.dockerfile(role)
         for role in ("agent-base", "verifier", "agent-gpu", "verifier-gpu")
     ):
         if not dockerfile.is_file():
@@ -250,10 +255,8 @@ def published_manifest(path: Path, name: str, source: str, entry: dict) -> dict:
             target = result["sidecar_images"][sidecar_roles[role]]
         else:
             current = target = None
+        # Every image, the dataset image included, carries the source-bound tag.
         tag = (current or entry[ROLE_KEYS[role]])["tag"]
-        # Changed selectors get a new source-bound tag; legacy v1 is immutable.
-        if role == "datasets" and image.get("tag") != "v1":
-            tag = entry["agent_image"]["tag"]
         deploy.validate_image(image, f"images.{role}", expected_tag=tag)
         # Adoption can change publisher namespace but keeps the catalog naming contract.
         suffix = (current or entry[ROLE_KEYS[role]])["repository"].split("/", 2)[2]
@@ -272,7 +275,7 @@ def published_manifest(path: Path, name: str, source: str, entry: dict) -> dict:
 
 
 def verify_images(entry: dict, root: Path, payload: Path | None) -> None:
-    extension = dataset_extension(deploy.load_json(root / "policy.json"))
+    extension = dataset_extension(task_manifest.load_policy(root))
     for image, single_layer in resolver.task_images(entry):
         if image["digest"] == PLACEHOLDER:
             raise ValueError("image digest is a placeholder")
@@ -290,7 +293,7 @@ def verify_images(entry: dict, root: Path, payload: Path | None) -> None:
                 raise ValueError(
                     "reference image verification requires its payload file"
                 )
-            definition = deploy.load_json(root / "policy.json")
+            definition = task_manifest.load_policy(root)
             expected = {
                 "opt/frontier/reference-candidate": (
                     REPOSITORY_ROOT / LAUNCHER

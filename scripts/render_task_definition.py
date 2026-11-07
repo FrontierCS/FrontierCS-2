@@ -11,9 +11,13 @@ import re
 import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from native_datasets import dataset_hashes
+import source_tree
+import task_manifest
+from task_manifest import load_policy
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK_ROOT = ROOT / "tasks/frontier-cs-2.0-demo"
@@ -22,6 +26,8 @@ CATALOG = ROOT / "config/task-catalog.json"
 SCHEMA = "frontier.frontiersmith-task-policy/v1"
 IDENTITY = "preview-source-identity/v1"
 SPARSE = "sparse_video_attention_policy"
+# Hard-linked staging of a task's tracked files for its identity (same filesystem as the tree).
+STAGING = ROOT / ".generated" / "source-identity"
 
 
 def json_text(value: object) -> str:
@@ -146,9 +152,8 @@ def check_tree(root: Path) -> None:
             )
 
 
-def source_sha256(root: Path) -> str:
-    if "TAR_OPTIONS" in os.environ:
-        raise ValueError("TAR_OPTIONS must be unset")
+def tree_sha256(root: Path) -> str:
+    """sha256 of a canonical GNU tar of the directory as it is on disk."""
     check_tree(root)
     command = [
         "tar",
@@ -158,7 +163,8 @@ def source_sha256(root: Path) -> str:
         "--owner=0",
         "--group=0",
         "--numeric-owner",
-        "--mode=u=rwX,go=rX",
+        # a-st: a setgid/sticky parent (directory bits survive the = forms) must not change it.
+        "--mode=u=rwX,go=rX,a-st",
         "--hard-dereference",
         "--blocking-factor=20",
         "-C",
@@ -175,6 +181,35 @@ def source_sha256(root: Path) -> str:
             digest = hashlib.file_digest(archive.stdout, "sha256").hexdigest()
         if archive.wait() != 0:
             raise ValueError("source identity tar failed")
+    return digest
+
+
+def source_sha256(root: Path) -> str:
+    """The task's source identity: a canonical tar of its git-tracked files (source_tree; an
+    untracked or ignored file under the task fails), plus for a task.toml task its generated
+    files and resolved shared bases."""
+    if "TAR_OPTIONS" in os.environ:
+        raise ValueError("TAR_OPTIONS must be unset")
+    if source_tree.in_work_tree(root):
+        STAGING.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=STAGING) as directory:
+            staged = Path(directory) / "tree"
+            source_tree.stage(root, staged, link=True)
+            digest = tree_sha256(staged)
+    else:
+        digest = tree_sha256(root)
+    if task_manifest.is_native(root):
+        # A task.toml task's images also hold files generated from task.toml and the shared
+        # defaults (tasks/shared/task-defaults.toml); bind them, so a default that changes
+        # what a build produces also changes the source identity and image tag.
+        combined = hashlib.sha256(f"tree {digest}\n".encode())
+        for name, body in sorted(task_manifest.generated_files(root).items()):
+            combined.update(f"{name} {hashlib.sha256(body).hexdigest()}\n".encode())
+        # Shared bases a recipe takes by build argument are injected from bases.json at build
+        # time; bind the resolved references, so a base bump moves the image tag too.
+        for role, reference in task_manifest.resolved_bases(root).items():
+            combined.update(f"base {role} {reference}\n".encode())
+        digest = combined.hexdigest()
     return "sha256:" + digest
 
 
@@ -184,7 +219,7 @@ def render(root: Path, name: str) -> dict:
     if re.fullmatch(r"[a-z][a-z0-9_]*", name) is None:
         raise ValueError("invalid problem name")
     check_tree(root)
-    policy = json.loads((root / "policy.json").read_text(encoding="utf-8"))
+    policy = load_policy(root)
     if policy.get("schema_version") != SCHEMA:
         raise ValueError("unsupported native policy schema_version")
     required = ("quota", "agent", "verifier", "submission", "metadata")

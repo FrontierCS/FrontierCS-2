@@ -226,7 +226,9 @@ def shim_patch_targets(source, namespace):
 class ShimPatchGuardTests(unittest.TestCase):
     def test_tests_never_patch_the_compatibility_shim(self):
         failures = []
-        for path in (ROOT / "tests").rglob("test_*.py"):
+        # The modules this suite runs (unittest discovery of tests/); the per-task maintenance
+        # suites under tests/maintenance/ run separately with their own import paths.
+        for path in (ROOT / "tests").glob("test_*.py"):
             module = importlib.import_module(
                 ".".join(path.relative_to(ROOT).with_suffix("").parts)
             )

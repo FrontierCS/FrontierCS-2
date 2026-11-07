@@ -7,7 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
-import select
+import shutil
 import signal
 import subprocess
 import sys
@@ -24,14 +24,24 @@ TASK = Path(__file__).resolve().parents[1] / (
 def helpers():
     source = TASK / "judge/trusted_runner.py"
     names = {"NativeProcessFailure", "_resource_snapshot", "_native_process_diagnostic",
-             "remaining", "terminate_group", "sample"}
+             "remaining", "sample", "_sample"}
     definitions = [node for node in ast.parse(source.read_text()).body
                    if isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in names]
-    namespace = {"hashlib": hashlib, "json": json, "Path": Path, "select": select,
+    namespace = {"hashlib": hashlib, "json": json, "Path": Path, "shutil": shutil,
                  "os": os, "sys": sys, "signal": signal, "subprocess": subprocess,
-                 "tempfile": tempfile, "time": time}
+                 "tempfile": tempfile, "time": time, "isolate": FakeSandbox,
+                 **dict.fromkeys(("Pinned", "AddressSpace", "OutputsDir"), lambda *args: None)}
     exec(compile(ast.Module(body=definitions, type_ignores=[]), str(source), "exec"), namespace)
     return namespace
+
+
+class FakeSandbox:
+    """isolate.run without the boundary: runs argv[0] and reports its exit like Result."""
+    @staticmethod
+    def run(argv, **kwargs):
+        process = subprocess.run([argv[0]], stdin=subprocess.DEVNULL, capture_output=True)
+        return SimpleNamespace(returncode=process.returncode, limit=None, timed_out=False,
+                               command_seconds=0.01, outputs={"product": None})
 
 
 class ClusterwiseNativeDiagnosticTests(unittest.TestCase):
@@ -51,16 +61,15 @@ class ClusterwiseNativeDiagnosticTests(unittest.TestCase):
                     f"Path({str(group / 'memory.events')!r}).write_text('oom 1\\noom_kill 1\\n')\n"
                     "raise SystemExit(137)\n")
                 binary.chmod(0o755)
-                context = SimpleNamespace(cgroup=group, threads=60,
+                context = SimpleNamespace(cgroup=group, threads=60, cpus=[0],
                     memory_check=lambda *args: None, environment=lambda: {})
                 stream = io.StringIO()
                 with patch.dict(namespace, {
-                    "guard": lambda *args, **kwargs: None,
-                    "subreaper": lambda: None,
                     "require_disk_capture": lambda file: None,
                     "CONFIG": {"environment": {"memory_mb": 65536}},
                     "LIMITS": SimpleNamespace(child_address_space_bytes=48 * 1024**3,
-                        process_cpu_seconds=10800, process_wall_seconds=180),
+                        process_cpu_seconds=10800, process_wall_seconds=180,
+                        max_product_bytes=7516192768),
                 }), patch("sys.stderr", stream):
                     with self.assertRaises(namespace["NativeProcessFailure"]) as caught:
                         namespace["sample"](binary, root / "matrix", root / "order",

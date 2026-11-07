@@ -12,8 +12,12 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Programming Language/polygon'
-sys.path.insert(0, str(TASK / 'judge'))
-spec = importlib.util.spec_from_file_location('polygon_v4_evaluator', TASK / 'judge/evaluator.py')
+sys.path.insert(0, str(ROOT / 'scripts'))
+import task_manifest  # noqa: E402
+JUDGE = task_manifest.judge_bundle(TASK)
+sys.path.insert(0, str(task_manifest.SHARED / 'lib'))  # isolate, beside the judge in the Verifier base
+sys.path.insert(0, str(JUDGE))
+spec = importlib.util.spec_from_file_location('polygon_v4_evaluator', JUDGE / 'evaluator.py')
 evaluator = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = evaluator
 spec.loader.exec_module(evaluator)
@@ -24,12 +28,11 @@ class PolygonV4ReconciliationTests(unittest.TestCase):
         for timeout in (False, True):
             with self.subTest(timeout=timeout), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
+                # The runner runs in an isolate instance (a copy of root): it reports its child on stderr.
                 (root / evaluator.RUNNER).write_text(
-                    'import json, subprocess, time\n'
-                    'from pathlib import Path\n'
+                    'import json, subprocess, sys, time\n'
                     'p = subprocess.Popen(["sleep", "60"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n'
-                    'Path("child.pid").write_text(str(p.pid))\n'
-                    'Path("oom_priority").write_text(Path("/proc/self/oom_score_adj").read_text())\n'
+                    'print(f"child={p.pid}", file=sys.stderr, flush=True)\n'
                     + ('time.sleep(60)\n' if timeout else 'print(json.dumps({"ok": True, "refuted": True, "time_seconds": 0.1, "iterations": 1, "backtracks": 0}))\n')
                 )
                 workload = evaluator.Workload('cleanup', 'pair', 1, {}, evaluator.HARD_STRATUM)
@@ -42,12 +45,12 @@ class PolygonV4ReconciliationTests(unittest.TestCase):
                     return path
 
                 with mock.patch.object(evaluator, 'HARD_SUBPROCESS_MARGIN_SECONDS', 0), mock.patch.object(evaluator, 'SUBPROCESS_TIMEOUT_SECONDS', 0), mock.patch.object(evaluator.tempfile, 'mkdtemp', make_directory):
-                    result = evaluator._run_case(root, workload, 'unused')
+                    record = {}
+                    result = evaluator._run_case(root, workload, 'unused', record)
                 self.assertEqual(result.valid, not timeout)
-                self.assertEqual((root / 'oom_priority').read_text().strip(), '1000')
                 self.assertTrue(created)
                 self.assertTrue(all(not path.exists() for path in created))
-                pid = int((root / 'child.pid').read_text())
+                pid = int(record['stderr_tail'].split('child=')[1].split()[0])
                 for _ in range(50):
                     status = Path(f'/proc/{pid}/stat')
                     if not status.exists() or status.read_text().split()[2] == 'Z':
@@ -89,7 +92,7 @@ class PolygonV4ReconciliationTests(unittest.TestCase):
                 mock.patch.object(evaluator, '_build'), \
                 mock.patch.object(evaluator, '_measure_pair', return_value=([], [evaluator.Observation(False, 2.0, 0, 0, 2, False)])):
             with self.assertRaises(evaluator.ReferenceFailure):
-                evaluator.evaluate(str(TASK / 'judge/reference.patch'))
+                evaluator.evaluate(str(JUDGE / 'pristine'))
 
     def test_reference_failure_persists_private_case_diagnostics(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -106,10 +109,13 @@ class PolygonV4ReconciliationTests(unittest.TestCase):
                 starts = 1
                 socket = 'unused'
 
+                def fresh(self):
+                    return self.socket
+
                 def reset(self):
                     return {}
 
-                def freeze(self):
+                def stop(self):
                     pass
 
             class Validators:
@@ -125,7 +131,7 @@ class PolygonV4ReconciliationTests(unittest.TestCase):
                     mock.patch.object(evaluator, '_Validators', Validators), \
                     mock.patch.object(evaluator, '_measure_pair', lambda c, r, w, records: real_measure(roots['candidate'], roots['reference'], w, records)):
                 with self.assertRaises(evaluator.ReferenceFailure) as raised:
-                    evaluator.evaluate(str(TASK / 'judge/reference.patch'))
+                    evaluator.evaluate(str(JUDGE / 'pristine'))
         evidence = raised.exception.private_execution_evidence
         reference = [row for row in evidence['cases'] if row['side'] == evaluator.REFERENCE_SIDE]
         candidate = [row for row in evidence['cases'] if row['side'] == evaluator.CANDIDATE_SIDE]
@@ -161,7 +167,7 @@ class PolygonV4ReconciliationTests(unittest.TestCase):
         self.assertEqual(reference_record['budget_seconds'], 12)
 
     def test_current_operational_limits_and_hygiene(self):
-        policy = json.loads((TASK / 'policy.json').read_text())
+        policy = task_manifest.load_policy(TASK)
         self.assertEqual(policy['quota']['eval_timeout_seconds'], 330)
         self.assertEqual(policy['quota']['wall_time_seconds'], 18000)
         self.assertEqual(policy['network']['audit']['max_bundle_bytes'], 34359738368)

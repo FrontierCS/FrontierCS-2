@@ -2,7 +2,10 @@ import deployment_test_guard  # noqa: F401
 import sys
 from pathlib import Path
 TASK = Path(__file__).resolve().parents[3] / "tasks/frontier-cs-2.0-demo/problems/Bioinformatics/edlib_exact_alignment"
-sys.path.insert(0, str(TASK / "judge"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tasks/shared/lib'))  # isolate, as in the Verifier base
+import task_manifest  # noqa: E402
+sys.path.insert(0, str(task_manifest.judge_bundle(TASK)))
 """Source-phase contracts only. No compilation, reference replay or timing run."""
 import shutil
 import pytest
@@ -106,33 +109,43 @@ def test_reference_patch_changes_only_the_body():
     finally:
         if result.cleanup_root: shutil.rmtree(result.cleanup_root)
 
-def test_native_filter_is_an_allow_list():
-    import native_cmake as n
-    rows=n.native_filter_instructions()
-    assert rows[-1]==(0x06,0,0,0x00050000|38)                 # default: ENOSYS
-    allowed={k for code,jt,jf,k in rows if code==0x15 and (jt,jf)==(0,1)}
-    for number in (56,57,58,203,435): assert (0x15,0,1,number) in rows   # still fatal
-    # Nothing that creates, renames, removes or re-labels a file, and no IPC or sockets.
-    for number in (2,257,85,82,83,84,86,87,88,90,92,76,77,133,188,190,319,29,30,31,64,68,240,41,49,16,72,217,89,62,101,310,311,437,425):
-        assert number not in n.NATIVE_ALLOWED_SYSCALLS, number
+def test_native_runs_use_the_strict_shared_sandbox(monkeypatch,tmp_path):
+    """Every executable runs in a fresh isolate instance: strict syscalls, fixed env, its own stage."""
+    import native_cmake as n,isolate
+    seen={}
+    def run(argv,**options):
+        seen.update(argv=argv,**options)
+        return isolate.Result(returncode=0,stdout=b'out\n',stderr=b'line\n',command_seconds=0.25)
+    monkeypatch.setattr(n.isolate,'run',run)
+    import time
+    out,elapsed=n.run_native('exe',['-m','NW','in1.fa'],tmp_path,time.monotonic()+60)
+    # stderr first: the instrumented collector line precedes the buffered stdout (former single pipe).
+    assert (out,elapsed)==('line\nout\n',0.25)
+    assert seen['argv']==['{work}/exe','-m','NW','in1.fa'] and seen['tree']==tmp_path
+    assert seen['syscalls']=='strict' and seen['env']==n.NATIVE_ENV
     assert n.NATIVE_ENV=={'LC_ALL':'C','OMP_NUM_THREADS':'1','OPENBLAS_NUM_THREADS':'1','MKL_NUM_THREADS':'1'}
+    for result,message in ((isolate.Result(returncode=0,stdout=b'',stderr=b'',timed_out=True,limit='time'),'process timeout'),
+                           (isolate.Result(returncode=-9,stdout=b'',stderr=b'',limit='memory'),'memory limit'),
+                           (isolate.Result(returncode=1,stdout=b'',stderr=b''),'build or executable failed')):
+        monkeypatch.setattr(n.isolate,'run',lambda argv,**options:result)
+        with pytest.raises(n.NativeError,match=message): n.run_native('exe',[],tmp_path,time.monotonic()+60)
 
 def test_preprocessor_spellings_are_screened(tmp_path):
     import json
     surface=e.SURFACE
     path=tmp_path/surface['path'];path.parent.mkdir(parents=True)
-    for body in ('\n#define X 1\n','\n%:define X 1\n','\n  ??=define X 1\n','\n fopen ("x","w");\n'):
+    for body in ('\n#define X 1\n','\n%:define X 1\n','\n  ??=define X 1\n','\n clock ();\n','\n asm ("nop");\n'):
         path.write_text(surface['prefix']+body+surface['suffix'])
         with pytest.raises(e.Invalid): e.check_surface(tmp_path)
 
 def test_self_reported_time_is_only_a_bounded_diagnostic(monkeypatch):
     expected={'distance':1,'starts':[0],'ends':[3]}
-    monkeypatch.setattr(e,'run_native',lambda args,deadline:(CLI,1000,0.5))
-    out,elapsed,reported,rss=e.checked_cli_run('aligner','NW','ACGT','ACCT','q','t',expected,0)
+    monkeypatch.setattr(e,'run_native',lambda args,deadline:(CLI,0.5))
+    out,elapsed,reported=e.checked_cli_run('aligner','NW','ACGT','ACCT','q','t',expected,0)
     assert elapsed==0.5 and reported==0.000001234      # the compared value is the verifier's
-    monkeypatch.setattr(e,'run_native',lambda args,deadline:(CLI,1000,0.000001))
+    monkeypatch.setattr(e,'run_native',lambda args,deadline:(CLI,0.000001))
     with pytest.raises(e.Invalid,match='exceeds verifier-measured'): e.checked_cli_run('aligner','NW','ACGT','ACCT','q','t',expected,0)
-    monkeypatch.setattr(e,'run_native',lambda args,deadline:(CLI.replace('0.000001234','0.000000000'),1000,0.5))
+    monkeypatch.setattr(e,'run_native',lambda args,deadline:(CLI.replace('0.000001234','0.000000000'),0.5))
     with pytest.raises(e.Invalid,match='self-reported'): e.checked_cli_run('aligner','NW','ACGT','ACCT','q','t',expected,0)
 
 def test_location_only_output_must_be_exact_and_complete():
@@ -144,11 +157,11 @@ def test_location_only_output_must_be_exact_and_complete():
 
 def test_location_only_run_is_checked_against_the_reference_result(monkeypatch):
     expected={'distance':0,'starts':[2,4],'ends':[3,5]}
-    monkeypatch.setattr(e,'run_native',lambda args,deadline:(LOCATION,1000,0.5))
+    monkeypatch.setattr(e,'run_native',lambda args,deadline:(LOCATION,0.5))
     assert e.checked_location_run('aligner','HW','AC','TTACAC','q','t',expected,0)[1:3]==(0.5,0.000001234)
     for wrong in ({'distance':1,'starts':[2,4],'ends':[3,5]},{'distance':0,'starts':[2],'ends':[3]},{'distance':0,'starts':[2,4],'ends':[3,4]}):
         with pytest.raises(e.Invalid,match='location'): e.checked_location_run('aligner','HW','AC','TTACAC','q','t',wrong,0)
-    monkeypatch.setattr(e,'run_native',lambda args,deadline:(LOCATION,1000,0.000001))
+    monkeypatch.setattr(e,'run_native',lambda args,deadline:(LOCATION,0.000001))
     with pytest.raises(e.Invalid,match='exceeds verifier-measured'): e.checked_location_run('aligner','HW','AC','TTACAC','q','t',expected,0)
 
 @pytest.mark.parametrize('body,inside',[
@@ -311,7 +324,6 @@ def rejected_evaluation(monkeypatch,tmp_path,text,final,reference=None):
     import submission_patch
     trees=[surface_tree(tmp_path/'candidate',text),surface_tree(tmp_path/'reference',reference or PREFIX+BODY+SUFFIX)]
     monkeypatch.setattr(e,'load_qualification',lambda:{'execution_admitted':True,'reference_qualification_complete':True})
-    monkeypatch.setattr(e,'protect_verifier_process',lambda:None)
     monkeypatch.setattr(e,'apply_submission_patch',lambda *a,**k:submission_patch.PatchResult(True,workdir=trees.pop(0)))
     def forbidden(*a,**k): raise AssertionError('a statically rejected submission must not be built')
     monkeypatch.setattr(e,'build',forbidden)
@@ -342,7 +354,6 @@ def test_final_rejection_and_reference_faults_keep_the_private_contract(monkeypa
 def test_unaccepted_patch_and_launch_surface_categories(monkeypatch,tmp_path):
     import candidate_failure,submission_patch
     monkeypatch.setattr(e,'load_qualification',lambda:{'execution_admitted':True,'reference_qualification_complete':True})
-    monkeypatch.setattr(e,'protect_verifier_process',lambda:None)
     monkeypatch.setattr(e,'apply_submission_patch',lambda *a,**k:submission_patch.PatchResult(False,'patch touches secret/path.cpp'))
     _,_,message,metrics=e._evaluate('unused.patch',False)
     assert metrics=={'candidate_diagnostic':candidate_failure.diagnostic('patch_policy')} and 'secret' not in message

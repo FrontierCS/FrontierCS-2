@@ -1,4 +1,4 @@
-"""EVM State Checkpoints: one metric set on every workload (Preview issue #646).
+"""EVM State Checkpoints: one metric set on every workload.
 
 Spectrum workloads used to report only committed TPS and the checkpoint-micro trace
 only per-call create/restore/bytes, so a backend could move cost between them
@@ -10,6 +10,7 @@ and restores are checked through ``top()``/``pop()`` as well as ``get()``.
 """
 import deployment_test_guard  # noqa: F401 # isort: skip
 
+import difflib
 import importlib.util
 import os
 import shutil
@@ -23,9 +24,10 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 EVM = ROOT / "tasks/frontier-cs-2.0-demo/problems/Database/evm_state_checkpoints"
 HEADER = Path("lib/evmcow/execution_state.hpp")
+sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, as the Verifier base ships it
 GXX = shutil.which("g++")
 
-# The #646 pattern on the shipped header: above height 64 load_checkpoint() only
+# The known pattern on the shipped header: above height 64 load_checkpoint() only
 # records the target; get()/get_mut()/push() finish the restore, top()/pop() do not.
 LAZY_EDITS = (
     ("    inline void push(const uint256& item) {\n        values[height++] = item;",
@@ -74,7 +76,7 @@ class CheckpointMicroDriverTests(unittest.TestCase):
 
     def tree(self, name, edit=None):
         tree = self.tmp / name
-        shutil.copytree(EVM / "agent-base/frontier/task/repo", tree)
+        shutil.copytree(EVM / "repo", tree)
         if edit:
             edit(tree)
         return tree
@@ -178,8 +180,9 @@ class UniformMetricEvaluatorTests(unittest.TestCase):
                 "creates 274727 restores 2322 retained_samples 274727\n")
         for stderr, ok in ((good, True), ("commit        53721.0000 tx/s\n", False),
                            (good.replace("restores 2322", "restores 0"), False)):
-            proc = subprocess.CompletedProcess([], 0, "", stderr)
-            with self.subTest(ok=ok), mock.patch.object(e, "_run_checked", return_value=proc):
+            result = mock.Mock(ok=True, stderr=stderr.encode())
+            with self.subTest(ok=ok), mock.patch.object(e, "_run_built", return_value=result), \
+                    mock.patch.object(e, "_runtime_libs", return_value=[]):
                 if ok:
                     self.assertEqual(e._one_benchmark(Path("b"), Path("s"), "YCSB:1:0.9", 1)["restore_ns"], 108.49)
                 else:
@@ -187,12 +190,29 @@ class UniformMetricEvaluatorTests(unittest.TestCase):
                         e._one_benchmark(Path("b"), Path("s"), "YCSB:1:0.9", 1)
 
     def test_harness_tokens_are_forbidden_in_submissions(self):
-        e = self.evaluator
-        for token in ("mallctl", "jemalloc", "frontier_checkpoint_record_restore"):
-            with tempfile.TemporaryDirectory() as tmp, self.subTest(token=token):
-                patch = Path(tmp) / "p.patch"
-                patch.write_text(f"+++ b/{HEADER}\n+// {token}\n")
-                self.assertIsNotNone(e._forbidden_patch(patch))
+        # The tokens are task.toml forbidden_added rules, applied by the shared edit scope.
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import task_manifest
+        finally:
+            sys.path.pop(0)
+        scope = task_manifest._edit_scope()
+        rules = scope.Rules.from_mapping(task_manifest.edit_scope_rules(task_manifest.read_task(EVM)))
+        original = (EVM / "repo" / HEADER).read_text()
+
+        def patch_adding(line):
+            edited = original + line + "\n"
+            return "".join(difflib.unified_diff(
+                original.splitlines(keepends=True), edited.splitlines(keepends=True),
+                f"a/{HEADER}", f"b/{HEADER}")).encode()
+
+        for token in ("mallctl", "jemalloc", "frontier_checkpoint_record_restore", "MallCtl"):
+            with self.subTest(token=token):
+                result = scope.check(patch_adding(f"// {token}"), EVM / "repo", rules,
+                                     build_tree=False)
+                self.assertEqual(result.category, "content_policy")
+        clean = patch_adding("// fine")
+        self.assertTrue(scope.check(clean, EVM / "repo", rules, build_tree=False).ok)
 
 
 if __name__ == "__main__":

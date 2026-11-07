@@ -1,4 +1,10 @@
-"""Exact Kubernetes Service destinations, observed through the cluster API."""
+"""Kubernetes API destinations, observed through the cluster API.
+
+The live default/kubernetes endpoints are EKS control-plane ENIs whose addresses
+EKS rotates. The platform therefore pins stable CIDRs (the dedicated
+control-plane /28s plus the Service ClusterIP /32, from Terraform) and proves
+that every observed endpoint lies inside them.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +18,7 @@ from typing import Any, Mapping
 from .infra import (
     PLATFORM_NAMESPACE,
     DeployError,
+    allowed_api_cidrs,
     atomic_write,
     canonical_json,
     canonical_object_sha256,
@@ -19,6 +26,7 @@ from .infra import (
     kubernetes_environment,
     management_api_routes_rbac,
     run_command,
+    validate_api_cidrs,
 )
 
 
@@ -123,11 +131,11 @@ def route_snapshot(
         raise DeployError(
             "Kubernetes API Endpoints and EndpointSlices disagree or are empty"
         )
-    cidrs = sorted({service_ip + "/32"} | {ip + "/32" for ip in endpoint_ips})
+    observed = sorted({service_ip + "/32"} | {ip + "/32" for ip in endpoint_ips})
     return {
-        "schema": "frontier.kubernetes-api-routes/v1",
-        "cidrs": cidrs,
-        "route_sha256": canonical_object_sha256(cidrs),
+        "schema": "frontier.kubernetes-api-routes/v2",
+        "observed_cidrs": observed,
+        "route_sha256": canonical_object_sha256(observed),
         "objects": [
             {
                 "kind": o["kind"],
@@ -140,8 +148,21 @@ def route_snapshot(
     }
 
 
+def outside_allowed(observed: list[str], allowed: list[str]) -> list[str]:
+    networks = [ipaddress.ip_network(cidr) for cidr in validate_api_cidrs(allowed)]
+    return [
+        cidr
+        for cidr in observed
+        if not any(ipaddress.ip_network(cidr).subnet_of(net) for net in networks)
+    ]
+
+
 def discover_api_routes(
-    config: Mapping[str, Any], kubeconfig: Path, *, receipt_path: Path | None = None
+    config: Mapping[str, Any],
+    kubeconfig: Path,
+    allowed: list[str],
+    *,
+    receipt_path: Path | None = None,
 ) -> dict:
     environment = kubernetes_environment(kubeconfig)
 
@@ -178,6 +199,14 @@ def discover_api_routes(
         raise DeployError(
             "Kubernetes API destinations changed during discovery; retry before deployment"
         )
+    outside = outside_allowed(after["observed_cidrs"], allowed)
+    if outside:
+        raise DeployError(
+            f"Kubernetes API endpoints {outside} lie outside the allowed CIDRs "
+            f"{allowed}; check the EKS cluster subnets against Terraform "
+            "kubernetes_api_cidrs before deploying"
+        )
+    after["allowed_cidrs"] = list(allowed)
     after["observed_at"] = datetime.now(timezone.utc).isoformat()
     after["source_files_sha256"] = {
         name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
@@ -192,12 +221,7 @@ def api_policy_patch(
     policy: dict, cidrs: list[str], old_cidrs: list[str]
 ) -> tuple[list, dict]:
     """CAS only the existing API rule, retaining unrelated ingress and egress."""
-    if (
-        not cidrs
-        or len(cidrs) > 64
-        or any(not c.endswith("/32") or _ip(c[:-3]) + "/32" != c for c in cidrs)
-    ):
-        raise DeployError("Kubernetes API policy requires exact IPv4 /32 destinations")
+    cidrs = validate_api_cidrs(cidrs)
     spec = json.loads(json.dumps(policy["spec"]))
     matches = []
     for i, rule in enumerate(spec.get("egress", [])):
@@ -263,8 +287,11 @@ def verify_api_route_reader_rbac(kubeconfig: Path) -> None:
             )
 
 
-def verify_api_routes(config: Mapping[str, Any], kubeconfig: Path) -> dict:
-    snapshot = discover_api_routes(config, kubeconfig)
+def verify_api_routes(
+    config: Mapping[str, Any], outputs: Mapping[str, Any], kubeconfig: Path
+) -> dict:
+    allowed = allowed_api_cidrs(config, outputs)
+    snapshot = discover_api_routes(config, kubeconfig, allowed)
     verify_api_route_reader_rbac(kubeconfig)
     environment = kubernetes_environment(kubeconfig)
 
@@ -289,13 +316,14 @@ def verify_api_routes(config: Mapping[str, Any], kubeconfig: Path) -> dict:
 
     cm = get("configmap", "frontier-management-config")
     frozen = cm.get("data", {}).get("MANAGEMENT_KUBERNETES_API_CIDRS", "").split(",")
-    if sorted(frozen) != snapshot["cidrs"]:
+    if sorted(frozen) != allowed:
         raise DeployError(
-            "Kubernetes API routes changed or are incomplete; idle upgrade-runtime required before new runs"
+            "Management API CIDRs differ from Terraform kubernetes_api_cidrs; "
+            "idle upgrade-runtime required before new runs"
         )
     for name in (
         "frontier-management-boundary",
         "frontier-storage-controller-boundary",
     ):
-        api_policy_patch(get("networkpolicy", name), snapshot["cidrs"], frozen)
+        api_policy_patch(get("networkpolicy", name), allowed, frozen)
     return snapshot

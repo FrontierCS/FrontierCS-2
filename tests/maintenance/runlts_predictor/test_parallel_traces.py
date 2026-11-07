@@ -14,12 +14,12 @@ import threading
 import time
 
 import pytest
-import yaml
-from tests.maintenance.runlts_predictor.runtime_imports import MODULES, TASK
+from tests.maintenance.runlts_predictor.runtime_imports import (
+    MODULES, TASK, check_runtime_telemetry, failure_metrics, task_manifest)
 from tests.maintenance.runlts_predictor.test_pinned_reference import N, output, stage  # noqa: F401
 
 e = MODULES["evaluator"]
-adapter = MODULES["fcs2_verifier"]
+SENTENCES = e.SENTENCES
 
 
 def test_parallel_exec_applies_exact_limits_without_postfork_python(tmp_path, monkeypatch):
@@ -177,14 +177,17 @@ def test_watchdog_and_total_deadline_hold_inside_the_pool(tmp_path):
 
 
 def test_worker_count_is_the_verifier_allocation_lowered_never_raised(monkeypatch):
-    policy = json.loads((TASK / "policy.json").read_text())
-    config = yaml.safe_load((TASK / "judge/config.yaml").read_text())
+    # task.toml: the Verifier allocation, and the judge config generated from it.
+    task = task_manifest.read_task(TASK)
+    policy = task_manifest.load_policy(TASK)
+    config = e.CONFIG
     assert e.TRACE_WORKERS == 8 == config["environment"]["cpus"]
-    assert policy["verifier"]["cpu_millis"] == 1000 * e.TRACE_WORKERS
-    assert policy["verifier"]["memory_bytes"] == config["environment"]["memory_mb"] * 1024 * 1024
+    assert task["verifier"]["cpu_millis"] == policy["verifier"]["cpu_millis"] == 1000 * e.TRACE_WORKERS
+    assert task["verifier"]["memory_bytes"] == policy["verifier"]["memory_bytes"] == 32 * 1024 ** 3
     # The agent and the envelope of one simulation are what they were.
-    assert policy["agent"] == {"cpu_millis": 1000, "memory_bytes": 4294967296, "workspace_bytes": 42949672960}
-    assert config["environment"]["agent"] == {"cpus": 1, "memory_mb": 4096}
+    assert task["agent"] == policy["agent"] == {"cpu_millis": 1000, "memory_bytes": 4294967296,
+                                                "workspace_bytes": 42949672960}
+    assert config["runtime"]["environment"]["memory_mb"] == 4096
     assert e.MEMORY_BYTES == 4096 * 1024 * 1024
     # Even if every simulation reached its address-space limit, they fit.
     assert e.TRACE_WORKERS * e.MEMORY_BYTES <= policy["verifier"]["memory_bytes"]
@@ -254,6 +257,7 @@ def fake_simulator(stage, monkeypatch, behaviour=lambda side, index: None):
             with lock:
                 running["now"] -= 1
     monkeypatch.setattr(e, "run_command", command)
+    monkeypatch.setattr(e, "run_sandboxed", lambda argv, cwd, timeout, deadline, **sandbox: command(argv, cwd, timeout, deadline))
     monkeypatch.setattr(e, "available_cpus", lambda: 64)
     return running
 
@@ -261,7 +265,7 @@ def fake_simulator(stage, monkeypatch, behaviour=lambda side, index: None):
 def evaluate_with(monkeypatch, workers):
     monkeypatch.setenv(e.TRACE_WORKERS_ENV, str(workers))
     try:
-        return comparable(e.evaluate("candidate.patch"))
+        return comparable(e.evaluate("candidate-tree"))
     except e.EvaluationError as error:
         evidence = dict(error.private_execution_evidence)
         telemetry = evidence.pop("private_runtime_telemetry")
@@ -286,9 +290,9 @@ def test_one_worker_and_eight_workers_give_the_same_result(stage, monkeypatch, a
     roles = ["reference", "candidate"] if audit else ["candidate"]
     assert sequential[4] == [(role, wid, True) for wid in order for role in roles]
     monkeypatch.setenv(e.TRACE_WORKERS_ENV, "8")
-    metrics = e.evaluate("candidate.patch")[3]
+    metrics = e.evaluate("candidate-tree")[3]
     assert metrics["trace_simulation"] == {"workers": 8, "configured_workers": 8, "simulations": 48 if audit else 24}
-    adapter.validated_runtime_telemetry(metrics["private_runtime_telemetry"])
+    check_runtime_telemetry(metrics["private_runtime_telemetry"])
 
 
 def command_failure():
@@ -320,7 +324,7 @@ def test_candidate_failure_category_is_the_first_failing_workload(stage, monkeyp
     sequential = evaluate_with(monkeypatch, 1)
     parallel = evaluate_with(monkeypatch, 8)
     assert sequential == parallel
-    assert sequential[3] == {"candidate_diagnostic": MODULES["candidate_failure"].diagnostic(category)}
+    assert sequential[:4] == (0.0, 0.0, f"Rejected: {SENTENCES[category]}.", failure_metrics(category))
 
 
 @pytest.mark.parametrize("failing_side,expected", [
@@ -352,8 +356,8 @@ def test_memory_kill_of_a_simulator_is_not_a_candidate_failure(stage, monkeypatc
     assert evaluate_with(monkeypatch, 8)[:2] == ("EvaluationError", "verifier memory exhausted during trace simulation")
     # The same exit without a recorded memory kill is the candidate's.
     monkeypatch.setattr(e, "oom_kills", lambda: 0)
-    assert evaluate_with(monkeypatch, 8)[3] == {
-        "candidate_diagnostic": MODULES["candidate_failure"].diagnostic("simulator_run_failed")}
+    assert evaluate_with(monkeypatch, 8)[:4] == (0.0, 0.0, f"Rejected: {SENTENCES['simulator_run_failed']}.",
+                                                 failure_metrics("simulator_run_failed"))
     monkeypatch.setattr(e, "oom_kills", lambda: None)
-    assert evaluate_with(monkeypatch, 8)[3] == {
-        "candidate_diagnostic": MODULES["candidate_failure"].diagnostic("simulator_run_failed")}
+    assert evaluate_with(monkeypatch, 8)[:4] == (0.0, 0.0, f"Rejected: {SENTENCES['simulator_run_failed']}.",
+                                                 failure_metrics("simulator_run_failed"))

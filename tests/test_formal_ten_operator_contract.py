@@ -3,7 +3,6 @@
 # Install isolation before runtime imports.
 import deployment_test_guard  # noqa: F401  # isort: skip
 
-import json
 import sys
 import unittest
 from pathlib import Path
@@ -11,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer
+import task_manifest
 
 TASKS = (
     "batch_local_counting",
@@ -30,7 +30,8 @@ class FormalTenOperatorContract(unittest.TestCase):
         for name in TASKS:
             with self.subTest(task=name):
                 task = renderer.problem_directory(renderer.TASK_ROOT / "problems", name)
-                policy = json.loads((task / "policy.json").read_text())
+                # Either definition format: policy.json, or task.toml over the shared defaults.
+                policy = task_manifest.load_policy(task)
                 self.assertEqual(policy["quota"]["wall_time_seconds"], 18000)
                 self.assertEqual(policy["network"]["audit"]["max_model_sessions"], 1024)
                 self.assertGreaterEqual(
@@ -43,13 +44,26 @@ class FormalTenOperatorContract(unittest.TestCase):
                     task / "agent-base/frontier/task/README.md",
                     task / "agent-base/frontier/task/bin/README.md",
                 ]
+                native = task_manifest.is_native(task)
+                # A task.toml task's Agent README is generated: its own opening plus the shared
+                # platform text, which states the save rules in its own words.
                 text = " ".join(
-                    " ".join(p.read_text() for p in paths if p.is_file()).split()
+                    (task_manifest.agent_readme(task) if native
+                     else " ".join(p.read_text() for p in paths if p.is_file())).split()
                 )
                 if name == "bounded_evm_path_prediction":
-                    self.assertIn("You must save the final answer you select", text)
+                    # The saved selection is the final answer, kept up to date; a task.toml
+                    # task states it in the shared store-final text.
+                    self.assertIn(
+                        "Save your chosen answer early and update it with" if native
+                        else "You must save the final answer you select",
+                        text,
+                    )
                     self.assertNotIn("save your first usable chosen", text.lower())
-                self.assertIn("Saving has no save-count quota.", text)
+                if native:
+                    self.assertIn("Save your chosen answer early", text)
+                else:
+                    self.assertIn("Saving has no save-count quota.", text)
                 self.assertIn("store-final", text)
                 self.assertNotIn("100-update checkpoint/store-final cap", text)
 

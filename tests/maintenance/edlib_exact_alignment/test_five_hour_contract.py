@@ -2,7 +2,10 @@ import deployment_test_guard  # noqa: F401
 import sys
 from pathlib import Path
 TASK = Path(__file__).resolve().parents[3] / "tasks/frontier-cs-2.0-demo/problems/Bioinformatics/edlib_exact_alignment"
-sys.path.insert(0, str(TASK / "judge"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tasks/shared/lib'))  # isolate, as in the Verifier base
+import task_manifest  # noqa: E402
+sys.path.insert(0, str(task_manifest.judge_bundle(TASK)))
 """Affected resource and workload contracts; not scientific measurements."""
 import json
 from pathlib import Path

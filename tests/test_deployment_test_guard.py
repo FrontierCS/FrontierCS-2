@@ -669,7 +669,9 @@ subprocess.run([sys.executable, '-c',
 
     def test_every_test_module_imports_guard_before_other_runtime_code(self):
         missing = []
-        for path in (ROOT / "tests").rglob("test_*.py"):
+        # The modules this suite runs (unittest discovery of tests/); the per-task maintenance
+        # suites under tests/maintenance/ run separately under pytest with their own conftest.
+        for path in (ROOT / "tests").glob("test_*.py"):
             nodes = ast.parse(path.read_text()).body
             nodes = [
                 node

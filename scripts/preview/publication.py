@@ -9,8 +9,10 @@ import re
 import secrets
 from pathlib import Path
 from typing import Any, Mapping, Sequence
+from urllib.parse import quote
 
 import render_task_definition as renderer
+import task_manifest
 from task_selection import TaskSelection, requirements, select_tasks
 
 from .images import (
@@ -28,6 +30,7 @@ from .infra import (
     TASK_IMAGE_TAG_RE,
     TASK_PLACEHOLDER_DIGEST,
     DeployError,
+    ManagementHTTPError,
     api_json,
     atomic_write,
     canonical_json,
@@ -1189,13 +1192,29 @@ def local_author_receipt(
 
 
 def find_version(base: str, endpoint: str, version_id: str) -> dict[str, Any] | None:
-    existing = api_json(base, "GET", endpoint)
-    if not isinstance(existing, list):
-        raise DeployError(f"Management version list is malformed: {endpoint}")
-    matches = [item for item in existing if item.get("id") == version_id]
-    if len(matches) > 1:
-        raise DeployError(f"Management returned duplicate version {version_id}")
-    return matches[0] if matches else None
+    """Read one exact immutable version; None only for Management's not_found Problem.
+
+    Any other 404 (for example a Management build without the exact-read route)
+    is an error, never a missing version.
+    """
+    path = f"{endpoint}/{quote(version_id, safe='')}"
+    try:
+        found = api_json(base, "GET", path)
+    except ManagementHTTPError as error:
+        if error.status == 404 and _problem_code(error.detail) == "not_found":
+            return None
+        raise
+    if not isinstance(found, dict) or found.get("id") != version_id:
+        raise DeployError(f"Management returned the wrong version for {path}")
+    return found
+
+
+def _problem_code(detail: str) -> str | None:
+    try:
+        problem = json.loads(detail)
+    except json.JSONDecodeError:
+        return None
+    return problem.get("code") if isinstance(problem, dict) else None
 
 
 def ensure_version(
@@ -1209,7 +1228,7 @@ def ensure_version(
                 continue
             server_value = existing.get(key)
             if key == "driver_config" and server_value is None:
-                # Management's list view omits the full config document;
+                # Management's TaskVersion view omits the full config document;
                 # definition_digest is its canonical content hash and is
                 # compared like every other field, so equality still holds.
                 continue
@@ -1223,16 +1242,11 @@ def ensure_version(
         # already-exists conflict as success when the stored record matches.
         if "409" not in str(error):
             raise
-        refreshed = api_json(base, "GET", endpoint)
-        remote = [
-            item
-            for item in refreshed
-            if isinstance(refreshed, list) and item.get("id") == version_id
-        ]
-        if len(remote) == 1 and remote[0].get("definition_digest") == body.get(
+        remote = find_version(base, endpoint, version_id)
+        if remote is not None and remote.get("definition_digest") == body.get(
             "definition_digest"
         ):
-            return remote[0]
+            return remote
         raise
     if not isinstance(created, dict) or created.get("id") != version_id:
         raise DeployError(
@@ -1299,6 +1313,15 @@ def validate_reference(name, image, definition, *, root=None, require_resolved=F
         raise ValueError(f"reference image digest is a placeholder: {name}")
 
 
+def verifier_adapter(task_root: Path) -> Path:
+    """The verifier code a baseline binds: the task's own adapter, or for a task.toml task
+    the shared one its base image carries."""
+    if task_manifest.is_task_dir(task_root) and task_manifest.is_native(task_root):
+        return task_manifest.SHARED / "verifier/fcs2_verifier.py"
+    adapter = task_root / "verifier/fcs2_verifier.py"
+    return adapter if adapter.is_file() else task_root / "verifier/verify.py"
+
+
 def validate_baseline(name, baseline, image, definition, *, root=None):
     root = root or REPOSITORY_ROOT
     if (
@@ -1349,18 +1372,13 @@ def validate_baseline(name, baseline, image, definition, *, root=None):
         raise ValueError(
             f"baseline reference_patch_sha256 differs from the bundled task: {name}"
         )
-    adapter = (
-        "verifier/fcs2_verifier.py"
-        if (task_root / "verifier/fcs2_verifier.py").is_file()
-        else "verifier/verify.py"
-    )
     for key, path in (
-        ("evaluator_sha256", "judge/evaluator.py"),
-        ("verifier_adapter_sha256", adapter),
+        ("evaluator_sha256", task_root / "judge/evaluator.py"),
+        ("verifier_adapter_sha256", verifier_adapter(task_root)),
     ):
         if key not in baseline and baseline["provenance"] == "unverified":
             continue
-        if baseline.get(key) != file_sha(task_root / path):
+        if baseline.get(key) != file_sha(path):
             raise ValueError(f"baseline {key} differs from the bundled task: {name}")
 
 
@@ -1470,9 +1488,7 @@ def baseline_from_result_json(
         or not math.isclose(relative, expected_relative, rel_tol=1e-12, abs_tol=1e-12)
     ):
         raise ValueError("judge/result.json inconsistent reference rel")
-    adapter = root / "verifier/fcs2_verifier.py"
-    if not adapter.is_file():
-        adapter = root / "verifier/verify.py"
+    adapter = verifier_adapter(root)
     evaluator = root / "judge/evaluator.py"
     payload = payload or (root / "judge/reference.patch")
     baseline = {

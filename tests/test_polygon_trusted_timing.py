@@ -3,20 +3,22 @@ import deployment_test_guard  # noqa: F401
 
 import importlib.util
 import json
-import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
 import textwrap
 import unittest
-from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = ROOT / 'tasks/frontier-cs-2.0-demo/problems/Programming Language/polygon'
-RUNNER = TASK / 'agent-base/frontier/task/repo/frontier_runner.py'
-sys.path.insert(0, str(TASK / 'judge'))
-spec = importlib.util.spec_from_file_location('polygon_timing_evaluator', TASK / 'judge/evaluator.py')
+RUNNER = TASK / 'repo/frontier_runner.py'
+sys.path.insert(0, str(ROOT / 'scripts'))
+import task_manifest  # noqa: E402
+JUDGE = task_manifest.judge_bundle(TASK)
+sys.path.insert(0, str(task_manifest.SHARED / 'lib'))  # isolate, beside the judge in the Verifier base
+sys.path.insert(0, str(JUDGE))
+spec = importlib.util.spec_from_file_location('polygon_timing_evaluator', JUDGE / 'evaluator.py')
 evaluator = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = evaluator
 spec.loader.exec_module(evaluator)
@@ -83,7 +85,9 @@ FAKES = {
         import os
         import time
 
-        MODE = os.environ.get("POLYGON_STUB", "")
+        # The test's mode, beside the tree root: the runner's environment is the sandbox's own.
+        _MODE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "POLYGON_STUB")
+        MODE = open(_MODE_FILE).read() if os.path.exists(_MODE_FILE) else ""
         if MODE == "import":
             time.sleep({SLEEP_SECONDS})
 
@@ -161,8 +165,8 @@ class PolygonTrustedTimingTests(unittest.TestCase):
     def _run(self, payload, mode=''):
         workload = evaluator.Workload('timing', payload['kind'], payload['timeout_seconds'], payload)
         record = {}
-        with mock.patch.dict(os.environ, {'POLYGON_STUB': mode}):
-            row = evaluator._run_case(self.root, workload, 'unused', record)
+        (self.root / 'POLYGON_STUB').write_text(mode)
+        row = evaluator._run_case(self.root, workload, 'unused', record)
         self.assertTrue(row.valid, record)
         return row, record
 
@@ -245,11 +249,31 @@ class PolygonTrustedTimingTests(unittest.TestCase):
         self.assertEqual(row.time_seconds, 5.0)
 
     def test_policy_rejects_main_and_atexit(self):
+        from types import SimpleNamespace
         for line in ('import __main__', '__main__._clock = None', 'import atexit', 'atexit.register(print)'):
-            with self.subTest(line=line), tempfile.TemporaryDirectory() as directory:
-                patch = Path(directory) / 'solution.patch'
-                patch.write_text(f'--- a/x\n+++ b/x\n@@ -1 +1 @@\n+{line}\n')
-                self.assertFalse(evaluator._policy_ok(patch)[0])
+            with self.subTest(line=line):
+                change = SimpleNamespace(path='x', status='M', added=(line,))
+                self.assertEqual(evaluator._added_lines_ok([change]), ['x'])
+        self.assertEqual(evaluator._added_lines_ok([SimpleNamespace(path='x', status='M', added=('import time',))]), [])
+
+    def test_check_tree_exempts_only_the_exact_reference(self):
+        import subprocess
+        scope = task_manifest._edit_scope()
+        rules = scope.Rules.from_mapping(task_manifest.edit_scope_rules(task_manifest.read_task(TASK)))
+        result = scope.check((JUDGE / 'reference.patch').read_bytes(), JUDGE / 'pristine', rules)
+        try:
+            self.assertTrue(result.ok)
+            self.assertIsNone(evaluator.check_tree(str(result.tree), str(JUDGE / 'pristine'), list(result.changes)))
+            # The same patch with one more screened line is no longer the reference.
+            target = result.tree / 'sql_testing/smt/search_extensions/extra.py'
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text('import time\nx = open\n')
+            from types import SimpleNamespace
+            extra = SimpleNamespace(path='sql_testing/smt/search_extensions/extra.py', status='A', added=('x = open(',))
+            self.assertEqual(evaluator.check_tree(str(result.tree), str(JUDGE / 'pristine'),
+                                                  list(result.changes) + [extra])[0], 'content_policy')
+        finally:
+            result.dispose()
 
     def test_forbidden_imports_are_rejected_in_every_form(self):
         pristine = evaluator._pristine_root()
