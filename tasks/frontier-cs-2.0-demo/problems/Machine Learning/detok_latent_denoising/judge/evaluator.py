@@ -1,6 +1,32 @@
-"""GPU evaluator for the stripped upstream reconstruction task."""
+"""Judge of detok_latent_denoising: latent-denoising tokenizer continuation, on one GPU.
+
+Score: per workload, with dO, dE the ordinary / EMA quantized-PNG PSNR differences to the
+reference (dB), LO, LE the LPIPS values and T the method-process wall times,
+    g = [dO/1.25, dE/1.25, log2(LO_r/LO_c)/0.25, log2(LE_r/LE_c)/0.25]
+    speed = 15 tanh(log2(T_r/T_c)/0.5); if speed > 0: speed *= clamp((0.096 + min(g)) / 0.08, 0, 1)
+    score_w = 50 + 8.75 * sum(tanh(g)) + speed;
+raw_score = mean_w(score_w) clipped to 0..100, score_unbounded unclipped; the reference scores 50.
+A crash, a 1,500 s overrun (or a disk/output limit), an incomplete evaluation or a non-finite
+measurement of the submission's method process is a scored zero naming it; a reference or asset
+failure raises. Every method process (warm-up, candidate, reference) runs in the shared test
+sandbox (isolate.run: no judge files, no FRONTIER_* environment, the GPU, a private
+loopback for torch.distributed); its time is the sandboxed command's own wall time.
+LPIPS ratios use a floor of 1e-6.
+
+Metrics, per workload (train feedback: development_mean_<name>):
+- ordinary_quantized_png_psnr_db, ema_quantized_png_psnr_db: mean PSNR of the ordinary / EMA
+  reconstructions after PNG quantization; higher is better; pass when strictly above the reference.
+- ordinary_quantized_png_lpips, ema_quantized_png_lpips: mean LPIPS (v0.1, VGG16); lower is
+  better; pass when strictly below the reference.
+- method_process_wall_seconds: complete method-process wall time; lower is better; passes when
+  strictly below the reference.
+
+beats_reference = 1 iff all five metrics pass on every workload.
+The archived beat spec is docs/task-authoring/detok_latent_denoising/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 
+import io
 import json
 import math
 import os
@@ -8,18 +34,17 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
-import time
 from pathlib import Path
 
-import yaml
-
-from submission_patch import apply_submission_patch
+import isolate  # noqa: E402  (/opt/frontier, on the import path by frontier.pth)
 
 TASK_DIR = Path(__file__).resolve().parent
-CONFIG = TASK_DIR / "config.yaml"
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
 AUTHENTIC_ENTRYPOINT = "main_reconstruction.py"
-FINAL_LAUNCHER = TASK_DIR / "final_launcher.py"
+METHOD_RUNNER = TASK_DIR / "method_runner.py"
+RESULT_TAR = "result.tar"
 OFFLINE_MODEL_ROOT = Path(os.environ.get("FRONTIER_MODEL_ROOT", "/opt/frontier/models"))
 PSNR_O = "ordinary_quantized_png_psnr_db"
 PSNR_E = "ema_quantized_png_psnr_db"
@@ -27,6 +52,10 @@ LPIPS_O = "ordinary_quantized_png_lpips"
 LPIPS_E = "ema_quantized_png_lpips"
 TIME = "method_process_wall_seconds"
 SPEC_METRICS = (PSNR_O, PSNR_E, LPIPS_O, LPIPS_E, TIME)
+# The train feedback names (task.toml [feedback]), in SPEC_METRICS order.
+VISIBLE = ("development_mean_ordinary_quantized_png_psnr_db", "development_mean_ema_quantized_png_psnr_db",
+           "development_mean_ordinary_quantized_png_lpips", "development_mean_ema_quantized_png_lpips",
+           "development_mean_method_process_wall_seconds")
 HIGHER_IS_BETTER = {PSNR_O: True, PSNR_E: True, LPIPS_O: False, LPIPS_E: False, TIME: False}
 REFERENCE_SCORE = 50.0
 QUALITY_POINTS = 8.75        # per quality metric: 4 metrics x (+/-8.75) span the 70-point quality share
@@ -39,6 +68,19 @@ SPEED_SCALE_DOUBLINGS = 0.5
 GATE_START = 0.016
 GATE_WIDTH = 0.08
 LPIPS_FLOOR = 1e-6
+METHOD_TIMEOUT_SECONDS = 1500
+# The method process's private disk (tree copy, workload copy, the one-epoch checkpoint and the
+# evaluation PNGs) and its output (stdout, stderr and the result tar, each).
+METHOD_DISK_BYTES = 64 << 30
+METHOD_OUTPUT_BYTES = 512 << 20
+METHOD_PATH = "/usr/local/bin:/usr/bin:/bin"
+
+
+def method_options() -> dict:
+    """The isolate knobs of one method process (tests drop the userns-only loopback)."""
+    return {"devices": ["nvidia"], "network": "loopback", "dev_shm": True,
+            "read_paths": [str(OFFLINE_MODEL_ROOT)], "disk_bytes": METHOD_DISK_BYTES,
+            "output_bytes": METHOD_OUTPUT_BYTES, "path": METHOD_PATH}
 
 
 def workload_score(cand: dict[str, float], ref: dict[str, float]) -> float:
@@ -140,8 +182,32 @@ def _targets(images: Path, data_list: Path) -> list:
     return targets
 
 
-def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
-    """Run the retained entrypoint; private data supplies lists, images and assets.
+class CandidateFailure(Exception):
+    """The submission's own method process failed: a scored zero whose message names it."""
+
+
+def _unpack(data: bytes | None, output: Path) -> bool:
+    """Extract the method's result tar (regular files under relative names only) into output."""
+    if not data:
+        return False
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as tar:
+            for member in tar.getmembers():
+                parts = Path(member.name).parts
+                if not member.isfile() or not parts or member.name.startswith("/") or ".." in parts:
+                    return False
+                target = output.joinpath(*parts)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(tar.extractfile(member).read())
+    except (tarfile.TarError, OSError, ValueError):
+        return False
+    return True
+
+
+def _run(tree: Path, workload: Path, output: Path, *, candidate: bool = False) -> dict[str, float]:
+    """Run the retained entrypoint in an isolate instance on a copy of the tree and of this workload
+    (lists, images, FID statistics), with the offline model assets readable in place; the
+    evaluation PNGs come back as the instance's result tar, extracted into output.
 
     In the graded suite the EMA evaluation reconstructs the workload's second held-out set
     (``val_ema``) instead of repeating the ordinary evaluation's images."""
@@ -170,49 +236,64 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
     data_dir.mkdir(exist_ok=True)
     shutil.copyfile(workload / "train.txt", data_dir / "train.txt")
     shutil.copyfile(workload / "val.txt", data_dir / "val.txt")
-    env = os.environ.copy()
-    env.update({
-        "TORCH_HOME": str(OFFLINE_MODEL_ROOT / "torch"),
-        "FRONTIER_DETOK_DATA": str(workload),
-        "FRONTIER_DETOK_FID_STATS": str(workload / "fid_stats.npz"),
-        "FRONTIER_DETOK_CHECKPOINT": str(checkpoint),
-        "FRONTIER_DETOK_OUTPUT": str(output),
-        "FRONTIER_DETOK_SEED": (workload / "seed.txt").read_text().strip(),
-    })
-    started = time.monotonic()
+    seed = (workload / "seed.txt").read_text().strip()
     entrypoint = tree / AUTHENTIC_ENTRYPOINT
     if not entrypoint.is_file():
         raise RuntimeError("authentic reconstruction entrypoint is missing")
-    launcher = [str(FINAL_LAUNCHER), str(workload / "val_ema"), str(workload / "val_ema.txt")] if ema_set else []
+    data = "{in}/workload"
+    if checkpoint.parent == workload:
+        checkpoint_arg = f"{data}/{checkpoint.name}"
+    else:
+        checkpoint_arg = str(checkpoint)
+    ema = ["--ema-set", f"{data}/val_ema", f"{data}/val_ema.txt"] if ema_set else []
     command = [
-        sys.executable, *launcher, str(entrypoint),
+        os.path.realpath(sys.executable), "{in}/method_runner.py", "{out}/" + RESULT_TAR,
+        "{work}/output", *ema, "{work}/" + AUTHENTIC_ENTRYPOINT,
         "--epochs", "1", "--batch_size", "4", "--eval_bsz", "4",
         "--model", "detok_BB", "--img_size", "256", "--patch_size", "16",
         "--token_channels", "16", "--gamma", "3", "--mask_ratio", "0.7",
-        "--lr", "1e-6", "--seed", env["FRONTIER_DETOK_SEED"],
+        "--lr", "1e-6", "--seed", seed,
         "--discriminator_start_epoch", "100", "--num_workers", "4",
         "--class_of_interest", "0",
-        "--num_images", "64", "--data_path", str(workload / "train"),
-        "--fid_stats_path", str(workload / "fid_stats.npz"),
-        "--load_from", str(checkpoint), "--keep_eval_folder",
-        "--output_dir", str(output), "--save_freq", "1", "--vis_freq", "100",
+        "--num_images", "64", "--data_path", f"{data}/train",
+        "--fid_stats_path", f"{data}/fid_stats.npz",
+        "--load_from", checkpoint_arg, "--keep_eval_folder",
+        "--output_dir", "{work}/output", "--save_freq", "1", "--vis_freq", "100",
         "--eval_freq", "100",
     ]
-    proc = subprocess.run(
-        command, cwd=tree, env=env,
-        text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=1500,
-    )
-    elapsed = time.monotonic() - started
+    env = {
+        "TORCH_HOME": str(OFFLINE_MODEL_ROOT / "torch"),
+        "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "WANDB_MODE": "disabled",
+        "PYTHONDONTWRITEBYTECODE": "1", "PYTHONUNBUFFERED": "1",
+    }
+    # From here on a failure is the submission's when this is its tree; the reference's is a
+    # judge fault and raises. An IsolateError (the boundary could not be built) always raises.
+    def fail(reason: str):
+        raise (CandidateFailure if candidate else RuntimeError)(reason)
+
+    proc = isolate.run(
+        command, timeout_seconds=METHOD_TIMEOUT_SECONDS, tree=tree, cwd="{work}",
+        inputs={"method_runner.py": METHOD_RUNNER, "workload": workload},
+        outputs=[RESULT_TAR], env=env, **method_options())
+    if proc.limit == "time":
+        fail(f"method process exceeded its {METHOD_TIMEOUT_SECONDS}-second limit")
+    if proc.limit:
+        fail(f"method process exceeded its {proc.limit} limit")
+    elapsed = proc.command_seconds
     if proc.returncode:
-        raise RuntimeError("authentic reconstruction process failed")
-    if len(re.findall(r"Average PSNR \(all ranks\):", proc.stdout)) != 2:
-        raise RuntimeError("ordinary/EMA evaluation did not complete")
+        fail("method process failed")
+    log = (proc.stdout + proc.stderr).decode("utf-8", "replace")
+    if len(re.findall(r"Average PSNR \(all ranks\):", log)) != 2:
+        fail("ordinary/EMA evaluation did not complete")
+    output.mkdir(parents=True, exist_ok=True)
+    if not _unpack(proc.outputs.get(RESULT_TAR), output):
+        fail("reconstruction output is missing or unreadable")
     summaries = list(output.rglob("eval_summary.txt"))
     if len(summaries) != 1:
-        raise RuntimeError("evaluation summary is missing")
+        fail("evaluation summary is missing")
     rows = re.findall(r"use_ema=(True|False).*?psnr=([0-9.eE+-]+)", summaries[0].read_text())
     if len(rows) != 2:
-        raise RuntimeError("evaluation metrics are incomplete")
+        fail("evaluation metrics are incomplete")
     # Recompute the authoritative metric in the parent from PNG bytes. This is
     # intentionally independent of candidate log output.
     import numpy as np
@@ -226,12 +307,15 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
     for kind, matches in eval_dirs.items():
         targets = target_sets[kind]
         if len(matches) != 1:
-            raise RuntimeError("reconstruction PNG directory is missing")
+            fail("reconstruction PNG directory is missing")
         recons, values = [], []
         for idx, target in enumerate(targets):
-            b = np.asarray(Image.open(matches[0] / f"{idx:06d}.png").convert("RGB"), dtype=np.uint8)
+            try:
+                b = np.asarray(Image.open(matches[0] / f"{idx:06d}.png").convert("RGB"), dtype=np.uint8)
+            except OSError:  # missing or unreadable PNG (FileNotFoundError, PIL decode errors)
+                fail("reconstruction PNG is missing or unreadable")
             if b.shape != target.shape:
-                raise RuntimeError("reconstruction PNG has the wrong shape")
+                fail("reconstruction PNG has the wrong shape")
             recons.append(b)
             mse = float(np.mean((target.astype(np.float64) - b.astype(np.float64)) ** 2))
             values.append(float("inf") if mse == 0 else 10.0 * math.log10(255.0 * 255.0 / mse))
@@ -246,7 +330,7 @@ def _run(tree: Path, workload: Path, output: Path) -> dict[str, float]:
         TIME: elapsed,
     }
     if not all(math.isfinite(v) for v in result.values()):
-        raise RuntimeError("nonfinite measurement")
+        fail("measurement is not finite")
     return result
 
 
@@ -259,65 +343,57 @@ def _final() -> bool:
     return os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
 
 
-def evaluate(solution_path: str):
-    applied = None
-    try:
-        config = yaml.safe_load(CONFIG.read_text())
-        if not isinstance(config, dict):
-            raise RuntimeError("task config must be a mapping")
-        applied = apply_submission_patch(solution_path, TASK_DIR, config)
-        if not applied.ok:
-            return _zero(applied.message)
-        tree = Path(applied.workdir)
-        suite = _suite_root()
-        workloads = sorted(p for p in suite.iterdir() if p.is_dir())
-        if len(workloads) != 3:
-            raise RuntimeError("the selected suite must contain three workloads")
-        # One untimed warm-up before any timed process: the first
-        # process of the evaluation pays the cold cost of the first checkpoint
-        # read and GPU initialisation, which previously fell only on the
-        # candidate at workload-0. Run the reference on the first workload and
-        # discard its result so neither timed side on workload-0 runs cold.
+def evaluate(tree: str):
+    """Shared-verifier contract: `tree` is the pristine starter with only the submission's
+    allowed files overlaid (the edit scope has already passed)."""
+    tree = Path(tree)
+    suite = _suite_root()
+    workloads = sorted(p for p in suite.iterdir() if p.is_dir())
+    if len(workloads) != 3:
+        raise RuntimeError("the selected suite must contain three workloads")
+    # One untimed warm-up before any timed process: the first
+    # process of the evaluation pays the cold cost of the first checkpoint
+    # read and GPU initialisation, which previously fell only on the
+    # candidate at workload-0. Run the reference on the first workload and
+    # discard its result so neither timed side on workload-0 runs cold.
+    with tempfile.TemporaryDirectory(dir=str(tree.parent)) as td:
+        warmup_tree = Path(td) / "repo"
+        shutil.copytree(PRISTINE, warmup_tree)
+        subprocess.run(["git", "apply", str(TASK_DIR / "reference.patch")], cwd=warmup_tree, check=True)
+        _run(warmup_tree, workloads[0], warmup_tree / "warmup-output")
+    candidates, references = [], []
+    for i, workload in enumerate(workloads):
+        # Release the original multi-GB checkpoint outputs before the next process.
+        with tempfile.TemporaryDirectory(prefix=f"candidate-output-{i}-", dir=str(tree.parent)) as td:
+            try:
+                candidates.append(_run(tree, workload, Path(td), candidate=True))
+            except CandidateFailure as failure:
+                return 0.0, 0.0, f"the submission's {failure}"[:240], {}
         with tempfile.TemporaryDirectory(dir=str(tree.parent)) as td:
-            warmup_tree = Path(td) / "repo"
-            shutil.copytree(TASK_DIR / "harbor" / "app", warmup_tree)
-            subprocess.run(["git", "apply", str(TASK_DIR / "reference.patch")], cwd=warmup_tree, check=True)
-            _run(warmup_tree, workloads[0], warmup_tree / "warmup-output")
-        candidates, references = [], []
-        for i, workload in enumerate(workloads):
-            # Release the original multi-GB checkpoint outputs before the next process.
-            with tempfile.TemporaryDirectory(prefix=f"candidate-output-{i}-", dir=str(tree)) as td:
-                candidates.append(_run(tree, workload, Path(td)))
-            with tempfile.TemporaryDirectory(dir=str(tree.parent)) as td:
-                ref_tree = Path(td) / "repo"
-                shutil.copytree(TASK_DIR / "harbor" / "app", ref_tree)
-                subprocess.run(["git", "apply", str(TASK_DIR / "reference.patch")], cwd=ref_tree, check=True)
-                references.append(_run(ref_tree, workload, ref_tree / "reference-output"))
-        passes = []
-        for i, (cand, ref) in enumerate(zip(candidates, references)):
-            decisions = {k: (cand[k] > ref[k]) if HIGHER_IS_BETTER[k] else (cand[k] < ref[k]) for k in SPEC_METRICS}
-            passes.append({"workload": f"workload-{i}", "metrics": decisions})
-        beats = int(all(v for row in passes for v in row["metrics"].values()))
-        score = continuous_score(candidates, references)
-        metrics = {
-            "beat_spec_workload_passes": passes,
-            "beats_reference": beats,
-            "reference_score": REFERENCE_SCORE,
-            "margin": score - REFERENCE_SCORE,
-            **{f"development_mean_{k}": sum(x[k] for x in candidates) / len(candidates) for k in SPEC_METRICS},
-            # Operator evidence only (never solver-visible): paired per-workload measurements.
-            "per_workload_measurements": [
-                {"workload": f"workload-{i}", "candidate": dict(c), "reference": dict(r),
-                 "score": workload_score(c, r)}
-                for i, (c, r) in enumerate(zip(candidates, references))
-            ],
-        }
-        return min(100.0, max(0.0, score)), score, "evaluation completed", metrics
-    finally:
-        if applied is not None and hasattr(applied, "cleanup"):
-            applied.cleanup()
-        elif applied is not None and getattr(applied, "workdir", None) is not None:
-            shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
+            ref_tree = Path(td) / "repo"
+            shutil.copytree(PRISTINE, ref_tree)
+            subprocess.run(["git", "apply", str(TASK_DIR / "reference.patch")], cwd=ref_tree, check=True)
+            references.append(_run(ref_tree, workload, ref_tree / "reference-output"))
+    passes = []
+    for i, (cand, ref) in enumerate(zip(candidates, references)):
+        decisions = {k: (cand[k] > ref[k]) if HIGHER_IS_BETTER[k] else (cand[k] < ref[k]) for k in SPEC_METRICS}
+        passes.append({"workload": f"workload-{i}", "metrics": decisions})
+    beats = int(all(v for row in passes for v in row["metrics"].values()))
+    score = continuous_score(candidates, references)
+    metrics = {
+        "beat_spec_workload_passes": passes,
+        "beats_reference": beats,
+        "reference_score": REFERENCE_SCORE,
+        "margin": score - REFERENCE_SCORE,
+        **{name: sum(x[k] for x in candidates) / len(candidates) for name, k in zip(VISIBLE, SPEC_METRICS)},
+        # Operator evidence only (never solver-visible): paired per-workload measurements.
+        "per_workload_measurements": [
+            {"workload": f"workload-{i}", "candidate": dict(c), "reference": dict(r),
+             "score": workload_score(c, r)}
+            for i, (c, r) in enumerate(zip(candidates, references))
+        ],
+    }
+    return min(100.0, max(0.0, score)), score, "evaluation completed", metrics
 
 
 if __name__ == "__main__":

@@ -1,0 +1,20 @@
+{
+  "metadata": {
+    "evaluation": {
+      "suite_relation": "same_distribution"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": "f23d8686dc4e5a4f87274937c026bc7bdab0888b",
+      "pipeline": "frontiersmith2",
+      "run_id": null
+    },
+    "isolation": "suites are compiled into the verifier image and absent from every agent-visible layer; train and eval authority read the same evaluator",
+    "paper": {
+      "arxiv": "2605.08063v5",
+      "title": "Flow-OPD: On-Policy Distillation for Flow Matching Models",
+      "url": "https://arxiv.org/pdf/2605.08063v5"
+    }
+  },
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform."
+}

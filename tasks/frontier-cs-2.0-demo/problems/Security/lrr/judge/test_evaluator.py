@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import math
+import sys
 import tempfile
 from types import SimpleNamespace
 from pathlib import Path
@@ -8,29 +9,66 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent
+# The shared launcher: /opt/frontier/isolate.py in the image, tasks/shared/lib in the repo.
+SHARED_LIB = ROOT.parents[4] / "shared" / "lib" if len(ROOT.parents) > 4 else None
+if SHARED_LIB is not None and SHARED_LIB.is_dir():
+    sys.path.insert(0, str(SHARED_LIB))
 spec = importlib.util.spec_from_file_location("lrr_evaluator", ROOT / "evaluator.py")
 ev = importlib.util.module_from_spec(spec)
 assert spec.loader
 spec.loader.exec_module(ev)
 
 
-def test_constructor_uses_stable_anchor_when_judge_is_under_workspace(monkeypatch, tmp_path):
+def test_constructor_runs_under_isolate(monkeypatch, tmp_path):
     relocated = tmp_path / "workspace" / "frontier-verify" / "task"
     relocated.mkdir(parents=True)
     (relocated / "constructor_worker.py").write_text("# retained worker\n")
     repo = tmp_path / "repo"
     repo.mkdir()
-    commands = []
-    def launch(command, **kwargs):
-        commands.append(command)
-        return SimpleNamespace(pid=12345, returncode=0,
-                               communicate=lambda **kw: ('{"rows": [[]]}', ''), wait=lambda: 0)
+    calls = []
+    def run(argv, **kwargs):
+        calls.append((argv, kwargs))
+        return SimpleNamespace(ok=True, limit=None, stdout=b'{"rows": [[]]}', stderr=b"")
     monkeypatch.setattr(ev, "TASK_DIR", relocated)
-    monkeypatch.setattr(ev.subprocess, "Popen", launch)
-    monkeypatch.setattr(ev.os, "killpg", lambda *args: None)
+    monkeypatch.setattr(ev.isolate, "run", run)
     assert ev._render_chats(repo, "repair", ["input"]) == [[]]
-    assert commands[0][2] == str(relocated / "policy_sandbox.py")
-    assert commands[0][3] == "/opt/frontier/task"
+    argv, kwargs = calls[0]
+    assert argv[1:] == ["-I", "{in}/worker.py", "{in}/request.json"]
+    assert kwargs["tree"] == str(repo) and kwargs["timeout_seconds"] == 600
+    assert kwargs["inputs"]["worker.py"] == str(relocated / "constructor_worker.py")
+    assert json.loads(kwargs["inputs"]["request.json"]) == {"task": "repair", "lines": ["input"]}
+    assert not kwargs.get("devices") and not kwargs.get("read_paths")
+
+
+@pytest.mark.parametrize("result,reason", [
+    (SimpleNamespace(ok=False, limit="time", stdout=b"", stderr=b""), "exceeded its time limit"),
+    (SimpleNamespace(ok=False, limit=None, stdout=b"", stderr=b"Traceback\nValueError: boom\n"), "ValueError: boom"),
+    (SimpleNamespace(ok=False, limit="memory", stdout=b"", stderr=b""), "limit memory"),
+    (SimpleNamespace(ok=True, limit=None, stdout=b"not json", stderr=b""), "malformed output"),
+    (SimpleNamespace(ok=True, limit=None, stdout=b'{"rows": []}', stderr=b""), "wrong number"),
+])
+def test_constructor_failures_are_policy_errors(monkeypatch, tmp_path, result, reason):
+    monkeypatch.setattr(ev.isolate, "run", lambda argv, **kwargs: result)
+    with pytest.raises(ev.PolicyError, match=reason):
+        ev._render_chats(tmp_path, "repair", ["input"])
+
+
+def test_isolate_faults_are_evaluator_errors(monkeypatch, tmp_path):
+    def run(argv, **kwargs):
+        raise ev.isolate.IsolateError("no backend")
+    monkeypatch.setattr(ev.isolate, "run", run)
+    with pytest.raises(ev.isolate.IsolateError):
+        ev._render_chats(tmp_path, "repair", ["input"])
+
+
+def test_policy_input_keeps_only_pattern_and_first_localization():
+    raw = {"pattern": "^(a+)+$", "error": None, "result": {
+        "regex": "LEAK", "final_regex": "LEAK-REPAIRED",
+        "repairs": [{"subpatterns": ["(a+)+"], "repaired": "LEAK", "nested_quantifier_result": "LEAK"},
+                    {"subpatterns": ["LEAK-LATER"], "repaired": "LEAK"}]}}
+    text = json.dumps(ev._policy_input(raw))
+    assert "LEAK" not in text
+    assert json.loads(text)["result"]["repairs"][0]["subpatterns"] == ["(a+)+"]
 
 
 @pytest.mark.parametrize("startup,accepted", [
@@ -81,7 +119,7 @@ def fast_native(monkeypatch):
 
 
 def test_reference_scores_and_metrics_complete_repeat(fast_native):
-    observed = [ev.evaluate(str(ROOT / "reference.patch")) for _ in range(3)]
+    observed = [ev.evaluate(str(ev.PRISTINE)) for _ in range(3)]
     assert len({row[0] for row in observed}) == 1
     for score, unbounded, message, metrics in observed:
         assert math.isfinite(score) and 0 <= score <= 100 and score == unbounded
@@ -95,21 +133,15 @@ def test_reference_scores_and_metrics_complete_repeat(fast_native):
 
 
 def test_valid_solver_patch_is_accepted(fast_native):
-    score, _, message, metrics = ev.evaluate(str(ROOT / "reference.patch"))
+    score, _, message, metrics = ev.evaluate(str(ev.PRISTINE))
     assert score > 0 and metrics
     assert "evaluated" in message
 
 
-def test_invalid_submission_is_zero(tmp_path):
-    bad = tmp_path / "bad.patch"
-    bad.write_text("not a diff\n")
-    assert ev.evaluate(str(bad))[:2] == (0.0, 0.0)
-
-
 def test_metric_orders_controlled_partial_below_exact(fast_native):
-    exact = ev.evaluate(str(ROOT / "reference.patch"))[0]
+    exact = ev.evaluate(str(ev.PRISTINE))[0]
     fast_native["mode"] = "partial"
-    partial = ev.evaluate(str(ROOT / "reference.patch"))[0]
+    partial = ev.evaluate(str(ev.PRISTINE))[0]
     assert 0 <= partial < exact
 
 

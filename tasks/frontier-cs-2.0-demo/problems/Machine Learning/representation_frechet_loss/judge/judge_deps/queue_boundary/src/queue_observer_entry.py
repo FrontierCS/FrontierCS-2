@@ -2,7 +2,6 @@
 
 import argparse
 import ctypes
-import hashlib
 import importlib.util
 import json
 import os
@@ -12,12 +11,18 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import isolate  # /opt/frontier, on the import path by frontier.pth
 from observer_queue import trusted_queue_import
+from queue_process import QueueWorkerStartError
+
+# Faults of the trusted side alone: the report names them (trusted_fault), and the evaluator
+# leaves the verification unscored instead of scoring the submission zero.
+TRUSTED_FAULTS = (isolate.IsolateError, QueueWorkerStartError)
 
 
 def bind_parent_lifetime():
     # torchrun starts observers in new sessions, outside its process group.
-    # Its death must also stop this observer and its die-with-parent actors.
+    # Its death must also stop this observer; its sandboxed queue actors end with it.
     parent = os.getppid()
     libc = ctypes.CDLL(None, use_errno=True)
     libc.prctl.argtypes = [ctypes.c_int, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong]
@@ -43,12 +48,9 @@ def main():
     parser.add_argument("--phase", choices=("train", "eval"), required=True)
     parser.add_argument("--suite", choices=("development", "final"), required=True)
     parser.add_argument("--trusted-repo", type=Path, required=True)
-    parser.add_argument("--spine-manifest", type=Path, required=True)
     parser.add_argument("--queue-source", type=Path, required=True)
-    parser.add_argument("--queue-scratch", type=Path, required=True)
     parser.add_argument("--queue-python", type=Path, required=True)
     parser.add_argument("--observer", type=Path, required=True)
-    parser.add_argument("--observer-sha256", required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--seconds", type=int, required=True)
     parser.add_argument("--device", choices=("cpu", "cuda:0"), required=True)
@@ -56,15 +58,14 @@ def main():
     if upstream[:1] == ["--"]:
         upstream = upstream[1:]
     validate_deadline(args.seconds, args.device, args.suite)
-    if args.observer.is_symlink() or hashlib.sha256(args.observer.read_bytes()).hexdigest() != args.observer_sha256:
-        raise ValueError("Trusted observer bytes changed")
     old_argv, old_path = sys.argv, sys.path[:]
     workers = []
+    trusted_fault = None
     # Loading observe.py by file does not add its private sibling evaluator.
     sys.path.insert(0, str(args.observer.resolve().parent))
     try:
         with trusted_queue_import(
-                args.trusted_repo, args.spine_manifest, args.queue_source, args.queue_scratch,
+                args.trusted_repo, args.queue_source,
                 python=args.queue_python, deadline=time.monotonic() + args.seconds,
                 allow_cuda=args.device == "cuda:0", processes=workers):
             spec = importlib.util.spec_from_file_location("fd_trusted_observer", args.observer)
@@ -74,6 +75,8 @@ def main():
                         "--report", str(args.report), "--", *upstream]
             module.main()
     except BaseException as error:
+        if isinstance(error, TRUSTED_FAULTS):
+            trusted_fault = f"{type(error).__name__}: {error}"[:1000]
         diagnostic = getattr(error, "worker_stderr", "")
         if diagnostic:
             sys.stderr.write(diagnostic[:8192])
@@ -81,13 +84,16 @@ def main():
     finally:
         sys.argv = old_argv
         sys.path[:] = old_path
-        if args.report.is_file():
-            if args.report.stat().st_size > 16 * 1024:
-                raise ValueError("Trusted observer report exceeds evidence bound")
-            report = json.loads(args.report.read_text())
-            report["queue_worker_pids"] = [worker.process.pid for worker in workers]
-            report["queue_worker_returncodes"] = [worker.process.returncode for worker in workers]
-            report["queue_workers_closed"] = all(worker.closed and worker.process.returncode is not None
+        if args.report.is_file() or trusted_fault is not None:
+            report = {}
+            if args.report.is_file():
+                if args.report.stat().st_size > 16 * 1024:
+                    raise ValueError("Trusted observer report exceeds evidence bound")
+                report = json.loads(args.report.read_text())
+            if trusted_fault is not None:
+                report["trusted_fault"] = trusted_fault
+            report["queue_worker_returncodes"] = [worker.returncode for worker in workers]
+            report["queue_workers_closed"] = all(worker.closed and worker.returncode is not None
                                                 for worker in workers)
             args.report.write_text(json.dumps(report, allow_nan=False) + "\n")
 

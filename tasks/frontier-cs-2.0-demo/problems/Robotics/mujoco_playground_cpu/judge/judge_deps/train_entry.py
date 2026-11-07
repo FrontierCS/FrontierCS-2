@@ -1,6 +1,8 @@
 """Trusted wrapper around one training run. Runs as ``python -I -B``.
 
-Stage markers written to the inherited descriptor, each limited by the parent:
+Runs under the shared isolate launcher (runtime.ChildRunner.run_sandboxed). Stage markers are
+written to the original stdout, the judge's pipe (the process's own stdout is moved to stderr
+first), each limited by the parent:
 
   I  pristine site-packages (JAX, Brax, MuJoCo) are imported. Nothing submitted
      has run. Process start and these imports are infrastructure time.
@@ -11,6 +13,7 @@ Stage markers written to the inherited descriptor, each limited by the parent:
   D  ``train`` has returned. What remains is tracing ``jax.vmap(policy)`` and
      serialising it with ``jax.export`` as ``(obs[N, obs_size] f32, keys[N, 2]
      u32) -> action[N, action_size] f32``, under its own limit.
+  E  the artifact is in place; the process exits next (within the same limit).
 
 The artifact is StableHLO: a pure tensor program with the trained parameters
 embedded as constants. It is the only thing the evaluation ever takes from this
@@ -35,8 +38,9 @@ def main():
     parser.add_argument("--observation-size", type=int, required=True)
     parser.add_argument("--action-size", type=int, required=True)
     parser.add_argument("--artifact", required=True)
-    parser.add_argument("--ready-fd", type=int, required=True)
     opts = parser.parse_args()
+    ready = os.dup(1)   # the judge's pipe; not inherited by child processes
+    os.dup2(2, 1)
 
     # Pristine dependencies only; the heavy imports are outside the budget.
     import jax
@@ -47,16 +51,15 @@ def main():
     import mujoco  # noqa: F401
     from mujoco import mjx  # noqa: F401
 
-    os.write(opts.ready_fd, b"I")
+    os.write(ready, b"I")
 
     sys.path.insert(0, opts.repo)
     from frontier_solution.train import train
 
-    os.write(opts.ready_fd, b"T")
+    os.write(ready, b"T")
     began = time.monotonic()
     policy = train(opts.seed, float(opts.budget_seconds))
-    os.write(opts.ready_fd, b"D")
-    os.close(opts.ready_fd)
+    os.write(ready, b"D")
     print(f"train_entry: train() returned after {time.monotonic() - began:.1f}s", flush=True)
     if not callable(policy):
         raise TypeError("train() must return a callable policy(obs_state, rng)")
@@ -76,6 +79,7 @@ def main():
         stream.write(body)
     os.replace(temporary, opts.artifact)
     print(f"train_entry: exported {len(body)} bytes", flush=True)
+    os.write(ready, b"E")
 
 
 if __name__ == "__main__":

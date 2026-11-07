@@ -1,9 +1,9 @@
 """Verifier-side orchestration for a subsequently qualified private manifest.
 
 This module never provisions hardware. It runs inside the Driver Verifier GPU.
-Execution checks validate the runtime report and retained endpoint artifacts.
-They are not a second sandbox; platform isolation and actual-trial review
-remain the execution and acceptance boundaries.
+Each run executes in a fresh isolate instance (judge/judge/shell_workload.py);
+execution checks validate its runtime report and the listing of its endpoint
+artifacts. Actual-trial review remains the acceptance boundary.
 """
 from __future__ import annotations
 import hashlib
@@ -112,8 +112,8 @@ def run_evaluation(tree,q,*,final,deadline,model_root):
             # A launcher or infrastructure error is not an observed candidate
             # rejection. Preserve that distinction instead of fabricating a zero.
             raise TrustedEvaluationFailure('workload_runtime_unclassified') from error
-        # Preserve state/evidence on both success and failure; owned cleanup is
-        # explicit after review. The outer evaluator deletes only patched source.
+        # The run's reports and logs stay in `output` on success and failure; its state and
+        # checkpoints end with its instance (files.json lists them).
     if not valid:
         metrics=failure_metrics(ids,reference=reference,final=final,updates=updates,
                                 feedback_reference=feedback_reference,

@@ -1,0 +1,75 @@
+# The definition of kmeans_gpu_kernel_optimization (schema frontier.task/v1). Only what
+# differs between tasks is here; tasks/shared/task-defaults.toml has the explicit defaults of
+# the rest, and the category is this task's folder.
+#
+# GPU task: the Agent has one H100 runner (docker/agent-gpu.Dockerfile) and the Verifier runs
+# the judge on one H100 (docker/verifier-gpu.Dockerfile) through the shared GPU adapter.
+schema = "frontier.task/v1"
+id = "kmeans_gpu_kernel_optimization"
+display_name = "GPU K-Means Kernel Optimization"
+version = "native-staging.10"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 17179869184     # 16 GiB
+
+[verifier]
+cpu_millis = 3000
+memory_bytes = 8589934592         # 8 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 25
+max_train_wall_seconds = 16200
+eval_timeout_seconds = 1800
+
+# Python files below kmeanslib/, new ones included; never a reserved name, never a
+# deletion or rename. The content rule (no external optimized imports) is the judge's check_tree.
+[submission]
+max_bytes = 2097152                # the archive cap the Agent was told
+max_patch_bytes = 2000000         # the patch cap the Agent was told (old README and make_submission.sh)
+allowed_paths = ["kmeanslib/**/*.py"]
+# Reserved at every depth as the statement says. The old root-level entries (evaluator.py,
+# reference.patch, the ref file, pyproject.toml, setup.*) could never match allowed_paths.
+deny_paths = ["**/refkmeans.py", "**/conftest.py"]
+max_changed_files = 80            # as the previous judge enforced
+
+[gpu.agent]
+allowed_types = ["H100"]
+max_gpu_seconds = 10800
+max_instance_seconds = 10800
+max_instances = 1
+
+[gpu.verifier]
+max_gpu_instances = 1
+max_gpu_seconds = 18000
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["H100"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions), and the
+# per-session byte bound the Agent was told (64 MiB, below the 512 MiB default).
+[network.audit]
+max_ssh_bytes_per_direction = 67108864
+max_ssh_sessions = 1076
+ssh_session_budgets = { agent = 1024, verifier_train = 50, verifier_eval = 2 }
+
+[paper]                           # for readers; the platform never reads it
+title = "Flash-KMeans: Fast and Memory-Efficient Exact K-Means"
+venue = "arXiv 2026"
+url = "https://arxiv.org/abs/2603.09229"
+summary = "Optimize one exact Lloyd k-means step on one H100."
+
+# What a train result returns to the Agent besides score_unbounded, beat_spec_progress and
+# rejected (tasks/shared/task-defaults.toml).
+[feedback]
+geomean_speedup = "Geometric mean over the train workloads of the naive/candidate median loop-latency ratio (unitless)."
+lloyd_loop_latency_ms = "Candidate median two-step loop latency per train workload, in milliseconds; sorted, without workload labels."
+labeled_inertia = "Candidate labeled inertia of the final labels and centroids per train workload; sorted, without workload labels."
+label_mismatch_fraction = "Candidate fraction of final labels that are not an exact nearest centroid per train workload; sorted, without workload labels."

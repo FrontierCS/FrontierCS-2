@@ -21,37 +21,6 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def admit_reference(repo, *, pristine=None):
-    """Admit only a trusted restored reference, never a solver submission.
-
-    This guard remains mandatory for the parent scientific spine. Submitted
-    queues are admitted separately, as data for the isolated actor only.
-    """
-    expected = json.loads((HERE / "source.json").read_text())["reference_files"]
-    pristine = pristine or HERE.parent / "harbor/app"
-    # The exporter adds the rendered public statement to its pristine substrate.
-    if "README.md" not in expected and (pristine / "README.md").is_file():
-        expected["README.md"] = sha256(pristine / "README.md")
-    if any(p.is_symlink() for p in repo.rglob("*")):
-        raise ValueError("reference source may not contain symlinks")
-    actual = {str(p.relative_to(repo)): p for p in repo.rglob("*")
-              if p.is_file() and ".git" not in p.relative_to(repo).parts
-              and "__pycache__" not in p.relative_to(repo).parts}
-    if set(actual) != set(expected) or any(
-            p.is_symlink() or sha256(p) != expected[name] for name, p in actual.items()):
-        raise ValueError("only the exact upstream reference is admitted as the trusted scientific spine")
-
-
-def check_queue_runtime():
-    """Bind the private source/tools before loading the observer integration."""
-    root = HERE / "queue_boundary"
-    expected = json.loads((HERE / "queue_runtime.json").read_text())["files"]
-    for name, digest in expected.items():
-        path = root / name
-        if path.is_symlink() or not path.is_file() or sha256(path) != digest:
-            raise ValueError("private queue runtime changed: " + name)
-
-
 class ArrayUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         allowed = {("numpy", "ndarray"), ("numpy", "dtype")}

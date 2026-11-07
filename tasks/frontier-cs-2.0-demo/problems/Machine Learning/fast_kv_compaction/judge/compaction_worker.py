@@ -9,7 +9,9 @@ hold the model that answers the questions: it loads its own Qwen3-4B (and vLLM
 for query generation) and returns only tensors.
 
 Protocol (wire.py frames on the inherited stdin/stdout pipes):
-  -> {"kind": "ready"} once the model is loaded and solver_entry.setup() returned
+  -> {"kind": "loaded"} once the model and vLLM are loaded, before any submitted
+     code is imported (a failure before it is the platform's, not the submission's)
+  -> {"kind": "ready"} once solver_entry.setup() returned
   <- {"kind": "compact", "article": text, "target_size": int, "seed": int}
   -> {"kind": "cache", "layers": L, "has_bias": [bool] * L, "seq_len": S, "tensors": [...]}
      + raw bytes (per layer: keys, values, then attention_bias if present), or
@@ -79,6 +81,7 @@ def main() -> int:
     from evaluation.utils import extract_full_kv_cache, initialize_vllm, load_model_and_tokenizer
     model, tokenizer = load_model_and_tokenizer(MODEL, device="cuda")
     vllm_model = initialize_vllm(MODEL)
+    wire.write_frame(outbox, {"kind": "loaded"})
     import compaction.solver_entry as entry
     state = entry.setup(model, tokenizer, vllm_model)
     wire.write_frame(outbox, {"kind": "ready"})

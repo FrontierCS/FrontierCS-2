@@ -3,18 +3,18 @@
 These checks detect incomplete or inconsistent runtime evidence. They do not
 prove that malicious code in the same process cannot falsify instrumentation;
 selected submissions and their execution evidence still require trial audit.
+The run's state and checkpoints stay in its isolate instance; files.json
+(written there by instance_entry.py) lists their sizes.
 """
+import fnmatch
 import json
 import math
 import time
 from pathlib import Path
 
 
-def _regular_nonempty(root, relative):
-    path = root / relative
-    return (not path.is_symlink() and path.is_file()
-            and path.resolve().is_relative_to(root.resolve())
-            and path.stat().st_size > 0)
+def _regular_nonempty(files, relative):
+    return type(files.get(relative)) is int and files[relative] > 0
 
 
 def validate_execution(tree, output, profile, result, *, deadline):
@@ -43,12 +43,19 @@ def validate_execution(tree, output, profile, result, *, deadline):
             or any(type(v) not in (int, float) or not math.isfinite(v)
                    or not 0 <= v <= 1 for v in rewards)):
         return False
-    if not all(_regular_nonempty(output, path) for path in
+    try:
+        files = json.loads((output / "files.json").read_text())
+    except (OSError, ValueError):
+        return False
+    if not isinstance(files, dict) or not (output / "effective_config.json").is_file():
+        return False
+    if not all(_regular_nonempty(files, path) for path in
                ("state/endpoint.pt", "state/optimizer.bin", "effective_config.json")):
         return False
-    checkpoints = output / "checkpoints"
-    adapters = list(checkpoints.glob("checkpoint-*/lora/adapter_model.safetensors"))
-    if len(adapters) != 1 or not _regular_nonempty(output, adapters[0].relative_to(output)):
+    adapters = [path for path in files
+                if fnmatch.fnmatchcase(path, "checkpoints/checkpoint-*/lora/adapter_model.safetensors")
+                and path.count("/") == 3]
+    if len(adapters) != 1 or not _regular_nonempty(files, adapters[0]):
         return False
     config = json.loads((output / "effective_config.json").read_text())
     return (config["resolution"] == 512 and config["sample"]["num_steps"] == 10

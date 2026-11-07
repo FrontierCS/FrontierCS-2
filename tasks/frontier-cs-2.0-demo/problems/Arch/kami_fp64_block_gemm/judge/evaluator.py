@@ -1,4 +1,26 @@
-"""Release evaluator for the KAMI trusted batched harness adaptation."""
+"""Evaluator for the KAMI FP64 block GEMM trusted batched harness adaptation (one exact H100).
+
+For each selected workload (train: the four public DEV_SUITE points; final: FINAL_SUITE, the
+four public plus four hidden), the candidate (`tree`: the starter with the submission overlaid)
+and the source-locked reference are compiled to device-only sm_90a cubins and run by the
+trusted host in six alternating repetitions (three candidate-first, three reference-first),
+every output element checked against the CPU oracle. A workload value is the geometric mean of
+the two order-arm medians of its TFLOPS samples.
+
+raw_score = score_unbounded = 100 * G / (G + 20) with G the geometric mean of the candidate
+workload values (clipped to [0, 100]); any build, validation or timing failure scores 0.
+
+Metric per workload:
+  tflops  crossover-adjusted validated batched throughput, higher; passes when
+          candidate / reference > STRICT_IMPROVEMENT_RATIO.
+beats_reference = 1 when tflops passes on every selected workload (a conjunction). A reference
+that fails to build or validate, or a runner that is not one exact H100, is a failed
+verification, never a score.
+check_tree rejects (out_of_scope) a change to any byte of the CUDA source outside its original
+device region; task.toml [submission] holds the file scope. Every nvcc run on candidate or
+reference source and every trusted-host run (which executes their device code) is a fresh
+shared isolate instance: no judge file, no network, nothing kept; the host gets the GPU.
+"""
 
 from __future__ import annotations
 
@@ -13,19 +35,18 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
-from submission_patch import apply_submission_patch
-
 TASK_DIR = Path(__file__).resolve().parent
-APP_DIR = TASK_DIR / "harbor/app"
+APP_DIR = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
 HARNESS_DIR = APP_DIR / "frontier_harness"
 sys.path.insert(0, str(APP_DIR))
 
+import isolate  # noqa: E402  (/opt/frontier, on the import path by frontier.pth)
 from frontier_harness.adapter import (  # noqa: E402
     FIXED_ENTRY,
     build_trusted_host,
-    compile_cubin,
     split_device_region,
     transform_kernel_to_helper,
 )
@@ -45,24 +66,6 @@ WORKLOAD_TIMEOUT_SECONDS = 900
 SCORE_SCALE_TFLOPS = 20.0
 STRICT_IMPROVEMENT_RATIO: float | None = 1.024
 EXACT_GPU_NAME = "NVIDIA H100 80GB HBM3"
-
-STUBBED_SOURCE_SHA256 = "54ca1476848d70bedc469a04e24c85224305bf4a5926bc798ec807b81b7ee08e"
-REFERENCE_PATCH_SHA256 = "e104c534ba929b73d0ca1a7104aebdfc6bdb2a0a5a646d7119b14e2859d2228a"
-RESTORED_UPSTREAM_SOURCE_SHA256 = "2b822cd274b0ff600d574c06cb0e52da97216c8d01b15d0b5932d97edaafebf9"
-
-CONFIG: dict[str, Any] = {
-    "submission": {
-        "kind": "patch",
-        "repo_root": "/app",
-        "allow_paths": [
-            str(SOURCE),
-            "src/block_gemm/KAMI/1d/fp64/solver_extensions/",
-        ],
-        "max_changed_files": 12,
-        "max_patch_bytes": 262144,
-    }
-}
-
 
 class ReferenceVerificationError(RuntimeError):
     """The source-locked reference could not be restored, built or validated.
@@ -238,53 +241,90 @@ def _validate_hardware() -> None:
             f"expected exactly one {EXACT_GPU_NAME} device; observed {observed}")
 
 
-def _validate_canonical_locks() -> None:
-    if _sha256(APP_DIR / SOURCE) != STUBBED_SOURCE_SHA256:
-        raise RuntimeError("public excised CUDA source lock does not match")
-    if _sha256(TASK_DIR / "reference.patch") != REFERENCE_PATCH_SHA256:
-        raise RuntimeError("source-locked reference patch does not match")
-
-
-def _validate_solution_structure(tree: Path) -> None:
+def _outside_device_region_changed(tree: Path) -> bool:
+    """Whether any byte outside the original device region differs from the starter."""
     pristine = (APP_DIR / SOURCE).read_text(encoding="utf-8")
     candidate = (tree / SOURCE).read_text(encoding="utf-8")
     pristine_prefix, _stub, pristine_suffix = split_device_region(pristine)
-    candidate_prefix, device_region, candidate_suffix = split_device_region(candidate)
-    if candidate_prefix != pristine_prefix or candidate_suffix != pristine_suffix:
-        raise RuntimeError("bytes outside the original device region must remain source-locked")
+    try:
+        candidate_prefix, _region, candidate_suffix = split_device_region(candidate)
+    except ValueError:  # a region marker itself was removed or moved
+        return True
+    return candidate_prefix != pristine_prefix or candidate_suffix != pristine_suffix
+
+
+def check_tree(tree: str, pristine: str, changes: list) -> tuple[str, list[str]] | None:
+    """Shared-verifier hook: only the device region of the CUDA source may change; every other
+    byte of that file stays as the starter has it (task.toml [submission] has the file scope)."""
+    if _outside_device_region_changed(Path(tree)):
+        return "out_of_scope", [str(SOURCE)]
+    return None
+
+
+def _validate_device_region(tree: Path) -> None:
+    _prefix, device_region, _suffix = split_device_region((tree / SOURCE).read_text(encoding="utf-8"))
     # A lexical structure check supports the one deterministic wrapper
     # conversion. It does not blacklist source or infer performed work.
     transform_kernel_to_helper(device_region)
-    extension = tree / "src/block_gemm/KAMI/1d/fp64/solver_extensions"
-    if extension.exists():
-        for path in extension.rglob("*"):
-            if path.is_symlink() or (
-                path.exists() and not path.is_file() and not path.is_dir()
-            ):
-                raise RuntimeError("solver extension entries must be regular files")
 
 
-def _apply_reference() -> Any:
-    return apply_submission_patch(TASK_DIR / "reference.patch", TASK_DIR, CONFIG)
+def _apply_reference(scratch: Path) -> Path:
+    """The pristine starter with judge/reference.patch applied (trusted, judge-owned)."""
+    tree = scratch / "reference"
+    shutil.copytree(APP_DIR, tree, symlinks=True)
+    for path in (tree, *tree.rglob("*")):
+        if not path.is_symlink():
+            path.chmod(path.stat().st_mode | 0o200)
+    env = {**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch.resolve())}
+    for args in (["apply", "--check", "--whitespace=nowarn"], ["apply", "--whitespace=nowarn"]):
+        proc = subprocess.run(["git", "-C", str(tree), *args, str(TASK_DIR / "reference.patch")],
+                              capture_output=True, text=True, timeout=300, env=env, check=False)
+        if proc.returncode != 0:
+            raise ReferenceVerificationError("judge reference could not be restored")
+    return tree
+
+
+def _sandbox_options() -> dict:
+    """The toolchain environment every isolate instance of this judge gets (PATH holds
+    nvcc; CUDA_VISIBLE_DEVICES / NVIDIA_VISIBLE_DEVICES come with the nvidia device class)."""
+    env = {name: os.environ[name] for name in (
+        "LD_LIBRARY_PATH", "LIBRARY_PATH", "CUDA_HOME", "CUDA_PATH", "OMP_NUM_THREADS")
+        if name in os.environ}
+    return {"env": env, "path": os.environ.get("PATH", isolate.DEFAULT_PATH)}
 
 
 def _compile_module(tree: Path, workload: Workload, output: Path) -> tuple[str, str]:
-    rendered, proc = compile_cubin(
-        tree / SOURCE,
-        output,
-        m=workload.m,
-        n=workload.n,
-        k=workload.k,
-        active_ranks=workload.active_ranks,
-        allocated_ranks=workload.allocated_ranks,
-    )
-    if proc.returncode != 0 or not output.is_file() or output.stat().st_size == 0:
-        detail = (proc.stderr or proc.stdout).strip().splitlines()
+    """nvcc on submitted source runs in an isolate instance: `tree` is its own copy, so an
+    #include can reach no judge file; only the cubin comes back."""
+    result = isolate.run(
+        [os.path.realpath(sys.executable), "{in}/compile_module.py", f"{{work}}/{SOURCE}",
+         f"{{out}}/{output.name}", str(workload.m), str(workload.n), str(workload.k),
+         str(workload.active_ranks), str(workload.allocated_ranks)],
+        tree=tree, inputs={"compile_module.py": TASK_DIR / "compile_module.py",
+                           "frontier_harness": HARNESS_DIR},
+        outputs=[output.name], timeout_seconds=BUILD_TIMEOUT_SECONDS + 60, **_sandbox_options())
+    if result.timed_out:
+        raise subprocess.TimeoutExpired("nvcc", BUILD_TIMEOUT_SECONDS)
+    try:
+        report = json.loads(result.stdout.decode("utf-8").strip().splitlines()[-1])
+    except (UnicodeDecodeError, IndexError, ValueError):
+        report = None
+    if not result.ok or not isinstance(report, dict):
+        raise RuntimeError("device-only sm_90a compilation failed")
+    if report.get("timeout"):
+        raise subprocess.TimeoutExpired("nvcc", BUILD_TIMEOUT_SECONDS)
+    if "error" in report:
+        raise ValueError(report["error"])
+    cubin = result.outputs.get(output.name)
+    if report["returncode"] != 0 or not cubin:
+        detail = (report["stderr"] or report["stdout"]).strip().splitlines()
         raise RuntimeError(
             "device-only sm_90a compilation failed"
             + (f": {detail[-1][:180]}" if detail else "")
         )
-    return rendered.rendered_sha256, proc.stderr
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(cubin)
+    return report["rendered_sha256"], report["stderr"]
 
 
 def _compile_trusted_host(output: Path) -> None:
@@ -332,9 +372,9 @@ def _measure_workload(
     except Exception as error:
         raise ReferenceVerificationError("source-locked reference did not compile") from error
     command = [
-        str(trusted_host),
-        "--candidate", str(candidate_cubin),
-        "--reference", str(reference_cubin),
+        "{work}/trusted_host",
+        "--candidate", "{work}/candidate.cubin",
+        "--reference", "{work}/reference.cubin",
         "--m", str(workload.m), "--n", str(workload.n), "--k", str(workload.k),
         "--active-ranks", str(workload.active_ranks),
         "--allocated-ranks", str(workload.allocated_ranks),
@@ -343,13 +383,17 @@ def _measure_workload(
         "--seed", str(workload.input_seed),
         "--repetitions", str(REPETITIONS),
     ]
-    proc = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        timeout=WORKLOAD_TIMEOUT_SECONDS,
-        check=False,
-    )
+    # The trusted host executes submitted device code: it runs in an isolate instance with
+    # the GPU and a work dir holding only the host binary and the two cubins (copied with their
+    # modes, so the host stays executable). Timing stays inside the host.
+    shutil.copy2(trusted_host, build / "trusted_host")
+    host = isolate.run(command, tree=build, timeout_seconds=WORKLOAD_TIMEOUT_SECONDS,
+                            devices=["nvidia"], **_sandbox_options())
+    if host.timed_out:
+        raise subprocess.TimeoutExpired(command, WORKLOAD_TIMEOUT_SECONDS)
+    proc = SimpleNamespace(returncode=host.returncode if host.limit is None else -9,
+                           stdout=host.stdout.decode("utf-8", errors="replace"),
+                           stderr=host.stderr.decode("utf-8", errors="replace"))
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout).strip().splitlines()
         # The trusted host labels which module failed full-output validation.
@@ -419,27 +463,18 @@ def _clears_reference(candidate_tflops: float, reference_tflops: float) -> bool:
     return _strictly_beats_reference(candidate_tflops, reference_tflops, STRICT_IMPROVEMENT_RATIO)
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
-    candidate_result = None
-    reference_result = None
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    """`tree` is the starter with only the submission's allowed files overlaid (shared verifier,
+    after check_tree)."""
+    candidate_tree = Path(tree)
     scratch = None
     try:
         _validate_hardware()
-        _validate_canonical_locks()
         scratch = _scratch_root()
-        candidate_result = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not candidate_result.ok or candidate_result.workdir is None:
-            return 0.0, 0.0, candidate_result.message or "invalid submission", {}
-        reference_result = _apply_reference()
-        if not reference_result.ok or reference_result.workdir is None:
-            raise ReferenceVerificationError("judge reference could not be restored")
-        _validate_solution_structure(candidate_result.workdir)
-        try:
-            _validate_solution_structure(reference_result.workdir)
-        except RuntimeError as error:
-            raise ReferenceVerificationError("judge reference structure is invalid") from error
-        if _sha256(reference_result.workdir / SOURCE) != RESTORED_UPSTREAM_SOURCE_SHA256:
-            raise ReferenceVerificationError("reference patch did not restore the source-locked upstream CUDA")
+        reference_tree = _apply_reference(scratch)
+        # The reference's device region is converted (and any failure reported as a failed
+        # verification) when it is compiled.
+        _validate_device_region(candidate_tree)
 
         trusted_host = scratch / "trusted_host"
         _compile_trusted_host(trusted_host)
@@ -450,8 +485,8 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
         pass_rows: list[dict[str, Any]] = []
         for workload in suite:
             measured = _measure_workload(
-                candidate_result.workdir,
-                reference_result.workdir,
+                candidate_tree,
+                reference_tree,
                 trusted_host,
                 workload,
                 scratch,
@@ -539,17 +574,13 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
     except Exception as error:
         return 0.0, 0.0, f"evaluation failed: {str(error)[:220]}", {}
     finally:
-        for result in (candidate_result, reference_result):
-            workdir = getattr(result, "workdir", None)
-            if workdir is not None:
-                shutil.rmtree(workdir.parent, ignore_errors=True)
         if scratch is not None:
             shutil.rmtree(scratch, ignore_errors=True)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print(json.dumps({"score": 0.0, "message": "usage: evaluator.py SOLUTION_PATCH"}))
+        print(json.dumps({"score": 0.0, "message": "usage: evaluator.py TREE"}))
         raise SystemExit(0)
     score, unbounded, message, metrics = evaluate(sys.argv[1])
     print(json.dumps({

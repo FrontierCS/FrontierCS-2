@@ -1,0 +1,37 @@
+{
+  "metadata": {
+    "calibration": {
+      "final_timeout_reserve_seconds": 3111.3204323733225,
+      "manifest": "judge/targets/manifest.json",
+      "manifest_sha256": "sha256:006eec8c62f7df9e2084a228964f6d3c8585a635c2216f86cc2a324c3ddafb8a",
+      "max_capture_wall_seconds": 2288.6795676266775,
+      "script": "judge/calibrate.py",
+      "status": "READY"
+    },
+    "conversion": {
+      "method": "Native port; upstream evaluation path preserved",
+      "source_commit": "2020f6d37940fe013e7e7f1ebf409e5d107c5670",
+      "source_repo": "https://github.com/adamzweiger/compaction"
+    },
+    "evaluation": {
+      "beat_spec_sha256": "sha256:b4b5bd4ba5c62354a9f32e8b345a8ee55b0f67583d11eb4d934d6a4885a7fc42",
+      "suite_relation": "development grades the 12 public articles; final grades those 12 plus 12 hidden articles with the same evaluator and beat-spec rules"
+    },
+    "generator": {
+      "candidate_id": null,
+      "commit": null,
+      "pipeline": "preview-manual",
+      "run_id": null,
+      "source": "authoring proposal (scope, QuALITY subset, metric definitions)"
+    },
+    "isolation": "hidden articles, gold labels, the reference patch and the frozen targets are compiled into the verifier image only; the agent images hold the public tree with the 12 development articles",
+    "paper": {
+      "arxiv": "2602.16284",
+      "code": "https://github.com/adamzweiger/compaction",
+      "code_commit": "2020f6d37940fe013e7e7f1ebf409e5d107c5670",
+      "license": "MIT",
+      "title": "Fast KV Compaction via Attention Matching"
+    }
+  },
+  "note": "Provenance metadata moved out of policy.json by the task.toml migration; not read by the platform."
+}

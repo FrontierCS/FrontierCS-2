@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
 """Evaluator for fast_kv_compaction (Attention Matching KV compaction, QuALITY + Qwen3-4B).
 
-The submitted patch edits the public upstream tree's compaction/ package. One
-GPU process (harness.py) builds the method from compaction/solver_entry.py and
-runs the unchanged upstream QA path on every article of the suite, recording
-QA correctness, synchronized compaction time and the compacted prefix's
-physical bytes. The candidate is compared article by article with frozen
-reference targets (judge/targets/manifest.json, produced by calibrate.py from
-seeded reference captures); no reference runs during an ordinary evaluation.
+Shared verifier, trusted command test sandbox (task.toml [test_sandboxes.shard]): on the
+CPU control image the shared verifier applies the patch (edit scope, forbidden_added) and calls
+evaluate(tree); evaluate() sends each shard of the suite (3 articles) with the applied tree and
+this judge to its own single-H100 runner of the verifier-gpu image through the shared adapter's
+run_sandboxes (train 4 runners / 12 articles, final 8 / 24; leases 3600 s / 4500 s per runner),
+where `evaluator.py --shard-run` runs harness.py on the applied tree and returns one bounded
+JSON document. Candidates are compared article by article
+with frozen reference targets (judge/targets/manifest.json, from calibrate.py).
+Repetitions (run_local, warmup=True in both roles): final runs harness.py with 3 fresh-worker
+repetitions after an untimed warmup, QA on each; development runs `--repeats 1`, also after an
+untimed warmup, QA once. harness.py's docstring still says `--no-warmup` for development: it
+is a measured file of judge/calibration_compatibility.json and stays byte-identical.
 
-Until calibration is complete the manifest is on HOLD and every evaluation
-raises TargetsUnavailable: an evaluator error, never a candidate score.
+Scoring. Mode (time or bytes) follows the declared target size. Per article:
+  accuracy = correct / questions,
+  e = clip(0.5 + log10(r) / 6, 0, 1), r = target/candidate on the mode's axis (seconds or bytes)
+      times min(1, the same ratio on the other axis),
+  value = accuracy * (0.75 + 0.25 e);  raw_score = score_unbounded = 100 * mean value.
+The reference scores 100 * mean(reference accuracy) * 0.875 (r = 1, e = 0.5).
+Metrics (per article, beat_spec_workload_passes) qa_correct, compaction_seconds,
+compact_cache_bytes: pass/fail per judge/gate.py decide(). beats_reference = 1 iff every article
+passes every metric. A failed candidate run scores 0 with every article failing; missing targets,
+a GPU mismatch or a runner failure raise (an unscored verification).
 """
 
 from __future__ import annotations
@@ -25,12 +38,12 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Any
 
 _MODULE_DIR = Path(__file__).resolve().parent
 if str(_MODULE_DIR) not in sys.path:
     sys.path.insert(0, str(_MODULE_DIR))
-from submission_patch import apply_submission_patch  # noqa: E402
 import gate  # noqa: E402
 from gate import TargetsUnavailable  # noqa: E402
 
@@ -42,16 +55,6 @@ MANIFEST_PATH = TASK_DIR / "targets" / "manifest.json"
 HARNESS = TASK_DIR / "harness.py"
 SOLVER_ENTRY = "compaction/solver_entry.py"
 
-CONFIG = {
-    "submission": {
-        "kind": "patch",
-        "repo_root": "/app",
-        "allow_paths": ["compaction/"],
-        "max_changed_files": 40,
-        "max_patch_bytes": 262144,
-    }
-}
-
 # Frozen article split of the 24-article QuALITY subset (sorted ids, alternating),
 # chosen before any model outcome was seen. Final grades both halves.
 PUBLIC_ARTICLES = ("22073", "22218", "22462", "22579", "22867", "22876",
@@ -60,11 +63,15 @@ HIDDEN_ARTICLES = ("22102", "22346", "22524", "22590", "22875", "22958",
                    "22967", "23160", "24290", "30035", "31599", "32665")
 
 EVALUATION_SEED = 20261019
-# Three articles per shard, including warmup, compaction and QA on each repetition.
+# Three articles per shard, including warmup, compaction and QA on each repetition. These are
+# the per-runner leases (task.toml [test_sandboxes.shard] lease_seconds): final stays below the
+# 5400-s evaluation timeout so that provisioning, upload and runner deletion fit inside it.
 TRAIN_TIMEOUT_SECONDS = 3600
-FINAL_TIMEOUT_SECONDS = 5400
+FINAL_TIMEOUT_SECONDS = 4500
 # Single-H100 Verifier GPU instances per role; articles are sharded across them
-# (shard()). The CPU verifier orchestrates them through verifier/gpu_fanout.py.
+# (shard()). evaluate() on the CPU control image runs each on a runner of the trusted command
+# test sandbox SANDBOX through the shared GPU adapter.
+SANDBOX = "shard"
 INSTANCES = {"train": 4, "final": 8}
 VERIFIER_GPUS = max(INSTANCES.values())
 # Final and calibration: 3 fresh-worker repetitions after a warmup, QA on each.
@@ -74,6 +81,16 @@ FINAL_REPEATS = 3
 SHARD_TIMEOUT_GRACE_SECONDS = 60
 TRAIN_REPEATS = 1
 INFRA_EXIT_CODE = 75
+# Bound of one shard document, and time kept back from the end of the shard step's limit (its
+# FRONTIER_VERIFIER_LOCAL_DEADLINE) to write it.
+MAX_SHARD_BYTES = 4 * 1024 * 1024
+RESULT_MARGIN_SECONDS = 240
+# The least a shard can run in: the harness's trusted setup (engine anchor, model load,
+# isolation probes, prefill anchors), then the trusted QA it reserves for every stored cache
+# (harness.QA_RESERVE_SECONDS per article and repetition). A runner whose lease, after its
+# provisioning and upload, leaves less than this is the platform's fault; above it the
+# budget is only capped. Historical shards took at most 640 s (train) and 1781 s (final).
+MIN_SHARD_SETUP_SECONDS = 300
 MAX_HARNESS_LOG_BYTES = 64 * 1024
 
 SPEC_METRICS = ("qa_correct", "compaction_seconds", "compact_cache_bytes")
@@ -116,12 +133,9 @@ def reference_absolute_score(workloads, targets: dict) -> float:
 assert SPEC_METRICS == gate.METRICS
 VISIBLE_METRICS = ("dev_qa_accuracy", "dev_compaction_seconds", "dev_compact_cache_bytes")
 
-# The trust boundary is the worker process (see harness.py): submitted code runs
-# only there, as an unprivileged user without the judge, the model that answers,
-# the timer or the byte count. This token check is only a fast early rejection.
-FORBIDDEN_ADDED_PATTERNS = (
-    re.compile(r"FRONTIER_|HARBOR_"),
-)
+# The trust boundary is the worker process (see harness.py): submitted code runs only there, as
+# an unprivileged user without the judge, the model that answers, the timer or the byte count.
+# The early token check ("FRONTIER_|HARBOR_" in added lines) is task.toml forbidden_added.
 
 
 class HarnessInfrastructureFailure(RuntimeError):
@@ -132,29 +146,19 @@ def _workloads(final: bool) -> tuple[str, ...]:
     return PUBLIC_ARTICLES + HIDDEN_ARTICLES if final else PUBLIC_ARTICLES
 
 
-def _empty_metrics(final: bool) -> dict[str, Any]:
+def _failed_metrics(workloads: tuple[str, ...], targets: dict) -> dict[str, Any]:
+    """A failed candidate run: every article fails every metric, the score 0 is the margin's.
+    The shared verifier's final projection (private_metrics) needs reference_score and margin."""
+    reference = reference_absolute_score(workloads, targets)
     return {
         "beats_reference": 0,
+        "reference_score": reference,
+        "margin": -reference,
         "beat_spec_workload_passes": [
             {"workload": workload, "metrics": {name: False for name in SPEC_METRICS}}
-            for workload in _workloads(final)
+            for workload in workloads
         ],
     }
-
-
-def _added_source(patch_path: str | Path) -> str:
-    text = Path(patch_path).read_text(encoding="utf-8", errors="replace")
-    return "\n".join(line[1:] for line in text.splitlines()
-                     if line.startswith("+") and not line.startswith("+++"))
-
-
-def _task_policy_error(patch_path: str | Path) -> str | None:
-    added = _added_source(patch_path)
-    for pattern in FORBIDDEN_ADDED_PATTERNS:
-        match = pattern.search(added)
-        if match:
-            return f"submitted source uses a forbidden token: {match.group(0).strip()[:40]}"
-    return None
 
 
 def declared_target_size(root: Path) -> float:
@@ -249,15 +253,65 @@ def combine_shards(workloads: tuple[str, ...], instances: int, results: dict[int
             "rows": [rows_by_workload[w] for w in workloads]}
 
 
-def run_harness(solution_path: Path, workloads: tuple[str, ...], *, final: bool, timeout: int) -> dict:
-    """Measure the submission on INSTANCES[role] single-GPU instances (CPU verifier)."""
-    import gpu_fanout  # verifier plumbing beside the CPU verifier's adapter
-    role = "final" if final else "train"
+def shard_command(index: int, instances: int, role: str, budget: int, root: str) -> list[str]:
+    """What one Verifier GPU runner runs: this evaluator (the uploaded judge copy) on its shard of
+    the suite, against the applied tree, writing one bounded JSON document. `root` is the
+    sandbox's workdir on the runner, holding input/tree, input/judge and output/."""
+    return ["/opt/frontier/runtime-python", f"{root}/input/judge/evaluator.py", "--shard-run",
+            str(index), str(instances), role, f"{root}/input/tree", f"{root}/output/shard.json",
+            str(int(budget))]
+
+
+def _shard_document(result, index: int) -> dict:
+    """The one JSON document a shard's runner returned; anything else is the platform's."""
+    step = result.steps[0]
+    if step.lost_session or step.timed_out or step.exit_code != 0:
+        raise HarnessInfrastructureFailure(f"shard {index}: the trusted shard command did not complete")
+    path = None if result.outputs is None else result.outputs / "output" / "shard.json"
+    if path is None or not path.is_file():
+        raise HarnessInfrastructureFailure(f"shard {index}: the runner returned no bounded shard document")
+
+    def finite(constant):
+        raise ValueError(f"non-finite JSON number {constant}")
     try:
-        results = gpu_fanout.run_shards(Path(solution_path), "eval" if final else "train",
-                                        INSTANCES[role], timeout)
-    except gpu_fanout.FanoutInfrastructureError as exc:
-        raise HarnessInfrastructureFailure(str(exc)) from exc
+        return json.loads(path.read_bytes().decode("utf-8"), parse_constant=finite)
+    except ValueError as exc:
+        raise HarnessInfrastructureFailure(f"shard {index}: the shard result is not one JSON document") from exc
+
+
+def _run_shards(tree: Path, role: str, instances: int, seconds: int) -> dict[int, dict]:
+    """Every shard on its own single-GPU runner of the trusted command test sandbox SANDBOX
+    (task.toml [test_sandboxes.shard]); {shard: document}. Each runner receives the applied tree
+    and this judge (with config.yaml and pristine/) and runs one step for the rest of its grant;
+    the harness budgets itself by FRONTIER_VERIFIER_LOCAL_DEADLINE. The adapter owns runner
+    creation, the upload, deadlines and termination; a runner failure is an infrastructure
+    error, never a score."""
+    # The shared adapter on the control image. Any of its errors is the platform's, never a score.
+    from fcs2_verifier_gpu import (SandboxRun, SandboxStep, VerifierGpuError, run_sandboxes,
+                                   sandbox_workdir)
+    with tempfile.TemporaryDirectory(prefix="fastkv-shards-") as scratch:
+        files, into = Path(scratch) / "files", Path(scratch) / "outputs"
+        shutil.copytree(tree, files / "input" / "tree", symlinks=True)
+        shutil.copytree(TASK_DIR, files / "input" / "judge", symlinks=True)
+        into.mkdir()
+        try:
+            root = sandbox_workdir(SANDBOX)
+            runs = [SandboxRun(SANDBOX, files,
+                               [SandboxStep(shard_command(index, instances, role,
+                                                          max(1, seconds - RESULT_MARGIN_SECONDS), root),
+                                            None, {"TMPDIR": "/workspace"})],
+                               ["output/shard.json"], MAX_SHARD_BYTES)
+                    for index in sorted(shard(_workloads(role == "final"), instances))]
+            results = run_sandboxes(runs, into=into)
+        except VerifierGpuError as exc:
+            raise HarnessInfrastructureFailure(str(exc)) from exc
+        return {index: _shard_document(result, index) for index, result in enumerate(results)}
+
+
+def run_harness(tree: Path, workloads: tuple[str, ...], *, final: bool, timeout: int) -> dict:
+    """Measure the applied tree on INSTANCES[role] single-GPU runners (control Verifier)."""
+    role = "final" if final else "train"
+    results = _run_shards(tree, role, INSTANCES[role], timeout)
     shard_results = {}
     for index, document in results.items():
         if not isinstance(document, dict) or document.get("shard") != index:
@@ -270,37 +324,50 @@ def run_harness(solution_path: Path, workloads: tuple[str, ...], *, final: bool,
     return combine_shards(workloads, INSTANCES[role], shard_results)
 
 
-def shard_run(index: int, instances: int, role: str, payload: Path, output: Path,
+def minimal_shard_seconds(articles: int, final: bool) -> int:
+    """Trusted setup plus the trusted QA of every cache: the least a shard of `articles` needs."""
+    from harness import QA_RESERVE_SECONDS
+    repeats = FINAL_REPEATS if final else TRAIN_REPEATS
+    return MIN_SHARD_SETUP_SECONDS + QA_RESERVE_SECONDS * articles * repeats
+
+
+def shard_run(index: int, instances: int, role: str, tree: Path, output: Path,
               budget: float | None = None) -> int:
-    """On one GPU instance: apply the payload's patch and measure this shard's articles."""
-    sys.path.insert(0, "/opt/frontier")
+    """On one GPU runner: measure this shard's articles on the applied tree."""
     final = role == "final"
     workloads = shard(_workloads(final), instances).get(index, ())
     document = {"shard": index, "instances": instances, "role": role}
-    applied = None
     try:
-        from fcs2_verifier import entrypoint_path, extract_payload
-        with tempfile.TemporaryDirectory(prefix="fastkv-shard-") as scratch:
-            extract_payload(payload, Path(scratch) / "payload")
-            patch = entrypoint_path(Path(scratch) / "payload", "payload/solution.patch")
-            applied = apply_submission_patch(str(patch), TASK_DIR, CONFIG)
-            if not applied.ok or applied.workdir is None:
-                raise RuntimeError(applied.message or "submission patch was rejected")
-            limit = FINAL_TIMEOUT_SECONDS if final else TRAIN_TIMEOUT_SECONDS
-            budget = min(limit, budget) if budget else limit
-            document["result"] = run_local(
-                Path(applied.workdir), workloads, timeout=int(budget) + SHARD_TIMEOUT_GRACE_SECONDS,
-                repeats=FINAL_REPEATS if final else TRAIN_REPEATS, warmup=True, budget=budget)
-            document["status"] = "ok"
+        limit = FINAL_TIMEOUT_SECONDS if final else TRAIN_TIMEOUT_SECONDS
+        budget = min(limit, budget) if budget else limit
+        # The shard step's limit ends at FRONTIER_VERIFIER_LOCAL_DEADLINE (this runner's
+        # monotonic clock: the rest of the runner's grant, which provisioning and upload already
+        # spent part of, less the adapter's collect reserve); keep the margin to write the shard
+        # document before it. The budget is what is left, capped by the configured one; only a
+        # lease below the shard's minimal need is infrastructure.
+        deadline = os.environ.get("FRONTIER_VERIFIER_LOCAL_DEADLINE")
+        if deadline:
+            available = float(deadline) - time.monotonic() - RESULT_MARGIN_SECONDS
+            needed = minimal_shard_seconds(len(workloads), final)
+            if available < needed:
+                raise HarnessInfrastructureFailure(
+                    f"the runner's lease leaves {available:.0f} s, below the {needed:.0f} s "
+                    f"this shard needs at least")
+            budget = min(budget, available)
+        document["result"] = run_local(
+            Path(tree), workloads, timeout=int(budget) + SHARD_TIMEOUT_GRACE_SECONDS,
+            repeats=FINAL_REPEATS if final else TRAIN_REPEATS, warmup=True, budget=budget)
+        document["status"] = "ok"
     except HarnessInfrastructureFailure as exc:
         document.update(status="infrastructure", message=str(exc)[-2000:])
     except Exception as exc:  # noqa: BLE001 - the submission's failure on this shard
         document.update(status="submission", message=(str(exc).strip() or type(exc).__name__)[:180])
-    finally:
-        if applied is not None and applied.workdir is not None:
-            shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(document, allow_nan=False, sort_keys=True))
+    body = json.dumps(document, allow_nan=False, sort_keys=True)
+    if len(body.encode()) > MAX_SHARD_BYTES:
+        body = json.dumps({"shard": index, "instances": instances, "role": role,
+                           "status": "infrastructure", "message": "shard result exceeds its bound"})
+    output.write_text(body)
     return 0
 
 
@@ -330,22 +397,18 @@ def _complete_metrics(mode, workloads, rows, targets, score) -> dict[str, Any]:
     }
 
 
-def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
+def evaluate(tree: str) -> tuple[float, float, str, dict]:
+    """The shared verifier has applied the patch (edit scope, forbidden_added); `tree` is the
+    starter with only the allowed files overlaid. Runs on the CPU control image."""
     final = os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
     workloads = _workloads(final)
     # No frozen targets, no verdict for anyone: raise before touching the patch.
     targets, expected_device, expected_engine = load_targets(workloads)
-    applied = None
+    calibrated = targets
     try:
-        policy_error = _task_policy_error(solution_path)
-        if policy_error:
-            return 0.0, 0.0, policy_error, _empty_metrics(final)
-        applied = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not applied.ok or applied.workdir is None:
-            return 0.0, 0.0, applied.message or "submission patch was rejected", _empty_metrics(final)
-        root = Path(applied.workdir)
+        root = Path(tree)
         mode = gate.mode_for(declared_target_size(root))
-        result = run_harness(Path(solution_path), workloads, final=final,
+        result = run_harness(root, workloads, final=final,
                              timeout=FINAL_TIMEOUT_SECONDS if final else TRAIN_TIMEOUT_SECONDS)
         # Preserve per-instance scaling; speed drift is diagnostic, GPU identity is required.
         engines = result.get("instance_engine_anchor_seconds") or {"0": result.get("engine_anchor_seconds")}
@@ -372,26 +435,18 @@ def evaluate(solution_path: str) -> tuple[float, float, str, dict]:
         raise
     except (OSError, ValueError, RuntimeError, KeyError, TypeError, SyntaxError, json.JSONDecodeError) as exc:
         message = str(exc).strip() or "evaluation failed"
-        return 0.0, 0.0, message[:180], _empty_metrics(final)
-    finally:
-        if applied is not None and applied.workdir is not None:
-            shutil.rmtree(Path(applied.workdir).parent, ignore_errors=True)
+        return 0.0, 0.0, message[:180], _failed_metrics(workloads, calibrated)
 
 
 def _main() -> int:
+    """`evaluator.py --shard-run INDEX INSTANCES ROLE TREE OUTPUT [BUDGET]` on a GPU runner."""
     if len(sys.argv) in (7, 8) and sys.argv[1] == "--shard-run":
-        _flag, index, instances, role, payload, output = sys.argv[1:7]
+        _flag, index, instances, role, tree, output = sys.argv[1:7]
         if role not in INSTANCES:
             raise SystemExit("role must be train or final")
         budget = float(sys.argv[7]) if len(sys.argv) == 8 else None
-        return shard_run(int(index), int(instances), role, Path(payload), Path(output), budget)
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: evaluator.py SOLUTION.patch")
-    path = sys.argv[1]
-    score, unbounded, message, metrics = evaluate(path)
-    print(json.dumps({"score": score, "score_unbounded": unbounded,
-                      "message": message, "metrics": metrics}, sort_keys=True))
-    return 0
+        return shard_run(int(index), int(instances), role, Path(tree), Path(output), budget)
+    raise SystemExit("usage: evaluator.py --shard-run INDEX INSTANCES ROLE TREE OUTPUT [BUDGET]")
 
 
 if __name__ == "__main__":

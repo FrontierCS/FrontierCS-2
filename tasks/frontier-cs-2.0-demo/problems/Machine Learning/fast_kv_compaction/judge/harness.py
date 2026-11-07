@@ -419,8 +419,13 @@ class WorkerSession:
         self.pid_namespace = None
         self._drain = threading.Thread(target=self._collect, daemon=True)
         self._drain.start()
-        header = self._read(self.budget.remaining(WORKER_READY_SECONDS))[0]
+        # Until "loaded" only the launcher and the pristine runtime have run (model, vLLM):
+        # any failure there is the platform's and is never scored.
+        loaded = self._read(self.budget.remaining(WORKER_READY_SECONDS), trusted=True)[0]
         self.pid_namespace = _pid_namespace(self.proc.pid)
+        if loaded.get("kind") != "loaded":
+            raise InfrastructureFailure("worker runtime did not report loaded")
+        header = self._read(self.budget.remaining(WORKER_READY_SECONDS))[0]
         if header.get("kind") != "ready":
             raise SubmissionFailure("worker did not become ready")
 
@@ -430,7 +435,9 @@ class WorkerSession:
             if len(self.log) > MAX_LOG_BYTES:
                 del self.log[: len(self.log) - MAX_LOG_BYTES]
 
-    def _read(self, timeout: float):
+    def _read(self, timeout: float, trusted: bool = False):
+        """One frame. trusted: no submitted code has run in the worker yet, so a failure is
+        an InfrastructureFailure carrying the worker's stderr tail."""
         result: dict = {}
 
         def reader():
@@ -444,12 +451,21 @@ class WorkerSession:
         thread.join(timeout)
         if thread.is_alive():
             self.kill()
-            raise SubmissionFailure("worker timed out")
-        if self.watchdog.tripped:
-            raise SubmissionFailure("worker exceeded its host memory limit")
-        if "error" in result:
-            raise SubmissionFailure(f"worker protocol failure: {result['error']}")
-        return result["frame"]
+            failure = "worker timed out"
+        elif self.watchdog.tripped:
+            failure = "worker exceeded its host memory limit"
+        elif "error" in result:
+            failure = f"worker protocol failure: {result['error']}"
+        else:
+            return result["frame"]
+        if trusted:
+            self.kill()
+            self.proc.wait()
+            self._drain.join()
+            tail = bytes(self.log[-2000:]).decode(errors="replace")
+            raise InfrastructureFailure(f"{failure} before loading the runtime (exit "
+                                        f"{self.proc.returncode}): {tail}")
+        raise SubmissionFailure(failure)
 
     def compact(self, key: str, article: str, target_size: int, seed: int, synchronize=None):
         """Timed request; returns (seconds, header, payloads)."""

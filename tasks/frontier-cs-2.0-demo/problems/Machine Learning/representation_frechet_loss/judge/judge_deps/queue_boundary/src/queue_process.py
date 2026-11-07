@@ -1,64 +1,92 @@
-"""Trusted lifetime/transport for a confined queue worker."""
+"""Trusted lifetime/transport for a queue worker under the shared isolate launcher.
+
+Each queue runs queue_actor.py, which imports the submitted FeatureQueue, as a long-lived
+worker started with the shared launcher (/opt/frontier/isolate.py, `start`; on the GPU
+runner its userns backend): fresh user, mount, network, PID and IPC namespaces, no judge files,
+an environment built from nothing, no new processes (syscalls="no_fork"), private directories
+deleted when it ends. Its only inputs are the queue-only source snapshot and the actor files;
+tensors cross its stdin/stdout by value (queue_wire). A worker that does not start is an
+infrastructure fault, never a candidate failure: a sandbox that cannot be built raises
+IsolateError, and a worker that does not reach READY raises QueueWorkerStartError. Until READY the
+worker runs only trusted code (the actor, torch and the CUDA context), so its startup has its own
+bound, STARTUP_SECONDS, not the submission's per-call budget.
+"""
 
 from pathlib import Path
 import math
-import os
 import select
-import signal
-import subprocess
-import tempfile
-import threading
 import time
 
 import queue_wire as wire
 
+import isolate  # /opt/frontier, on the import path by frontier.pth
+
+HERE = Path(__file__).resolve().parent
+ACTOR_FILES = ("queue_actor.py", "queue_wire.py")
+STDERR_PREFIX_BYTES = 8192
+# Bounds of one queue worker. Its stderr is the author's diagnostic only; the cap keeps a
+# chatty queue from ending the workload (the instance stops at output_bytes).
+WORKER_OUTPUT_BYTES = 256 << 20
+WORKER_PATH = "/usr/bin:/bin"
+# Seconds the instance outlives the queue deadline, so the actor reports its own deadline first.
+LIFETIME_MARGIN_SECONDS = 30
+# Bound of a worker's startup (isolate launch, interpreter, import torch, CUDA context) until
+# READY; it runs no submitted code. Round 5's 15 s (the per-call budget) expired on a loaded runner.
+STARTUP_SECONDS = 180
+
+
+class QueueWorkerStartError(RuntimeError):
+    """A queue worker did not reach READY: a judge/infrastructure fault, never a candidate failure."""
+
+
+def worker_options(allow_cuda):
+    """isolate.start keywords of one queue worker (tests swap them for the local backend)."""
+    env = {"PYTHONDONTWRITEBYTECODE": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1",
+           "OPENBLAS_NUM_THREADS": "1", "CUDA_VISIBLE_DEVICES": "0" if allow_cuda else "",
+           "LD_LIBRARY_PATH": "/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
+           "CUDA_CACHE_PATH": "{tmp}"}
+    return {"devices": ["nvidia"] if allow_cuda else [], "env": env, "path": WORKER_PATH,
+            "syscalls": "no_fork", "output_bytes": WORKER_OUTPUT_BYTES}
+
 
 class QueueProcess:
-    def __init__(self, source, scratch_root, *, python, deadline, seconds=15, allow_cuda=False, namespace=False):
+    def __init__(self, source, *, python, deadline, seconds=15, allow_cuda=False):
         if not math.isfinite(deadline) or deadline <= time.monotonic():
             raise ValueError("Queue lifetime must have a finite future deadline")
         self.deadline, self.seconds = deadline, seconds
         self.seq, self.closed = 0, False
-        self.scratch = tempfile.TemporaryDirectory(prefix="fd-queue-", dir=scratch_root)
-        if os.geteuid() == 0:
-            os.chown(self.scratch.name, 65534, 65534)
-        actor = Path(__file__).with_name("queue_actor.py")
-        self.process = None
-        self.stderr_prefix = bytearray()
-        self.stderr_reader = None
+        self.result, self.stderr_prefix = None, b""
+        self.instance = None
+        inputs = {"solution": Path(source).resolve(strict=True)}
+        inputs.update((name, HERE / name) for name in ACTOR_FILES)
+        argv = [str(python), "-I", "-B", "{in}/queue_actor.py", "{in}/solution", "{work}",
+                "cuda" if allow_cuda else "cpu", str(deadline)]
         try:
-            if allow_cuda or namespace:
-                from queue_namespace import command
-                argv = command(Path(source).resolve(), actor.parent, python, cuda=allow_cuda)
-            else:
-                argv = [str(python), "-I", "-B", str(actor), str(Path(source).resolve()), self.scratch.name, "cpu"]
-            argv.append(str(deadline))
-            self.process = subprocess.Popen(
-                argv,
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                close_fds=True, start_new_session=True,
-                env={"PATH": "/usr/bin:/bin", "HOME": self.scratch.name, "TMPDIR": self.scratch.name,
-                     "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1",
-                     "PYTHONDONTWRITEBYTECODE": "1", "CUDA_VISIBLE_DEVICES": "0" if allow_cuda else "",
-                     "LD_LIBRARY_PATH": "/usr/local/nvidia/lib:/usr/local/nvidia/lib64",
-                     "CUDA_CACHE_PATH": self.scratch.name})
-            self.stderr_reader = threading.Thread(target=self._drain_stderr, daemon=True)
-            self.stderr_reader.start()
-            if wire.receive(self.process.stdout.fileno(), self._deadline()) != (0, wire.READY, []):
+            self.instance = isolate.start(
+                argv, timeout_seconds=deadline - time.monotonic() + LIFETIME_MARGIN_SECONDS,
+                inputs=inputs, **worker_options(allow_cuda))
+            ready = wire.receive(self.instance.stdout.fileno(),
+                                 min(deadline, time.monotonic() + STARTUP_SECONDS))
+            if ready != (0, wire.READY, []):
                 raise ValueError("Queue worker did not establish readiness")
-        except BaseException as error:
+        except isolate.IsolateError:
             self.close()
-            error.worker_stderr = self.stderr_prefix.decode(errors="replace")
             raise
-
-    def _drain_stderr(self):
-        # Drain continuously, retaining only a bounded author diagnostic. These
-        # untrusted bytes are never used as tensor replies, validity or scores.
-        while chunk := self.process.stderr.read(4096):
-            self.stderr_prefix.extend(chunk[:max(0, 8192 - len(self.stderr_prefix))])
+        except Exception as error:
+            self.close()
+            fault = QueueWorkerStartError(f"queue worker did not start: {type(error).__name__}: {error}")
+            fault.worker_stderr = self.stderr_prefix.decode(errors="replace")
+            raise fault from error
+        except BaseException:
+            self.close()
+            raise
 
     def _deadline(self):
         return min(self.deadline, time.monotonic() + self.seconds)
+
+    @property
+    def returncode(self):
+        return None if self.result is None else self.result.returncode
 
     def call(self, op, tensors=()):
         if self.closed or self.seq >= 16384:
@@ -67,11 +95,11 @@ class QueueProcess:
         self.seq += 1
         deadline = self._deadline()
         try:
-            wire.send(self.process.stdin.fileno(), self.seq, op, tensors, deadline)
-            seq, result_op, result = wire.receive(self.process.stdout.fileno(), deadline)
+            wire.send(self.instance.stdin.fileno(), self.seq, op, tensors, deadline)
+            seq, result_op, result = wire.receive(self.instance.stdout.fileno(), deadline)
             if (seq, result_op) != (self.seq, op):
                 raise ValueError("Unexpected operation or stale queue reply")
-            if select.select([self.process.stdout], [], [], 0)[0]:
+            if select.select([self.instance.stdout], [], [], 0)[0]:
                 raise ValueError("Unsolicited bytes or exit after queue reply")
             return seq, result
         except BaseException as error:
@@ -80,21 +108,14 @@ class QueueProcess:
             raise
 
     def close(self):
+        """End the worker (every process it started) and keep a bounded stderr prefix. These
+        untrusted bytes are never used as tensor replies, validity or scores."""
         if self.closed:
             return
         self.closed = True
-        if self.process is not None:
-            try:
-                os.killpg(self.process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            self.process.wait(timeout=5)
-            self.process.stdin.close()
-            self.process.stdout.close()
-            if self.stderr_reader is not None:
-                self.stderr_reader.join(timeout=1)
-            self.process.stderr.close()
-        self.scratch.cleanup()
+        if self.instance is not None:
+            self.result = self.instance.close()
+            self.stderr_prefix = self.result.stderr[:STDERR_PREFIX_BYTES]
 
     def __enter__(self):
         return self

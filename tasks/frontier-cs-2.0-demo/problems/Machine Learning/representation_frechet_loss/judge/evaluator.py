@@ -1,10 +1,23 @@
+"""Judge of representation_frechet_loss: FeatureQueue population statistics, on one GPU.
+
+Score (raw_score = score_unbounded): per workload, FDr6 = mean of the six normalized held-out
+Frechet distances below; score = 100 / (1 + mean_w(FDr6)). A failed validity guard, and a failure
+or suite-time overrun of the submission's train or eval phase, is a scored zero; reference and
+judge failures (among them a queue worker the judge could not start) raise.
+
+Metrics, per workload (train feedback: development_mean_<name>), each the held-out generated-image
+Frechet distance in one representation divided by the paper's validation-set normalizer; lower
+is better; each passes when strictly below the reference's:
+- inception_fdr, convnext_fdr, dinov2_fdr, mae_fdr, siglip_fdr, clip_fdr.
+
+beats_reference = 1 iff every validity guard passes and all six metrics pass on every workload.
+The archived beat spec is docs/task-authoring/representation_frechet_loss/provenance/beat_spec.json.
+"""
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,17 +26,17 @@ from pathlib import Path
 
 import yaml
 
-from submission_patch import apply_submission_patch
 from judge_deps.private_evidence import read as read_private_evidence
 
 TASK_DIR = Path(__file__).resolve().parent
+PRISTINE = TASK_DIR / "pristine"  # the starter repo; the shared verifier overlays the submission
+# config.yaml is generated from task.toml; [judge.config] keeps this task's suite timeouts.
 CONFIG = yaml.safe_load((TASK_DIR / "config.yaml").read_text())
 RUNNER = TASK_DIR / "judge_deps" / "run_workload.py"
 MODEL_ROOT = Path(os.environ.get("FRONTIER_MODEL_ROOT", "/opt/frontier/models"))
 OFFLINE_TARGETS = ("fd-loss", "mae", "siglip2", "convnextv2", "dinov2", "clip")
 SPEC_METRICS = ("inception_fdr", "convnext_fdr", "dinov2_fdr", "mae_fdr", "siglip_fdr", "clip_fdr")
-VISIBLE = tuple(f"development_mean_{name}" for name in SPEC_METRICS)
-LOCKED = ("main_fd.py", "utils/builders.py", "models/denoiser_pmf.py", "frechet_distance/judges.py")
+VISIBLE = ("development_mean_inception_fdr", "development_mean_convnext_fdr", "development_mean_dinov2_fdr", "development_mean_mae_fdr", "development_mean_siglip_fdr", "development_mean_clip_fdr")  # the [feedback] names
 MAX_PRIVATE_DIAGNOSTIC_BYTES = 4096
 
 
@@ -57,23 +70,60 @@ def _runtime_evidence(path):
             "verifier_execution_evidence_invalid", "trusted execution evidence is unreadable", None) from error
 
 
-def _raise_runtime_failure(evidence, *, parent_timeout=False):
-    events = evidence["events"] if evidence else []
+TIMEOUT_ERRORS = ("TimeoutExpired", "TimeoutError", "SuiteDeadlineExpired", "PhaseTimeout")
+
+
+def _last_phase(events):
+    """The phase that failed last, or (after a parent timeout) the one still running."""
+    open_phases = {}
+    for row in events:
+        key = (row.get("workload"), row.get("side"), row.get("phase"))
+        if row.get("event") == "phase_started":
+            open_phases[key] = row
+        elif row.get("event") in ("phase_completed", "phase_failed"):
+            open_phases.pop(key, None)
     failures = [row for row in events if row.get("event") == "phase_failed"]
-    if failures and failures[-1].get("side") == "reference":
-        raise VerifierScientificFailure(
-            "verifier_reference_failed", "trusted reference execution failed", evidence)
-    if parent_timeout or any(row.get("error_type") in ("TimeoutExpired", "TimeoutError", "SuiteDeadlineExpired")
-                             for row in failures):
-        raise VerifierScientificFailure(
-            "verifier_suite_timeout", "shared scientific suite deadline exhausted", evidence)
-    if not failures:
+    if failures:
+        return failures[-1]
+    return list(open_phases.values())[-1] if open_phases else None
+
+
+def _runtime_failure(evidence, *, parent_timeout=False, **diagnostics):
+    """A failed runner. The candidate's own failure or time-out is a scored zero whose message
+    names it (the message is the train summary); a judge fault raises and stays unscored."""
+    events = evidence["events"] if evidence else []
+    row = _last_phase(events)
+    timeout = parent_timeout or bool(row and row.get("error_type") in TIMEOUT_ERRORS)
+    if row is None:
         raise VerifierScientificFailure(
             "verifier_execution_evidence_invalid", "trusted execution failure evidence is missing", evidence)
+    if (row.get("report") or {}).get("trusted_fault"):
+        # The observer's own fault (a queue worker that could not be started) on either side.
+        raise VerifierScientificFailure(
+            "verifier_queue_worker_failed", "a trusted queue worker could not be started", evidence)
+    if row.get("side") != "candidate":
+        if row.get("side") == "reference":
+            raise VerifierScientificFailure(
+                "verifier_reference_failed", "trusted reference execution failed", evidence)
+        if timeout:
+            raise VerifierScientificFailure(
+                "verifier_suite_timeout", "shared scientific suite deadline exhausted", evidence)
+        raise VerifierScientificFailure(
+            "verifier_execution_evidence_invalid", "trusted execution failed", evidence)
+    what = row.get("phase") or "run"
+    if timeout:
+        return _invalid(f"the submission's {what} exceeded the suite time limit", **diagnostics)
+    return _invalid(f"the submission's {what} failed", **diagnostics)
+
+
+def _final():
+    return os.environ.get("FRONTIER_SUBMISSION_ROLE") == "final"
 
 
 def _invalid(reason, *, stderr=None, returncode=None):
-    metrics = {"beats_reference": 0, "reference_diagnostics": {"reason": reason[:200]}}
+    """A scored zero. Train metrics stay empty (the shared verifier admits only beat-spec
+    metrics there); final keeps the private diagnostic in evidence."""
+    metrics = {"reference_diagnostics": {"reason": reason[:200]}}
     if stderr is not None:
         body = stderr if isinstance(stderr, bytes) else str(stderr).encode("utf-8", errors="replace")
         metrics["reference_diagnostics"] = {
@@ -81,11 +131,7 @@ def _invalid(reason, *, stderr=None, returncode=None):
             "truncated": len(body) > MAX_PRIVATE_DIAGNOSTIC_BYTES,
             "returncode": returncode,
         }
-    return 0.0, 0.0, reason[:200], metrics
-
-
-def _sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return 0.0, 0.0, reason[:200], (metrics if _final() else {})
 
 
 def _validate_payload(payload, final):
@@ -112,15 +158,12 @@ def _validate_payload(payload, final):
     return rows
 
 
-def _evaluate(solution_path: str, evidence_path: Path):
-    applied = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-    if not applied.ok:
-        return _invalid(applied.message)
-    root = applied.workdir
+def _evaluate(tree: str, evidence_path: Path):
+    # The execution spine (main_fd.py, utils/builders.py, models/denoiser_pmf.py,
+    # frechet_distance/judges.py) is outside the editable surface, so the shared edit scope
+    # already keeps it byte-identical to the pristine tree.
+    root = Path(tree)
     try:
-        upstream = TASK_DIR / "harbor" / "app"
-        if any(_sha(root / p) != _sha(upstream / p) for p in LOCKED):
-            return _invalid("retained execution-spine source changed")
         if not RUNNER.is_file():
             return _invalid("authoritative NVIDIA workload runner is unavailable")
         assets = {name: MODEL_ROOT / name for name in OFFLINE_TARGETS}
@@ -154,8 +197,8 @@ def _evaluate(solution_path: str, evidence_path: Path):
         if proc.returncode == 75 and proc.stdout.strip() == '{"verifier_failure": "verifier_setup_timeout"}':
             raise VerifierSetupDeadlineExpired("Verifier setup exhausted its execution envelope")
         if proc.returncode:
-            _raise_runtime_failure(_runtime_evidence(evidence_path))
-            return _invalid("GPU workload failed", stderr=proc.stderr, returncode=proc.returncode)
+            return _runtime_failure(_runtime_evidence(evidence_path),
+                                    stderr=proc.stderr, returncode=proc.returncode)
         payload = json.loads(proc.stdout)
         rows = _validate_payload(payload, final)
         audit = []
@@ -181,26 +224,25 @@ def _evaluate(solution_path: str, evidence_path: Path):
             if evidence is None or not any(row.get("event") == "scientific_started"
                                            for row in evidence["events"]):
                 raise VerifierSetupDeadlineExpired("Verifier setup exhausted its execution envelope") from exc
-        _raise_runtime_failure(_runtime_evidence(evidence_path), parent_timeout=True)
+        return _runtime_failure(_runtime_evidence(evidence_path), parent_timeout=True)
     except Exception:
         return _invalid("evaluation failed")
-    finally:
-        if root is not None:
-            shutil.rmtree(root.parent, ignore_errors=True)
 
 
-def evaluate(solution_path: str):
+def evaluate(tree: str):
+    """Shared-verifier contract: `tree` is the pristine starter with only the submission's
+    allowed files overlaid (the edit scope has already passed)."""
     with tempfile.TemporaryDirectory(prefix="fd-private-evidence-") as temporary:
         path = Path(temporary) / "workloads.json"
-        score, unbounded, message, metrics = _evaluate(solution_path, path)
+        score, unbounded, message, metrics = _evaluate(tree, path)
         evidence = read_private_evidence(path)
         if evidence is not None:
             retained = {"runtime_evidence_schema": evidence["schema_version"],
                         "runtime_evidence": evidence["events"]}
             if "beat_spec_workload_passes" in metrics:
                 metrics.update(retained)
-            else:
-                # Preserve the adapter's existing scored-zero diagnostic shape.
+            elif _final():
+                # A scored zero keeps its runtime evidence privately in final only.
                 metrics.setdefault("reference_diagnostics", {}).update(retained)
         return score, unbounded, message, metrics
 

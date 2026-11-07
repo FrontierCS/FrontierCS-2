@@ -39,7 +39,6 @@
       "reason": "Launches the retained entrypoint with the supported single-node rendezvous address."
     },
     {
-      "path": "make_submission.sh",
       "reason": "Stages the declared solver surface and emits the patch submission."
     },
     {

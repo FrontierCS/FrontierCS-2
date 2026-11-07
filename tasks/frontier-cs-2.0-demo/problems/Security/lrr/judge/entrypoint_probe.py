@@ -6,7 +6,7 @@ import sys
 import types
 
 task_dir = Path(__file__).resolve().parent
-repo = task_dir / "harbor" / "app"
+repo = task_dir / "pristine"
 os.chdir(repo)
 sys.path.insert(0, str(repo / "scripts"))
 # inference.py imports its training stack eagerly although the retained prompt

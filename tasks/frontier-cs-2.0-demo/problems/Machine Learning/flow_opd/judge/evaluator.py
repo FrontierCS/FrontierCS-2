@@ -1,7 +1,26 @@
-"""Source-only draft evaluator. No authoritative run before GPU qualification.
+"""GPU evaluator for flow_opd on the shared verifier.
 
-Never replace the qualification error with a CPU/synthetic score. The metric
-arithmetic is unit-tested separately; that is not a reference Evaluation.
+The shared verifier applies the patch with the task's edit-scope rules, runs check_tree (only the
+two computational bodies may change; UTF-8 files) and calls evaluate(tree): the starter (bundle
+pristine/, also the runtime adapter) with only the allowed files overlaid. Never replace the
+qualification error with a CPU/synthetic score.
+
+Each workload run (the unchanged shell launcher on the patched tree) executes in a fresh instance
+of the shared isolate launcher (/opt/frontier/isolate.py): it sees the tree, the runtime adapter,
+the transition guard, its run profile and corpus, the offline models and the GPU, and no other
+judge file or platform variable.
+
+Scoring. The retained launcher trains the student for 8 verified optimizer updates on the real
+single-OCR-teacher kl_only path, then generates one 512x512 image per prompt-and-seed workload.
+  raw_score = score_unbounded = 100 * mean ocr_reward over the scored suite (development in train,
+  final in eval); 0 if any required workload is missing or invalid.
+Metric (per workload, beat_spec_workload_passes):
+  ocr_reward  the scorer's normalized, capped Levenshtein OCR reward in [0, 1], higher is better;
+              passes if C > R (reference R < 1), or C >= R when R == 1 (ceiling).
+beats_reference = 1 iff the graded suite (train-grading in train, final in eval) is complete and
+every workload passes. reference_score is the frozen reference mean (x100), margin = score - it.
+Train metrics: dev_eval_reward_ocr, dev_verified_optimizer_updates. Qualification, runtime and
+missing-report faults raise TrustedEvaluationFailure (an unscored verification).
 """
 from __future__ import annotations
 import json
@@ -17,17 +36,26 @@ TASK_DIR = Path(__file__).resolve().parent
 if str(TASK_DIR) not in sys.path:
     sys.path.insert(0, str(TASK_DIR))
 
-from submission_patch import apply_submission_patch, validate_patch
-from judge.policy import check_surface
-from judge.scoring import QualificationError, TrustedEvaluationFailure, failure_metrics
+from judge.policy import SYMBOLS, check_surface
+from judge.scoring import QualificationError, TrustedEvaluationFailure
 
-# config.yaml uses JSON syntax, a valid YAML subset.
+# config.yaml (generated from task.toml) uses JSON syntax, a valid YAML subset.
 CONFIG = json.loads((TASK_DIR/'config.yaml').read_text())
+PRISTINE = TASK_DIR/'pristine'  # the starter repo the shared verifier applies the patch to
+# The runtime adapter (frontier_runtime.py and frontier_shim/, from the starter) and the judge's
+# transition guard are staged into each run's isolate instance as {in}/adapter/app and
+# {in}/judge: frontier_runtime.py finds the guard at parents[2]/judge/transition_checks.py.
+JUDGE_INPUTS = {'transition_checks.py': TASK_DIR/'judge'/'transition_checks.py'}
+INSTANCE_ENTRY = TASK_DIR/'judge'/'instance_entry.py'
 ENTRYPOINT = 'scripts/single_node/sd3_opd_example.sh'
+# The baked offline snapshots below FRONTIER_MODEL_ROOT (docker/*-gpu.Dockerfile base).
+MODEL_TARGETS = ('stable-diffusion-3.5-medium', 'SD3.5M-FlowGRPO-Text')
 
 
 # The exact private metric schema is part of the evaluator's public API.
 BEAT_METRICS = {"ocr_reward"}
+# The train metrics the Agent receives (task.toml [feedback]); judge/judge/scoring.py fills them.
+FEEDBACK_METRICS = ("dev_eval_reward_ocr", "dev_verified_optimizer_updates")
 
 
 def checked_result(result):
@@ -48,6 +76,8 @@ def checked_result(result):
         raise QualificationError('Incorrect strict conjunction.')
     if "reference_score" not in metrics or "margin" not in metrics:
         raise QualificationError('Incomplete reference accounting.')
+    if any(name not in metrics for name in FEEDBACK_METRICS):
+        raise QualificationError('Incomplete development feedback.')
     return score, unbounded, message, metrics
 
 
@@ -58,8 +88,8 @@ def offline_model_root():
         raise QualificationError('Offline model root is unavailable.')
     try:
         root = Path(value).resolve(strict=True)
-        for model in CONFIG['runtime']['huggingface_models']:
-            target = (root/model['target']).resolve(strict=True)
+        for name in MODEL_TARGETS:
+            target = (root/name).resolve(strict=True)
             if not target.is_relative_to(root) or not target.is_dir():
                 raise QualificationError('Offline model snapshot is unavailable.')
     except OSError as exc:
@@ -67,11 +97,46 @@ def offline_model_root():
     return root
 
 
+def instance_inputs(output, profile_path):
+    """The read-only inputs of a run's instance, staged below the run's private output: the
+    adapter, the transition guard, the run profile and its corpus, the instance's first command."""
+    staging = output/'instance-inputs'
+    if staging.exists():
+        shutil.rmtree(staging)
+    shutil.copytree(PRISTINE, staging/'adapter'/'app', symlinks=False)
+    (staging/'judge').mkdir()
+    for name, path in JUDGE_INPUTS.items():
+        shutil.copyfile(path, staging/'judge'/name)
+    return {'adapter': staging/'adapter', 'judge': staging/'judge',
+            'corpus': Path(json.loads(profile_path.read_text())['dataset']),
+            'run-profile.json': profile_path, 'instance_entry.py': INSTANCE_ENTRY}
+
+
+# The run's isolate launcher: the GPU, the offline models (read in place), a private loopback,
+# AF_UNIX sockets and /dev/shm (DataLoader workers); its HOME holds the run's output
+# (checkpoints and full state), bounded by SANDBOX_DISK_BYTES. Memory is bounded by the runner.
+SANDBOX_DISK_BYTES = 128 << 30
+SANDBOX_OUTPUT_BYTES = 256 << 20   # stdout and stderr, each (the private runtime log)
+
+
+def sandbox_options(model_root):
+    path = '{in}/adapter/app/frontier_shim' + os.pathsep + os.environ.get('PATH', '/usr/bin:/bin')
+    env = {'PATH': path, 'FRONTIER_MODEL_ROOT': str(model_root), 'HF_HUB_OFFLINE': '1',
+           'TRANSFORMERS_OFFLINE': '1', 'WANDB_MODE': 'disabled', 'PYTHONDONTWRITEBYTECODE': '1',
+           'FRONTIER_RUNTIME_ADAPTER': '{in}/adapter/app'}
+    if 'LD_LIBRARY_PATH' in os.environ:
+        env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
+    return {'env': env, 'read_paths': [str(model_root)], 'devices': ['nvidia'],
+            'network': 'loopback', 'unix_sockets': True, 'dev_shm': True,
+            'disk_bytes': SANDBOX_DISK_BYTES, 'output_bytes': SANDBOX_OUTPUT_BYTES}
+
+
 def launch_workload(tree, profile, output, deadline, model_root):
     """Collect and execute the unchanged shell launcher on the patched real tree.
 
-    The shim supplies only offline/bounded runtime adaptation. Training still
-    runs scripts/train_sd3.py with the original single-OCR kl_only computation.
+    The run executes in a fresh isolate instance (judge/judge/shell_workload.py). The shim
+    supplies only offline/bounded runtime adaptation. Training still runs scripts/train_sd3.py
+    with the original single-OCR kl_only computation.
     """
     import pytest
     from judge.shell_workload import ShellWorkloadPlugin, collection_context
@@ -82,20 +147,15 @@ def launch_workload(tree, profile, output, deadline, model_root):
     output.mkdir(parents=True, exist_ok=True)
     profile_path = output/'run-profile.json'
     profile_path.write_text(json.dumps(profile))
-    adapter = TASK_DIR/'harbor/app'
-    env = {k:v for k,v in os.environ.items() if k in
-           {'PATH','LD_LIBRARY_PATH','CUDA_VISIBLE_DEVICES','TMPDIR','LANG'}}
-    env.update(FRONTIER_MODEL_ROOT=str(model_root), HF_HUB_OFFLINE='1',
-               TRANSFORMERS_OFFLINE='1', WANDB_MODE='disabled', PYTHONDONTWRITEBYTECODE='1',
-               FRONTIER_RUNTIME_ADAPTER=str(adapter), FRONTIER_RUN_PROFILE=str(profile_path.resolve()),
-               FRONTIER_RUN_OUTPUT=str(output.resolve()))
-    env['PATH'] = str(adapter/'frontier_shim') + os.pathsep + env.get('PATH','/usr/bin:/bin')
-    workload = ShellWorkloadPlugin(tree, ENTRYPOINT, env, output,
+    workload = ShellWorkloadPlugin(tree, ENTRYPOINT, instance_inputs(output, profile_path),
+                                   sandbox_options(model_root), output,
                                    min(deadline, time.monotonic()+remaining))
     with collection_context(tree, output):
         exit_code = pytest.main(
             ['-q', '-s', '-p', 'no:cacheprovider', 'scripts/single_node/sd3_opd_example.sh'],
             plugins=[workload])
+    if workload.infrastructure_error is not None:   # a boundary that could not be built
+        raise TrustedEvaluationFailure('isolate_unavailable') from workload.infrastructure_error
     if exit_code == 0 and (workload.executions != 1 or workload.returncode != 0):
         raise RuntimeError('The original upstream entrypoint was not executed.')
     progress_path = output/'progress.json'
@@ -126,16 +186,6 @@ def qualification():
     return q
 
 
-def safe_patch_reason(message):
-    text = message.lower()
-    categories = (("empty", "Empty patch."), ("allow", "Patch exceeds the allowed source surface."),
-                  ("outside", "Patch exceeds the allowed source surface."), ("binary", "Binary patches are forbidden."),
-                  ("size", "Patch exceeds the size limit."), ("unsafe", "Unsafe patch path."),
-                  ("does not apply", "Patch does not apply to the pristine source."),
-                  ("could not read", "Submission file is missing or unreadable."))
-    return next((public for token, public in categories if token in text), "Malformed patch submission.")
-
-
 def prepare():
     try:
         qualification()
@@ -145,36 +195,39 @@ def prepare():
     return {'ready':True, 'status':'qualified'}
 
 
-def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
+def check_tree(tree, pristine, changes):
+    """Shared-verifier hook: in the two retained modules only the bodies of
+    pipeline_with_logprob and sde_step_with_logprob may change (imports, decorators,
+    signatures and module-level wiring stay as they are), and every changed file is UTF-8."""
+    tree, pristine = Path(tree), Path(pristine)
+    undecodable = []
+    for change in changes:
+        if change.status == 'D':
+            continue
+        try:
+            (tree/change.path).read_bytes().decode('utf-8')
+        except UnicodeDecodeError:
+            undecodable.append(change.path)
+    if undecodable:
+        return 'malformed', undecodable
+    # A broken trusted scaffold must not be attributed to the candidate.
+    check_surface(pristine, pristine)
+    try:
+        check_surface(tree, pristine)
+    except (ValueError, SyntaxError, OSError):
+        return 'out_of_scope', [path for path in SYMBOLS
+                                if any(c.path == path for c in changes)] or sorted(SYMBOLS)
+    return None
+
+
+def evaluate(tree: str) -> tuple[float,float,str,dict]:
     final = os.environ.get('FRONTIER_SUBMISSION_ROLE')=='final'
-    result = None
     deadline = time.monotonic()+CONFIG['runtime']['timeout_seconds']
     try:
         q = qualification()
-        from judge.runner import comparison_context, run_evaluation
-        _, _, _, ids, reference, feedback_reference = comparison_context(q, final=final)
-        metrics = failure_metrics(ids, reference=reference, final=final,
-                                  feedback_reference=feedback_reference)
-        # A broken trusted scaffold must not be attributed to the candidate.
-        pristine = TASK_DIR/'harbor/app'
-        check_surface(pristine, pristine)
-        # Validate source packaging without importing or executing submitted Python.
-        try:
-            patch_text = Path(solution_path).read_text(encoding='utf-8')
-        except UnicodeDecodeError:
-            return 0.0, 0.0, 'Invalid submission: patch is not UTF-8.', metrics
-        valid_patch, patch_message, _ = validate_patch(patch_text, CONFIG)
-        if not valid_patch:
-            return 0.0, 0.0, 'Invalid submission: ' + safe_patch_reason(patch_message), metrics
-        result = apply_submission_patch(solution_path, TASK_DIR, CONFIG)
-        if not result.ok:
-            raise TrustedEvaluationFailure('trusted_runtime_unclassified')
-        try:
-            check_surface(result.workdir, TASK_DIR/'harbor/app')
-        except (ValueError, SyntaxError):
-            return 0.0, 0.0, 'Invalid submission: source surface rejected.', metrics
+        from judge.runner import run_evaluation
         model_root = offline_model_root()
-        runs = run_evaluation(Path(result.workdir), q, final=final,
+        runs = run_evaluation(Path(tree), q, final=final,
                               deadline=deadline, model_root=model_root)
         # The evaluator owns workload dispatch; the runner provides frozen run
         # profiles and consumes the actual process results for private scoring.
@@ -182,7 +235,7 @@ def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
             profile, output = next(runs)
             while True:
                 try:
-                    measured = launch_workload(Path(result.workdir), profile, output,
+                    measured = launch_workload(Path(tree), profile, output,
                                                deadline, model_root)
                 except (TimeoutError, ValueError, RuntimeError) as exc:
                     profile, output = runs.throw(exc)
@@ -198,12 +251,3 @@ def evaluate(solution_path: str) -> tuple[float,float,str,dict]:
         raise TrustedEvaluationFailure('reference_or_qualification_invalid') from error
     except Exception as error:
         raise TrustedEvaluationFailure('trusted_runtime_unclassified') from error
-    finally:
-        if result is not None and result.cleanup_root:
-            shutil.rmtree(result.cleanup_root,ignore_errors=True)
-
-if __name__ == '__main__':
-    if len(sys.argv)!=2:
-        raise TrustedEvaluationFailure('evaluator_invocation_invalid')
-    else:
-        print(json.dumps(evaluate(sys.argv[1]),allow_nan=False))

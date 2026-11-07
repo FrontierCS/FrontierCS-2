@@ -8,7 +8,7 @@
   "CITATION.cff": "50220849f8f9d5500524fb6529aa0350a538795fe5870a74077fcd4f9fe8e4da",
   "CONTRIBUTING.md": "8674b474b43f46b0c5be0439316e8b3f9f8ca624828fe89c6620136d327f5477",
   "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
-  "README.md": "efe233b79f2ac5598c62352a3d5593a53f70e5c41ab6535b2eecaa14ec5b2b79",
+  "README.md": "1ea1c0263ad4d0e30b242e3eef606323d9ef6efab7459c33cc5fadd156bec90a",
   "UPSTREAM_README.md": "87223c47c2ef09f8333c795ee889c9944d1a16d5f68c9991a342aa8312d6137b",
   "assets/banner.png": "c607f99b278cf53af2568f46b147cf70d3a17f4737a60c48460724bc072e3e0b",
   "frontier_check.py": "6c09fd0c57d6c37def0873a97d8f87f997fbef8c273f183be11e884918661f59",
@@ -284,8 +284,8 @@
   "pyproject.toml": "4306d968ff2f89c239a41bbd8ac96de17bec74b64cc1b842ebd297172ffb0cdd"
  },
  "trusted_children": {
-  "evaluate_policy.py": "6da3aa4d1920dd6cc13516f34455fb0d3576ab556b91b517148e7e52462c0647",
-  "train_entry.py": "18744dcb0ab2820cc45925957d245ed88c11b75176bfbb804754f1f38bdf0ed6"
+  "evaluate_policy.py": "5fa3b0a612e24dce159aea5eb1af77d4c0630eb1c41d8cfbf64476fc36bf2300",
+  "train_entry.py": "34257848ccc50c9aee4911b5f5a9e8863bcaf93de6229eba2c402ef808c95fdc"
  },
  "upstream": {
   "commit": "254c38f9c240012518dbe61d1267bc375ff827e4",
