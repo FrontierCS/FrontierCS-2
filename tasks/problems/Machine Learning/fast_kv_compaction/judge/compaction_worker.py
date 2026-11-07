@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Untrusted side: runs the submitted compaction method in its own process.
 
-Started by the harness through /opt/frontier/fastkv-worker as the unprivileged
-fastkv-worker user, with a scrubbed environment, a private empty HOME, and a
-copy of the patched public tree without its data directory. It cannot read the
+Started by the harness in the shared isolate sandbox (isolate.start), with a
+scrubbed environment, a private empty HOME, and a read-only copy of the patched
+public tree without its data directory ({in}/tree). It cannot read the
 judge, the hidden articles, the targets or the harness's memory, and it does not
 hold the model that answers the questions: it loads its own Qwen3-4B (and vLLM
 for query generation) and returns only tensors.

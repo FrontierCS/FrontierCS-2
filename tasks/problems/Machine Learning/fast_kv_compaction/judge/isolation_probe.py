@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Worker-side isolation checks, run by the launcher exactly as a worker would be.
+"""Worker-side isolation checks, run by the harness in the shared isolate sandbox exactly as a
+worker is (the same options, the method tree read-only at {in}/tree).
 
-  probe   prints FASTKV_ISOLATION_OK if every check holds, else FASTKV_ISOLATION_FAIL <reasons>
-  hog        allocates host memory without bound (the harness's watchdog must kill it)
-  hog-tmpfs  fills the RAM-backed /tmp instead (the watchdog must count tmpfs too)
+  probe TREE     prints FASTKV_ISOLATION_OK if every check holds, else FASTKV_ISOLATION_FAIL
+                 <reasons>; leaves a marker in every directory it can write
+  residue TREE   in a fresh instance after `probe`: FASTKV_ISOLATION_OK if no marker of the
+                 earlier instance is visible anywhere
+  hog            allocates host memory without bound (the instance's memory limit must end it)
+  hog-shm        fills the private /dev/shm instead (the limit must count it too)
 
-The harness adds the parent-side checks (writes did not persist, the
-watchdog kills a hog) and treats any failure as infrastructure.
+The harness adds the parent-side checks (no marker reached the runner's own /tmp, /dev/shm,
+/var/tmp; the memory limit ends both hogs) and treats any failure as infrastructure.
 """
 import ctypes
 import os
@@ -15,10 +19,7 @@ import sys
 import time
 
 MARKER = "fastkv-isolation-marker"
-WRITE_PROBES = ("/tmp", "/dev/shm", "/var/tmp", "/tmp/home")
-HIDDEN = ("/opt/frontier/task", "/tmp", "/dev/shm", "/var/tmp", "/workspace", "/frontier", "/home", "/root",
-          "/run/lock", "/dev/mqueue")
-WORKER_ROOT = "/opt/frontier/worker-root"
+JUDGE = "/opt/frontier/task"   # judge state on the runner: covered by isolate
 SKIP_SCAN = ("/proc", "/sys", "/dev")
 CLONE_NEWUSER, CLONE_NEWNS, MNT_DETACH, MS_REMOUNT, MS_BIND = 0x10000000, 0x00020000, 2, 32, 4096
 EROFS = 30
@@ -28,34 +29,43 @@ def libc():
     return ctypes.CDLL(None, use_errno=True)
 
 
-def judge_hidden(failures):
+def own_dirs():
+    """What the instance may write: its own directory (isolate: the parent of its HOME, TMPDIR,
+    work and out directories; deleted with it) and its private /dev/shm."""
+    root = os.path.dirname(os.environ["HOME"])
+    if os.path.dirname(os.environ["TMPDIR"]) != root:
+        raise RuntimeError("HOME and TMPDIR are not one instance's directories")
+    return [root, "/dev/shm"]
+
+
+def judge_hidden(failures, tree):
     try:
-        if os.listdir("/opt/frontier/task"):
+        if os.listdir(JUDGE):
             failures.append("judge directory not empty")
     except OSError:
         pass
-    for path in ("/opt/frontier/task/gate.py", "/opt/frontier/task/data", "/opt/frontier/task/targets"):
+    for path in (f"{JUDGE}/gate.py", f"{JUDGE}/harness.py", f"{JUDGE}/data", f"{JUDGE}/targets",
+                 f"{JUDGE}/pristine", os.path.join(tree, "data")):
         if os.path.exists(path):
             failures.append(f"{path} visible")
 
 
-def cannot_unmount(failures):
+def cannot_unmount(failures, tree):
     lib = libc()
-    for target in ("/opt/frontier/task", "/tmp"):
+    for target in (JUDGE, "/tmp", tree):
         if lib.umount2(target.encode(), MNT_DETACH) == 0:
             failures.append(f"umount {target} succeeded")
         if lib.mount(None, target.encode(), None, MS_REMOUNT | MS_BIND, None) == 0:
             failures.append(f"remount {target} succeeded")
-    # In a namespace of its own (where the worker is root), the outer mounts must
-    # stay locked (MNT_LOCKED): no bind, remount or unmount may reveal the judge or
-    # make the tree writable. Each escape that works sets one bit of the exit code.
+    # Should a namespace of its own be creatable, the outer mounts must stay locked there.
+    # Each escape that works sets one bit of the exit code.
     pid = os.fork()
     if pid == 0:
         code = 0
         try:
             if lib.unshare(CLONE_NEWUSER | CLONE_NEWNS) != 0:
                 os._exit(0)  # cannot even create one: nothing to escape with
-            peek = b"/tmp/fastkv-probe-peek"
+            peek = os.path.join(os.environ["TMPDIR"], "fastkv-probe-peek").encode()
             os.makedirs(peek, exist_ok=True)
             for bit, source in ((1, b"/"), (2, b"/opt/frontier")):  # non-recursive binds
                 if lib.mount(source, peek, None, MS_BIND, None) == 0:
@@ -64,9 +74,9 @@ def cannot_unmount(failures):
                     if os.path.exists(revealed) or os.listdir(os.path.dirname(revealed)):
                         code |= bit
                     lib.umount2(peek, MNT_DETACH)
-            if lib.mount(None, WORKER_ROOT.encode(), None, MS_REMOUNT | MS_BIND, None) == 0:
+            if lib.mount(None, tree.encode(), None, MS_REMOUNT | MS_BIND, None) == 0:
                 code |= 4
-            for bit, target in ((8, b"/opt/frontier/task"), (16, b"/tmp"), (32, b"/workspace")):
+            for bit, target in ((8, JUDGE.encode()), (16, b"/tmp"), (32, b"/workspace")):
                 if os.path.isdir(target) and lib.umount2(target, MNT_DETACH) == 0:
                     code |= bit
         finally:
@@ -74,23 +84,23 @@ def cannot_unmount(failures):
     _, status = os.waitpid(pid, 0)
     code = os.WEXITSTATUS(status)
     for bit, what in ((1, "bind of / revealed the judge"), (2, "bind of /opt/frontier revealed the judge"),
-                      (4, "worker tree remounted writable"), (8, "judge tmpfs unmounted"),
+                      (4, "method tree remounted writable"), (8, "judge tmpfs unmounted"),
                       (16, "/tmp tmpfs unmounted"), (32, "/workspace tmpfs unmounted")):
         if code & bit:
             failures.append(f"nested namespace: {what}")
 
 
-def tree_read_only(failures):
+def tree_read_only(failures, tree):
     try:
-        with open(os.path.join(WORKER_ROOT, "fastkv-probe-write"), "w") as stream:
+        with open(os.path.join(tree, "fastkv-probe-write"), "w") as stream:
             stream.write("x")
-        failures.append("worker tree is writable")
+        failures.append("method tree is writable")
     except OSError as error:
         if error.errno != EROFS:
-            failures.append(f"worker tree write failed with errno {error.errno}, not EROFS")
+            failures.append(f"method tree write failed with errno {error.errno}, not EROFS")
 
 
-def processes_hidden(failures):
+def processes_hidden(failures, tree):
     pids = [entry for entry in os.listdir("/proc") if entry.isdigit()]
     if len(pids) > 8:
         failures.append(f"{len(pids)} processes visible")
@@ -106,7 +116,13 @@ def processes_hidden(failures):
             failures.append(f"trusted process {pid} visible")
 
 
-def network_loopback_only(failures):
+def environment_clean(failures, tree):
+    leaked = sorted(key for key in os.environ if key.startswith(("FRONTIER_", "HARBOR_")))
+    if leaked:
+        failures.append(f"environment {leaked}")
+
+
+def network_loopback_only(failures, tree):
     names = sorted(name for _index, name in socket.if_nameindex())
     if names != ["lo"]:
         failures.append(f"interfaces {names}")
@@ -117,7 +133,7 @@ def network_loopback_only(failures):
         pass
 
 
-def unprivileged(failures):
+def unprivileged(failures, tree):
     if os.getuid() == 0 or os.geteuid() == 0:
         failures.append("worker is uid 0 in its namespace")
     with open("/proc/self/status") as stream:
@@ -129,8 +145,15 @@ def unprivileged(failures):
         failures.append("no_new_privs not set")
 
 
-def writes_confined(failures):
-    for directory in WRITE_PROBES:
+def mqueue_private(failures, tree):
+    if os.path.isdir("/dev/mqueue") and os.listdir("/dev/mqueue"):
+        failures.append("/dev/mqueue is not a fresh instance")
+
+
+def writes_confined(failures, tree):
+    """Only the instance's own directories are writable; leave a marker wherever it can."""
+    own = own_dirs()
+    for directory in (os.environ["HOME"], os.environ["TMPDIR"], "/dev/shm", "/tmp", "/var/tmp"):
         try:
             with open(os.path.join(directory, MARKER), "w") as stream:
                 stream.write("x")
@@ -138,7 +161,7 @@ def writes_confined(failures):
             pass
     found = 0
     for root, directories, files in os.walk("/", topdown=True):
-        if root in SKIP_SCAN or root in HIDDEN or root.startswith(WORKER_ROOT):
+        if root in SKIP_SCAN or any(root == d or root.startswith(d + "/") for d in own):
             directories[:] = []
             continue
         if root != "/" and os.access(root, os.W_OK):
@@ -151,22 +174,30 @@ def writes_confined(failures):
                 found += 1
         if found > 20:
             return
-        directories[:] = [d for d in directories
-                          if not os.path.islink(os.path.join(root, d))
-                          and os.path.join(root, d) not in SKIP_SCAN + HIDDEN]
+        directories[:] = [d for d in directories if not os.path.islink(os.path.join(root, d))]
 
 
-def mqueue_private(failures):
-    if os.path.isdir("/dev/mqueue") and os.listdir("/dev/mqueue"):
-        failures.append("/dev/mqueue is not a fresh instance")
+def residue(failures, tree):
+    """No marker of an earlier instance anywhere this one can see."""
+    for root, directories, files in os.walk("/", topdown=True):
+        if root in ("/proc", "/sys"):
+            directories[:] = []
+            continue
+        if MARKER in files:
+            failures.append(f"marker of an earlier instance in {root}")
+        directories[:] = [d for d in directories if not os.path.islink(os.path.join(root, d))]
+
+
+CHECKS = (judge_hidden, cannot_unmount, tree_read_only, processes_hidden, environment_clean,
+          network_loopback_only, unprivileged, mqueue_private, writes_confined)
 
 
 def main() -> int:
-    if sys.argv[1:] == ["hog-tmpfs"]:
+    if sys.argv[1:] == ["hog-shm"]:
         index = 0
         while True:
             try:
-                with open(f"/tmp/fastkv-hog-{index}", "wb") as stream:
+                with open(f"/dev/shm/fastkv-hog-{index}", "wb") as stream:
                     stream.write(b"\xa5" * (256 << 20))
             except OSError:
                 pass
@@ -177,11 +208,11 @@ def main() -> int:
         while True:
             blocks.append(bytearray(256 << 20))
             time.sleep(0.05)
+    mode, tree = sys.argv[1:]
     failures = []
-    for check in (judge_hidden, cannot_unmount, tree_read_only, processes_hidden, network_loopback_only,
-                  unprivileged, mqueue_private, writes_confined):
+    for check in ((residue,) if mode == "residue" else CHECKS):
         try:
-            check(failures)
+            check(failures, tree)
         except Exception as error:  # noqa: BLE001 - a check that cannot run is a failure
             failures.append(f"{check.__name__}: {error}")
     if failures:
