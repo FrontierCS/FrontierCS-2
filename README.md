@@ -1,7 +1,7 @@
 <p align="center">
   <img src="docs/assets/frontiercs2.gif" alt="FrontierCS 2: A Benchmark for Computer Science R&amp;D" width="100%">
 </p>
-
+ 
 <p align="center">
   <a href="https://arxiv.org/abs/2610.29932">Paper</a> ·
   <a href="https://frontier-cs.org">Website</a> ·
