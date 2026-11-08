@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:d0d4d7cebf455673a34157fc3c5837f53515f924e500293376d989743b37fde2",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/join_tree_rewriting/d0d4d7cebf455673a34157fc3c5837f53515f924e500293376d989743b37fde2.json",
+  "definition_digest": "sha256:b1353b8237488be3c6f9bb61d380aab619d3c9122288f22b37806d22bdcd5c7e",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/join_tree_rewriting/b1353b8237488be3c6f9bb61d380aab619d3c9122288f22b37806d22bdcd5c7e.json",
   "display_name": "Join-Tree Rewriting",
   "driver_config": {
     "agent": {
@@ -68,7 +68,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_361RYFYDRYKWDXENY5MTHF8J5F",
+    "task_version_id": "taskver_78AG24TRHC1MP8DGB8X89WAMFY",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -107,7 +107,7 @@
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "join_tree_rewriting",
-      "source_set_sha256": "sha256:312fce7218ef69f93674317f4821f76441b56dd233e062a6689c9f1baab828d1"
+      "source_set_sha256": "sha256:c4ed63e4cb567219cc363c9f74384a0c883e1b19b9ea45aa339e6daeaed5a1ee"
     },
     "runtime": {
       "allowed_paths": [
@@ -117,5 +117,5 @@
     }
   },
   "task_id": "frontier-cs-2.0-join-tree-rewriting",
-  "version": "g2-task-toml-shared-verifier-cfg-d0d4d7cebf45"
+  "version": "g2-task-toml-shared-verifier-cfg-b1353b823748"
 }
