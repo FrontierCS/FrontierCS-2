@@ -35,11 +35,10 @@ def measured(programs, candidate, reference):
 def harness(monkeypatch, tmp_path):
     """Replaces building and measuring; returns a setter for the fake runs."""
     state = {}
-    tools = (Path("/nonexistent"), runner, types.SimpleNamespace(
-        environment=lambda tree, out, tmp=None: ({}, None)))
+    tools = (Path("/nonexistent"), runner)
     monkeypatch.setattr(e, "load_tools", lambda: tools)
     monkeypatch.setattr(e, "build_candidate", lambda policy, solution, out: Path("/nonexistent/host"))
-    monkeypatch.setattr(e, "measure", lambda tools, programs, hosts, scratch, env:
+    monkeypatch.setattr(e, "measure", lambda tools, programs, hosts, scratch:
                         measured(programs, state["candidate"], state["reference"]))
 
     def evaluate(candidate, reference, role="development"):
@@ -130,8 +129,15 @@ def test_reference_or_harness_failure_is_never_a_candidate_result(harness):
         harness(spread(1586), lambda i, n: run(1586, status="compute_budget_exhausted" if n == 3 else "budget_exhausted"))
     with pytest.raises(e.EvaluatorFailure):
         harness(lambda i, n: run(0, status="harness_failure"), spread(1586))
-    with pytest.raises(e.EvaluatorFailure):
-        harness(lambda i, n: run(0, status="harness_error:sandbox_unavailable"), spread(1586))
+
+
+@pytest.mark.parametrize("status", ["harness_error:sandbox_unavailable", "harness_error:spawn"])
+def test_every_exit_status_of_the_strategy_is_its_own(harness, status):
+    # The harness calls exit statuses 71 and 127 harness_error:*; the strategy can end with
+    # them itself, and a launcher failure never reaches a status (run_search.py), so they void
+    # the submission like any other exit (owner decision 2026-11-07).
+    score, unbounded, message, metrics = harness(lambda i, n: run(0, status=status), spread(1586))
+    assert (score, message) == (0.0, "invalid candidate: " + status.replace(":", "_"))
 
 
 def edit_scope_check(patch):
@@ -180,8 +186,7 @@ def test_policy_violation_reports_its_category(monkeypatch, tmp_path):
                    for name in kwargs["outputs"] if name != "strategy_host"}
         return types.SimpleNamespace(returncode=0, limit=None,
                                      outputs={**outputs, "strategy_host": b"\x7fELF"})
-    tools = (Path("/nonexistent"), runner, types.SimpleNamespace(
-        environment=lambda tree, out, tmp=None: ({}, None)))
+    tools = (Path("/nonexistent"), runner)
     monkeypatch.setattr(e, "load_tools", lambda: tools)
     monkeypatch.setattr(e.isolate, "run", build)
     monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE", "final")
@@ -213,25 +218,19 @@ def test_score_is_reference_free_and_monotone(harness):
     assert low == same and high > low
 
 
-def test_seeds_keys_and_interleaving(monkeypatch):
+def test_seeds_keys_and_interleaving():
     programs = e.PROGRAMS["final"]
     keys = {(p["id"], s): e.relabel_key(p, s) for p in programs for s in e.seeds_of(p)}
     assert len(set(keys.values())) == 2 * K and all(0 <= k < 2 ** 63 for k in keys.values())
     assert e.relabel_key(programs[0], 2001) == e.relabel_key(programs[0], 2001)
-    captured = {}
-
-    def run_many(jobs, workers):
-        captured["jobs"], captured["workers"] = jobs, workers
-        return {key: run(1) for key, _ in jobs}
-    fake_runner = types.SimpleNamespace(ProgramSpec=runner.ProgramSpec, run_many=run_many)
-    e.measure((Path("/t"), fake_runner, None), programs, {"candidate": "c", "reference": "r"}, Path("/s"), {})
-    jobs = captured["jobs"]
-    assert captured["workers"] == 8 and len(jobs) == 2 * 2 * K
-    assert [key[1] for key, _ in jobs[:4]] == ["candidate", "reference", "reference", "candidate"]
-    for (index, role, seed), kwargs in jobs:
-        assert kwargs["relabel_key"] == keys[(programs[index]["id"], seed)]
-        assert kwargs["run_wall_seconds"] == programs[index]["run_wall_seconds"]
-        assert kwargs["strategy_host"] == {"candidate": "c", "reference": "r"}[role]
+    jobs = e.jobs_of(programs)
+    assert len(jobs) == 2 * 2 * K
+    assert [job["role"] for job in jobs[:4]] == ["candidate", "reference", "reference", "candidate"]
+    for job in jobs:
+        program = programs[job["program"]]
+        assert job["relabel_key"] == keys[(program["id"], job["seed"])]
+        assert job["run_wall_seconds"] == program["run_wall_seconds"]
+        assert job["directory"] == program["directory"] and job["argv"] == program["argv"]
 
 
 def test_program_manifest_does_not_reach_the_solver_tree():

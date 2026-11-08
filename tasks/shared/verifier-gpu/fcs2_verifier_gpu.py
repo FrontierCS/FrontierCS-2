@@ -42,7 +42,7 @@ Errors: VerifierGpuError subclasses Exception, NOT RuntimeError, so a judge's
 `except RuntimeError` for its own submission failures never turns a lost runner into a score.
 Let it propagate: the shared verifier reports it as an unscored `verifier_gpu_error`.
 
-Command test sandboxes (verifier.json `sandboxes`; design /data/task-format/design/sandboxes.md):
+Command test sandboxes (verifier.json `sandboxes`):
 
     run_sandboxes([SandboxRun(sandbox, files, steps, outputs=(), max_output_bytes=None)], *, into)
         -> [SandboxResult(steps, outputs, outputs_exceeded, logs)]
@@ -131,7 +131,6 @@ MAX_UPLOAD_DIAGNOSTIC_BYTES = 2048
 NSS_WRAPPER_ROOT = Path("/usr/lib")
 PASSWD_DATABASE = Path("/etc/passwd")
 GROUP_DATABASE = Path("/etc/group")
-DEFAULT_SSH_CAPTURE_BYTES = 8 * 1024 * 1024
 MAX_SSH_CAPTURE_BYTES = 64 * 1024 * 1024
 MAX_UPLOAD_RETRIES = 2
 # /opt/frontier/verifier.json, generated from task.toml; its `gpu` table configures this adapter.
@@ -150,6 +149,27 @@ class VerifierGpuError(Exception):
     def __init__(self, message: str, *, private_evidence: dict | None = None):
         super().__init__(message)
         self.private_evidence = private_evidence
+
+
+class _DriverRefusal(VerifierGpuError):
+    """The Driver answered a request with HTTP 4xx (`status`)."""
+
+    def __init__(self, message: str, status: int):
+        super().__init__(message)
+        self.status = status
+
+
+# The Driver statuses by which a create (one POST, never retried) proves that it leased nothing:
+# refused before the provider is called (malformed request 400, authentication 401/403,
+# unknown verification 404, undeclared runner 422, quota or undeclared machine 429). Every
+# other status leaves the runner in doubt, e.g. 409/425 (an idempotency record exists) and 410
+# (cancelled after the provider was called).
+CREATE_REFUSALS_NOT_LEASED = frozenset({400, 401, 403, 404, 422, 429})
+
+
+def _not_leased(error: BaseException | None) -> bool:
+    """Whether `error`, raised by a runner create, proves that no runner was leased."""
+    return isinstance(error, _DriverRefusal) and error.status in CREATE_REFUSALS_NOT_LEASED
 
 
 MAX_PHASE_EVENTS = 16
@@ -435,8 +455,11 @@ def _request(method: str, driver_url: str, verification_id: str, token: str,
     except urllib.error.HTTPError as error:
         if error.code == 429:
             # Quota exhausted, or a GPU type / CPU machine shape the task does not declare.
-            raise VerifierGpuError("the Driver refused the runner: the Verifier quota is "
-                                   "exhausted or does not declare this machine") from error
+            raise _DriverRefusal("the Driver refused the runner: the Verifier quota is "
+                                 "exhausted or does not declare this machine", 429) from error
+        if 400 <= error.code < 500:
+            raise _DriverRefusal(
+                f"{method} Verifier GPU endpoint returned HTTP {error.code}", error.code) from error
         raise VerifierGpuError(
             f"{method} Verifier GPU endpoint returned HTTP {error.code}") from error
     except (urllib.error.URLError, TimeoutError, OSError) as error:
@@ -753,9 +776,13 @@ def _input_archive(path: Path, payload: Path, dataset: Path) -> None:
 
 
 def _upload_chunk_bytes(environment: dict[str, str]) -> int:
+    # The Verifier image's own channel size: the shared Verifier base sets it (ENV); a task's
+    # Verifier Dockerfile may set another. The Driver never passes it.
+    if "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION" not in environment:
+        raise VerifierGpuError("FRONTIER_MAX_SSH_BYTES_PER_DIRECTION is not set: the Verifier "
+                               "image declares its SSH channel size")
     try:
-        capture = int(environment.get(
-            "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION", str(DEFAULT_SSH_CAPTURE_BYTES)))
+        capture = int(environment["FRONTIER_MAX_SSH_BYTES_PER_DIRECTION"])
     except ValueError as error:
         raise VerifierGpuError("the Verifier GPU SSH capture cap is invalid") from error
     if not 1 <= capture <= MAX_SSH_CAPTURE_BYTES:
@@ -1428,9 +1455,11 @@ def run(*, payload: Path, dataset: Path, mode: str, result_path: Path,
         try:
             with evidence.phase("delete", DELETE_RESERVE_SECONDS, cleanup=True) as window:
                 if runner is None:
-                    # A lost create response can hide a runner. Absence is not proven.
+                    # A lost create response can hide a runner. Absence is not proven, unless
+                    # the Driver refused the create.
                     evidence.events[-1]["runner_termination"] = (
-                        "unconfirmed_no_identity" if any(e["phase"] == "provisioning" for e in evidence.events)
+                        "not_leased" if _not_leased(failure)
+                        else "unconfirmed_no_identity" if any(e["phase"] == "provisioning" for e in evidence.events)
                         else "not_requested")
                 else:
                     terminated = _terminate_runner(driver_url, verification_id, token,
@@ -1821,11 +1850,15 @@ def _sandbox_run(index: int, request: SandboxRun, spec: dict, *, mode: str, call
         resources = spec["resources"]
         machine = None if "gpus" in resources else {
             "cpu_millis": resources["cpu_millis"], "memory_bytes": resources["memory_bytes"]}
-        runner = _create_runner(
-            driver_url, verification_id, token, resources.get("gpu_type"), seconds,
-            resources.get("gpus", 1), window=_WaitWindow(create_end, "work_budget_exhausted"),
-            idempotency_scope=f"sandbox-v1:{call}:{mode}:{index}:{request.sandbox}",
-            image=spec["image"], machine=machine)
+        try:
+            runner = _create_runner(
+                driver_url, verification_id, token, resources.get("gpu_type"), seconds,
+                resources.get("gpus", 1), window=_WaitWindow(create_end, "work_budget_exhausted"),
+                idempotency_scope=f"sandbox-v1:{call}:{mode}:{index}:{request.sandbox}",
+                image=spec["image"], machine=machine)
+        except VerifierGpuError as error:
+            record["not_leased"] = _not_leased(error)
+            raise
         deadline = _runner_deadline(runner, seconds, anchor=anchor)
         if outer is not None:
             deadline = min(deadline, outer.work_end)
@@ -1885,7 +1918,8 @@ def _sandbox_run(index: int, request: SandboxRun, spec: dict, *, mode: str, call
         raise
     finally:
         if runner is None:
-            record["termination"] = ("unconfirmed_no_identity" if record.get("create_requested")
+            record["termination"] = ("not_leased" if record.get("not_leased")
+                                     else "unconfirmed_no_identity" if record.get("create_requested")
                                      else "not_requested")
         else:
             end = time.monotonic() + DELETE_RESERVE_SECONDS
@@ -1965,7 +1999,8 @@ def run_sandboxes(runs, *, into) -> list[SandboxResult]:
                          for record in records]}
     cause = next((error for error in errors if not isinstance(error, _SandboxCancelled)),
                  errors[0] if errors else None)
-    if any(record["termination"] not in ("confirmed", "not_requested") for record in records):
+    if any(record["termination"] not in ("confirmed", "not_requested", "not_leased")
+           for record in records):
         raise VerifierGpuError("command sandbox runner termination was not confirmed",
                                private_evidence=evidence) from cause
     if cause is not None:

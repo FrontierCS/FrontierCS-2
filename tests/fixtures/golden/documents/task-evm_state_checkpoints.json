@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:9b47d4ca1da4cc8b660cc0e3c3de59d4c4f69d70244dfb5211ad0dc0f8df3865",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/evm_state_checkpoints/9b47d4ca1da4cc8b660cc0e3c3de59d4c4f69d70244dfb5211ad0dc0f8df3865.json",
+  "definition_digest": "sha256:c53761b5481b45c075a2f9b77fde5b280babd60c7296b453f5cbc9321c396c49",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/evm_state_checkpoints/c53761b5481b45c075a2f9b77fde5b280babd60c7296b453f5cbc9321c396c49.json",
   "display_name": "EVM State Checkpoints",
   "driver_config": {
     "agent": {
@@ -68,7 +68,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_19QG1G2PMBJT81FXNXAQQ8GDA3",
+    "task_version_id": "taskver_58X26PF0ESQCBX51KKGTRYGFCH",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -109,7 +109,7 @@
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "evm_state_checkpoints",
-      "source_set_sha256": "sha256:5ee7a830737eede489e01f9506b9f4b1d6798d7883d624826f44e6d2f900f2bc"
+      "source_set_sha256": "sha256:10916eda50f0f2ef24cc4931e933d768b63cdaf08e949ae6077a3321376f3431"
     },
     "runtime": {
       "allowed_paths": [
@@ -119,5 +119,5 @@
     }
   },
   "task_id": "frontier-cs-2.0-evm-state-checkpoints",
-  "version": "g1-beat-spec-v1-agent5h-r2-cfg-9b47d4ca1da4"
+  "version": "g1-beat-spec-v1-agent5h-r2-cfg-c53761b5481b"
 }

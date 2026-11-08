@@ -28,6 +28,9 @@ RUN apt-get update \
 RUN install -d -o 65532 -g 65532 /frontier \
     && if ! getent passwd 65532 >/dev/null; then useradd --uid 65532 --user-group --no-create-home --home-dir /frontier --shell /bin/sh frontier-verifier; fi
 ENV HOME=/frontier
+# The Verifier's SSH channel size per direction: the shared GPU adapter sizes upload chunks and
+# one sandbox collect to 7/8 of it. A task's Verifier Dockerfile may set another value.
+ENV FRONTIER_MAX_SSH_BYTES_PER_DIRECTION=8388608
 
 COPY verifier/verify.py verifier/fcs2_verifier.py verifier/beat_spec_feedback.py lib/edit_scope.py lib/isolate.py /opt/frontier/
 RUN --mount=type=bind,source=lib/install_frontier_pth.py,target=/tmp/install_frontier_pth.py \

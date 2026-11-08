@@ -16,8 +16,14 @@ RUN apt-get update \
 LABEL org.opencontainers.image.title="FrontierCS2 verifier parallel_radix_sort" \
       dev.frontier.problem-id="parallel_radix_sort"
 
+# Every member is extracted as root's (the archive's uid/gid 3689121/2626 are not kept). A
+# rootless BuildKit cannot map those owners, and a failed chown makes tarfile skip the member's
+# mode and mtime: the compilers lost their execute bits and isolate failed with EACCES. The
+# toolchain's absolute symlinks need filter='fully_trusted' rather than 'data'; like it, this
+# filter skips the 'data' path checks, which is acceptable only because the archive is this
+# task's own, pinned in repo/.
 COPY repo/frontier-gcc7.tar.xz /tmp/frontier-gcc7.tar.xz
-RUN python3 -c "import tarfile; tarfile.open('/tmp/frontier-gcc7.tar.xz').extractall('/usr/local/lib/frontier-gcc7', filter='fully_trusted')" \
+RUN python3 -c "import tarfile; tarfile.open('/tmp/frontier-gcc7.tar.xz').extractall('/usr/local/lib/frontier-gcc7', filter=lambda member, path: member.replace(uid=0, gid=0, uname='root', gname='root', deep=False))" \
     && rm /tmp/frontier-gcc7.tar.xz \
     && chmod -R a+rX,a-w /usr/local/lib/frontier-gcc7
 

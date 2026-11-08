@@ -151,9 +151,9 @@ def main() -> int:
     gpu._ssh_environment = lambda directory: dict(os.environ)
     gpu._driver_config = lambda: ("http://driver.invalid", VERIFICATION, "unused")
 
-    # As on the platform, the Verifier gets no FRONTIER_MAX_SSH_BYTES_PER_DIRECTION: the adapter
-    # uses its own capture size.
+    # As in the task's Verifier image (its ENV, or the shared Verifier base's).
     os.environ.update({
+        "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": task_manifest.verifier_channel_bytes(root),
         "FRONTIER_VERIFICATION_MODE": options.mode,
         "FRONTIER_SUBMISSION_ROLE": "final" if options.mode == "eval" else "development"})
     sys.path.insert(0, str(bundle))

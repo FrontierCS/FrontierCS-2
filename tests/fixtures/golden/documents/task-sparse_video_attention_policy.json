@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:702303920768a7d328b4bd6bc5ae3b0a8a93a346aecfce9f114a70acb5d786e1",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/sparse_video_attention_policy/702303920768a7d328b4bd6bc5ae3b0a8a93a346aecfce9f114a70acb5d786e1.json",
+  "definition_digest": "sha256:b797b841d83ed9b79a2026005c17ebe5099e16a9f0931d740c4eef4b631373ef",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/sparse_video_attention_policy/b797b841d83ed9b79a2026005c17ebe5099e16a9f0931d740c4eef4b631373ef.json",
   "display_name": "Sparse Video Attention Policy",
   "driver_config": {
     "agent": {
@@ -29,12 +29,12 @@
       },
       "agent_gpu": {
         "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000010",
-        "tag": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-agent-gpu:source-1ccd6454a8d6d8ba0e492a1b9e904af380a36379ac37d818a355446b9d27cdb5"
+        "tag": "docker.io/joyemang33/fcs2-task-sparse_video_attention_policy-agent-gpu:source-c8f959b11b48a4f09af1373170c6f0506f5a8ba000c568b421dcb20a3f7d4409"
       },
       "verifier": {
         "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000075",
         "gpu_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000013",
-        "gpu_tag": "docker.io/joyemang33/fcs2-task-verifier-sparse_video_attention_policy-gpu:source-1ccd6454a8d6d8ba0e492a1b9e904af380a36379ac37d818a355446b9d27cdb5",
+        "gpu_tag": "docker.io/joyemang33/fcs2-task-verifier-sparse_video_attention_policy-gpu:source-c8f959b11b48a4f09af1373170c6f0506f5a8ba000c568b421dcb20a3f7d4409",
         "reference": "172.20.0.50:5000/frontier/tasks/sparse_video_attention_policy/verifier_image@sha256:0000000000000000000000000000000000000000000000000000000000000075"
       }
     },
@@ -81,7 +81,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_274635JEN22BCGSV9GJW4JA067",
+    "task_version_id": "taskver_373AVT1MXDMSCT90CN55XKKF86",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -131,7 +131,7 @@
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "sparse_video_attention_policy",
-      "source_set_sha256": "sha256:1ccd6454a8d6d8ba0e492a1b9e904af380a36379ac37d818a355446b9d27cdb5"
+      "source_set_sha256": "sha256:c8f959b11b48a4f09af1373170c6f0506f5a8ba000c568b421dcb20a3f7d4409"
     },
     "runtime": {
       "allowed_paths": [
@@ -144,5 +144,5 @@
     }
   },
   "task_id": "frontier-cs-2.0-sparse-video-attention-policy",
-  "version": "gpu-helper-v3-store-final-formal-v2-cfg-702303920768"
+  "version": "gpu-helper-v3-store-final-formal-v2-cfg-b797b841d83e"
 }

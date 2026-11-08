@@ -1,6 +1,6 @@
 {
-  "definition_digest": "sha256:a53b45b9cdfcdb71e0dd1dcaed74e2205c4f0dadb22da0ca8ef6cb419f801179",
-  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/graph_mining_method_selection/a53b45b9cdfcdb71e0dd1dcaed74e2205c4f0dadb22da0ca8ef6cb419f801179.json",
+  "definition_digest": "sha256:f772f95225384eb29956d892f418634a8f8452013558ac5b48241e9b9a8e6821",
+  "definition_ref": "s3://frontier-local-task-data/definitions/frontier-cs-2.0-demo/graph_mining_method_selection/f772f95225384eb29956d892f418634a8f8452013558ac5b48241e9b9a8e6821.json",
   "display_name": "Graph Mining Method Selection",
   "driver_config": {
     "agent": {
@@ -68,7 +68,7 @@
       "media_type": "application/x-tar",
       "required_sha256": true
     },
-    "task_version_id": "taskver_4NM03CGH9ZX2XY8JKMPPC9PJST",
+    "task_version_id": "taskver_265MNCP6J563ZZ7ESDCF9K0W7F",
     "verifier": {
       "command": [
         "/opt/frontier/verifier"
@@ -108,7 +108,7 @@
       "identity_algorithm": "preview-source-identity/v1",
       "policy_schema_version": "frontier.frontiersmith-task-policy/v1",
       "problem_id": "graph_mining_method_selection",
-      "source_set_sha256": "sha256:aa25b92e795464f39bc3517ae49248f572380bdaf41e713a6ad5df6e8f6b6a45"
+      "source_set_sha256": "sha256:08779f6aef35ab66c13341c362f50dee2f762568dcb0344bf8754db7b4092e71"
     },
     "runtime": {
       "allowed_paths": [
@@ -118,5 +118,5 @@
     }
   },
   "task_id": "frontier-cs-2.0-graph-mining-method-selection",
-  "version": "g1-beat-spec-v1-agent5h-r2-cfg-a53b45b9cdfc"
+  "version": "g1-beat-spec-v1-agent5h-r2-cfg-f772f9522538"
 }

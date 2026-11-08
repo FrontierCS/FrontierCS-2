@@ -288,7 +288,8 @@ class PolygonSearchSandbox(AdapterCase):
         # (one SSH chunk of the platform's default capture): every entry's result line at its
         # cap plus its largest record (every stderr byte non-ASCII: 6 JSON bytes each).
         judge = self.judge()
-        self.assertLessEqual(judge["SEARCH_OUTPUT_BYTES"], self.gpu._upload_chunk_bytes({}))
+        self.assertLessEqual(judge["SEARCH_OUTPUT_BYTES"], self.gpu._upload_chunk_bytes(
+            {"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": task_manifest.verifier_channel_bytes(None)}))
         sys.path.insert(0, str(self.bundle))
         import search_harness
         record = json.dumps({"index": 20, "side": "reference", "decided": False,
@@ -304,6 +305,17 @@ class PolygonSearchSandbox(AdapterCase):
             needed = (len(entries) * (128 * 1024 + len(record))
                       + self.gpu.MAX_LOG_TAIL_BYTES)
             self.assertLessEqual(needed, judge["SEARCH_OUTPUT_BYTES"], role)
+            # The collect's tar stream on the SSH channel: per member (<n>.json, <n>.message,
+            # out/, the step log tail, the unreadable list) one 512-byte header and at most 511
+            # bytes of padding, plus the closing blocks rounded to a 10 KiB record. It stays
+            # within 7/8 of the Verifier's channel, so the stream never reaches the channel.
+            members = 2 * len(entries) + 3
+            stream = needed + members * 1024 + 10240
+            self.assertLessEqual(stream, self.gpu._upload_chunk_bytes(
+                {"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": task_manifest.verifier_channel_bytes(
+                    TASK)}), role)
+            print(f"polygon {role}: {len(entries)} entries, collect stream <= {stream} bytes",
+                  file=sys.stderr)
 
     def test_an_over_cap_result_fails_its_case_loudly(self):
         # Never truncated or validated: the case fails (refuted 0, charged its budget), the

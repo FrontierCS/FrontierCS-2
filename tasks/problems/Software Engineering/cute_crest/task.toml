@@ -15,6 +15,22 @@ workspace_bytes = 8589934592      # 8 GiB
 cpu_millis = 8000
 memory_bytes = 34359738368        # 32 GiB
 
+# The search runs on a machine of their own, the judge's trusted search machine: the Verifier
+# image (the built harness, solver and programs), 8 CPU / 32 GiB, both sides' runs interleaved
+# eight at a time as the wall budgets of judge/programs.json were measured; only the candidate's
+# strategy runs in a shared-isolate instance there. Its one step takes the rest of the grant.
+# lease_seconds: the slowest schedule of the runs is the sum of their hard limits over 8 plus the
+# longest (train 3230 s; final 10585 s, where quota.eval_timeout_seconds less the judge's own
+# build caps the lease; the reference's runs take about a third of their limits).
+[test_sandboxes.search]
+access = "command"
+trust = "trusted"
+dockerfile = "docker/verifier.Dockerfile"
+workdir = "/workspace/search"
+resources = { cpu_millis = 8000, memory_bytes = 34359738368 }
+max_concurrent = 1
+lease_seconds = { train = 3600, eval = 10500 }
+
 [quota]
 wall_time_seconds = 18000         # 5 h
 max_train_calls = 100

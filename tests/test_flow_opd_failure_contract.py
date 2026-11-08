@@ -209,7 +209,9 @@ class RemoteFailureRetentionTests(unittest.TestCase):
 
                 with (
                     mock.patch.dict(os.environ, {'FRONTIER_MAX_EVIDENCE_BYTES':'32768',
-                                                  'FRONTIER_VERIFIER_DEADLINE_UNIX_MS':''}),
+                                                  'FRONTIER_VERIFIER_DEADLINE_UNIX_MS':'',
+                                                  # the shared Verifier base's channel size
+                                                  'FRONTIER_MAX_SSH_BYTES_PER_DIRECTION':'8388608'}),
                     mock.patch.object(gpu, '_config', return_value=('url','verification','token','gpu',1)),
                     mock.patch.object(gpu, '_input_archive'),
                     mock.patch.object(gpu, '_create_runner', return_value={'runner_id':'owned','granted_seconds':7200}),

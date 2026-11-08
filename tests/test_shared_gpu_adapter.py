@@ -96,6 +96,7 @@ class FakeDriver:
         self.deleted: list[str] = []
         self.granted = granted
         self.fail_scope_suffix = None
+        self.fail_status = 500  # the HTTP status of the failed create
 
     def open(self, request, timeout=None):
         url = request.full_url
@@ -106,7 +107,7 @@ class FakeDriver:
                 key = request.get_header("Idempotency-key")
                 self.creates.append({"key": key, **body})
                 if self.fail_scope_suffix is not None and len(self.creates) == self.fail_scope_suffix:
-                    raise urllib.error.HTTPError(url, 500, "boom", {}, io.BytesIO(b"{}"))
+                    raise urllib.error.HTTPError(url, self.fail_status, "boom", {}, io.BytesIO(b"{}"))
                 if key not in self.runners:
                     number = len(self.runners)
                     runner_id = "gpurunner_0" + "".join(
@@ -143,9 +144,10 @@ class AdapterCase(unittest.TestCase):
             "FRONTIER_DRIVER_INTERNAL_URL": DRIVER, "FRONTIER_VERIFICATION_ID": VERIFICATION,
             "FRONTIER_VERIFIER_GPU_TYPE": "H100",
             "FRONTIER_VERIFIER_GPU_COUNT": "1", "FRONTIER_VERIFICATION_MODE": "train",
-            "FRONTIER_MAX_EVIDENCE_BYTES": "4194304"}
-        for name in ("FRONTIER_VERIFIER_GPU_SECONDS", "FRONTIER_VERIFIER_DEADLINE_UNIX_MS",
-                     "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION"):
+            "FRONTIER_MAX_EVIDENCE_BYTES": "4194304",
+            # The Verifier image's channel size (the shared Verifier base's ENV).
+            "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": task_manifest.verifier_channel_bytes(None)}
+        for name in ("FRONTIER_VERIFIER_GPU_SECONDS", "FRONTIER_VERIFIER_DEADLINE_UNIX_MS"):
             environment[name] = ""
         self.verifier = load_verifier()
         self.real_ssh_argv = self.gpu._ssh_argv
@@ -162,8 +164,7 @@ class AdapterCase(unittest.TestCase):
         for patch in patches:
             patch.start()
             self.addCleanup(patch.stop)
-        for name in ("FRONTIER_VERIFIER_GPU_SECONDS", "FRONTIER_VERIFIER_DEADLINE_UNIX_MS",
-                     "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION"):
+        for name in ("FRONTIER_VERIFIER_GPU_SECONDS", "FRONTIER_VERIFIER_DEADLINE_UNIX_MS"):
             os.environ.pop(name)
 
     def tearDown(self):

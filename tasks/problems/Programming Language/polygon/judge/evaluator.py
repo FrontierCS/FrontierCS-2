@@ -389,9 +389,8 @@ PYTHON = "/opt/frontier/runtime-python"   # the sandbox image's interpreter
 SEARCH_SETUP_SECONDS = 30.0
 HARNESS_FILES = ("search_harness.py", "search_child.py")
 # The one collect of the harness's out/: run_sandboxes() allows at most one SSH chunk, 7/8 of the
-# declared per-direction cap (FRONTIER_MAX_SSH_BYTES_PER_DIRECTION, task.toml [network.audit]:
-# 64 MiB; 8 MiB when unset), and refuses a larger max_output_bytes. 7 MiB fits every capture of
-# 8 MiB or more; 42 entries x (RESULT_MAX_BYTES + a record of at most ~10 KiB) stays below it
+# Verifier's channel size (FRONTIER_MAX_SSH_BYTES_PER_DIRECTION, the shared Verifier base's
+# 8 MiB), and refuses a larger max_output_bytes. 7 MiB fits every channel of 8 MiB or more; 42 entries x (RESULT_MAX_BYTES + a record of at most ~10 KiB) stays below it
 # (tests/test_polygon_search_sandbox.py).
 SEARCH_OUTPUT_BYTES = 7 * 1024 * 1024
 VALIDATOR_START_SECONDS = 20.0

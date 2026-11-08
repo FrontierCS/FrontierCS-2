@@ -175,7 +175,8 @@ The grep 2.2 source is at `/frontier/task/benchmark-src/grep-2.2`.
 
 ## Environment
 
-The judge has 8 CPUs and 32 GiB of memory; your workspace has 8 CPUs and 16 GiB. CREST is pinned
+The judge's search machine has 8 CPUs and 32 GiB of memory, and each run's strategy process runs
+there in an isolated instance of its own; your workspace has 8 CPUs and 16 GiB. CREST is pinned
 at commit 3e5ececd with offline OCaml 4.02.3 and Z3 4.15.3.0. A development evaluation of a
 strategy in the reference's cost range takes about 15 minutes, a final evaluation about an hour.
 

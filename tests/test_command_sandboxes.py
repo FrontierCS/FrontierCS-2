@@ -154,6 +154,55 @@ class RunSandboxes(AdapterCase):
         result = self.run_one(self.step("python3 judge/probe.py"), outputs=())
         self.assertEqual(result.logs[0], b"judge here\n")
 
+    def test_a_create_the_driver_refused_is_reported_not_leased(self):
+        # A 4xx refusal proves that no runner exists: the run failed, nothing to terminate.
+        # A lost create (5xx), or an idempotency conflict / in-progress create, may hide one.
+        for status, message, termination in (
+                (429, "a command sandbox run failed", "not_leased"),
+                (422, "a command sandbox run failed", "not_leased"),
+                (500, "termination was not confirmed", "unconfirmed_no_identity"),
+                (409, "termination was not confirmed", "unconfirmed_no_identity"),
+                (410, "termination was not confirmed", "unconfirmed_no_identity"),
+                (425, "termination was not confirmed", "unconfirmed_no_identity")):
+            with self.subTest(status=status):
+                self.driver.creates.clear()
+                self.driver.fail_scope_suffix, self.driver.fail_status = 1, status
+                into = Path(tempfile.mkdtemp(dir=self.scratch))
+                with self.assertRaisesRegex(self.gpu.VerifierGpuError, message) as raised:
+                    self.gpu.run_sandboxes([self.gpu.SandboxRun(
+                        "candidate", self.files, [self.step("true")])], into=into)
+                [run] = raised.exception.private_evidence["runs"]
+                self.assertEqual((run["status"], run["termination"]), ("failed", termination))
+        self.assertEqual(self.driver.deleted, [])
+
+    # The Driver's statuses for a Verifier runner create, copied by hand from the core
+    # repository's driver/crates/driver-api/src/lib.rs (`impl From<DriverError> for ApiError`,
+    # create_verifier_gpu_runner and its authentication and header refusals), and
+    # whether each proves that no runner exists: raised before the provider is called. A status
+    # the Driver adds later is in doubt until it is added here and to the adapter's allow-list.
+    DRIVER_CREATE_STATUSES = {
+        "bad_request (shape, headers, body)": (400, True),
+        "unauthorized": (401, True),
+        "verifier token scope": (403, True),
+        "verification_not_found": (404, True),
+        "idempotency_conflict": (409, False),       # an idempotency record exists
+        "driver_cancelled": (410, False),           # mapped after the provider was called
+        "invalid_dispatch / runner_not_declared": (422, True),
+        "idempotency_in_progress": (425, False),    # a create under this key is running
+        "quota_exhausted / gpu_type_not_allowed / cpu_machine_shape_not_declared": (429, True),
+        "internal": (500, False),
+        "gpu_backend_unavailable / verifier_start_failed": (502, False),
+        "runner_capacity_refused / agent_not_ready": (503, False),
+    }
+
+    def test_only_refusals_before_the_provider_prove_that_nothing_was_leased(self):
+        proven = {status for status, absent in self.DRIVER_CREATE_STATUSES.values() if absent}
+        self.assertEqual(self.gpu.CREATE_REFUSALS_NOT_LEASED, frozenset(proven))
+        for name, (status, absent) in self.DRIVER_CREATE_STATUSES.items():
+            with self.subTest(name=name):
+                self.assertEqual(self.gpu._not_leased(self.gpu._DriverRefusal(name, status)), absent)
+        self.assertFalse(self.gpu._not_leased(self.gpu.VerifierGpuError("lost response")))
+
     def test_malformed_requests_lease_nothing(self):
         Run, Step = self.gpu.SandboxRun, self.gpu.SandboxStep
         bad = [
@@ -395,8 +444,9 @@ if __name__ == "__main__":
 
 class VerifierChannelSize(unittest.TestCase):
     """The Verifier's SSH channel size (FRONTIER_MAX_SSH_BYTES_PER_DIRECTION, by which the
-    adapter sizes upload chunks and collects to 7/8) is the Verifier image's own: a legacy task's
-    Dockerfile ENV, else the shared adapter's 8 MiB. The Driver never sets it. The task's
+    adapter sizes upload chunks and collects to 7/8) is the Verifier image's own: a task's
+    Dockerfile ENV, else the shared Verifier base's ENV (8 MiB); a legacy task's vendored adapter
+    keeps its own default. The Driver never sets it. The task's
     network.audit.max_ssh_bytes_per_direction is a retired recording capacity; many tasks declare
     512 MiB, which the adapter would refuse. Every catalog task's effective size must be one its
     adapter accepts."""
@@ -424,8 +474,17 @@ class VerifierChannelSize(unittest.TestCase):
                 if "gpu" not in parameters and "sandboxes" not in parameters:
                     continue
                 adapter = shared
-                values = {match for dockerfile in (root / "docker").glob("verifier*.Dockerfile")
-                          for match in self.ENV.findall(dockerfile.read_text(encoding="utf-8"))}
+                # Each image that carries the shared adapter inherits the Verifier base's ENV (its
+                # final stage is FROM ${VERIFIER_BASE}) or sets the size itself.
+                for dockerfile in (root / "docker").glob("*.Dockerfile"):
+                    text = dockerfile.read_text(encoding="utf-8")
+                    if "fcs2_verifier_gpu.py" not in text:
+                        continue
+                    stages = re.findall(r"^FROM\s+(\S+)", text, re.MULTILINE)
+                    with self.subTest(task=task["name"], dockerfile=dockerfile.name):
+                        self.assertTrue(stages[-1] == "${VERIFIER_BASE}" or self.ENV.search(text),
+                                        stages)
+                values = {task_manifest.verifier_channel_bytes(root)}
             else:
                 continue
             self.assertLessEqual(len(values), 1, task["name"])
@@ -438,3 +497,13 @@ class VerifierChannelSize(unittest.TestCase):
         # What the Driver must never pass: the retired cap many tasks declare.
         with self.assertRaises(shared.VerifierGpuError):
             shared._upload_chunk_bytes({"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": str(512 * 1024 * 1024)})
+        # The shared adapter has no built-in size: an image without the ENV fails loudly.
+        with self.assertRaisesRegex(shared.VerifierGpuError, "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION"):
+            shared._upload_chunk_bytes({})
+
+    def test_effective_sizes_are_unchanged_by_the_explicit_base_value(self):
+        # The base ENV is the adapter's former built-in 8 MiB.
+        import render_task_definition as renderer
+        self.assertEqual(task_manifest.verifier_channel_bytes(None), str(8 * 1024 * 1024))
+        polygon = renderer.problem_directory(renderer.TASK_ROOT / "problems", "polygon")
+        self.assertEqual(task_manifest.verifier_channel_bytes(polygon), str(8 * 1024 * 1024))

@@ -5,7 +5,7 @@ Score: per graded program, 100 * max(0, C - B) / (T - B) with C the candidate's 
 over the 30 seeds, B the program's pinned bounded-DFS (depth 12) mean coverage and T its branch
 count; raw_score = score_unbounded = the mean over the graded programs (development: grep 2.2;
 final: two held-out programs). A source/object rule break is a rejection; a build failure or a
-strategy fault in any run (crash, sandbox kill, API misuse, protocol, exit) scores 0. Early
+strategy fault in any run (crash, sandbox kill, API misuse, protocol, any exit) scores 0. Early
 ends (caps, Run returned) are valid. A reference or harness failure raises.
 
 Beat-spec metrics (beat_spec_workload_passes, one row per graded program; gate.py, exact
@@ -17,8 +17,14 @@ beats_reference = 1 iff both metrics pass on every graded program.
 
 Candidate and reference run interleaved on the same seeds and secret relabelling; check_tree
 runs the starter's solution_policy source rules. The strategy is compiled, and its objects are
-listed for the object rules, in a shared isolate instance (no judge files, no network, a
-clean environment); the strategy process seals itself (seccomp) before any solution code runs.
+listed for the object rules, here in a shared isolate instance (no judge files, no network, a
+clean environment). The search runs execute on one trusted command test sandbox (task.toml
+[test_sandboxes.search], a CPU machine of the Verifier image, which holds the built harness and
+programs): both sides' runs, eight at a time and interleaved as before (judge/run_search.py),
+the fixed harness measuring each run. Only the strategy is the candidate's: the harness starts
+it in a fresh isolate instance (judge/strategy_bridge.py), and the strategy process seals itself
+(seccomp) before any solution code runs. The results come back as one file from the trusted
+machine; anything wrong with it, or with the machine, is the judge's failure.
 """
 from __future__ import annotations
 
@@ -37,6 +43,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(TASK))
 import gate  # noqa: E402
 import isolate  # noqa: E402  the shared launcher, beside edit_scope in the Verifier base
+from fcs2_verifier_gpu import SandboxRun, SandboxStep, run_sandboxes, sandbox_workdir  # noqa: E402
 
 # Built once per verifier image by build_benchmarks.py; read-only afterwards.
 # Kept outside the task bundle so a verification does not copy it.
@@ -46,7 +53,18 @@ PRISTINE = TASK / 'pristine'
 SOLUTION = 'src/frontier_solution'
 METRIC_NAMES = ['branches_covered', 'search_overhead_seconds']
 PROGRAMS = json.loads((TASK / 'programs.json').read_text())
+# Runs at once on the search machine: the condition the wall budgets were measured under.
 WORKERS = 8
+SEARCH_SANDBOX = 'search'
+# The search machine's interpreter (the Verifier image's; isolate is on its import path).
+PYTHON = '/opt/frontier/runtime-python'
+MAX_RESULTS_BYTES = 8 << 20
+# What a run result must hold, with its type (crest_runner.run_one: the harness's result file plus
+# killed_executions, seed and children_peak_kb). `curve` is a list of [iteration, covered].
+RESULT_FIELDS = {'status': str, 'covered': int, 'iterations': int, 'solver_attempts': int,
+                 'strategy_cpu_seconds': (int, float), 'solver_cpu_seconds': (int, float),
+                 'wall_seconds': (int, float), 'killed_executions': int, 'seed': int,
+                 'curve': list}
 
 
 # Solution-rule codes (solution_policy.PolicyViolation) -> the shared rejection categories.
@@ -132,10 +150,9 @@ def load_tools():
     sys.path.insert(0, str(tree))
     try:
         import crest_runner
-        import frontier_build
     finally:
         sys.path.remove(str(tree))
-    return tree, crest_runner, frontier_build
+    return tree, crest_runner
 
 
 # The strategy build of the starter's frontier_build.build_strategy (same compiler flags and
@@ -237,37 +254,91 @@ def reference_tree(scratch):
     return tree
 
 
-def measure(tools, programs, hosts, scratch, env):
-    """Runs every (program, role, seed).  Returns {(program index, role): [result per seed]}."""
-    tree, crest_runner, _ = tools
+def jobs_of(programs):
+    """Every (program, role, seed) run in the order to start them: per program, per seed, both
+    sides, the side that starts alternating (so neither is systematically first), each with its
+    per-run relabel key and wall budget."""
     jobs = []
     for index, program in enumerate(programs):
-        spec = crest_runner.ProgramSpec(BUILT / 'bench' / program['directory'], program['argv'],
-                                        needs_pty=bool(program['needs_pty']), term=program['term'])
         for n, seed in enumerate(seeds_of(program)):
-            # Alternate which side starts, so neither is systematically first.
             for role in (('candidate', 'reference') if n % 2 == 0 else ('reference', 'candidate')):
-                jobs.append(((index, role, seed), dict(
-                    repo=tree, spec=spec, strategy_host=hosts[role], seed=seed, scratch=scratch,
-                    relabel_key=relabel_key(program, seed), run_wall_seconds=int(program['run_wall_seconds']),
-                    toolchain_env=env)))
-    results = crest_runner.run_many(jobs, WORKERS)
-    return {(index, role): [results[(index, role, seed)] for seed in seeds_of(program)]
-            for index, program in enumerate(programs) for role in ('candidate', 'reference')}
+                jobs.append({'program': index, 'role': role, 'seed': seed,
+                             'directory': program['directory'], 'argv': list(program['argv']),
+                             'needs_pty': bool(program['needs_pty']), 'term': program['term'],
+                             'relabel_key': relabel_key(program, seed),
+                             'run_wall_seconds': int(program['run_wall_seconds'])})
+    return jobs
+
+
+def search_run(programs, hosts, files):
+    """The upload of the search machine (both strategies, the judge's driver and bridge, the
+    jobs) and its one step, which takes the rest of the machine's grant."""
+    for role, host in hosts.items():
+        (files / 'sides' / role).mkdir(parents=True)
+        shutil.copy2(host, files / 'sides' / role / 'strategy')
+    for name in ('run_search.py', 'strategy_bridge.py'):
+        shutil.copy2(TASK / name, files / name)
+    (files / 'jobs.json').write_text(json.dumps({'workers': WORKERS, 'runs': jobs_of(programs)}))
+    (files / 'out').mkdir()
+    (files / 'scratch').mkdir()
+    root = sandbox_workdir(SEARCH_SANDBOX)
+    step = SandboxStep([PYTHON, '-I', root + '/run_search.py', root], None,
+                       {'CREST_TASK_BUILT_ROOT': str(BUILT)})
+    return SandboxRun(SEARCH_SANDBOX, files, [step], ['out/results.json'])
+
+
+def checked(run, job, program):
+    """One run result of the trusted machine, checked for every field the judge uses."""
+    if not isinstance(run, dict):
+        raise EvaluatorFailure('a search result is not a record')
+    for name, kind in RESULT_FIELDS.items():
+        if name not in run or not isinstance(run[name], kind) or isinstance(run[name], bool):
+            raise EvaluatorFailure('a search result lacks a well-formed %r' % name)
+    if run['seed'] != job['seed'] or not 0 <= run['covered'] <= int(program['branch_count']):
+        raise EvaluatorFailure('a search result does not belong to its run')
+    if not all(isinstance(point, list) and len(point) == 2 for point in run['curve']):
+        raise EvaluatorFailure('a search result has a malformed curve')
+    return run
+
+
+def measure(tools, programs, hosts, scratch):
+    """Runs every (program, role, seed) on the search machine.
+    Returns {(program index, role): [result per seed]}."""
+    (scratch / 'search').mkdir()
+    (scratch / 'out').mkdir()
+    (result,) = run_sandboxes([search_run(programs, hosts, scratch / 'search')], into=scratch / 'out')
+    step = result.steps[0]
+    if step.exit_code != 0 or result.outputs is None:
+        raise EvaluatorFailure('the search machine failed: %s: %s' % (
+            step, (result.logs[0] or b'').decode('utf-8', 'replace')[-500:]))
+    path = result.outputs / 'out' / 'results.json'
+    if path.stat().st_size > MAX_RESULTS_BYTES:
+        raise EvaluatorFailure('the search results exceed their size cap')
+    runs = json.loads(path.read_text())
+    jobs = jobs_of(programs)
+    if len(runs) != len(jobs):
+        raise EvaluatorFailure('the search results do not list every run')
+    measured = {(index, role): [] for index in range(len(programs)) for role in ('candidate', 'reference')}
+    for job, run in zip(jobs, runs):
+        measured[(job['program'], job['role'])].append(checked(run, job, programs[job['program']]))
+    return measured
 
 
 def grade(tools, programs, measured, final):
-    _, crest_runner, _ = tools
+    _, crest_runner = tools
     rows = []
     for index, program in enumerate(programs):
         candidate, reference = measured[(index, 'candidate')], measured[(index, 'reference')]
         if any(r['status'] != 'budget_exhausted' for r in reference):
             raise EvaluatorFailure('a reference run did not complete its budget')
         # A candidate run may end early (budget caps, or Run() returned): it
-        # keeps the coverage it reached.  Anything else is a fault of the
-        # strategy process and voids the submission.
+        # keeps the coverage it reached.  Every other status voids the
+        # submission: each is how the strategy process ended (its exit status,
+        # whatever it is, 71 and 127 included, which the harness calls
+        # harness_error:*; a launcher failure never reaches a status, see
+        # run_search.py), except harness_failure, the harness's own loss.
         faults = sorted({r['status'] for r in candidate if r['status'] not in crest_runner.COMPLETE_STATUSES})
-        if any(s == 'harness_failure' or s.startswith('harness_error') for s in faults):
+        if 'harness_failure' in faults:
             raise EvaluatorFailure('a candidate run was lost: ' + ','.join(faults))
         if faults:
             raise InvalidCandidate(faults[0].replace(':', '_'))
@@ -306,13 +377,13 @@ def grade(tools, programs, measured, final):
     if not final:
         # Development feedback: the candidate's own measurements only.
         n = float(len(all_candidate))
-        checkpoints = sorted({point[0] for r in all_candidate for point in r.get('curve', [])})
+        checkpoints = sorted({point[0] for r in all_candidate for point in r['curve']})
         curve = []
         for checkpoint in checkpoints:
-            values = [point[1] for r in all_candidate for point in r.get('curve', []) if point[0] == checkpoint]
+            values = [point[1] for r in all_candidate for point in r['curve'] if point[0] == checkpoint]
             # Runs that ended before a checkpoint keep their final coverage.
             values += [int(r['covered']) for r in all_candidate
-                       if all(point[0] != checkpoint for point in r.get('curve', []))]
+                       if all(point[0] != checkpoint for point in r['curve'])]
             curve.append([checkpoint, round(sum(values) / n, 2)])
         metrics.update({
             'dev_branches_covered_mean': round(sum(int(r['covered']) for r in all_candidate) / n, 3),
@@ -320,7 +391,7 @@ def grade(tools, programs, measured, final):
             'dev_search_overhead_seconds_mean': round(sum(overhead_ms(r) for r in all_candidate) / n / 1000.0, 3),
             'dev_solver_attempts_mean': round(sum(int(r['solver_attempts']) for r in all_candidate) / n, 1),
             'dev_runs_ended_early': sum(1 for r in all_candidate if r['status'] != 'budget_exhausted'),
-            'dev_killed_executions_mean': round(sum(int(r.get('killed_executions', 0)) for r in all_candidate) / n, 2),
+            'dev_killed_executions_mean': round(sum(r['killed_executions'] for r in all_candidate) / n, 2),
         })
     return score, metrics
 
@@ -338,7 +409,6 @@ def evaluate(tree: str) -> tuple[float, float, str, dict]:
         cleanup.append(work)
         try:
             tools = load_tools()
-            env, _ = tools[2].environment(tools[0], BUILT / 'build', tmp=work / 'tmp')
             policy = load_policy()
             hosts = {'candidate': build_candidate(policy, candidate / SOLUTION, work / 'candidate')}
         except Rejected as error:
@@ -356,8 +426,8 @@ def evaluate(tree: str) -> tuple[float, float, str, dict]:
         programs = suite(final)
         runs = work / 'runs'
         runs.mkdir()
-        measured = measure(tools, programs, hosts, runs, env)
         try:
+            measured = measure(tools, programs, hosts, runs)
             score, metrics = grade(tools, programs, measured, final)
         except InvalidCandidate as error:
             return 0.0, 0.0, 'invalid candidate: ' + error.code, empty_metrics(final)

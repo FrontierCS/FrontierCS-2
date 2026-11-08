@@ -24,6 +24,7 @@ import glob
 import json
 import os
 import shutil
+import signal
 import socket
 import struct
 import subprocess
@@ -291,6 +292,19 @@ except OSError:
     print('denied')
 """, syscalls="no_fork")
         self.assertEqual(result.stdout.split(), [b"thread", b"1", b"denied"], result.stderr)
+
+    def test_no_clone_profile_has_no_processes_or_threads(self):
+        result = self.python("""
+import os, threading
+for name, start in (('thread', lambda: threading.Thread(target=print).start()),
+                    ('fork', os.fork)):
+    try:
+        start(); print(name, 'CREATED')
+    except (OSError, RuntimeError):
+        print(name, 'denied')
+""", syscalls="no_clone")
+        self.assertEqual(result.stdout.split(), [b"thread", b"denied", b"fork", b"denied"],
+                         result.stderr)
 
     def test_strict_profile_has_no_processes(self):
         result = self.python("import os\ntry:\n os.fork(); print('FORKED')\n"
@@ -668,6 +682,210 @@ os.chmod(home, 0)
 """
 
 
+# The trusted parent's child for ExecTests: calls exec_on_stdio, which never returns.
+EXEC_CALLER = """
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import isolate
+isolate.BACKENDS = (sys.argv[2],)
+isolate.exec_on_stdio(json.loads(sys.argv[3]), **json.loads(sys.argv[4]))
+"""
+
+
+class ExecTests(Backend):
+    """exec_on_stdio(): the caller becomes the launcher; its parent keeps the pipes, the exit
+    status and the resource usage, as a C harness that forks and wait4s its child sees them."""
+
+    def setUp(self):
+        super().setUp()
+        self.judge = Path(tempfile.mkdtemp(prefix="judge-state-"))
+        self.secret = self.judge / "reference.patch"
+        self.secret.write_text("the reference answer")
+        self.record = self.judge / "launcher-failure.json"
+
+    def tearDown(self):
+        isolate._remove(self.judge)
+
+    def spawn(self, argv, **options):
+        options.setdefault("timeout_seconds", 30)
+        options.setdefault("failure_record", str(self.record))
+        options.setdefault("syscalls", "no_clone")
+        return subprocess.Popen(
+            [PYTHON, "-I", "-S", "-c", EXEC_CALLER, str(ROOT / "tasks/shared/lib"), self.backend,
+             json.dumps(argv), json.dumps(options)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env={})
+
+    def outcome(self, process):
+        """(waitstatus as an exit code, ru_utime + ru_stime) of the ended caller, by wait4."""
+        _, status, usage = os.wait4(process.pid, 0)
+        process.returncode = os.waitstatus_to_exitcode(status)
+        return process.returncode, usage.ru_utime + usage.ru_stime
+
+    def test_round_trips_on_the_callers_pipes_inside_the_boundary(self):
+        process = self.spawn([PYTHON, "-I", "-S", "-c", ECHO_WORKER, str(self.secret)])
+        for request, reply in ((b"hello\n", b"HELLO\n"), (b"secret?\n", b"denied\n"),
+                               (b"env?\n", b"[]\n")):
+            process.stdin.write(request)
+            process.stdin.flush()
+            self.assertEqual(process.stdout.readline(), reply)
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 0)
+
+    def test_the_exit_code_and_the_killing_signal_pass_through(self):
+        # Every status is the command's own, the codes a harness gives a meaning (70-72, 127)
+        # included: the launcher reports its own failures only in the failure record.
+        for code, expected in (("raise SystemExit(3)", 3), ("raise SystemExit(71)", 71),
+                               ("raise SystemExit(1)", 1),
+                               ("import os, signal; os.kill(os.getpid(), signal.SIGSEGV)", -11),
+                               ("import os, signal; os.kill(os.getpid(), signal.SIGSYS)", -31),
+                               ("import os, signal; os.kill(os.getpid(), signal.SIGTERM)", -15)):
+            with self.subTest(code=code):
+                process = self.spawn([PYTHON, "-I", "-S", "-c", code])
+                process.stdin.close()
+                process.stdout.close()
+                self.assertEqual(self.outcome(process)[0], expected)
+                self.assertFalse(self.record.exists())
+
+    def test_a_limit_ends_the_caller_by_sigkill(self):
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "import time; time.sleep(60)"],
+                             timeout_seconds=1)
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], -9)
+
+    def test_the_callers_resource_usage_includes_the_command(self):
+        burn = "import time\nend = time.process_time() + 1.5\nwhile time.process_time() < end: pass"
+        process = self.spawn([PYTHON, "-I", "-S", "-c", burn])
+        process.stdin.close()
+        process.stdout.close()
+        status, cpu = self.outcome(process)
+        self.assertEqual(status, 0)
+        self.assertGreaterEqual(cpu, 1.5)
+
+    def test_a_missing_command_is_its_own_127(self):
+        process = self.spawn(["/nonexistent/strategy"])
+        process.stdin.close()
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 127)
+
+    def test_directories_are_removed(self):
+        before = set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*"))
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('x')"])
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"x\n")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 0)
+        self.assertEqual(set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before)
+
+    def test_a_failure_before_the_launch_is_reported_out_of_band(self):
+        # An invalid read path: the call fails in the caller, before any instance exists.
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"],
+                             read_paths=["/nonexistent/path"])
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 1)
+        self.assertIn("IsolateError", json.loads(self.record.read_text())["error"])
+
+    def test_a_launcher_failure_is_reported_out_of_band(self):
+        # The launcher cannot build the instance (a spec it cannot use): it writes the record.
+        control = Path(tempfile.mkdtemp(prefix=isolate.INSTANCE_PREFIX)) / "control"
+        control.mkdir()
+        (control / "spec.json").write_text(json.dumps({
+            "backend": self.backend, "options": {"timeout_seconds": 5},
+            "exec": {"failure_record": str(self.record)}}))
+        process = subprocess.run([PYTHON, "-I", "-S", isolate.LAUNCHER, str(control)],
+                                 capture_output=True, env={})
+        self.assertEqual(process.returncode, 1)
+        self.assertIn("error", json.loads(self.record.read_text()))
+        self.assertFalse(control.exists())
+
+    def test_bad_arguments(self):
+        self.record.write_text("stale")
+        for record in ("relative/record.json", "/nonexistent/dir/record.json", str(self.record)):
+            with self.subTest(record=record), self.assertRaises(isolate.IsolateError):
+                isolate.exec_on_stdio([PYTHON], timeout_seconds=5, failure_record=record)
+
+    def test_a_command_that_may_fork_is_refused_out_of_band(self):
+        # The command must be the instance's only process (see test_the_command_dies_...).
+        for syscalls in ("default", "no_fork"):   # a thread could escape the death signal
+            with self.subTest(syscalls=syscalls):
+                self.record.unlink(missing_ok=True)
+                self.refused_profile(syscalls)
+
+    def refused_profile(self, syscalls):
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"], syscalls=syscalls)
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 1)
+        self.assertIn("syscalls", json.loads(self.record.read_text())["error"])
+
+    @staticmethod
+    def running(token: str) -> list[int]:
+        """Live processes whose command line holds `token`."""
+        found = []
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                if token.encode() in (entry / "cmdline").read_bytes():
+                    found.append(int(entry.name))
+            except OSError:
+                continue
+        return found
+
+    def test_the_command_dies_with_its_launcher(self):
+        # A harness SIGKILLs the launcher at its budget: the command (which ignores every
+        # catchable signal) must not survive it as an orphan.
+        token = f"orphan-probe-{os.getpid()}-{time.time_ns()}"
+        code = ("import signal\n"
+                "for name in ('SIGPIPE', 'SIGHUP', 'SIGTERM', 'SIGINT'):\n"
+                "    signal.signal(getattr(signal, name), signal.SIG_IGN)\n"
+                "print('up', flush=True)\n"
+                "while True: pass\n")
+        process = self.spawn([PYTHON, "-I", "-S", "-c", code, token])
+        self.assertEqual(process.stdout.readline(), b"up\n")
+        self.assertTrue(self.running(token))
+        os.kill(process.pid, signal.SIGKILL)
+        self.assertEqual(self.outcome(process)[0], -9)
+        process.stdin.close()
+        process.stdout.close()
+        deadline = time.monotonic() + 10
+        while self.running(token) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertEqual(self.running(token), [])
+        self.assertFalse(self.record.exists())
+
+    def test_a_thread_cannot_carry_the_command_past_its_launcher(self):
+        # A thread starts without the parent death signal and keeps that through execve: the
+        # command may create none, so an exec from a thread never runs.
+        token = f"thread-probe-{os.getpid()}-{time.time_ns()}"
+        loop = f"import sys\nwhile True: pass  # {token}"
+        code = ("import os, sys, threading\n"
+                "def run():\n"
+                f"    os.execv(sys.executable, [sys.executable, '-c', {loop!r}, {token!r}])\n"
+                "try:\n"
+                "    threading.Thread(target=run).start()\n"
+                "    print('thread', flush=True)\n"
+                "except (OSError, RuntimeError):\n"
+                "    print('denied', flush=True)\n"
+                "while True: pass\n")
+        process = self.spawn([PYTHON, "-I", "-S", "-c", code])
+        self.assertEqual(process.stdout.readline(), b"denied\n")
+        os.kill(process.pid, signal.SIGKILL)
+        self.assertEqual(self.outcome(process)[0], -9)
+        process.stdin.close()
+        process.stdout.close()
+        deadline = time.monotonic() + 10
+        while self.running(token) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertEqual(self.running(token), [])
+
+
 class Cleanup:
     """What a command leaves behind never makes cleanup raise, follow a link or touch the judge."""
 
@@ -836,7 +1054,7 @@ class ProgramTests(unittest.TestCase):
 
 
 for _name in isolate.BACKENDS:
-    for _base in (EscapeTests, AccountTests, LimitTests, WorkerTests, UsernsTests,
+    for _base in (EscapeTests, AccountTests, LimitTests, WorkerTests, ExecTests, UsernsTests,
                   HostileTreeTests, LayerTests):
         if (_base is UsernsTests and _name != "userns") \
                 or (_base is LayerTests and _name != "landlock"):
