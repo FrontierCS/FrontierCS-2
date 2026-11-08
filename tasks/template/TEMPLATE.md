@@ -169,6 +169,14 @@ points tasks get wrong:
   interpreter: the judge runs as the same uid, so file modes do not hide its data. Each run is a
   fresh instance that reads only the system, its inputs and the named paths, writes only its
   own TMPDIR/HOME, and leaves nothing running. Never copy or fork the launcher into a task.
+  `isolate.start` runs a long-lived worker over pipes to the judge. When a trusted program that
+  is not the judge's Python spawns the submitted program itself and measures it by its child's
+  exit status and wait4 resource usage (a C harness), it spawns a small Python program that
+  calls `isolate.exec_on_stdio(argv, failure_record=PATH, ...)` instead: that process becomes
+  the instance's launcher on the harness's own pipes (fds 0 and 1), ends with the command's exit
+  code or signal, whatever it is, and its resource usage includes the command's plus a fixed
+  launch cost. A failure of the launcher itself is never an exit status: it writes PATH (a new
+  file the judge's side owns) and the judge treats a run with that record as its own failure.
 
 ### `task.toml` `[feedback]` (what train returns)
 

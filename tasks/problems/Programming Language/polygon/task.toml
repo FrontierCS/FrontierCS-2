@@ -23,9 +23,10 @@ max_train_wall_seconds = 12000
 # judge's validations here. Agent-visible (the generated README states it): owner decision.
 eval_timeout_seconds = 1800
 
-# The Driver passes this cap to the Verifier (FRONTIER_MAX_SSH_BYTES_PER_DIRECTION); the shared
-# adapter accepts at most 64 MiB and sizes its upload chunks and collects to 7/8 of it. The judge
-# still asks for one 7 MiB collect (judge/evaluator.py SEARCH_OUTPUT_BYTES).
+# A recording capacity only: the Driver does NOT pass it to the Verifier. The Verifier's SSH
+# channel size is its image's FRONTIER_MAX_SSH_BYTES_PER_DIRECTION (the shared Verifier base's
+# 8 MiB), and one collect is at most 7/8 of it: the judge asks for one 7 MiB collect
+# (judge/evaluator.py SEARCH_OUTPUT_BYTES).
 [network.audit]
 max_ssh_bytes_per_direction = 67108864   # 64 MiB, the shared adapter's maximum
 
@@ -45,7 +46,8 @@ max_changed_files = 20            # unchanged by the migration; the Agent sees i
 # runs every search in a fresh isolate instance (no network, no judge file) and times it; the
 # counterexamples are validated on the judge's own MariaDB, which no submitted code can reach.
 # resources: the old Verifier pod's shape, so that the times stay comparable with the reference
-# runs so far. dockerfile: the Verifier image (the searches' toolchain and pins, the shared
+# runs so far; nproc reports the node's cores on unpinned nodes (the machine's share is its
+# 2-core CPU quota). dockerfile: the Verifier image (the searches' toolchain and pins, the shared
 # isolate launcher) with the shared CPU runner layer; no isolate instance can read its judge
 # files. lease_seconds: covers every search instance's limit of the larger suite (932 s:
 # judge/evaluator.py _limit_seconds, both sides), so a candidate's slow searches can never run

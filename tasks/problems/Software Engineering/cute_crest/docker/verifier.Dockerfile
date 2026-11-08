@@ -1,15 +1,18 @@
 # Verifier image of cute_crest, both modes: the shared Verifier base plus this task's packages,
-# judge bundle, generated config, and the harness and instrumented programs built once here.
+# judge bundle, generated config, the shared adapter, and the harness and instrumented programs
+# built once here (uploaded to the search machines per verification).
 # The platform wrapper invokes /opt/frontier/verifier; task evaluator code never receives a
 # Modal, AWS or Kubernetes credential and must not reach S3 directly.
 # Build context: this task's root, with .frontier-generated/ added by the build.
+ARG GPU_TOOLS
 ARG VERIFIER_BASE
+FROM ${GPU_TOOLS} AS frontier_gpu_tools
 FROM ${VERIFIER_BASE}
 
 USER root
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends binutils bsdutils build-essential ca-certificates coreutils dpkg git libncurses-dev make patch perl python3 python3-pip time \
+    && apt-get install -y --no-install-recommends binutils bsdutils build-essential ca-certificates coreutils dpkg git libncurses-dev libnss-wrapper make openssh-client patch perl python3 python3-pip time \
     && rm -rf /var/lib/apt/lists/*
 
 LABEL org.opencontainers.image.title="FrontierCS2 verifier cute_crest" \
@@ -21,6 +24,9 @@ COPY judge /opt/frontier/task
 COPY repo /opt/frontier/task/pristine
 COPY .frontier-generated/judge/config.yaml /opt/frontier/task/config.yaml
 COPY .frontier-generated/verifier/verifier.json /opt/frontier/verifier.json
+# The shared adapter: evaluate() runs the search on the [test_sandboxes.search] machines with
+# run_sandboxes(); libnss-wrapper and openssh-client are its ssh to them as uid 65532.
+COPY --from=frontier_gpu_tools /opt/frontier/shared-gpu/fcs2_verifier_gpu.py /opt/frontier/fcs2_verifier_gpu.py
 COPY .frontier-generated/effective-task.toml /opt/frontier/effective-task.toml
 
 # Build the harness and the instrumented programs once, outside the task bundle (a
@@ -29,7 +35,7 @@ COPY .frontier-generated/effective-task.toml /opt/frontier/effective-task.toml
 # them (/opt/crest-task/src).
 RUN python3 /opt/frontier/task/build_benchmarks.py /opt/crest-task
 
-RUN chmod 0444 /opt/frontier/verifier.json /opt/frontier/effective-task.toml \
+RUN chmod 0444 /opt/frontier/fcs2_verifier_gpu.py /opt/frontier/verifier.json /opt/frontier/effective-task.toml \
     && chmod 0555 /opt/frontier \
     && chmod -R a+rX,a-w /opt/frontier/task \
     && find /opt/frontier/task/pristine -type f -name '*.sh' -exec chmod 0555 {} +

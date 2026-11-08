@@ -16,9 +16,12 @@ RUN apt-get update \
 LABEL org.opencontainers.image.title="FrontierCS2 verifier parallel_radix_sort" \
       dev.frontier.problem-id="parallel_radix_sort"
 
+# The archive's owners (uid/gid 3689121/2626) are not kept: root owns the toolchain on every
+# builder (a rootless BuildKit cannot map them). Its absolute symlinks need filter='fully_trusted'.
 COPY repo/frontier-gcc7.tar.xz /tmp/frontier-gcc7.tar.xz
 RUN python3 -c "import tarfile; tarfile.open('/tmp/frontier-gcc7.tar.xz').extractall('/usr/local/lib/frontier-gcc7', filter='fully_trusted')" \
     && rm /tmp/frontier-gcc7.tar.xz \
+    && chown -R 0:0 /usr/local/lib/frontier-gcc7 \
     && chmod -R a+rX,a-w /usr/local/lib/frontier-gcc7
 
 COPY judge /opt/frontier/task

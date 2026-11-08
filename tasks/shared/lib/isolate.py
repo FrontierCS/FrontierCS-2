@@ -5,7 +5,12 @@ Not a container: task.toml's [test_sandboxes.*] are separate containers beside t
 A judge is trusted; the code it builds from a submission is not. A judge runs every command that
 executes submitted code (an interpreter that imports it, a binary built from it) with `run`
 instead of `subprocess`, or, for a long-lived worker it talks to over pipes, with `start`
-instead of `subprocess.Popen`. The command then runs in a fresh instance with:
+instead of `subprocess.Popen`. A trusted program that is not Python and spawns submitted code
+itself, on pipes it set up and with the child's wait4 status and resource usage as its
+measurement (a C harness), spawns a small Python program that calls `exec_on_stdio` instead of
+the submitted program: that process becomes the instance's launcher, so the harness's child
+keeps the harness's pipes, its exit status and its resource usage. The command then runs in a
+fresh instance with:
 
   - read access only to the system directories (SYSTEM_READ), the judge's own interpreter, its
     own writable copy of `tree`, its read-only `inputs` and the `read_paths` the judge names:
@@ -267,6 +272,61 @@ def start(argv, **options) -> "Instance":
     call = _check_call(argv, **options)
     _self_test(call["backend"])
     return Instance(call)
+
+
+def exec_on_stdio(argv, *, failure_record: str, **options):
+    """Replace this process with the launcher of a fresh instance that runs `argv` on this
+    process's standard input and output; never returns.
+
+    The boundary and `options` are those of `run`, except that nothing is collected: no
+    `outputs` and no `layers` (their result hook needs a judge after the run); the command's
+    stderr is discarded (bounded by output_bytes). fds 0 and 1 are inherited, not copied, so the
+    command reads and writes this process's own pipes. This process (its pid) stays the
+    launcher until the instance has ended and its directories are deleted, then ends exactly as
+    the command did: its exit code, whatever it is, or death by the same signal (a limit ends
+    the command with SIGKILL, so the launcher dies by SIGKILL too; no core is written).
+
+    A failure of the launcher itself (the call, the self-test, building the instance, the
+    launcher's own bookkeeping) is never an exit status, which the command could produce too:
+    it is reported out of band, in `failure_record`, an absolute path the caller owns (its
+    directory exists and lies outside every instance; the file must not exist yet). The record
+    (JSON {"error": ...}) is written, then this process exits with status 1; the caller tells a
+    launcher failure apart from the command's own exit 1 only by the record. A path that cannot
+    hold the record raises IsolateError here, before anything runs.
+
+    wait4 on this process therefore returns the command's outcome, and its resource usage
+    includes the command's (the launcher reaps it) plus this process's own CPU before and after
+    the command (the Python start, the self-test of the backend's first instance in this
+    process, staging, cleanup): a fixed cost per call, never a cost per byte of the command's
+    I/O.
+    """
+    record = Path(failure_record) if isinstance(failure_record, str) else None
+    if record is None or not record.is_absolute() or not record.parent.is_dir() \
+            or os.path.lexists(record):
+        raise IsolateError("failure_record must be a new file's absolute path in an existing "
+                           "directory")
+    try:
+        if options.get("outputs") or options.get("layers"):
+            raise IsolateError("exec_on_stdio collects nothing: no outputs or layers")
+        call = _check_call(argv, **options)
+        _self_test(call["backend"])
+        _base, control, _paths, spec = _prepare_launch(call, b"")
+        spec["pipes"] = {"stdin": 0, "stdout": 1, "stop": None}
+        spec["exec"] = {"failure_record": str(record)}
+        (control / "spec.json").write_text(json.dumps(spec))
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.execv(sys.executable, [sys.executable, "-I", "-S", LAUNCHER, str(control)])
+    except BaseException as error:  # noqa: BLE001 - reported out of band, never as a status
+        _fail_out_of_band(str(record), f"{type(error).__name__}: {error}")
+
+
+def _fail_out_of_band(record: str, error: str) -> None:
+    """exec_on_stdio: write the launcher's failure record, then exit 1."""
+    descriptor = os.open(record, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644)
+    os.write(descriptor, json.dumps({"error": error}).encode())
+    os.close(descriptor)
+    os._exit(1)
 
 
 def _check_call(argv, *, timeout_seconds: float, tree=None, inputs=None, outputs=(),
@@ -1437,8 +1497,26 @@ def _launcher(control: Path) -> int:
             _kill_all()
         except Exception:  # noqa: BLE001
             pass
+    if launch.get("exec"):   # exec_on_stdio: no judge collects; end as the command did
+        _remove(control.parent)
+        if status["error"]:
+            _fail_out_of_band(launch["exec"]["failure_record"], status["error"])
+        _end_as(status["returncode"])
     (control / "status.json").write_text(json.dumps(status))
     return 0
+
+
+def _end_as(returncode: int) -> None:
+    """exec_on_stdio: exit with the command's code, or die by the signal that ended it."""
+    if returncode >= 0:
+        os._exit(returncode)
+    number = -returncode
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    if number not in (signal.SIGKILL, signal.SIGSTOP):
+        signal.signal(number, signal.SIG_DFL)
+    signal.pthread_sigmask(signal.SIG_UNBLOCK, [number])
+    os.kill(os.getpid(), number)
+    os._exit(128 + number)   # a signal whose default action does not end a process
 
 
 if __name__ == "__main__":

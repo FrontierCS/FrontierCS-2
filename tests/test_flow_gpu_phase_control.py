@@ -12,6 +12,9 @@ from unittest import mock
 
 from test_gpu_remaining_envelopes import PROBLEMS, load
 
+# The Verifier image's SSH channel size (the shared Verifier base's ENV).
+CHANNEL = {"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": "8388608"}
+
 
 class FakeClock:
     def __init__(self):
@@ -43,7 +46,7 @@ def assert_grant_cleanup(test, adapter, grant, elapsed):
               else ("url", "verification", "token", "gpu", 7200, 1))
     with (
         tempfile.TemporaryDirectory() as temp,
-        mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+        mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
                                     "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
         mock.patch.object(adapter, "_config", return_value=config),
         mock.patch.object(adapter, "_input_archive", side_effect=archive),
@@ -104,6 +107,30 @@ class FlowPhaseControlTests(unittest.TestCase):
             with self.subTest(grant=grant):
                 assert_grant_cleanup(self, self.adapter(), grant, elapsed)
 
+    def test_a_create_the_driver_refused_is_reported_not_leased(self):
+        # A 4xx refusal proves that no runner exists; a lost create (5xx) or an idempotency
+        # conflict / in-progress create may hide one.
+        adapter = self.adapter()
+        for error, termination in (
+                (adapter._DriverRefusal("refused", 429), "not_leased"),
+                (adapter._DriverRefusal("refused", 425), "unconfirmed_no_identity"),
+                (adapter._DriverRefusal("refused", 410), "unconfirmed_no_identity"),
+                (adapter.VerifierGpuError("lost"), "unconfirmed_no_identity")):
+            with self.subTest(error=error), tempfile.TemporaryDirectory() as temp, \
+                    mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
+                                                 "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}), \
+                    mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)), \
+                    mock.patch.object(adapter, "_input_archive"), \
+                    mock.patch.object(adapter, "_create_runner", side_effect=error), \
+                    mock.patch.object(adapter, "_terminate_runner") as delete:
+                with self.assertRaises(adapter.VerifierGpuError) as caught:
+                    adapter.run(payload=Path(temp)/"payload", dataset=Path(temp)/"dataset", mode="eval",
+                                result_path=Path(temp)/"result", evidence_path=Path(temp)/"evidence",
+                                record_evidence=lambda evidence: None)
+                delete.assert_not_called()
+                events = {event["phase"]: event for event in caught.exception.private_evidence["events"]}
+                self.assertEqual(events["delete"]["runner_termination"], termination)
+
     def test_fully_consumed_grant_reports_unconfirmed_cleanup_without_score(self):
         adapter = self.adapter()
         clock = FakeClock()
@@ -120,7 +147,7 @@ class FlowPhaseControlTests(unittest.TestCase):
         try:
             with (
                 tempfile.TemporaryDirectory() as temp,
-                mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+                mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
                                             "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
                 mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
                 mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)),
@@ -206,7 +233,7 @@ class FlowPhaseControlTests(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as temp,
-            mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+            mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
                                         "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
             mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
             mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)),

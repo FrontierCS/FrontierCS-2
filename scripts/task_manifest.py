@@ -1097,6 +1097,25 @@ def resolved_bases(root: Path) -> dict[str, str]:
 _BUNDLES: dict[Path, Path] = {}
 
 
+VERIFIER_CHANNEL_ENV = re.compile(r"FRONTIER_MAX_SSH_BYTES_PER_DIRECTION=(\d+)")
+
+
+def verifier_channel_bytes(root: Path | None) -> str:
+    """FRONTIER_MAX_SSH_BYTES_PER_DIRECTION of a task.toml task's Verifier image (`root`), or of
+    the shared Verifier base (None): the task's docker/verifier*.Dockerfile ENV, else the base's.
+    The shared GPU adapter sizes upload chunks and collects by it; the Driver never sets it."""
+    values = set() if root is None else {
+        match for dockerfile in (root / "docker").glob("verifier*.Dockerfile")
+        for match in VERIFIER_CHANNEL_ENV.findall(dockerfile.read_text(encoding="utf-8"))}
+    if len(values) > 1:
+        raise ManifestError(f"{root}: the Verifier Dockerfiles set different SSH channel sizes")
+    if values:
+        return values.pop()
+    [base] = VERIFIER_CHANNEL_ENV.findall(
+        (SHARED / "images/verifier-base.Dockerfile").read_text(encoding="utf-8"))
+    return base
+
+
 def judge_bundle(root: Path) -> Path:
     """The judge directory as the Verifier image holds it at /opt/frontier/task, for tests and
     tools that import a task's judge. A legacy task's is judge/ itself; a task.toml task's is

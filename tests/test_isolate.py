@@ -668,6 +668,133 @@ os.chmod(home, 0)
 """
 
 
+# The trusted parent's child for ExecTests: calls exec_on_stdio, which never returns.
+EXEC_CALLER = """
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import isolate
+isolate.BACKENDS = (sys.argv[2],)
+isolate.exec_on_stdio(json.loads(sys.argv[3]), **json.loads(sys.argv[4]))
+"""
+
+
+class ExecTests(Backend):
+    """exec_on_stdio(): the caller becomes the launcher; its parent keeps the pipes, the exit
+    status and the resource usage, as a C harness that forks and wait4s its child sees them."""
+
+    def setUp(self):
+        super().setUp()
+        self.judge = Path(tempfile.mkdtemp(prefix="judge-state-"))
+        self.secret = self.judge / "reference.patch"
+        self.secret.write_text("the reference answer")
+        self.record = self.judge / "launcher-failure.json"
+
+    def tearDown(self):
+        isolate._remove(self.judge)
+
+    def spawn(self, argv, **options):
+        options.setdefault("timeout_seconds", 30)
+        options.setdefault("failure_record", str(self.record))
+        return subprocess.Popen(
+            [PYTHON, "-I", "-S", "-c", EXEC_CALLER, str(ROOT / "tasks/shared/lib"), self.backend,
+             json.dumps(argv), json.dumps(options)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env={})
+
+    def outcome(self, process):
+        """(waitstatus as an exit code, ru_utime + ru_stime) of the ended caller, by wait4."""
+        _, status, usage = os.wait4(process.pid, 0)
+        process.returncode = os.waitstatus_to_exitcode(status)
+        return process.returncode, usage.ru_utime + usage.ru_stime
+
+    def test_round_trips_on_the_callers_pipes_inside_the_boundary(self):
+        process = self.spawn([PYTHON, "-I", "-S", "-c", ECHO_WORKER, str(self.secret)])
+        for request, reply in ((b"hello\n", b"HELLO\n"), (b"secret?\n", b"denied\n"),
+                               (b"env?\n", b"[]\n")):
+            process.stdin.write(request)
+            process.stdin.flush()
+            self.assertEqual(process.stdout.readline(), reply)
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 0)
+
+    def test_the_exit_code_and_the_killing_signal_pass_through(self):
+        # Every status is the command's own, the codes a harness gives a meaning (70-72, 127)
+        # included: the launcher reports its own failures only in the failure record.
+        for code, expected in (("raise SystemExit(3)", 3), ("raise SystemExit(71)", 71),
+                               ("raise SystemExit(1)", 1),
+                               ("import os, signal; os.kill(os.getpid(), signal.SIGSEGV)", -11),
+                               ("import os, signal; os.kill(os.getpid(), signal.SIGSYS)", -31),
+                               ("import os, signal; os.kill(os.getpid(), signal.SIGTERM)", -15)):
+            with self.subTest(code=code):
+                process = self.spawn([PYTHON, "-I", "-S", "-c", code])
+                process.stdin.close()
+                process.stdout.close()
+                self.assertEqual(self.outcome(process)[0], expected)
+                self.assertFalse(self.record.exists())
+
+    def test_a_limit_ends_the_caller_by_sigkill(self):
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "import time; time.sleep(60)"],
+                             timeout_seconds=1)
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], -9)
+
+    def test_the_callers_resource_usage_includes_the_command(self):
+        burn = "import time\nend = time.process_time() + 1.5\nwhile time.process_time() < end: pass"
+        process = self.spawn([PYTHON, "-I", "-S", "-c", burn])
+        process.stdin.close()
+        process.stdout.close()
+        status, cpu = self.outcome(process)
+        self.assertEqual(status, 0)
+        self.assertGreaterEqual(cpu, 1.5)
+
+    def test_a_missing_command_is_its_own_127(self):
+        process = self.spawn(["/nonexistent/strategy"])
+        process.stdin.close()
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 127)
+
+    def test_directories_are_removed(self):
+        before = set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*"))
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('x')"])
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"x\n")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 0)
+        self.assertEqual(set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before)
+
+    def test_a_failure_before_the_launch_is_reported_out_of_band(self):
+        # An invalid read path: the call fails in the caller, before any instance exists.
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"],
+                             read_paths=["/nonexistent/path"])
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 1)
+        self.assertIn("IsolateError", json.loads(self.record.read_text())["error"])
+
+    def test_a_launcher_failure_is_reported_out_of_band(self):
+        # The launcher cannot build the instance (a spec it cannot use): it writes the record.
+        control = Path(tempfile.mkdtemp(prefix=isolate.INSTANCE_PREFIX)) / "control"
+        control.mkdir()
+        (control / "spec.json").write_text(json.dumps({
+            "backend": self.backend, "options": {"timeout_seconds": 5},
+            "exec": {"failure_record": str(self.record)}}))
+        process = subprocess.run([PYTHON, "-I", "-S", isolate.LAUNCHER, str(control)],
+                                 capture_output=True, env={})
+        self.assertEqual(process.returncode, 1)
+        self.assertIn("error", json.loads(self.record.read_text()))
+        self.assertFalse(control.exists())
+
+    def test_bad_arguments(self):
+        self.record.write_text("stale")
+        for record in ("relative/record.json", "/nonexistent/dir/record.json", str(self.record), 5):
+            with self.subTest(record=record), self.assertRaises(isolate.IsolateError):
+                isolate.exec_on_stdio([PYTHON], timeout_seconds=5, failure_record=record)
+
+
 class Cleanup:
     """What a command leaves behind never makes cleanup raise, follow a link or touch the judge."""
 
@@ -836,7 +963,7 @@ class ProgramTests(unittest.TestCase):
 
 
 for _name in isolate.BACKENDS:
-    for _base in (EscapeTests, AccountTests, LimitTests, WorkerTests, UsernsTests,
+    for _base in (EscapeTests, AccountTests, LimitTests, WorkerTests, ExecTests, UsernsTests,
                   HostileTreeTests, LayerTests):
         if (_base is UsernsTests and _name != "userns") \
                 or (_base is LayerTests and _name != "landlock"):
