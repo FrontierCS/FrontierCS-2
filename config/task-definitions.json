@@ -3185,7 +3185,7 @@
     },
     "display_name": "In-place Integer Redistribution",
     "family": "HPC",
-    "image_tag": "source-38a587c6643630cd973a40e79af8b7abeb05911c7ffd0894a5ee0b6663bd9b82",
+    "image_tag": "source-e132c33b8a348c60bd9cf7d06a9e70730b6e42d86aac58008b2c7742f0c689e6",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3236,7 +3236,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:38a587c6643630cd973a40e79af8b7abeb05911c7ffd0894a5ee0b6663bd9b82"
+      "source_set_sha256": "sha256:e132c33b8a348c60bd9cf7d06a9e70730b6e42d86aac58008b2c7742f0c689e6"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
