@@ -293,6 +293,19 @@ except OSError:
 """, syscalls="no_fork")
         self.assertEqual(result.stdout.split(), [b"thread", b"1", b"denied"], result.stderr)
 
+    def test_no_clone_profile_has_no_processes_or_threads(self):
+        result = self.python("""
+import os, threading
+for name, start in (('thread', lambda: threading.Thread(target=print).start()),
+                    ('fork', os.fork)):
+    try:
+        start(); print(name, 'CREATED')
+    except (OSError, RuntimeError):
+        print(name, 'denied')
+""", syscalls="no_clone")
+        self.assertEqual(result.stdout.split(), [b"thread", b"denied", b"fork", b"denied"],
+                         result.stderr)
+
     def test_strict_profile_has_no_processes(self):
         result = self.python("import os\ntry:\n os.fork(); print('FORKED')\n"
                         "except OSError:\n print('denied')", syscalls="strict")
@@ -696,7 +709,7 @@ class ExecTests(Backend):
     def spawn(self, argv, **options):
         options.setdefault("timeout_seconds", 30)
         options.setdefault("failure_record", str(self.record))
-        options.setdefault("syscalls", "no_fork")
+        options.setdefault("syscalls", "no_clone")
         return subprocess.Popen(
             [PYTHON, "-I", "-S", "-c", EXEC_CALLER, str(ROOT / "tasks/shared/lib"), self.backend,
              json.dumps(argv), json.dumps(options)],
@@ -798,7 +811,13 @@ class ExecTests(Backend):
 
     def test_a_command_that_may_fork_is_refused_out_of_band(self):
         # The command must be the instance's only process (see test_the_command_dies_...).
-        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"], syscalls="default")
+        for syscalls in ("default", "no_fork"):   # a thread could escape the death signal
+            with self.subTest(syscalls=syscalls):
+                self.record.unlink(missing_ok=True)
+                self.refused_profile(syscalls)
+
+    def refused_profile(self, syscalls):
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"], syscalls=syscalls)
         process.stdin.close()
         self.assertEqual(process.stdout.read(), b"")
         process.stdout.close()
@@ -840,6 +859,31 @@ class ExecTests(Backend):
             time.sleep(0.05)
         self.assertEqual(self.running(token), [])
         self.assertFalse(self.record.exists())
+
+    def test_a_thread_cannot_carry_the_command_past_its_launcher(self):
+        # A thread starts without the parent death signal and keeps that through execve: the
+        # command may create none, so an exec from a thread never runs.
+        token = f"thread-probe-{os.getpid()}-{time.time_ns()}"
+        loop = f"import sys\nwhile True: pass  # {token}"
+        code = ("import os, sys, threading\n"
+                "def run():\n"
+                f"    os.execv(sys.executable, [sys.executable, '-c', {loop!r}, {token!r}])\n"
+                "try:\n"
+                "    threading.Thread(target=run).start()\n"
+                "    print('thread', flush=True)\n"
+                "except (OSError, RuntimeError):\n"
+                "    print('denied', flush=True)\n"
+                "while True: pass\n")
+        process = self.spawn([PYTHON, "-I", "-S", "-c", code])
+        self.assertEqual(process.stdout.readline(), b"denied\n")
+        os.kill(process.pid, signal.SIGKILL)
+        self.assertEqual(self.outcome(process)[0], -9)
+        process.stdin.close()
+        process.stdout.close()
+        deadline = time.monotonic() + 10
+        while self.running(token) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertEqual(self.running(token), [])
 
 
 class Cleanup:

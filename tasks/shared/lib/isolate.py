@@ -26,7 +26,8 @@ fresh instance with:
     judge passing it keeps no pathname socket of its own while the instance runs), no
     ptrace or /proc/<pid>/{environ,mem} of the judge, no signals to it, no mount, namespace,
     BPF, perf, io_uring or keyring calls; with syscalls="no_fork" no new processes (threads
-    still work), with "strict" neither processes nor threads nor signals;
+    still work), with "no_clone" neither processes nor threads, with "strict" neither
+    processes nor threads nor signals;
   - limits on wall time, CPU time, summed resident memory, private disk, output bytes,
     processes, open files and file size; every process it started is killed when the run ends
     (the launcher is a child subreaper, so double-forked daemons are found too).
@@ -103,7 +104,7 @@ DEVICES_RO = ("/dev/random", "/dev/urandom")
 PROTECTED_ROOTS = ("/opt/frontier/task", "/frontier", "/datasets", "/tmp",
                    "/var/tmp", "/dev/shm", "/workspace", "/root", "/home", "/run", "/platform")
 DEFAULT_PATH = "/usr/local/bin:/usr/bin:/bin"
-SYSCALL_PROFILES = ("default", "no_fork", "strict")
+SYSCALL_PROFILES = ("default", "no_fork", "no_clone", "strict")
 NETWORKS = ("none", "loopback")
 DEVICES = {"nvidia": ("/dev/nvidia*", "/dev/nvidia-caps/*")}
 # Passed on from the judge's environment to an instance given that device class.
@@ -303,8 +304,9 @@ def exec_on_stdio(argv, *, failure_record: str, **options):
     The instance never outlives its launcher. The caller (a harness) may end the launcher with
     SIGKILL at its own budget; the command then dies by SIGKILL too (PR_SET_PDEATHSIG on the
     launcher's child: the command, or the userns backend's PID namespace init, whose end ends
-    every process in the namespace). The command is the instance's only process: `syscalls`
-    must be "no_fork" or "strict", so no process of the instance escapes that.
+    every process in the namespace). The command is the instance's only process and thread:
+    `syscalls` must be "no_clone" or "strict". A thread starts without the parent death signal
+    and keeps that through an execve, so a command that could create one could escape.
     """
     record = Path(failure_record)
     if not record.is_absolute() or not record.parent.is_dir() or os.path.lexists(record):
@@ -313,9 +315,9 @@ def exec_on_stdio(argv, *, failure_record: str, **options):
     try:
         if options.get("outputs") or options.get("layers"):
             raise IsolateError("exec_on_stdio collects nothing: no outputs or layers")
-        if options.get("syscalls") not in ("no_fork", "strict"):
-            raise IsolateError("exec_on_stdio runs one process: syscalls must be \"no_fork\" "
-                               "or \"strict\"")
+        if options.get("syscalls") not in ("no_clone", "strict"):
+            raise IsolateError("exec_on_stdio runs one process and one thread: syscalls must be "
+                               "\"no_clone\" or \"strict\"")
         call = _check_call(argv, **options)
         _self_test(call["backend"])
         _base, control, _paths, spec = _prepare_launch(call, b"")
@@ -936,6 +938,8 @@ SYSCALLS_DENIED = {
 }
 # "no_fork": no new processes (fork, vfork, clone without CLONE_THREAD); threads still work.
 SYSCALLS_NO_FORK = {"fork": 57, "vfork": 58}
+# "no_clone": no new processes and no threads (fork, vfork, clone; clone3 is ENOSYS for all).
+SYSCALLS_NO_CLONE = {"clone": 56, "fork": 57, "vfork": 58}
 # "strict" adds: no threads either, no signals, no socketpairs (one-process probes).
 SYSCALLS_STRICT = {"clone": 56, "fork": 57, "vfork": 58, "kill": 62, "tkill": 200,
                    "tgkill": 234, "socketpair": 53, "rt_sigqueueinfo": 129,
@@ -969,12 +973,14 @@ def seccomp_program(profile: str, unix_sockets: bool, network: str = "none", dev
     denied = set(SYSCALLS_DENIED.values()) | (rules.denied if rules else set())
     if profile == "no_fork":
         denied |= set(SYSCALLS_NO_FORK.values())
+    if profile == "no_clone":
+        denied |= set(SYSCALLS_NO_CLONE.values())
     if profile == "strict":
         denied |= set(SYSCALLS_STRICT.values())
     for number in sorted(denied):
         emit(JEQ, number, "eperm", 0)
     emit(JEQ, SYS_SOCKET, "socket", 0)
-    if profile != "strict":
+    if profile not in ("no_clone", "strict"):
         emit(JEQ, SYS_CLONE, "clone", 0)
     emit(RET, RET_ALLOW)
     labels["clone"] = len(program)

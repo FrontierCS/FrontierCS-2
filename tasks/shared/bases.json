@@ -1,6 +1,6 @@
 {
   "agent": "docker.io/joyemang33/frontier-agent-base:src-3d8d799e29ea@sha256:55317b36f668d3a36b87f82eb1b88623ac7b77c2a31eadc9be7c7f02b56d6704",
-  "gpu-tools": "docker.io/joyemang33/frontier-gpu-tools:src-90e34db62d6c@sha256:44ea04399e72152e4863d873aa41d0c8c406f78f4b0b9c097e8e4d34cd58207f",
+  "gpu-tools": "docker.io/joyemang33/frontier-gpu-tools:src-f0be3321d935@sha256:162d094b7b6aa226190239403b76eda1a7a9d222e9742b00d22d52cfb635fb72",
   "schema_version": "frontier.task-bases/v2",
-  "verifier": "docker.io/joyemang33/frontier-verifier-base:src-08d43fbfbeed@sha256:3fe164bfd2b40f4a50eee029c61fc14fcfe879237b602428eec702b2c041f420"
+  "verifier": "docker.io/joyemang33/frontier-verifier-base:src-470375269c15@sha256:4c324066f74b1022560dbbeeba904817394c2613c41253dff027b3f785fab4d6"
 }

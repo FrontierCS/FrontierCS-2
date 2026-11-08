@@ -27,7 +27,7 @@ LIFETIME_SECONDS = 3600
 side = os.path.dirname(os.path.abspath(__file__))
 record = os.path.join(os.path.dirname(os.path.dirname(side)), 'launcher-failures',
                       '%d-%d.json' % (os.getpid(), time.time_ns()))
-# no_fork: the strategy is the instance's only process (it seals itself further), so the
-# instance ends with this launcher when the harness kills it at a budget.
+# no_clone: the strategy is the instance's only process and thread (it seals itself further),
+# so the instance ends with this launcher when the harness kills it at a budget.
 isolate.exec_on_stdio([os.path.join(side, 'strategy')], failure_record=record,
-                      timeout_seconds=LIFETIME_SECONDS, read_paths=[side], syscalls='no_fork')
+                      timeout_seconds=LIFETIME_SECONDS, read_paths=[side], syscalls='no_clone')

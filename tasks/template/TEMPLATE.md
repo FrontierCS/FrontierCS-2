@@ -177,7 +177,8 @@ points tasks get wrong:
   code or signal, whatever it is, and its resource usage includes the command's plus a fixed
   launch cost. A failure of the launcher itself is never an exit status: it writes PATH (a new
   file the judge's side owns) and the judge treats a run with that record as its own failure.
-  The command is the instance's only process (`syscalls="no_fork"` or `"strict"`, required), and
+  The command is the instance's only process and thread (`syscalls="no_clone"` or `"strict"`,
+  required), and
   it dies with the launcher: a harness that SIGKILLs the launcher at a budget ends the instance.
 
 ### `task.toml` `[feedback]` (what train returns)
