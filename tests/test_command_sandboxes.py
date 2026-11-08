@@ -175,8 +175,9 @@ class RunSandboxes(AdapterCase):
                 self.assertEqual((run["status"], run["termination"]), ("failed", termination))
         self.assertEqual(self.driver.deleted, [])
 
-    # The Driver's statuses for a Verifier runner create (core driver/crates/driver-api
-    # src/lib.rs, `impl From<DriverError> for ApiError` and the route's own refusals), and
+    # The Driver's statuses for a Verifier runner create, copied by hand from the core
+    # repository's driver/crates/driver-api/src/lib.rs (`impl From<DriverError> for ApiError`,
+    # create_verifier_gpu_runner and its authentication and header refusals), and
     # whether each proves that no runner exists: raised before the provider is called. A status
     # the Driver adds later is in doubt until it is added here and to the adapter's allow-list.
     DRIVER_CREATE_STATUSES = {

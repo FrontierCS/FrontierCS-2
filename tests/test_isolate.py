@@ -24,6 +24,7 @@ import glob
 import json
 import os
 import shutil
+import signal
 import socket
 import struct
 import subprocess
@@ -695,6 +696,7 @@ class ExecTests(Backend):
     def spawn(self, argv, **options):
         options.setdefault("timeout_seconds", 30)
         options.setdefault("failure_record", str(self.record))
+        options.setdefault("syscalls", "no_fork")
         return subprocess.Popen(
             [PYTHON, "-I", "-S", "-c", EXEC_CALLER, str(ROOT / "tasks/shared/lib"), self.backend,
              json.dumps(argv), json.dumps(options)],
@@ -790,9 +792,54 @@ class ExecTests(Backend):
 
     def test_bad_arguments(self):
         self.record.write_text("stale")
-        for record in ("relative/record.json", "/nonexistent/dir/record.json", str(self.record), 5):
+        for record in ("relative/record.json", "/nonexistent/dir/record.json", str(self.record)):
             with self.subTest(record=record), self.assertRaises(isolate.IsolateError):
                 isolate.exec_on_stdio([PYTHON], timeout_seconds=5, failure_record=record)
+
+    def test_a_command_that_may_fork_is_refused_out_of_band(self):
+        # The command must be the instance's only process (see test_the_command_dies_...).
+        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"], syscalls="default")
+        process.stdin.close()
+        self.assertEqual(process.stdout.read(), b"")
+        process.stdout.close()
+        self.assertEqual(self.outcome(process)[0], 1)
+        self.assertIn("syscalls", json.loads(self.record.read_text())["error"])
+
+    @staticmethod
+    def running(token: str) -> list[int]:
+        """Live processes whose command line holds `token`."""
+        found = []
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                if token.encode() in (entry / "cmdline").read_bytes():
+                    found.append(int(entry.name))
+            except OSError:
+                continue
+        return found
+
+    def test_the_command_dies_with_its_launcher(self):
+        # A harness SIGKILLs the launcher at its budget: the command (which ignores every
+        # catchable signal) must not survive it as an orphan.
+        token = f"orphan-probe-{os.getpid()}-{time.time_ns()}"
+        code = ("import signal\n"
+                "for name in ('SIGPIPE', 'SIGHUP', 'SIGTERM', 'SIGINT'):\n"
+                "    signal.signal(getattr(signal, name), signal.SIG_IGN)\n"
+                "print('up', flush=True)\n"
+                "while True: pass\n")
+        process = self.spawn([PYTHON, "-I", "-S", "-c", code, token])
+        self.assertEqual(process.stdout.readline(), b"up\n")
+        self.assertTrue(self.running(token))
+        os.kill(process.pid, signal.SIGKILL)
+        self.assertEqual(self.outcome(process)[0], -9)
+        process.stdin.close()
+        process.stdout.close()
+        deadline = time.monotonic() + 10
+        while self.running(token) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        self.assertEqual(self.running(token), [])
+        self.assertFalse(self.record.exists())
 
 
 class Cleanup:

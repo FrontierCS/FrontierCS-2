@@ -48,8 +48,9 @@ def main(image: str, gpu: str = "H100", timeout: int = 1800):
     built = (modal.Image.from_registry(image)
              .add_local_file(str(REPO / "tasks/shared/lib/isolate.py"),
                              f"{CHECK}/tasks/shared/lib/isolate.py", copy=True)
-             .add_local_file(str(REPO / "tests/test_isolate.py"),
-                             f"{CHECK}/tests/test_isolate.py", copy=True)
+             .add_local_file(str(REPO / "tests/test_isolate.py"), f"{CHECK}/tests/test_isolate.py", copy=True)
+             .add_local_file(str(REPO / "tests/isolate_layers.py"), f"{CHECK}/tests/isolate_layers.py", copy=True)
+             .add_local_file(str(REPO / "tests/deployment_test_guard.py"), f"{CHECK}/tests/deployment_test_guard.py", copy=True)
              .run_commands(f"install -d {CHECK}/worker",
                            f"printf '%s\\n' '{WORKER}' > {CHECK}/worker/evaluator.py",
                            f"chmod -R a+rX {CHECK}",
@@ -66,7 +67,7 @@ def main(image: str, gpu: str = "H100", timeout: int = 1800):
               f"(cd / && {as_runner}{python} {CHECK}/worker/evaluator.py && "
               f"{as_runner}{python} -I {CHECK}/worker/evaluator.py) 2>&1; "
               "echo WORKER_IMPORT_EXIT=$?; "
-              f"{as_runner}{python} -m unittest -v tests.test_isolate 2>&1; "
+              f"(cd tests && {as_runner}{python} -m unittest -v test_isolate) 2>&1; "
               "echo ISOLATE_SUITE_EXIT=$?")
     try:
         process = sandbox.exec("bash", "-c", script, timeout=timeout)

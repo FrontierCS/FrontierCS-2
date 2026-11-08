@@ -299,15 +299,23 @@ def exec_on_stdio(argv, *, failure_record: str, **options):
     the command (the Python start, the self-test of the backend's first instance in this
     process, staging, cleanup): a fixed cost per call, never a cost per byte of the command's
     I/O.
+
+    The instance never outlives its launcher. The caller (a harness) may end the launcher with
+    SIGKILL at its own budget; the command then dies by SIGKILL too (PR_SET_PDEATHSIG on the
+    launcher's child: the command, or the userns backend's PID namespace init, whose end ends
+    every process in the namespace). The command is the instance's only process: `syscalls`
+    must be "no_fork" or "strict", so no process of the instance escapes that.
     """
-    record = Path(failure_record) if isinstance(failure_record, str) else None
-    if record is None or not record.is_absolute() or not record.parent.is_dir() \
-            or os.path.lexists(record):
+    record = Path(failure_record)
+    if not record.is_absolute() or not record.parent.is_dir() or os.path.lexists(record):
         raise IsolateError("failure_record must be a new file's absolute path in an existing "
                            "directory")
     try:
         if options.get("outputs") or options.get("layers"):
             raise IsolateError("exec_on_stdio collects nothing: no outputs or layers")
+        if options.get("syscalls") not in ("no_fork", "strict"):
+            raise IsolateError("exec_on_stdio runs one process: syscalls must be \"no_fork\" "
+                               "or \"strict\"")
         call = _check_call(argv, **options)
         _self_test(call["backend"])
         _base, control, _paths, spec = _prepare_launch(call, b"")
@@ -834,7 +842,7 @@ _LIBC.syscall.restype = ctypes.c_long
 SYS_LANDLOCK_CREATE_RULESET, SYS_LANDLOCK_ADD_RULE, SYS_LANDLOCK_RESTRICT_SELF = 444, 445, 446
 # Called directly: some judge interpreters (conda builds) lack os.pidfd_open; the kernel has it.
 SYS_PIDFD_OPEN = 434
-PR_SET_NO_NEW_PRIVS, PR_SET_SECCOMP, PR_SET_CHILD_SUBREAPER = 38, 22, 36
+PR_SET_NO_NEW_PRIVS, PR_SET_SECCOMP, PR_SET_CHILD_SUBREAPER, PR_SET_PDEATHSIG = 38, 22, 36, 1
 SECCOMP_MODE_FILTER = 2
 
 
@@ -1184,18 +1192,34 @@ def _load_layers(specs: list[dict]) -> list[Layer]:
     return layers
 
 
+def _end_with_launcher(alive: int) -> None:
+    """exec_on_stdio: this process (the launcher's child) gets SIGKILL when the launcher dies.
+    Set after every credential change (one clears it). The launcher holds the only write end
+    of the pipe `alive`: its EOF here means the launcher already died before the signal was
+    armed."""
+    if _LIBC.prctl(PR_SET_PDEATHSIG, signal.SIGKILL, 0, 0, 0) != 0:
+        raise OSError(ctypes.get_errno(), "parent death signal")
+    if select.select([alive], [], [], 0)[0]:
+        raise IsolateError("the launcher ended before the instance started")
+    os.close(alive)
+
+
 def _child(launch: dict, ready: dict) -> None:
     """In the forked child: enter the boundary, then exec. Never returns. A setup failure is
     written to the close-on-exec pipe ready["errpipe"]; a missing command is exit 127."""
     errpipe, executing = ready["errpipe"], False
     try:
+        alive = None
+        if ready["alive"] is not None:   # exec_on_stdio: only the launcher holds the write end
+            alive = ready["alive"][0]
+            os.close(ready["alive"][1])
         os.sched_setaffinity(0, ready["affinity"])
         os.setsid()
         for source, target in zip(ready["stdio"], (0, 1, 2)):
             os.dup2(source, target)
         ruleset = ready["ruleset"]
         low = 3   # closes the judge's stop pipe of a started worker too
-        kept = (ruleset, ready["status"], errpipe, *ready["fds"])
+        kept = (ruleset, ready["status"], errpipe, alive, *ready["fds"])
         for keep in sorted(fd for fd in kept if fd is not None):
             os.closerange(low, keep)
             low = keep + 1
@@ -1208,7 +1232,10 @@ def _child(launch: dict, ready: dict) -> None:
             layer.preexec()
         if launch["backend"] == "userns":
             _userns_enter(launch)
-            _userns_init(ready["status"], errpipe)   # returns in the command's process only
+            # returns in the command's process only; the init dies with the launcher
+            _userns_init(ready["status"], errpipe, alive)
+        elif alive is not None:
+            _end_with_launcher(alive)
         os.chdir(launch["cwd"])
         _confine(ruleset, ready["fprog"])
         executing = True
@@ -1331,11 +1358,14 @@ def _userns_enter(launch: dict) -> None:
     # execve as a non-root uid clears the permitted and effective capability sets
 
 
-def _userns_init(status_fd: int, errpipe: int) -> None:
+def _userns_init(status_fd: int, errpipe: int, alive: int | None) -> None:
     """The first process of the instance's PID namespace stays a minimal init, so the command
     keeps ordinary signal semantics (a namespace init ignores SIGPIPE, SIGXFSZ, SIGXCPU, ...).
     It forks the command, waits for it, sends its raw wait status to the launcher and exits,
-    which ends the namespace and every process left in it."""
+    which ends the namespace and every process left in it. For exec_on_stdio (`alive`) it also
+    dies with the launcher."""
+    if alive is not None:
+        _end_with_launcher(alive)
     pid = os.fork()
     if pid == 0:
         os.close(status_fd)
@@ -1408,9 +1438,13 @@ def _launcher(control: Path) -> int:
         os.sched_setaffinity(0, range(os.cpu_count()))
         command_status, ready["status"] = os.pipe() if userns else (None, None)
         errpipe_read, ready["errpipe"] = os.pipe()   # close-on-exec: EOF once the command runs
+        # exec_on_stdio: the write end stays open here until this process ends (see _child)
+        ready["alive"] = os.pipe() if launch.get("exec") else None
         pid = os.fork()
         if pid == 0:
             _child(launch, ready)
+        if ready["alive"] is not None:
+            os.close(ready["alive"][0])
         for descriptor in (ready["ruleset"], ready["status"], ready["errpipe"], *ready["stdio"]):
             if descriptor is not None:
                 os.close(descriptor)
