@@ -18,7 +18,7 @@
     "members": 105
   },
   "source_notices": "preserved verbatim; private manufacture authorized; publication not performed",
-  "requested_model": "redacted",
+  "requested_model": "gpt-6-astra/xhigh via current CRS primary",
   "actual_underlying_provider_model": "UNKNOWN",
   "budget": {
     "cumulative_usd": 1000,

@@ -22,6 +22,8 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.dont_write_bytecode = True
+import image_namespace
+import task_layers  # noqa: E402
 import render_task_definition as renderer
 import task_manifest
 import validate_task_layout as native_layout
@@ -35,6 +37,16 @@ assert SPEC is not None and SPEC.loader is not None
 build_task_images = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(build_task_images)
 
+
+
+def with_definitions(path: Path) -> list:
+    """The repository's task layers, every definition read from `path` instead."""
+    empty = path.with_name("no-definitions.json")
+    empty.write_text("{}")
+    return [
+        task_layers.Layer(layer.root, layer.problems, layer.catalog, path if index == 0 else empty)
+        for index, layer in enumerate(task_layers.layers())
+    ]
 
 class DemoImageBuildTests(unittest.TestCase):
     def setUp(self):
@@ -243,14 +255,14 @@ with mock.patch.object(Path, 'open', checked_open):
                 build.assert_not_called()
 
     def test_malformed_definition_type_fails_before_building(self):
-        definitions = json.loads(renderer.DEFINITIONS.read_text())
+        definitions = task_layers.load_definitions()
         name = "batch_local_counting"
         for value in (None, [], "gpu", 1, False):
             with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
                 path = Path(directory) / "definitions.json"
                 path.write_text(json.dumps({**definitions, name: value}))
                 with (
-                    mock.patch.object(renderer, "DEFINITIONS", path),
+                    mock.patch.object(task_layers, "layers", return_value=with_definitions(path)),
                     mock.patch.object(build_task_images, "build_problem") as build,
                 ):
                     with self.assertRaisesRegex(
@@ -273,9 +285,9 @@ with mock.patch.object(Path, 'open', checked_open):
             definitions.write_text(json.dumps({name: definition}))
             manifest = root / "manifest.json"
             with (
-                mock.patch.object(build_task_images, "TASK_ROOT", root),
+                mock.patch.object(task_layers, "layers", return_value=[task_layers.Layer(root, root / "problems", root / "catalog.json", definitions)]),
                 mock.patch.object(renderer, "catalog_task_names", return_value=[name]),
-                mock.patch.object(renderer, "DEFINITIONS", definitions),
+                
                 mock.patch.object(renderer, "render", return_value=definition),
                 mock.patch.object(build_task_images, "gpu_ssh_base") as gpu_base,
                 mock.patch.object(build_task_images, "freeze_bases") as freeze,
@@ -315,9 +327,9 @@ with mock.patch.object(Path, 'open', checked_open):
             definitions.write_text(json.dumps({name: definition}))
             manifest = root / "manifest.json"
             with (
-                mock.patch.object(build_task_images, "TASK_ROOT", root),
+                mock.patch.object(task_layers, "layers", return_value=[task_layers.Layer(root, root / "problems", root / "catalog.json", definitions)]),
                 mock.patch.object(renderer, "catalog_task_names", return_value=[name]),
-                mock.patch.object(renderer, "DEFINITIONS", definitions),
+                
                 mock.patch.object(renderer, "render", return_value=definition),
                 mock.patch.object(build_task_images, "gpu_ssh_base") as gpu_base,
                 mock.patch.object(build_task_images, "freeze_bases", return_value=[]),
@@ -340,10 +352,10 @@ with mock.patch.object(Path, 'open', checked_open):
                 run.assert_not_called()
 
     def test_all_ignores_extra_directory_with_one_warning(self):
-        paths = list((build_task_images.TASK_ROOT / "problems").iterdir())
+        paths = list(task_layers.shared_layer().problems.iterdir())
         names = [
             task["name"]
-            for task in json.loads(build_task_images.TASK_CATALOG.read_text())["tasks"]
+            for task in task_layers.load_catalog()["tasks"]
         ]
         with tempfile.TemporaryDirectory() as directory:
             extra = Path(directory) / "extra_task"
@@ -366,7 +378,7 @@ with mock.patch.object(Path, 'open', checked_open):
             self.assertEqual(set(json.loads(output.read_text())["tasks"]), set(names))
             self.assertEqual(
                 stderr.getvalue().splitlines(),
-                [f"{extra}: ignored: not in config/task-catalog.json"],
+                [f"{extra}: ignored: not in the task catalog"],
             )
 
     def test_missing_catalog_directory_fails_before_building(self):
@@ -384,7 +396,7 @@ with mock.patch.object(Path, 'open', checked_open):
         build.assert_not_called()
 
     def test_gpu_definition_directory_disagreement_fails_before_building(self):
-        definitions = json.loads(renderer.DEFINITIONS.read_text())
+        definitions = task_layers.load_definitions()
         for name in renderer.catalog_task_names():
             changed = json.loads(json.dumps(definitions))
             if "gpu" in changed[name]:
@@ -395,7 +407,7 @@ with mock.patch.object(Path, 'open', checked_open):
                 path = Path(directory) / "definitions.json"
                 path.write_text(json.dumps(changed))
                 with (
-                    mock.patch.object(renderer, "DEFINITIONS", path),
+                    mock.patch.object(task_layers, "layers", return_value=with_definitions(path)),
                     mock.patch.object(build_task_images, "build_problem") as build,
                 ):
                     with self.assertRaisesRegex(
@@ -406,8 +418,7 @@ with mock.patch.object(Path, 'open', checked_open):
                 build.assert_not_called()
 
     def test_native_gpu_quotas_and_ssh_environment_fix_are_preserved(self) -> None:
-        root = renderer.problem_directory(
-            build_task_images.TASK_ROOT / "problems", build_task_images.SPARSE_VIDEO
+        root = renderer.task_directory(build_task_images.SPARSE_VIDEO
         )
         # svg is a task.toml task: its policy is task.toml over the shared defaults and its
         # recipes are docker/*.Dockerfile on the shared gpu-tools stage.
@@ -632,11 +643,11 @@ with mock.patch.object(Path, 'open', checked_open):
 
     def test_build_catalog_with_native_contexts_names_and_frozen_bases(self):
         commands = []
-        catalog_bytes = build_task_images.TASK_CATALOG.read_bytes()
-        catalog = json.loads(catalog_bytes)
+        catalog_bytes = task_layers.shared_layer().catalog.read_bytes()
+        catalog = task_layers.load_catalog()
         catalog_tasks = {task["name"]: task for task in catalog["tasks"]}
         self.assertEqual(list(renderer.catalog_task_names()), list(catalog_tasks))
-        definitions = json.loads(renderer.DEFINITIONS.read_text())
+        definitions = task_layers.load_definitions()
         bases = {}
 
         def fake_run(command, **kwargs):
@@ -671,7 +682,7 @@ with mock.patch.object(Path, 'open', checked_open):
         self.assertEqual(verify.call_count, len(catalog_tasks))
         required_bases = set()
         for name in renderer.catalog_task_names():
-            root = renderer.problem_directory(renderer.TASK_ROOT / "problems", name)
+            root = renderer.task_directory(name)
             for role in ("agent-base", "verifier", "agent-gpu", "verifier-gpu"):
                 recipe = root / role / "Dockerfile"
                 if recipe.is_file():
@@ -687,7 +698,7 @@ with mock.patch.object(Path, 'open', checked_open):
                 for task in catalog_tasks.values()
             ),
         )
-        catalog = json.loads(build_task_images.TASK_CATALOG.read_text())
+        catalog = task_layers.load_catalog()
         expected = {
             image["repository"].removeprefix("docker.io/")
             + ":"
@@ -727,7 +738,7 @@ with mock.patch.object(Path, 'open', checked_open):
                         image["tag"], source_tag, image["digest"]
                     )
                 )
-        self.assertEqual(catalog_bytes, build_task_images.TASK_CATALOG.read_bytes())
+        self.assertEqual(catalog_bytes, task_layers.shared_layer().catalog.read_bytes())
         self.assertFalse(any(c[:2] == ["docker", "push"] for c in commands))
         self.assertEqual({c[c.index("--tag") + 1] for c in builds}, expected)
         for command in builds:
@@ -774,12 +785,11 @@ with mock.patch.object(Path, 'open', checked_open):
 
     def test_dataset_staging_and_single_layer_member_bodies(self):
         name = "batch_local_counting"
-        definition = json.loads(renderer.DEFINITIONS.read_text())[name]
+        definition = task_layers.load_definitions()[name]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             expected = build_task_images.stage_datasets(
-                renderer.problem_directory(
-                    build_task_images.TASK_ROOT / "problems", name
+                renderer.task_directory(name
                 ),
                 root,
                 definition,
@@ -856,7 +866,7 @@ with mock.patch.object(Path, 'open', checked_open):
         self.assertEqual(path.read_bytes(), before)
 
     def test_push_is_opt_in_and_after_dataset_verification(self):
-        definitions = json.loads(renderer.DEFINITIONS.read_text())
+        definitions = task_layers.load_definitions()
         for fails in (False, True):
             with (
                 mock.patch.object(
@@ -898,9 +908,9 @@ with mock.patch.object(Path, 'open', checked_open):
     def test_selections_manifest_and_prefix(self):
         names = [
             task["name"]
-            for task in json.loads(build_task_images.TASK_CATALOG.read_text())["tasks"]
+            for task in task_layers.load_catalog()["tasks"]
         ]
-        definitions = json.loads(renderer.DEFINITIONS.read_text())
+        definitions = task_layers.load_definitions()
         cpu = [name for name in names if "gpu" not in definitions[name]]
         for selection in (
             [],
@@ -927,16 +937,15 @@ with mock.patch.object(Path, 'open', checked_open):
                     json.loads(path.read_text())["platform"], "linux/amd64"
                 )
                 self.assertTrue(
-                    all(call.args[1] == "joyemang33" for call in build.call_args_list)
+                    all(call.args[1] == image_namespace.namespace()
+                        for call in build.call_args_list)
                 )
         for value in ("repo;echo", "repo:latest", "UPPER/repo", "repo name"):
             self.assertIsNone(build_task_images.IMAGE_PREFIX_RE.fullmatch(value))
 
     def test_native_copy_sources_exist_and_agents_exclude_judge(self):
         for name in renderer.catalog_task_names():
-            root = renderer.problem_directory(
-                build_task_images.TASK_ROOT / "problems", name
-            )
+            root = renderer.task_directory(name)
             for directory in ("agent-base", "verifier", "agent-gpu", "verifier-gpu"):
                 path = root / directory / "Dockerfile"
                 if not path.exists():
@@ -971,7 +980,7 @@ with mock.patch.object(Path, 'open', checked_open):
                 mock.patch.object(
                     renderer, "catalog_task_names", return_value=[root.name]
                 ),
-                mock.patch.object(renderer, "problem_directory", return_value=root),
+                mock.patch.object(renderer, "task_directory", return_value=root),
             ):
                 self.test_native_copy_sources_exist_and_agents_exclude_judge()
                 for copy_line, message in (
@@ -1344,7 +1353,7 @@ class IncrementalImageTests(unittest.TestCase):
                 tempfile.TemporaryDirectory() as directory,
                 mock.patch.object(
                     incremental.renderer,
-                    "problem_directory",
+                    "task_directory",
                     return_value=Path(directory),
                 ),
                 mock.patch.object(
@@ -1432,23 +1441,20 @@ class IncrementalImageTests(unittest.TestCase):
             docker_build.assert_not_called()
 
 
-class TaskImageMakeCompatibilityTests(unittest.TestCase):
-    def run_make(self, *arguments, environment=None):
+class TaskImageMakeTests(unittest.TestCase):
+    def run_make(self, *arguments):
         env = {
             key: value
             for key, value in os.environ.items()
             if key
             not in {
                 "TASK_PROBLEM",
-                "TASK_IMAGE_PREFIX",
-                "DEMO_PROBLEM",
-                "DEMO_IMAGE_PREFIX",
+                "IMAGE_NAMESPACE",
                 "MAKEFLAGS",
                 "MFLAGS",
                 "MAKEOVERRIDES",
             }
         }
-        env.update(environment or {})
         # Echo the builder invocation: no Docker, registry, task or state writes.
         return subprocess.run(
             ["make", "--no-print-directory", "-s", "PYTHON=echo", *arguments],
@@ -1459,95 +1465,23 @@ class TaskImageMakeCompatibilityTests(unittest.TestCase):
             timeout=30,
         )
 
-    def test_new_target_and_defaults(self):
+    def test_the_namespace_comes_from_the_declaration(self):
         result = self.run_make("build-task-images")
         self.assertEqual((result.returncode, result.stderr), (0, ""))
         self.assertEqual(
-            result.stdout.strip(),
-            "scripts/build_task_images.py --problem all --image-prefix joyemang33",
+            result.stdout.strip(), "scripts/build_task_images.py --problem all"
         )
 
-    def test_legacy_target_and_variables_preserve_arguments_and_warn_once(self):
-        for target in ("build-demo-images", "build-task-images"):
-            for via_environment in (False, True):
-                with self.subTest(target=target, environment=via_environment):
-                    old = {"DEMO_PROBLEM": "cpu", "DEMO_IMAGE_PREFIX": "example"}
-                    arguments = (
-                        [] if via_environment else [f"{k}={v}" for k, v in old.items()]
-                    )
-                    result = self.run_make(
-                        target, *arguments, environment=old if via_environment else None
-                    )
-                    self.assertEqual(result.returncode, 0, result.stderr)
-                    self.assertEqual(
-                        result.stdout.strip(),
-                        "scripts/build_task_images.py --problem cpu --image-prefix example",
-                    )
-                    self.assertEqual(len(result.stderr.splitlines()), 1)
-                    self.assertIn("deprecated:", result.stderr)
-        result = self.run_make("build-demo-images")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(result.stderr.splitlines()), 1)
-
-    def test_new_variables_win_and_both_targets_build_once(self):
+    def test_one_run_can_name_another_namespace(self):
         result = self.run_make(
-            "build-demo-images",
-            "build-task-images",
-            "DEMO_PROBLEM=all",
-            "DEMO_IMAGE_PREFIX=old",
-            "TASK_PROBLEM=cpu",
-            "TASK_IMAGE_PREFIX=new",
+            "build-task-images", "TASK_PROBLEM=cpu", "IMAGE_NAMESPACE=localhost:5000/frontier"
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
         self.assertEqual(
             result.stdout.strip(),
-            "scripts/build_task_images.py --problem cpu --image-prefix new",
+            "scripts/build_task_images.py --problem cpu "
+            "--image-namespace localhost:5000/frontier",
         )
-        self.assertEqual(len(result.stderr.splitlines()), 1)
-
-    def test_builder_environment_alias_and_explicit_flag_precedence(self):
-        for env, flags, prefix, warning in (
-            ({"DEMO_IMAGE_PREFIX": "old"}, [], "old", True),
-            (
-                {"DEMO_IMAGE_PREFIX": "old", "TASK_IMAGE_PREFIX": "new"},
-                [],
-                "new",
-                False,
-            ),
-            (
-                {"DEMO_IMAGE_PREFIX": "old"},
-                ["--image-prefix", "explicit"],
-                "explicit",
-                True,
-            ),
-        ):
-            with (
-                self.subTest(env=env, flags=flags),
-                tempfile.TemporaryDirectory() as directory,
-            ):
-                with (
-                    mock.patch.dict(os.environ, env, clear=True),
-                    mock.patch.object(
-                        build_task_images, "build_problem", return_value={}
-                    ) as build,
-                    mock.patch("sys.stdout", new_callable=io.StringIO),
-                    mock.patch("sys.stderr", new_callable=io.StringIO) as stderr,
-                ):
-                    build_task_images.main(
-                        [
-                            "--problem",
-                            "cpu",
-                            "--manifest",
-                            str(Path(directory) / "build.json"),
-                            *flags,
-                        ]
-                    )
-                self.assertTrue(build.called)
-                self.assertTrue(
-                    all(call.args[1] == prefix for call in build.call_args_list)
-                )
-                self.assertEqual(len(stderr.getvalue().splitlines()), int(warning))
-
 
 
 def setUpModule():
@@ -1588,9 +1522,9 @@ class VerifierSmokeTests(unittest.TestCase):
             return subprocess.CompletedProcess(command, 0, "placement control: agree", "")
 
         with (
-            mock.patch.object(build_task_images, "TASK_ROOT", root),
+            mock.patch.object(task_layers, "layers", return_value=[task_layers.Layer(root, root / "problems", root / "catalog.json", definitions)]),
             mock.patch.object(renderer, "catalog_task_names", return_value=[name]),
-            mock.patch.object(renderer, "DEFINITIONS", definitions),
+            
             mock.patch.object(renderer, "render", return_value=definition),
             mock.patch.object(build_task_images, "task_placement", return_value="control"),
             mock.patch.object(build_task_images, "freeze_bases", return_value=[]),
@@ -1605,7 +1539,7 @@ class VerifierSmokeTests(unittest.TestCase):
                 build_task_images.main(["--problem", "all", "--manifest", str(manifest), *arguments])
             finally:
                 self.commands = commands
-        return f"joyemang33/fcs2-task-verifier-{name}:source-test"
+        return image_namespace.repository(f"fcs2-task-verifier-{name}") + ":source-test"
 
     GPU = {"image_tag": "source-test", "source": {}, "datasets": {},
            "gpu": {"verifier": {"max_gpu_instances": 2, "max_gpu_seconds": 60}},
@@ -1642,14 +1576,11 @@ class VerifierSmokeTests(unittest.TestCase):
             self.build(["--push"], self.GPU, run_side_effect=mismatch)
 
     def test_placement_comes_from_task_toml(self):
-        svg = renderer.problem_directory(build_task_images.TASK_ROOT / "problems",
-                                         "sparse_video_attention_policy")
+        svg = renderer.task_directory("sparse_video_attention_policy")
         self.assertEqual(build_task_images.task_placement(svg), "runner")
-        cpu = renderer.problem_directory(build_task_images.TASK_ROOT / "problems",
-                                         "edlib_exact_alignment")
+        cpu = renderer.task_directory("edlib_exact_alignment")
         self.assertIsNone(build_task_images.task_placement(cpu))
-        standalone = renderer.problem_directory(build_task_images.TASK_ROOT / "problems",
-                                                "vllm_llm_serving_optimization")
+        standalone = renderer.task_directory("vllm_llm_serving_optimization")
         self.assertIsNone(build_task_images.task_placement(standalone))
 
     # ------------------------------------------------------------------ CPU: a real judgement
@@ -1700,7 +1631,7 @@ class VerifierSmokeTests(unittest.TestCase):
     def test_a_cpu_sandbox_task_smokes_that_its_image_reads_the_declared_sandboxes(self):
         # polygon's judge leases a Driver CPU machine: without a Driver the smoke checks that
         # the image's shared adapter reads exactly task.toml's command test sandboxes.
-        root = renderer.problem_directory(build_task_images.TASK_ROOT / "problems", "polygon")
+        root = renderer.task_directory("polygon")
         definition = renderer.render(root, "polygon")
         expected = task_manifest.verifier_parameters(task_manifest.read_task(root))["sandboxes"]
         calls = []
@@ -1834,8 +1765,7 @@ class VerifierSmokeTests(unittest.TestCase):
     def run_fixture_check(self, metrics):
         """FIXTURE_CHECK as the image runs it, here on the repository's shared verifier and a
         real task bundle (edlib_exact_alignment) with its reference patch as the payload."""
-        root = renderer.problem_directory(build_task_images.TASK_ROOT / "problems",
-                                          "edlib_exact_alignment")
+        root = renderer.task_directory("edlib_exact_alignment")
         bundle = task_manifest.judge_bundle(root)
         work = Path(self.enterContext(tempfile.TemporaryDirectory()))
         (work / "verifier.json").write_text(json.dumps({"entrypoint": "payload/solution.patch"}))

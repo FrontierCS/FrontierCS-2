@@ -9,7 +9,6 @@
     "conversion": {
       "adapter_commit": "a48a08703c02e2765040584ddca1df1c780e25c2",
       "adapter_path": "2.0/fcs2/problems/lwe_structured_recovery",
-      "adapter_repository": "private authoring repository",
       "continuous_score": "100 * solved_count / instance_count; independent of reference",
       "pass_fail": "all 200 public instances solved; exact per-instance comparison to empty reference",
       "source_commit": "ad37be5d8d8ba59c8d4e62ed35c3a13489cf17d4",

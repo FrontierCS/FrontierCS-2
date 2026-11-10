@@ -41,5 +41,5 @@
     "metric": null
   },
   "host": {},
-  "provenance_note": "Mapped from original judge/metadata.json and policy metadata at source aa3d0101b6a40686a9147b959e2b2c4e665caea8. Exact original metadata is retained in the authoring source history (not distributed). Unavailable producer fields are null/empty; historical local release, automatic COMPLETED state and automatic_promoted=false do not establish staging acceptance or a promotion gate. Requested CPU/RAM are in policy, not measured-host facts."
+  "provenance_note": "Mapped from original judge/metadata.json and policy metadata at source aa3d0101b6a40686a9147b959e2b2c4e665caea8. Exact original metadata is retained at docs/transfers/babble_anti_unification/source-history/judge/metadata.json. Unavailable producer fields are null/empty; historical local release, automatic COMPLETED state and automatic_promoted=false do not establish staging acceptance or a promotion gate. Requested CPU/RAM are in policy, not measured-host facts."
 }

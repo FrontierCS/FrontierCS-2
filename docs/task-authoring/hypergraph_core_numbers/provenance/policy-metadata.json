@@ -5,10 +5,9 @@
       "historical_evidence_path": null,
       "note": "No standalone Smith metadata exists in the source PR. Paper and artifact provenance is recovered from the byte-matched retained jshun/ligra source, its README citation, the paper's Section 5.3/Algorithm 3, and Crossref's DOI record; other unknown fields remain null rather than inferred.",
       "original_metadata_path": null,
-      "scope": "Original-format to native transfer; scientific task, authentic execution, workloads, reference, scoring and thresholds preserved",
+      "scope": "HYJ original-format to native transfer; scientific task, authentic execution, workloads, reference, scoring and thresholds preserved",
       "source_commit": "52c793d1b7144f66e45cdf30a36c66869a1f07aa",
-      "source_path": "original_format_problems/hypergraph_core_numbers",
-      "source_repository": "private authoring repository"
+      "source_path": "original_format_problems/hypergraph_core_numbers"
     },
     "datasets": {
       "eval": {

@@ -16,5 +16,5 @@
     "metric": "exact counts plus per-workload reference speed and independent naive-baseline speedup"
   },
   "host": null,
-  "provenance_note": "Manual native-format transfer from the authoring source at b55ddd03f6b726235f03603b15b4f4c489d478bc. The source contains no Smith generator, ranking, promotion, paper, artifact, or measured-host metadata; unavailable fields remain null or empty. Conversion and runtime provenance are recorded in policy metadata and upstream.lock.json."
+  "provenance_note": "Manual native-format transfer from the upstream authoring source at b55ddd03f6b726235f03603b15b4f4c489d478bc. The source contains no Smith generator, ranking, promotion, paper, artifact, or measured-host metadata; unavailable fields remain null or empty. Conversion and runtime provenance are recorded in policy metadata and upstream.lock.json."
 }

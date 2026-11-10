@@ -1,0 +1,111 @@
+{
+  "schema": "binary-fuse-runtime-qualification/v2",
+  "status": "QUALIFIED_EXACT_RUNTIME",
+  "measured_at": "2026-11-04T07:32:46.538486+00:00",
+  "measurement_sha256": "sha256:d5fcf030400072371a53f8211c090ddfbf90d9b0d9be82232d7a00db3ccea4b5",
+  "rule": "certified-non-inferiority/v1",
+  "full_entrypoint_train_final": true,
+  "answering_seconds": 18000,
+  "train_calls": 100,
+  "train_pool_fit_seconds": 2893.415355682373,
+  "train_pool_scope": "100 times observed complete train verifier wall, not 100 executed calls",
+  "final_wall_seconds": 56.46449303627014,
+  "peak_memory_bytes": 71708672,
+  "qualified_image_id": "docker.io/joyemang33/fcs2-task-verifier-binary_fuse_filter@sha256:6174ad7adaed796842a194a27b081db6a4bee37463c043230fd90dde7d8a9541",
+  "qualified_uid": 65532,
+  "cpu_limit": 2,
+  "memory_limit_bytes": 4294967296,
+  "reference_entrypoint": "/opt/frontier/verifier (shared verifier); judge/reference.patch as an ordinary payload; only the exact reference tree is measured while the receipt is missing",
+  "production_gate_at_measurement": "Confirmed closed (RuntimeQualificationRequired) in train mode for a non-reference payload before this receipt existed",
+  "local_qualification_receipt_sha256": "sha256:90e8cc6890a2cb756e065630bb239ffb707f0343fda2af40cecc445eec2134ce",
+  "train_evidence_sha256": "sha256:58ea3cd036a52bcf0b22eaac91b901ed6ef9609dfa53a55d2c13ec45977d1260",
+  "final_evidence_sha256": "sha256:22b5e2e929747f2e5f1ee5bfbdf0fef29756d27226359df82b266f446aa4a666",
+  "metric_progress": {
+    "train": {
+      "build_ns": {
+        "fail_percent": 50.0,
+        "failed": 36,
+        "pass_percent": 50.0,
+        "passed": 36,
+        "total": 72
+      },
+      "effective_fpr": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 72,
+        "total": 72
+      },
+      "lookup_ns": {
+        "fail_percent": 52.78,
+        "failed": 38,
+        "pass_percent": 47.22,
+        "passed": 34,
+        "total": 72
+      },
+      "resident_bytes": {
+        "fail_percent": 100.0,
+        "failed": 72,
+        "pass_percent": 0.0,
+        "passed": 0,
+        "total": 72
+      },
+      "space_overhead_pct": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 72,
+        "total": 72
+      }
+    },
+    "eval": {
+      "build_ns": {
+        "fail_percent": 36.11,
+        "failed": 52,
+        "pass_percent": 63.89,
+        "passed": 92,
+        "total": 144
+      },
+      "effective_fpr": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 144,
+        "total": 144
+      },
+      "lookup_ns": {
+        "fail_percent": 60.42,
+        "failed": 87,
+        "pass_percent": 39.58,
+        "passed": 57,
+        "total": 144
+      },
+      "resident_bytes": {
+        "fail_percent": 100.0,
+        "failed": 144,
+        "pass_percent": 0.0,
+        "passed": 0,
+        "total": 144
+      },
+      "space_overhead_pct": {
+        "fail_percent": 0.0,
+        "failed": 0,
+        "pass_percent": 100.0,
+        "passed": 144,
+        "total": 144
+      }
+    }
+  },
+  "accuracy_guard_failures": 0,
+  "scientific_verdict": "valid reference; strict FAIL on the paired performance ties, expected for comparison against itself; both accuracy guards pass on every workload",
+  "private_profile_sha256": "sha256:092e8de98c8670847d705d74fd430ffe3579281659a10eea21b213610c5d968a",
+  "calibration_rounds_added": 0,
+  "statistical_anchors_changed": false,
+  "formal_native_acceptance": false,
+  "genuine_solver_qualification": false,
+  "runtime": {
+    "python": "Python 3.12.3",
+    "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "zstandard": "0.25.0"
+  }
+}

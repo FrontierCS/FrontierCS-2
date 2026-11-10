@@ -4,11 +4,11 @@ This docstring is the task's one scoring note; fill in each part for a new task.
 
 Score: raw_score = clamp(score_unbounded, 0, 100), score_unbounded = 50 + 25 * log2(S), where S
 is the geometric mean over workloads of reference time / candidate time (50 at the reference's
-speed; each doubling adds 25). A build failure or a wrong count scores 0. Train measures the
-three public workloads, final those plus three held-out ones.
+speed; each doubling adds 25). A build failure, a wrong count, a crash or a timeout scores 0.
+Train measures the three public workloads, final those plus three held-out ones.
 
 Beat-spec metrics (beat_spec_workload_passes, one row per workload):
-- wall_seconds, lower is better: the smallest of five wall times of a fresh bench process,
+- wall_seconds, lower is better: the smallest of five run times of a fresh bench process,
   candidate and reference runs interleaved; passes when 0 < candidate < reference.
 beats_reference = 1 iff every workload of the evaluated suite passes every metric; otherwise 0.
 """
@@ -29,7 +29,7 @@ beats_reference = 1 iff every workload of the evaluated suite passes every metri
 #   metrics         a JSON-serialisable dict. It always goes to private evidence. A train result
 #                   returns only beat_spec_progress (aggregate counts the shared verifier
 #                   computes from beat_spec_workload_passes) and the metrics task.toml
-#                   [feedback] names. It must carry
+#                   [feedback] names (here wall_seconds_total). It must carry
 #                     beats_reference            0 or 1, the rule stated in the docstring
 #                     beat_spec_workload_passes  [{"workload": id, "metrics": {name: bool}}],
 #                                                the same metric names in every row
@@ -42,6 +42,10 @@ beats_reference = 1 iff every workload of the evaluated suite passes every metri
 #
 # Everything here runs offline, as uid 65532, with a read-only root and a writable scratch
 # (TMPDIR, HOME). The suites below are the private data: they exist only in the Verifier image.
+# Submitted code (here: the compiler over the submitted sources, and the binary it builds) runs
+# only through the shared launcher, isolate.run (tasks/shared/lib/isolate.py, on the Verifier
+# image's default import path): a fresh instance that sees no judge file, writes only its own
+# directories and leaves nothing running. The judge's own interpreter never imports it.
 
 from __future__ import annotations
 
@@ -50,16 +54,19 @@ import os
 import shutil
 import subprocess
 import tempfile
-import time
 from pathlib import Path
+
+import isolate  # the shared launcher, beside edit_scope in the Verifier base
 
 ROOT = Path(__file__).resolve().parent
 PRISTINE = ROOT / "pristine"         # docker/verifier.Dockerfile copies repo/ here; the reference applies to it
 METRIC = "wall_seconds"              # the one beat-spec metric (see the docstring)
 REPLICATES = 5
 REFERENCE_SCORE = 50.0              # the score formula gives the reference exactly 50
+BUILD_TIMEOUT = 300
 RUN_TIMEOUT = 60
 CFLAGS = ["-O2", "-std=c11", "-Wall", "-Wextra"]  # = repo/Makefile; the statement says so
+BINARY = "bench"
 
 # Private suites. Train measures PUBLIC; final measures PUBLIC + HELD_OUT. The expected counts
 # are checked independently of both implementations.
@@ -69,29 +76,32 @@ HELD_OUT = {"n8m": (8_000_000, 539777), "n15m": (15_000_000, 970704),
 
 
 def _build(tree: Path, out: Path) -> str | None:
-    """Compile bench/bench from `tree`; return an error line, or None."""
-    proc = subprocess.run(
-        ["cc", *CFLAGS, f"-I{tree / 'src'}", "-o", str(out),
-         str(tree / "bench/main.c"), str(tree / "src/primes.c")],
-        capture_output=True, text=True, timeout=300)
-    if proc.returncode != 0:
-        lines = (proc.stderr or proc.stdout).strip().splitlines()
+    """Compile `tree`'s bench program and every .c file in its src/ into out/bench, in a fresh
+    instance; return an error line, or None."""
+    sources = sorted(f"{{work}}/src/{path.name}" for path in (tree / "src").glob("*.c"))
+    if not sources:
+        return "no .c file in src/"
+    result = isolate.run(["cc", *CFLAGS, "-I{work}/include", "-o", f"{{out}}/{BINARY}",
+                          "{work}/bench/main.c", *sources],
+                         tree=tree, outputs=[BINARY], timeout_seconds=BUILD_TIMEOUT)
+    if not result.ok or not result.outputs.get(BINARY):
+        lines = (result.stderr or result.stdout).decode(errors="replace").strip().splitlines()
         return lines[-1][:200] if lines else "compiler failed"
+    out.mkdir()
+    (out / BINARY).write_bytes(result.outputs[BINARY])
+    (out / BINARY).chmod(0o755)
     return None
 
 
-def _time(binary: Path, n: int, expected: int) -> float | None:
-    """Wall time of one run, or None if it fails or prints a wrong count."""
-    start = time.monotonic()
-    try:
-        proc = subprocess.run([str(binary), str(n)], capture_output=True, text=True,
-                              timeout=RUN_TIMEOUT, stdin=subprocess.DEVNULL)
-    except subprocess.TimeoutExpired:
+def _time(binary_dir: Path, n: int, expected: int) -> float | None:
+    """Run time of one fresh bench process (exec to exit), or None if it fails, times out or
+    prints a wrong count. syscalls="strict": no processes, threads or signals, as the
+    statement says."""
+    result = isolate.run([f"{{work}}/{BINARY}", str(n)], tree=binary_dir,
+                         timeout_seconds=RUN_TIMEOUT, syscalls="strict")
+    if not result.ok or result.stdout.decode(errors="replace").strip() != str(expected):
         return None
-    elapsed = time.monotonic() - start
-    if proc.returncode != 0 or proc.stdout.strip() != str(expected):
-        return None
-    return elapsed
+    return result.command_seconds
 
 
 def _reference_tree(scratch: Path) -> Path:
@@ -117,7 +127,7 @@ def evaluate(tree: str):
 
     scratch = Path(tempfile.mkdtemp(prefix="template-judge-"))
     try:
-        candidate, reference = scratch / "candidate", scratch / "reference.bin"
+        candidate, reference = scratch / "candidate-bin", scratch / "reference-bin"
         error = _build(tree, candidate)
         if error:
             return 0.0, 0.0, f"build failed: {error}", rejected
@@ -129,7 +139,8 @@ def evaluate(tree: str):
             for wid, (n, expected) in suite.items():
                 c = _time(candidate, n, expected)
                 if c is None:
-                    return 0.0, 0.0, f"wrong or failed output on {'a held-out' if wid in HELD_OUT else 'a public'} workload", rejected
+                    where = "a held-out" if wid in HELD_OUT else "a public"
+                    return 0.0, 0.0, f"wrong, failed or timed-out run on {where} workload", rejected
                 r = _time(reference, n, expected)
                 if r is None:
                     raise RuntimeError("the reference failed")
@@ -151,7 +162,7 @@ def evaluate(tree: str):
             "wall_seconds_candidate_by_workload": c_min,
             "wall_seconds_reference_by_workload": r_min,
             "wall_seconds_replicates_by_workload": {"candidate": cand, "reference": ref},
-            # Candidate-only, no workload identities: a value task.toml [feedback] could name.
+            # Candidate-only, no workload identities: task.toml [feedback] returns it in train.
             "wall_seconds_total": sum(c_min.values()),
         }
         return score, unbounded, f"geometric-mean speedup {speedup:.3f}", metrics

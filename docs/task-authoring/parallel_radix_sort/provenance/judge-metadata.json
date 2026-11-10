@@ -45,10 +45,10 @@
   },
   "host": {},
   "promotion": {},
-  "provenance_note": "Manual Harbor-to-native conversion of the contributed source. The source has no metadata.json, so no Smith paper_id, generator/ranking/promotion history or measured host is claimed. The source license and exact artifact commit identify the SPAA 2019 Regions Sort paper and author repository. Requested runtime resources are not measured host provenance.",
+  "provenance_note": "Manual Harbor-to-native conversion of the upstream authoring source. The source has no metadata.json, so no Smith paper_id, generator/ranking/promotion history or measured host is claimed. The source license and exact artifact commit identify the SPAA 2019 Regions Sort paper and author repository. Requested runtime resources are not measured host provenance.",
   "generated_at": null,
   "conversion_decisions": {
-    "source": "decision M010, 2026-09-14",
+    "source": "direct user confirmation recorded2026-09-14 via coordinator/M010",
     "baseline": "new independent std::sort; not optimized reference and not original invalid starter",
     "continuous": "S=geomean(B_w/C_w);0 if S<=1 else100*log(S)/(log(10)+log(S))",
     "final": "fresh original public4+hidden4, no new shapes/seeds",

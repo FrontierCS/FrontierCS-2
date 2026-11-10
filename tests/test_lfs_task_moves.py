@@ -15,9 +15,7 @@ import render_task_definition as renderer
 
 class TaskMoveLFSTests(unittest.TestCase):
     def test_clusterwise_archives_retain_lfs_filter(self):
-        task = renderer.problem_directory(
-            ROOT / "tasks/problems", "clusterwise_spgemm"
-        )
+        task = renderer.task_directory("clusterwise_spgemm")
         paths = [
             (task / "datasets" / (mode + ".tar")).relative_to(ROOT).as_posix()
             for mode in ("train", "eval")

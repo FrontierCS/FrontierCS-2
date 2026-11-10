@@ -12,7 +12,9 @@ import render_task_definition as renderer
 class DomainPaths(unittest.TestCase):
     def test_flat_grouped_ambiguous_and_identity(self):
         with tempfile.TemporaryDirectory() as d:
-            root = pathlib.Path(d)
+            repository = pathlib.Path(d)
+            root = repository / "tasks/problems"
+            root.mkdir(parents=True)
             flat = root / "sample_task"
             flat.mkdir()
             (flat / "policy.json").write_text("{}")
@@ -25,7 +27,7 @@ class DomainPaths(unittest.TestCase):
             self.assertEqual(renderer.problem_directory(root, "sample_task"), moved)
             self.assertEqual(renderer.source_sha256(moved), before)
             self.assertEqual(
-                renderer.catalog_problem_directories(["sample_task"], root),
+                renderer.catalog_problem_directories(["sample_task"], repository),
                 {"sample_task": moved},
             )
             flat.mkdir()
@@ -38,7 +40,7 @@ class DomainPaths(unittest.TestCase):
 
 
 class PreviousDomainPaths(unittest.TestCase):
-    def test_historical_flat_and_grouped_layouts(self):
+    def test_flat_and_grouped_layouts(self):
         from unittest import mock
 
         from preview import images
@@ -47,7 +49,7 @@ class PreviousDomainPaths(unittest.TestCase):
         for relative in ("sample_task", "databases/sample_task"):
             with mock.patch.object(
                 images, "command", return_value=prefix + relative + "/policy.json"
-            ):
+            ), mock.patch.object(images, "previous_layers", return_value=[]):
                 self.assertEqual(
                     images.previous_problem_path(
                         pathlib.Path("."), "commit", "sample_task"
@@ -60,7 +62,8 @@ class PreviousDomainPaths(unittest.TestCase):
             + prefix
             + "databases/sample_task/policy.json"
         )
-        with mock.patch.object(images, "command", return_value=duplicate):
+        with mock.patch.object(images, "command", return_value=duplicate), \
+                mock.patch.object(images, "previous_layers", return_value=[]):
             with self.assertRaisesRegex(
                 images.IncrementalFailure, "one source directory"
             ):

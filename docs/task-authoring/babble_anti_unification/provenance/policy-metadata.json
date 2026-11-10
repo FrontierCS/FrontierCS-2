@@ -2,13 +2,12 @@
   "metadata": {
     "accelerator": null,
     "conversion": {
-      "historical_evidence_path": "authoring source history (not distributed)",
+      "historical_evidence_path": "docs/transfers/babble_anti_unification/source-history",
       "note": "Existing generator, paper, artifact and local-release history retain their source meanings. PASS now requires every workload to clear compression and strict runtime comparisons; continuous compression scoring remains independent. Historical staging evidence is bound to its exact immutable source.",
       "original_metadata_path": "judge/metadata.json",
-      "scope": "T40 native standardization plus per-workload/per-metric PASS conjunction",
+      "scope": "T40 native standardization plus user-authorized per-workload/per-metric PASS conjunction",
       "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
-      "source_path": "2.0/fcs2/problems/babble_anti_unification",
-      "source_repository": "private authoring repository"
+      "source_path": "2.0/fcs2/problems/babble_anti_unification"
     },
     "datasets": {
       "eval": {

@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 from urllib.parse import quote
 
+import image_namespace
 import render_task_definition as renderer
+import task_layers
 import task_manifest
 from task_selection import TaskSelection, requirements, select_tasks
 
@@ -25,8 +27,6 @@ from .infra import (
     PLATFORM_NAMESPACE,
     REPOSITORY_ROOT,
     SUPPORTED_TASK_CATALOG_SCHEMA,
-    TASK_CATALOG_PATH,
-    TASK_DEFINITIONS_PATH,
     TASK_IMAGE_TAG_RE,
     TASK_PLACEHOLDER_DIGEST,
     DeployError,
@@ -61,9 +61,13 @@ CPU_RUNNER_IMAGES = {
 }
 
 
+# A catalog file in place of the repository's task layers (tests set it).
+CATALOG: Path | None = None
+
+
 def load_task_definitions() -> dict[str, dict[str, Any]]:
-    """Load the reviewed definitions when used, never while importing modules."""
-    return json.loads(TASK_DEFINITIONS_PATH.read_text())
+    """Load every layer's definitions when used, never while importing modules."""
+    return task_layers.load_definitions()
 
 
 def __getattr__(name: str) -> Any:
@@ -96,9 +100,10 @@ def validate_task_catalog(
     overlay = validate_image(
         candidate["overlay_image"], "task catalog.candidate.overlay_image"
     )
-    if overlay["repository"] != "docker.io/joyemang33/fcs2-codex-overlay":
+    if overlay["repository"] != image_namespace.repository("fcs2-codex-overlay"):
         raise DeployError(
-            "candidate overlay repository must equal docker.io/joyemang33/fcs2-codex-overlay"
+            "candidate overlay repository must equal "
+            + image_namespace.repository("fcs2-codex-overlay")
         )
     if not TASK_IMAGE_TAG_RE.fullmatch(overlay["tag"]):
         raise DeployError("candidate overlay tag must equal sha-<40 lowercase hex>")
@@ -259,7 +264,7 @@ def load_task_selection(
     require_resolved: bool = False,
 ) -> tuple[dict[str, Any], TaskSelection]:
     TASK_DEFINITIONS = load_task_definitions()
-    raw = load_json(catalog_path if catalog_path is not None else TASK_CATALOG_PATH)
+    raw = task_layers.load_catalog(catalog_path if catalog_path is not None else CATALOG)
     catalog = validate_task_catalog(raw, require_resolved=require_resolved)
     selection = select_tasks(config, raw, TASK_DEFINITIONS)
     catalog["tasks"] = [
@@ -846,8 +851,8 @@ def candidate_version_document(
             "env": {},
         }
     )
-    # The seeded Codex candidate connects to its model provider (OpenRouter by
-    # default) directly from the Agent (site NetworkPolicy grants the egress), so
+    # The internal-beta candidate connects to the lab's model endpoint
+    # directly from the Agent (site NetworkPolicy grants the egress), so
     # no platform model API — direct-proxy mode would demand a
     # Driver-mounted provider secret and the dispatch would never form.
     model_api = {"allowed_domains": [], "secret_refs": []}
@@ -919,7 +924,7 @@ def candidate_version_document(
 def seed_tasks(
     config: Mapping[str, Any],
     kubeconfig: Path,
-    catalog_path: Path = TASK_CATALOG_PATH,
+    catalog_path: Path | None = None,
     *,
     check: bool = False,
 ) -> list[dict[str, Any]]:
@@ -1290,7 +1295,6 @@ def ensure_version(
 
 
 # Reference catalog descriptors and authoring baselines.
-MANIFEST = REPOSITORY_ROOT / "config/task-catalog.json"
 LAUNCHER = (
     REPOSITORY_ROOT
     / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
@@ -1325,7 +1329,7 @@ def validate_reference(name, image, definition, *, root=None, require_resolved=F
         / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
     )
     patch = (
-        renderer.problem_directory(root / "tasks/problems", name)
+        renderer.task_directory(name, root)
         / "judge/reference.patch"
     )
     if (
@@ -1398,9 +1402,7 @@ def validate_baseline(name, baseline, image, definition, *, root=None):
         )
     ):
         raise ValueError(f"baseline does not bind the native release: {name}")
-    task_root = renderer.problem_directory(
-        root / "tasks/problems", name
-    )
+    task_root = renderer.task_directory(name, root)
     patch = task_root / "judge/reference.patch"
     if patch.is_file() and baseline.get("reference_patch_sha256") != file_sha(patch):
         raise ValueError(
@@ -1424,13 +1426,13 @@ def load_manifest(
     definitions=None,
     root=None,
 ):
-    raw = catalog if catalog is not None else load_json(path or MANIFEST)
+    raw = catalog if catalog is not None else task_layers.load_catalog(path)
     if raw.get("schema_version") != "frontier.deployment-task-catalog/v2":
         raise ValueError("reference manifest requires catalog v2")
     definitions = (
         definitions
         if definitions is not None
-        else load_json((root or REPOSITORY_ROOT) / "config/task-definitions.json")
+        else task_layers.load_definitions(root or REPOSITORY_ROOT)
     )
     result, seen = {}, set()
     if not isinstance(raw.get("tasks"), list) or not raw["tasks"]:
@@ -1456,7 +1458,7 @@ def load_manifest(
 
 
 def load_baselines(path: Path | None = None):
-    catalog = load_json(path or MANIFEST)
+    catalog = task_layers.load_catalog(path)
     if catalog.get("schema_version") != "frontier.deployment-task-catalog/v2":
         raise ValueError("baselines require catalog v2")
     return {task["name"]: task["baseline"] for task in catalog["tasks"]}
@@ -1467,11 +1469,7 @@ def baseline_from_result_json(
 ) -> dict:
     result_path = root / "judge/result.json"
     if not result_path.is_file():
-        return {
-            "provenance": "unverified",
-            "comparable": False,
-            "comparability_note": "no judge/result.json in the export",
-        }
+        return {"provenance": "unverified", "comparable": False}
     result = load_json(result_path)
     if not isinstance(result, dict):
         raise ValueError("judge/result.json must be an object")
@@ -1527,7 +1525,6 @@ def baseline_from_result_json(
     payload = payload or (root / "judge/reference.patch")
     baseline = {
         "agreement_rule": dict(RULE),
-        "historical_scores": scores,
         "historical_mean": spread["mean"],
         "historical_spread": spread["spread"],
         "datasets": {
@@ -1535,12 +1532,9 @@ def baseline_from_result_json(
         },
         "verifier_adapter_sha256": file_sha(adapter),
         "source_set_sha256": definition["source"]["source_set_sha256"],
-        "result_json_source": "judge/result.json",
         "provenance": "historical-authoring",
         "comparable": False,
-        "comparability_note": "result.json does not attest that these scores measured the exported input identity",
     }
-    missing = []
     for key, path in (
         ("evaluator_sha256", evaluator),
         ("reference_patch_sha256", payload),
@@ -1548,10 +1542,5 @@ def baseline_from_result_json(
         if path.is_file():
             baseline[key] = file_sha(path)
         else:
-            missing.append(path.relative_to(root).as_posix())
-    if missing:
-        baseline.update(
-            provenance="unverified",
-            comparability_note="missing baseline binding files: " + ", ".join(missing),
-        )
+            baseline["provenance"] = "unverified"
     return baseline

@@ -1,11 +1,10 @@
 {
   "application": {
-    "commit": "492ceb9aaae62ebf06fd477070baa4ea225b4520",
-    "repository": "https://github.com/FrontierCS/FrontierCS-2.git",
+    "commit": "9694dd4a9d36b13013991b5d17eaad705ef2882f",
     "require_source": false,
     "runtime_source_commits": {
-      "driver": "936501d45df2ff991408322509c1354cfc31e289",
-      "management": "492ceb9aaae62ebf06fd477070baa4ea225b4520"
+      "driver": "9694dd4a9d36b13013991b5d17eaad705ef2882f",
+      "management": "9694dd4a9d36b13013991b5d17eaad705ef2882f"
     }
   },
   "compute": {
@@ -58,10 +57,10 @@
   },
   "images": {
     "driver": {
-      "digest": "sha256:972a512a31dba8b9f3c605ebcf5a1c8039bfb3902077b7751c8e2c164a575938",
-      "reference": "docker.io/joyemang33/fcs2-driver@sha256:972a512a31dba8b9f3c605ebcf5a1c8039bfb3902077b7751c8e2c164a575938",
+      "digest": "sha256:53a173bdfbb313b4b7a8b5fcfb6045f95e4f871373d572ae58c3503faf33dd91",
+      "reference": "docker.io/joyemang33/fcs2-driver@sha256:53a173bdfbb313b4b7a8b5fcfb6045f95e4f871373d572ae58c3503faf33dd91",
       "repository": "docker.io/joyemang33/fcs2-driver",
-      "tag": "sha-936501d45df2ff991408322509c1354cfc31e289"
+      "tag": "sha-9694dd4a9d36b13013991b5d17eaad705ef2882f"
     },
     "litellm": {
       "digest": "sha256:0aa398456068b6a91d05eb0ae0004d3ca5cec7c7608a901c73d3cdc6833be974",
@@ -70,10 +69,10 @@
       "tag": "v1.97.0"
     },
     "management": {
-      "digest": "sha256:0be125343300e160319055a84cc3d44b151c57f8715d29d6ac5ab44558a692ea",
-      "reference": "docker.io/joyemang33/fcs2-management@sha256:0be125343300e160319055a84cc3d44b151c57f8715d29d6ac5ab44558a692ea",
+      "digest": "sha256:a4b5ea1d09e5ca8440d9f8304e59b195e7a402ce688504658c2d0a2fe865749c",
+      "reference": "docker.io/joyemang33/fcs2-management@sha256:a4b5ea1d09e5ca8440d9f8304e59b195e7a402ce688504658c2d0a2fe865749c",
       "repository": "docker.io/joyemang33/fcs2-management",
-      "tag": "sha-492ceb9aaae62ebf06fd477070baa4ea225b4520"
+      "tag": "sha-9694dd4a9d36b13013991b5d17eaad705ef2882f"
     },
     "postgres": {
       "digest": "sha256:0933d60933003cb2d0e4f074ba8a83542fe203803fece22be97795e06ccbdfdc",

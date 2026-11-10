@@ -39,7 +39,6 @@ from .infra import (
     PLATFORM_NAMESPACE,
     REGISTRY_SERVICE,
     REPOSITORY_ROOT,
-    TASK_CATALOG_PATH,
     TERMINAL_EVALUATIONS,
     TERMINAL_RUNS,
     TRAIN_URI,
@@ -77,6 +76,7 @@ from .publication import (
     load_task_definitions,
     load_task_selection,
     local_author_receipt,
+    receipt_images,
     task_version_document,
     validate_baseline,
     validate_seed_receipt,
@@ -1168,6 +1168,24 @@ def cancel_expired(
     return record
 
 
+def task_image_digests(images: Mapping[str, Any]) -> dict[str, str]:
+    """Digest of every image a TaskConfig binds, keyed like its images block.
+
+    Uses the author-receipt projection, so non-image entries such as
+    `gpu_parent_resources` are skipped and declared GPU sidecars are keyed
+    `gpu_sidecar:<name>`.
+    """
+    digests: dict[str, str] = {}
+    for key, value in receipt_images(images).items():
+        if key == "gpu_sidecars":
+            digests.update(
+                (f"gpu_sidecar:{name}", image["digest"]) for name, image in value.items()
+            )
+        else:
+            digests[key] = value["digest"]
+    return digests
+
+
 def replay_task(
     base: str,
     name: str,
@@ -1192,10 +1210,7 @@ def replay_task(
         "image_digests": {
             "reference_public": image["digest"],
             "reference_mirror": document["driver_config"]["overlay_image"]["digest"],
-            **{
-                key: value["digest"]
-                for key, value in task_document["driver_config"]["images"].items()
-            },
+            **task_image_digests(task_document["driver_config"]["images"]),
         },
         "launcher_sha256": image["launcher_sha256"],
         "payload_sha256": image["payload_sha256"],
@@ -1391,7 +1406,9 @@ def reference_parity_main(arguments: list[str] | None = None) -> int:
     parser.add_argument(
         "--config", type=Path, default=REPOSITORY_ROOT / "config/site.json"
     )
-    parser.add_argument("--catalog", type=Path, default=TASK_CATALOG_PATH)
+    parser.add_argument(
+        "--catalog", type=Path, help="a catalog file in place of the repository's task layers"
+    )
     parser.add_argument(
         "--seed-receipt",
         type=Path,

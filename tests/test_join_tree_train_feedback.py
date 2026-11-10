@@ -27,9 +27,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer  # noqa: E402
 import task_manifest  # noqa: E402
 
-TASK = renderer.problem_directory(
-    ROOT / "tasks/problems", "join_tree_rewriting"
-)
+TASK = renderer.task_directory("join_tree_rewriting")
 EDITABLE = "2phase_nsa/binary_plan/rewrite_policy.py"
 EXPECTED = [f"dev/{i}" for i in range(1, 21)] + [f"final/{i}" for i in range(1, 20)]
 

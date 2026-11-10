@@ -292,6 +292,12 @@ def create_or_replace_network_policy(namespace: str, desired: dict) -> None:
 
 
 def remove_agent_external_egress_policy(namespace: str) -> bool:
+    """Delete the Agent external-egress allow while the site flag is false.
+
+    The controller owns this policy name in Management Run namespaces (the
+    enabled path already replaces any drift under it), so a disabled flag must
+    withdraw it from Runs created while the flag was true.
+    """
     policy_path = (
         f"/apis/networking.k8s.io/v1/namespaces/{namespace}"
         f"/networkpolicies/{NETWORK_POLICY_NAME}"
@@ -312,6 +318,7 @@ def reconcile_namespace(namespace: dict) -> None:
     name = namespace["metadata"]["name"]
     run_id, attempt_id = identity
     if not AGENT_EXTERNAL_EGRESS:
+        # Withdraw first, so a PV/PVC fault in this namespace cannot keep it.
         remove_agent_external_egress_policy(name)
     # EKS can enforce the pre-DNAT Service address. The upstream frozen policy
     # already allows registry Pods; add only the configured local Service /32.

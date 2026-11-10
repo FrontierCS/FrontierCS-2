@@ -1,5 +1,4 @@
 {
-  "repository": "https://github.com/FrontierCS/FrontierCS-2",
   "platform_source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12",
   "dockerfile": {
     "source": "candidate-overlays/codex/Dockerfile",

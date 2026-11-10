@@ -3,7 +3,9 @@
 The template is what new tasks copy, so a format or contract change that breaks it must fail
 here: it passes the layout validator, and its judge, run through the shared verifier exactly as
 the Verifier image runs it, scores the reference at about 50 and a wrong answer at 0 in both
-modes, with the private final metrics present.
+modes, with the private final metrics present. The judge runs the compiler and every candidate
+binary through the shared isolate launcher (tasks/shared/lib/isolate.py), as the Verifier image
+does; this host builds its landlock backend.
 """
 
 from __future__ import annotations
@@ -23,22 +25,45 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "scripts"))
 sys.path.insert(0, str(REPO / "tasks/shared/verifier"))
+# The shared launcher: the Verifier image puts it on the default import path (frontier.pth).
+sys.path.insert(0, str(REPO / "tasks/shared/lib"))
 
+import isolate  # noqa: E402
 import task_manifest  # noqa: E402
 import validate_task_layout  # noqa: E402
 
 TEMPLATE = REPO / "tasks/template/Theory/template_task"
-WRONG = """\
---- a/src/primes.c
-+++ b/src/primes.c
-@@ -15,5 +15,5 @@ uint64_t count_primes(uint32_t n) {
-     uint64_t count = 0;
-     for (uint32_t x = 2; x <= n && x != 0; x++)
-         count += (uint64_t)is_prime(x);
--    return count;
-+    return count + 1;
- }
+STARTER = (TEMPLATE / "repo/src/primes.c").read_text()
+FEEDBACK = ('[feedback]\nwall_seconds_total = "Sum over the train workloads of the candidate\'s run '
+            'time (the smallest of five runs), in seconds."\n')
+
+
+def diff(path: str, before: str, after: str) -> str:
+    return "".join(difflib.unified_diff(before.splitlines(keepends=True),
+                                        after.splitlines(keepends=True),
+                                        f"a/{path}", f"b/{path}"))
+
+
+# A sieve in a file of its own (the test of a new file in src/).
+SIEVE = """#include <stdlib.h>
+#include <stdint.h>
+
+uint64_t sieve_count(uint32_t n) {
+    if (n < 2) return 0;
+    unsigned char *composite = calloc((size_t)n + 1, 1);
+    if (!composite) abort();
+    uint64_t count = 0;
+    for (uint64_t i = 2; i <= n; i++) {
+        if (composite[i]) continue;
+        count++;
+        for (uint64_t j = i * i; j <= n; j += i) composite[j] = 1;
+    }
+    free(composite);
+    return count;
+}
 """
+WRONG = diff("src/primes.c", STARTER, STARTER.replace("    return count;\n",
+                                                      "    return count + 1;\n"))
 
 
 def payload(patch: str, directory: Path) -> Path:
@@ -54,7 +79,8 @@ def payload(patch: str, directory: Path) -> Path:
     return path
 
 
-@unittest.skipUnless(shutil.which("cc") and shutil.which("git"), "needs cc and git")
+@unittest.skipUnless(shutil.which("cc") and shutil.which("git") and isolate.available(),
+                     "needs cc, git and an isolate backend")
 class TemplateTask(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -128,7 +154,9 @@ class TemplateTask(unittest.TestCase):
         self.assertEqual(policy["problem_id"], "template_task")
         generated = task_manifest.generated_files(TEMPLATE)
         config = json.loads(generated[".frontier-generated/judge/config.yaml"])
-        self.assertEqual(config["edit_scope"]["allowed_paths"], ["src/primes.c"])
+        self.assertEqual(config["edit_scope"]["allowed_paths"], ["src/"])
+        self.assertEqual(config["edit_scope"]["max_changed_files"], 8)
+        self.assertEqual(config["evaluation"]["solver_visible_metrics"], ["wall_seconds_total"])
         agent = json.loads(generated[".frontier-generated/agent/submission-policy.json"])
         self.assertNotIn("forbidden_added", agent["edit_scope"])  # content rules stay judge-only
 
@@ -152,6 +180,30 @@ class TemplateTask(unittest.TestCase):
             self.assertEqual(result["metrics"]["rejected"], "out_of_scope", mode)
             self.assertIn("bench/main.c", result["summary"])
 
+    def test_a_new_file_in_the_editable_directory_is_built_and_judged(self):
+        # allowed_paths names the directory src/: a new .c file there is in scope, and the judge
+        # compiles every .c file in src/.
+        split = diff("src/primes.c", STARTER, '#include "primes.h"\n'
+                     "uint64_t sieve_count(uint32_t n);\n"
+                     "uint64_t count_primes(uint32_t n) { return sieve_count(n); }\n")
+        sieve = diff("src/sieve.c", "", SIEVE).replace("--- a/src/sieve.c", "--- /dev/null")
+        result = self.run_verifier(split + sieve, "train")
+        # Linked with src/sieve.c (without it the link fails: a scored zero for the build).
+        self.assertEqual(result["status"], "passed")
+        self.assertGreater(result["raw_score"], 0.0, result)
+        header = diff("include/primes.h", (TEMPLATE / "repo/include/primes.h").read_text(),
+                      (TEMPLATE / "repo/include/primes.h").read_text() + "/* x */\n")
+        result = self.run_verifier(header, "train")
+        self.assertEqual(result["metrics"]["rejected"], "out_of_scope")
+
+    def test_a_binary_that_starts_a_thread_or_process_is_a_scored_zero(self):
+        # syscalls="strict": the statement forbids threads and processes, and isolate enforces it.
+        forking = STARTER.replace('#include "primes.h"\n', '#include "primes.h"\n#include <unistd.h>\n')
+        forking = forking.replace("    uint64_t count = 0;\n", "    if (fork() == 0) _exit(0);\n"
+                                  "    uint64_t count = 0;\n")
+        result = self.run_verifier(diff("src/primes.c", STARTER, forking), "train")
+        self.assertEqual((result["status"], result["raw_score"]), ("passed", 0.0), result)
+
     def test_wrong_answer_is_a_scored_zero_in_both_modes(self):
         for mode in ("train", "eval"):
             result = self.run_verifier(WRONG, mode)
@@ -164,26 +216,31 @@ class TemplateTask(unittest.TestCase):
         shutil.copytree(TEMPLATE, root)
         return root
 
+    def with_feedback(self, table: str) -> Path:
+        """A copy of the template whose [feedback] table is `table` (its body lines)."""
+        root = self.copy_template()
+        manifest = root / "task.toml"
+        text = manifest.read_text()
+        self.assertIn(FEEDBACK, text)
+        manifest.write_text(text.replace(FEEDBACK, f"[feedback]\n{table}\n"))
+        return root
+
     def test_feedback_table_is_checked(self):
         # task.toml [feedback]: lower_snake_case names, never private or shared names, each a
         # non-empty sentence.
+        task_manifest.read_task(self.with_feedback('solved = "x"'))
         for table in ('"Bad-Name" = "x"', 'reference_seconds = "x"', 'margin_total = "x"',
                       'beats_count = "x"', 'score_unbounded = "x"', 'beat_spec_progress = "x"',
                       'beat_spec_workload_passes = "x"', 'rejected = "x"', 'solved = ""',
                       'solved = 3', 'solved = "  "'):
             with self.subTest(table=table):
-                root = self.copy_template()
-                manifest = root / "task.toml"
-                manifest.write_text(manifest.read_text() + f"\n[feedback]\n{table}\n")
                 with self.assertRaises(task_manifest.ManifestError):
-                    task_manifest.read_task(root)
+                    task_manifest.read_task(self.with_feedback(table))
 
     def test_feedback_names_reach_config_readme_and_definition_in_order(self):
-        root = self.copy_template()
-        manifest = root / "task.toml"
-        manifest.write_text(manifest.read_text() + (
-            '\n[feedback]\nwall_seconds_replicates_by_workload = "Candidate and reference wall times of every replicate."\n'
-            'wall_seconds_candidate_by_workload = "Candidate wall time per workload, in seconds."\n'))
+        root = self.with_feedback(
+            'wall_seconds_replicates_by_workload = "Candidate and reference wall times of every replicate."\n'
+            'wall_seconds_candidate_by_workload = "Candidate wall time per workload, in seconds."')
         names = ["wall_seconds_replicates_by_workload", "wall_seconds_candidate_by_workload"]
         task = task_manifest.read_task(root)
         self.assertEqual(task_manifest.judge_config(task)["evaluation"]["solver_visible_metrics"],
@@ -194,7 +251,9 @@ class TemplateTask(unittest.TestCase):
         self.assertIn("- `wall_seconds_candidate_by_workload`: Candidate wall time per workload, in seconds.",
                       readme)
         self.assertNotIn("No task-specific metrics", readme)
-        self.assertIn("No task-specific metrics", task_manifest.agent_readme(TEMPLATE))
+        self.assertIn("No task-specific metrics", task_manifest.agent_readme(self.with_feedback("")))
+        self.assertIn("- `wall_seconds_total`: Sum over the train workloads",
+                      task_manifest.agent_readme(TEMPLATE))
         self.assertIn('wall_seconds_candidate_by_workload = "Candidate wall time per workload, in seconds."',
                       task_manifest.effective_toml(root))
 
@@ -207,9 +266,7 @@ class TemplateTask(unittest.TestCase):
                 root, task_manifest.load_policy(root)["metadata"]["evaluation"])
 
     def test_feedback_metric_must_be_named_by_the_evaluator(self):
-        root = self.copy_template()
-        manifest = root / "task.toml"
-        manifest.write_text(manifest.read_text() + '\n[feedback]\nsolved_count = "Solved."\n')
+        root = self.with_feedback('solved_count = "Solved."')
         with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "solved_count"):
             validate_task_layout.check_task_feedback(
                 root, task_manifest.load_policy(root)["metadata"]["evaluation"])
@@ -246,7 +303,11 @@ def public_metrics(metrics, *, visible):
         # and nothing else besides score_unbounded and beat_spec_progress.
         reference = (TEMPLATE / "judge/reference.patch").read_text()
         default = self.run_verifier(reference, "train")
-        self.assertEqual(set(default["metrics"]), {"score_unbounded", "beat_spec_progress"})
+        self.assertEqual(set(default["metrics"]),
+                         {"score_unbounded", "beat_spec_progress", "wall_seconds_total"})
+        self.assertEqual(self.with_allowlist(
+            [], lambda: set(self.run_verifier(reference, "train")["metrics"])),
+            {"score_unbounded", "beat_spec_progress"})
         self.assertEqual(self.with_allowlist(
             ["wall_seconds_total", "reference_score", "margin"],
             lambda: set(self.run_verifier(reference, "train")["metrics"])),
@@ -388,9 +449,6 @@ def public_metrics(metrics, *, visible):
     def test_generated_readme_must_name_every_feedback_metric(self):
         from unittest import mock
         root = self.copy_template()
-        manifest = root / "task.toml"
-        manifest.write_text(manifest.read_text()
-                            + '\n[feedback]\nwall_seconds_total = "Sum of candidate times."\n')
         evaluation = task_manifest.load_policy(root)["metadata"]["evaluation"]
         validate_task_layout.check_task_feedback(root, evaluation)
         real = task_manifest.agent_readme
@@ -401,16 +459,15 @@ def public_metrics(metrics, *, visible):
 
     def test_generated_readme_states_the_file_rules(self):
         readme = task_manifest.agent_readme(TEMPLATE)
-        self.assertIn("The patch may change at most 50 files. It may not delete files.\n", readme)
+        self.assertIn("The patch may change at most 8 files. It may not delete files.\n", readme)
         self.assertNotIn("add new files", readme)
         self.assertIn("The judge evaluates your submission with 2 CPU cores and 4 GiB of\n  memory.",
                       readme)
         root = self.copy_template()
         manifest = root / "task.toml"
         manifest.write_text(manifest.read_text().replace(
-            'allowed_paths = ["src/primes.c"]',
-            'allowed_paths = ["src/primes.c"]\nmax_changed_files = 1\nallow_delete = true\n'
-            'allow_new_files = false', 1))
+            "max_changed_files = 8",
+            'max_changed_files = 1\nallow_delete = true\nallow_new_files = false', 1))
         readme = task_manifest.agent_readme(root)
         self.assertIn("The patch may change at most 1 file. It may not add new files.\n", readme)
         self.assertNotIn("delete files", readme)
@@ -423,8 +480,7 @@ def public_metrics(metrics, *, visible):
         root = self.copy_template()
         manifest = root / "task.toml"
         manifest.write_text(manifest.read_text().replace(
-            'allowed_paths = ["src/primes.c"]',
-            'allowed_paths = ["src/primes.c"]\nallow_rename = true', 1))
+            "max_changed_files = 8", "max_changed_files = 8\nallow_rename = true", 1))
         task = task_manifest.read_task(root)
         self.assertTrue(task_manifest.edit_scope_rules(task, agent=True)["allow_rename"])
         self.assertTrue(task_manifest.judge_config(task)["edit_scope"]["allow_rename"])

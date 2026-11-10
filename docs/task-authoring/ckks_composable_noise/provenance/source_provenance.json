@@ -106,7 +106,7 @@
     "schema_version": "ckks-authorized-parameter-derivation/v1",
     "original_commit": "53dd2367a25a0ae45298dd4086ef50ae03aa778a",
     "new_release": "composition-scaled-logn12-v1",
-    "authorization": "recorded parameter derivation decision, 2026-10-05",
+    "authorization": "USER_DECISIONS_20261005.md section CKKS, 2026-10-05",
     "changes": [
       {
         "path": "estimator/experiments/bootstrapping/bootstrapping.go",
@@ -216,7 +216,7 @@
   },
   "authorized_configuration_successor": {
     "schema": "ckks-configuration-derivation/v1",
-    "authorization": "recorded configuration decision, 2026-10-07",
+    "authorization": "USER_DECISIONS_20261006.md: 2026-10-07T17:28Z CKKS decision",
     "predecessor_release": "composition-scaled-logn12-v1",
     "release": "composition-scaled-logn12-configurations-v2",
     "retained_base_mains": "all nine byte-identical; prior authorized_parameter_derivation and comment equivalence remain historical base provenance",
@@ -238,7 +238,7 @@
     "source_files_sha256": {
       "workload_configurations.py": "549c817a9042444abe7396d2719ef9679221fbb102937e5e0b635f51eb39b563",
       "judge/configuration_bases.json": "ccf453028974ab088a789bff16070da05a62c21e0c579b4480afca644a1ccc09",
-      "judge/workload_manifest.json": "03be4cf5fb478ff69f4cc86a4e00b02092882fffd68d145e7f01b5a40633857b"
+      "judge/workload_manifest.json": "278a9b967175bb6eaaefcd9d359d8b315bf4672fd419c914cb66679291af6588"
     },
     "paper_equivalence": false,
     "old_bands_reusable": false,

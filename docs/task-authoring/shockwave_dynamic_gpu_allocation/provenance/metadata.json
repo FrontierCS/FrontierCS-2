@@ -17,7 +17,7 @@
     }
   },
   "scientific_override_20260915": {
-    "basis": "decision M084/M087",
+    "basis": "explicit user decision M084/M087",
     "scope": "binary PASS aggregation only (M084/M087; later continuous correction recorded separately)",
     "current_aggregation": "all-workload/all-metric conjunction",
     "current_known_witness_beats_reference": false,
@@ -95,7 +95,7 @@
     "measured_at": "2026-09-03T09:41:05.635547+00:00"
   },
   "continuous_score_override_20260915": {
-    "basis": "formula adopted 2026-09-15; canonical criteria commit 794546b966ad8e7216a38515923b2d11de2f9cec",
+    "basis": "explicit user-approved formula, 2026-09-15; canonical criteria commit 794546b966ad8e7216a38515923b2d11de2f9cec",
     "scope": "continuous score only",
     "per_trace_formula": "40*12000/(12000+M) + 40*7000/(7000+J) + 15*0.55/(rho+0.05) + 5*(1-U/100)",
     "aggregation": "raw unrounded binary64 arithmetic mean over the original two traces",

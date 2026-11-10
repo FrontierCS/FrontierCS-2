@@ -34,10 +34,9 @@
       "year": 2023
     },
     "conversion": {
-      "source_repository": "private authoring repository",
       "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
       "source_path": "2.0/fcs2/problems/shockwave_dynamic_gpu_allocation",
-      "scope": "T40 existing-native standardization with explicit M084/M087 binary-PASS conjunction and the 2026-09-15 continuous-score correction; algorithms, workloads, reference, comparators, thresholds, and validity checks preserved",
+      "scope": "T40 existing-native standardization with explicit M084/M087 binary-PASS conjunction and the user-approved 2026-09-15 continuous-score correction; algorithms, workloads, reference, comparators, thresholds, and validity checks preserved",
       "original_metadata_path": "judge/metadata.json",
       "historical_evidence_path": "judge/result.json",
       "note": "Generator, paper, artifact, promotion, and local-release history retain their source meanings; historical evidence does not accept this conversion."

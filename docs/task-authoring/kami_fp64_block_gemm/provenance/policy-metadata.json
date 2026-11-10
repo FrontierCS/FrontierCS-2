@@ -22,11 +22,10 @@
         "verifier_gpu": "one NVIDIA H100 80GB HBM3 for at most 1800 seconds"
       },
       "research_artifact_hardware_note": "Upstream plots and scripts include GH200 and RTX 5090 targets; the frozen task validates and runs on exact NVIDIA H100 80GB HBM3.",
-      "scope": "T40 standardization plus T35 public-plus-hidden final; eight workloads, reference, threshold, and score curve preserved",
+      "scope": "T40 standardization plus approved T35 public-plus-hidden final; eight workloads, reference, threshold, and score curve preserved",
       "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
       "source_last_task_commit": "91a8772b9309622910a29a32f9f9241701c367b4",
-      "source_path": "2.0/fcs2/problems/kami_fp64_block_gemm",
-      "source_repository": "private authoring repository"
+      "source_path": "2.0/fcs2/problems/kami_fp64_block_gemm"
     },
     "datasets": {
       "eval": {

@@ -1,0 +1,92 @@
+{
+  "checkpoint": {
+    "license": "Tencent Hunyuan Community License Agreement (Hub card license_name: tencent-hunyuan-community)",
+    "license_file": {
+      "git_blob_id": "0b1319a00ca4fea1c55d1437c6bedd0e357ddc19",
+      "path": "docs/task-authoring/sparse_video_attention_policy/hunyuan/LICENSE",
+      "sha256": "sha256:6ba8ea0dc1c464c9ab549b281be5d3afcab93c3308a6967d22240150d844c54d"
+    },
+    "notice_file": {
+      "git_blob_id": "3d54d773ce6354d6f740bd97152192d4d2cafe01",
+      "path": "docs/task-authoring/sparse_video_attention_policy/hunyuan/Notice",
+      "sha256": "sha256:6f7d8a47d6a713f0a1f88841520a9f55b431c422a52d83962695883ae2fe8008"
+    },
+    "repo_id": "tencent/HunyuanVideo",
+    "requested_revision": "refs/pr/18",
+    "revision": "2a15b5574ee77888e51ae6f593b2ceed8ce813e5",
+    "subset": "Diffusers components plus LICENSE, Notice and README.md; per-file sizes and LFS sha256 in model-assets.json",
+    "territory": "worldwide excluding the European Union, United Kingdom and South Korea"
+  },
+  "schema_version": 1,
+  "task_owned_files": [
+    {
+      "path": "flash_attn/__init__.py",
+      "task_sha256": "sha256:c22ff8703d0e02da644904ee505350f2c5bcec7876d35c656baa4f17ddc8be45"
+    },
+    {
+      "path": "flash_attn/flash_attn_interface.py",
+      "task_sha256": "sha256:44d4b6645ba0a2b18f57278b22f908a652e99ed15bfe70df58dfdae190b20607"
+    }
+  ],
+  "upstream": {
+    "commit": "f89aedaf169ac2ae5b186bda674e53c3dc08c476",
+    "fetch": "git init; git fetch --depth 1 origin f89aedaf169ac2ae5b186bda674e53c3dc08c476 (no account)",
+    "repository": "https://github.com/svg-project/Sparse-VideoGen"
+  },
+  "vendored_files": [
+    {
+      "path": "hyvideo_t2v_inference.py",
+      "status": "byte-identical",
+      "task_sha256": "sha256:990e5b80322a9d9c9a5c83f7f9150552f28cd4013280c6314f2ab85b41199e12",
+      "upstream_sha256": "sha256:990e5b80322a9d9c9a5c83f7f9150552f28cd4013280c6314f2ab85b41199e12"
+    },
+    {
+      "path": "scripts/hyvideo/hyvideo_t2v_720p_ear.sh",
+      "status": "byte-identical",
+      "task_sha256": "sha256:b93250a2d6a194d1a3607ed944fd6d0051431659032eca090ca13eab9b68c37e",
+      "upstream_sha256": "sha256:b93250a2d6a194d1a3607ed944fd6d0051431659032eca090ca13eab9b68c37e"
+    },
+    {
+      "path": "examples/7/prompt.txt",
+      "status": "byte-identical",
+      "task_sha256": "sha256:28e14de3c7b4aab8fa268a10cc044c5d8a163530f32b0b8c7fa838a4c8016bdc",
+      "upstream_sha256": "sha256:28e14de3c7b4aab8fa268a10cc044c5d8a163530f32b0b8c7fa838a4c8016bdc"
+    },
+    {
+      "path": "svg/models/hyvideo/__init__.py",
+      "status": "byte-identical",
+      "task_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "upstream_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "svg/models/hyvideo/attention.py",
+      "status": "stubbed: Hunyuan_EARAttn_Processor body removed; judge/reference.patch restores the upstream bytes",
+      "task_sha256": "sha256:b4f9c30f7eb14b9d71676f76a26a9a3009b4ce41715f76a6be982fa04b7d870d",
+      "upstream_sha256": "sha256:ecb40c4da5e3732cdf9868120680dc243dc116dbf08d223be45a0745931d3863"
+    },
+    {
+      "path": "svg/models/hyvideo/custom_models.py",
+      "status": "byte-identical",
+      "task_sha256": "sha256:f7902aba7117176642fad100e20cf965259e8cd30e065d74da14c37d33e95a08",
+      "upstream_sha256": "sha256:f7902aba7117176642fad100e20cf965259e8cd30e065d74da14c37d33e95a08"
+    },
+    {
+      "path": "svg/models/hyvideo/inference.py",
+      "status": "byte-identical",
+      "task_sha256": "sha256:4047d38b410092eb1a3faa0de25cf8af429a8697e0df8a0df02faf491450da77",
+      "upstream_sha256": "sha256:4047d38b410092eb1a3faa0de25cf8af429a8697e0df8a0df02faf491450da77"
+    },
+    {
+      "path": "svg/models/hyvideo/placement.py",
+      "status": "byte-identical",
+      "task_sha256": "sha256:10559c9b36268f64ddde3d4a8a1cd5e2a9b516a79b8adb2b11fc4271255c2603",
+      "upstream_sha256": "sha256:10559c9b36268f64ddde3d4a8a1cd5e2a9b516a79b8adb2b11fc4271255c2603"
+    },
+    {
+      "path": "svg/models/hyvideo/utils.py",
+      "status": "byte-identical",
+      "task_sha256": "sha256:42a63da31a0abfceefd35c1aacf3150c2b9db268bf0f1311997b37c0a56c4dae",
+      "upstream_sha256": "sha256:42a63da31a0abfceefd35c1aacf3150c2b9db268bf0f1311997b37c0a56c4dae"
+    }
+  ]
+}

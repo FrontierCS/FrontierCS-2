@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
 import task_selection
 from task_selection import attested_agent_gpu_interfaces, requirements, select_tasks
+import task_layers  # noqa: E402
 
 SPARSE = "sparse_video_attention_policy"
 
@@ -23,7 +24,7 @@ SPARSE = "sparse_video_attention_policy"
 class SelectionTests(unittest.TestCase):
     def setUp(self):
         self.config = deploy.load_json(ROOT / "config/site.example.json")
-        self.catalog = deploy.load_json(deploy.TASK_CATALOG_PATH)
+        self.catalog = task_layers.load_catalog()
         self.definitions = copy.deepcopy(deploy.TASK_DEFINITIONS)
 
     def test_cpu_selection_preserves_raw_catalog_order_and_objects(self):
@@ -227,7 +228,6 @@ class SelectionTests(unittest.TestCase):
         receipt = deploy.load_json(ROOT / "config/kimi-candidate-image.json")
         mutations = [
             ("source", "commit", "0" * 40),
-            ("source", "repository", "https://example.invalid/other"),
             ("source", "dockerfile_sha256", "sha256:" + "0" * 64),
             ("registry_readback", "image_digest", "sha256:" + "0" * 64),
             ("registry_readback", "files", {}),

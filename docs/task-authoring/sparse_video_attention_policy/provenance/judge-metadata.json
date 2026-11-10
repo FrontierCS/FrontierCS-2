@@ -28,7 +28,6 @@
     "risks": []
   },
   "artifact": {
-    "repo_url": "private authoring repository",
     "commit": "6c0d0d871433147cdea2f2e3457c6e7fb1e47600",
     "path": "tasks/problems/sparse_video_attention_policy",
     "cloned_at": null,
@@ -48,7 +47,7 @@
   },
   "host": null,
   "publication": {
-    "task_version_id": "taskver-redacted-c6b42549",
+    "task_version_id": "taskver_01M1HD5VAZR8W7XWF9Y7939S03",
     "definition_digest": "sha256:bd488674f9c4cdeccd8d54076f0027288ba3414b713ae695ec8b40616b996f51",
     "published_at": "2026-09-02T15:54:17.087Z"
   },

@@ -8,8 +8,8 @@ import sys
 
 import pytest
 
-TASK = (Path(__file__).resolve().parents[3] / 'tasks'
-        / 'problems/Bioinformatics/edlib_exact_alignment')
+TASK = (Path(__file__).resolve().parents[3] / 'tasks/problems'
+        / 'Bioinformatics/edlib_exact_alignment')
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'scripts'))
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tasks/shared/lib'))  # isolate, as in the Verifier base
 import task_manifest  # noqa: E402

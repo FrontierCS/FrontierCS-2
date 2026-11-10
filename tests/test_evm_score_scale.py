@@ -66,20 +66,20 @@ class EvmScoreScaleTests(unittest.TestCase):
 
     def test_recorded_finals_no_longer_clip(self):
         bounded = self.e._bounded_score
-        # Unbounded final scores recorded on the uniform-metrics version: three were clipped to 100.
-        recorded = {"a": 107.74601365893348, "b": 106.44073372448088,
-                    "c": 102.54355766242458, "d": 83.70437128299251,
-                    "e": 63.860724954667035}
+        # Unbounded finals recorded on the uniform-metrics version: three were clipped to 100.
+        recorded = {"gemini-agy": 107.74601365893348, "carbon-g": 106.44073372448088,
+                    "fable51": 102.54355766242458, "k31": 83.70437128299251,
+                    "terra": 63.860724954667035}
         scores = {name: bounded(value) for name, value in recorded.items()}
-        self.assertAlmostEqual(scores["a"], 65.97, places=2)
-        self.assertAlmostEqual(scores["b"], 65.42, places=2)
-        self.assertAlmostEqual(scores["c"], 63.75, places=2)
+        self.assertAlmostEqual(scores["gemini-agy"], 65.97, places=2)
+        self.assertAlmostEqual(scores["carbon-g"], 65.42, places=2)
+        self.assertAlmostEqual(scores["fable51"], 63.75, places=2)
         self.assertEqual(sorted(scores, key=scores.get), sorted(recorded, key=recorded.get))
         self.assertTrue(all(score < 70 for score in scores.values()))
         # The platform's reference anchor (median 74.76 unbounded) sits at 50.
         self.assertAlmostEqual(bounded(74.76154275002324), 50.0, delta=0.05)
         # A further doubling of the best recorded quality still earns about 11 points.
-        self.assertGreater(bounded(107.746 + 100 * math.log10(2)) - scores["a"], 10)
+        self.assertGreater(bounded(107.746 + 100 * math.log10(2)) - scores["gemini-agy"], 10)
 
     def test_gate_failure_reports_the_mapped_reference_score(self):
         self.e._REFERENCE_ANCHOR[True] = 74.76

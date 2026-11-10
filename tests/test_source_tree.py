@@ -1,5 +1,5 @@
-"""Source identity and build contexts use only git-tracked files (scripts/source_tree.py,
-decision 54): an ignored __pycache__ or an untracked scratch file under a task fails instead of
+"""Source identity and build contexts use only git-tracked files (scripts/source_tree.py):
+an ignored __pycache__ or an untracked scratch file under a task fails instead of
 changing the image tag or reaching an image, and a worktree computes the identity a clean
 checkout computes."""
 

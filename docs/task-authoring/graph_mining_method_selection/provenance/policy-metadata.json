@@ -15,7 +15,7 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 100,
-      "beat_spec_sha256": "sha256:1d6415d43978f8e28ae91cb130011fbf02be511fea60795bfc2654bf3254b035",
+      "beat_spec_sha256": "sha256:6ff41bdfbc9f2c27e77b9cfca936de477776ca97b845afa012a206d2a04f7d19",
       "solver_visible_metrics": [
         "geomean_selected_runtime_seconds",
         "max_selected_relative_error",

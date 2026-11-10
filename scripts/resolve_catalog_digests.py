@@ -22,6 +22,7 @@ from urllib import parse, request
 import frontier_deploy as deploy
 from preview.images import linux_amd64_children
 from render_task_definition import json_text
+import task_layers
 
 ACCEPT = ", ".join(
     (
@@ -229,9 +230,17 @@ def task_images(task: dict) -> list[tuple[dict, bool]]:
 
 
 def resolve_files(
-    catalog_path: Path, task_name: str | None = None, *, definitions=None, root=None
+    catalog_path: Path | None = None, task_name: str | None = None, *, definitions=None,
+    root=None
 ) -> None:
-    catalog = deploy.load_json(catalog_path)
+    """Resolve the pins of the catalog at `catalog_path`, or of every task layer's catalog, and
+    rewrite the file or files."""
+    documents = (
+        [(catalog_path, deploy.load_json(catalog_path))]
+        if catalog_path is not None
+        else task_layers.catalog_documents(root or deploy.REPOSITORY_ROOT)
+    )
+    catalog = task_layers.merge_catalogs(documents)
     deploy.validate_task_catalog(catalog, definitions=definitions, root=root)
     if task_name is not None and task_name not in {
         task["name"] for task in catalog["tasks"]
@@ -250,12 +259,15 @@ def resolve_files(
     )
     if any(image["digest"] == deploy.TASK_PLACEHOLDER_DIGEST for image, _ in images):
         raise ValueError("resolver returned a placeholder")
-    deploy.atomic_write(catalog_path, json_text(catalog).encode())
+    for path, document in documents:
+        deploy.atomic_write(path, json_text(document).encode())
 
 
 def main(arguments: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--catalog", type=Path, default=deploy.TASK_CATALOG_PATH)
+    parser.add_argument(
+        "--catalog", type=Path, help="a catalog file in place of the repository's task layers"
+    )
     parser.add_argument(
         "--task", help="resolve only this task; leave all other pins unchanged"
     )

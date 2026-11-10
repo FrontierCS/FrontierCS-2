@@ -32,7 +32,9 @@ from urllib.parse import quote
 
 import build_task_images as builder
 import frontier_deploy as deploy
+import image_namespace
 import render_task_definition as renderer
+import task_layers
 import task_manifest
 import resolve_catalog_digests as resolver
 from native_datasets import dataset_extension, dataset_path
@@ -43,15 +45,11 @@ from preview.publication import baseline_from_result_json, file_sha
 from task_selection import requirements
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-PROBLEMS = Path("tasks/problems")
 LAUNCHER = Path(
     "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
 )
 MAX_FILE_BYTES = 512 * 1024 * 1024
 PLACEHOLDER = deploy.TASK_PLACEHOLDER_DIGEST
-# Docker Hub namespace for built/published task images. The default is the
-# namespace that hosts the published, digest-pinned release images.
-DEFAULT_IMAGE_NAMESPACE = os.environ.get("FRONTIER_IMAGE_NAMESPACE", "joyemang33")
 ROLE_KEYS = {
     "agent": "agent_image",
     "verifier": "verifier_image",
@@ -193,11 +191,9 @@ def catalog_entry(
     root: Path, definition: dict, namespace: str, payload: Path | None
 ) -> dict:
     sidecars = builder.sidecar_roles(definition)
-    names = builder.image_names(
-        "docker.io/" + namespace, root.name, definition["image_tag"], sidecars
-    )
+    names = builder.image_names(namespace, root.name, definition["image_tag"], sidecars)
     names["reference"] = (
-        f"docker.io/{namespace}/fcs2-task-{root.name}-reference:{definition['image_tag']}"
+        f"{namespace}/fcs2-task-{root.name}-reference:{definition['image_tag']}"
     )
     entry = {
         "name": root.name,
@@ -435,52 +431,6 @@ def tree_differences(source: Path, target: Path) -> list[str]:
     ]
 
 
-def row_spans(text: str) -> dict[str, tuple[int, int]]:
-    decoder, spans = json.JSONDecoder(), {}
-    pos = text.index("{") + 1
-    while True:
-        while text[pos].isspace() or text[pos] == ",":
-            pos += 1
-        if text[pos] == "}":
-            return spans
-        key, pos = decoder.raw_decode(text, pos)
-        while text[pos].isspace() or text[pos] == ":":
-            pos += 1
-        start = pos
-        _, pos = decoder.raw_decode(text, pos)
-        spans[key] = (start, pos)
-
-
-def definitions_text(original: str, name: str, definition: dict) -> str:
-    spans = row_spans(original)
-    value = json.dumps(
-        definition, indent=2, ensure_ascii=False, sort_keys=True
-    ).replace("\n", "\n  ")
-    if name in spans:
-        start, end = spans[name]
-        result = original[:start] + value + original[end:]
-    else:
-        pos = original.rfind("}")
-        prefix = original[:pos].rstrip()
-        result = (
-            prefix
-            + ("," if spans else "")
-            + "\n  "
-            + json.dumps(name)
-            + ": "
-            + value
-            + "\n"
-            + original[pos:]
-        )
-    after = row_spans(result)
-    for key, (start, end) in spans.items():
-        if key != name:
-            left, right = after[key]
-            if original[start:end] != result[left:right]:
-                raise ValueError(f"unrelated definition row changed: {key}")
-    return result
-
-
 def verify_definitions(
     catalog: dict, definitions: dict, *, root: Path | None = None
 ) -> None:
@@ -489,7 +439,7 @@ def verify_definitions(
     # with no rewrite of unrelated rows or their whitespace.
     rendered = {
         task["name"]: renderer.render(
-            renderer.problem_directory(root / PROBLEMS, task["name"]).resolve(),
+            renderer.task_directory(task["name"], root).resolve(),
             task["name"],
         )
         for task in sorted(catalog["tasks"], key=lambda task: task["name"])
@@ -573,17 +523,17 @@ def validate_replacement_catalog(
         )
         if (
             candidate["name"] != "codex"
-            or image["repository"] != "docker.io/joyemang33/fcs2-codex-overlay"
+            or image["repository"] != image_namespace.repository("fcs2-codex-overlay")
             or not publication.TASK_IMAGE_TAG_RE.fullmatch(image["tag"])
         ):
             raise ValueError("invalid task catalog candidate")
 
 
 def validate_staged(root: Path, name: str, identity: str) -> None:
-    catalog = deploy.load_json(root / "config/task-catalog.json")
-    definitions = deploy.load_json(root / "config/task-definitions.json")
+    catalog = task_layers.load_catalog(root=root)
+    definitions = task_layers.load_definitions(root)
     if (
-        renderer.source_sha256(renderer.problem_directory(root / PROBLEMS, name))
+        renderer.source_sha256(renderer.task_directory(name, root))
         != identity
     ):
         raise ValueError("copied tree identity differs from source")
@@ -594,15 +544,13 @@ def validate_staged(root: Path, name: str, identity: str) -> None:
 
 
 def install_staged(staged: Path, workspace: Path, name: str, record: dict) -> None:
-    target = renderer.problem_directory(REPOSITORY_ROOT / PROBLEMS, name)
+    target = REPOSITORY_ROOT / renderer.task_directory(name, staged).relative_to(staged)
     previous = workspace / "previous"
     older_previous = staged / "older-previous"
     receipt = REPOSITORY_ROOT / ".generated/import" / (name + ".json")
     contents = {
-        REPOSITORY_ROOT / "config" / filename: (
-            staged / "config" / filename
-        ).read_bytes()
-        for filename in ("task-definitions.json", "task-catalog.json")
+        REPOSITORY_ROOT / relative: (staged / relative).read_bytes()
+        for relative in layer_paths(staged)
     }
     contents[receipt] = renderer.json_text(record).encode()
     originals = {
@@ -617,7 +565,7 @@ def install_staged(staged: Path, workspace: Path, name: str, record: dict) -> No
         if target.exists():
             target.rename(previous)
             moved_target = True
-        renderer.problem_directory(staged / PROBLEMS, name).rename(target)
+        renderer.task_directory(name, staged).rename(target)
         installed = True
         for path, body in contents.items():
             atomic_write(path, body)
@@ -673,6 +621,39 @@ def run_checks() -> None:
         subprocess.run(command, cwd=REPOSITORY_ROOT, env=environment, check=True)
 
 
+def task_target(name: str, layer: Path | None = None) -> Path:
+    """Where task `name` is installed: its directory in the task layers, or for a new task a
+    directory in the problems of the layer at `layer` (the shared tree when None)."""
+    found = [path for item in task_layers.layers(REPOSITORY_ROOT) if item.problems.is_dir()
+             for path in [renderer.problem_directory(item.problems, name)] if path.is_dir()]
+    if len(found) > 1:
+        raise ValueError(f"task {name} has directories in two layers: {found}")
+    if found:
+        return found[0]
+    targets = [item for item in task_layers.layers(REPOSITORY_ROOT)
+               if item.root == (layer or REPOSITORY_ROOT).resolve()]
+    if len(targets) != 1:
+        raise ValueError(f"{layer} is not a task layer")
+    return targets[0].problems / name
+
+
+def layer_paths(root: Path) -> list[Path]:
+    """The catalog and definitions files of `root`'s task layers, relative to it."""
+    return [path.relative_to(root.resolve()) for layer in task_layers.layers(root)
+            for path in (layer.definitions, layer.catalog)]
+
+
+def stage_layers(staged: Path, catalog: dict, definitions: dict,
+                 new_layer: Path | None = None) -> None:
+    """Write the layers' catalog and definitions files, holding `catalog` and `definitions`,
+    into the staged copy."""
+    for relative, body in task_layers.layer_files(
+        catalog, definitions, new_layer, REPOSITORY_ROOT
+    ).items():
+        (staged / relative).parent.mkdir(parents=True, exist_ok=True)
+        (staged / relative).write_text(body)
+
+
 def changed_files(paths: list[Path]) -> None:
     print("Changed files:")
     for path in paths:
@@ -687,10 +668,8 @@ def changed_files(paths: list[Path]) -> None:
 def install_batch(staged: Path, names: list[str], records: dict) -> None:
     """Install the complete validated batch, restoring every member on failure."""
     contents = {
-        REPOSITORY_ROOT / "config" / filename: (
-            staged / "config" / filename
-        ).read_bytes()
-        for filename in ("task-definitions.json", "task-catalog.json")
+        REPOSITORY_ROOT / relative: (staged / relative).read_bytes()
+        for relative in layer_paths(staged)
     }
     for name in names:
         contents[REPOSITORY_ROOT / ".generated/import" / (name + ".json")] = (
@@ -702,12 +681,12 @@ def install_batch(staged: Path, names: list[str], records: dict) -> None:
     moved = []
     try:
         for name in names:
-            target = renderer.problem_directory(REPOSITORY_ROOT / PROBLEMS, name)
+            target = renderer.task_directory(name, REPOSITORY_ROOT)
             previous = staged / "previous" / name
             previous.parent.mkdir(parents=True, exist_ok=True)
             target.rename(previous)
             moved.append((target, previous))
-            renderer.problem_directory(staged / PROBLEMS, name).rename(target)
+            renderer.task_directory(name, staged).rename(target)
         for path, body in contents.items():
             path.parent.mkdir(parents=True, exist_ok=True)
             atomic_write(path, body)
@@ -751,10 +730,8 @@ def batch_main(arguments) -> int:
     members = request["exports"]
     if not isinstance(members, list) or not 2 <= len(members) <= 16:
         raise ValueError("batch requires between two and sixteen explicit exports")
-    catalog = deploy.load_json(REPOSITORY_ROOT / "config/task-catalog.json")
-    definitions_path = REPOSITORY_ROOT / "config/task-definitions.json"
-    definitions = deploy.load_json(definitions_path)
-    definition_body = definitions_path.read_text()
+    catalog = task_layers.load_catalog(root=REPOSITORY_ROOT)
+    definitions = task_layers.load_definitions(REPOSITORY_ROOT)
     names, prepared, records = [], {}, {}
     for member in members:
         deploy.require_exact_keys(
@@ -776,7 +753,7 @@ def batch_main(arguments) -> int:
             raise ValueError(
                 "batch replacement requires one existing catalog task: " + name
             )
-        target = renderer.problem_directory(REPOSITORY_ROOT / PROBLEMS, name)
+        target = renderer.task_directory(name, REPOSITORY_ROOT)
         if source.resolve() == target.resolve() or manifest.resolve().is_relative_to(
             source.resolve()
         ):
@@ -792,16 +769,15 @@ def batch_main(arguments) -> int:
             manifest,
             name,
             definition["source"]["source_set_sha256"],
-            catalog_entry(source, definition, DEFAULT_IMAGE_NAMESPACE, payload),
+            catalog_entry(source, definition, image_namespace.namespace(), payload),
         )
         definitions[name] = definition
-        definition_body = definitions_text(definition_body, name, definition)
         catalog["tasks"][matches[0]] = entry
         intent = {
             "source_sha256": definition["source"]["source_set_sha256"],
             "images": "published",
             "publish": False,
-            "image_namespace": DEFAULT_IMAGE_NAMESPACE,
+            "image_namespace": image_namespace.namespace(),
             "no_reference": member["no_reference"],
             "baseline_comparable": None,
             "payload_sha256": file_sha(payload) if payload else None,
@@ -815,7 +791,7 @@ def batch_main(arguments) -> int:
         prepared[name] = (source, payload, entry)
         names.append(name)
     destinations = [
-        renderer.problem_directory(REPOSITORY_ROOT / PROBLEMS, name).resolve()
+        renderer.task_directory(name, REPOSITORY_ROOT).resolve()
         for name in names
     ]
     for source, _, _ in prepared.values():
@@ -833,7 +809,7 @@ def batch_main(arguments) -> int:
         staged = Path(directory)
         for task in catalog["tasks"]:
             name = task["name"]
-            target = renderer.problem_directory(REPOSITORY_ROOT / PROBLEMS, name)
+            target = renderer.task_directory(name, REPOSITORY_ROOT)
             staged_task = staged / target.relative_to(REPOSITORY_ROOT)
             staged_task.parent.mkdir(parents=True, exist_ok=True)
             if name in prepared:
@@ -842,13 +818,11 @@ def batch_main(arguments) -> int:
                 staged_task.symlink_to(target)
         (staged / LAUNCHER).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(REPOSITORY_ROOT / LAUNCHER, staged / LAUNCHER)
-        (staged / "config").mkdir()
-        (staged / "config/task-definitions.json").write_text(definition_body)
-        (staged / "config/task-catalog.json").write_text(renderer.json_text(catalog))
+        stage_layers(staged, catalog, definitions)
         for name in names:
             source, payload, entry = prepared[name]
             validate_staged(staged, name, records[name]["intent"]["source_sha256"])
-            staged_task = renderer.problem_directory(staged / PROBLEMS, name)
+            staged_task = renderer.task_directory(name, staged)
             verify_images(
                 entry,
                 staged_task,
@@ -858,7 +832,7 @@ def batch_main(arguments) -> int:
             print("Validated complete batch without installation: " + ", ".join(names))
             return 0
         install_batch(staged, names, records)
-    changed_files([REPOSITORY_ROOT / "config/task-catalog.json", definitions_path])
+    changed_files([REPOSITORY_ROOT / path for path in layer_paths(REPOSITORY_ROOT)])
     return 0
 
 
@@ -873,7 +847,12 @@ def main(arguments=None) -> int:
         "--images", choices=("auto", "published", "build"), default="auto"
     )
     parser.add_argument("--publish", action="store_true")
-    parser.add_argument("--image-namespace", default=DEFAULT_IMAGE_NAMESPACE)
+    parser.add_argument(
+        "--image-namespace",
+        default=image_namespace.namespace(),
+        help="docker.io/<namespace> to name and publish the images under "
+        "(default: config/image-namespace.json)",
+    )
     baseline = parser.add_mutually_exclusive_group()
     baseline.add_argument(
         "--measured-baseline",
@@ -890,6 +869,10 @@ def main(arguments=None) -> int:
     mode.add_argument("--plan", action="store_true")
     mode.add_argument("--check", action="store_true")
     parser.add_argument("--replace", action="store_true")
+    parser.add_argument(
+        "--layer", type=Path,
+        help="the task layer directory a new task joins (default: the shared tree)",
+    )
     reference = parser.add_mutually_exclusive_group()
     reference.add_argument("--no-reference", action="store_true")
     reference.add_argument("--reference-payload", type=Path)
@@ -899,8 +882,10 @@ def main(arguments=None) -> int:
         and not options.baseline_comparable.strip()
     ):
         raise ValueError("--baseline-comparable requires a nonempty operator note")
-    if re.fullmatch(r"[a-z0-9]+(?:[._-][a-z0-9]+)*", options.image_namespace) is None:
-        raise ValueError("image namespace must be a bounded Docker Hub namespace")
+    # Publication and verification speak the Docker Hub registry API.
+    namespace = r"docker\.io/[a-z0-9]+(?:[._-][a-z0-9]+)*"
+    if re.fullmatch(namespace, options.image_namespace) is None:
+        raise ValueError("image namespace must be docker.io/<bounded Docker Hub namespace>")
     image_mode = (
         ("published" if options.published_images else "build")
         if options.images == "auto"
@@ -915,12 +900,10 @@ def main(arguments=None) -> int:
     source = options.export_dir.absolute()
     definition = validate_export(source)
     name, identity = source.name, definition["source"]["source_set_sha256"]
-    target = renderer.problem_directory(REPOSITORY_ROOT / PROBLEMS, name)
-    catalog_path = REPOSITORY_ROOT / "config/task-catalog.json"
-    definitions_path = REPOSITORY_ROOT / "config/task-definitions.json"
+    target = task_target(name, options.layer)
     receipt_path = REPOSITORY_ROOT / ".generated/import" / (name + ".json")
-    catalog = deploy.load_json(catalog_path)
-    definitions = deploy.load_json(definitions_path)
+    catalog = task_layers.load_catalog(root=REPOSITORY_ROOT)
+    definitions = task_layers.load_definitions(REPOSITORY_ROOT)
     catalog_validation_error = None
     try:
         deploy.validate_task_catalog(
@@ -1109,7 +1092,6 @@ def main(arguments=None) -> int:
     if options.plan:
         print("\n".join(actions))
         return 0
-    definition_body = definitions_text(definitions_path.read_text(), name, definition)
     definitions[name] = definition
     if existing is None:
         catalog["tasks"].append(entry)
@@ -1125,18 +1107,13 @@ def main(arguments=None) -> int:
         # Unchanged tasks remain read-only inputs; all changed files are copies.
         for task in catalog["tasks"]:
             if task["name"] != name:
-                peer = renderer.problem_directory(
-                    REPOSITORY_ROOT / PROBLEMS, task["name"]
-                )
+                peer = renderer.task_directory(task["name"], REPOSITORY_ROOT)
                 staged_peer = staged / peer.relative_to(REPOSITORY_ROOT)
                 staged_peer.parent.mkdir(parents=True, exist_ok=True)
                 staged_peer.symlink_to(peer)
         (staged / LAUNCHER).parent.mkdir(parents=True)
         shutil.copyfile(REPOSITORY_ROOT / LAUNCHER, staged / LAUNCHER)
-        (staged / "config").mkdir()
-        (staged / "config/task-definitions.json").write_text(definition_body)
-        staged_catalog = staged / "config/task-catalog.json"
-        staged_catalog.write_text(renderer.json_text(catalog))
+        stage_layers(staged, catalog, definitions, options.layer)
         staged_payload = None
         if payload is not None:
             if payload.resolve().is_relative_to(source.resolve()):
@@ -1169,10 +1146,8 @@ def main(arguments=None) -> int:
                 )
             if options.publish:
                 publish_images(entry)
-                resolver.resolve_files(
-                    staged_catalog, name, definitions=definitions, root=staged
-                )
-                catalog = deploy.load_json(staged_catalog)
+                resolver.resolve_files(None, name, definitions=definitions, root=staged)
+                catalog = task_layers.load_catalog(root=staged)
                 entry = next(task for task in catalog["tasks"] if task["name"] == name)
                 verify_images(entry, staged_tree, staged_payload)
         # Validate the final bytes that will be installed, including resolved pins.
@@ -1185,7 +1160,8 @@ def main(arguments=None) -> int:
         if build_receipt is not None:
             record["build"] = build_receipt
         install_staged(staged, workspace, name, record)
-    changed_files([target, definitions_path, catalog_path, receipt_path])
+    changed_files([target, *(REPOSITORY_ROOT / path for path in layer_paths(REPOSITORY_ROOT)),
+                   receipt_path])
     return 0
 
 

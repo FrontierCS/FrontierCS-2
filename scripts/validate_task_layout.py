@@ -11,6 +11,7 @@ import argparse
 import ast
 import copy
 import hashlib
+import importlib.util
 import json
 import math
 import re
@@ -20,12 +21,12 @@ import sys
 import tomllib
 from pathlib import Path
 
-from native_datasets import check_tar_dataset, dataset_hashes, dataset_path
+import image_namespace
+import task_layers
 import task_manifest
+from native_datasets import check_tar_dataset, dataset_hashes, dataset_path
 
-DEFAULT_PROBLEMS_ROOT = (
-    Path(__file__).resolve().parents[1] / "tasks/problems"
-)
+DEFAULT_PROBLEMS_ROOT = Path(__file__).resolve().parents[1] / "tasks/problems"
 # Reviewed public-copy exceptions, keyed by (task, image role). None are needed
 # by the current catalog; the mechanism stays for imported tasks.
 PUBLIC_COPY_REVIEWS: dict[tuple[str, str], Path] = {}
@@ -35,6 +36,11 @@ FEEDBACK_STATEMENT_REVIEWS = {
         / "reference/ckks-feedback-statement-reviewed-v1.json"
     ),
 }
+# Every workload measures and gates every declared metric. These tasks still declare
+# workloads that carry only part of the metric set and are reported as
+# warnings until their own fixes land. Any other such task fails, and an entry
+# must be removed once its task complies.
+NONUNIFORM_WORKLOAD_METRICS_EXEMPT: dict[str, str] = {}
 
 
 class LayoutFailure(ValueError):
@@ -362,8 +368,8 @@ def check_native_dockerfile(root: Path, role: str) -> None:
             # image named by full repository and digest (never a tag); an Agent recipe never.
             # An Agent GPU recipe may carry over public Agent-side data from the task's own
             # published Agent images (never a Verifier image), pinned by digest.
-            own_agent = re.compile(rf"docker\.io/joyemang33/fcs2-task-{re.escape(root.name)}"
-                                   r"-agent(?:-gpu)?@sha256:[0-9a-f]{64}")
+            own_agent = re.compile(re.escape(image_namespace.repository(f"fcs2-task-{root.name}"))
+                                   + r"-agent(?:-gpu)?@sha256:[0-9a-f]{64}")
             # A service or test-sandbox recipe (judge-side only) may also copy from its own
             # earlier stages.
             require(stage in tools_stages
@@ -652,6 +658,79 @@ def check_beat_spec_schema(spec: dict, evaluation: dict) -> tuple[list[str], lis
     return names_by_field["metrics"], visible
 
 
+def declared_workload_metrics(spec: dict, names: list[str]) -> dict[str, set[str]]:
+    """Map each workload row or group the beat spec declares to its metrics.
+
+    Rows are listed under any top-level key ending in "workloads". A row carries
+    its own "metrics" when given, else the spec's matching "<prefix>metrics"
+    list (for example final_only_workloads with final_only_metrics), else every
+    declared metric.
+    """
+    declared = {}
+    groups = spec.get("workload_groups")
+    if groups is not None:
+        require(isinstance(groups, dict) and bool(groups), "invalid workload groups")
+        for group, record in groups.items():
+            require(
+                isinstance(record, dict) and isinstance(record.get("metrics"), list),
+                "invalid workload group metrics",
+            )
+            declared[f"workload_groups.{group}"] = set(record["metrics"])
+    for key, rows in spec.items():
+        if not key.endswith("workloads"):
+            continue
+        require(isinstance(rows, list), f"beat_spec.json {key} must be a list")
+        prefix = key[: -len("workloads")]
+        shared = spec.get(f"{prefix}metrics") if prefix else None
+        for index, row in enumerate(rows):
+            if isinstance(row, str):
+                row = {"name": row}
+            require(
+                isinstance(row, dict) and _nonempty(row.get("name")),
+                f"beat_spec.json {key}[{index}] needs a workload name",
+            )
+            carried = row.get("metrics", shared)
+            if carried is None:
+                carried = names
+            require(
+                isinstance(carried, (list, dict))
+                and all(isinstance(name, str) for name in carried),
+                f"beat_spec.json {key}[{index}] has invalid metrics",
+            )
+            declared[f"{key}[{row['name']}]"] = set(carried)
+    return declared
+
+
+def check_uniform_workload_metrics(root: Path, spec: dict, names: list[str]) -> None:
+    """Every workload the beat spec declares measures every declared metric."""
+    expected = set(names)
+    problems = []
+    if "workload_groups" in spec:
+        problems.append("workload_groups is retired")
+    for row, carried in declared_workload_metrics(spec, names).items():
+        if carried != expected:
+            detail = []
+            if expected - carried:
+                detail.append(f"lacks {sorted(expected - carried)}")
+            if carried - expected:
+                detail.append(f"names undeclared {sorted(carried - expected)}")
+            problems.append(f"{row} {' and '.join(detail)}")
+    exemption = NONUNIFORM_WORKLOAD_METRICS_EXEMPT.get(root.name)
+    if not problems:
+        require(
+            exemption is None,
+            f"remove the stale exemption for {root.name}: "
+            "every declared workload now measures every metric",
+        )
+        return
+    shown = "; ".join(problems[:3])
+    if len(problems) > 3:
+        shown += f"; and {len(problems) - 3} more"
+    message = f"every workload must measure every declared metric: {shown}"
+    require(exemption is not None, message)
+    warn(root, f"{message} (exempt: {exemption})")
+
+
 def check_beat_spec_feedback(
     root: Path, spec: dict, names: list[str], visible: list[str]
 ) -> None:
@@ -686,10 +765,16 @@ def check_beat_spec_feedback(
             "beat_spec_path": root / "judge/beat_spec.json",
             "configured_visible": visible,
         }
-        # Grouped tasks measure separate metric subsets at different granularities.
         totals = {name: 2 for name in names}
         groups = spec.get("workload_groups")
         if groups is not None:
+            # Retired layout, probed only for an exempt task whose shipped
+            # helper still requires grouped rows.
+            require(
+                root.name in NONUNIFORM_WORKLOAD_METRICS_EXEMPT,
+                "beat_spec.json workload_groups is retired: every workload "
+                "must measure every declared metric",
+            )
             require(isinstance(groups, dict) and bool(groups), "invalid workload groups")
             rows = []
             totals = {}
@@ -748,6 +833,10 @@ def check_beat_spec_feedback(
             "undeclared_probe_metric"
         ] = True
         invalid_payloads.append((wrong_metric, "undeclared row metric"))
+        if root.name not in NONUNIFORM_WORKLOAD_METRICS_EXEMPT:
+            partial = copy.deepcopy(values)
+            partial["beat_spec_workload_passes"][0]["metrics"].pop(names[0])
+            invalid_payloads.append((partial, "workload row missing a declared metric"))
         if visible:
             identity = copy.deepcopy(values)
             identity[visible[0]] = {"nested": [{"private-layout-probe-0": 1.0}]}
@@ -1022,12 +1111,37 @@ def check_shared_feedback(helper: Path, visible: list[str]) -> None:
         raise LayoutFailure(f"shared feedback helper contract failed: {error}") from error
 
 
+def check_native_contract(root: Path, evaluation: dict) -> None:
+    """A policy.json task without judge/beat_spec.json declares its own contract: a
+    native_contract.py at its root whose check_native_contract(root, evaluation) raises
+    ValueError when the task breaks it."""
+    contract = root / "native_contract.py"
+    require(contract.is_file() and not contract.is_symlink(),
+            "a policy.json task without judge/beat_spec.json needs native_contract.py")
+    spec = importlib.util.spec_from_file_location(f"native_contract_{root.name}", contract)
+    module = importlib.util.module_from_spec(spec)
+    dont_write = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = dont_write
+    try:
+        module.check_native_contract(root, evaluation)
+    except ValueError as error:
+        raise LayoutFailure(str(error)) from error
+
+
 def check_beat_spec(root: Path, evaluation: dict) -> None:
     if task_manifest.is_native(root):
         check_task_feedback(root, evaluation)
         return
+    if not (root / "judge/beat_spec.json").exists():
+        check_native_contract(root, evaluation)
+        return
     spec = document(root / "judge/beat_spec.json")
     names, visible = check_beat_spec_schema(spec, evaluation)
+    check_uniform_workload_metrics(root, spec, names)
     evaluator = regular(root / "judge/evaluator.py")
     try:
         tree = ast.parse(evaluator.read_text(), filename=str(evaluator))
@@ -1237,7 +1351,7 @@ def check_ssh_session_budgets(policy: dict) -> None:
 
 SIDECAR_NAME_RE = re.compile(r"(?!main$)[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?")
 SIDECAR_PHASES = {"agent": "agent", "train": "verifier", "eval": "verifier"}
-MAX_SIDECARS = 250  # Modal's concurrent-sidecar cap per Sandbox (measured)
+MAX_SIDECARS = 250  # Modal's concurrent-sidecar cap per Sandbox (measured 2026-10-12)
 MAX_SIDECAR_ARG_BYTES = 32 * 1024
 # Modal admits sidecars against the parent reservation at this per-container
 # floor; the provider default reservation therefore allows four sidecars.
@@ -1598,7 +1712,10 @@ def check_shared_from(ref: str, root: Path = task_manifest.REPO) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--problems-root", type=Path, default=DEFAULT_PROBLEMS_ROOT)
+    parser.add_argument(
+        "--problems-root", type=Path, action="append",
+        help="a problems directory to check (default: every task layer's)",
+    )
     parser.add_argument("--shared-from", metavar="REF",
                         help="also require tasks/shared to equal REF's (e.g. origin/main)")
     options = parser.parse_args()
@@ -1610,7 +1727,10 @@ def main() -> int:
             failures += 1
             print(f"FAIL tasks/shared: {error}", file=sys.stderr)
     tasks = []
-    for path in sorted(options.problems_root.iterdir()):
+    roots = options.problems_root or [
+        layer.problems for layer in task_layers.layers() if layer.problems.is_dir()
+    ]
+    for path in sorted(path for root in roots for path in root.iterdir()):
         if not path.is_dir():
             continue
         if not task_manifest.is_task_dir(path) and any(

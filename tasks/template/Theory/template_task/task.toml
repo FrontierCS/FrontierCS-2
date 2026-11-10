@@ -12,7 +12,7 @@
 schema = "frontier.task/v1"
 id = "template_task"                 # must equal the directory name; [a-z0-9_]
 display_name = "Count Primes (template)"
-version = "r001"                     # bump on any change that alters judging
+version = "r002"                     # bump on any change that alters judging
 
 # The Agent sandbox (the solver's machine).
 [agent]
@@ -35,16 +35,21 @@ max_train_wall_seconds = 12000       # cumulative Verifier time spent on train
 eval_timeout_seconds = 600           # one evaluation (train or final)
 
 # The answer: a git diff of repo/, written by make_submission.sh as payload/solution.patch.
+# allowed_paths are repo-relative files, directories ("dir/", new files included) or globs
+# ("pkg/**/*.py"); deny_paths win over them. A directory needs max_changed_files: the default
+# (50) only fits a list of single files, and the statement tells the solver the same limit.
 [submission]
 max_bytes = 262144                   # the submitted tar; also the patch cap unless max_patch_bytes
-allowed_paths = ["src/primes.c"]     # repo-relative files (or "dir/") the patch may touch
+allowed_paths = ["src/"]             # every file below repo/src/, new .c files included
+max_changed_files = 8
 
 # What a train result returns to the Agent besides score_unbounded, beat_spec_progress and
 # rejected: the evaluator metrics named here, each with the one sentence the generated README
-# shows for it, in display order. This task returns none (the default); a task that does writes
-#   [feedback]
-#   solved_count = "Distinct instances whose submitted answer passes every check."
-# Names are lower_snake_case and never private ("reference", "margin", "beats..." are refused).
+# shows for it, in display order. Each name is a literal in judge/evaluator.py, lower_snake_case
+# and never private ("reference", "margin", "beats..." are refused), and its value carries no
+# workload identity (a per-workload dict fails closed in the shared verifier).
+[feedback]
+wall_seconds_total = "Sum over the train workloads of the candidate's run time (the smallest of five runs), in seconds."
 
 # Overrides of tasks/shared/task-defaults.toml, only where a task needs them, e.g.
 #   [network.audit]                  # GPU tasks: SSH sessions per role
@@ -53,7 +58,9 @@ allowed_paths = ["src/primes.c"]     # repo-relative files (or "dir/") the patch
 #
 # Task-specific blocks, only when used (see TEMPLATE.md):
 #   [judge.config]                   merged into the generated config.yaml (judge-specific keys)
-#   [gpu.agent] / [gpu.verifier] / [accelerator]   GPU tasks, with docker/*-gpu.Dockerfile
+#   [gpu.agent] / [gpu.verifier] / [accelerator]   GPU tasks: copy tasks/template/MLSys/gpu_template_task
+#   [test_sandboxes.<name>]          machines beside the judge: copy
+#                                    "tasks/template/Machine Learning/sandbox_template_task"
 
 # What the task is based on, for readers: the public task page and tasks/metadata/<id>.yaml.
 # The platform and the judge never read it.

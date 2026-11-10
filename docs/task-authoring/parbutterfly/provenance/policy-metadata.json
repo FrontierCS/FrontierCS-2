@@ -3,13 +3,11 @@
     "accelerator": null,
     "conversion": {
       "historical_evidence_path": null,
-      "note": "No Smith generator, promotion, paper, or model-trial metadata exists in the source PR; unknown fields remain null.",
+      "note": "No Smith generator, promotion, paper, or model-trial metadata exists in the source; unknown fields remain null.",
       "original_metadata_path": null,
-      "scope": "Original-format to native transfer with T41 calibration of author BATCHS parallel branch, same-generator scale, four CPU workers, independent naive scoring and public-plus-hidden final replay",
+      "scope": "HYJ original-format to native transfer with user-approved T41 calibration of author BATCHS parallel branch, same-generator scale, four CPU workers, independent naive scoring and public-plus-hidden final replay",
       "source_commit": "b55ddd03f6b726235f03603b15b4f4c489d478bc",
-      "source_path": "original_format_problems/parbutterfly2",
-      "source_pull_request": 52,
-      "source_repository": "private authoring repository"
+      "source_path": "original_format_problems/parbutterfly2"
     },
     "datasets": {
       "eval": {

@@ -110,7 +110,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("(int(p.SBSize)*int(p.OffsetBits())+7)/8", source)
 
     def test_every_comparison_is_strict_without_allowance(self):
-        # One workload per experiment, judged on all five metrics.
+        # one workload per experiment, judged on all five metrics.
         self.assertEqual(self.gate.GATED_METRICS, tuple(row["name"] for row in self.spec["metrics"]))
         reference = self.result()
         equal = self.compare(self.result(), reference, [11] * 1000, [11] * 1000)
@@ -152,7 +152,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertFalse(hasattr(self.gate, "storage_cap"))
 
     def test_client_storage_includes_the_volume_phase_against_the_reference_growth(self):
-        # State that grows with every query is read up to the planned budget. The paired reference
+        # state that grows with every query is read up to the planned budget. The paired reference
         # run skips the volume phase; its storage there is its last reading before the phase plus the
         # reference client's own measured growth over the phase. Both points are compared.
         jitter, key = self.gate.STORAGE_JITTER_BYTES, "client_storage_bytes"
@@ -219,7 +219,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertGreater(self.gate.continuous_score(rows(small_bytes=196, large_bytes=1696)), base)
         self.assertLess(self.gate.continuous_score(rows(small_bytes=320, large_bytes=2048)), base)
         self.assertGreater(self.gate.continuous_score(rows(speed=2.0)), base)
-        # Client storage, gated, is scored too, with a fixed public scale (the hint export length).
+        # client storage, gated, is scored too, with a fixed public scale (the hint export length).
         self.assertGreater(self.gate.continuous_score(rows(storage=0.8)), base)
         self.assertLess(self.gate.continuous_score(rows(storage=1.2)), base)
         self.assertEqual(self.gate.score_scales(67108864)["storage"], 47054848.0)
@@ -273,7 +273,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertEqual(self.spec["beats_reference_aggregation"], {"kind": "conjunction"})
 
     def test_failure_rows_cover_every_gated_metric_once_per_experiment(self):
-        # One workload per experiment, each judged on every metric; no workload groups.
+        # one workload per experiment, each judged on every metric; no workload groups.
         self.assertNotIn("workload_groups", self.spec)
         names = [row["name"] for row in self.spec["metrics"]]
         for final, experiments in ((False, 1), (True, 2)):
@@ -341,7 +341,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertEqual(self.gate.audit_failure(stopped, reference), "client_crashed_or_protocol")
         evaluator = (TASK / "judge/evaluator.py").read_text()
         self.assertIn("skip_volume=implementation == 'reference'", evaluator)
-        # Probe queries are clocked like measured ones. The depth part, which both runs answer, enters the
+        # probe queries are clocked like measured ones. The depth part, which both runs answer, enters the
         # paired online comparison; after a failed depth part only the measured queries are compared.
         slow_depth = self.result(probe_online=10 ** 12)
         self.assertFalse(self.compare(slow_depth, reference)["end_to_end_online_time_ms"])
@@ -394,7 +394,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertIn("nothing is asked about backup hints or about hints a query has consumed", statement)
 
     def test_client_storage_is_the_peak_over_the_online_phase(self):
-        # A reading after the export alone misses state released before it and rebuilt by a query.
+        # a reading after the export alone misses state released before it and rebuilt by a query.
         driver = (CODE / "ec24/ec24_client.go").read_text()
         reading = driver[driver.index("if tag == 'M'"):driver.index("if tag == 'U'")]
         self.assertIn("liveBytes()", reading)
@@ -419,10 +419,10 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         self.assertLess(probe.index("outcome.ProbeAnswered++"), probe.index("readStorage(&outcome.StorageBytes)"))
         self.assertIn("if !volume {\n\t\t\t\toutcome.ProbeOnlineNs += intervals[0] + intervals[1] + intervals[2]\n"
                       "\t\t\t\treadStorage(&outcome.StorageBytes)", probe)
-        # Every answered probe query is clocked, the depth and volume parts apart.
+        # every answered probe query is clocked, the depth and volume parts apart.
         self.assertIn("outcome.ProbeVolumeOnlineNs += intervals[0] + intervals[1] + intervals[2]", probe)
         self.assertIn("failure, entry, intervals := exchange(query.X)", probe)
-        # The volume phase is read too, after a query drawn from the private probe seed and after its
+        # the volume phase is read too, after a query drawn from the private probe seed and after its
         # second-to-last query, while a query is still to come; its readings are kept apart.
         self.assertEqual(probe.count("readStorage(&outcome.StorageVolumeBytes)"), 1)
         self.assertLess(probe.index("outcome.ProbeAnswered++"), probe.index("readStorage(&outcome.StorageVolumeBytes)"))
@@ -476,7 +476,7 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
             self.assertNotIn("OnlineQueries", fixture.read_text(), fixture.name)
 
     def test_one_graded_size_and_a_probe_with_a_volume_phase(self):
-        # At 65,536 entries the whole database is smaller than the reference client's
+        # at 65,536 entries the whole database is smaller than the reference client's
         # storage; and a probe of depth alone never reached a capacity limit on promoted hints.
         self.assertEqual(self.evaluator.SIZES, (67108864,))
         self.assertEqual([len(self.evaluator.experiment_plan(final)) for final in (False, True)], [1, 2])
@@ -516,6 +516,20 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
         for internal in ("forced", "garbage collection", "drawn at random", "five measured",
                          "STORAGE_JITTER", "probe_seed", "2.23 MB", "85.5 MB", "fraction", "eighth"):
             self.assertNotIn(internal, statement)
+
+    def test_datasets_are_plans_without_seeds_or_transcripts(self):
+        for mode, count in (("train", 1), ("eval", 2)):
+            path = TASK / "datasets" / (mode + ".tar")
+            self.assertEqual(path.read_bytes(), plan_archive(mode))
+            with tarfile.open(path) as archive:
+                self.assertEqual(archive.getnames(), ["plan.json"])
+                plan = json.loads(archive.extractfile("plan.json").read())
+            self.assertEqual([row["db_size"] for row in plan["experiments"]], [67108864] * count)
+            self.assertNotRegex(json.dumps(plan), r"seed\"\s*:\s*\d")
+            with patch.dict(os.environ, {"FRONTIER_DATASET_PATH": str(path)}):
+                self.assertEqual(len(self.evaluator.experiment_plan(mode == "eval")), count)
+                with self.assertRaises(self.evaluator.TaskConfigurationError):
+                    self.evaluator.experiment_plan(mode != "eval")
 
     def test_seeds_are_fresh_private_and_never_constant(self):
         first, second = self.evaluator.fresh_seeds(), self.evaluator.fresh_seeds()
@@ -700,6 +714,42 @@ class QuarterPIRFullComputeGateTests(unittest.TestCase):
             self.assertEqual(verdict().category, "out_of_scope")
             (tree / "quarter_pir/code/pir/link.go").symlink_to("/etc/passwd")
             self.assertEqual(verdict().category, "forbidden_file_type")
+
+    def test_release_tree_invariants_and_fixture_manifest(self):
+        expected = json.loads((FIXTURES / "expected.json").read_text())["fixtures"]
+        present = {path.relative_to(FIXTURES).as_posix() for path in FIXTURES.rglob("*.patch")}
+        self.assertEqual(set(expected), present)
+        self.assertEqual((FIXTURES / "positive/reference_unchanged.patch").read_bytes(),
+                         (TASK / "judge/reference.patch").read_bytes())
+        negative = {name: row["expect"] for name, row in expected.items() if name.startswith("negative/")}
+        self.assertGreaterEqual(len(negative), 30)
+        self.assertNotIn("negative/locked_file_changed.patch", negative)
+        self.assertTrue(set(negative.values()) <= set(self.evaluator.VALIDITY_CODES) - {"valid"})
+        for route in ("raw_asm_symbol_second_file", "raw_asm_function_value", "refwire_short_long_key"):
+            self.assertEqual(negative[f"negative/{route}.patch"], "build")
+        self.assertEqual(negative["negative/discard_deep_backups_after_export.patch"], "coverage_probe")
+        self.assertEqual(negative["negative/discard_primary_tail_after_export.patch"], "hint_audit")
+        self.assertEqual(negative["negative/capped_promoted_hints.patch"], "coverage_probe")
+        for required in ("under_provisioned_hints", "keep_db_skip_hints", "deferred_work",
+                         "background_goroutine", "fake_metric_record_stdout", "init_function", "package_variable",
+                         "import_alias", "import_dot", "import_second_file", "extra_rpc",
+                         "server_memoization", "seed_special_casing", "transcript_replay",
+                         "leak_query_index", "server_lingering_goroutine",
+                         "reducer_lingering_goroutine", "raw_asm_symbol_second_file",
+                         "raw_asm_function_value", "safeaes_unexported_symbol", "util_cipher_import",
+                         "util_long_key_prf_import", "refwire_short_long_key", "bodyless_function",
+                         "new_assembly_file"):
+            self.assertIn(f"negative/{required}.patch", negative)
+        positive = {name: row["expect"] for name, row in expected.items() if name.startswith("positive/")}
+        self.assertEqual(positive["positive/dropped_superblock_keys.patch"],
+                         "valid_fewer_bytes_over_storage")
+        self.assertEqual(positive["positive/compact_dropped_superblock_keys.patch"],
+                         "valid_fewer_bytes_within_storage")
+        self.assertEqual(positive["positive/storage_for_time.patch"], "valid_over_storage")
+        for accepted in ("server_returns_before_workers", "server_joined_parallel_workers"):
+            self.assertEqual(positive[f"positive/{accepted}.patch"], "valid_not_beating")
+        self.assertEqual(negative["negative/process_memory_guard.patch"], "process_memory")
+        self.assertFalse((ROOT / "scripts/rebind_quarter_pir_calibrated_datasets.py").exists())
 
 
 if __name__ == "__main__":

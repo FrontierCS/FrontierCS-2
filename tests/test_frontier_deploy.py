@@ -192,9 +192,7 @@ class ConfigTests(unittest.TestCase):
     def test_example_enables_cpu_preview_and_admin_configured_litellm(self) -> None:
         config = frontier_deploy.validate_config(copy.deepcopy(self.raw))
         self.assertEqual(config["management"]["profile"], "executable-preview")
-        self.assertEqual(
-            config["application"]["repository"], frontier_deploy.APPLICATION_REPOSITORY
-        )
+        self.assertNotIn("repository", config["application"])
         self.assertRegex(config["application"]["commit"], r"^[0-9a-f]{40}$")
         self.assertIs(config["application"]["require_source"], False)
         self.assertEqual(
@@ -264,6 +262,28 @@ class ConfigTests(unittest.TestCase):
             frontier_deploy.DeployError, "missing=\\['require_source'\\]"
         ):
             frontier_deploy.validate_config(candidate)
+
+    def test_required_application_source_needs_a_repository(self) -> None:
+        import jsonschema
+
+        schema = json.loads((ROOT / "config/site.schema.json").read_text())
+        application_schema = schema["properties"]["application"]
+        jsonschema.validate(self.raw["application"], application_schema)
+        candidate = copy.deepcopy(self.raw)
+        candidate["application"]["require_source"] = True
+        with self.assertRaises(jsonschema.ValidationError):
+            jsonschema.validate(candidate["application"], application_schema)
+        with self.assertRaisesRegex(
+            frontier_deploy.DeployError,
+            "application.require_source=true requires application.repository",
+        ):
+            frontier_deploy.validate_config(candidate)
+        candidate["application"]["repository"] = "https://git.example.invalid/frontier.git"
+        jsonschema.validate(candidate["application"], application_schema)
+        config = frontier_deploy.validate_config(candidate)
+        self.assertEqual(
+            config["application"]["repository"], "https://git.example.invalid/frontier.git"
+        )
 
     def test_mutable_platform_image_or_application_commit_is_rejected(self) -> None:
         for field, value in (
@@ -952,9 +972,7 @@ class ModalConfigTests(unittest.TestCase):
         # published. Adding a second GPU task must not invalidate this gate.
         import render_task_definition as renderer
 
-        roots = renderer.catalog_problem_directories(
-            renderer.catalog_task_names(), renderer.TASK_ROOT / "problems"
-        )
+        roots = renderer.catalog_problem_directories(renderer.catalog_task_names())
         gpu_names = set()
         for name, root in roots.items():
             gpu = task_manifest.load_policy(root).get("gpu", {})
@@ -1052,13 +1070,54 @@ class SourceTests(unittest.TestCase):
         self.assertIn('"skills/add-frontier-task/scripts/publish_task.py"', source)
         self.assertIn("Task authoring skill:", source)
 
-    def test_required_application_source_is_rejected(self) -> None:
+    def test_required_application_source_keeps_exact_checkout_gate(self) -> None:
         raw = json.loads((ROOT / "config/site.example.json").read_text())
         raw["application"]["require_source"] = True
-        with self.assertRaisesRegex(
-            frontier_deploy.DeployError, "require_source=true is not supported"
-        ):
-            frontier_deploy.validate_config(raw)
+        raw["application"]["repository"] = "https://git.example.invalid/frontier.git"
+        config = frontier_deploy.validate_config(raw)
+        required_files = (
+            "management-plane/Dockerfile",
+            "driver/Dockerfile",
+            "skills/add-frontier-task/SKILL.md",
+            "skills/add-frontier-task/references/task-protocol.md",
+            "skills/add-frontier-task/references/release-and-publish.md",
+            "skills/add-frontier-task/scripts/publish_task.py",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            for relative in required_files:
+                item = source / relative
+                item.parent.mkdir(parents=True, exist_ok=True)
+                item.write_text("fixture")
+            with (
+                mock.patch.dict(os.environ, {"FRONTIERCS2_SOURCE_DIR": directory}),
+                mock.patch.object(
+                    image_ops, "executable", return_value="git"
+                ) as executable,
+                mock.patch.object(
+                    image_ops,
+                    "run_command",
+                    side_effect=[config["application"]["commit"] + "\n", ""],
+                ) as run_command,
+            ):
+                result = frontier_deploy.ensure_application_source(config)
+
+        self.assertEqual(result, source.resolve())
+        executable.assert_called_once_with("git")
+        self.assertEqual(
+            [call.args[0] for call in run_command.call_args_list],
+            [
+                ["git", "-C", str(source.resolve()), "rev-parse", "HEAD"],
+                [
+                    "git",
+                    "-C",
+                    str(source.resolve()),
+                    "status",
+                    "--porcelain",
+                    "--untracked-files=all",
+                ],
+            ],
+        )
 
     def test_optional_application_source_skips_git_and_reports_unavailable_handoff(
         self,

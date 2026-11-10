@@ -15,7 +15,7 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 50,
-      "beat_spec_sha256": "sha256:c2d68ab8563de1517783c588c995fa3fd9b5e27bbe5fff86a228ca2cfa147aee",
+      "beat_spec_sha256": "sha256:33454d83a297b7002209314060545017b4147e186625ddb8ec3089ed80b4e957",
       "solver_visible_metrics": [
         "raw_quality",
         "branch_accuracy",

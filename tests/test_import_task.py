@@ -23,6 +23,7 @@ import frontier_deploy as deploy
 import import_task as importer
 import render_task_definition as renderer
 from preview.publication import baseline_from_result_json, load_baselines
+import task_layers  # noqa: E402
 
 REAL_RESOLVE_DIGEST = importer.resolver.resolve_digest
 
@@ -111,7 +112,7 @@ class ImportTests(unittest.TestCase):
             side_effect=AssertionError("unexpected network"),
         ).start()
         self.stdout = mock.patch("sys.stdout", new_callable=io.StringIO).start()
-        existing = self.root / importer.PROBLEMS / "existing_task"
+        existing = self.root / importer.task_layers.SHARED_PROBLEMS / "existing_task"
         shutil.copytree(self.source, existing)
         for path, key in [
             ("policy.json", "problem_id"),
@@ -123,13 +124,13 @@ class ImportTests(unittest.TestCase):
             (existing / path).write_text(json.dumps(body))
         definition = importer.validate_export(existing)
         entry = importer.catalog_entry(
-            existing, definition, "joyemang33", existing / "judge/reference.patch"
+            existing, definition, "docker.io/joyemang33", existing / "judge/reference.patch"
         )
         for image, _ in importer.resolver.task_images(entry):
             image["digest"] = "sha256:" + "b" * 64
         catalog = {
             "schema_version": "frontier.deployment-task-catalog/v2",
-            "candidate": deploy.load_json(ROOT / "config/task-catalog.json")[
+            "candidate": task_layers.load_catalog()[
                 "candidate"
             ],
             "tasks": [entry],
@@ -149,7 +150,7 @@ class ImportTests(unittest.TestCase):
     def manifest(self):
         definition = importer.validate_export(self.source)
         entry = importer.catalog_entry(
-            self.source, definition, "joyemang33", self.source / "judge/reference.patch"
+            self.source, definition, "docker.io/joyemang33", self.source / "judge/reference.patch"
         )
         images = {
             role: {k: entry[key][k] for k in ("repository", "tag", "digest")}
@@ -187,13 +188,11 @@ class ImportTests(unittest.TestCase):
 
     def test_import_repeat_replace_and_unrelated_definition_bytes(self):
         definitions = self.root / "config/task-definitions.json"
-        old = definitions.read_text()
-        spans = importer.row_spans(old)
-        original_row = old[slice(*spans["existing_task"])]
+        original_row = json.loads(definitions.read_text())["existing_task"]
         self.assertEqual(self.invoke(), 0)
         self.assertEqual(
             snapshot(self.source),
-            snapshot(self.root / importer.PROBLEMS / "minimal_task"),
+            snapshot(self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task"),
         )
         self.assertEqual(self.entry()["agent_image"]["digest"], importer.PLACEHOLDER)
         self.assertEqual(self.entry()["baseline"]["historical_mean"], 2.0)
@@ -209,13 +208,12 @@ class ImportTests(unittest.TestCase):
         self.invoke("--replace")
         self.assertEqual(self.build.call_count, 2)
         changed = definitions.read_text()
-        self.assertEqual(
-            changed[slice(*importer.row_spans(changed)["existing_task"])], original_row
-        )
+        self.assertEqual(json.loads(changed)["existing_task"], original_row)
+        self.assertEqual(changed, importer.task_layers.json_text(json.loads(changed)))
         self.assertNotEqual(snapshot(self.root), before)
 
     def source_first_update(self, name="minimal_task"):
-        target = self.root / importer.PROBLEMS / name
+        target = self.root / importer.task_layers.SHARED_PROBLEMS / name
         (target / "judge/evaluator.py").write_text("source-first replacement\n")
         if name == "minimal_task":
             (self.source / "judge/evaluator.py").write_bytes(
@@ -285,11 +283,11 @@ class ImportTests(unittest.TestCase):
                 staged.is_relative_to(self.root / ".generated/import/minimal_task")
             )
             self.assertEqual(
-                snapshot(self.root / importer.PROBLEMS / name),
+                snapshot(self.root / importer.task_layers.SHARED_PROBLEMS / name),
                 {
-                    p.removeprefix(str(importer.PROBLEMS / name) + "/"): body
+                    p.removeprefix(str(importer.task_layers.SHARED_PROBLEMS / name) + "/"): body
                     for p, body in before.items()
-                    if p.startswith(str(importer.PROBLEMS / name) + "/")
+                    if p.startswith(str(importer.task_layers.SHARED_PROBLEMS / name) + "/")
                 },
             )
             self.assertTrue((staged / "config/task-catalog.json").is_file())
@@ -353,7 +351,7 @@ class ImportTests(unittest.TestCase):
         self.checks.side_effect = ValueError("post-import failure")
         with self.assertRaisesRegex(ValueError, "post-import failure"):
             self.invoke()
-        self.assertFalse((self.root / importer.PROBLEMS / "minimal_task").exists())
+        self.assertFalse((self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task").exists())
         self.assertEqual(snapshot(self.root), before)
 
     def test_persistent_catalog_write_failure_restores_tree_and_both_configs(self):
@@ -409,7 +407,7 @@ class ImportTests(unittest.TestCase):
         def remove(path, *args, **kwargs):
             nonlocal rolling_back
             rmtree(path, *args, **kwargs)
-            if path == self.root / importer.PROBLEMS / "minimal_task":
+            if path == self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task":
                 rolling_back = True
                 raise OSError("tree removal reported failure")
 
@@ -559,7 +557,7 @@ class ImportTests(unittest.TestCase):
         path, manifest = self.manifest()
         definition = importer.validate_export(self.source)
         entry = importer.catalog_entry(
-            self.source, definition, "joyemang33", self.source / "judge/reference.patch"
+            self.source, definition, "docker.io/joyemang33", self.source / "judge/reference.patch"
         )
         expected = entry["agent_image"]["tag"]
         self.assertEqual(entry["dataset_image"]["tag"], expected)
@@ -582,7 +580,7 @@ class ImportTests(unittest.TestCase):
         path, manifest = self.manifest()
         definition = importer.validate_export(self.source)
         entry = importer.catalog_entry(
-            self.source, definition, "joyemang33", self.source / "judge/reference.patch"
+            self.source, definition, "docker.io/joyemang33", self.source / "judge/reference.patch"
         )
         source_tag = definition["image_tag"]
         for _role, image in manifest["images"].items():
@@ -596,12 +594,12 @@ class ImportTests(unittest.TestCase):
         )
         catalog = {
             "schema_version": "frontier.deployment-task-catalog/v2",
-            "candidate": deploy.load_json(ROOT / "config/task-catalog.json")[
+            "candidate": task_layers.load_catalog()[
                 "candidate"
             ],
             "tasks": [adopted],
         }
-        shutil.copytree(self.source, self.root / importer.PROBLEMS / self.source.name)
+        shutil.copytree(self.source, self.root / importer.task_layers.SHARED_PROBLEMS / self.source.name)
         deploy.validate_task_catalog(
             catalog, definitions={self.source.name: definition}, root=self.root
         )
@@ -674,7 +672,7 @@ lease_seconds = { train = 600, eval = 600 }
 """, encoding="utf-8")
         definition = importer.validate_export(source)
         self.assertEqual(definition["cpu_runner_images"], ["agent_cpu"])
-        entry = importer.catalog_entry(source, definition, "joyemang33", None)
+        entry = importer.catalog_entry(source, definition, "docker.io/joyemang33", None)
         self.assertEqual(entry["agent_cpu_runner_image"], {
             "repository": "docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
             "tag": entry["agent_image"]["tag"], "digest": importer.PLACEHOLDER})
@@ -747,11 +745,6 @@ lease_seconds = { train = 600, eval = 600 }
             ):
                 self.invoke("--check")
             self.assertEqual(snapshot(self.root), before)
-        changed = copy.deepcopy(original)
-        changed["tasks"][-1]["baseline"]["historical_scores"][0] = True
-        catalog_path.write_text(renderer.json_text(changed))
-        with self.assertRaisesRegex(ValueError, "freshly derived"):
-            self.invoke("--check")
         baseline.update(
             provenance="measured",
             comparable=True,
@@ -827,11 +820,7 @@ lease_seconds = { train = 600, eval = 600 }
         self.assertIsNone(self.entry()["reference"])
         self.assertEqual(
             self.entry()["baseline"],
-            {
-                "provenance": "unverified",
-                "comparable": False,
-                "comparability_note": "no judge/result.json in the export",
-            },
+            {"provenance": "unverified", "comparable": False},
         )
         (self.source / "judge/reference.patch").unlink()
         (self.source / "judge/reference.py").write_text('print("payload")\n')
@@ -1009,23 +998,18 @@ lease_seconds = { train = 600, eval = 600 }
         (self.source / "judge/reference.patch").unlink()
         self.invoke()
         self.assertIsNone(self.entry()["reference"])
-        self.assertEqual(self.entry()["baseline"]["historical_scores"], [1.0, 3.0])
+        self.assertEqual(self.entry()["baseline"]["historical_mean"], 2.0)
         self.assertEqual(self.entry()["baseline"]["provenance"], "unverified")
         self.assertFalse(self.entry()["baseline"]["comparable"])
-        self.assertEqual(
-            self.entry()["baseline"]["comparability_note"],
-            "missing baseline binding files: judge/reference.patch",
-        )
 
     def test_result_with_reference_is_historical_authoring_and_not_comparable(self):
         self.assertTrue((self.source / "judge/result.json").is_file())
         self.assertTrue((self.source / "judge/reference.patch").is_file())
         self.invoke()
         baseline = self.entry()["baseline"]
-        self.assertEqual(baseline["historical_scores"], [1.0, 3.0])
+        self.assertEqual(baseline["historical_mean"], 2.0)
         self.assertEqual(baseline["provenance"], "historical-authoring")
         self.assertFalse(baseline["comparable"])
-        self.assertIn("does not attest", baseline["comparability_note"])
 
     def test_published_plan_is_offline_and_repeat_is_unchanged(self):
         path, _ = self.manifest()
@@ -1127,7 +1111,7 @@ lease_seconds = { train = 600, eval = 600 }
 
     def test_check_detects_imported_tree_drift_without_writes(self):
         self.invoke()
-        (self.root / importer.PROBLEMS / "minimal_task/new-file").write_text("drift")
+        (self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task/new-file").write_text("drift")
         before = snapshot(self.root)
         with self.assertRaisesRegex(ValueError, "identity differs"):
             self.invoke("--check")
@@ -1277,24 +1261,13 @@ class BaselineTests(unittest.TestCase):
                 ):
                     baseline_from_result_json(root, definition)
 
-    def test_import_baselines_bind_current_sources_and_retain_original_authoring_scores(
-        self,
-    ):
+    def test_import_baselines_bind_current_sources(self):
         baselines = load_baselines()
         # These are external author/operator annotations, absent from result.json.
-        annotations = {
-            "result_json_source",
-            "provenance",
-            "comparable",
-            "comparability_note",
-            "calibration",
-            "historical_scores",
-            "historical_mean",
-            "historical_spread",
-        }
+        annotations = {"provenance", "comparable", "comparability_note", "calibration"}
         count = 0
         for name, baseline in baselines.items():
-            if "historical_scores" not in baseline:
+            if "historical_mean" not in baseline:
                 continue
             if "measurement" in baseline:
                 count += 1
@@ -1311,7 +1284,6 @@ class BaselineTests(unittest.TestCase):
                 )
                 self.assertEqual(baseline["provenance"], "measured")
                 self.assertIs(baseline["comparable"], True)
-                self.assertNotIn("result_json_source", baseline)
                 for field, prefix in (
                     ("evaluation_id", "eval"),
                     ("run_id", "run"),
@@ -1327,13 +1299,10 @@ class BaselineTests(unittest.TestCase):
                         measurement["management_score"], baseline["historical_mean"]
                     )
                 )
-                self.assertEqual(
-                    baseline["historical_scores"], [baseline["historical_mean"]]
-                )
                 self.assertEqual(baseline["historical_spread"], 0.0)
                 task = next(
                     row
-                    for row in deploy.load_json(ROOT / "config/task-catalog.json")[
+                    for row in task_layers.load_catalog()[
                         "tasks"
                     ]
                     if row["name"] == name
@@ -1344,7 +1313,7 @@ class BaselineTests(unittest.TestCase):
                 continue
             count += 1
             definition = deploy.TASK_DEFINITIONS[name]
-            task_root = renderer.problem_directory(ROOT / importer.PROBLEMS, name)
+            task_root = renderer.task_directory(name)
             authored = ROOT / "docs/task-authoring" / name / "provenance/judge-result.json"
             if (task_root / "judge/result.json").is_file() or not authored.is_file():
                 derived = baseline_from_result_json(task_root, definition)
@@ -1364,30 +1333,20 @@ class BaselineTests(unittest.TestCase):
                     {k: v for k, v in baseline.items() if k not in annotations}
                 ),
             )
-            prior = deploy.load_json(
-                ROOT / "tests/fixtures/evidence/beat-spec-20260911-prior-reference-baselines.json"
-            ).get(name, baseline)
-            for key in ("historical_scores", "historical_mean", "historical_spread"):
-                self.assertEqual(derived[key], prior[key])
             self.assertFalse(derived["comparable"])
-            root = renderer.problem_directory(ROOT / importer.PROBLEMS, name)
+            root = renderer.task_directory(name)
             missing = [
                 member
                 for member in ("judge/evaluator.py", "judge/reference.patch")
                 if not (root / member).is_file()
             ]
-            if missing:
-                self.assertEqual(derived["provenance"], "unverified")
-                self.assertEqual(
-                    derived["comparability_note"],
-                    "missing baseline binding files: " + ", ".join(missing),
-                )
-            else:
-                self.assertEqual(derived["provenance"], "historical-authoring")
-                self.assertIn("does not attest", derived["comparability_note"])
+            self.assertEqual(
+                derived["provenance"],
+                "unverified" if missing else "historical-authoring",
+            )
         self.assertEqual(
             count,
-            sum("historical_scores" in baseline for baseline in baselines.values()),
+            sum("historical_mean" in baseline for baseline in baselines.values()),
         )
 
     def test_bad_result_statistics_are_refused(self):

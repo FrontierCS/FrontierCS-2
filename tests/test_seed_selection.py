@@ -27,6 +27,7 @@ from test_task_seeding import (
     not_found,
     resolved_catalog,
 )
+import task_layers  # noqa: E402
 
 
 class SeedSelectionTests(unittest.TestCase):
@@ -239,7 +240,7 @@ class SeedSelectionTests(unittest.TestCase):
         documents = self.documents()
         documents["/api/v1/candidate-versions"] = []
         snapshot = deploy.load_json(
-            ROOT / "tests/fixtures/evidence/v3-runtime-incident-2026-09-12.json"
+            ROOT / "tests/fixtures/v3-runtime/dispatch.json"
         )["observed"]["scheduler_capacity_snapshot"]
         capacity_path = "/api/v1/infrastructure/scheduler-capacity"
         before = self.state_bytes()
@@ -305,7 +306,7 @@ class SeedSelectionTests(unittest.TestCase):
         overview_path = "/api/v1/overview"
         capacity_path = "/api/v1/infrastructure/scheduler-capacity"
         snapshot = deploy.load_json(
-            ROOT / "tests/fixtures/evidence/v3-runtime-incident-2026-09-12.json"
+            ROOT / "tests/fixtures/v3-runtime/dispatch.json"
         )["observed"]["scheduler_capacity_snapshot"]
         before = self.state_bytes()
         for truncated_path in (overview_path, capacity_path):
@@ -712,7 +713,7 @@ class SeedSelectionTests(unittest.TestCase):
                 )
                 with (
                     mock.patch.object(
-                        publication, "TASK_CATALOG_PATH", self.catalog_path
+                        publication, "CATALOG", self.catalog_path
                     ),
                     mock.patch.object(acceptance, "api_json", side_effect=api),
                     mock.patch.object(
@@ -735,7 +736,7 @@ class SeedSelectionTests(unittest.TestCase):
         seed["selection_digest"] = "sha256:" + "0" * 64
         (self.state / "task-seed-receipt.json").write_bytes(deploy.canonical_json(seed))
         with (
-            mock.patch.object(publication, "TASK_CATALOG_PATH", self.catalog_path),
+            mock.patch.object(publication, "CATALOG", self.catalog_path),
             mock.patch.object(acceptance, "api_json") as api,
         ):
             with self.assertRaisesRegex(deploy.DeployError, "selection_digest"):

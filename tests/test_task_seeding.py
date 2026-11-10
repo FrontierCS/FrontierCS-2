@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy
 from preview import cli, infra, publication
 from preview import images as image_ops
+import task_layers  # noqa: E402
 
 
 def not_found(path: str) -> infra.ManagementHTTPError:
@@ -36,7 +37,7 @@ def exact_version(collections: dict[str, list[dict]], path: str) -> dict:
 
 
 def resolved_catalog(task_names=None) -> dict:
-    catalog = json.loads((ROOT / "config/task-catalog.json").read_text())
+    catalog = task_layers.load_catalog()
     if task_names is not None:
         tasks = {task["name"]: task for task in catalog["tasks"]}
         catalog["tasks"] = [tasks[name] for name in task_names]
@@ -127,7 +128,7 @@ class TaskCatalogTests(unittest.TestCase):
     def test_resolved_fixture_preserves_artifact_interlock_and_rejects_tampering(
         self,
     ) -> None:
-        original = json.loads((ROOT / "config/task-catalog.json").read_text())
+        original = task_layers.load_catalog(task_layers.shared_layer().catalog)
         task = original["tasks"][0]
         source_tag = frontier_deploy.TASK_DEFINITIONS[task["name"]]["image_tag"]
         image = task["agent_image"]
@@ -136,7 +137,7 @@ class TaskCatalogTests(unittest.TestCase):
         read_text = Path.read_text
 
         def fixture_catalog(path, *args, **kwargs):
-            if path == ROOT / "config/task-catalog.json":
+            if path == task_layers.shared_layer().catalog:
                 return json.dumps(original)
             return read_text(path, *args, **kwargs)
 
@@ -221,7 +222,7 @@ class TaskCatalogTests(unittest.TestCase):
         self,
     ) -> None:
         catalog = frontier_deploy.validate_task_catalog(
-            frontier_deploy.load_json(frontier_deploy.TASK_CATALOG_PATH)
+            task_layers.load_catalog()
         )
         self.assertEqual(
             {task["name"] for task in catalog["tasks"]},
@@ -231,7 +232,7 @@ class TaskCatalogTests(unittest.TestCase):
             catalog["candidate"]["overlay_image"]["repository"],
             "docker.io/joyemang33/fcs2-codex-overlay",
         )
-        placeholder = json.loads((ROOT / "config/task-catalog.json").read_text())
+        placeholder = task_layers.load_catalog()
         placeholder["tasks"][0]["agent_image"]["digest"] = (
             frontier_deploy.TASK_PLACEHOLDER_DIGEST
         )
@@ -274,7 +275,7 @@ class TaskCatalogTests(unittest.TestCase):
     def test_apply_refuses_placeholders_before_cloud_mutation(self) -> None:
         raw = json.loads((ROOT / "config/site.example.json").read_text())
         config = frontier_deploy.validate_config(raw)
-        placeholder = json.loads((ROOT / "config/task-catalog.json").read_text())
+        placeholder = task_layers.load_catalog()
         placeholder["tasks"][0]["agent_image"]["digest"] = (
             frontier_deploy.TASK_PLACEHOLDER_DIGEST
         )
@@ -282,7 +283,7 @@ class TaskCatalogTests(unittest.TestCase):
             catalog_path = Path(tmp) / "task-catalog.json"
             catalog_path.write_text(json.dumps(placeholder))
             with (
-                mock.patch.object(publication, "TASK_CATALOG_PATH", catalog_path),
+                mock.patch.object(publication, "CATALOG", catalog_path),
                 mock.patch.object(
                     cli, "render_bundle", return_value=(config, Path("/tmp/render"))
                 ),

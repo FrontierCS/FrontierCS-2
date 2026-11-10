@@ -1,0 +1,42 @@
+{
+  "platform_source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7",
+  "dockerfile": {
+    "source": "candidate-overlays/opencode/Dockerfile",
+    "sha256": "sha256:e03eae8d360acb9bea0c3224fe0f391bed6f677731642f3327874a711ecae0cf",
+    "local_sha256": "sha256:886e382f1a8cfbc71a1f19627f15308699cc786caa3fc480a2cde8f22bb414fa"
+  },
+  "files": {
+    "package.json": {
+      "source": "candidate-overlays/opencode/package.json",
+      "sha256": "sha256:0329556b1d9fc2a432f4ce7ba72539a9acb6f62f3827e3f6f855313587fb86f1"
+    },
+    "package-lock.json": {
+      "source": "candidate-overlays/opencode/package-lock.json",
+      "sha256": "sha256:fd02a55fe3911c2c483be7557fdf85ca0a829a8c3b36036539df58084fdea1be"
+    },
+    "launcher.py": {
+      "source": "candidate-overlays/opencode/launcher.py",
+      "sha256": "sha256:37a65c56dbd8348bac8c6e11af56a831a939b5cbd06dd7f59dacf08256fb21a6"
+    },
+    "submit/frontier_submit.py": {
+      "source": "candidate-overlays/codex/frontier_submit.py",
+      "sha256": "sha256:f4cbc551acd10a729e5cade5cc3a70b653d9aee1dee4b1cbfeb20b3208df6f00"
+    },
+    "gpu-helper/frontier_gpu.py": {
+      "source": "candidate-overlays/codex/frontier_gpu.py",
+      "sha256": "sha256:c6e26af56f6fb1b81d89c684959394eb31ae884400581ceab2146a835bdc52d2"
+    },
+    "gpu-helper/frontier_gpu_connect_proxy.py": {
+      "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
+      "sha256": "sha256:8362d734e2b7fc51f6f112497aa662373fd6499ee1e43f574a53fb45176af6d7"
+    },
+    "submit/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-submit/SKILL.md",
+      "sha256": "sha256:7b2970a46013672fefaaa92a75552347c129af18fabd4f9bccad74033b9021cb"
+    },
+    "gpu-helper/SKILL.md": {
+      "source": "candidate-overlays/codex/skills/frontier-gpu/SKILL.md",
+      "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    }
+  }
+}

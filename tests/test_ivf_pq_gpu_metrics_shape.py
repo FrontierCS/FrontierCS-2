@@ -4,7 +4,7 @@ The shared verifier bounds evaluator metrics (fcs2_verifier._bounded: nesting de
 judge used to nest every timed sample's distance-error distribution under
 comparison_details[].{reference,candidate}.timed_samples[], eight levels deep, so every real
 GPU verification failed invalid_evaluator_result "metrics are nested too deeply" (registrar,
-an earlier task version). Unit tests of evaluate() alone did not see it.
+taskver_6D7FEVH8MEJZTPPV763R83RC8W). Unit tests of evaluate() alone did not see it.
 
 This runs fcs2_verifier.verify() end to end (payload, edit scope, check_tree, evaluate, bounds,
 result and evidence) on worker rows recorded by a real H100 train verification of the

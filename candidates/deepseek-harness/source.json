@@ -1,5 +1,4 @@
 {
-  "repository": "https://github.com/FrontierCS/FrontierCS-2",
   "platform_source_commit": "69dc7de7d780076557de84f9a191f3b4a41aa883",
   "dockerfile": {
     "source": "candidate-overlays/deepseek-harness/Dockerfile",

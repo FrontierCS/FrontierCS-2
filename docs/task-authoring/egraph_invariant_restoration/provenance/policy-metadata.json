@@ -7,8 +7,7 @@
       "original_metadata_path": "judge/metadata.json",
       "scope": "original-format to native transfer with T35 public-plus-hidden final and independent continuous scoring correction",
       "source_commit": "38a2b36b1de35f39e518d77fad097c2037a3ffa5",
-      "source_path": "original_format_problems/egraph_invariant_restoration",
-      "source_repository": "private authoring repository"
+      "source_path": "original_format_problems/egraph_invariant_restoration"
     },
     "datasets": {
       "eval": {

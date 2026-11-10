@@ -9,6 +9,7 @@ import unittest
 
 ROOT = REPO_ROOT
 sys.path.insert(0, str(ROOT / "scripts"))
+import task_layers  # noqa: E402
 from preview import publication
 
 
@@ -49,10 +50,10 @@ class PendingVllmPublicationTests(unittest.TestCase):
             publication.validate_task_catalog(raw)
 
     def test_pending_images_bind_reviewed_source_and_refuse_seeding(self):
-        self.check_catalog(json.loads((ROOT / "config/task-catalog.json").read_text()))
+        self.check_catalog(task_layers.load_catalog())
 
     def test_unrelated_pending_publication_is_not_counted_as_vllm(self):
-        raw = json.loads((ROOT / "config/task-catalog.json").read_text())
+        raw = task_layers.load_catalog()
         other = next(row for row in raw["tasks"] if row["name"] != "vllm_llm_serving_optimization")
         policy = publication.load_task_definitions()[other["name"]]
         other["agent_image"].update(tag=policy["image_tag"], digest=publication.TASK_PLACEHOLDER_DIGEST)

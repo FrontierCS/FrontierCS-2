@@ -1,5 +1,6 @@
-/* The editable file (task.toml submission.allowed_paths). Starter: trial division by odd
- * numbers. Correct, deliberately slow. */
+/* src/ is the editable directory (task.toml submission.allowed_paths): change this file or
+ * add more .c files beside it; the judge compiles every .c file in src/. Starter: trial
+ * division by odd numbers. Correct, deliberately slow. */
 #include "primes.h"
 
 static int is_prime(uint32_t x) {

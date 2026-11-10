@@ -14,7 +14,7 @@
       "current_qualification": "UNPUBLISHED; retained reference and solver receipts bind the earlier immutable TaskVersion.",
       "identity_migration": "Identity normalization plus an unpublished queue-state compatibility repair; see docs/tasks/representation_frechet_loss/source-binding.json.",
       "measured_task_id": "r_top01_2604-28190-cand_000-preflight-8250ab0a4a09",
-      "measured_task_version_id": "taskver-redacted-bed68ad7"
+      "measured_task_version_id": "taskver_01M2HKJAPQDYE052263SJPEC3A"
     },
     "evaluation": {
       "authored_max_dev_submissions": 3,

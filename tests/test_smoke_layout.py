@@ -53,7 +53,7 @@ class RunInPodTests(unittest.TestCase):
             name, IMAGE, VERIFIER, "train", node_selector=verifier_layout.NODE_SELECTOR,
             labels={"app": "frontier-verifier-smoke"}))
         self.assertEqual(manifest["spec"]["nodeSelector"],
-                         {"eks.amazonaws.com/nodegroup": "frontiercs2-eval"})
+                         {"eks.amazonaws.com/nodegroup": "frontiercs2-preview-eval16"})
         copied_in = sorted(command[5].rsplit("/", 1)[1] for command, _ in calls
                            if command[3] == "cp" and command[5].startswith(name + ":"))
         self.assertEqual(copied_in, ["dataset", "fixture.json", "payload.tar"])

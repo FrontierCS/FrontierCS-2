@@ -27,7 +27,7 @@ HEADER = Path("lib/evmcow/execution_state.hpp")
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, as the Verifier base ships it
 GXX = shutil.which("g++")
 
-# The known pattern on the shipped header: above height 64 load_checkpoint() only
+# The pattern on the shipped header: above height 64 load_checkpoint() only
 # records the target; get()/get_mut()/push() finish the restore, top()/pop() do not.
 LAZY_EDITS = (
     ("    inline void push(const uint256& item) {\n        values[height++] = item;",

@@ -15,7 +15,7 @@
     },
     "evaluation": {
       "authored_max_dev_submissions": 100,
-      "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
+      "beat_spec_sha256": "sha256:4b9ce0b346434e5cd17f4abbf589c9db01975031e4f514f17fc085cf17000f35",
       "solver_visible_metrics": [
         "committed_tps",
         "checkpoint_create_ns",

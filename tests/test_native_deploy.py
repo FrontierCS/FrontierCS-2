@@ -14,12 +14,13 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
-import reference_candidates as references
+from preview import publication as references
 import reference_parity as parity
 from preview import images as image_ops
 from preview import publication
 from task_selection import select_tasks
 from test_task_seeding import mirrored_images, resolved_catalog
+import task_layers  # noqa: E402
 
 
 class NativeDeployTests(unittest.TestCase):
@@ -280,7 +281,7 @@ class NativeDeployTests(unittest.TestCase):
                 )
 
     def test_reference_manifest_binds_payload_launcher_tag_and_exact_task_set(self):
-        original = deploy.load_json(ROOT / "config/task-catalog.json")
+        original = task_layers.load_catalog()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "catalog.json"
             placeholder = copy.deepcopy(original)

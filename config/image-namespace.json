@@ -1,0 +1,5 @@
+{
+  "description": "The one repository prefix (registry/namespace) of the images this repository builds and publishes: task, shared base, candidate overlay and runtime images. Build and import tools name new images under it and validators compare unpinned repositories with it; digest-pinned references in config/ and tasks/ keep their own full repository.",
+  "namespace": "docker.io/joyemang33",
+  "schema_version": "frontier.image-namespace/v1"
+}

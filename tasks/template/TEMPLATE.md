@@ -1,18 +1,38 @@
-# Task template
+# Task templates
 
-`Theory/template_task/` is a complete, working FrontierCS2 task in the `task.toml` format: a toy
-C problem (make `count_primes` fast) whose every file shows what a real task's file must
-contain. Start a new task by copying it:
+Three complete, working FrontierCS2 tasks in the `task.toml` format. Each is a toy whose
+every file shows what a real task's file must contain; copy the one that matches how your task's
+judge must run candidate code:
+
+| Template | Copy it for | What it shows beyond the others |
+|---|---|---|
+| `Theory/template_task` (C: make `count_primes` fast) | a CPU task: the judge builds and runs candidate code on the Verifier Pod | the shared `isolate.run` launcher for every submitted command, `[feedback]` train metrics, a directory in `allowed_paths` with `max_changed_files` |
+| `MLSys/gpu_template_task` (PyTorch: pairwise distances on an H100) | a GPU task timed on one GPU: the Agent has GPU runners and the whole verification runs on one Verifier GPU runner | `[gpu.agent]`, `[gpu.verifier]`, `[accelerator]`, `[network.audit]` SSH budgets, `docker/agent-gpu.Dockerfile` and `docker/verifier-gpu.Dockerfile` on the shared GPU tools, `isolate.run(devices=["nvidia"])` (userns backend on the runner) |
+| `Machine Learning/sandbox_template_task` (Python: fit a curve) | a task whose candidate code must run on machines of its own beside a judge on the CPU control image | `[test_sandboxes.<name>]` with `access = "command"`: class 1 (untrusted candidate machine, the judge recomputes the score from its outputs) and class 2 (a trusted harness that runs candidate code through isolate on its machine), `run_sandboxes()` |
+
+A task with a service test sandbox (`access = "service"`, a container the platform starts beside
+a GPU runner for the judge to call) has no template: copy the pattern of
+`tasks/problems/MLSys/vllm_llm_serving_optimization` (see "Test sandboxes"
+below). Each template's `task.toml` comments only what it adds; `Theory/template_task` comments
+every key.
+
+Start a new task by copying a template into its category folder (the folder is the task's
+category: one of `scripts/task_manifest.py` `CATEGORIES`, the folders of FrontierCS-2 main):
 
 ```sh
-cp -r tasks/template/Theory/template_task tasks/problems/<Category>/<task_id>
-# then: rename id in task.toml, replace every file's content
+cp -r "tasks/template/<Category>/<template>" "tasks/problems/<Category>/<task_id>"
+# then: rename id in task.toml (and the image labels), replace every file's content
 make validate
-scripts/task_manifest.py show tasks/problems/<Category>/<task_id>
+scripts/task_manifest.py show "tasks/problems/<Category>/<task_id>"
 ```
 
-The template is not in the catalog and is never published. `tests/test_template_task.py` keeps
-it valid and runs its judge, so a format change that breaks the template fails CI.
+The templates are not in the catalog and are never published. `make validate` checks their
+layout (`--problems-root tasks/template`), and `tests/test_template_task.py`,
+`tests/test_gpu_template_task.py` and `tests/test_sandbox_template_task.py` keep them valid and
+run each judge through the shared verifier (the sandbox judge on the shared GPU adapter's test
+harness, a fake Driver and SSH gateway that run each machine's commands locally; the GPU judge
+with a stand-in for its GPU worker process), so a format or contract change that breaks a
+template fails CI.
 
 ## Layout
 
@@ -34,6 +54,10 @@ it valid and runs its judge, so a format change that breaks the template fails C
   docker/
     agent.Dockerfile        FROM the shared Agent base + this task's packages and public files
     verifier.Dockerfile     FROM the shared Verifier base + this task's packages and judge
+                            (a GPU task's control image: + the shared GPU adapter)
+    agent-gpu.Dockerfile    GPU tasks: the Agent's GPU runner (and a class-1 sandbox machine)
+    verifier-gpu.Dockerfile GPU tasks: the Verifier's GPU runner (or a class-2 sandbox machine)
+  gpu/task_runtime.py       GPU tasks: /opt/frontier/task-runtime in the Agent GPU image
 ```
 
 What a task does **not** contain any more, because it is shared or generated:
@@ -223,23 +247,33 @@ and `verifier.json`, install the shared `submission_patch.py`, end as `USER 6553
 
 ### Optional files
 
-- `docker/agent-gpu.Dockerfile`, `docker/verifier-gpu.Dockerfile`: with `[gpu.*]` and
-  `[accelerator]` in `task.toml`. Each GPU task keeps its own CUDA/PyTorch image and copies
-  the shared GPU tools (SSH bootstrap, GPU adapter) from `gpu-tools` in `bases.json`:
-  `ARG GPU_TOOLS`, `FROM ${GPU_TOOLS} AS frontier_gpu_tools`, then `COPY --from=frontier_gpu_tools`
-  (a GPU Verifier takes the shared verifier modules the same way, from
-  `FROM ${VERIFIER_BASE} AS frontier_verifier`).
-  The control `docker/verifier.Dockerfile` copies the adapter
-  (`/opt/frontier/shared-gpu/fcs2_verifier_gpu.py` to `/opt/frontier/fcs2_verifier_gpu.py`)
-  and the generated `verifier.json`, and sets `FRONTIER_VERIFIER_GPU_TYPE` and
-  `FRONTIER_VERIFIER_GPU_COUNT` (never `FRONTIER_VERIFIER_GPU_SECONDS`, which is retired).
-  `[gpu.verifier]` holds the Driver quota (`max_gpu_instances`, `max_gpu_seconds`) and the
-  shared GPU adapter's settings, which go to `verifier.json` only (the module docstring of
-  `tasks/shared/verifier-gpu/fcs2_verifier_gpu.py` is the contract):
-  - Without a command test sandbox (below) the placement is `"runner"` (derived, never
-    written): the whole verification runs on one runner with `FRONTIER_VERIFIER_GPU_COUNT`
-    GPUs; the control image holds no judge.
-  - `lease_seconds = { train = N, eval = M }`: the runner lease per mode (default: both
+- GPU (`MLSys/gpu_template_task`): `[gpu.agent]`, `[gpu.verifier]`, `[accelerator]` and
+  `[network.audit]` in `task.toml`, with `docker/agent-gpu.Dockerfile` and
+  `docker/verifier-gpu.Dockerfile`. Each GPU task keeps its own CUDA/PyTorch image (pinned by
+  digest) and copies the shared GPU tools (SSH bootstrap, isolate, GPU adapter) from `gpu-tools`
+  in `bases.json`: `ARG GPU_TOOLS`, `FROM ${GPU_TOOLS} AS frontier_gpu_tools`, then
+  `COPY --from=frontier_gpu_tools` (a GPU Verifier takes the shared verifier modules the same
+  way, from `FROM ${VERIFIER_BASE} AS frontier_verifier`). `gpu/task_runtime.py` (copied to
+  `/opt/frontier/task-runtime` in the Agent GPU image) replays the image's toolchain environment
+  for commands over SSH.
+  - `[gpu.agent]` is the Agent's runner budget (`allowed_types`, `max_instances`,
+    `max_instance_seconds`, `max_gpu_seconds`); a non-zero budget adds
+    `tasks/shared/agent/README.gpu.md` to the Agent's README. `[accelerator]` is the platform's
+    contract with the Candidate helper (`agent_gpu_interface = "frontier.gpu-helper/v3"`).
+  - `[network.audit]` `ssh_session_budgets = { agent, verifier_train, verifier_eval }` must sum
+    to `max_ssh_sessions` (the v3 helper requires the split). Count the Verifier's sessions per
+    call: a runner-placement verification uses one per upload chunk and one for the run; a
+    command sandbox run one per upload chunk, one per step and one to collect.
+  - The control `docker/verifier.Dockerfile` copies the adapter
+    (`/opt/frontier/shared-gpu/fcs2_verifier_gpu.py` to `/opt/frontier/fcs2_verifier_gpu.py`)
+    and the generated `verifier.json`, and sets `FRONTIER_VERIFIER_GPU_TYPE` and
+    `FRONTIER_VERIFIER_GPU_COUNT` (never `FRONTIER_VERIFIER_GPU_SECONDS`, which is retired).
+  - `[gpu.verifier]` holds the Driver quota (`max_gpu_instances`, `max_gpu_seconds`) and the
+    shared GPU adapter's settings, which go to `verifier.json` only (the module docstring of
+    `tasks/shared/verifier-gpu/fcs2_verifier_gpu.py` is the contract). Without a command test
+    sandbox the placement is `"runner"` (derived, never written): the whole verification runs on
+    one runner with `FRONTIER_VERIFIER_GPU_COUNT` GPUs, and the control image holds no judge.
+    `lease_seconds = { train = N, eval = M }` is the runner lease per mode (default: both
     `quota.eval_timeout_seconds`).
   - Every runner command gets `FRONTIER_VERIFIER_LOCAL_DEADLINE`, a `time.monotonic()` value on
     the runner: the end of the granted lease for verify.py, the end of its limit for a command
@@ -257,9 +291,9 @@ and `verifier.json`, install the shared `submission_patch.py`, end as `USER 6553
   paper's term). Every table has `dockerfile`, `workdir` and `trust` (`"untrusted"`, the default,
   or `"trusted"`). Two kinds, by `access`:
 
-  `access = "command"` declares a machine of its own the judge runs commands
-  on: a GPU runner or a CPU machine, the same protocol, API and journal; only `resources`
-  differs. The judge then runs on the CPU control image (for a GPU task derived
+  `access = "command"` (`Machine Learning/sandbox_template_task`) declares a machine of its
+  own the judge runs commands on: a GPU runner or a CPU machine, the same protocol, API and
+  journal; only `resources` differs. The judge then runs on the CPU control image (for a GPU task derived
   `placement = "control"`, `[gpu.verifier]` keeping only the quota); the control image holds
   `judge/` and `pristine/` like a CPU task and takes the shared adapter from a `${GPU_TOOLS}`
   stage (checked), with `openssh-client` and `libnss-wrapper`. Keys: `trust`, `dockerfile`,
@@ -288,20 +322,20 @@ and `verifier.json`, install the shared `submission_patch.py`, end as `USER 6553
   into=dir)`: one runner per run, exactly `files` uploaded, each `SandboxStep(argv, seconds,
   env)` killed at its `seconds` (a reported `timed_out`, not an error), declared outputs back;
   the last step may set `seconds=None` to take the rest of the runner's grant. The two classes:
-  - class 1, `trust = "untrusted"` (ragen_multi_turn_rl, nano_world_model,
-    cute_crest): the candidate's own machine, on the Agent (GPU) image. For output-scored
+  - class 1, `trust = "untrusted"` (`candidate` in the template; ragen_multi_turn_rl,
+    nano_world_model): the candidate's own machine, on the Agent (GPU) image. For output-scored
     work with a deadline. Nothing on it is trusted, including any judge script uploaded beside
     the candidate: the judge validates the returned files as untrusted input and recomputes the
     score on the control image from data that never leaves it, never from a number the
     candidate's code reports. A timeout, a non-zero exit, a lost session or malformed output is
     the candidate's scored zero; the same on the reference's run is the judge's fault (raise).
-  - class 2, `trust = "trusted"` (fast_kv_compaction, polygon): a machine of
+  - class 2, `trust = "trusted"` (`timing` in the template; fast_kv_compaction): a machine of
     the Verifier (GPU) image carrying the judge's toolchain and the shared isolate launcher. The
     judge may upload its own harness; the harness runs candidate code through `isolate.run`
     there (timing-scored work belongs here, measured from outside the candidate's process) and
     its output is trusted. Its failure is the judge's fault, never a score; a long harness takes
     `seconds=None` and budgets itself by `FRONTIER_VERIFIER_LOCAL_DEADLINE`.
-  A task usually needs one class.
+  A task usually needs one class; the template declares both to show both.
 
   `access = "service"` (the default; vllm_llm_serving_optimization, no template) declares a
   container the platform starts beside a GPU runner of the Verifier or the Agent (a "sidecar";
@@ -320,41 +354,28 @@ and `verifier.json`, install the shared `submission_patch.py`, end as `USER 6553
     e.g. `FROM source-${TEST_SANDBOX_SOURCE}` with a global `ARG TEST_SANDBOX_SOURCE=declared`);
     sidecars `<name>-<index>-<role>` on image `<name>-<index>`.
 
-  Images are published as `fcs2-task-<id>-sidecar-<image>`. `load_policy` returns the expanded
-  `sidecars` mapping; `task_manifest.py show` prints only their count.
-
-  `access = "command"` (the default is `"service"`, all of the above) declares instead a machine
-  of its own the judge runs commands on. The
-  judge then runs on the CPU control image (derived `placement = "control"`; `[gpu.verifier]`
-  keeps only the quota, and the control image holds `judge/` and `pristine/` like a CPU task).
-  Keys: `trust`, `dockerfile` (`docker/agent-gpu.Dockerfile`, the judge-free Agent GPU image,
-  or trusted only `docker/verifier-gpu.Dockerfile`, an image carrying the judge's harness),
-  `workdir` (below `/workspace/`: the upload lands and steps run there),
-  `resources` (`{ gpus, gpu_type }`: a GPU runner; `{ cpu_millis, memory_bytes }` without
-  `gpus`: a CPU machine, declared in the schema but refused until its provisioning path exists),
-  `max_concurrent` and `lease_seconds = { train, eval }`.
-  `evaluate` calls `fcs2_verifier_gpu.run_sandboxes([SandboxRun(name, files, steps, outputs)],
-  into=dir)`: one runner per run, exactly `files` uploaded, each `SandboxStep(argv, seconds,
-  env)` killed at its `seconds` (a reported `timed_out`, not an error), declared outputs back;
-  the last step may set `seconds=None` to take the rest of the runner's grant (a trusted
-  harness that budgets itself by `FRONTIER_VERIFIER_LOCAL_DEADLINE`).
-  Untrusted (candidate-only) sandboxes are for output-scored tasks with a deadline; a
-  timing-scored task keeps its trusted harness on the runner (a trusted sandbox, whose judge
-  may put its own bundle in `files`; fast_kv_compaction).
+  Service images are published as `fcs2-task-<id>-sidecar-<image>`. `load_policy` returns the
+  expanded `sidecars` mapping; `task_manifest.py show` prints only their count.
 - `verifier/verify.py` with a non-default `[verifier] command`: a standalone Verifier, only for
   a judge the shared verifier cannot express (vllm_llm_serving_optimization). Everything else
   in this list still applies.
+- `[judge.config]`: task-specific keys merged into the generated `config.yaml` the judge reads.
+- `COPY --from=docker.io/<ns>/<repo>@sha256:<digest>` in a Verifier recipe: judge data or
+  toolchains too large for the task tree (see "Rules that the schema cannot express").
 - `judge/candidate-diagnostic.json` + `judge/candidate_failure.py`: a pinned private
   validator that turns static rejections into one fixed public category (see edlib).
 
 ## Checks before review
 
 ```sh
-make validate                          # layout and contract checks
-make test                              # includes tests/test_template_task.py
+make validate                          # layout and contract checks (the templates included)
+make test                              # includes the three templates' tests
 scripts/task_build_context.py tasks/.../<task_id> /tmp/ctx
-docker build -f /tmp/ctx/docker/agent.Dockerfile    -t local/<task_id>-agent /tmp/ctx
-docker build -f /tmp/ctx/docker/verifier.Dockerfile -t local/<task_id>-verifier /tmp/ctx
+bases="--build-arg AGENT_BASE=$(jq -r .agent tasks/shared/bases.json)
+       --build-arg VERIFIER_BASE=$(jq -r .verifier tasks/shared/bases.json)
+       --build-arg GPU_TOOLS=$(jq -r '.["gpu-tools"]' tasks/shared/bases.json)"
+docker build $bases -f /tmp/ctx/docker/agent.Dockerfile    -t local/<task_id>-agent /tmp/ctx
+docker build $bases -f /tmp/ctx/docker/verifier.Dockerfile -t local/<task_id>-verifier /tmp/ctx
 scripts/run_task_verifier.sh local/<task_id>-verifier payload.tar tasks/.../datasets/train.json train /tmp/out-train
 ```
 

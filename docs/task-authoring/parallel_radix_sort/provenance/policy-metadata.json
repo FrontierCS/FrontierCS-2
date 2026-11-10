@@ -3,8 +3,6 @@
     "conversion": {
       "source_commit": "ac19add605ee544aa20c29a51d32e4d0ebf942ba",
       "source_path": "original_format_problems/parallel_radix_sort",
-      "source_pr": 29,
-      "source_repository": "private authoring repository",
       "status": "approved_science_calibration_and_immutable_image_review"
     },
     "datasets": {
@@ -32,13 +30,13 @@
         "timing_unit": "nanoseconds",
         "upper_clipping": false
       },
-      "scoring_alignment": "Independent std::sort baseline; S=geomean(B/C), score0 if S<=1 else100*log(S)/(log(10)+log(S)); reference solely strict PASS",
+      "scoring_alignment": "User-approved independent std::sort baseline; S=geomean(B/C), score0 if S<=1 else100*log(S)/(log(10)+log(S)); reference solely strict PASS",
       "solver_visible_metrics": [
         "dev_candidate_median_sort_time_ns",
         "dev_candidate_max_auxiliary_bytes",
         "dev_candidate_median_region_graph_ns"
       ],
-      "suite_relation": "Train original DEV4; final fresh DEV4 + HIDDEN4, no new shapes. Beat spec v3 (2026-10-08): the strict verdict adds two 16M-key paper-input workloads per partition (train 6, final 12); continuous score unchanged over DEV4 / DEV4 + HIDDEN4"
+      "suite_relation": "Approved: train original DEV4; final fresh DEV4 + HIDDEN4, no new shapes. Beat spec v3 (2026-10-08): the strict verdict adds two 16M-key paper-input workloads per partition (train 6, final 12); continuous score unchanged over DEV4 / DEV4 + HIDDEN4"
     },
     "provenance_file": "judge/metadata.json",
     "runtime": {

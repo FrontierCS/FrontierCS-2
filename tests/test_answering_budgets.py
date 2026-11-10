@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+import task_layers  # noqa: E402
 import render_task_definition as renderer
 import task_manifest
 
@@ -63,23 +64,6 @@ def declares_answering_and_independent_final(root, final_seconds):
             "You have 5 hours (18000 seconds) for answering.",
             f"Final verification has its own {final_seconds}-second budget after answering.",
             "The final budget is independent of the answering window;",
-        )
-    ):
-        return True
-    # 中文题面同样必须明确作答秒数、独立 final 秒数和退出后的评分边界。
-    if root.name == "hacking_blind" and all(
-        part in normalized_entry
-        for part in (
-            "作答时限 18,000 秒；",
-            f"最终验证有独立的 {final_seconds} 秒预算。",
-            "正式评分在 Agent 退出后开始。",
-        )
-    ):
-        return True
-    if root.name == "hacking_blind" and all(
-        part in normalized_entry for part in (
-            "作答18000秒，", f"独立 final{final_seconds}秒；",
-            "唯一独立 final 在 Agent 退出后执行，结果不回流作答上下文。",
         )
     ):
         return True
@@ -203,6 +187,30 @@ def declares_answering_and_independent_final(root, final_seconds):
         if all(part in linked for part in (
             "Answering lasts exactly 18,000 seconds (five hours), including train work.",
             "Final has its own independent 600-second allowance after answering; it does not add to the answering clock.",
+        )):
+            return True
+    # Ripser declares the five-hour answering window and the separate post-
+    # answering final clock in its linked immutable statement; the generated
+    # entry states the same exact clocks and the post-exit scoring boundary.
+    ripser_statement = task_manifest.layout(root).repo / "README.md"
+    if (
+        root.name == "ripser_persistence"
+        and "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
+        and not ripser_statement.is_symlink()
+        and not ripser_statement.parent.is_symlink()
+        and ripser_statement.is_file()
+        and final_seconds == 300
+        and all(part in normalized_entry for part in (
+            "The task's configured per-evaluation timeout is **300 seconds**, and the overall answering window is **18000 seconds**.",
+            "Agent work and train share that answering window; their limits are not additive.",
+            "Final evaluation has a separate **300-second** allowance; it does not consume train calls or the train wall-time budget.",
+            "exactly once, and exit. The final score is produced after you exit;",
+        ))
+    ):
+        linked = " ".join(ripser_statement.read_text().split())
+        if all(part in linked for part in (
+            "The answering window is 18000 seconds (five hours), including training and other Agent work.",
+            "final verification has a separate 300-second clock after the answering phase.",
         )):
             return True
     # Glenside links its existing public statement, which contains both exact
@@ -675,10 +683,8 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
                 self.assertFalse(declares_answering_and_independent_final(root, 9000))
 
     def test_every_public_task_preserves_its_approved_answering_and_final_contract(self):
-        definitions = json.loads(renderer.DEFINITIONS.read_text())
-        for name, root in renderer.catalog_problem_directories(
-            renderer.catalog_task_names(), renderer.TASK_ROOT / "problems"
-        ).items():
+        definitions = task_layers.load_definitions()
+        for name, root in renderer.catalog_problem_directories(renderer.catalog_task_names()).items():
             with self.subTest(task=name):
                 policy = task_manifest.load_policy(root)
                 self.assertEqual(definitions[name]["quota"], policy["quota"])
@@ -691,7 +697,7 @@ class LrrApprovedBudgetTests(unittest.TestCase):
     def test_exact_clocks_in_the_generated_agent_readme(self):
         # lrr is a task.toml task: its clocks come from task.toml into the generated
         # /frontier/task/README.md, which must state each of them exactly.
-        source = renderer.problem_directory(renderer.TASK_ROOT / "problems", "lrr")
+        source = renderer.task_directory("lrr")
         self.assertTrue(task_manifest.is_native(source))
         policy = task_manifest.load_policy(source)
         self.assertEqual(policy["quota"], {"wall_time_seconds": 18000, "max_train_calls": 100,
@@ -754,6 +760,57 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
             outside.write_text(statement_text)
             statement.symlink_to(outside)
             self.assertFalse(declares_answering_and_independent_final(root, 600))
+
+    def test_ripser_linked_contract_requires_exact_clocks_and_final_boundary(self):
+        import tempfile
+
+        entry_text = (
+            "The task statement is at `/frontier/task/repo/README.md`. "
+            "The task's configured per-evaluation timeout is **300 seconds**, and the overall answering window is **18000 seconds**. "
+            "Agent work and train share that answering window; their limits are not additive. "
+            "Final evaluation has a separate **300-second** allowance; it does not consume train calls or the train wall-time budget. "
+            "exactly once, and exit. The final score is produced after you exit;"
+        )
+        statement_text = (
+            "The answering window is 18000 seconds (five hours), including training and other Agent work. "
+            "Each native verification is limited to 300 seconds; "
+            "final verification has a separate 300-second clock after the answering phase."
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "ripser_persistence"
+            entry = task_manifest.layout(root).statement
+            statement = entry.parent / "repo/README.md"
+            statement.parent.mkdir(parents=True)
+            entry.write_text(entry_text)
+            for valid in (statement_text, statement_text.replace(" ", "\n")):
+                statement.write_text(valid)
+                self.assertTrue(declares_answering_and_independent_final(root, 300))
+                self.assertFalse(declares_answering_and_independent_final(root, 301))
+            statement.write_text(statement_text)
+            for before, after in (("18000", "18001"), ("300-second", "301-second"),
+                                  ("after you exit", "before you exit"),
+                                  ("`/frontier/task/repo/README.md`", "`/elsewhere`")):
+                with self.subTest(entry_mutation=(before, after)):
+                    entry.write_text(entry_text.replace(before, after))
+                    self.assertFalse(declares_answering_and_independent_final(root, 300))
+            entry.write_text(entry_text)
+            for before, after in (("18000", "18001"), ("five hours", "six hours"),
+                                  ("300-second clock", "301-second clock"), ("separate", "shared"),
+                                  ("after the answering phase", "during the answering phase")):
+                with self.subTest(statement_mutation=(before, after)):
+                    statement.write_text(statement_text.replace(before, after))
+                    self.assertFalse(declares_answering_and_independent_final(root, 300))
+            statement.unlink()
+            self.assertFalse(declares_answering_and_independent_final(root, 300))
+            outside = Path(directory) / "outside.md"
+            outside.write_text(statement_text)
+            statement.symlink_to(outside)
+            self.assertFalse(declares_answering_and_independent_final(root, 300))
+            other = Path(directory) / "other_task"
+            (other / "agent-base/frontier/task/repo").mkdir(parents=True)
+            (other / "agent-base/frontier/task/README.md").write_text(entry_text)
+            (other / "agent-base/frontier/task/repo/README.md").write_text(statement_text)
+            self.assertFalse(declares_answering_and_independent_final(other, 300))
 
     def test_quarter_native_contract_requires_exact_clocks_and_exit(self):
         import tempfile
@@ -1177,48 +1234,6 @@ class ClusterwiseApprovedBudgetTests(unittest.TestCase):
             outside.write_text(statement)
             guide.symlink_to(outside)
             self.assertFalse(declares_public_budget("clusterwise_spgemm", root, policy))
-
-
-class ChineseHackingBudgetNoticeTests(unittest.TestCase):
-    def test_requires_exact_clocks_and_post_exit_final(self):
-        import tempfile
-
-        notice = (
-            "作答时限 18,000 秒；最多 50 次 train。\n"
-            "最终验证有独立的 120 秒预算。\n"
-            "正式评分在 Agent 退出后开始。"
-        )
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / "hacking_blind"
-            entry = root / "agent-base/frontier/task/README.md"
-            entry.parent.mkdir(parents=True)
-            entry.write_text(notice)
-            self.assertTrue(declares_answering_and_independent_final(root, 120))
-            self.assertFalse(declares_answering_and_independent_final(root, 121))
-            for old, new in (
-                ("18,000", "1,800"),
-                ("120", "1200"),
-                ("有独立的", "有共享的"),
-                ("退出后", "退出前"),
-            ):
-                with self.subTest(statement=old):
-                    entry.write_text(notice.replace(old, new))
-                    self.assertFalse(declares_answering_and_independent_final(root, 120))
-
-    def test_native_defense_exact_budgets_and_post_exit_boundary(self):
-        import tempfile
-        notice = "作答18000秒，最多100次 train；独立 final1800秒；唯一独立 final 在 Agent 退出后执行，结果不回流作答上下文。"
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / "hacking_blind"
-            entry = root / "agent-base/frontier/task/README.md"
-            entry.parent.mkdir(parents=True)
-            entry.write_text(notice)
-            self.assertTrue(declares_answering_and_independent_final(root, 1800))
-            self.assertFalse(declares_answering_and_independent_final(root, 180))
-            for a, b in (("18000", "1800"), ("独立 final", "共享 final"),
-                         ("退出后", "退出前"), ("不回流", "回流")):
-                entry.write_text(notice.replace(a, b))
-                self.assertFalse(declares_answering_and_independent_final(root, 1800))
 
 
 if __name__ == "__main__":

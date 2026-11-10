@@ -70,7 +70,7 @@
   "status": "estimator_time_successor_source_only_calibration_pending",
   "scientific_revision": {
     "release": "composition-scaled-logn12-configurations-v2",
-    "authorization": "2026-10-12 revision: accuracy not worse and estimator time strictly lower; whole estimator package editable except the fixed set",
+    "authorization": "2026-10-12 owner decision: accuracy not worse and estimator time strictly lower; whole estimator package editable except the fixed set",
     "calibration": "pending; no predecessor bands or qualification transferred",
     "development_workloads": 21,
     "final_workloads": 29,
@@ -85,12 +85,12 @@
   "scientific_revision_history": [
     {
       "release": "composition-scaled-logn12-v1",
-      "authorization": "2026-10-05 CKKS revision",
+      "authorization": "2026-10-05 CKKS direct user decision",
       "calibration": "pending; no old bands reused"
     },
     {
       "release": "composition-scaled-logn12-configurations-v2",
-      "authorization": "2026-10-07 revision: CKKS accuracy-only exception and feasible missing configurations",
+      "authorization": "2026-10-07T17:28Z direct user decision: CKKS accuracy-only exception and feasible missing configurations",
       "calibration": "frozen for the predecessor source only; not transferable"
     }
   ]

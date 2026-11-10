@@ -11,7 +11,7 @@
       "verifier_gpu": true
     },
     "delivery": {
-      "current_qualification": "Hand-authored source revision. Immutable images for the five roles (agent, verifier, datasets, agent GPU, verifier GPU) are published under docker.io/joyemang33 with source-bound tags and pinned by digest in the task catalog, which is the authority for the digests. Author H100 calibration ran this evaluator in an image built from verifier-gpu/Dockerfile without its SSH-bootstrap stage (development suite 1128 s, final suite 5728 s, reference procedure against itself). Native Driver qualification with the published images (reference train and final) is pending and will be run by the transfer line."
+      "current_qualification": "Hand-authored source revision. Immutable images for the five roles (agent, verifier, datasets, agent GPU, verifier GPU) are published under docker.io/joyemang33 with source-bound tags and pinned by digest in the Preview task catalog, which is the authority for the digests. Author H100 calibration ran this evaluator in an image built from verifier-gpu/Dockerfile without its SSH-bootstrap stage (development suite 1128 s, final suite 5728 s, reference procedure against itself). Native Driver qualification with the published images (reference train and final) is pending and will be run by the transfer line."
     },
     "evaluation": {
       "authored_max_dev_submissions": 3,

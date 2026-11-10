@@ -23,6 +23,7 @@
   "workloads_sha256": "e945574d216d2b1263b3ed872daf7cf888ef288bc7224c2585d0568157b92456",
   "subset_provenance": {
     "parent_workloads_sha256": "b7c69475232ffb744d6567642df24a4f0b631682dfffab0ca5c5d62a2eec835c",
-    "selection": "first 10 development and 40 heldout records per stratum, in previously frozen order"
+    "selection": "first 10 development and 40 heldout records per stratum, in previously frozen order",
+    "user_authorized": true
   }
 }

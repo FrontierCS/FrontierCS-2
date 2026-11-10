@@ -4,6 +4,6 @@ usage: frontier_deploy.py seed-tasks [-h] --config CONFIG [--catalog CATALOG]
 options:
   -h, --help         show this help message and exit
   --config CONFIG
-  --catalog CATALOG
+  --catalog CATALOG  a catalog file in place of the repository's task layers
   --check            GET existing versions and compare digests; do not seed or
                      write state

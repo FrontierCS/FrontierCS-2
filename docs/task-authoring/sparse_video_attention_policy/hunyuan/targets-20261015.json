@@ -1,0 +1,84 @@
+{
+  "inputs": [
+    "svg-hunyuan-targets-20261015/shard-000",
+    "svg-hunyuan-targets-20261015/shard-001",
+    "svg-hunyuan-targets-20261015/shard-002"
+  ],
+  "merged_at": "2026-10-15T21:43:48.572085+00:00",
+  "schema": "frontier.svg-hunyuan-targets/v1",
+  "targets": {
+    "hunyuan_t2v_720p_feedback_0": {
+      "dense": {
+        "e2e_latency_seconds": 797.575589797,
+        "path": "hunyuan-feedback-0-dense.mp4",
+        "sha256": "e5af10cf180b725796c02a7e2315dadf31cfef8652088bc3ee6e1947071177b2"
+      },
+      "reference": {
+        "e2e_latency_seconds": 445.954326167,
+        "path": "hunyuan-feedback-0-reference.mp4",
+        "sha256": "982fd3a768f3456a2f4d83620170f011d0a715d27ce37586abe5ed95d843fa6d"
+      }
+    },
+    "hunyuan_t2v_720p_feedback_1": {
+      "dense": {
+        "e2e_latency_seconds": 803.248058606,
+        "path": "hunyuan-feedback-1-dense.mp4",
+        "sha256": "fe8191fe7ac0a67e7f88a893ea2900e77720b747223c8a9510b75154b9595b9d"
+      },
+      "reference": {
+        "e2e_latency_seconds": 444.251547768,
+        "path": "hunyuan-feedback-1-reference.mp4",
+        "sha256": "6930aed1da2428d69767a5f432067c75dfc23fd9569716eb22a5ef914ae0e6ce"
+      }
+    },
+    "hunyuan_t2v_720p_graded_0": {
+      "dense": {
+        "e2e_latency_seconds": 800.7861156390001,
+        "path": "hunyuan-graded-0-dense.mp4",
+        "sha256": "57cac0cf0e4ef03e597644625a5652b70531b6b9f1d28dcc50786e777fc76b7b"
+      },
+      "reference": {
+        "e2e_latency_seconds": 443.342898285,
+        "path": "hunyuan-graded-0-reference.mp4",
+        "sha256": "4ccae25b325316b7e013a455af677b45962ef51367ec1f079806572b32c2378a"
+      }
+    },
+    "hunyuan_t2v_720p_graded_1": {
+      "dense": {
+        "e2e_latency_seconds": 801.88388144,
+        "path": "hunyuan-graded-1-dense.mp4",
+        "sha256": "e577326d1d336ae9606644058caf56322a6dec24cec15776369fc712721dafb6"
+      },
+      "reference": {
+        "e2e_latency_seconds": 438.31819408900003,
+        "path": "hunyuan-graded-1-reference.mp4",
+        "sha256": "3da9482a7bc49cc3f3a82e8024701334d0b58236f9c1e7c53ba7af427e026246"
+      }
+    },
+    "hunyuan_t2v_720p_graded_2": {
+      "dense": {
+        "e2e_latency_seconds": 811.279401595,
+        "path": "hunyuan-graded-2-dense.mp4",
+        "sha256": "a2bb98cee610e423eb28cbf6afc5968ac918f79e851172966d8ea2e61dbfe523"
+      },
+      "reference": {
+        "e2e_latency_seconds": 446.08581122699997,
+        "path": "hunyuan-graded-2-reference.mp4",
+        "sha256": "c9db47144570a4f9a19fd06922ad442b154f6efea092b0983c8fbe2fc7affc52"
+      }
+    },
+    "hunyuan_t2v_720p_graded_3": {
+      "dense": {
+        "e2e_latency_seconds": 795.566055568,
+        "path": "hunyuan-graded-3-dense.mp4",
+        "sha256": "504bf4f0c223eb05466ce64662092f932cbec9f4edca33ef35b520cb02330467"
+      },
+      "reference": {
+        "e2e_latency_seconds": 438.880842691,
+        "path": "hunyuan-graded-3-reference.mp4",
+        "sha256": "b8e3751441ba6d68ff62383b46d3e656ff83f79d433205873face0f6ef382348"
+      }
+    }
+  },
+  "wan_filler_drift": []
+}

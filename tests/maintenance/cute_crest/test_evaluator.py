@@ -135,7 +135,7 @@ def test_reference_or_harness_failure_is_never_a_candidate_result(harness):
 def test_every_exit_status_of_the_strategy_is_its_own(harness, status):
     # The harness calls exit statuses 71 and 127 harness_error:*; the strategy can end with
     # them itself, and a launcher failure never reaches a status (run_search.py), so they void
-    # the submission like any other exit (owner decision 2026-11-07).
+    # the submission like any other exit.
     score, unbounded, message, metrics = harness(lambda i, n: run(0, status=status), spread(1586))
     assert (score, message) == (0.0, "invalid candidate: " + status.replace(":", "_"))
 
