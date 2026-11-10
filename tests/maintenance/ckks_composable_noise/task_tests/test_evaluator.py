@@ -202,23 +202,25 @@ def test_go_adapter_requires_invocation_and_rejects_escape():
 
 @GO
 def test_source_policy_accepts_numerical_helpers_rejects_tampering(tmp_path):
+    # The judge's own entry point: check_tree builds source_policy.go and runs it over the tree.
+    from types import SimpleNamespace
     tree=tmp_path/'tree';shutil.copytree(e.PRISTINE,tree)
-    policy=tmp_path/'policy';deadline=time.monotonic()+120
-    e.run(['go','build','-p=1','-o',policy,e.TASK_DIR/'judge/source_policy.go'],e.TASK_DIR,deadline)
+    change=[SimpleNamespace(status='M',path='estimator/noise.go')]
+    policy=lambda:e.check_tree(str(tree),str(e.PRISTINE),change)
     helper=tree/'estimator/tables';helper.mkdir(parents=True)
     (helper/'tables.go').write_text('package tables\nimport "math/bits"\nvar Weights = [...]float64{1,2,3}\nfunc Width(x uint)int{return bits.Len(x)}\n')
-    e.run([policy,e.PRISTINE,tree],tree,deadline)
+    assert policy() is None
     p=tree/'estimator/noise.go';original=p.read_text()
     # Editable files may change freely; only what they import and schedule is policed.
     p.write_text(original.replace('sigma *= math.Sqrt','sigma *= 1 * math.Sqrt'))
-    e.run([policy,e.PRISTINE,tree],tree,deadline)
+    assert policy() is None
     for bad in (original.replace('"math"','"math"\n"os"'),original.replace('"math"','"math"\n"sync"'),
                 original.replace('time.Now().UnixNano()','time.Since(time.Now()).Nanoseconds()')):
         assert bad!=original;p.write_text(bad)
-        with pytest.raises(e.EvaluationError):e.run([policy,e.PRISTINE,tree],tree,deadline)
+        assert policy()==('content_policy',['estimator/noise.go'])
     p.write_text(original)
     (helper/'tables.go').write_text('package tables\nfunc init(){}\n')
-    with pytest.raises(e.EvaluationError):e.run([policy,e.PRISTINE,tree],tree,deadline)
+    assert policy()==('content_policy',['estimator/noise.go'])
 
 @GO
 def test_check_tree_reports_policy_violations_as_content_policy(tmp_path):
@@ -232,11 +234,15 @@ def test_check_tree_reports_policy_violations_as_content_policy(tmp_path):
 @GO
 def test_all_original_and_measured_mains_compile_only(restored,tmp_path):
     deadline=time.monotonic()+900
-    e.run(['go','build','-p=1','./...'],e.PRISTINE/'estimator',deadline)
+    # Compile only, with the judge's toolchain settings; run() is reserved for measured `go run`.
+    def build(args,cwd):
+        subprocess.run(['go','build','-p=1',*map(str,args)],cwd=cwd,env=e.go_env(),check=True,
+                       capture_output=True,timeout=max(1,deadline-time.monotonic()))
+    build(['./...'],e.PRISTINE/'estimator')
     for name in e.FINAL_SUITE:
         row=e.WORKLOADS[name]
         overlay,_=e.prepare_overlay(restored,tmp_path/name,e.observation_prefix(),row)
-        e.run(['go','build','-p=1','-overlay',overlay,'-o',tmp_path/'bin','./experiments/'+row['circuit']],restored/'estimator',deadline)
+        build(['-overlay',overlay,'-o',tmp_path/'bin','./experiments/'+row['circuit']],restored/'estimator')
 
 def test_absolute_importlib_stdlib_loading(tmp_path):
     code='import importlib.util,sys;s=importlib.util.spec_from_file_location("e",sys.argv[1]);m=importlib.util.module_from_spec(s);sys.modules["e"]=m;s.loader.exec_module(m);assert m.evaluate("missing")[0]==0'

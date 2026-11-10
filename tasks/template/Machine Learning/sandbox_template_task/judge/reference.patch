@@ -1,0 +1,38 @@
+diff --git a/model/fit.py b/model/fit.py
+index e39ec7a..ed69078 100644
+--- a/model/fit.py
++++ b/model/fit.py
+@@ -1,16 +1,25 @@
+-"""Starter: a straight line by least squares. Plain Python; PyTorch is there if you want it."""
++"""Reference: a cubic polynomial by least squares (normal equations), plain Python."""
++
++DEGREE = 3
+ 
+ 
+ def fit(xs: list[float], ys: list[float]) -> dict:
+     """Fit the training points; return the model as a JSON-serialisable dict."""
+-    n = len(xs)
+-    mean_x, mean_y = sum(xs) / n, sum(ys) / n
+-    sxx = sum((x - mean_x) ** 2 for x in xs)
+-    sxy = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+-    slope = sxy / sxx
+-    return {"slope": slope, "intercept": mean_y - slope * mean_x}
++    size = DEGREE + 1
++    moments = [sum(x ** k for x in xs) for k in range(2 * DEGREE + 1)]
++    rows = [[moments[i + j] for j in range(size)] + [sum(y * x ** i for x, y in zip(xs, ys))]
++            for i in range(size)]
++    for column in range(size):  # Gaussian elimination with partial pivoting
++        pivot = max(range(column, size), key=lambda r: abs(rows[r][column]))
++        rows[column], rows[pivot] = rows[pivot], rows[column]
++        for r in range(size):
++            if r != column:
++                factor = rows[r][column] / rows[column][column]
++                rows[r] = [a - factor * b for a, b in zip(rows[r], rows[column])]
++    return {"coefficients": [rows[i][size] / rows[i][i] for i in range(size)]}
+ 
+ 
+ def predict(params: dict, xs: list[float]) -> list[float]:
+     """The model's prediction at each x."""
+-    return [params["slope"] * x + params["intercept"] for x in xs]
++    coefficients = params["coefficients"]
++    return [sum(c * x ** k for k, c in enumerate(coefficients)) for x in xs]

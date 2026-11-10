@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import copy
+
+import image_namespace
+
 from .infra import DeployError, canonical_object_sha256, runtime_source_commit
 
 
@@ -10,7 +13,7 @@ def require_native_management_record(config, record):
     source = config["images"]["management"]
     commit = runtime_source_commit(config, "management")
     repository = f"{config['network']['registry_cluster_ip']}:5000/frontier/runtime/management"
-    if (source["repository"] != "docker.io/joyemang33/fcs2-management"
+    if (source["repository"] != image_namespace.repository("fcs2-management")
             or source["tag"] != "sha-" + commit
             or source["reference"] != source["repository"] + "@" + source["digest"]
             or record != {"tag": repository + ":git-" + commit[:20],

@@ -46,7 +46,11 @@ class RosterTests(unittest.TestCase):
         for candidate in ROSTER["candidates"]:
             with self.subTest(candidate=candidate["id"]):
                 harness = harnesses[candidate["harness"]]
-                self.assertEqual(candidate["harness_version"], harness["version"])
+                # A candidate evaluated with an earlier recipe keeps the version it ran; only
+                # then may it differ from the recipe's.
+                if candidate["harness_version"] != harness["version"]:
+                    self.assertNotEqual(candidate["image_source_commit"],
+                                        harness["recipe"]["source_commit"])
                 self.assertIn(candidate["reasoning_effort"], EFFORTS)
                 image = candidate["overlay_image"]
                 self.assertTrue(image["repository"].startswith("docker.io/"))

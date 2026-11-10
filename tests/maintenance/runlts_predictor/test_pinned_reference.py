@@ -1,7 +1,7 @@
 """The pinned reference table: when it is used, when it is refused, how it is audited.
 
-The shipped table is checked against the task tree and the archived reference
-receipts. Evaluations below use invented simulator outputs and a temporary table;
+The shipped table is checked against the task tree (its reproduction from the
+reference receipts is a Preview test). Evaluations below use invented simulator outputs and a temporary table;
 no predictor is built or run.
 """
 import deployment_test_guard  # noqa: F401  # isort: skip
@@ -11,7 +11,6 @@ import io
 import json
 from pathlib import Path
 import shutil
-import subprocess
 import sys
 import tarfile
 import types
@@ -25,7 +24,6 @@ adapter = MODULES["fcs2_verifier"]
 policy = MODULES["source_policy"]
 REPO = REPOSITORY_ROOT
 PROVENANCE = REPO / "docs/task-authoring/runlts_predictor/provenance"
-GENERATOR = REPO / "scripts/maintenance/runlts_predictor/pin_reference_counts.py"
 HEADER = "       Instr       Cycles      IPC      NumBr     MispBr BrPerCyc MispBrPerCyc        MR     MPKI      CycWP   CycWPAvg   CycWPPKI"
 N = 1000000
 SHIPPED_TABLE = e.PINNED_REFERENCE
@@ -82,28 +80,6 @@ def test_shipped_identity_is_the_pinned_reference_and_documents(restored):
     assert identity["invocation"]["build_argv"] == ["make", "-j1", "OPT=-O3 -D_GLIBCXX_ASSERTIONS"]
     # The restored reference is the tree the logical-storage audit recognises.
     assert policy.audit(restored)["logical_bits"] == policy.REFERENCE_BITS
-
-
-def test_shipped_table_is_reproduced_from_the_archived_receipts():
-    done = subprocess.run([sys.executable, "-B", str(GENERATOR), "--check"], capture_output=True, text=True, timeout=300)
-    assert done.returncode == 0, done.stdout + done.stderr
-    assert e.PINNED_REFERENCE_SHA256 in done.stdout
-
-
-def test_archived_copies_of_the_reference_run_agree_and_match_the_native_score(restored):
-    # progress.json and result.recovered.json are copies of the per-trace receipts,
-    # not repeat executions. The recorded native reference run agrees in its score.
-    doc = json.loads(e.PINNED_REFERENCE.read_text())
-    table = {row["id"]: row for row in doc["rows"]}
-    receipts = REPO / doc["provenance"]["receipts"]
-    for name in ("progress.json", "result.recovered.json"):
-        for row in json.loads((receipts / name).read_text())["rows"]:
-            half, pinned = row["latter_half"], table[row["id"]]
-            assert (half["instr"], half["misp_br"], half["cyc_wp"], row["full"]["instr"]) == (
-                pinned["instr"], pinned["misp_br"], pinned["cyc_wp"], pinned["full_instr"])
-    native = doc["provenance"]["native_reference_run"]
-    assert native["score_equals_table"] is True and native["reference_patch_equals_table"] is True
-    assert e.score_of(list(e.pinned_reference(workloads(), restored).values())) == native["score"]
 
 
 # ------------------------------------------------------ refusals of the table

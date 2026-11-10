@@ -976,7 +976,6 @@ def baseline_from_measurement(
         adapter = source / "verifier/verify.py"
     return {
         "agreement_rule": dict(RULE),
-        "historical_scores": [score],
         "historical_mean": score,
         "historical_spread": 0.0,
         "datasets": {
@@ -990,7 +989,6 @@ def baseline_from_measurement(
         "reference_patch_sha256": sha(payload),
         "provenance": "measured",
         "comparable": True,
-        "comparability_note": "Independent native authoring reference; one sample does not establish repeatability.",
         "measurement": {
             "schema_version": SCHEMA,
             "packet_sha256": sha(packet_body),

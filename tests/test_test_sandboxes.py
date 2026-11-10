@@ -339,8 +339,10 @@ class StandaloneVerifierTest(Fixture):
             '"""Scoring note."""\nRESULT = {"beats_reference": 0}\n')
         with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "beat_spec_progress"):
             validate_task_layout.validate_task(self.root)
+        # A standalone Verifier names the template's [feedback] metric itself.
         (self.root / "verifier/verify.py").write_text(
-            '"""Scoring note."""\nRESULT = {"beats_reference": 0, "beat_spec_progress": {}}\n')
+            '"""Scoring note."""\nRESULT = {"beats_reference": 0, "beat_spec_progress": {},'
+            ' "wall_seconds_total": 0.0}\n')
         validate_task_layout.validate_task(self.root)
 
 

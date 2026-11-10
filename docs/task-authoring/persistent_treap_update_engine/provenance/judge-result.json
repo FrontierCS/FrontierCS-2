@@ -35,8 +35,8 @@
       {
         "round": 3,
         "idx": 0,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.5400076153417878,
         "score": 54.00076153417877,
         "beats_reference": 1,

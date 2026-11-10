@@ -66,7 +66,7 @@
    "AVG",
    "STD"
   ],
-  "reason": "The two accuracy statistics are location and spread on one axis; both are kept. Estimator time is a second, separately measured axis added for this release: a trusted in-process clock over the estimator-side statements of the fixed experiment programs.",
+  "reason": "The two accuracy statistics are location and spread on one axis; the user approved keeping both. Estimator time is a second, separately measured axis added for this release: a trusted in-process clock over the estimator-side statements of the fixed experiment programs.",
   "validity": "Per workload: declared parameters, complete finite statistics from the trusted derived main, byte-identical fixed surface, source policy and public-interface check; all 58 accuracy cells and all 87 time pairs conjunctive."
  }
 }

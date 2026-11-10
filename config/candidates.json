@@ -4,14 +4,23 @@
   "source_repository": "https://github.com/FrontierCS/FrontierCS-2",
   "builtin_candidate": "codex",
   "harnesses": {
+    "agy-gemini": {
+      "display_name": "Antigravity CLI",
+      "version": "1.4.7",
+      "recipe": {
+        "path": "candidates/agy-gemini",
+        "source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7"
+      },
+      "upstream": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.7-5900205422411776/linux-x64/cli_linux_x64.tar.gz"
+    },
     "claude-code": {
       "display_name": "Claude Code",
-      "version": "2.1.296",
+      "version": "2.1.311",
       "recipe": {
         "path": "candidates/claude-code",
-        "source_commit": "bc42240f72ccab6d97dc23d9af8b3884b439c6a5"
+        "source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7"
       },
-      "upstream": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.296.tgz"
+      "upstream": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.311.tgz"
     },
     "codex": {
       "display_name": "Codex CLI",
@@ -49,6 +58,15 @@
         "source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33"
       },
       "upstream": "https://lookaside.facebook.com/lookaside/muse/download/?channel=muse&version=1.4.2-R4684.1&file=muse-x86-linux"
+    },
+    "opencode": {
+      "display_name": "OpenCode",
+      "version": "1.19.5",
+      "recipe": {
+        "path": "candidates/opencode",
+        "source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7"
+      },
+      "upstream": "https://registry.npmjs.org/opencode-ai/-/opencode-ai-1.19.5.tgz"
     },
     "pi-gemini": {
       "display_name": "Pi",

@@ -9,7 +9,7 @@ letters, digits and underscores, starting with a letter).
 python3 scripts/import_task.py /path/to/problem_id --plan
 make import-task EXPORT=/path/to/problem_id
 # Build, verify datasets, then publish using existing Docker authentication:
-make import-task EXPORT=/path/to/problem_id PUBLISH=1 IMAGE_NAMESPACE=<your-namespace>
+make import-task EXPORT=/path/to/problem_id PUBLISH=1 IMAGE_NAMESPACE=docker.io/<your-namespace>
 ```
 
 Use one of the last two commands: changing from a local build to publication
@@ -41,8 +41,10 @@ import_task.py EXPORT_DIR
 
 `auto` uses published images when a manifest is supplied and otherwise builds.
 An invalid manifest is an error. `published` requires a manifest; `build` cannot
-also receive one. `--publish` applies only to builds. The default namespace is
-`joyemang33`; `EXPORT`, `PUBLISH` and `IMAGE_NAMESPACE` configure the Make target.
+also receive one. `--publish` applies only to builds. `--image-namespace` takes
+`docker.io/<namespace>` and defaults to the repository's one declaration,
+`config/image-namespace.json`; `EXPORT`, `PUBLISH` and `IMAGE_NAMESPACE` configure
+the Make target.
 
 ## Source checks and prerequisites
 
@@ -55,6 +57,16 @@ source-lock identity.
 Every test imports `deployment_test_guard` before other runtime imports. Keep
 that import exempt from automatic sorting so formatting preserves the guard's
 required initialization order.
+
+The supported pipeline is **Smith export → staging → Preview**. Preview imports
+native exports; it never hand-converts a task. Importing tasks (including
+`--plan` and `--check`) requires Python `jsonschema`: install it with
+`pip install jsonschema`. External measured evidence additionally needs `zstandard`
+(`pip install zstandard`); the test preflight requires both modules. Install Git LFS and run
+`git lfs pull` before local task builds, tests or `make validate`. The preflight
+rejects unresolved pointers matched by `.gitattributes` and a missing Python
+`jsonschema` or `zstandard` package; identity tests are never skipped. Installation consumes
+published task images and needs no hydrated LFS objects.
 
 The renderer's frozen `preview-source-identity/v1` hashes the complete task tree
 using normalized GNU tar. Hidden files and executable bits
@@ -277,11 +289,11 @@ changing it on an existing import requires `--replace`. Never promote a Preview
 replay into its own baseline. If no result exists, the exact default is:
 
 ```json
-{"provenance": "unverified", "comparable": false, "comparability_note": "no judge/result.json in the export"}
+{"provenance": "unverified", "comparable": false}
 ```
 
-A result lacking evaluator/payload bindings is also unverified; its valid
-scores and available hashes are retained, and the note lists missing binding files. Invalid results
+A result lacking evaluator/payload bindings is also unverified; its reference
+mean, spread and available hashes are retained. Invalid results
 are refused. Reference payload hashes remain separately bound in the descriptor.
 
 Tests preserve existing baseline numeric/input fields. Operator classifications
@@ -290,10 +302,16 @@ publication does not silently regenerate or reclassify existing baselines.
 
 ## Independent measurements outside the export
 
+When the frozen export has no result for its current image, an existing,
+independent native authoring measurement can supply the baseline without changing
+any export bytes. Keep the complete evidence packet outside the export and pass
+it on **both** import and check:
+
 ```bash
 python3 scripts/import_task.py /physical/path/to/problem_id \
   --published-images /evidence/task-images.json \
   --measured-baseline /evidence/measurement.json --plan
+# After reviewing the plan, use the same inputs without --plan (and --replace
 # when replacing an existing catalog entry). Verify with the same inputs:
 python3 scripts/import_task.py /physical/path/to/problem_id \
   --published-images /evidence/task-images.json \
@@ -342,12 +360,34 @@ to 32 MiB, and member count to 256. Absolute/traversing packet paths, symlinks i
 any path component, duplicate JSON fields, nonfinite JSON numbers, duplicate tar
 members, links, special files, sparse members and extended tar metadata are errors.
 
+Qualification binds the full TaskConfig, versioned datasets, source identity,
+public and native image digests, exact guarded/model-free Candidate config,
+launcher and reference bytes, actual Evaluation/Run IDs, one successful train,
+and one finite final score. Existing logical Candidate names are retained (native
+`frontiersmith2-preview-reference-<task>`, `frontiersmith2-reference-<task>`, or
+`reference-<task>-authoring`); they never replace typed-version and full receipt
+binding. Both actual submission archives must contain exactly
+the frozen `payload/solution.patch` or `payload/solution.json`; their archive hashes
+are distinct from the installed file hash. Standard verifier results must agree
+with Driver/Management scores and dataset-bound `metrics.json` (or the
+`parallel-dbscan-evidence/v1` `measurement.json`). One adjacent positive JSON f64
+transport value is allowed; arbitrary score drift is not. The source must be an
+independent authoring Evaluation, never Preview reference parity.
+
 The catalog stores `provenance: measured`, exact measurement IDs, packet hash,
 original PASS/FAIL verdict, train score and final sample. Spread zero describes a
 single sample, not repeatability. `--check` repeats qualification, compares the
 entire derived baseline including classification, and binds every catalog image
 to the measured manifest before normal registry verification. It fails if the
 packet is missing or changed; there is no fallback to trusting a provenance tag.
+
+**Trust boundary:** receipt origin is an operator responsibility. Packet hashes
+prove byte integrity, not a platform signature or independent server provenance.
+The importer cross-checks authentic retained Management/Driver records and
+artifacts; it cannot authenticate fabricated offline receipts. It does not fetch
+missing evidence. Original binding paths are historical context only and are
+never followed. Retain the packet alongside its acquisition receipts for review.
+Normal import/check registry verification and all deployment gates still apply.
 
 ## Re-run, check, and deploy
 
@@ -374,6 +414,7 @@ Importing does not create a commit.
 
 ```bash
 python3 scripts/import_task.py /path/to/problem_id --check
+# For a payload supplied outside the tree, pass --reference-payload again.
 # If imported with --no-reference, repeat it even when judge/reference.patch exists.
 make validate CONFIG=config/site.example.json
 make validate CONFIG=config/site.json
@@ -396,6 +437,18 @@ a focused unittest recipe for `make test`; the outer repository suite runs once,
 without recursively repeating itself inside each import. The real importer and
 release Makefile retain their full validation and test commands.
 
+After reviewing and committing the task release, follow the
+[live-site procedure](operations.md#live-site-changes) and deploy with
+`CONFIRM_ACCOUNT=<account> CONFIRM_SITE=<site> make apply`, using the values
+from `config/site.json`.
+Then run [reference parity](operations.md#reference-parity-acceptance-gate), for
+example `python3 scripts/reference_parity.py --task NAME --config config/site.json
+--management-url http://127.0.0.1:8080 --receipt docs/evidence/reference-parity-NAME.json`.
+A task with no reference has no reference replay. An unverified/non-comparable
+baseline yields `NOT_COMPARABLE` after a successful run, never a tolerance PASS;
+execution/evidence failures still fail. Local or mocked checks do not establish
+live publication, deployment or score parity.
+
 ## Domain-grouped source directories
 
 Existing tasks can live at `tasks/problems/<domain>/<task>/`.
@@ -405,3 +458,22 @@ complete task root into its paper domain after successful import. Do not edit
 source bytes or regenerate identities merely to relocate a directory. Both
 layouts work, but duplicate task names are rejected. See
 the migration and import check.
+
+
+Partitioned SSH audit policies keep independent session counts, per-stream byte
+caps, and a whole-Run `max_bundle_bytes` limit. The layout gate matches native
+Driver admission: Verifier evidence, 24 MiB archive reserve, the standard gateway
+snapshot/disposition reserve, one maximum model exchange, and (when GPU is
+enabled) one maximum SSH channel plus 24 KiB request metadata. Bundles at least
+8 GiB include the 4 GiB gateway snapshot; smaller bundles retain 128 MiB, with
+4 MiB disposition in either case. Session ceilings do not promise all sessions
+can fill their streams: actual retained traffic shares the finite aggregate and
+Driver fails closed when it is exhausted. The aligned gate enforces 64 MiB model
+streams, 512 MiB SSH directions, 2,048 sessions per kind and 4,096 combined,
+separated role pools, and the 32 GiB bundle cap. This does not change task
+permissions or scientific measurements. The 512 MiB and combined-session
+capabilities require a runtime that supports them; validating a source
+tree does not mean an older deployed Driver supports it.
+
+BROP packaging permission acceptance is described in
+brop-helper-permissions.md.

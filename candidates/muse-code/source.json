@@ -1,5 +1,4 @@
 {
-  "repository": "https://github.com/FrontierCS/FrontierCS-2",
   "platform_source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33",
   "dockerfile": {
     "source": "candidate-overlays/muse-code/Dockerfile",

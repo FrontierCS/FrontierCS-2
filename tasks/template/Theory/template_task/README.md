@@ -11,5 +11,5 @@ a git repository:
 /frontier/task/prepare_workspace.sh          # -> /workspace/repo
 ```
 
-Edit `src/primes.c` there; it is the only editable file. Nothing outside `/workspace` is
-writable.
+Edit the files below `src/` there (`src/primes.c`, and new `.c` files beside it if you like);
+nothing else is editable. Nothing outside `/workspace` is writable.

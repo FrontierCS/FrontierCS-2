@@ -26,7 +26,6 @@ SUPPORTED_SCHEMA = "frontier.deployment-site/v2"
 SUPPORTED_TASK_CATALOG_SCHEMA = "frontier.deployment-task-catalog/v2"
 SUPPORTED_KUBERNETES_VERSION = "1.34"
 MANAGEMENT_RESPONSE_LIMIT = 16 * 1024 * 1024
-APPLICATION_REPOSITORY = "https://github.com/FrontierCS/FrontierCS-2.git"
 SITE_RE = re.compile(r"^[a-z][a-z0-9-]{1,22}[a-z0-9]$")
 REGION_RE = re.compile(r"^[a-z]{2}(?:-[a-z]+)+-[0-9]$")
 ACCOUNT_RE = re.compile(r"^[0-9]{12}$")

@@ -42,9 +42,11 @@
     "application": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository", "commit", "require_source"],
+      "required": ["commit", "require_source"],
+      "if": {"properties": {"require_source": {"const": true}}},
+      "then": {"required": ["repository"]},
       "properties": {
-        "repository": {"const": "https://github.com/FrontierCS/FrontierCS-2.git"},
+        "repository": {"type": "string", "minLength": 1},
         "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
         "require_source": {"type": "boolean"},
         "runtime_source_commits": {

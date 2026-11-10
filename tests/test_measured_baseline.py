@@ -567,7 +567,7 @@ class MeasuredBaselineTests(unittest.TestCase):
         payload = self.source / (
             "judge/reference.json" if json_payload else "judge/reference.patch"
         )
-        entry = importer.catalog_entry(self.source, definition, "joyemang33", payload)
+        entry = importer.catalog_entry(self.source, definition, "docker.io/joyemang33", payload)
         for image, _ in importer.resolver.task_images(entry):
             image["digest"] = "sha256:" + "c" * 64
         directory = Path(self.harness.temp.name) / (
@@ -632,7 +632,7 @@ class MeasuredBaselineTests(unittest.TestCase):
 
     def test_real_structure_derives_score_preserving_fail_and_rule(self):
         baseline = self.qualify()
-        self.assertEqual(baseline["historical_scores"], [2.0])
+        self.assertEqual(baseline["historical_mean"], 2.0)
         self.assertEqual(baseline["measurement"]["verdict"], "FAIL")
         self.assertEqual(baseline["measurement"]["train_score"], 1.0)
         self.assertNotEqual(
@@ -680,7 +680,7 @@ class MeasuredBaselineTests(unittest.TestCase):
         self.assertEqual(
             import_tests.snapshot(self.source),
             import_tests.snapshot(
-                self.harness.root / importer.PROBLEMS / self.source.name
+                self.harness.root / importer.task_layers.SHARED_PROBLEMS / self.source.name
             ),
         )
         with self.assertRaisesRegex(ValueError, "catalog baseline differs"):
@@ -753,7 +753,7 @@ class MeasuredBaselineTests(unittest.TestCase):
         f.rebind_synthetic_candidate()
         baseline = self.qualify()
         self.assertEqual(baseline["measurement"]["train_score"], 49.590244174198695)
-        self.assertEqual(baseline["historical_scores"], [48.21403389012444])
+        self.assertEqual(baseline["historical_mean"], 48.21403389012444)
         self.assertEqual(baseline["measurement"]["verdict"], "FAIL")
         before = import_tests.snapshot(Path(self.harness.temp.name))
         self.assertEqual(self.invoke("--plan"), 0)
@@ -931,7 +931,7 @@ class MeasuredBaselineTests(unittest.TestCase):
         baseline = self.qualify()
         self.assertEqual(baseline["measurement"]["candidate_version_id"], f.cid)
         self.assertEqual(baseline["measurement"]["verdict"], "FAIL")
-        self.assertEqual(baseline["historical_scores"], [2.0])
+        self.assertEqual(baseline["historical_mean"], 2.0)
         self.assertEqual(self.invoke("--plan"), 0)
 
     def test_native_underscore_alias_rejects_self_consistent_foreign_candidate_inputs(

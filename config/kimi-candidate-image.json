@@ -8,7 +8,6 @@
   "model": "kimi-k2.7-code",
   "source": {
     "schema_version": "frontier.core-candidate-source/v1",
-    "repository": "https://github.com/FrontierCS/FrontierCS-2",
     "commit": "341949767be14411465bbb704ce87e8453773965",
     "dockerfile": "candidate-overlays/kimi-code/Dockerfile",
     "dockerfile_sha256": "sha256:a26280ad41c44b35cc3fa7e8716bcfcaae9f7ed14bff0030a80af8dc921cad66",
@@ -73,8 +72,7 @@
         "mode": 292,
         "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
       }
-    },
-    "evidence": "docs/evidence/kimi-high-effort-20261006.json"
+    }
   },
   "local_readback": {
     "files_match": true,

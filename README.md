@@ -267,7 +267,7 @@ make validate   # task layouts and site configuration
 ./x check       # lint, formatting, tests and validation
 ```
 
-Further reading: [architecture](docs/architecture.md),
+Further reading: [deployment architecture](docs/deploy.md),
 [site configuration](docs/configuration.md),
 [task selection](docs/task-selection.md),
 [operations](docs/operations.md).

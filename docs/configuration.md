@@ -19,10 +19,10 @@ secret. Copy `config/site.example.json`; the real file is ignored by Git.
   Use IAM ARNs, including any user/role path; STS session ARNs, root ARNs,
   wildcard ARNs and duplicates are
   rejected. Supported partitions are `aws`, `aws-cn` and `aws-us-gov`.
-- `application.repository` is the fixed FrontierCS2 source repository and
-  `application.commit` is the exact clean main commit for the release and task
+- `application.commit` is the exact clean main commit for the release and task
   authoring handoff. `application.require_source` is required explicitly: when
-  `true`, the installer clones the source under
+  `true`, the site must also give `application.repository`, the Git URL of the
+  platform source, and the installer clones that commit under
   `.state/<site>/application-source`, or uses `FRONTIERCS2_SOURCE_DIR` after
   verifying exact HEAD and a clean worktree; when `false`, it skips the source
   checkout and only the task-authoring handoff is unavailable.
@@ -48,7 +48,8 @@ by full ARN, so reordering the list does not recreate access. With
 `cluster_creator` entry from the current Terraform caller. Changing the caller
 destroys and recreates that entry. Keep the Terraform caller stable and never
 list its cluster-creator ARN again in `operator_principals`. Import manually
-created entries before adding them to the managed list.
+created entries before adding them to the managed list. Shared-devbox account
+history and the import commands are in devbox notes.
 Network access still requires an allowed `network.operator_cidrs` address.
 
 ## Networks
@@ -216,6 +217,21 @@ salt, but deliberately creates no model-provider credential. The operator adds
 provider credentials and model definitions through the admin UI; those records
 are held by LiteLLM/PostgreSQL and must not be copied into `site.json`.
 
+The automatic smoke Candidate is scripted and performs no live model call.
+Task seeding also publishes one immutable `Codex Preview` CandidateVersion from
+the public overlay record in `config/task-catalog.json`; publishing it does not
+prove a model call. The paired platform/installer integration connects `local-k8s`
+to the staging LiteLLM virtual-key lifecycle. The current public runtime pins
+include platform support; a complete model/audit/key-cleanup smoke is still
+required before formal evaluations. See release order and storage
+adaptation. Modal requires separate non-AWS authorization:
+`MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` in the installer environment, plus
+non-secret `modal.environment`, `modal.app_name`, and `modal.credentials_secret`
+in the site file. The installer checks credentials before cloud mutation and
+creates the named platform Secret using stdin, never command-line arguments or
+generated files. Rotation of a differing existing Secret is explicit and should
+wait until active Runs finish.
+
 For private ECR GPU images, optional `modal.ecr_pull_secret_ref` names an existing
 Modal Secret in `modal.environment`. Its `AWS_ROLE_ARN` and `AWS_REGION` fields
 select the existing AWS OIDC pull role and ECR region; keep these fields and all
@@ -228,6 +244,13 @@ the existing Management configuration hash and triggers a Management rollout;
 apply it in an operator window after active Runs finish, with a current site
 backup. Restore the previous reference and apply in another such window to
 roll back. Management and Driver image pins are unaffected by this option.
+
+The controller delivers immutable copies only to matching Management-owned GPU
+Driver/cleanup Jobs. Agent and Verifier Pods do not receive Modal credentials.
+`nat_gateway_public_ips` from Terraform becomes the exact public `/32` inbound
+allowlist, using the same Modal network and cleanup implementation as staging.
+Modal credentials are read only when selected tasks require Modal. CPU sites
+keep the GPU task in the tracked catalog without mirroring or seeding it.
 
 ## Runtime images
 
@@ -254,8 +277,8 @@ version.
 
 ## Task publication catalog v2
 
-The catalog task trees under `tasks/problems/` are the
-released task directories. `scripts/render_task_definition.py --all` is the
+The catalog task trees under `tasks/problems/` are native
+FrontierSmith task releases. `scripts/render_task_definition.py --all` is the
 only producer of `config/task-definitions.json`: policy fields and authored
 budgets are copied, JSON selector bodies are hashed, and source
 identities follow `preview-source-identity/v1`. Sparse uses that same native
@@ -361,6 +384,14 @@ every demo. It is not a fresh-site live acceptance claim: a real Preview
 Evaluation for each task remains the deployment gate. The CPU scripted smoke
 also does not prove sparse-video H100 execution or a model-enabled Run.
 
+Preview and staging now both record an author release receipt, but they do not
+yet consume one shared environment-independent release artifact. Preview
+renders its local receipt from the bundled task definitions/catalog and binds
+registry/EFS identities; staging renders from the FrontierCS2 task release and
+binds ECR/S3 VersionIds. The alignment target is one author release consumed by
+both site adapters, not byte-identical final TaskConfig documents containing
+different site-specific image and dataset URIs.
+
 Terraform creates a separate Management artifact-reader role. Its web-identity
 trust is fixed to `system:serviceaccount:frontier-system:frontier-management`;
 its object authority is `s3:GetObject` on the site artifact bucket's `runs/*`
@@ -376,7 +407,8 @@ definition source tag; launcher, payload and baseline input hashes are checked
 against the native release. Public task repositories may use any bounded
 Docker Hub namespace while retaining the role-specific repository names.
 The generic Codex candidate is unchanged. V1 catalogs are refused. The one-time
-v1-to-v2 upgrade folded the separate reference and baseline authority
+v1-to-v2 upgrade has run; its tool is retired and remains in Git history at
+`016e053`. The upgrade folded the separate reference and baseline authority
 files into the catalog while preserving task order and old record contents.
 
 Seed receipt hashes retain the v1 deployment projection: the v1 schema marker,

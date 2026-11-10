@@ -22,11 +22,26 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE_PATHS_ENV = "_PREVIEW_TEST_STATE_PATHS"
+
+
+def primary_checkout(root: Path) -> Path:
+    """The repository's main working tree: `root` itself, or, from a linked worktree, the
+    checkout whose `.git` holds the shared Git directory (where live state usually lives)."""
+    marker = root / ".git"
+    if not marker.is_file():
+        return root
+    gitdir = Path(marker.read_text().removeprefix("gitdir:").strip())
+    if not gitdir.is_absolute():
+        gitdir = root / gitdir
+    common = gitdir / (gitdir / "commondir").read_text().strip()
+    return common.resolve().parent
+
+
 STATE_PATHS = tuple(
     dict.fromkeys(
         [
             ROOT / ".state",
-            Path("/root/FrontierCS-2.0-Preview/.state"),
+            primary_checkout(ROOT) / ".state",
             *(Path(path) for path in json.loads(os.environ.get(STATE_PATHS_ENV, "[]"))),
         ]
     )

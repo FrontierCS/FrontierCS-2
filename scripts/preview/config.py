@@ -15,7 +15,6 @@ from .infra import (
     CPU_MACHINE_ENV as CPU_MACHINE_ENV,
     cpu_machine_management_env as cpu_machine_management_env,
     validate_cpu_machines,
-    APPLICATION_REPOSITORY,
     COMMIT_RE,
     FORBIDDEN_CONFIG_KEYS,
     INSTANCE_TYPE_RE,
@@ -366,13 +365,12 @@ def validate_config(raw: Any) -> dict[str, Any]:
 
     application = require_mapping(config["application"], "application")
     require_exact_keys(
-        application, {"repository", "commit", "require_source"}
-        | ({"runtime_source_commits"} if "runtime_source_commits" in application else set()),
+        application, {"commit", "require_source"}
+        | {key for key in ("repository", "runtime_source_commits") if key in application},
         "application"
     )
-    repository = require_string(application["repository"], "application.repository")
-    if repository != APPLICATION_REPOSITORY:
-        raise DeployError(f"application.repository must equal {APPLICATION_REPOSITORY}")
+    if "repository" in application:
+        require_string(application["repository"], "application.repository")
     source_commit = require_string(application["commit"], "application.commit")
     if not COMMIT_RE.fullmatch(source_commit):
         raise DeployError(
@@ -380,11 +378,9 @@ def validate_config(raw: Any) -> dict[str, Any]:
         )
     if not isinstance(application["require_source"], bool):
         raise DeployError("application.require_source must be a boolean")
-    if application["require_source"]:
+    if application["require_source"] and "repository" not in application:
         raise DeployError(
-            "application.require_source=true is not supported: this release ships "
-            "prebuilt Management/Driver images; application.commit is an opaque "
-            "build identifier"
+            "application.require_source=true requires application.repository"
         )
     if "runtime_source_commits" in application:
         role_sources = require_mapping(

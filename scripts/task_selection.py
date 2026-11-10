@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+import image_namespace
 from preview.infra import load_json
 
 
@@ -224,7 +225,7 @@ def attested_agent_gpu_interfaces() -> set[str]:
     )
     helper = deploy.require_mapping(receipt.get("gpu_helper"), "Kimi gpu_helper")
     if (
-        image["repository"] != "docker.io/joyemang33/fcs2-kimi-overlay"
+        image["repository"] != image_namespace.repository("fcs2-kimi-overlay")
         or image["digest"] == deploy.TASK_PLACEHOLDER_DIGEST
         or image["tag"] != "sha-" + str(receipt.get("source_commit"))
         or not deploy.TASK_IMAGE_TAG_RE.fullmatch(image["tag"])
@@ -294,18 +295,16 @@ def attested_agent_gpu_interfaces() -> set[str]:
                 f"Kimi frontier.gpu-helper/v3 is not attested: "
                 f"source differs from its pinned receipt: {name}"
             )
-    from sync_candidate_overlay import DOCKERFILE, FILES, INSTALLED, SOURCE_REPOSITORY
+    from sync_candidate_overlay import DOCKERFILE, FILES, INSTALLED
 
     source = deploy.require_mapping(receipt.get("source"), "Kimi source")
     provenance_path = "candidates/kimi-code/source.json"
     provenance = json.loads((deploy.REPOSITORY_ROOT / provenance_path).read_text())
     if (
         source.get("schema_version") != "frontier.core-candidate-source/v1"
-        or source.get("repository") != SOURCE_REPOSITORY
         or source.get("commit") != receipt["source_commit"]
         or source.get("provenance") != provenance_path
         or source.get("dockerfile") != DOCKERFILE
-        or provenance.get("repository") != SOURCE_REPOSITORY
         or provenance.get("platform_source_commit") != source["commit"]
         or provenance.get("dockerfile", {}).get("source") != DOCKERFILE
         or source.get("dockerfile_sha256")

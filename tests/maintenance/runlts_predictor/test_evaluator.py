@@ -294,7 +294,6 @@ def test_run_ceiling_and_scientific_timeout():
     # official finals on 8 workers (3,247 to 3,608 s). It no longer covers every
     # simulation at its watchdog; it still covers the slowest measured final plus
     # both builds and one more trace at its watchdog.
-    # See docs/acceptance/runlts_predictor/final-timeout-2h.md.
     assert e.TRACE_WORKERS==8
     assert cap==7200
     assert 3608+e.TRACE_TIMEOUT+2*e.BUILD_TIMEOUT<=cap

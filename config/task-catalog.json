@@ -22,7 +22,6 @@
           "rel": 0.05,
           "replays": 1
         },
-        "comparability_note": "result.json does not attest that these scores measured the exported input identity",
         "comparable": false,
         "datasets": {
           "eval": "sha256:b1c6e93f03c972a4bf63d54b453a0e8519efaa51651a4f572d7334d173a501d7",
@@ -30,17 +29,9 @@
         },
         "evaluator_sha256": "sha256:8221cd2d1f6b79140e7b079bebf466ca804e389b4838091a61469a8c590704b6",
         "historical_mean": 12.805318426021563,
-        "historical_scores": [
-          12.500607571875047,
-          13.016857446054395,
-          13.011021729803632,
-          12.71547318684792,
-          12.782632195526816
-        ],
         "historical_spread": 0.5162498741793478,
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:1cb3d6c02baec5454052d297fe7b29fed30982bce1fc3c605783676684eb0614",
-        "result_json_source": "docs/task-authoring/batch_local_counting/provenance/judge-result.json",
         "source_set_sha256": "sha256:e3671eca4b791c6847115d92c8666932e95cd07f3c5d03f2e6a807d274ce334e",
         "verifier_adapter_sha256": "sha256:7edfe98a761b664dde8befa20ba11acf8386c71fe3febb684799165adb160f0d"
       },
@@ -80,7 +71,6 @@
           "rel": 0.05,
           "replays": 1
         },
-        "comparability_note": "result.json does not attest that these scores measured the exported input identity",
         "comparable": false,
         "datasets": {
           "eval": "sha256:dfdf09127d9db72ae20941839491c296d1dcbfd5865f2d731c7456671d0c27a4",
@@ -88,17 +78,9 @@
         },
         "evaluator_sha256": "sha256:cfb9ee45cdf78af0c946609d1c7e1ac898d4d41e1d214b1209b2f1a7e1fdc82d",
         "historical_mean": 80.44069341508703,
-        "historical_scores": [
-          80.44069341508703,
-          80.44069341508703,
-          80.44069341508703,
-          80.44069341508703,
-          80.44069341508703
-        ],
         "historical_spread": 0.0,
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:1e92a8a973904660a66ce8fb10b47f8693387c317354105dcd725b1fcdcb52f4",
-        "result_json_source": "docs/task-authoring/bounded_evm_path_prediction/provenance/judge-result.json",
         "source_set_sha256": "sha256:147832b0ccdfba5d58c69b3653d11e8dfb2233fde966f3ee6389697c90f5c4f1",
         "verifier_adapter_sha256": "sha256:7edfe98a761b664dde8befa20ba11acf8386c71fe3febb684799165adb160f0d"
       },
@@ -138,7 +120,6 @@
           "rel": 0.05,
           "replays": 1
         },
-        "comparability_note": "result.json does not attest that these scores measured the exported input identity",
         "comparable": false,
         "datasets": {
           "eval": "sha256:5fe245aa2798296a9dbac7a20486e7b695078c6c30d50c20ae6c6ffbabd8ecad",
@@ -146,17 +127,9 @@
         },
         "evaluator_sha256": "sha256:481d7f7a2516e12798a4e5b285ece3708774f89633eb8ae5097699790ff19c0a",
         "historical_mean": 50.0,
-        "historical_scores": [
-          50.0,
-          50.0,
-          50.0,
-          50.0,
-          50.0
-        ],
         "historical_spread": 0.0,
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:396c1fccd323ba4cbfa92cd2609b6b57d0ae3fa5574d4302064d79d04f77cd6c",
-        "result_json_source": "docs/task-authoring/evm_state_checkpoints/provenance/judge-result.json",
         "source_set_sha256": "sha256:10916eda50f0f2ef24cc4931e933d768b63cdaf08e949ae6077a3321376f3431",
         "verifier_adapter_sha256": "sha256:7edfe98a761b664dde8befa20ba11acf8386c71fe3febb684799165adb160f0d"
       },
@@ -196,7 +169,6 @@
           "rel": 0.05,
           "replays": 1
         },
-        "comparability_note": "result.json does not attest that these scores measured the exported input identity",
         "comparable": false,
         "datasets": {
           "eval": "sha256:706d40fdde8747d763c7a821106556b84fba88774984a27e5f1dead2a2deb18e",
@@ -204,17 +176,9 @@
         },
         "evaluator_sha256": "sha256:4ba2056355c815143869f3d4d97bcdae8143e5ff260aaaa1de750b88a568c7b7",
         "historical_mean": 95.38468624450594,
-        "historical_scores": [
-          95.38468624450594,
-          95.38468624450594,
-          95.38468624450594,
-          95.38468624450594,
-          95.38468624450594
-        ],
         "historical_spread": 0.0,
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:bceb52507a468972db2a0b88a1f626b1a5c005dc3388cd60087c88ba1fe4de20",
-        "result_json_source": "docs/task-authoring/graph_mining_method_selection/provenance/judge-result.json",
         "source_set_sha256": "sha256:08779f6aef35ab66c13341c362f50dee2f762568dcb0344bf8754db7b4092e71",
         "verifier_adapter_sha256": "sha256:7edfe98a761b664dde8befa20ba11acf8386c71fe3febb684799165adb160f0d"
       },
@@ -248,7 +212,6 @@
         "tag": "source-d8d9328f2588f87e8aba969a129a6a81805e60f7c9135ec54401ca19bb165f4d"
       },
       "baseline": {
-        "comparability_note": "historical-authoring scores (mean 62.0) were measured on the release before the task.toml migration and do not bind this source; the record is docs/task-authoring/join_tree_rewriting/provenance/result.json",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -287,7 +250,6 @@
         "tag": "source-c8f959b11b48a4f09af1373170c6f0506f5a8ba000c568b421dcb20a3f7d4409"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -320,7 +282,6 @@
         "tag": "source-c0d06820c718089af1bca21fd3e71cc4d5fa0829547db30872bb9c383e997025"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -354,7 +315,6 @@
         "tag": "source-12afe85cee9185b32cce95a9f8908b24a3a20298327d900c6e4acab6c34f7bf5"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -388,7 +348,6 @@
         "tag": "source-215390a304e7e09e4f7fd75feace62086154c3e0b91eb8e0d108296020933c31"
       },
       "baseline": {
-        "comparability_note": "historical-authoring scores (mean 74.106465) were measured on the release before the task.toml migration and do not bind this source; the record is docs/task-authoring/shockwave_dynamic_gpu_allocation/provenance/result.json",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -427,7 +386,6 @@
         "tag": "source-bcc497ec9ec2a5ba06b7eb08de60c8eeca0c97faa6d6306fdf630fbf768da0c6"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -460,7 +418,6 @@
         "tag": "source-1839328cf3f4f47992255aaa59d78a63864a10a8e807fc4f83cc5ad55d474754"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -494,7 +451,6 @@
         "tag": "source-69a9a568d6e7eb2fa12c02c67031fbf4de5fa9fce0a1987fd87abcf26c4175bd"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -528,7 +484,6 @@
         "tag": "source-b3664ddf3c8defb10c8f938fd266f4b24a0917fae9104c840fdbcdf9c5b4e54c"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -562,7 +517,6 @@
         "tag": "source-fef0b75ebca2d13eb552aff1bd7604b0fb1eea3d339976b4ae51d702c968f91d"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -596,7 +550,6 @@
         "tag": "source-669f2293abc76f5fdee513b31d617e0db9d5429705d01f3f13680b21dc14b525"
       },
       "baseline": {
-        "comparability_note": "the authoring judge/result.json moved to docs/task-authoring/persistent_treap_update_engine/provenance at the task.toml migration; its reference scores predate the current score formula",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -630,7 +583,6 @@
         "tag": "source-f5680daefd523b81814a201e76fb1c4e4d3270f62348be7f82f1063da2a54f85"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -664,7 +616,6 @@
         "tag": "source-ff2b61a8f594f7af2e6b6357920b7321e8bde9768c5255b61923046cc4fac364"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -698,7 +649,6 @@
         "tag": "source-655c71a30e18b3062215388ee2c9e2c920ab54fbd7c9ea4fd162631df4067b19"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -738,7 +688,6 @@
           "rel": 0.05,
           "replays": 1
         },
-        "comparability_note": "result.json does not attest that these scores measured the exported input identity",
         "comparable": false,
         "datasets": {
           "eval": "sha256:26d42d4b8ab8a4644adbb3f714bef2bbef592983a2dec456c133f90049052d76",
@@ -746,17 +695,9 @@
         },
         "evaluator_sha256": "sha256:b4bec87b3dba988701bc93c3e2ac5afe62dfc907ccc6569f4532b37b1636208e",
         "historical_mean": 50.0,
-        "historical_scores": [
-          50.0,
-          50.0,
-          50.0,
-          50.0,
-          50.0
-        ],
         "historical_spread": 0.0,
         "provenance": "historical-authoring",
         "reference_patch_sha256": "sha256:a11b02e0a3043198e9321ef29d7ccd4781cb351215fa41699a4496361da2cdad",
-        "result_json_source": "docs/task-authoring/residual_state_advancement/provenance/judge-result.json",
         "source_set_sha256": "sha256:e387a79cca0fee3a6377aa967b34624eb33a47d4a5301ce4e6b7cacdb2841b3a",
         "verifier_adapter_sha256": "sha256:7edfe98a761b664dde8befa20ba11acf8386c71fe3febb684799165adb160f0d"
       },
@@ -790,7 +731,6 @@
         "tag": "source-e862593127f04df1b5c412c2178cfd1393249ae2efa1a3645e955449e8bab0d6"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -824,7 +764,6 @@
         "tag": "source-0c31dc890876fd76e356f5947df272f122866ed1eebf4988be0cbc454fb2c1a4"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -857,7 +796,6 @@
         "tag": "source-07091f42edfff72b0d42f47919635448bceb3ce388e6344ab1c7c7bec3febc26"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -901,7 +839,6 @@
         "tag": "source-b1974002d847f7425cdb8797b607b8c255fd95c85a3a75a3939f6bdceea95250"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -939,7 +876,6 @@
         "tag": "source-eb3eda59df1262484c6a0678086c8b1fada9428be77dddaaccdf986a6e5523b0"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -977,7 +913,6 @@
         "tag": "source-51dcb0f8a86656033e9c6c8d6b0cd3455e6c886f444818afb099cb65253f957b"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1015,7 +950,6 @@
         "tag": "source-342f690268a8dfdcb5e5980fd474e355d5a482bc8aea70c4efbc21d3dc8f65d6"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1053,7 +987,6 @@
         "tag": "source-fb2eb189a09e8a385473b076af33fa9577b80e30b6f89758e06396bc5f4b1532"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1091,7 +1024,6 @@
         "tag": "source-26aab86d585cff67f4575b55d4c52025cd16abe06d5c33838c9914820eec0be3"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1129,7 +1061,6 @@
         "tag": "source-55960d9b6f3109258e8a5948c8983cc8ef6e59065956111c9eda036a54428d7b"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1167,7 +1098,6 @@
         "tag": "source-4d833a980a62b98be7d2e41aa0587eef134d3960a5c71f76fdf97986f721c6a9"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1200,7 +1130,6 @@
         "tag": "source-f101076070bd22f4754f219afd17cf981185cc0bbcc1ddd56564f51a7253badd"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1234,7 +1163,6 @@
         "tag": "source-87b72936b4c93d5fed687e3fe61c61bf08b8128ad2ee04f5bf06902d220a4135"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1267,7 +1195,6 @@
         "tag": "source-e61cc84def3330a8f40a898ee52a63dee56eb785e438848fe5de5a5c7c261a91"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1300,7 +1227,6 @@
         "tag": "source-dc64200603237e73120a27b6c0b9860ecdb7bfc4fa0fc9a7d62d96e2c2dc3846"
       },
       "baseline": {
-        "comparability_note": "the historical judge/result.json (now docs/task-authoring/polygon/provenance/frontiersmith-result.json, mean 95.49) measured the pre-migration source and is not bound to this release",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1339,7 +1265,6 @@
         "tag": "source-94e158066db0d3567f400f700c5b882d2b2c0f1a0caff777a60f6a815e857271"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1373,7 +1298,6 @@
         "tag": "source-4efbfeaa1b0e61a0b452122f7bbba0b12b6b8c894e7966ce658631c40b55d875"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1412,7 +1336,6 @@
         "tag": "source-1b33a2738f3f7e402d11240cdf2787d7ba72ede9ace78334f5cdc34759c146c9"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1445,7 +1368,6 @@
         "tag": "source-d58095350383d503dad85d90f714ea883cac8429f9f806fd7a4f16c25aafb1b2"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1479,7 +1401,6 @@
         "tag": "source-0f5537d1c7c726e6d786f51c98d74dffee028c968b1b2d78289b9c3ffb6c637a"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1513,7 +1434,6 @@
         "tag": "source-19eb8c4f7b141011511051d184eb4f15a879d4d1f2ccf6c33dc3b81af4ad2998"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1541,7 +1461,6 @@
         "tag": "source-ad6bed2606a5f6bc23faea2e3c0a360149800a6d0188352126d611295d5e1d35"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1575,7 +1494,6 @@
         "tag": "source-b883c8e76564749f6603cb32b889fc454c7ffeb067f6cc25c49724bd3fc8c374"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1609,7 +1527,6 @@
         "tag": "source-b396b3d7ce369e1a57f87061f058e5f49293deb29f1f678bed434437de888e10"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1643,7 +1560,6 @@
         "tag": "source-790a65ac0b0f3523ad84631c2c86efb929b1e884f29227028918e50e6e95cb65"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1682,7 +1598,6 @@
         "tag": "source-5b1fa49475477bc3e5eb5e3681eee6c4aaa23be8e61d59e92c35273ddba49a65"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -1968,7 +1883,6 @@
         "tag": "source-d0796f23477f2097fda30180b6ecc865883832bb8adc9f8e601780c1c0f42994"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -2012,7 +1926,6 @@
         "tag": "source-ee5df2179f0efe18d5811b92d672c0e21887ba74cc91be73bf63ac904b61118c"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },
@@ -2045,7 +1958,6 @@
         "tag": "source-22d72fe371a9610347f39994f03fe7c4d843b53173de73adc81e7d0305f75882"
       },
       "baseline": {
-        "comparability_note": "no judge/result.json in the export",
         "comparable": false,
         "provenance": "unverified"
       },

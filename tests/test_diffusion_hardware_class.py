@@ -1,4 +1,4 @@
-"""Diffusion admits hosts by the sealed hardware class."""
+"""Diffusion admits hosts by the sealed hardware class; selection is in the judge."""
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import base64
@@ -89,7 +89,7 @@ class HardwareClassTests(unittest.TestCase):
         sealed = self.sealed("train")
         with materialize_dataset(self.select("train", sealed), "dev", self.scratch) as root:
             # The judge source and runtime are no longer bound to the seal (owner decision,
-            # ); the hardware class and the sealed constants still are.
+            # the hardware class and the sealed constants still are.
             with mock.patch.object(pc, "verify_cgroup", lambda policy: None):
                 for actual in self.admitted(sealed):
                     with mock.patch.object(pc, "hardware_identity", lambda: actual):

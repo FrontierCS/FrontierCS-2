@@ -88,11 +88,9 @@ class PackageImportsTests(unittest.TestCase):
             "render_task_definition",
             "import_task",
             "reference_parity",
-            "reference_candidates",
             "task_selection",
             "build_task_images",
             "resolve_catalog_digests",
-            "task_baselines",
             "check_test_prerequisites",
         )
         with tempfile.TemporaryDirectory(prefix="preview-script-import-") as directory:
@@ -139,7 +137,7 @@ class PackageImportsTests(unittest.TestCase):
 
     def test_shim_reexports_every_original_function_and_constant(self):
         exports = json.loads(
-            (ROOT / "tests/fixtures/evidence/phase3/shim-exports.json").read_text()
+            (ROOT / "tests/fixtures/cli/frontier-deploy-exports.json").read_text()
         )
         for module, names in exports.items():
             owner = __import__("preview." + module, fromlist=["unused"])
@@ -215,8 +213,6 @@ def shim_patch_targets(source, namespace):
             for name in (
                 "frontier_deploy.py",
                 "reference_parity.py",
-                "reference_candidates.py",
-                "task_baselines.py",
             )
         }:
             failures.append(node.lineno)
@@ -258,8 +254,6 @@ class ShimPatchGuardTests(unittest.TestCase):
         for expression in (
             "mock.patch.object(parity.deploy, 'api_json')",
             "mock.patch('reference_parity.save_receipt')",
-            "mock.patch('reference_candidates.load_manifest')",
-            "mock.patch('task_baselines.baseline_from_result_json')",
             "mock.patch('parity.deploy.api_json')",
             "alias = parity.deploy\nmock.patch.object(alias, 'api_json')",
             "mock.patch.object(d, 'run')",
@@ -329,8 +323,8 @@ class CliSubprocessTests(unittest.TestCase):
                 self.assertEqual(result.stderr, "")
 
     def test_parity_wrappers_match_captured_cli_bytes(self):
-        before = json.loads((ROOT / "tests/fixtures/evidence/phase5/cli-before.json").read_text())
-        for name in ("reference_parity", "reference_candidates", "task_baselines"):
+        before = json.loads((ROOT / "tests/fixtures/cli/help.json").read_text())
+        for name in ("reference_parity",):
             with self.subTest(script=name):
                 expected = before[name]
                 result = subprocess.run(

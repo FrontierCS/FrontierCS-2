@@ -1202,7 +1202,7 @@ def deploy_existing_platform(
     if run_acceptance:
         run_smoke(config, kubeconfig, images)
     if TASK_CATALOG_PATH.is_file():
-        seed_tasks(config, kubeconfig, TASK_CATALOG_PATH)
+        seed_tasks(config, kubeconfig)
     verify_runtime(config, outputs, kubeconfig, require_smoke=run_acceptance)
 
 
@@ -1288,7 +1288,9 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--config", required=True, type=Path)
     seed_parser = commands.add_parser("seed-tasks")
     seed_parser.add_argument("--config", required=True, type=Path)
-    seed_parser.add_argument("--catalog", type=Path, default=TASK_CATALOG_PATH)
+    seed_parser.add_argument(
+        "--catalog", type=Path, help="a catalog file in place of the repository's task layers"
+    )
     local_network = commands.add_parser("upgrade-local-network")
     local_network.add_argument("--config", required=True, type=Path)
     local_network.add_argument("--image-receipt", required=True, type=Path)
@@ -1385,7 +1387,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             apply_site(config_path, arguments.confirm_account, arguments.confirm_site)
         elif arguments.command == "seed-tasks" and arguments.check:
             config, _ = read_and_validate(config_path)
-            catalog_path = arguments.catalog.resolve(strict=True)
+            catalog_path = arguments.catalog and arguments.catalog.resolve(strict=True)
             # Reuse the saved kubeconfig: update_kubeconfig/platform_outputs write .state.
             seed_tasks(
                 config, state_directory(config) / "kubeconfig", catalog_path, check=True
@@ -1393,12 +1395,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             catalog_path = (
                 arguments.catalog.resolve(strict=True)
-                if arguments.command == "seed-tasks"
-                else TASK_CATALOG_PATH
+                if arguments.command == "seed-tasks" and arguments.catalog
+                else None
             )
             config, output = render_bundle(config_path, catalog_path=catalog_path)
             if arguments.command == "seed-tasks":
-                catalog_path = arguments.catalog.resolve(strict=True)
                 load_task_selection(config, catalog_path, require_resolved=True)
             elif arguments.command == "deploy" and TASK_CATALOG_PATH.is_file():
                 _, selection = load_task_selection(config, require_resolved=True)

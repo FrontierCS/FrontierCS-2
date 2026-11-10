@@ -6,7 +6,6 @@ pinned reference table; no predictor is built or run.
 import deployment_test_guard  # noqa: F401  # isort: skip
 
 import json
-import os
 from decimal import Decimal
 from fractions import Fraction
 from pathlib import Path
@@ -167,17 +166,3 @@ def test_statement_keeps_the_strict_rule_and_states_the_measured_noise():
         assert needle in text, needle
     for stale in ("remains incomplete", "repeatability remain pending", "mean_gate", "0.002"):
         assert stale not in text, stale
-
-
-@pytest.mark.skipif(not os.environ.get("RUNLTS_OFFICIAL_METRICS"),
-                    reason="set RUNLTS_OFFICIAL_METRICS to private final metrics.json paths (os.pathsep-separated)")
-def test_recorded_official_finals_keep_their_recorded_verdict():
-    import importlib.util
-    script = Path(__file__).resolve().parents[3] / "scripts/maintenance/runlts_predictor/rejudge_metrics.py"
-    spec = importlib.util.spec_from_file_location("runlts_rejudge_metrics", script)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    for name in os.environ["RUNLTS_OFFICIAL_METRICS"].split(os.pathsep):
-        row = module.rejudge(e, Path(name))
-        print(Path(name).parent.name, row)
-        assert row["beats_reference"] == row["recorded_beats_reference"] == int(row["strict_wins_both"] == 105)

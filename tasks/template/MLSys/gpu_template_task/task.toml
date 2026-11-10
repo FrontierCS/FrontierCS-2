@@ -1,0 +1,77 @@
+# task.toml of the GPU template (schema frontier.task/v1): a kernel task whose Agent has a
+# GPU runner and whose whole verification runs on one GPU runner. Copy this template for a task
+# that times submitted GPU code; tasks/template/Theory/template_task explains every key a CPU
+# task shares with this one, so only the GPU parts are commented here.
+#
+# The images: docker/agent.Dockerfile (the Agent, CPU), docker/agent-gpu.Dockerfile (the
+# Agent's GPU runner), docker/verifier.Dockerfile (the CPU control Pod: only the shared GPU
+# adapter, no judge) and docker/verifier-gpu.Dockerfile (the GPU runner that runs the shared
+# verifier and judge/evaluator.py; the judge runs every implementation through isolate).
+
+schema = "frontier.task/v1"
+id = "gpu_template_task"
+display_name = "Pairwise Distances on a GPU (template)"
+version = "r001"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+# The control Pod only drives the runner; the judge's resources are the runner's.
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 10
+max_train_wall_seconds = 12000
+eval_timeout_seconds = 1800
+
+# Python files below kernel/, new modules included (a glob: never a deletion or a rename).
+[submission]
+max_bytes = 262144
+allowed_paths = ["kernel/**/*.py"]
+max_changed_files = 10
+
+# The Agent's GPU budget: runners of these types, at most max_instances at once, each at most
+# max_instance_seconds, max_gpu_seconds in total. It needs docker/agent-gpu.Dockerfile and adds
+# tasks/shared/agent/README.gpu.md (filled in from this table and [network.audit]) to the
+# Agent's README.
+[gpu.agent]
+allowed_types = ["H100"]
+max_instances = 1
+max_instance_seconds = 7200
+max_gpu_seconds = 7200
+
+# The Verifier's GPU quota (the Driver's): runners at once and GPU seconds over the whole run.
+# Without a command test sandbox the placement is "runner" (derived, never written): the whole
+# verification runs on one runner of docker/verifier-gpu.Dockerfile with
+# FRONTIER_VERIFIER_GPU_COUNT GPUs, leased for quota.eval_timeout_seconds per mode unless
+# lease_seconds = { train = N, eval = M } says otherwise.
+[gpu.verifier]
+max_gpu_instances = 1
+max_gpu_seconds = 19800           # 1800 s x (10 train calls + 1 final)
+
+# The platform's GPU contract with the Candidate helper (frontier-gpu v3) and the Driver.
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["H100"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions to the GPU runners, per role (they must sum to max_ssh_sessions; the v3 helper
+# requires the split). A runner-placement verification uses one upload session and one for the
+# run: 2 per call, so 20 for 10 train calls and 2 for final.
+[network.audit]
+max_ssh_bytes_per_direction = 67108864  # 64 MiB per session and direction
+max_ssh_sessions = 54
+ssh_session_budgets = { agent = 32, verifier_train = 20, verifier_eval = 2 }
+
+[feedback]
+latency_ms = "Candidate latency per train workload, in milliseconds (the smallest of three medians); sorted, without workload labels."
+
+# [paper] (for readers; optional): as in tasks/template/Theory/template_task.

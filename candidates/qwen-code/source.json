@@ -1,5 +1,4 @@
 {
-  "repository": "https://github.com/FrontierCS/FrontierCS-2",
   "platform_source_commit": "0c26747c4cb53baf2221b3fdc16a14a1e157c156",
   "dockerfile": {
     "source": "candidate-overlays/qwen-code/Dockerfile",

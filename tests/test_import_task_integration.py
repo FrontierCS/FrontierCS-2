@@ -89,7 +89,7 @@ class RepositoryCopyTests(unittest.TestCase):
                 "tasks",
                 "scripts",
                 "tests",
-                        "docs",
+                "docs",
                 "runtime",
                 "smoke",
                 "terraform",

@@ -7,8 +7,7 @@
       "original_metadata_path": "judge/metadata.json",
       "scope": "T40 existing-native runtime standardization; science preserved",
       "source_commit": "e68a0d65eafec10f66d31e1dd2506f448cab8741",
-      "source_path": "2.0/fcs2/problems/persistent_treap_update_engine",
-      "source_repository": "private authoring repository"
+      "source_path": "2.0/fcs2/problems/persistent_treap_update_engine"
     },
     "datasets": {
       "eval": {

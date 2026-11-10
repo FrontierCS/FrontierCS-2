@@ -5,10 +5,9 @@
       "historical_evidence_path": "judge/result.json",
       "note": "Generator, paper, ranking, promotion, artifact, and historical trial fields retain their source meanings; historical evidence does not accept this conversion.",
       "original_metadata_path": "judge/metadata.json",
-      "scope": "T40 existing-native runtime standardization; algorithm, workloads, baseline, reference, and resources preserved; M087 replaces binary PASS and the 2026-09-15 asymptotic mapping removes the continuous-score upper clip",
+      "scope": "T40 existing-native runtime standardization; algorithm, workloads, baseline, reference, and resources preserved; M087 replaces binary PASS and the 2026-09-15 approved asymptotic mapping removes the continuous-score upper clip",
       "source_commit": "e68a0d65ec3f97072215f2a42a519b4654c45315",
-      "source_path": "2.0/fcs2/problems/residual_state_advancement",
-      "source_repository": "private authoring repository"
+      "source_path": "2.0/fcs2/problems/residual_state_advancement"
     },
     "datasets": {
       "eval": {

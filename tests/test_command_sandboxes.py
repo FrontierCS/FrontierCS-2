@@ -23,6 +23,7 @@ from pathlib import Path
 from unittest import mock
 
 from test_shared_gpu_adapter import REPO, TEMPLATE, AdapterCase, task_manifest
+import task_layers  # noqa: E402
 
 SANDBOX = {"image": "agent_gpu", "workdir": "/workspace/sandbox",
            "resources": {"gpus": 1, "gpu_type": "A100-80GB"}, "max_concurrent": 2,
@@ -458,10 +459,10 @@ class VerifierChannelSize(unittest.TestCase):
         import importlib.util
         import render_task_definition as renderer
         shared = load_adapter()
-        catalog = json.loads((REPO / "config/task-catalog.json").read_text())["tasks"]
+        catalog = task_layers.load_catalog()["tasks"]
         checked = 0
         for task in catalog:
-            root = renderer.problem_directory(renderer.TASK_ROOT / "problems", task["name"])
+            root = renderer.task_directory(task["name"])
             vendored = root / "verifier/fcs2_verifier_gpu.py"
             if vendored.is_file():
                 spec = importlib.util.spec_from_file_location(f"vendored_{task['name']}", vendored)
@@ -504,6 +505,7 @@ class VerifierChannelSize(unittest.TestCase):
     def test_effective_sizes_are_unchanged_by_the_explicit_base_value(self):
         # The base ENV is the adapter's former built-in 8 MiB.
         import render_task_definition as renderer
+        problems = REPO / "tasks/problems"
         self.assertEqual(task_manifest.verifier_channel_bytes(None), str(8 * 1024 * 1024))
-        polygon = renderer.problem_directory(renderer.TASK_ROOT / "problems", "polygon")
+        polygon = renderer.problem_directory(problems, "polygon")
         self.assertEqual(task_manifest.verifier_channel_bytes(polygon), str(8 * 1024 * 1024))

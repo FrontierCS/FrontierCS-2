@@ -1,5 +1,3 @@
-# Golden behaviour fixtures
-
 The Agent egress closure updates ten CPU/Modal fixtures. The example
 site sets `execution.agent_external_egress` to `false`, so each bundle
 `config.json`, its `release.json` checksum and `bundle.sha256` change, and the
@@ -7,6 +5,33 @@ four runtime manifests render `FRONTIER_AGENT_EXTERNAL_EGRESS=false`. The
 storage-controller ClusterRole gains `delete` on `networkpolicies`, so the
 controller can remove `frontier-agent-external-egress` while the flag is false.
 No other fixture bytes change.
+
+The Step 5 terminal-authority Management-only release updates exactly six CPU/Modal
+bundle fixtures (config, release and bundle checksum in each mode). Only Management
+source/image metadata, application source metadata and derived hashes change.
+Driver source and digest remain the genuine paired release; task/Candidate
+fixtures and all other runtime pins retain their bytes. See the
+publication proof.
+
+# Golden behaviour fixtures
+
+The scoped terminal-adjudication Management publication from platform `41a269f`
+updates exactly six CPU/Modal bundle fixtures: `config.json`, `release.json`
+and `bundle.sha256` in each mode. Only the Management image/source, application
+source metadata and their derived configuration/release checksums change. Both
+Driver pin and Driver source remain unchanged; task/Candidate documents, CLI help,
+runtime manifests and all other fixture bytes remain unchanged. See the
+publication proof.
+
+The reviewed Management follow-up and explicit per-role source contract
+update exactly six CPU/Modal bundle fixtures. Application
+and Management bind `8636e70e`; Driver binds `e8f1c31e`. The
+application records both role sources explicitly. Only source metadata, published
+image pins, and derived configuration/release checksums change. The previous
+fixtures still named `c7fc1d28`. Task documents, Candidate documents, CLI help,
+Terraform inputs, and runtime manifests remain byte-for-byte unchanged. Run
+captured CLI comparisons with Python 3.13 both as the Makefile interpreter and
+first on `PATH`, using a Linux build with `os.pidfd_open` for native diagnostics.
 
 The official Codex 0.162.1 overlay update changes the catalog Candidate image
 pin. Golden Candidate documents use a synthetic digest and remain unchanged;
@@ -16,6 +41,14 @@ full official native package from merged platform source
 `cc87b067cb5b103de6bfc05e40fe0da8527dba5b`; publication verification is described
 in [Candidates](candidates.md#codex-with-stored-final-support). Earlier release
 notes below describe their historical fixture changes.
+
+The paired `cc87b067cb5b103de6bfc05e40fe0da8527dba5b` Management/Driver
+publication updates six CPU/Modal bundle fixtures: the site config, release
+metadata and derived bundle checksum in each mode. The differences are the
+reviewed application commit and published runtime pins plus their derived
+metadata hashes. Task documents, synthetic Candidate identity and CLI help
+remain unchanged. See the
+native retry publication.
 
 The workspace-limit release bound Management and Driver to the same published
 `78905901bccc1d51301961cafc4fb638ec6d6c8b` source, documented in the
@@ -95,7 +128,18 @@ the new `--check` usage line and help stanza reproduces main's help bytes.
 There were no other differences. The two additional CLI files cover main's
 `upgrade-runtime` and `upgrade-local-network` subcommands.
 
+The new `task-selection.json` artifact is tested separately and excluded from
+bundle capture, matching its exclusion from `bundle.sha256`. See the
+comparison evidence for exact output and
+reproduction details.
+
 ## Live-state migration fixtures
+
+The two captured state files in `tests/fixtures/live-state-v1/` are byte-for-byte copies
+of `.state/preview/task-seed-receipt.json` and `.state/preview/task-images.json`,
+read on September 11. The source files and `.state` symlink were not modified.
+They contain no timestamp, so this capture date does not establish when the
+site was last seeded.
 
 Before copying, both JSON documents passed duplicate-key and token-pattern
 checks and strict field/value allowlists: the known schema and site, typed
@@ -163,7 +207,12 @@ seeding and reference mirroring are covered separately. The current catalog
 need not reproduce historical IDs. Follow [Live site changes](operations.md#live-site-changes)
 for the actual operator procedure.
 
-The RAGEN issue370 paired runtime changes only the application commit,
+Phase 5 keeps all 46 golden files unchanged and adds no deployment subcommands.
+The standalone parity wrapper transcript is captured separately in
+the consolidation evidence; the two reference
+metadata wrappers historically produce no output for `--help`.
+
+The RAGEN paired runtime changes only the application commit,
 Management/Driver public pins and their derived release/config checksums in
 the six CPU/Modal bundle fixtures. Task/Candidate documents and CLI help remain
 unchanged. See the paired publication.

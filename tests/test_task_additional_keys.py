@@ -17,6 +17,7 @@ import render_task_definition as renderer
 from preview import publication
 from task_selection import requirements, select_tasks
 from test_task_seeding import mirrored_images, resolved_catalog
+import task_layers  # noqa: E402
 
 KEYS = [
     {"name": "explore", "model_aliases": ["progent-agent-gpt-4o-mini"], "budget_usd": 15, "envs": ["agent"]},
@@ -93,7 +94,7 @@ class SelectionTests(unittest.TestCase):
     def setUp(self):
         self.config = frontier_deploy.load_json(ROOT / "config/site.example.json")
         self.config["features"]["modal_gpu"] = True
-        self.catalog = frontier_deploy.load_json(frontier_deploy.TASK_CATALOG_PATH)
+        self.catalog = task_layers.load_catalog()
         self.definitions = copy.deepcopy(frontier_deploy.TASK_DEFINITIONS)
         self.name = self.catalog["tasks"][0]["name"]
         self.definitions[self.name]["additional_keys"] = copy.deepcopy(KEYS)

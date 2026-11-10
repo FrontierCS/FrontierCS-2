@@ -34,7 +34,7 @@
     "year": null
   },
   "promotion": {},
-  "provenance_note": "Manual native-format transfer of a legacy public task; not Smith-generated, ranked or promoted. No separate research-code artifact or paper was identified. Benchmark source is recorded in policy metadata and upstream.lock.json. Runtime measurements belong to trial evidence and are not inferred here. The formal answering budget is 5 hours (18000 seconds); the original 3-hour answering budget is superseded. Independent evaluation and GPU quotas are recorded separately in policy.json.",
+  "provenance_note": "Manual native-format transfer of a legacy public task; not Smith-generated, ranked or promoted. No separate research-code artifact or paper was identified. Benchmark source is recorded in policy metadata and upstream.lock.json. Runtime measurements belong to trial evidence and are not inferred here. The user-confirmed formal answering budget is 5 hours (18000 seconds); the original 3-hour answering budget is superseded. Independent evaluation and GPU quotas are recorded separately in policy.json.",
   "rank": {
     "overall_score": null,
     "rank": null,

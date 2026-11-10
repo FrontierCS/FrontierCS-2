@@ -16,22 +16,17 @@ from pathlib import Path
 
 from native_datasets import dataset_hashes
 import source_tree
+import task_layers
 import task_manifest
+from task_layers import json_text
 from task_manifest import load_policy
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK_ROOT = ROOT / "tasks"
-DEFINITIONS = ROOT / "config/task-definitions.json"
-CATALOG = ROOT / "config/task-catalog.json"
 SCHEMA = "frontier.frontiersmith-task-policy/v1"
 IDENTITY = "preview-source-identity/v1"
 SPARSE = "sparse_video_attention_policy"
 # Hard-linked staging of a task's tracked files for its identity (same filesystem as the tree).
 STAGING = ROOT / ".generated" / "source-identity"
-
-
-def json_text(value: object) -> str:
-    return json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
 
 
 KEY_NAME_RE = re.compile(r"[a-z][a-z0-9-]{0,62}")
@@ -76,8 +71,19 @@ def validate_additional_keys(value: object) -> list[dict]:
     return value
 
 
-def catalog_task_names(catalog_path: Path = CATALOG) -> list[str]:
-    """Read task membership in catalog order, rejecting ambiguous JSON."""
+def catalog_task_names(catalog_path: Path | None = None) -> list[str]:
+    """Task membership of the catalog at `catalog_path`, or of every task layer's catalog, in
+    order; ambiguous JSON and a task in two layers are errors."""
+    if catalog_path is not None:
+        return _catalog_file_names(catalog_path)
+    names = [name for layer in task_layers.layers(ROOT)
+             for name in _catalog_file_names(layer.catalog)]
+    if len(set(names)) != len(names):
+        raise ValueError("a task is in more than one layer's catalog")
+    return names
+
+
+def _catalog_file_names(catalog_path: Path) -> list[str]:
 
     def unique_object(pairs: list[tuple[str, object]]) -> dict:
         result = {}
@@ -126,20 +132,35 @@ def problem_directory(problems: Path, name: str) -> Path:
     return candidates[0] if candidates else problems / name
 
 
+def task_directory(name: str, root: Path = ROOT) -> Path:
+    """The directory of task `name` in `root`'s task layers (task_layers), flat or one domain
+    deep; a task found in two layers is an error."""
+    found = [path for layer in task_layers.layers(root) if layer.problems.is_dir()
+             for path in [problem_directory(layer.problems, name)] if path.is_dir()]
+    if len(found) != 1:
+        raise ValueError(f"task {name} must have one directory in the task layers: {found}")
+    return found[0]
+
+
 def catalog_problem_directories(
-    names: list[str] | tuple[str, ...], problems: Path
+    names: list[str] | tuple[str, ...], root: Path = ROOT
 ) -> dict[str, Path]:
-    directories = {name: problem_directory(problems, name) for name in names}
-    for name, path in directories.items():
-        if not path.is_dir():
-            raise ValueError(f"catalog task {name} has no problem directory: {path}")
-    for path in sorted(problems.iterdir()):
-        if (
-            path.is_dir()
-            and path not in directories.values()
-            and not any(task.parent == path for task in directories.values())
-        ):
-            print(f"{path}: ignored: not in config/task-catalog.json", file=sys.stderr)
+    """Each catalog task's directory; a directory of every layer's problems that holds no
+    catalog task is reported and ignored."""
+    directories = {}
+    for name in names:
+        try:
+            directories[name] = task_directory(name, root)
+        except ValueError as error:
+            raise ValueError(f"catalog task {name} has no problem directory: {error}") from error
+    for layer in task_layers.layers(root):
+        for path in sorted(layer.problems.iterdir()) if layer.problems.is_dir() else ():
+            if (
+                path.is_dir()
+                and path not in directories.values()
+                and not any(task.parent == path for task in directories.values())
+            ):
+                print(f"{path}: ignored: not in the task catalog", file=sys.stderr)
     return directories
 
 
@@ -271,9 +292,7 @@ def main(arguments: list[str] | None = None) -> int:
                 parser.error(
                     "--all cannot be combined with a problem directory or --name"
                 )
-            directories = catalog_problem_directories(
-                catalog_task_names(), TASK_ROOT / "problems"
-            )
+            directories = catalog_problem_directories(catalog_task_names())
         else:
             if options.problem_dir is None or not options.name:
                 parser.error("provide a problem directory and --name, or --all")
@@ -281,7 +300,12 @@ def main(arguments: list[str] | None = None) -> int:
         parser.error(str(exc))
     if options.all:
         rows = {name: render(directories[name], name) for name in sorted(directories)}
-        DEFINITIONS.write_text(json_text(rows), encoding="utf-8")
+        for layer in task_layers.layers(ROOT):
+            names = set(_catalog_file_names(layer.catalog))
+            layer.definitions.write_text(
+                json_text({name: row for name, row in rows.items() if name in names}),
+                encoding="utf-8",
+            )
     else:
         print(json_text(render(options.problem_dir, options.name)), end="")
     return 0

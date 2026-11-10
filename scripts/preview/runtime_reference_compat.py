@@ -66,7 +66,7 @@ def preserve_reviewed_public_images(
         raise DeployError("unreviewed same-digest runtime references")
     for name in ("management", "driver"):
         source = config["images"][name]
-        if (source["repository"] != f"docker.io/joyemang33/fcs2-{name}"
+        if (source["repository"] != REVIEWED_REFERENCES[name].split("@")[0]
                 or source["digest"] != REVIEWED_DIGESTS[name]
                 or source["tag"] != "sha-" + REVIEWED_COMMIT
                 or source["reference"] != REVIEWED_REFERENCES[name]
@@ -140,7 +140,7 @@ def reviewed_public_runtime_records(config, records) -> bool:
         return False
     for name in ("management", "driver"):
         source = config["images"][name]
-        repository = f"docker.io/joyemang33/fcs2-{name}"
+        repository = REVIEWED_REFERENCES[name].split("@")[0]
         if (source["repository"] != repository
                 or source["tag"] != "sha-" + REVIEWED_COMMIT
                 or source["digest"] != REVIEWED_DIGESTS[name]

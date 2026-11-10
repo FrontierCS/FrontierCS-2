@@ -574,9 +574,9 @@
       "sha256": "sha256:a820bc8c5831967c2dcead3fbfb69ed8f877715544ab6cf20230b38896325639"
     },
     {
-      "bytes": 8904,
+      "bytes": 8890,
       "path": "judge/beat_spec.json",
-      "sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a"
+      "sha256": "sha256:4b9ce0b346434e5cd17f4abbf589c9db01975031e4f514f17fc085cf17000f35"
     },
     {
       "bytes": 13375,
@@ -713,7 +713,7 @@
   "schema_version": "frontier.frontiersmith-task-lock/v1",
   "source": {
     "beat_spec_migration": "2026-09-11: formal per-workload contract and private-feedback audit",
-    "beat_spec_sha256": "sha256:ff11a57e5789a4169cac38836c695005978ab748e01dda3e122bbb873783f76a",
+    "beat_spec_sha256": "sha256:4b9ce0b346434e5cd17f4abbf589c9db01975031e4f514f17fc085cf17000f35",
     "evaluator_sha256": "sha256:78fb0c93715e4335a7c8cc54d450c72cc976120910fdbeb60f5959755a172238",
     "statement_sha256": "sha256:899dfc6b8a581844717067106aa0e1ff3b86c6de2f89c92e49c8f816af5d2550",
     "task_dir": "evm_state_checkpoints"

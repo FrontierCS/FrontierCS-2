@@ -34,7 +34,7 @@
     "year": null
   },
   "promotion": {},
-  "provenance_note": "Manual native-format transfer of a legacy public task; not Smith-generated, ranked or promoted. No separate research-code artifact or paper was identified. Benchmark source is recorded in policy metadata and upstream.lock.json. Runtime measurements belong to trial evidence and are not inferred here. The formal answering budget is 18000 seconds, correcting the legacy 10800-second answer window; independent final remains 2400 seconds and other resource quotas and science are unchanged. Migration/model trials use separate frozen short1800 releases. Final source-readiness correction restricts the submission helper to Python files and rejects binary diff placeholders; no scientific or quota change. The separate solver trial pair is complete with actual outcomes reported outside runtime source.",
+  "provenance_note": "Manual native-format transfer of a legacy public task; not Smith-generated, ranked or promoted. No separate research-code artifact or paper was identified. Benchmark source is recorded in policy metadata and upstream.lock.json. Runtime measurements belong to trial evidence and are not inferred here. The user-approved formal answering budget is 18000 seconds, correcting the legacy 10800-second answer window; independent final remains 2400 seconds and other resource quotas and science are unchanged. Migration/model trials use separate frozen short1800 releases. Final source-readiness correction restricts the submission helper to Python files and rejects binary diff placeholders; no scientific or quota change. The separate Astra/Kimi trial pair is complete with actual outcomes reported outside runtime source.",
   "rank": {
     "overall_score": null,
     "rank": null,

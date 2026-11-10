@@ -1,0 +1,8 @@
+{
+  "name": "frontier-opencode-official-runtime",
+  "private": true,
+  "dependencies": {
+    "opencode-ai": "1.19.5",
+    "opencode-linux-x64": "1.19.5"
+  }
+}

@@ -20,12 +20,28 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.dont_write_bytecode = True
 import render_task_definition as renderer
 import task_manifest
+import task_layers  # noqa: E402
 
+
+
+def temporary_layers(directory: Path) -> list:
+    """The repository's task layers, with each definitions file redirected below `directory`."""
+    return [
+        task_layers.Layer(layer.root, layer.problems, layer.catalog, directory / f"definitions-{index}.json")
+        for index, layer in enumerate(task_layers.layers())
+    ]
+
+
+def written(layers: list) -> dict:
+    merged = {}
+    for layer in layers:
+        merged.update(json.loads(layer.definitions.read_text()))
+    return merged
 
 class RendererTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.definitions = json.loads(renderer.DEFINITIONS.read_text())
+        cls.definitions = task_layers.load_definitions()
         cls.fixture = json.loads(
             (ROOT / "tests/fixtures/native-identity.json").read_text()
         )
@@ -129,14 +145,14 @@ class RendererTests(unittest.TestCase):
                     renderer.main(["--all"])
 
     def test_all_ignores_extra_directory_with_one_warning(self):
-        paths = list((renderer.TASK_ROOT / "problems").iterdir())
+        paths = list((renderer.ROOT / "tasks/problems").iterdir())
         with tempfile.TemporaryDirectory() as directory:
             extra = Path(directory) / "extra_task"
             extra.mkdir()
-            output = Path(directory) / "definitions.json"
+            layers = temporary_layers(Path(directory))
             with (
                 mock.patch.object(Path, "iterdir", return_value=iter([*paths, extra])),
-                mock.patch.object(renderer, "DEFINITIONS", output),
+                mock.patch.object(renderer.task_layers, "layers", return_value=layers),
                 mock.patch.object(
                     renderer,
                     "render",
@@ -147,15 +163,15 @@ class RendererTests(unittest.TestCase):
                 self.assertEqual(renderer.main(["--all"]), 0)
             names = [
                 task["name"]
-                for task in json.loads(renderer.CATALOG.read_text())["tasks"]
+                for task in task_layers.load_catalog()["tasks"]
             ]
             self.assertEqual(
                 [call.args[1] for call in render.call_args_list], sorted(names)
             )
-            self.assertEqual(json.loads(output.read_bytes()), self.definitions)
+            self.assertEqual(written(layers), self.definitions)
             self.assertEqual(
                 stderr.getvalue().splitlines(),
-                [f"{extra}: ignored: not in config/task-catalog.json"],
+                [f"{extra}: ignored: not in the task catalog"],
             )
 
     def test_all_missing_catalog_directory_exits_two_before_rendering(self):
@@ -187,7 +203,7 @@ class RendererTests(unittest.TestCase):
         )
         for name, expected in self.fixture.items():
             with self.subTest(task=name):
-                root = renderer.problem_directory(renderer.TASK_ROOT / "problems", name)
+                root = renderer.task_directory(name)
                 row = renderer.render(root, name)
                 self.assertEqual(row, self.definitions[name])
                 self.assertEqual(
@@ -217,8 +233,7 @@ class RendererTests(unittest.TestCase):
 
     def test_sparse_has_native_identity_and_preserves_scoring_inputs(self):
         row = renderer.render(
-            renderer.problem_directory(
-                renderer.TASK_ROOT / "problems", renderer.SPARSE
+            renderer.task_directory(renderer.SPARSE
             ),
             renderer.SPARSE,
         )
@@ -230,7 +245,7 @@ class RendererTests(unittest.TestCase):
         self.assertEqual(row["source"]["identity_algorithm"], renderer.IDENTITY)
         self.assertEqual(row["quota"]["wall_time_seconds"], 18000)
         authored = json.loads(
-            (ROOT / "tests/fixtures/svg-authored-policy-pr25.json").read_text()
+            (ROOT / "tests/fixtures/authored-policy.json").read_text()
         )
         self.assertEqual(authored["commit"], "89dce3bc39109eea534d2beccb57a5fb8ec2b1bf")
         expected = copy.deepcopy(authored["policy"])
@@ -238,9 +253,10 @@ class RendererTests(unittest.TestCase):
         # Preserve authored science and the operator-approved transport capacity.
         expected["network"]["audit"]["max_model_sessions"] = 1024
         expected["network"]["audit"]["max_bundle_bytes"] = 32 * 1024**3
-        # HunyuanVideo extension: second editable
+        # 2026-10-15 owner-approved HunyuanVideo extension: second editable
         # surface, 12,600 s final timeout with the GPU budget scaled by the same
-        # (25 + 1) x 4 x timeout formula, and the revised beat-spec text.
+        # (25 + 1) x 4 x timeout formula, and the revised beat-spec text
+        # (docs/task-authoring/sparse_video_attention_policy/hunyuan-workloads.md).
         expected["quota"]["eval_timeout_seconds"] = 12600
         expected["gpu"]["verifier"]["max_gpu_seconds"] = 26 * 4 * 12600
         expected["metadata"]["runtime"]["allowed_paths"].insert(
@@ -249,8 +265,6 @@ class RendererTests(unittest.TestCase):
         expected["metadata"]["evaluation"]["beat_spec_sha256"] = (
             "sha256:19bb12002bd89b264f142f9e38a570133d98dee964051c032c2e5050135dff5d"
         )
-        # Internal repository URL replaced in the public release tree.
-        expected["metadata"]["conversion"]["source_repo"] = "private authoring repository"
         # The task.toml migration moved the metadata the platform does not read to
         # docs/task-authoring/sparse_video_attention_policy/provenance/policy-metadata.json;
         # runtime.language is no longer emitted for task.toml tasks.
@@ -281,17 +295,16 @@ class RendererTests(unittest.TestCase):
         )
 
     def test_all_twice_is_byte_identical_to_committed_definitions(self):
-        with (
-            tempfile.TemporaryDirectory() as directory,
-            mock.patch.object(
-                renderer, "DEFINITIONS", Path(directory) / "definitions.json"
-            ),
-        ):
-            renderer.main(["--all"])
-            first = renderer.DEFINITIONS.read_bytes()
-            renderer.main(["--all"])
-            self.assertEqual(first, renderer.DEFINITIONS.read_bytes())
-            self.assertEqual(json.loads(first), self.definitions)
+        with tempfile.TemporaryDirectory() as directory:
+            layers = temporary_layers(Path(directory))
+            with mock.patch.object(renderer.task_layers, "layers", return_value=layers):
+                renderer.main(["--all"])
+                first = [layer.definitions.read_bytes() for layer in layers]
+                renderer.main(["--all"])
+            self.assertEqual(first, [layer.definitions.read_bytes() for layer in layers])
+            self.assertEqual(
+                first, [layer.definitions.read_bytes() for layer in task_layers.layers()]
+            )
 
     def test_identity_repeatability_includes_hidden_and_lock_files(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -337,8 +350,7 @@ class RendererTests(unittest.TestCase):
                     renderer.source_sha256(root)
 
     def test_policy_and_dataset_errors(self):
-        source = renderer.problem_directory(
-            renderer.TASK_ROOT / "problems", "batch_local_counting"
+        source = renderer.task_directory("batch_local_counting"
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

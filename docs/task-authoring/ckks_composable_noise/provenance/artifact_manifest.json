@@ -136,7 +136,7 @@
     "estimator/experiments/poly_eval_bounds/poly_eval_bounds.go",
     "estimator/experiments/rotate/rotate.go"
   ],
-  "minimality_note": "LogN12 numerical composition task: nine original circuit algorithms and exact dependency closure. Only nine ring-dimension literals change in the derived material; contribution restoration remains exact upstream code. This is not an original-parameter reproduction.",
+  "minimality_note": "User-authorized LogN12 numerical composition task: nine original circuit algorithms and exact dependency closure. Only nine ring-dimension literals change in the derived material; contribution restoration remains exact upstream code. This is not an original-parameter reproduction.",
   "source_equivalence": {
     "schema_version": 1,
     "mode": "comment_only",
@@ -185,7 +185,7 @@
     "schema_version": "ckks-authorized-parameter-derivation/v1",
     "original_commit": "53dd2367a25a0ae45298dd4086ef50ae03aa778a",
     "new_release": "composition-scaled-logn12-v1",
-    "authorization": "recorded parameter derivation decision, 2026-10-05",
+    "authorization": "USER_DECISIONS_20261005.md section CKKS, 2026-10-05",
     "changes": [
       {
         "path": "estimator/experiments/bootstrapping/bootstrapping.go",

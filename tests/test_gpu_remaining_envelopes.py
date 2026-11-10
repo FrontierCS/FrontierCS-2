@@ -4,6 +4,7 @@ import deployment_test_guard  # noqa: F401  # isort: skip
 
 import importlib.util
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,11 +13,21 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBLEMS = ROOT / "tasks/problems"
-# Population's scientific handoff and setup classification have a separate suite.
-ADAPTERS = sorted(
-    p for p in PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py")
-    if p.parent.parent.name != "representation_frechet_loss"
+sys.path.insert(0, str(ROOT / "scripts"))
+import task_layers  # noqa: E402
+
+# Every forked GPU adapter in the repository's task layers.
+FORKED = sorted(
+    path for layer in task_layers.layers()
+    for path in layer.problems.rglob("verifier/fcs2_verifier_gpu.py")
 )
+# Population's scientific handoff and setup classification have a separate suite.
+ADAPTERS = [p for p in FORKED if p.parent.parent.name != "representation_frechet_loss"]
+
+
+def phase_controlled(adapter):
+    """An adapter that bounds each phase by a wait window and uploads through its own child."""
+    return hasattr(adapter, "_WaitWindow")
 
 
 def load(path, name):
@@ -28,10 +39,10 @@ def load(path, name):
 
 class RemainingEnvelopeTests(unittest.TestCase):
     def test_all_published_adapters_inventory(self):
-        # Every public task is a task.toml task: it uses the shared adapter (gpu-tools); a task.toml
-        # task uses the shared adapter (gpu-tools) and must not carry one.
-        forked = sorted(PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py"))
-        self.assertEqual(forked, [])
+        # A forked GPU adapter belongs to a policy.json task; a task.toml task uses the shared
+        # adapter (gpu-tools) and must not carry one.
+        for path in FORKED:
+            self.assertFalse((path.parent.parent / "task.toml").is_file(), path)
         for index, path in enumerate(ADAPTERS):
             adapter = load(path, f"deadline_adapter_{index}")
             with self.subTest(task=path.parent.parent.name):
@@ -64,35 +75,35 @@ class RemainingEnvelopeTests(unittest.TestCase):
                     )
                     self.assertEqual(
                         adapter._WaitWindow(deadline, "phase_timeout").remaining()
-                        if path.parent.parent.name in {"flow_opd", "lrr"}
+                        if phase_controlled(adapter)
                         else adapter._remaining(deadline), 399
                     )
                     with mock.patch.object(
-                        adapter if path.parent.parent.name in {"flow_opd", "lrr"} else adapter.subprocess,
-                        "_upload_process" if path.parent.parent.name in {"flow_opd", "lrr"} else "run",
+                        adapter if phase_controlled(adapter) else adapter.subprocess,
+                        "_upload_process" if phase_controlled(adapter) else "run",
                         return_value=SimpleNamespace(returncode=0, stderr=b""),
                     ) as child:
                         adapter._upload_inputs(
                             ["ssh"], inputs, 600, {}, runner_deadline=deadline,
                             **({"window": adapter._WaitWindow(deadline, "phase_timeout")}
-                               if path.parent.parent.name in {"flow_opd", "lrr"} else {})
+                               if phase_controlled(adapter) else {})
                         )
-                        self.assertLessEqual((child.call_args.args[3] if path.parent.parent.name in {"flow_opd", "lrr"}
+                        self.assertLessEqual((child.call_args.args[3] if phase_controlled(adapter)
                                               else child.call_args.kwargs["timeout"]), 120)
                 with (
                     mock.patch.object(adapter.time, "monotonic", return_value=680),
                     mock.patch.object(
-                        adapter if path.parent.parent.name in {"flow_opd", "lrr"} else adapter.subprocess,
-                        "_upload_process" if path.parent.parent.name in {"flow_opd", "lrr"} else "run",
+                        adapter if phase_controlled(adapter) else adapter.subprocess,
+                        "_upload_process" if phase_controlled(adapter) else "run",
                         return_value=SimpleNamespace(returncode=0, stderr=b""),
                     ) as child,
                 ):
                     adapter._upload_inputs(
                         ["ssh"], inputs, 600, {}, runner_deadline=deadline,
                             **({"window": adapter._WaitWindow(deadline, "phase_timeout")}
-                               if path.parent.parent.name in {"flow_opd", "lrr"} else {})
+                               if phase_controlled(adapter) else {})
                     )
-                    self.assertLessEqual((child.call_args.args[3] if path.parent.parent.name in {"flow_opd", "lrr"}
+                    self.assertLessEqual((child.call_args.args[3] if phase_controlled(adapter)
                                               else child.call_args.kwargs["timeout"]), 19)
                 with (
                     mock.patch.object(adapter.time, "monotonic", return_value=700),
@@ -114,7 +125,7 @@ class RemainingEnvelopeTests(unittest.TestCase):
             if path.parent.parent.name == "nano_world_model":
                 continue
             adapter = load(path, f"cleanup_adapter_{index}")
-            if path.parent.parent.name in {"flow_opd", "lrr"}:
+            if phase_controlled(adapter):
                 from test_flow_gpu_phase_control import assert_grant_cleanup
                 # Flow reserves cleanup inside the grant: consume its work
                 # window while retaining the actual deletion reserve.

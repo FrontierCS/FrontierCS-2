@@ -28,8 +28,8 @@
       {
         "round": 1,
         "idx": 0,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.8627254248994244,
         "score": 86.27254248994244,
         "beats_reference": 0,
@@ -77,8 +77,8 @@
   "genuine_solver_trials": [
     {
       "trial": "frontier-cs-2-0-polygon-preview__CH8Bvgp",
-      "agent": "redacted",
-      "model": "redacted",
+      "agent": "codex",
+      "model": "gpt-5.6-sol",
       "candidate_class": "model_agent",
       "patch_sha256": "363fde62d573130dfe55245b5b3708b61dcd07dc3034f92dd0d2b8c6dc8be7e5",
       "status": "scored",

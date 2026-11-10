@@ -1,5 +1,4 @@
 {
-  "repository": "https://github.com/FrontierCS/FrontierCS-2",
   "platform_source_commit": "68fb0550ec1e10f64a98463b663289259e0d712e",
   "dockerfile": {
     "source": "candidate-overlays/pi-gemini/Dockerfile",

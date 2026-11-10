@@ -23,15 +23,15 @@ import tempfile
 from pathlib import Path
 from typing import Sequence
 
+import image_namespace
 import render_task_definition as renderer
 import source_tree
+import task_layers
 import task_manifest
 import verifier_layout
 from native_datasets import dataset_path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-TASK_ROOT = REPOSITORY_ROOT / "tasks"
-TASK_CATALOG = REPOSITORY_ROOT / "config" / "task-catalog.json"
 SPARSE_VIDEO = "sparse_video_attention_policy"
 IMAGE_PREFIX_RE = re.compile(
     r"^(?:[a-z0-9]+(?:[._-][a-z0-9]+)*(?::[0-9]+)?/)*"
@@ -101,7 +101,6 @@ def gpu_ssh_base() -> str:
 
 BASE_IMAGES = {"ubuntu:24.04", "buildpack-deps:noble", "python:3.11-slim-bookworm"}
 # Exact reviewed public SDK used by MetaOpt; no general MCR registry approval.
-# Registry/config/license proof and upstream PR35 pin: docs/tool-compatibility-20261001.md.
 REVIEWED_PUBLIC_BASES = {
     "mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim@sha256:3ee581addaa35c8c790f5f62441b189810522bb32e43a8db9d4283b3f649cc24",
 }
@@ -769,7 +768,7 @@ def build_problem(
     `push`, push the built images, then smoke a newly built Verifier image by its pushed digest
     in the production layout (run_in_pod); without it, the smoke runs on the published catalog
     image (--smoke-catalog) once the image is pushed."""
-    root = root or renderer.problem_directory(TASK_ROOT / "problems", problem)
+    root = root or renderer.task_directory(problem)
     definition = definition or renderer.render(root, problem)
     sidecars = sidecar_roles(definition)
     names = image_names(prefix, problem, definition["image_tag"], sidecars)
@@ -902,13 +901,13 @@ def build_dataset_image(root: Path, definition: dict, name: str) -> None:
 def smoke_catalog(problems: Sequence[str], *, record: bool = False) -> int:
     """The production-layout smoke on the published catalog Verifier images: a list of the
     tasks that are broken in production right now."""
-    catalog = {task["name"]: task for task in json.loads(TASK_CATALOG.read_text())["tasks"]}
+    catalog = {task["name"]: task for task in task_layers.load_catalog()["tasks"]}
     failures, unchecked = [], []
     for problem in problems:
         image = catalog[problem]["verifier_image"]
         reference = image["repository"] + "@" + image["digest"]
         try:
-            root = renderer.problem_directory(TASK_ROOT / "problems", problem)
+            root = renderer.task_directory(problem)
             verdict = verifier_smoke(reference, problem, root, renderer.render(root, problem),
                                      record=record).strip()
             checked = not verdict.startswith("no control-image placement check")
@@ -942,12 +941,10 @@ def main(arguments: Sequence[str] | None = None) -> int:
         default=[],
     )
     parser.add_argument(
-        "--image-prefix",
-        default=os.environ.get(
-            "TASK_IMAGE_PREFIX", os.environ.get(
-                "DEMO_IMAGE_PREFIX", os.environ.get("FRONTIER_IMAGE_NAMESPACE", "joyemang33")
-            )
-        ),
+        "--image-namespace",
+        default=image_namespace.namespace(),
+        help="<registry>/<namespace> to name the images under "
+        "(default: config/image-namespace.json)",
     )
     parser.add_argument(
         "--manifest",
@@ -985,21 +982,15 @@ def main(arguments: Sequence[str] | None = None) -> int:
     CRANE = options.crane
     if catalog_error is not None:
         raise BuildFailure(str(catalog_error)) from catalog_error
-    if "DEMO_IMAGE_PREFIX" in os.environ and "TASK_IMAGE_PREFIX" not in os.environ:
-        print(
-            "deprecated: DEMO_IMAGE_PREFIX; use TASK_IMAGE_PREFIX (alias retained for one release)",
-            file=sys.stderr,
-        )
-    if IMAGE_PREFIX_RE.fullmatch(options.image_prefix) is None:
-        raise BuildFailure("--image-prefix is not a bounded Docker repository prefix")
-    if options.manifest.resolve().is_relative_to((TASK_ROOT / "problems").resolve()):
+    if IMAGE_PREFIX_RE.fullmatch(options.image_namespace) is None:
+        raise BuildFailure("--image-namespace is not a bounded Docker repository prefix")
+    if any(options.manifest.resolve().is_relative_to(layer.problems.resolve())
+           for layer in task_layers.layers()):
         raise BuildFailure("build manifest must live outside task trees")
     requested = options.problem or ["all"]
     try:
-        directories = renderer.catalog_problem_directories(
-            catalog_problems, TASK_ROOT / "problems"
-        )
-        definitions = json.loads(renderer.DEFINITIONS.read_text(encoding="utf-8"))
+        directories = renderer.catalog_problem_directories(catalog_problems)
+        definitions = task_layers.load_definitions()
         for name, root in directories.items():
             if name not in definitions:
                 raise ValueError(f"catalog task {name} has no rendered definition")
@@ -1069,7 +1060,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
         # Every selected task must validate before the first registry mutation.
         for problem in problems:
             manifest["tasks"][problem] = incremental.plan_problem(
-                REPOSITORY_ROOT, problem, options.image_prefix, commit, directory
+                REPOSITORY_ROOT, problem, options.image_namespace, commit, directory
             )
         options.manifest.parent.mkdir(parents=True, exist_ok=True)
         options.manifest.write_text(renderer.json_text(manifest), encoding="utf-8")
@@ -1094,7 +1085,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
     for problem in problems:
         manifest["tasks"][problem] = build_problem(
             problem,
-            options.image_prefix,
+            options.image_namespace,
             push=options.push,
             bases=manifest["bases"],
         )

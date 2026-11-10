@@ -35,7 +35,7 @@ OPEN_HEADERS = {
 
 
 def incident_snapshot():
-    return deploy.load_json(ROOT / "tests/fixtures/evidence/v3-runtime-incident-2026-09-12.json")[
+    return deploy.load_json(ROOT / "tests/fixtures/v3-runtime/dispatch.json")[
         "observed"
     ]["scheduler_capacity_snapshot"]
 
@@ -371,7 +371,7 @@ class CapacityTests(RuntimeFixture):
 class AdmissionObjectsTests(RuntimeFixture):
     def test_kubernetes_objects_equal_pinned_platform_and_simulator_is_unchanged(self):
         fixture = deploy.load_json(
-            ROOT / "tests/fixtures/evidence/v3-admission-control-0cc869e9.json"
+            ROOT / "tests/fixtures/v3-runtime/admission-control.json"
         )["objects"]
         maps = [item for item in fixture if item["kind"] == "ConfigMap"]
         static = [item for item in fixture if item["kind"] != "ConfigMap"]

@@ -20,6 +20,7 @@ from urllib.error import HTTPError
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import resolve_catalog_digests as resolver
+import task_layers  # noqa: E402
 
 
 def sha(body):
@@ -380,7 +381,7 @@ class DigestResolverTests(unittest.TestCase):
     ):
         with tempfile.TemporaryDirectory() as directory:
             catalog = Path(directory) / "catalog.json"
-            catalog.write_bytes((ROOT / "config/task-catalog.json").read_bytes())
+            catalog.write_text(task_layers.json_text(task_layers.load_catalog()))
             original = json.loads(catalog.read_text())
             artifact_digests = {
                 (image["repository"], image["tag"]): image["digest"]
@@ -415,7 +416,7 @@ class DigestResolverTests(unittest.TestCase):
     def test_failed_resolution_writes_nothing(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "task-catalog.json"
-            path.write_bytes((ROOT / "config/task-catalog.json").read_bytes())
+            path.write_text(task_layers.json_text(task_layers.load_catalog()))
             before = path.read_bytes()
             with mock.patch.object(
                 resolver,
@@ -429,7 +430,7 @@ class DigestResolverTests(unittest.TestCase):
     def test_task_filter_leaves_candidate_and_other_tasks_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "task-catalog.json"
-            path.write_bytes((ROOT / "config/task-catalog.json").read_bytes())
+            path.write_text(task_layers.json_text(task_layers.load_catalog()))
             original = json.loads(path.read_text())
             name = original["tasks"][0]["name"]
             with mock.patch.object(

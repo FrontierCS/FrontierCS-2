@@ -79,7 +79,7 @@ class SubmitMirrorTests(unittest.TestCase):
                 receipt = json.loads((directory / "source.json").read_text())
                 self.assertEqual(receipt["platform_source_commit"],
                                  entry["recipe"]["source_commit"])
-                self.assertEqual(receipt["repository"], sync.SOURCE_REPOSITORY)
+                self.assertNotIn("repository", receipt)
                 dockerfile = (directory / "Dockerfile").read_bytes()
                 self.assertEqual(receipt["dockerfile"]["local_sha256"], sync.sha256(dockerfile))
                 # The local Dockerfile copies exactly the receipt's files.

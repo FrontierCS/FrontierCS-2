@@ -21,6 +21,7 @@ POPULATION = PROBLEMS / "Machine Learning/representation_frechet_loss"
 # legacy-adapter inventory below still covers the tasks that keep their own copy.
 ADAPTERS = []
 sys.path.insert(0, str(ROOT / "scripts"))
+import task_layers  # noqa: E402
 import task_manifest  # noqa: E402
 
 
@@ -47,10 +48,12 @@ def load(path, name):
 
 class DeadlineEnvelopeTests(unittest.TestCase):
     def test_all_published_adapters_inventory(self):
-        # Every public task is a task.toml task: it uses the shared adapter (gpu-tools); a task.toml
-        # task uses the shared adapter (gpu-tools) and must not carry one.
-        forked = sorted(PROBLEMS.rglob("verifier/fcs2_verifier_gpu.py"))
-        self.assertEqual(forked, [])
+        # A forked GPU adapter belongs to a policy.json task; a task.toml task uses the shared
+        # adapter (gpu-tools) and must not carry one.
+        forked = sorted(path for layer in task_layers.layers()
+                        for path in layer.problems.rglob("verifier/fcs2_verifier_gpu.py"))
+        for path in forked:
+            self.assertFalse((path.parent.parent / "task.toml").is_file(), path)
         for index, path in enumerate(ADAPTERS):
             adapter = load(path, f"deadline_adapter_{index}")
             with self.subTest(task=path.parent.parent.name):

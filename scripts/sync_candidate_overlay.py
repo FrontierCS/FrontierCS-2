@@ -19,7 +19,6 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_REPOSITORY = "https://github.com/FrontierCS/FrontierCS-2"
 SOURCE_PREFIX = "candidate-overlays/"
 CANDIDATES = "candidates"
 ROSTER = "config/candidates.json"
@@ -139,16 +138,22 @@ PUBLIC_EDITS: dict[tuple[str, str], list[tuple[bytes, bytes]]] = {
                                 b'"META_API_KEY", "LD_LIBRARY_PATH",')],
     # Public copy authenticates with a standard Anthropic API key.
     ("claude-code", "launcher.py"): [
-        (b"Official Claude Code, subscription auth, bounded",
-         b"Official Claude Code, API-key auth, bounded"),
+        (b"Official Claude Code, subscription or Driver gateway auth, bounded",
+         b"Official Claude Code, API-key or Driver gateway auth, bounded"),
+        (b"Driver gateway mode: no subscription token;",
+         b"Driver gateway mode: no API key;"),
         (b"oauth = os.environ.get('CLAUDE_CODE_OAUTH_TOKEN', '').strip()",
          b"api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()"),
+        (b"gateway = None if oauth else gateway_environment()",
+         b"gateway = None if api_key else gateway_environment()"),
+        (b"if gateway: oauth, model = gateway['ANTHROPIC_AUTH_TOKEN']",
+         b"if gateway: api_key, model = gateway['ANTHROPIC_AUTH_TOKEN']"),
         (b"if not oauth.startswith('sk-ant-oat01-') or len(oauth) > 16384 or",
          b"if not api_key.startswith('sk-ant-') or len(api_key) > 16384 or"),
         (b"raise LaunchError('missing or invalid subscription credential/model')",
          b"raise LaunchError('missing or invalid API key/model')"),
-        (b"child.update({'CLAUDE_CODE_OAUTH_TOKEN': oauth,",
-         b"child.update({'ANTHROPIC_API_KEY': api_key,"),
+        (b"child.update({**({'CLAUDE_CODE_OAUTH_TOKEN': oauth} if gateway is None else {}),",
+         b"child.update({**({'ANTHROPIC_API_KEY': api_key} if gateway is None else {}),"),
         (b"return child, upload, [oauth.encode(), bearer.encode()], model, effort",
          b"return child, upload, [api_key.encode(), bearer.encode()], model, effort"),
     ],
@@ -180,7 +185,6 @@ def mirror(source: Path, harness: str, commit: str) -> tuple[dict[str, bytes], d
     local = adapted_dockerfile(official, harness)
     contents["Dockerfile"] = local
     receipt = {
-        "repository": SOURCE_REPOSITORY,
         "platform_source_commit": commit,
         "dockerfile": {
             "source": dockerfile,

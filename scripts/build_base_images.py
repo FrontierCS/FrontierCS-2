@@ -9,7 +9,8 @@ tasks/shared/bases.json holds the one current set: agent and verifier are bases 
 FROM (frontier-<role>-base, recipe tasks/shared/images/<role>-base.Dockerfile); gpu-tools is a
 files-only image GPU task images COPY --from (frontier-gpu-tools, recipe
 tasks/shared/images/gpu-tools.Dockerfile). Context is tasks/shared. With --push, each built role
-is pushed as docker.io/<namespace>/<name>:<tag> and becomes the current entry for that role in
+is pushed as <image namespace>/<name>:<tag> (config/image-namespace.json, or
+--image-namespace) and becomes the current entry for that role in
 bases.json; task Dockerfiles take the bases by build argument (ARG AGENT_BASE / VERIFIER_BASE /
 GPU_TOOLS) and build_task_images injects the bases.json references, so a base change moves all
 tasks at once.
@@ -36,6 +37,7 @@ import tarfile
 import tempfile
 from pathlib import Path
 
+import image_namespace
 import source_tree
 from task_manifest import SHARED
 
@@ -174,7 +176,9 @@ def gpu_tools_context(scratch: Path) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--namespace", default="joyemang33")
+    parser.add_argument("--image-namespace", default=image_namespace.namespace(),
+                        help="<registry>/<namespace> to push under "
+                        "(default: config/image-namespace.json)")
     parser.add_argument("--print-tags", action="store_true",
                         help="print each role's derived tag and exit")
     parser.add_argument("--push", action="store_true")
@@ -196,7 +200,7 @@ def main() -> int:
     references = {}
     scratch = Path(tempfile.mkdtemp(prefix="frontier-bases-"))
     for role in roles:
-        repository = f"docker.io/{options.namespace}/{IMAGE_NAMES[role]}"
+        repository = f"{options.image_namespace}/{IMAGE_NAMES[role]}"
         tag = f"{repository}:{source_tag(role)}"
         context = (gpu_tools_context(scratch) if role == "gpu-tools"
                    else source_context(role, scratch))

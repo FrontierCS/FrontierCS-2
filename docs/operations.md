@@ -5,7 +5,25 @@ native cleanup after unconfirmed Driver creation
 and the current native recovery runtime.
 Publication alone does not clean historical attempts or authorize their retry.
 
+## Provider refusal evidence compatibility
+
+The published Management/Driver pair pinned by this release supports explicit
+provider-refusal adjudication for both legacy gateway evidence v1 and primary-only
+gateway evidence v2. The operator action still verifies the original accepted
+Driver receipt, exact terminal key binding and all refusal callbacks; ordinary
+quota, network and provider errors remain unscored. Updating the runtime does not
+apply an adjudication or alter task definitions and existing evaluation results.
+See the pinned platform source's `docs/provider-refusal-adjudication.md` for the
+closed operator API and evidence requirements.
+
 ## Clusterwise selected-final recovery and resource outcomes
+
+The published Management/Driver pair also supports independent judging of an
+authenticated Clusterwise final whose original completed result lacks a verdict.
+This operator recovery requires stopped execution, the original accepted final
+archive and an explicit final submission receipt. A train answer or saved
+checkpoint alone is insufficient. Only the reviewed verifier image is replaced;
+the original task contract, execution records and evidence remain unchanged.
 
 An authenticated Agent OOM with no accepted final can receive score 0 / FAIL
 through the existing no-final adjudication route. The console displays OOM while
@@ -53,6 +71,17 @@ through its existing role. The upgrade preserves unrelated rules, uses both
 role UID and resourceVersion guards, performs server-side dry-run before any
 patch, and verifies role identity/rules after rollout. Simulator installation
 omits this observation wiring.
+
+Runtime upgrades remove obsolete snapshot settings (`MANAGEMENT_EKS_STATUS_PATH`,
+`MANAGEMENT_EKS_STATUS_NODEGROUPS`, `MANAGEMENT_EKS_STATUS_MAX_AGE_SECONDS`) and
+reject direct container environment overrides of those or the current cluster/
+region settings. Existing manual capacity bindings remain unchanged: enabling
+worker controls still needs the explicit configuration/IAM procedure in
+manual capacity. NodeMetrics reads remain part of that
+opt-in feature; neither autoscaling nor metrics-server is installed here.
+The runtime-only upgrade preserves the LiteLLM gateway and its identities;
+it does not redeploy the gateway, modify tasks or resize workers.
+See the current-source validation record.
 
 ## 1. Preflight, render, and plan
 
@@ -141,7 +170,7 @@ always uses [the importer](import-task.md).
 make build-task-images
 TASK_PROBLEM=sparse_video_attention_policy make build-task-images
 TASK_PROBLEM=cpu make build-task-images
-TASK_PROBLEM=graph_mining_method_selection TASK_IMAGE_PREFIX=joyemang33 make build-task-images
+TASK_PROBLEM=graph_mining_method_selection IMAGE_NAMESPACE=localhost:5000/frontier make build-task-images
 ```
 
 These commands build local `linux/amd64` images. The script
@@ -151,11 +180,13 @@ stay outside task trees, defaulting to `.generated/native-build.json`.
 Building or pushing images does not update the catalog. Use `import-task` for
 task release changes and never overwrite a published tag with different bytes.
 
-For one release, `make build-demo-images`, `DEMO_PROBLEM` and `DEMO_IMAGE_PREFIX`
-remain deprecated aliases. Either the old target or variables print one warning
-line. `TASK_PROBLEM` and `TASK_IMAGE_PREFIX` take precedence when both names are
-set. The script also accepts the old image-prefix environment variable for that
-release, with a warning; explicit `--image-prefix` still takes precedence.
+Images are named under the repository's one declared image namespace,
+`config/image-namespace.json` (`<registry>/<namespace>`, today
+`docker.io/joyemang33`). The build, base-build and import tools and the validators
+all read it; editing that file moves every newly built image at once.
+`IMAGE_NAMESPACE=<registry>/<namespace>` (the scripts' `--image-namespace`) names
+one run's images elsewhere. Digest-pinned references in the catalogs keep their
+own full repository.
 
 The builder uses each task's own Dockerfiles and root as its build context.
 It freezes mutable Ubuntu, buildpack-deps and Python bases through BuildKit
@@ -196,16 +227,25 @@ registry Service IPv4 `/32` on TCP 5000, including AWS VPC CNI strict mode.
 service:
 
 ```bash
-python3 scripts/frontier_deploy.py seed-tasks \
-  --config config/site.json \
-  --catalog config/task-catalog.json
+python3 scripts/frontier_deploy.py seed-tasks --config config/site.json
 ```
+
+It seeds every task layer's catalog (`scripts/task_layers.py`); `--catalog FILE` seeds
+one catalog file instead.
+
+Each task seed invocation creates a fresh Job whose name contains the dataset
+content hash and a random invocation suffix. Its saved manifest and PVC scratch
+files use that same name. The command uses `kubectl create`, then waits for and
+reads logs from that exact Job; a name collision fails without changing the
+existing Job. Earlier Jobs are retained, and their Completed status is never
+used as evidence for a new seed. Every invocation rechecks existing PVC objects'
+SHA-256 values and reports their byte sizes before registering the TaskVersion.
+The default manifest renderer keeps its deterministic name for offline callers.
 
 To check existing identities before migration or re-seeding:
 
 ```bash
-python3 scripts/frontier_deploy.py seed-tasks --check \
-  --config config/site.json --catalog config/task-catalog.json
+python3 scripts/frontier_deploy.py seed-tasks --check --config config/site.json
 ```
 
 This command reuses `.state/<site>/kubeconfig` and `task-images.json`. It verifies
@@ -238,6 +278,19 @@ python3 scripts/frontier_deploy.py gpu-smoke --config config/site.json \
   --patch /absolute/path/to/solution.patch --patch-sha256 sha256:<exact-body-hash> \
   --attempt release-r001
 ```
+
+The intended acceptance replays the immutable patch through the Candidate-owned H100 build helper,
+one train verification, then final submission. It uses the published generic
+overlay but makes no model call. The command persists Run/Evaluation identities
+before monitoring and the same attempt label resumes the same Evaluation.
+The Candidate-owned helper requests one H100 for compilation. Train and final
+each request four H100 GPUs through the separate trusted Verifier; these three
+stages run sequentially. A one-H100 Agent reservation is not a reduction of the
+four-GPU scoring configuration. Check the actual GPU journals for `1 / 4 / 4`
+and terminated provider resources, not just the configured quota limits.
+Its observation deadline follows the Task wall budget, not a short model timeout.
+A completed numeric score is only the scoring gate: inspect retained train/GPU
+evidence and exact resource cleanup before claiming full release acceptance.
 
 If an exact clean FrontierCS2 checkout is already present, avoid a network
 clone without putting its path in the site file:
@@ -280,8 +333,7 @@ and no active Runs. Coordinate the window before changing shared resources.
 3. Run the GET-only comparison before mutation:
 
    ```bash
-   python3 scripts/frontier_deploy.py seed-tasks --check \
-     --config config/site.json --catalog config/task-catalog.json
+   python3 scripts/frontier_deploy.py seed-tasks --check --config config/site.json
    ```
 
    Review each MATCH/MISSING/DIFFERS result. New releases can intentionally
@@ -405,6 +457,24 @@ patch.
 
 ## Reference parity acceptance gate
 
+Every baseline must declare `provenance` (`measured`, `historical-authoring`,
+or `unverified`) and boolean `comparable`. New imports conservatively mark
+authoring scores as not comparable until their measured revision is established;
+see [baseline sources](import-task.md).
+A completed successful replay with valid score and train evidence reports
+`NOT_COMPARABLE` for non-comparable baselines and skips only the tolerance comparison;
+execution or evidence failures still report `FAIL`. Scores, run/evaluation IDs
+and train verification are retained. `NOT_COMPARABLE` is terminal but does not
+satisfy the all-PASS CLI gate (exit 1). Old receipts without classification
+still load and keep their terminal verdicts without rewriting the records,
+but never satisfy the all-PASS gate (exit 1), even if the stored verdict is
+`PASS`. The CLI prints `<task>: PASS (unclassified legacy receipt — rerun with a new --receipt/--attempt)`;
+use a new receipt and attempt for a newly classified replay. Unfinished legacy
+records acquire the current baseline classification on resume. Once any
+classification key is recorded, the full classification must match the baseline,
+including whether `comparability_note` is present; changes require a new receipt
+and attempt. A Preview replay never becomes a baseline.
+
 After the operator runs `make apply`, use the Management endpoint and the
 local seed/mirror receipts from that same site:
 
@@ -451,6 +521,17 @@ numeric score, and a Driver `VERIFIER_TRAIN_COMPLETED` event with status
 0.05 * abs(historical_mean)`. This rule compares the replay with its bound baseline; it does not estimate
 within-sample timing variance.
 
+The receipt contains IDs, hashes, state/outcome, score, historical mean/spread,
+the rule, train verification ID, submission state and concise failure summaries.
+No artifact or evidence body is fetched or persisted. Until train success is
+checkpointed, the latest 500 event envelopes are checked on each poll. For a
+completed Run, the harness follows `X-Next-Cursor` through older pages before
+finalizing a missing-train failure. Connection errors, HTTP 5xx, HTTP 408/429,
+timeouts and oversized responses are retried within the saved observation
+deadline. Read timeouts are capped by the remaining budget. The receipt keeps
+error counts and at most ten error categories/operations per phase; it does not
+store exception text or HTTP error bodies.
+
 The `quota.wall_time_seconds + quota.verifier.eval_timeout_seconds + 900`
 deadline covers answering, independent final and cleanup, and is checkpointed before
 the first Evaluation POST. A saved deadline without a submission marker or
@@ -477,7 +558,14 @@ replay again, choose both a new receipt and a new `--attempt` label. Retain the
 real receipt and review every selected task verdict. Do not treat mocked test receipts
 as live acceptance.
 
+
 ## V3 runtime notes
+
+These notes apply to platform pin `0cc869e9`. The motivating observations are
+in the September 12 incident record.
+The pinned admission object fixture
+copies the relevant objects from the platform's `production-control.yaml` and
+`rbac.yaml` for portable offline comparison.
 
 ### Capacity and preflight
 
@@ -505,6 +593,14 @@ not the blocker list's length. `released` is `released_historical_cleanups`.
 The list contains all four cleanup states, with BLOCKED first, capped at 100;
 retained-capacity failure diagnostics show at most ten entries, tolerate null error
 messages, and report `blockers_truncated` when the server truncated its list.
+
+The capacity check fails before posting smoke only when `available_slots < 1`
+**and** `counts.cleanup_counts.BLOCKED >= configured_cap`: retained BLOCKED
+reservations alone exhaust the cap. In that case, raise
+`execution.max_active_drivers` above the retained count to leave headroom;
+historical-GC recovery is unsupported for the incident's records at this
+platform pin. This does not mean V3 can never release reservations: valid
+historical-GC completions are explicitly excluded from occupancy.
 
 If no slot is available but BLOCKED reservations are below the cap, active
 STARTING/RUNNING/FINALIZING Runs or PENDING/APPLYING/RUNNING cleanups can still
@@ -692,6 +788,40 @@ The UI/gateway can be healthy while model-enabled Frontier Runs remain
 unavailable. The automated smoke is intentionally scripted; this `local-k8s`
 profile does not issue LiteLLM virtual keys to Drivers.
 
+## 4. Failure diagnosis
+
+- registry Pending: inspect EFS CSI controller, mount targets, PV/PVC events;
+- internal image pull failure: inspect the node launch-template user data and
+  `/etc/containerd/certs.d/<registry-ip>:5000/hosts.toml` on an authorized node;
+- Driver Pending on PVC: inspect storage-controller logs and the exact Run
+  namespace/PV/PVC ownership labels;
+- GPU Driver waiting on Secret: inspect controller health, the exact named
+  Secret's metadata (not its values), and Driver Job ownership/secret references;
+- GPU import failure: confirm the public Docker Hub tag still resolves to the
+  pinned single-platform digest, Modal budget/quota, and the exact NAT `/32`
+  allowlist. Sparse video's offline model layers are large; use staging's
+  existing long image-build/deadline handling, not an arbitrary short timeout;
+- LiteLLM UI unavailable: inspect the `frontier-litellm` Deployment, Service,
+  NetworkPolicy, and readiness endpoint; never dump the Secret into logs;
+- LiteLLM model call fails: confirm the provider credential and model mapping
+  in the UI, then distinguish provider readiness from the still-unimplemented
+  Management/Driver virtual-key integration;
+- Management rejects Evaluation as fenced: confirm the simulator bootstrap
+  rollout completed on the same SQLite PVC before the final restart;
+- terminal smoke failure: collect Management, Driver, Agent, and Verifier logs;
+  do not promote partial component readiness to an E2E pass.
+
+### Reinstalling an existing site from a fresh clone
+
+The platform stack's Terraform state lives in the site's S3 state bucket, but the
+bootstrap stack that creates that bucket keeps its state locally in
+`.state/<site>/bootstrap.tfstate`. A fresh clone therefore reproduces the platform
+stack exactly (`make plan` reports no changes) while its bootstrap plan proposes to
+create the bucket again. To operate an existing site from a new checkout, copy
+`.state/<site>/bootstrap.tfstate` from the original operator checkout before
+`make plan`; to install a new site, choose a new `terraform.state_bucket`. Evidence:
+fresh-clone rehearsal, 2026-09-12.
+
 ## 5. Backup and deletion
 
 SQLite online backup/restore and PostgreSQL backup/restore are not automated
@@ -705,6 +835,20 @@ There is no destroy command. EKS deletion protection plus Terraform
 a reviewed change that proves backup integrity, zero active Run namespaces,
 exact retained-data disposition, and explicit site/account identity.
 
+## Staging evaluation format compatibility
+
+Preview's native-format validator supports 4096 combined model and SSH
+sessions, with at most 2048 per kind and per SSH pool. Model streams are
+bounded at 64 MiB and SSH streams at 512 MiB per direction. Actual retained
+traffic shares the task's aggregate audit budget, bounded at 32 GiB; session
+ceilings do not promise that every stream can fill its individual limit.
+These capabilities require a runtime that supports them. Verify the deployed
+image pins before registering these task configurations. Final judging
+timeouts remain limited to seven days by the shared contract and independent
+of the Agent window. Historical TaskVersions and acceptance receipts retain
+their original budgets and runtime identities.
+
+
 ## Local gateway terminal artifact retention
 
 Executable Preview renders a gateway artifact source at
@@ -716,7 +860,8 @@ as UID65532/mode0700. It reuses an existing private directory and rejects symlin
 wrong ownership or shared permissions without modifying them. Simulator bootstrap
 does not enable this receiver configuration.
 
-This configuration does not by itself upgrade the native runtime, consume a terminal handoff,
+The configuration accompanies native local terminal artifact verification.
+It does not by itself upgrade the native runtime, consume a terminal handoff,
 repair model-key cleanup or release scheduler capacity. Runtime publication still
 requires a clean official source revision, immutable image pins and the documented
 idle/backup/seed-check operator window. Before a schema-changing runtime upgrade,
@@ -743,6 +888,39 @@ it after a fresh idle check, preserving other site RBAC. Fresh renders use the
 upstream 15000 ms controller poll; upgrades preserve the live site's configured
 poll interval and other configuration.
 
+Preview's `local-k8s` backend selects local diagnostic storage, not the staging
+S3 diagnostic adapter. Management creates private retained diagnostics under
+`/var/lib/frontier/run-diagnostics` on its writable EBS data PVC as UID65532.
+Child diagnostics use the existing gateway artifact source. Their expiry handler
+must acquire a write lock and unlink validated diagnostic slots. Therefore an
+additional writable mount exposes only EFS subPath `artifacts` to Management at
+`/var/lib/frontier-local/artifacts`; the parent object/dataset mount stays read-only.
+Both mounts reference the same `objects` Pod volume, whose PVC source permits
+writes. Do not create a second volume alias for that PVC: on Preview's Kubernetes
+1.34 kubelet this left `objects` unmounted in its internal state even after CSI
+reported successful mount setup, blocking all containers before init startup.
+The upgrade migrates the former `diagnostic-source` alias to this single-volume
+layout, preserves a custom PVC and unrelated mounts, and rejects other alias
+consumers or any mount whose write access would expand. It remains guarded by
+resourceVersion and complete Deployment readback. See the
+incident evidence.
+This filesystem grant covers all local Run artifacts, while the trusted runtime
+restricts deletion to validated diagnostic paths and verifies source identity under
+the writer lock. It does not give Agents new mounts, credentials or RBAC. The
+portable EFS access point enforces UID/GID65532, including creation of a missing
+artifact subdirectory during volume setup. Upgrades reject conflicting mounts.
+The former read-only source would archive diagnostics but continually fail expiry
+with `SOURCE_RETENTION_DELETE_FAILED`; keeping it read-only is not a complete upgrade.
+The IAM artifact reader remains unchanged because this backend does not use S3
+diagnostic writes, lists or deletes.
+
+Preview does not provision the staging ValidatingAdmissionPolicy. A read-only
+check of the Preview evaluation cluster on 2026-10-03 found no such policies, so
+the staging ordinary-Job TTL compatibility patch is not applicable there. On a
+site with separately managed admission, confirm ordinary Driver/child Jobs with
+TTL300 are accepted before rollout; preserve its other rules. Do not install or
+replace staging admission or production command/receipt objects for this change.
+
 Before activating migration27, obtain a consistent SQLite snapshot using a fixed
 read transaction/SQLite backup API, verify integrity and foreign keys, and retain
 the old images, configuration and accepted-result baseline. The `.state` backup
@@ -753,6 +931,7 @@ An image-only rollback is unsupported. After rollout verify diagnostic reads,
 retained writes and expiry deletion, Jobs TTL behavior, cleanup/slot state, unchanged
 historical results and the existing model smoke. Local manifest tests do not prove
 these deployed checks or mark a release accepted.
+
 
 The original-ten 1024-session release and its platform prerequisite are tracked
 in the release record. The example site
@@ -768,7 +947,7 @@ their exact addresses are not stable. Terraform therefore gives the control plan
 two dedicated `/28` subnets (`aws_subnet.control_plane`, one per site AZ, used by
 nothing else) and exports the complete TCP 443 allowlist as the
 `kubernetes_api_cidrs` output: those `/28`s plus the Service ClusterIP `/32`
-(`10.42.200.0/28`, `10.42.200.16/28`, `172.20.0.1/32` in the default configuration).
+(`10.42.200.0/28`, `10.42.200.16/28`, `172.20.0.1/32` for the Preview site).
 Management `MANAGEMENT_KUBERNETES_API_CIDRS` and the API rule of the
 `frontier-management-boundary` and `frontier-storage-controller-boundary`
 NetworkPolicies are rendered from exactly that output. The allowlist must be
@@ -776,7 +955,7 @@ sorted, 1-8 canonical, non-overlapping RFC 1918 IPv4 CIDRs no wider than `/28`,
 with the Service `/32` and every other entry inside the site VPC; anything else
 fails before rendering or patching.
 
-The site still reads the cluster's `default/kubernetes` Service, Endpoints and
+Preview still reads the cluster's `default/kubernetes` Service, Endpoints and
 EndpointSlices; all must agree on ready IPv4 TCP 443 backends in two stable reads,
 and every observed backend (and the Service IP) must lie inside the Terraform
 allowlist. An endpoint outside it is refused by name, with a pointer to the EKS
@@ -804,18 +983,18 @@ deadlines or allow `10.0.0.0/8` to compensate.
 
 #### One-time migration to the control-plane subnets
 
-Requires the merged the change and Management and Driver images built from
+Requires the merged Preview change and Management and Driver images built from
 the merged core change (the Driver also validates the frozen dispatch's CIDRs, so
-an older Driver rejects `/28` entries). Run from the the checkout used for the
+an older Driver rejects `/28` entries). Run from the Preview checkout used for the
 site, with the site's own `TF_DATA_DIR`; never run a whole-platform
 `make apply` for this. A full platform plan on 2026-11-04 also wanted to roll both
 node groups to a new AMI, upgrade every add-on, reset the VPC CNI from the live
 `strict` / `WARM_IP_TARGET=10` / `MINIMUM_IP_TARGET=30` to the coded
 `standard` / 2 / 8, and move cluster-creator access and the module KMS key admin
-from `user/runyuan` to the caller. Each step below is targeted to avoid that.
+from the original cluster creator to the caller. Each step below is targeted to avoid that.
 
 ```bash
-cd <checkout>                       # e.g. ~/FrontierCS-2
+cd <checkout>
 export AWS_REGION=us-west-1 CLUSTER=frontiercs2-preview
 export KUBECONFIG=$PWD/.state/preview/kubeconfig
 export TF_DATA_DIR=$PWD/.state/preview/terraform-data/platform TF_IN_AUTOMATION=1
@@ -856,7 +1035,7 @@ B=$PWD/../api-cidr-backup-$(date -u +%Y%m%dT%H%M%SZ); mkdir -m 700 "$B"
    Expect `["10.42.200.0/28","10.42.200.16/28","172.20.0.1/32"]`.
 
 3. **Move the cluster's ENIs.** Use the EKS API directly; a targeted Terraform
-   apply of `module.eks.aws_eks_cluster.this[0]` by anyone but `user/runyuan`
+   apply of `module.eks.aws_eks_cluster.this[0]` by anyone but the cluster creator
    also rewrites the module KMS key policy.
 
    ```bash
@@ -910,7 +1089,7 @@ B=$PWD/../api-cidr-backup-$(date -u +%Y%m%dT%H%M%SZ); mkdir -m 700 "$B"
 6. **Rollback.**
    - Step 4 failed before mutation: nothing changed; fix and retry.
    - Runtime rollback: restore the previous `config/site.json` pins and check out
-     the previous the commit, then run its `upgrade-runtime`; it re-pins the
+     the previous Preview commit, then run its `upgrade-runtime`; it re-pins the
      exact `/32`s of the current ENIs (now inside the `/28`s) and the old exact-set
      check admits again until the next rotation. If `upgrade-runtime` itself cannot
      run, `kubectl replace -f` the backed-up ConfigMap and NetworkPolicies with
@@ -919,7 +1098,7 @@ B=$PWD/../api-cidr-backup-$(date -u +%Y%m%dT%H%M%SZ); mkdir -m 700 "$B"
    - Cluster subnets rollback: `aws eks update-cluster-config --name $CLUSTER
      --resources-vpc-config subnetIds=subnet-0ed176c2e0b0e4d63,subnet-00cc8aff26850c844`,
      wait for `Successful`, then re-pin the runtime as above.
-   - Remove the `/28`s only after the cluster no longer uses them and the site
+   - Remove the `/28`s only after the cluster no longer uses them and the Preview
      change is reverted:
      `terraform plan -destroy -target=aws_route_table_association.control_plane -target=aws_subnet.control_plane -target=aws_route_table.control_plane`.
 
@@ -953,6 +1132,7 @@ prevent later active Runs from receiving their normal network policy and object
 store PVC. Terminating namespaces remain in the observed namespace set for PV
 retention; orphan PV cleanup still requires confirmed namespace absence and the
 existing ownership and Retain-policy checks.
+
 
 ### Localize frozen native CPU images before registration
 

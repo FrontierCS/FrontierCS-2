@@ -20,8 +20,9 @@ from preview import images as image_ops
 from preview import publication
 from task_selection import deployment_catalog
 from test_task_seeding import exact_version
+import task_layers  # noqa: E402
 
-FIXTURES = ROOT / "tests/fixtures/live-state-2026-09-11"
+FIXTURES = ROOT / "tests/fixtures/live-state-v1"
 FILE_SHA256 = {
     "task-catalog.json": "sha256:584e26a921ff8b88c9ee9c04a156b9e2d5b4cbb1a37e75ef9ee2db0b0ed14fd8",
     "task-definitions.json": "sha256:c26bf5888d9eceaf85be500f521aca1dd06a9f785878f3ff0152c7129447f002",
@@ -51,7 +52,7 @@ class LiveStateMigrationTests(unittest.TestCase):
         catalog_path = self.catalog_path = Path(temporary.name) / "task-catalog.json"
         catalog_path.write_bytes(deploy.canonical_json(self.full_catalog))
         self.enterContext(
-            mock.patch.object(publication, "TASK_CATALOG_PATH", catalog_path)
+            mock.patch.object(publication, "CATALOG", catalog_path)
         )
         self.enterContext(
             mock.patch.object(
@@ -149,12 +150,13 @@ class LiveStateMigrationTests(unittest.TestCase):
         self.assertEqual(deploy.TASK_DEFINITIONS, before)
 
     def test_tracked_reexports_deliberately_differ_from_the_archived_receipt(self):
-        with mock.patch.object(
-            publication, "load_task_definitions", return_value=self.current_definitions
+        with (
+            mock.patch.object(
+                publication, "load_task_definitions", return_value=self.current_definitions
+            ),
+            mock.patch.object(publication, "CATALOG", None),
         ):
-            current, selection = deploy.load_task_selection(
-                self.config, ROOT / "config/task-catalog.json"
-            )
+            current, selection = deploy.load_task_selection(self.config)
             self.assertNotEqual(
                 selection.effective_catalog_sha256, self.receipt["catalog_sha256"]
             )

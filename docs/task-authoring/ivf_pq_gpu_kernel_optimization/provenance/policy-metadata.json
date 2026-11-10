@@ -14,11 +14,11 @@
       "continuous_score": "S is geometric mean of per-workload median of seven paired naive/candidate timing ratios; 0 if S <= 1, else 100*log(S)/(log(10)+log(S)).",
       "distance_validity": "For each valid ID: abs(returned-oracle) <= 1e-6*abs(float32 residual ADC oracle), atol0; zero oracle requires exact zero. Legal -1/+inf padding is validated separately and excluded.",
       "pass_fail": "On every selected workload: candidate median search latency < optimized reference latency, candidate worst timed iso-result recall >= reference worst timed recall and candidate worst timed exact nearest-neighbor recall@k >= reference; every timed candidate call must satisfy naive iso-recall >= 0.99.",
-      "resource_status": "Formal answering18000 seconds. Beat spec v3 release refresh (2026-10-11): independent final14400 seconds (was 5400) and Verifier GPU total25200 = train wall10800 + final14400 on one H100, sized against an eight-workload final of about 4140-4380 s (six-workload finals recorded; the two new shapes measured on one Modal H100 on 2026-10-11, not a platform qualification); Agent GPU10800 unchanged. Short trial answering1800 is rendered externally.",
+      "resource_status": "User-confirmed formal answering18000 seconds. Beat spec v3 release refresh (2026-10-11): independent final14400 seconds (was 5400) and Verifier GPU total25200 = train wall10800 + final14400 on one H100, sized against an eight-workload final of about 4140-4380 s (six-workload finals recorded; the two new shapes measured on one Modal H100 on 2026-10-11, not a platform qualification); Agent GPU10800 unchanged. Short trial answering1800 is rendered externally.",
       "source_commit": "1bccbadc6bead714d25c546cf954a37bb0791fd6",
       "source_path": "2.0/problems/ivf_pq_gpu_kernel_optimization",
       "source_repository": "https://github.com/FrontierCS/Frontier-CS",
-      "status": "contract"
+      "status": "approved_contract_pending_staging_model_evidence"
     },
     "data_asset": {
       "bytes": 525128288,

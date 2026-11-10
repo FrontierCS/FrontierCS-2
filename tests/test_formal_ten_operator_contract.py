@@ -29,7 +29,7 @@ class FormalTenOperatorContract(unittest.TestCase):
     def test_budget_and_selected_final_contract(self):
         for name in TASKS:
             with self.subTest(task=name):
-                task = renderer.problem_directory(renderer.TASK_ROOT / "problems", name)
+                task = renderer.task_directory(name)
                 # Either definition format: policy.json, or task.toml over the shared defaults.
                 policy = task_manifest.load_policy(task)
                 self.assertEqual(policy["quota"]["wall_time_seconds"], 18000)
@@ -69,7 +69,7 @@ class FormalTenOperatorContract(unittest.TestCase):
 
     def test_published_task_excludes_development_residue(self):
         for name in TASKS:
-            task = renderer.problem_directory(renderer.TASK_ROOT / "problems", name)
+            task = renderer.task_directory(name)
             forbidden = [task / "tests"]
             for directory in (task, task / "judge", task / "verifier"):
                 forbidden.extend(

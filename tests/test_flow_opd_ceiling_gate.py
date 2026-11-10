@@ -1,5 +1,5 @@
 """flow_opd: the per-workload gate stays strict below the scorer's maximum and
-accepts equality only on ceiling rows, so PASS is attainable (issue #314)."""
+accepts equality only on ceiling rows, so PASS is attainable."""
 
 import deployment_test_guard  # noqa: F401  # isort: skip
 

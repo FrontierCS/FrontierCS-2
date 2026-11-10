@@ -1,5 +1,4 @@
 {
-  "repository": "https://github.com/FrontierCS/FrontierCS-2",
   "platform_source_commit": "341949767be14411465bbb704ce87e8453773965",
   "dockerfile": {
     "source": "candidate-overlays/kimi-code/Dockerfile",

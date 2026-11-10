@@ -1,0 +1,105 @@
+# task.toml of the test-sandbox template (schema frontier.task/v1): a task whose judge
+# runs on the CPU control image and runs commands on GPU machines of their own, declared as
+# [test_sandboxes.<name>] with access = "command". Copy this template for a task whose
+# candidate code must run on a machine apart from the judge. tasks/template/Theory/template_task
+# explains the keys every task shares, tasks/template/MLSys/gpu_template_task the GPU ones;
+# only what command sandboxes add is commented here.
+#
+# The two sandboxes are the two classes of tasks/template/TEMPLATE.md ("Test sandboxes"); a real
+# task usually needs one of them:
+#   candidate  class 1, untrusted: the candidate's own machine (the Agent GPU image, no judge).
+#              The judge uploads the submitted tree and the public inputs, runs the candidate's
+#              fit and predict there under a deadline and gets the predictions back; it scores
+#              them on the control image against targets that never leave it.
+#   timing     class 2, trusted: a machine of the Verifier GPU image. The judge uploads its own
+#              timing harness with both trees; the harness runs each implementation's predict
+#              through the shared isolate launcher on the GPU and returns the times.
+
+schema = "frontier.task/v1"
+id = "sandbox_template_task"
+display_name = "Curve Fitting on Sandboxes (template)"
+version = "r001"
+
+[agent]
+cpu_millis = 4000
+memory_bytes = 8589934592         # 8 GiB
+workspace_bytes = 10737418240     # 10 GiB
+
+# The judge runs here (placement "control"): it holds the private targets and scores.
+[verifier]
+cpu_millis = 2000
+memory_bytes = 4294967296         # 4 GiB
+
+[quota]
+wall_time_seconds = 18000         # 5 h
+max_train_calls = 3
+max_train_wall_seconds = 9000
+eval_timeout_seconds = 2400       # the candidate phase (900 s lease) then the timing phase (900 s)
+
+[submission]
+max_bytes = 262144
+allowed_paths = ["model/"]
+max_changed_files = 10
+
+[gpu.agent]
+allowed_types = ["H100"]
+max_instances = 1
+max_instance_seconds = 3600
+max_gpu_seconds = 3600
+
+# Only the Driver quota: a task with a command sandbox sets no [gpu.verifier] lease_seconds
+# (each sandbox declares its own). max_gpu_instances covers every sandbox's
+# max_concurrent x gpus at once (2 + 1); max_gpu_seconds the leases of every call:
+# (2 x 900 + 900) s x (3 train calls + 1 final).
+[gpu.verifier]
+max_gpu_instances = 3
+max_gpu_seconds = 10800
+
+# Class 1. dockerfile: the judge-free Agent GPU image (an untrusted sandbox may use no other);
+# workdir: where the upload lands and the steps run (below /workspace/); resources: one H100 per
+# machine (a CPU machine is { cpu_millis, memory_bytes } on docker/agent.Dockerfile or, trusted,
+# docker/verifier.Dockerfile; TEMPLATE.md); max_concurrent: machines at once (the candidate's run and the
+# reference's run side by side); lease_seconds: per machine and mode, at least the steps plus
+# upload (120 s), collect (120 s) and 65 s grace per step: 300 + 305 = 605 s, at most
+# quota.eval_timeout_seconds.
+[test_sandboxes.candidate]
+access = "command"
+trust = "untrusted"               # the default; written here to show it
+dockerfile = "docker/agent-gpu.Dockerfile"
+workdir = "/workspace/sandbox"
+resources = { gpus = 1, gpu_type = "H100" }
+max_concurrent = 2
+lease_seconds = { train = 900, eval = 900 }
+
+# Class 2. trusted: the judge may put its own code in the upload, and the machine may run the
+# Verifier GPU image (the judge's toolchain and the shared isolate launcher). Its one step takes
+# the rest of the grant (seconds=None) and budgets itself by FRONTIER_VERIFIER_LOCAL_DEADLINE.
+[test_sandboxes.timing]
+access = "command"
+trust = "trusted"
+dockerfile = "docker/verifier-gpu.Dockerfile"
+workdir = "/workspace/timing"
+resources = { gpus = 1, gpu_type = "H100" }
+max_concurrent = 1
+lease_seconds = { train = 900, eval = 900 }
+
+[accelerator]
+agent_gpu_interface = "frontier.gpu-helper/v3"
+agent_sandbox = true
+allowed_types = ["H100"]
+credential_reaches_agent = false
+provider = "driver-managed"
+verifier_gpu = true
+
+# SSH sessions per role (they must sum to max_ssh_sessions). A sandbox run uses one session per
+# upload chunk, one per step and one to collect: 2 candidate-class runs x 3 + 1 timing run x 3
+# = 9 per call; 27 for 3 train calls, 9 for final.
+[network.audit]
+max_ssh_bytes_per_direction = 67108864  # 64 MiB per session and direction
+max_ssh_sessions = 68
+ssh_session_budgets = { agent = 32, verifier_train = 27, verifier_eval = 9 }
+
+[feedback]
+mse = "Candidate mean squared error of the predictions per train workload; sorted, without workload labels."
+
+# [paper] (for readers; optional): as in tasks/template/Theory/template_task.

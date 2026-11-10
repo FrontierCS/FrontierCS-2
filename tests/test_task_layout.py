@@ -3,7 +3,9 @@ from __future__ import annotations
 # Install isolation before project imports.
 import deployment_test_guard  # noqa: F401  # isort: skip
 
+import contextlib
 import copy
+import io
 import json
 import shutil
 import sys
@@ -18,16 +20,17 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer
 import task_manifest
 import validate_task_layout as layout
+import task_layers  # noqa: E402
 
 
 class TaskLayoutTests(unittest.TestCase):
     def test_every_catalog_task_has_a_complete_native_source_lock(self):
-        names = json.loads((ROOT / "config/task-definitions.json").read_text())
+        names = task_layers.load_definitions()
         for name in names:
             with self.subTest(task=name):
                 self.assertIn(
                     layout.validate_task(
-                        renderer.problem_directory(layout.DEFAULT_PROBLEMS_ROOT, name)
+                        renderer.task_directory(name)
                     ),
                     ("patch-workspace", "direct-payload", "patch-starter"),
                 )
@@ -579,6 +582,31 @@ class BeatSpecGateTests(unittest.TestCase):
                 layout.check_beat_spec(root, self.evaluation)
 
 
+
+class RelaxationListingTests(unittest.TestCase):
+    """scripts/validate_task_layout.py lists the layers that relax the boundary."""
+
+    def relaxations(self, source: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as task:
+            (Path(task) / "judge").mkdir()
+            (Path(task) / "judge/layers.py").write_text(source)
+            return layout.sandbox_relaxations(Path(task))
+
+    def test_lists_relaxing_layers_only(self):
+        self.assertEqual(self.relaxations("""
+import isolate
+class Tight(isolate.Layer):
+    pass
+class Ports(isolate.Layer):
+    relaxes = ("tcp connect", "tcp bind")
+"""), ["judge/layers.py:Ports relaxes tcp connect, tcp bind"])
+
+    def test_relaxes_must_be_literal(self):
+        with self.assertRaisesRegex(Exception, "literal tuple"):
+            self.relaxations("from isolate import Layer\n"
+                             "class Ports(Layer):\n    relaxes = tuple(['tcp'])\n")
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -783,3 +811,148 @@ class SidecarLayoutTests(unittest.TestCase):
         }
         with self.assertRaises(layout.LayoutFailure):
             layout.check_sidecars(self.root, self.policy)
+
+
+class UniformWorkloadMetricsTests(unittest.TestCase):
+    NAMES = ["throughput", "restore_ns", "bytes"]
+
+    def check(self, task: str, spec: dict) -> str:
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            layout.check_uniform_workload_metrics(Path("/tasks") / task, spec, self.NAMES)
+        return stderr.getvalue()
+
+    def test_workloads_carrying_every_metric_pass(self):
+        for spec in (
+            {},
+            {"workloads": [{"name": "spectrum"}, {"name": "micro"}]},
+            {"workloads": ["spectrum", "micro"]},
+            {"workloads": [{"name": "micro", "metrics": list(reversed(self.NAMES))}]},
+            {"final_only_workloads": [{"name": "large"}],
+             "final_only_metrics": list(self.NAMES)},
+        ):
+            with self.subTest(spec=spec):
+                self.assertEqual(self.check("evm_state_checkpoints", spec), "")
+
+    def test_workload_measuring_a_metric_subset_is_rejected(self):
+        for spec in (
+            # EVM: the micro-workload measured restore time but no throughput.
+            {"workloads": [{"name": "spectrum", "metrics": ["throughput"]},
+                           {"name": "micro", "metrics": ["restore_ns", "bytes"]}]},
+            {"workloads": [{"name": "micro", "metrics": {"throughput": "x"}}]},
+            {"workloads": [{"name": "micro", "metrics": self.NAMES + ["extra"]}]},
+            {"workloads": [{"name": "spectrum"}],
+             "final_only_workloads": [{"name": "large"}],
+             "final_only_metrics": ["restore_ns", "bytes"]},
+        ):
+            with self.subTest(spec=spec):
+                with self.assertRaisesRegex(
+                    layout.LayoutFailure, "every workload must measure every declared metric"
+                ):
+                    self.check("evm_state_checkpoints", spec)
+
+    def test_workload_groups_are_retired(self):
+        spec = {"workload_groups": {
+            "rpc": {"metrics": ["throughput"], "counts": {"train": 2, "final": 4}},
+            "experiment": {"metrics": ["restore_ns", "bytes"],
+                           "counts": {"train": 1, "final": 2}},
+        }}
+        with self.assertRaisesRegex(layout.LayoutFailure, "workload_groups is retired"):
+            self.check("evm_state_checkpoints", spec)
+
+    def test_exempt_task_warns_and_stale_exemption_fails(self):
+        spec = {"workloads": [{"name": "micro", "metrics": ["restore_ns"]}]}
+        for task in layout.NONUNIFORM_WORKLOAD_METRICS_EXEMPT:
+            with self.subTest(task=task):
+                warning = self.check(task, spec)
+                self.assertIn(f"WARN {task}: every workload must measure", warning)
+                with self.assertRaisesRegex(layout.LayoutFailure, "stale exemption"):
+                    self.check(task, {})
+
+    def test_catalog_warns_only_for_exempt_tasks(self):
+        names = task_layers.load_definitions()
+        warned = set()
+        for name in names:
+            root = renderer.task_directory(name)
+            spec_path = root / "judge/beat_spec.json"
+            if not spec_path.is_file():
+                continue
+            spec = json.loads(spec_path.read_text())
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                layout.check_uniform_workload_metrics(
+                    root, spec, [row["name"] for row in spec["metrics"]]
+                )
+            if stderr.getvalue():
+                warned.add(root.name)
+        self.assertEqual(warned, set(layout.NONUNIFORM_WORKLOAD_METRICS_EXEMPT))
+
+    def test_feedback_probe_rejects_a_row_missing_a_declared_metric(self):
+        # The legacy (policy.json) feedback probe, on a legacy task that still has a beat spec and
+        # its own helper (task.toml tasks have neither).
+        source = next((path for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
+                       if (path / "policy.json").is_file()
+                       and (path / "judge/beat_spec.json").is_file()
+                       and (path / "verifier/beat_spec_feedback.py").is_file()), None)
+        if source is None:
+            self.skipTest("no policy.json task with a beat spec and its own helper remains")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / source.name
+            for name in ("judge/beat_spec.json", "verifier/beat_spec_feedback.py"):
+                (root / name).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source / name, root / name)
+            spec = json.loads((root / "judge/beat_spec.json").read_text())
+            names = [row["name"] for row in spec["metrics"]]
+            visible = [row["name"] for row in spec["solver_feedback"]]
+            layout.check_beat_spec_feedback(root, spec, names, visible)
+            # A helper that fills in a row's missing metrics instead of rejecting it.
+            helper = root / "verifier/beat_spec_feedback.py"
+            helper.write_text(helper.read_text() + """
+
+import copy as _copy
+import json as _json
+_strict_public_metrics = public_metrics
+
+
+def public_metrics(metrics, **kwargs):
+    metrics = _copy.deepcopy(metrics)
+    spec = _json.loads(Path(kwargs["beat_spec_path"]).read_text())
+    for row in metrics.get("beat_spec_workload_passes", []):
+        if isinstance(row, dict) and isinstance(row.get("metrics"), dict):
+            for entry in spec["metrics"]:
+                row["metrics"].setdefault(entry["name"], True)
+    return _strict_public_metrics(metrics, **kwargs)
+""")
+            with self.assertRaisesRegex(
+                layout.LayoutFailure, "workload row missing a declared metric"
+            ):
+                layout.check_beat_spec_feedback(root, spec, names, visible)
+
+
+class SharedFromTests(unittest.TestCase):
+    """--shared-from: a staging branch (task-format/landing) must carry exactly main's
+    tasks/shared, so every branch builds the same bases."""
+
+    def git(self, root, *arguments):
+        subprocess.run(["git", "-C", str(root), "-c", "user.email=t@example.com",
+                        "-c", "user.name=t", *arguments], check=True, capture_output=True)
+
+    def test_a_differing_or_lagging_shared_tree_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "tasks/shared/lib").mkdir(parents=True)
+            (root / "tasks/shared/lib/isolate.py").write_text("main\n")
+            (root / "tasks/task.txt").write_text("task\n")
+            self.git(root, "init", "-q", "-b", "main")
+            self.git(root, "add", "-A")
+            self.git(root, "commit", "-qm", "main")
+            self.git(root, "checkout", "-q", "-b", "landing")
+            (root / "tasks/task.txt").write_text("a task change\n")
+            layout.check_shared_from("main", root)   # task changes are landing's business
+            (root / "tasks/shared/lib/isolate.py").write_text("landing\n")
+            self.git(root, "commit", "-qam", "shared edit on landing")
+            with self.assertRaisesRegex(layout.LayoutFailure,
+                                        "tasks/shared differs from main: tasks/shared/lib/isolate.py"):
+                layout.check_shared_from("main", root)
+            with self.assertRaisesRegex(layout.LayoutFailure, "cannot compare"):
+                layout.check_shared_from("no-such-ref", root)

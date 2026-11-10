@@ -16,6 +16,7 @@ TASK = ROOT / 'tasks/problems/MLSys/vllm_llm_serving_optimization'
 sys.path.insert(0, str(TASK / 'judge'))
 from serving_eval import swe_offline_setup as setup
 sys.path.insert(0, str(ROOT / 'scripts'))
+import task_layers  # noqa: E402
 import task_manifest  # noqa: E402
 from sidecar_catalog import instance_index
 
@@ -96,7 +97,7 @@ class OfflineSetupTests(unittest.TestCase):
         self.assertEqual([row['instance_id'] for row in rows],
                          [row['instance_id'] for row in load_swe_inputs('eval')])
         self.assertTrue(verify_projection(TASK / 'judge/serving_eval/swe_data/instances.json'))
-        catalog = json.loads((ROOT / 'config/task-catalog.json').read_text())
+        catalog = task_layers.load_catalog()
         entry = next(row for row in catalog['tasks'] if row['name'] == 'vllm_llm_serving_optimization')
         for index, ident in ((18, 'sympy__sympy-13177'), (39, 'pytest-dev__pytest-7168')):
             self.assertNotIn(f'swe-{index:03d}', task_manifest.read_task(TASK)['sidecar_images'])

@@ -11,8 +11,7 @@
       ],
       "scope": "T40 native runtime standardization; scientific semantics preserved",
       "source_commit": "aa3d0101b6a40686a9147b959e2b2c4e665caea8",
-      "source_path": "2.0/fcs2/problems/approximate_mips_query_stopping",
-      "source_repository": "private authoring repository"
+      "source_path": "2.0/fcs2/problems/approximate_mips_query_stopping"
     },
     "datasets": {
       "eval": {

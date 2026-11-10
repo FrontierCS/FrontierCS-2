@@ -23,6 +23,13 @@ reasoning effort and the published overlay image (repository, tag and digest):
 | Qwen 3.8 Max | Qwen Code | 0.25.0 | high | [`candidates/qwen-code`](../candidates/qwen-code) |
 | Step 5 Preview | Step Code | 0.1.0 | high | [`candidates/stepcode-step5`](../candidates/stepcode-step5) |
 
+The Version column is the harness version each model was evaluated with. Two
+further recipes have no evaluated model or published image yet:
+[`candidates/agy-gemini`](../candidates/agy-gemini) (Antigravity CLI 1.4.7) and
+[`candidates/opencode`](../candidates/opencode) (OpenCode 1.19.5). The Claude Code
+recipe is now 2.1.311 with Driver gateway mode; its evaluated image was built
+from 2.1.296.
+
 Publishing or registering a Candidate does not establish that a model works
 with it. Each new model/harness pair still needs its own smoke run covering
 model calls, train feedback, a stored or formal final, usage accounting and

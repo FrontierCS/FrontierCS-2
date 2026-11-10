@@ -35,8 +35,8 @@
       {
         "round": 3,
         "idx": 0,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.9476680324768235,
         "score": 94.76680324768235,
         "beats_reference": 1,
@@ -50,8 +50,8 @@
       {
         "round": 3,
         "idx": 1,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.88146128179729,
         "score": 88.146128179729,
         "beats_reference": 1,
@@ -65,8 +65,8 @@
       {
         "round": 3,
         "idx": 2,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.8499971456045547,
         "score": 84.99971456045547,
         "beats_reference": 1,

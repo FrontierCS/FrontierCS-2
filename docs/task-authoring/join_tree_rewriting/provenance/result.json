@@ -35,8 +35,8 @@
       {
         "round": 3,
         "idx": 0,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.0,
         "score": 0.0,
         "beats_reference": 0,
@@ -50,8 +50,8 @@
       {
         "round": 3,
         "idx": 1,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.0,
         "score": 0.0,
         "beats_reference": 0,
@@ -65,8 +65,8 @@
       {
         "round": 3,
         "idx": 2,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "codex",
+        "model": "gpt-5.6-sol",
         "reward": 0.0,
         "score": 0.0,
         "beats_reference": 0,
@@ -139,7 +139,7 @@
       "stability": "`evidence/preflight.md` reports final reference scores of 53.2732 on all five runs, mean 53.273238, absolute spread 0.000000, and relative spread 0.000%, with all metrics reported. Although the general candidate metric includes wall-clock medians, the reference produces byte-identical comparison JSON, so its live ratio is explicitly short-circuited to 1 and its score is pure deterministic arithmetic over stored author timings; exact repetition is expected and shows no seeded-arithmetic defect.",
       "statement_quality": "The statement is substantively complete: `solver_view/readme` lines 5-7 orient the task, lines 25-40 characterize the real workload, lines 44-77 give concrete scan and join records, lines 79-104 define the return contract and invariants, and lines 124-144 give the exact objective. However, lines 11 and 156-163 promise a Git checkout and commands using `/app/submit.sh`, while `find solver_view -maxdepth 1` plus direct tests show neither `solver_view/.git` nor `solver_view/submit.sh` exists; preflight confirms the authors' reference consequently scores zero through the solver path, making the task unanswerable as shipped. Line 148 is also stale: it claims the shipped stub has a forbidden `__future__` import, but the actual 14-line stub has no such import. The operational contract is therefore task-breakingly false despite excellent technical exposition and otherwise matching constants at lines 106-120 and 165-167."
     },
-    "judge_model": "redacted"
+    "judge_model": "gpt-5.6-sol"
   },
   "cost_usd": {
     "total": 111.22,
@@ -158,13 +158,13 @@
   "remeasured": {
     "at": "2026-08-20T08:16:38.413819+00:00",
     "why": "Every graded submission in `final` scored 0.0 while the reference scored 62. The cause was the judge container being OOM-killed at the then-declared memory_mb: 2048; config.yaml now declares 4096. These three trials are the same task and the same evaluator under the corrected limit.",
-    "how": "Three harbor trials run directly against the task, outside the pipeline.",
+    "how": "Three harbor trials run directly against the task, outside the pipeline: `scripts/run_kimi_trial.sh`. Agent kimi-cli on kimi-k2.7-code, since codex cannot reach a chat-only provider.",
     "reference_score": 62.0,
     "trials": [
       {
         "idx": 0,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "kimi-cli",
+        "model": "openrouter/kimi-k2.7-code",
         "reward": 0.62,
         "score": 62.0,
         "beats_reference": 1,
@@ -180,8 +180,8 @@
       },
       {
         "idx": 1,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "kimi-cli",
+        "model": "openrouter/kimi-k2.7-code",
         "reward": 0.64,
         "score": 64.0,
         "beats_reference": 1,
@@ -197,8 +197,8 @@
       },
       {
         "idx": 2,
-        "agent": "redacted",
-        "model": "redacted",
+        "agent": "kimi-cli",
+        "model": "openrouter/kimi-k2.7-code",
         "reward": 0.64,
         "score": 64.0,
         "beats_reference": 1,
