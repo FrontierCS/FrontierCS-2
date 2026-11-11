@@ -33,23 +33,15 @@ from .api_routes import (
     verify_api_routes,
 )
 from .config import (
-    read_and_validate,
-    render_bundle,
     CPU_MACHINE_ENV,
     cpu_machine_management_env,
+    read_and_validate,
+    render_bundle,
     state_directory,
     validate_verifier_node_allowlists,
     validate_verifier_placement_required_task_ids,
 )
-from .unchanged_management import (
-    unchanged_native_management, require_driver_only_patches, require_unchanged_observer,
-)
 from .gateway_preservation import read_gateway_snapshot
-from .runtime_reference_compat import (
-    preserve_reviewed_public_images,
-    require_reviewed_route_only_patches,
-    reviewed_retention_transition,
-)
 from .images import (
     build_runtime_images,
     cached_registry_image,
@@ -101,6 +93,16 @@ from .infra import (
 from .publication import (
     load_task_selection,
     seed_tasks,
+)
+from .runtime_reference_compat import (
+    preserve_reviewed_public_images,
+    require_reviewed_route_only_patches,
+    reviewed_retention_transition,
+)
+from .unchanged_management import (
+    require_driver_only_patches,
+    require_unchanged_observer,
+    unchanged_native_management,
 )
 
 
@@ -239,22 +241,34 @@ def runtime_upgrade_patches(
     if verifier_node_allowlists is not None:
         validate_verifier_node_allowlists(verifier_node_allowlists)
         key = "MANAGEMENT_VERIFIER_NODE_ALLOWLISTS"
-        if any(entry.get("name") == key for entry in containers[indices[0]].get("env", [])):
+        if any(
+            entry.get("name") == key for entry in containers[indices[0]].get("env", [])
+        ):
             raise DeployError("verifier placement rejects direct environment overrides")
         if verifier_node_allowlists:
-            value = json.dumps(verifier_node_allowlists, sort_keys=True, separators=(",", ":"))
+            value = json.dumps(
+                verifier_node_allowlists, sort_keys=True, separators=(",", ":")
+            )
             data[key] = value
             cm_patch.append({"op": "add", "path": "/data/" + key, "value": value})
         elif key in data:
             del data[key]
             cm_patch.append({"op": "remove", "path": "/data/" + key})
     if verifier_placement_required_task_ids is not None:
-        validate_verifier_placement_required_task_ids(verifier_placement_required_task_ids)
+        validate_verifier_placement_required_task_ids(
+            verifier_placement_required_task_ids
+        )
         key = "MANAGEMENT_VERIFIER_PLACEMENT_REQUIRED_TASK_IDS"
-        if any(entry.get("name") == key for entry in containers[indices[0]].get("env", [])):
-            raise DeployError("required verifier placement rejects direct environment overrides")
+        if any(
+            entry.get("name") == key for entry in containers[indices[0]].get("env", [])
+        ):
+            raise DeployError(
+                "required verifier placement rejects direct environment overrides"
+            )
         if verifier_placement_required_task_ids:
-            value = json.dumps(sorted(verifier_placement_required_task_ids), separators=(",", ":"))
+            value = json.dumps(
+                sorted(verifier_placement_required_task_ids), separators=(",", ":")
+            )
             data[key] = value
             cm_patch.append({"op": "add", "path": "/data/" + key, "value": value})
         elif key in data:
@@ -263,37 +277,63 @@ def runtime_upgrade_patches(
     if cpu_machines is not KEEP:
         # The site's execution.cpu_machines, or None when it has none: absent means the keys
         # are absent, never a default.
-        if any(entry.get("name") in CPU_MACHINE_ENV
-               for entry in containers[indices[0]].get("env", [])):
-            raise DeployError("CPU machine settings reject direct environment overrides")
-        wanted = {} if cpu_machines is None else cpu_machine_management_env(cpu_machines)
+        if any(
+            entry.get("name") in CPU_MACHINE_ENV
+            for entry in containers[indices[0]].get("env", [])
+        ):
+            raise DeployError(
+                "CPU machine settings reject direct environment overrides"
+            )
+        wanted = (
+            {} if cpu_machines is None else cpu_machine_management_env(cpu_machines)
+        )
         for key in CPU_MACHINE_ENV:
             if key in wanted:
-                cm_patch.append({"op": "replace" if key in data else "add",
-                                 "path": "/data/" + key, "value": wanted[key]})
+                cm_patch.append(
+                    {
+                        "op": "replace" if key in data else "add",
+                        "path": "/data/" + key,
+                        "value": wanted[key],
+                    }
+                )
                 data[key] = wanted[key]
             elif key in data:
                 del data[key]
                 cm_patch.append({"op": "remove", "path": "/data/" + key})
     if cluster_name is not None or region is not None:
-        if (not isinstance(cluster_name, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,99}', cluster_name)
-                or not isinstance(region, str) or not re.fullmatch(r'[a-z]{2}(?:-[a-z]+)+-[0-9]', region)
-                or data.get('MANAGEMENT_DRIVER_MODE') != 'kubernetes'):
-            raise DeployError('Infrastructure observation requires a cluster, region and kubernetes mode')
-        settings = {'MANAGEMENT_EKS_STATUS_CLUSTER': cluster_name,
-                    'MANAGEMENT_EKS_STATUS_REGION': region}
-        legacy = ('MANAGEMENT_EKS_STATUS_PATH', 'MANAGEMENT_EKS_STATUS_NODEGROUPS',
-                  'MANAGEMENT_EKS_STATUS_MAX_AGE_SECONDS')
-        if any(entry.get('name') in {*settings, *legacy}
-               for entry in containers[indices[0]].get('env', [])):
-            raise DeployError('Infrastructure observation rejects direct environment overrides')
+        if (
+            not isinstance(cluster_name, str)
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,99}", cluster_name)
+            or not isinstance(region, str)
+            or not re.fullmatch(r"[a-z]{2}(?:-[a-z]+)+-[0-9]", region)
+            or data.get("MANAGEMENT_DRIVER_MODE") != "kubernetes"
+        ):
+            raise DeployError(
+                "Infrastructure observation requires a cluster, region and kubernetes mode"
+            )
+        settings = {
+            "MANAGEMENT_EKS_STATUS_CLUSTER": cluster_name,
+            "MANAGEMENT_EKS_STATUS_REGION": region,
+        }
+        legacy = (
+            "MANAGEMENT_EKS_STATUS_PATH",
+            "MANAGEMENT_EKS_STATUS_NODEGROUPS",
+            "MANAGEMENT_EKS_STATUS_MAX_AGE_SECONDS",
+        )
+        if any(
+            entry.get("name") in {*settings, *legacy}
+            for entry in containers[indices[0]].get("env", [])
+        ):
+            raise DeployError(
+                "Infrastructure observation rejects direct environment overrides"
+            )
         for key in legacy:
             if key in data:
                 del data[key]
-                cm_patch.append({'op': 'remove', 'path': '/data/' + key})
+                cm_patch.append({"op": "remove", "path": "/data/" + key})
         for key, value in settings.items():
             data[key] = value
-            cm_patch.append({'op': 'add', 'path': '/data/' + key, 'value': value})
+            cm_patch.append({"op": "add", "path": "/data/" + key, "value": value})
     if kubernetes_api_cidrs is not None:
         data["MANAGEMENT_KUBERNETES_API_CIDRS"] = ",".join(
             sorted(validate_api_cidrs(kubernetes_api_cidrs))
@@ -418,21 +458,39 @@ def runtime_upgrade_patches(
     ]
     if large_verifier_results:
         pod = deployment["spec"]["template"]["spec"]
-        temporary = [(index, volume) for index, volume in enumerate(pod.get("volumes", []))
-                     if volume.get("name") == "tmp"]
-        mounts = [mount for mount in containers[indices[0]].get("volumeMounts", [])
-                  if mount.get("name") == "tmp"]
-        if (len(temporary) != 1 or len(mounts) != 1
-                or mounts[0].get("mountPath") != "/tmp" or mounts[0].get("readOnly", False)
-                or "emptyDir" not in temporary[0][1]
-                or temporary[0][1]["emptyDir"].get("medium", "") != ""):
-            raise DeployError("large verifier results require one disk-backed Management /tmp")
+        temporary = [
+            (index, volume)
+            for index, volume in enumerate(pod.get("volumes", []))
+            if volume.get("name") == "tmp"
+        ]
+        mounts = [
+            mount
+            for mount in containers[indices[0]].get("volumeMounts", [])
+            if mount.get("name") == "tmp"
+        ]
+        if (
+            len(temporary) != 1
+            or len(mounts) != 1
+            or mounts[0].get("mountPath") != "/tmp"
+            or mounts[0].get("readOnly", False)
+            or "emptyDir" not in temporary[0][1]
+            or temporary[0][1]["emptyDir"].get("medium", "") != ""
+        ):
+            raise DeployError(
+                "large verifier results require one disk-backed Management /tmp"
+            )
         temporary_index, _ = temporary[0]
         deploy_patch[-1:-1] = [
-            {"op": "add", "path": f"/spec/template/spec/containers/{indices[0]}/resources",
-             "value": management_result_resources()},
-            {"op": "add", "path": f"/spec/template/spec/volumes/{temporary_index}/emptyDir/sizeLimit",
-             "value": management_result_resources()["limits"]["ephemeral-storage"]},
+            {
+                "op": "add",
+                "path": f"/spec/template/spec/containers/{indices[0]}/resources",
+                "value": management_result_resources(),
+            },
+            {
+                "op": "add",
+                "path": f"/spec/template/spec/volumes/{temporary_index}/emptyDir/sizeLimit",
+                "value": management_result_resources()["limits"]["ephemeral-storage"],
+            },
         ]
     if retention_init is not None:
         deploy_patch.insert(
@@ -537,14 +595,18 @@ def modal_observer_upgrade_manifest(
 
 def infrastructure_role_patch(role: Mapping[str, Any]) -> tuple[list, list]:
     """Preserve existing authority while adding read-only node observation."""
-    rules = list(role['rules'])
-    rule = {'apiGroups': [''], 'resources': ['nodes'], 'verbs': ['get', 'list']}
+    rules = list(role["rules"])
+    rule = {"apiGroups": [""], "resources": ["nodes"], "verbs": ["get", "list"]}
     if rule not in rules:
         rules.append(rule)
     return [
-        {'op': 'test', 'path': '/metadata/uid', 'value': role['metadata']['uid']},
-        {'op': 'test', 'path': '/metadata/resourceVersion', 'value': role['metadata']['resourceVersion']},
-        {'op': 'replace', 'path': '/rules', 'value': rules},
+        {"op": "test", "path": "/metadata/uid", "value": role["metadata"]["uid"]},
+        {
+            "op": "test",
+            "path": "/metadata/resourceVersion",
+            "value": role["metadata"]["resourceVersion"],
+        },
+        {"op": "replace", "path": "/rules", "value": rules},
     ], rules
 
 
@@ -572,14 +634,26 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
     cm = get("configmap", "frontier-management-config")
     deployment = get("deployment", "frontier-management")
     unchanged_management = unchanged_native_management(config, cm, deployment, images)
-    reviewed_public_repair = (False if unchanged_management else
-        preserve_reviewed_public_images(config, cm, deployment, images))
+    reviewed_public_repair = (
+        False
+        if unchanged_management
+        else preserve_reviewed_public_images(config, cm, deployment, images)
+    )
     if not reviewed_public_repair:
         with port_forward(kubeconfig, REGISTRY_SERVICE, 5000) as port:
             if unchanged_management:
-                if cached_registry_image(port, unchanged_management, images["management"]["digest"]) != images["management"]["digest"]:
-                    raise DeployError("unchanged Management manifest is unavailable or differs")
-            for name in (("driver",) if unchanged_management else ("management", "driver")):
+                if (
+                    cached_registry_image(
+                        port, unchanged_management, images["management"]["digest"]
+                    )
+                    != images["management"]["digest"]
+                ):
+                    raise DeployError(
+                        "unchanged Management manifest is unavailable or differs"
+                    )
+            for name in (
+                ("driver",) if unchanged_management else ("management", "driver")
+            ):
                 source = config["images"][name]
                 repository = f"frontier/{name}"
                 tag = "git-" + runtime_source_commit(config, name)[:20]
@@ -601,8 +675,12 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
                     cached_registry_image(port, repository, source["digest"])
                     != source["digest"]
                 ):
-                    raise DeployError("runtime mirror did not preserve the source manifest")
-                endpoint = f"{config['network']['registry_cluster_ip']}:5000/{repository}"
+                    raise DeployError(
+                        "runtime mirror did not preserve the source manifest"
+                    )
+                endpoint = (
+                    f"{config['network']['registry_cluster_ip']}:5000/{repository}"
+                )
                 images[name] = {
                     "tag": endpoint + ":" + tag,
                     "digest": source["digest"],
@@ -616,7 +694,7 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
     cidrs = api_cidrs(
         config, outputs, kubeconfig, receipt_path=receipt_dir / "api-routes.json"
     )
-    role = get('clusterrole', 'frontier-management-preview')
+    role = get("clusterrole", "frontier-management-preview")
     role_patch, expected_rules = infrastructure_role_patch(role)
     observer_manifest = modal_observer_upgrade_manifest(config, cm, deployment)
     if (
@@ -631,11 +709,15 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         litellm_cidr=config["network"]["litellm_cluster_ip"] + "/32",
         gateway_artifact_retention=True,
         kubernetes_api_cidrs=cidrs,
-        cluster_name=outputs['cluster_name'],
-        region=config['site']['aws_region'],
+        cluster_name=outputs["cluster_name"],
+        region=config["site"]["aws_region"],
         large_verifier_results=True,
-        verifier_node_allowlists=config["execution"].get("verifier_node_allowlists", []),
-        verifier_placement_required_task_ids=config["execution"].get("verifier_placement_required_task_ids", []),
+        verifier_node_allowlists=config["execution"].get(
+            "verifier_node_allowlists", []
+        ),
+        verifier_placement_required_task_ids=config["execution"].get(
+            "verifier_placement_required_task_ids", []
+        ),
         cpu_machines=config["execution"].get("cpu_machines"),
         reviewed_public_repair=reviewed_public_repair,
     )
@@ -643,7 +725,9 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
     if unchanged_management:
         require_driver_only_patches(cm, deployment, expected_data, deploy_patch)
         if expected_rules != role["rules"]:
-            raise DeployError("unchanged Management upgrade has extra infrastructure changes")
+            raise DeployError(
+                "unchanged Management upgrade has extra infrastructure changes"
+            )
         if observer_manifest is not None:
             for expected in json.loads(observer_manifest)["items"]:
                 live = get(expected["kind"], expected["metadata"]["name"])
@@ -713,8 +797,8 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         ("deployment-before", deployment),
         ("configmap-patch", cm_patch),
         ("deployment-patch", deploy_patch),
-        ('clusterrole-before', role),
-        ('clusterrole-patch', role_patch),
+        ("clusterrole-before", role),
+        ("clusterrole-patch", role_patch),
     ):
         atomic_write(receipt_dir / (name + ".json"), canonical_json(body), mode=0o600)
     commands = []
@@ -742,7 +826,7 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         run_command(command + ["--dry-run=server"], environment=environment, timeout=60)
         commands.append(command)
     for kind, name in (
-        ('clusterrole', 'frontier-management-preview'),
+        ("clusterrole", "frontier-management-preview"),
         ("configmap", "frontier-management-config"),
         ("deployment", "frontier-management"),
     ):
@@ -766,7 +850,9 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         )
     for expected, before in preserved_observer:
         if get(expected["kind"], expected["metadata"]["name"]) != before:
-            raise DeployError("unchanged Management Modal observer changed before upgrade")
+            raise DeployError(
+                "unchanged Management Modal observer changed before upgrade"
+            )
     if observer_command is not None:
         run_command(observer_command, environment=environment, timeout=60)
     run_command(diagnostics_command, environment=environment, timeout=60)
@@ -780,9 +866,14 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
         environment=environment,
         timeout=660,
     )
-    after_role = get('clusterrole', 'frontier-management-preview')
-    if after_role['metadata']['uid'] != role['metadata']['uid'] or after_role['rules'] != expected_rules:
-        raise DeployError('Infrastructure observation role changed during runtime upgrade')
+    after_role = get("clusterrole", "frontier-management-preview")
+    if (
+        after_role["metadata"]["uid"] != role["metadata"]["uid"]
+        or after_role["rules"] != expected_rules
+    ):
+        raise DeployError(
+            "Infrastructure observation role changed during runtime upgrade"
+        )
     for name, expected in policy_specs.items():
         if get("networkpolicy", name)["spec"] != expected:
             raise DeployError(
@@ -812,11 +903,16 @@ def upgrade_runtime(config: Mapping[str, Any], output: Path, kubeconfig: Path) -
                 "value"
             ]
         elif patch["path"] == f"/spec/template/spec/containers/{i}/resources":
-            expected_spec["template"]["spec"]["containers"][i]["resources"] = patch["value"]
-        elif (patch["path"].startswith("/spec/template/spec/volumes/")
-              and patch["path"].endswith("/emptyDir/sizeLimit")):
+            expected_spec["template"]["spec"]["containers"][i]["resources"] = patch[
+                "value"
+            ]
+        elif patch["path"].startswith("/spec/template/spec/volumes/") and patch[
+            "path"
+        ].endswith("/emptyDir/sizeLimit"):
             volume_index = int(patch["path"].split("/")[5])
-            expected_spec["template"]["spec"]["volumes"][volume_index]["emptyDir"]["sizeLimit"] = patch["value"]
+            expected_spec["template"]["spec"]["volumes"][volume_index]["emptyDir"][
+                "sizeLimit"
+            ] = patch["value"]
     expected_spec["template"]["metadata"]["annotations"] = deploy_patch[-1]["value"]
     actual_spec = json.loads(json.dumps(after_deployment["spec"]))
     for init in actual_spec["template"]["spec"].get("initContainers", []):
@@ -1289,7 +1385,9 @@ def parser() -> argparse.ArgumentParser:
     seed_parser = commands.add_parser("seed-tasks")
     seed_parser.add_argument("--config", required=True, type=Path)
     seed_parser.add_argument(
-        "--catalog", type=Path, help="a catalog file in place of the repository's task layers"
+        "--catalog",
+        type=Path,
+        help="a catalog file in place of the repository's task layers",
     )
     local_network = commands.add_parser("upgrade-local-network")
     local_network.add_argument("--config", required=True, type=Path)
@@ -1299,10 +1397,20 @@ def parser() -> argparse.ArgumentParser:
         action="store_true",
         help="GET existing versions and compare digests; do not seed or write state",
     )
-    native = commands.add_parser("native-publish", help="Publish a frozen native Task on local-k8s without catalog import")
+    native = commands.add_parser(
+        "native-publish",
+        help="Publish a frozen native Task on local-k8s without catalog import",
+    )
     native.add_argument("--config", required=True, type=Path)
     stages = native.add_subparsers(dest="stage", required=True)
-    for stage in ("plan", "prepare", "render-seed", "render-inspector", "finalize", "register"):
+    for stage in (
+        "plan",
+        "prepare",
+        "render-seed",
+        "render-inspector",
+        "finalize",
+        "register",
+    ):
         command = stages.add_parser(stage)
         command.add_argument("--document", required=True, type=Path)
         if stage != "plan":
@@ -1311,22 +1419,38 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--bundle", required=True, type=Path)
         if stage in ("finalize", "register"):
             mount = command.add_mutually_exclusive_group(required=True)
-            mount.add_argument("--mounted-root", type=Path, help="Actual read-only object PVC mount")
-            mount.add_argument("--pvc-pod", help="Trusted inspector pod with the read-only object PVC")
+            mount.add_argument(
+                "--mounted-root", type=Path, help="Actual read-only object PVC mount"
+            )
+            mount.add_argument(
+                "--pvc-pod", help="Trusted inspector pod with the read-only object PVC"
+            )
         if stage == "register":
             action = command.add_mutually_exclusive_group(required=True)
             action.add_argument("--check", action="store_true")
             action.add_argument("--apply", action="store_true")
-    native_images = commands.add_parser("native-localize-images", help="Mirror frozen native images and derive immutable local versions")
+    native_images = commands.add_parser(
+        "native-localize-images",
+        help="Mirror frozen native images and derive immutable local versions",
+    )
     native_images.add_argument("--config", required=True, type=Path)
     native_images.add_argument("--document", required=True, type=Path)
     native_images.add_argument("--candidate", type=Path)
     native_images.add_argument("--output", required=True, type=Path)
     action = native_images.add_mutually_exclusive_group(required=True)
     action.add_argument("--plan", action="store_true", help="Offline plan only")
-    action.add_argument("--check", action="store_true", help="Read-only registry verification")
-    action.add_argument("--apply", action="store_true", help="Copy exact image manifests; no registration or definition upload")
-    native_artifacts = commands.add_parser("native-local-artifacts", help="Publish immutable native image-localized definitions and Candidate records")
+    action.add_argument(
+        "--check", action="store_true", help="Read-only registry verification"
+    )
+    action.add_argument(
+        "--apply",
+        action="store_true",
+        help="Copy exact image manifests; no registration or definition upload",
+    )
+    native_artifacts = commands.add_parser(
+        "native-local-artifacts",
+        help="Publish immutable native image-localized definitions and Candidate records",
+    )
     native_artifacts.add_argument("--config", required=True, type=Path)
     artifact_stages = native_artifacts.add_subparsers(dest="stage", required=True)
     for stage in ("rebind", "definitions", "candidate"):
@@ -1359,16 +1483,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         config_path = arguments.config.resolve(strict=True)
         if arguments.command == "native-local-artifacts":
             from .native_definition_publication import command
+
             print(json.dumps(command(arguments), indent=2, sort_keys=True))
             return 0
         if arguments.command == "native-localize-images":
             from .native_image_publication import command
+
             result = command(arguments)
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0
         if arguments.command == "native-publish":
             from .native_local_publication import command
-            if arguments.stage == "register" and arguments.apply and arguments.output is None:
+
+            if (
+                arguments.stage == "register"
+                and arguments.apply
+                and arguments.output is None
+            ):
                 raise DeployError("native-publish register --apply requires --output")
             print(json.dumps(command(arguments), sort_keys=True))
         elif arguments.command == "validate":

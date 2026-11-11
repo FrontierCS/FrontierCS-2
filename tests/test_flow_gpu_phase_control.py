@@ -42,12 +42,21 @@ def assert_grant_cleanup(test, adapter, grant, elapsed):
 
     # The shared adapter (gpu-tools v4) reads the lease from verifier.json (PARAMETERS); a task's
     # legacy copy (still used by test_gpu_remaining_envelopes) takes it from _config.
-    config = (("url", "verification", "token", "gpu", 1) if hasattr(adapter, "PARAMETERS")
-              else ("url", "verification", "token", "gpu", 7200, 1))
+    config = (
+        ("url", "verification", "token", "gpu", 1)
+        if hasattr(adapter, "PARAMETERS")
+        else ("url", "verification", "token", "gpu", 7200, 1)
+    )
     with (
         tempfile.TemporaryDirectory() as temp,
-        mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
-                                    "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
+        mock.patch.dict(
+            os.environ,
+            {
+                "FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+                **CHANNEL,
+                "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": "",
+            },
+        ),
         mock.patch.object(adapter, "_config", return_value=config),
         mock.patch.object(adapter, "_input_archive", side_effect=archive),
         mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
@@ -57,18 +66,29 @@ def assert_grant_cleanup(test, adapter, grant, elapsed):
         mock.patch.object(adapter, "_run_remote_verifier") as remote,
     ):
         with test.assertRaises(adapter.VerifierGpuError) as caught:
-            adapter.run(payload=Path(temp)/"payload", dataset=Path(temp)/"dataset", mode="eval",
-                        result_path=Path(temp)/"result", evidence_path=Path(temp)/"evidence",
-                        record_evidence=snapshots.append)
+            adapter.run(
+                payload=Path(temp) / "payload",
+                dataset=Path(temp) / "dataset",
+                mode="eval",
+                result_path=Path(temp) / "result",
+                evidence_path=Path(temp) / "evidence",
+                record_evidence=snapshots.append,
+            )
         provision.assert_called_once()
         test.assertEqual(str(caught.exception), "Verifier GPU control failed")
         if grant is True:
-            test.assertIn("invalid GPU granted duration", str(caught.exception.__cause__))
+            test.assertIn(
+                "invalid GPU granted duration", str(caught.exception.__cause__)
+            )
         else:
             test.assertIsInstance(caught.exception.__cause__, adapter._PhaseTimeout)
-            test.assertEqual(caught.exception.__cause__.boundary, "work_budget_exhausted")
+            test.assertEqual(
+                caught.exception.__cause__.boundary, "work_budget_exhausted"
+            )
         delete.assert_called_once()
-        test.assertEqual(delete.call_args.args, ("url", "verification", "token", "owned"))
+        test.assertEqual(
+            delete.call_args.args, ("url", "verification", "token", "owned")
+        )
         test.assertGreater(delete.call_args.kwargs["window"].remaining(), 0)
         upload.assert_not_called()
         remote.assert_not_called()
@@ -82,14 +102,25 @@ def assert_grant_cleanup(test, adapter, grant, elapsed):
     test.assertEqual(events["cleanup"]["status"], "completed")
     test.assertEqual(evidence["evaluator_progress"], "unobserved")
     test.assertFalse(evidence["evidence_write_failed"])
-    test.assertLessEqual(len(json.dumps(evidence).encode()), adapter.MAX_PHASE_EVIDENCE_BYTES)
+    test.assertLessEqual(
+        len(json.dumps(evidence).encode()), adapter.MAX_PHASE_EVIDENCE_BYTES
+    )
 
 
 def runner_parameters(seconds):
     """A verifier.json for the one-runner placement with the given lease (gpu-tools v4)."""
     path = Path(tempfile.mkdtemp(prefix="flow-phase-")) / "verifier.json"
-    path.write_text(json.dumps({"gpu": {"placement": "runner", "max_gpu_instances": 1,
-                                        "lease_seconds": {"train": seconds, "eval": seconds}}}))
+    path.write_text(
+        json.dumps(
+            {
+                "gpu": {
+                    "placement": "runner",
+                    "max_gpu_instances": 1,
+                    "lease_seconds": {"train": seconds, "eval": seconds},
+                }
+            }
+        )
+    )
     return path
 
 
@@ -97,8 +128,10 @@ class FlowPhaseControlTests(unittest.TestCase):
     def adapter(self):
         # flow_opd uses the shared GPU adapter since its task.toml migration; its former
         # task copy was byte-identical to it.
-        adapter = load(PROBLEMS.parents[0] / "shared/verifier-gpu/fcs2_verifier_gpu.py",
-                       "flow_phase_adapter")
+        adapter = load(
+            PROBLEMS.parents[0] / "shared/verifier-gpu/fcs2_verifier_gpu.py",
+            "flow_phase_adapter",
+        )
         adapter.PARAMETERS = runner_parameters(7200)
         return adapter
 
@@ -112,23 +145,45 @@ class FlowPhaseControlTests(unittest.TestCase):
         # conflict / in-progress create may hide one.
         adapter = self.adapter()
         for error, termination in (
-                (adapter._DriverRefusal("refused", 429), "not_leased"),
-                (adapter._DriverRefusal("refused", 425), "unconfirmed_no_identity"),
-                (adapter._DriverRefusal("refused", 410), "unconfirmed_no_identity"),
-                (adapter.VerifierGpuError("lost"), "unconfirmed_no_identity")):
-            with self.subTest(error=error), tempfile.TemporaryDirectory() as temp, \
-                    mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
-                                                 "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}), \
-                    mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)), \
-                    mock.patch.object(adapter, "_input_archive"), \
-                    mock.patch.object(adapter, "_create_runner", side_effect=error), \
-                    mock.patch.object(adapter, "_terminate_runner") as delete:
+            (adapter._DriverRefusal("refused", 429), "not_leased"),
+            (adapter._DriverRefusal("refused", 425), "unconfirmed_no_identity"),
+            (adapter._DriverRefusal("refused", 410), "unconfirmed_no_identity"),
+            (adapter.VerifierGpuError("lost"), "unconfirmed_no_identity"),
+        ):
+            with (
+                self.subTest(error=error),
+                tempfile.TemporaryDirectory() as temp,
+                mock.patch.dict(
+                    os.environ,
+                    {
+                        "FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+                        **CHANNEL,
+                        "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": "",
+                    },
+                ),
+                mock.patch.object(
+                    adapter,
+                    "_config",
+                    return_value=("url", "verification", "token", "gpu", 1),
+                ),
+                mock.patch.object(adapter, "_input_archive"),
+                mock.patch.object(adapter, "_create_runner", side_effect=error),
+                mock.patch.object(adapter, "_terminate_runner") as delete,
+            ):
                 with self.assertRaises(adapter.VerifierGpuError) as caught:
-                    adapter.run(payload=Path(temp)/"payload", dataset=Path(temp)/"dataset", mode="eval",
-                                result_path=Path(temp)/"result", evidence_path=Path(temp)/"evidence",
-                                record_evidence=lambda evidence: None)
+                    adapter.run(
+                        payload=Path(temp) / "payload",
+                        dataset=Path(temp) / "dataset",
+                        mode="eval",
+                        result_path=Path(temp) / "result",
+                        evidence_path=Path(temp) / "evidence",
+                        record_evidence=lambda evidence: None,
+                    )
                 delete.assert_not_called()
-                events = {event["phase"]: event for event in caught.exception.private_evidence["events"]}
+                events = {
+                    event["phase"]: event
+                    for event in caught.exception.private_evidence["events"]
+                }
                 self.assertEqual(events["delete"]["runner_termination"], termination)
 
     def test_fully_consumed_grant_reports_unconfirmed_cleanup_without_score(self):
@@ -147,22 +202,43 @@ class FlowPhaseControlTests(unittest.TestCase):
         try:
             with (
                 tempfile.TemporaryDirectory() as temp,
-                mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
-                                            "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
-                mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
-                mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)),
+                mock.patch.dict(
+                    os.environ,
+                    {
+                        "FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+                        **CHANNEL,
+                        "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": "",
+                    },
+                ),
+                mock.patch.object(
+                    adapter.time, "monotonic", side_effect=clock.monotonic
+                ),
+                mock.patch.object(
+                    adapter,
+                    "_config",
+                    return_value=("url", "verification", "token", "gpu", 1),
+                ),
                 mock.patch.object(adapter, "_input_archive", side_effect=archive),
-                mock.patch.object(adapter, "_create_runner", side_effect=create) as provision,
-                mock.patch.object(adapter, "_terminate_runner", return_value=True) as delete,
+                mock.patch.object(
+                    adapter, "_create_runner", side_effect=create
+                ) as provision,
+                mock.patch.object(
+                    adapter, "_terminate_runner", return_value=True
+                ) as delete,
                 mock.patch.object(adapter, "_upload_inputs") as upload,
                 mock.patch.object(adapter, "_run_remote_verifier") as remote,
                 mock.patch.object(adapter, "_copy_outputs") as copy,
             ):
                 result = Path(temp) / "result"
                 with self.assertRaises(adapter.VerifierGpuError) as caught:
-                    adapter.run(payload=Path(temp)/"payload", dataset=Path(temp)/"dataset", mode="eval",
-                                result_path=result, evidence_path=Path(temp)/"evidence",
-                                record_evidence=snapshots.append)
+                    adapter.run(
+                        payload=Path(temp) / "payload",
+                        dataset=Path(temp) / "dataset",
+                        mode="eval",
+                        result_path=result,
+                        evidence_path=Path(temp) / "evidence",
+                        record_evidence=snapshots.append,
+                    )
                 provision.assert_called_once()
                 upload.assert_not_called()
                 remote.assert_not_called()
@@ -195,7 +271,9 @@ class FlowPhaseControlTests(unittest.TestCase):
             outer = adapter._OuterDeadline(7300, "declared_request_pending_grant")
             anchor = clock.monotonic()
             clock.advance(200)
-            deadline = adapter._runner_deadline({"granted_seconds": 1200}, 7200, anchor=anchor)
+            deadline = adapter._runner_deadline(
+                {"granted_seconds": 1200}, 7200, anchor=anchor
+            )
             self.assertEqual(deadline, 1299)
             bounded = outer.with_grant(deadline)
             self.assertEqual(bounded.end, 1299)
@@ -233,10 +311,20 @@ class FlowPhaseControlTests(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as temp,
-            mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192", **CHANNEL,
-                                        "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": ""}),
+            mock.patch.dict(
+                os.environ,
+                {
+                    "FRONTIER_MAX_EVIDENCE_BYTES": "8192",
+                    **CHANNEL,
+                    "FRONTIER_VERIFIER_DEADLINE_UNIX_MS": "",
+                },
+            ),
             mock.patch.object(adapter.time, "monotonic", side_effect=clock.monotonic),
-            mock.patch.object(adapter, "_config", return_value=("url", "verification", "token", "gpu", 1)),
+            mock.patch.object(
+                adapter,
+                "_config",
+                return_value=("url", "verification", "token", "gpu", 1),
+            ),
             mock.patch.object(adapter, "_input_archive"),
             mock.patch.object(adapter, "_create_runner", side_effect=create),
             mock.patch.object(adapter, "_ssh_argv", return_value=["ssh"]),
@@ -244,19 +332,38 @@ class FlowPhaseControlTests(unittest.TestCase):
             mock.patch.object(adapter, "_upload_inputs", side_effect=upload),
             mock.patch.object(adapter, "_run_remote_verifier", side_effect=execute),
             mock.patch.object(adapter, "_copy_outputs") as copy,
-            mock.patch.object(adapter, "_terminate_runner", return_value=True) as delete,
+            mock.patch.object(
+                adapter, "_terminate_runner", return_value=True
+            ) as delete,
         ):
-            adapter.run(payload=Path(temp)/"payload", dataset=Path(temp)/"dataset", mode="eval",
-                        result_path=Path(temp)/"result", evidence_path=Path(temp)/"evidence",
-                        record_evidence=snapshots.append)
+            adapter.run(
+                payload=Path(temp) / "payload",
+                dataset=Path(temp) / "dataset",
+                mode="eval",
+                result_path=Path(temp) / "result",
+                evidence_path=Path(temp) / "evidence",
+                record_evidence=snapshots.append,
+            )
             copy.assert_called_once()
             delete.assert_called_once()
-            self.assertEqual(delete.call_args.args, ("url", "verification", "token", "owned"))
+            self.assertEqual(
+                delete.call_args.args, ("url", "verification", "token", "owned")
+            )
             self.assertEqual(delete.call_args.kwargs["window"].remaining(), 660)
         evidence = snapshots[-1]
-        self.assertEqual([e["phase"] for e in evidence["events"]], [
-            "configuration", "input_archive", "provisioning", "upload", "remote_execution",
-            "output_validation", "delete", "cleanup"])
+        self.assertEqual(
+            [e["phase"] for e in evidence["events"]],
+            [
+                "configuration",
+                "input_archive",
+                "provisioning",
+                "upload",
+                "remote_execution",
+                "output_validation",
+                "delete",
+                "cleanup",
+            ],
+        )
         self.assertTrue(all(e["status"] == "completed" for e in evidence["events"]))
         remote = evidence["events"][4]
         self.assertTrue(remote["transport_activity_seen"])

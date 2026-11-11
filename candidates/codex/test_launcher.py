@@ -27,6 +27,90 @@ class LauncherTests(unittest.TestCase):
             with self.assertRaises(launcher.LaunchError):
                 launcher.command("http://127.0.0.1:8082/v1")
 
+    def test_max_effort_is_accepted_and_ultra_is_not(self) -> None:
+        # Pinned Codex 0.162.1 sends `max` unchanged but rewrites `ultra` for
+        # an uncatalogued model, so only `max` is admitted.
+        with mock.patch.dict(launcher.os.environ, {"FRONTIER_CODEX_MODEL": "test-model"}, clear=True):
+            launcher.os.environ["FRONTIER_CODEX_REASONING_EFFORT"] = "max"
+            self.assertIn('model_reasoning_effort="max"', launcher.command("http://127.0.0.1:8082/v1"))
+            launcher.os.environ["FRONTIER_CODEX_REASONING_EFFORT"] = "ultra"
+            with self.assertRaises(launcher.LaunchError):
+                launcher.command("http://127.0.0.1:8082/v1")
+
+    def test_qwen_defaults_high_and_rejects_unsupported_efforts(self) -> None:
+        with mock.patch.dict(launcher.os.environ, {"FRONTIER_CODEX_MODEL": launcher.QWEN_MODEL}, clear=True):
+            self.assertIn('model_reasoning_effort="high"', launcher.command("http://127.0.0.1:8082/v1"))
+            launcher.os.environ["FRONTIER_CODEX_REASONING_EFFORT"] = "none"
+            self.assertIn('model_reasoning_effort="none"', launcher.command("http://127.0.0.1:8082/v1"))
+            for effort in ("minimal", "low", "medium", "xhigh", "max", "ultra"):
+                launcher.os.environ["FRONTIER_CODEX_REASONING_EFFORT"] = effort
+                with self.subTest(effort=effort), self.assertRaises(launcher.LaunchError):
+                    launcher.command("http://127.0.0.1:8082/v1")
+
+    def test_no_context_window_keeps_the_historical_command(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary, mock.patch.dict(
+            launcher.os.environ, {"FRONTIER_CODEX_MODEL": "test-model"}, clear=True
+        ):
+            self.assertIsNone(launcher.model_catalog(Path(temporary)))
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+            command = launcher.command("http://127.0.0.1:8082/v1")
+            self.assertFalse(any("model_catalog_json" in item for item in command))
+            self.assertFalse(any("max_output_tokens" in item for item in command))
+
+    def test_explicit_context_window_writes_one_native_catalog_row(self) -> None:
+        instructions = Path(__file__).with_name("fallback-base-instructions.md")
+        with tempfile.TemporaryDirectory() as temporary, mock.patch.object(
+            launcher, "FALLBACK_INSTRUCTIONS", instructions
+        ), mock.patch.dict(launcher.os.environ, {
+            "FRONTIER_CODEX_MODEL": "qwen3.8-max-vl-thinking",
+            "FRONTIER_CODEX_REASONING_EFFORT": "high",
+            "FRONTIER_CODEX_CONTEXT_WINDOW": "1000000",
+        }, clear=True):
+            catalog = launcher.model_catalog(Path(temporary))
+            self.assertEqual(catalog, Path(temporary) / "frontier-model-catalog.json")
+            self.assertEqual(catalog.stat().st_mode & 0o777, 0o600)
+            rows = json.loads(catalog.read_text(encoding="utf-8"))["models"]
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertEqual(row["slug"], "qwen3.8-max-vl-thinking")
+            self.assertEqual((row["context_window"], row["max_context_window"]), (1000000, 1000000))
+            self.assertEqual(row["default_reasoning_summary"], "none")
+            self.assertIsNone(row["apply_patch_tool_type"])
+            self.assertEqual(row["default_reasoning_level"], "high")
+            self.assertEqual([level["effort"] for level in row["supported_reasoning_levels"]], ["none", "high"])
+            self.assertEqual(row["base_instructions"].encode("utf-8"), instructions.read_bytes())
+            # No output-token cap is part of the row or the command.
+            self.assertFalse(any("output" in key for key in row))
+            command = launcher.command("http://127.0.0.1:8082/v1", catalog=catalog)
+            self.assertIn("model_catalog_json=" + json.dumps(str(catalog)), command)
+            self.assertLess(command.index("model_catalog_json=" + json.dumps(str(catalog))), command.index("exec"))
+
+    def test_context_window_and_instruction_file_fail_closed(self) -> None:
+        instructions = Path(__file__).with_name("fallback-base-instructions.md")
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for value in ("0", "16383", "2147483648", "1e6", "1000000 ", "-1", "１０００００００", "1_000_000"):
+                with self.subTest(value=value), mock.patch.object(
+                    launcher, "FALLBACK_INSTRUCTIONS", instructions
+                ), mock.patch.dict(launcher.os.environ, {
+                    "FRONTIER_CODEX_MODEL": "m", "FRONTIER_CODEX_CONTEXT_WINDOW": value,
+                }, clear=True):
+                    if value.strip() == "1000000":
+                        self.assertIsNotNone(launcher.model_catalog(directory))
+                    else:
+                        with self.assertRaises(launcher.LaunchError):
+                            launcher.model_catalog(directory)
+            changed = directory / "changed.md"
+            changed.write_bytes(instructions.read_bytes() + b"x")
+            for path in (changed, directory / "absent.md"):
+                with self.subTest(path=path.name), mock.patch.object(
+                    launcher, "FALLBACK_INSTRUCTIONS", path
+                ), mock.patch.dict(launcher.os.environ, {
+                    "FRONTIER_CODEX_MODEL": "m", "FRONTIER_CODEX_CONTEXT_WINDOW": "1000000",
+                }, clear=True):
+                    with self.assertRaises(launcher.LaunchError):
+                        launcher.model_catalog(directory)
+
     def test_explicit_direct_mode_uses_env_key_not_proxy_header(self) -> None:
         with mock.patch.dict(launcher.os.environ, {"FRONTIER_CODEX_MODEL": "fixture-model"}, clear=True):
             command = launcher.command("https://model.example/v1", direct=True)

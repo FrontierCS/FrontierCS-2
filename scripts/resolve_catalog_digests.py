@@ -20,9 +20,9 @@ from pathlib import Path, PurePosixPath
 from urllib import parse, request
 
 import frontier_deploy as deploy
-from preview.images import linux_amd64_children
-from render_task_definition import json_text
 import task_layers
+from deploy.images import linux_amd64_children
+from render_task_definition import json_text
 
 ACCEPT = ", ".join(
     (
@@ -230,8 +230,11 @@ def task_images(task: dict) -> list[tuple[dict, bool]]:
 
 
 def resolve_files(
-    catalog_path: Path | None = None, task_name: str | None = None, *, definitions=None,
-    root=None
+    catalog_path: Path | None = None,
+    task_name: str | None = None,
+    *,
+    definitions=None,
+    root=None,
 ) -> None:
     """Resolve the pins of the catalog at `catalog_path`, or of every task layer's catalog, and
     rewrite the file or files."""
@@ -266,7 +269,9 @@ def resolve_files(
 def main(arguments: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--catalog", type=Path, help="a catalog file in place of the repository's task layers"
+        "--catalog",
+        type=Path,
+        help="a catalog file in place of the repository's task layers",
     )
     parser.add_argument(
         "--task", help="resolve only this task; leave all other pins unchanged"

@@ -12,9 +12,6 @@ from typing import Any
 
 from .infra import (
     ACCOUNT_RE,
-    CPU_MACHINE_ENV as CPU_MACHINE_ENV,
-    cpu_machine_management_env as cpu_machine_management_env,
-    validate_cpu_machines,
     COMMIT_RE,
     FORBIDDEN_CONFIG_KEYS,
     INSTANCE_TYPE_RE,
@@ -36,10 +33,17 @@ from .infra import (
     runtime_source_commit,
     sha256_bytes,
     state_directory,
+    validate_cpu_machines,
     validate_image,
 )
 from .infra import (
+    CPU_MACHINE_ENV as CPU_MACHINE_ENV,
+)
+from .infra import (
     REPOSITORY_ROOT as REPOSITORY_ROOT,
+)
+from .infra import (
+    cpu_machine_management_env as cpu_machine_management_env,
 )
 from .manual_capacity import capacity_settings
 from .publication import (
@@ -322,10 +326,20 @@ def validate_config(raw: Any) -> dict[str, Any]:
             )
         for cidr in transitional:
             try:
-                route = ipaddress.ip_network(require_string(cidr, "network.transitional_kubernetes_api_cidrs"), strict=True)
+                route = ipaddress.ip_network(
+                    require_string(cidr, "network.transitional_kubernetes_api_cidrs"),
+                    strict=True,
+                )
             except ValueError as error:
-                raise DeployError(f"network.transitional_kubernetes_api_cidrs is invalid: {error}") from error
-            if route.version != 4 or route.prefixlen != 32 or str(route) != cidr or not route.subnet_of(vpc):
+                raise DeployError(
+                    f"network.transitional_kubernetes_api_cidrs is invalid: {error}"
+                ) from error
+            if (
+                route.version != 4
+                or route.prefixlen != 32
+                or str(route) != cidr
+                or not route.subnet_of(vpc)
+            ):
                 raise DeployError(
                     "network.transitional_kubernetes_api_cidrs accepts only exact /32s inside network.vpc_cidr"
                 )
@@ -365,9 +379,14 @@ def validate_config(raw: Any) -> dict[str, Any]:
 
     application = require_mapping(config["application"], "application")
     require_exact_keys(
-        application, {"commit", "require_source"}
-        | {key for key in ("repository", "runtime_source_commits") if key in application},
-        "application"
+        application,
+        {"commit", "require_source"}
+        | {
+            key
+            for key in ("repository", "runtime_source_commits")
+            if key in application
+        },
+        "application",
     )
     if "repository" in application:
         require_string(application["repository"], "application.repository")
@@ -386,12 +405,18 @@ def validate_config(raw: Any) -> dict[str, Any]:
         role_sources = require_mapping(
             application["runtime_source_commits"], "application.runtime_source_commits"
         )
-        require_exact_keys(role_sources, {"management", "driver"}, "application.runtime_source_commits")
+        require_exact_keys(
+            role_sources, {"management", "driver"}, "application.runtime_source_commits"
+        )
         for role, commit in role_sources.items():
             if not isinstance(commit, str) or not COMMIT_RE.fullmatch(commit):
-                raise DeployError(f"application.runtime_source_commits.{role} must be a 40-character lowercase Git commit")
+                raise DeployError(
+                    f"application.runtime_source_commits.{role} must be a 40-character lowercase Git commit"
+                )
         if role_sources["management"] != source_commit:
-            raise DeployError("application.runtime_source_commits.management must equal application.commit")
+            raise DeployError(
+                "application.runtime_source_commits.management must equal application.commit"
+            )
 
     images = require_mapping(config["images"], "images")
     require_exact_keys(
@@ -399,10 +424,14 @@ def validate_config(raw: Any) -> dict[str, Any]:
     )
     registry_image = validate_image(images["registry"], "images.registry")
     management_image = validate_image(
-        images["management"], "images.management", expected_tag=f"sha-{runtime_source_commit(config, 'management')}"
+        images["management"],
+        "images.management",
+        expected_tag=f"sha-{runtime_source_commit(config, 'management')}",
     )
     driver_image = validate_image(
-        images["driver"], "images.driver", expected_tag=f"sha-{runtime_source_commit(config, 'driver')}"
+        images["driver"],
+        "images.driver",
+        expected_tag=f"sha-{runtime_source_commit(config, 'driver')}",
     )
     litellm_image = validate_image(images["litellm"], "images.litellm")
     postgres_image = validate_image(images["postgres"], "images.postgres")
@@ -551,7 +580,9 @@ def validate_config(raw: Any) -> dict[str, Any]:
                 for alias in aliases
             )
         ):
-            raise DeployError("features.task_model_aliases must be unique LiteLLM model aliases")
+            raise DeployError(
+                "features.task_model_aliases must be unique LiteLLM model aliases"
+            )
     if (
         features["run_execution"] is not True
         or features["litellm"] is not True

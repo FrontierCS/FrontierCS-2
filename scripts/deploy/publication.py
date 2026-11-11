@@ -37,7 +37,6 @@ from .infra import (
     canonical_object_sha256,
     executable,
     k8s_list,
-    kubectl_apply,
     kubernetes_environment,
     load_json,
     platform_labels,
@@ -52,6 +51,11 @@ from .infra import (
     stable_ulid,
     state_directory,
     validate_image,
+)
+
+# Re-exported: tests patch publication.kubectl_apply.
+from .infra import (
+    kubectl_apply as kubectl_apply,
 )
 
 # A CPU command sandbox's Driver runner image -> (its catalog row key, its repository).
@@ -179,7 +183,9 @@ def validate_task_catalog(
             # One task-owned image per declared sidecar, published like the GPU
             # images under the reviewed source tag.
             declared = require_mapping(task["sidecar_images"], f"{path}.sidecar_images")
-            roles = {profile.get("image", sidecar) for sidecar, profile in sidecars.items()}
+            roles = {
+                profile.get("image", sidecar) for sidecar, profile in sidecars.items()
+            }
             require_exact_keys(declared, roles, f"{path}.sidecar_images")
             images["sidecar_images"] = {}
             for sidecar in sorted(declared):
@@ -188,12 +194,15 @@ def validate_task_catalog(
                 repository = f"fcs2-task-{name}-sidecar-{sidecar}"
                 if (
                     re.fullmatch(
-                        r"docker.io/[a-z0-9]+(?:[._-][a-z0-9]+)*/" + re.escape(repository),
+                        r"docker.io/[a-z0-9]+(?:[._-][a-z0-9]+)*/"
+                        + re.escape(repository),
                         image["repository"],
                     )
                     is None
                 ):
-                    raise DeployError(f"{path}.{kind}.repository must equal {repository}")
+                    raise DeployError(
+                        f"{path}.{kind}.repository must equal {repository}"
+                    )
                 if image["tag"] != expected_tag and not source_image_tag_matches(
                     image["tag"], expected_tag, image["digest"]
                 ):
@@ -264,7 +273,9 @@ def load_task_selection(
     require_resolved: bool = False,
 ) -> tuple[dict[str, Any], TaskSelection]:
     TASK_DEFINITIONS = load_task_definitions()
-    raw = task_layers.load_catalog(catalog_path if catalog_path is not None else CATALOG)
+    raw = task_layers.load_catalog(
+        catalog_path if catalog_path is not None else CATALOG
+    )
     catalog = validate_task_catalog(raw, require_resolved=require_resolved)
     selection = select_tasks(config, raw, TASK_DEFINITIONS)
     catalog["tasks"] = [
@@ -742,9 +753,15 @@ def task_version_document(
     for runner, (catalog_name, _) in CPU_RUNNER_IMAGES.items():
         if catalog_name in task:
             image = task[catalog_name]
-            mirrored = require_mapping(mirrored_images.get(catalog_name), f"mirrored {catalog_name}")
-            reference = require_string(mirrored.get("reference"), f"mirrored {catalog_name}.reference")
-            if mirrored.get("digest") != image["digest"] or not reference.endswith("@" + image["digest"]):
+            mirrored = require_mapping(
+                mirrored_images.get(catalog_name), f"mirrored {catalog_name}"
+            )
+            reference = require_string(
+                mirrored.get("reference"), f"mirrored {catalog_name}.reference"
+            )
+            if mirrored.get("digest") != image["digest"] or not reference.endswith(
+                "@" + image["digest"]
+            ):
                 raise DeployError(f"mirrored {catalog_name} is not the catalog digest")
             task_config["images"][f"{runner}_runner"] = {
                 "tag": f"{image['repository']}:{image['tag']}",
@@ -752,7 +769,9 @@ def task_version_document(
                 "reference": reference,
             }
     if "verifier_cpu" in policy:
-        task_config["quota"]["verifier_cpu"] = json.loads(json.dumps(policy["verifier_cpu"]))
+        task_config["quota"]["verifier_cpu"] = json.loads(
+            json.dumps(policy["verifier_cpu"])
+        )
     if "network" in policy:
         task_config["network"] = network
     else:
@@ -1296,8 +1315,7 @@ def ensure_version(
 
 # Reference catalog descriptors and authoring baselines.
 LAUNCHER = (
-    REPOSITORY_ROOT
-    / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
+    REPOSITORY_ROOT / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
 )
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 PLACEHOLDER = "sha256:" + "0" * 64
@@ -1324,14 +1342,8 @@ def validate_reference(name, image, definition, *, root=None, require_resolved=F
     for key in ("digest", "launcher_sha256", "payload_sha256"):
         if not isinstance(image[key], str) or DIGEST.fullmatch(image[key]) is None:
             raise ValueError(f"invalid reference {key}: {name}")
-    launcher = (
-        root
-        / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
-    )
-    patch = (
-        renderer.task_directory(name, root)
-        / "judge/reference.patch"
-    )
+    launcher = root / "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
+    patch = renderer.task_directory(name, root) / "judge/reference.patch"
     if (
         not isinstance(image["repository"], str)
         or not re.fullmatch(

@@ -14,9 +14,9 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy
-from preview import cli, infra, publication
-from preview import images as image_ops
 import task_layers  # noqa: E402
+from deploy import cli, infra, publication
+from deploy import images as image_ops
 
 
 def not_found(path: str) -> infra.ManagementHTTPError:
@@ -221,9 +221,7 @@ class TaskCatalogTests(unittest.TestCase):
     def test_catalog_contains_exact_reviewed_tasks_and_refuses_placeholder_seeding(
         self,
     ) -> None:
-        catalog = frontier_deploy.validate_task_catalog(
-            task_layers.load_catalog()
-        )
+        catalog = frontier_deploy.validate_task_catalog(task_layers.load_catalog())
         self.assertEqual(
             {task["name"] for task in catalog["tasks"]},
             set(frontier_deploy.TASK_DEFINITIONS),
@@ -419,7 +417,9 @@ class TaskDocumentTests(unittest.TestCase):
             config["execution"]["entrypoint"], ["/opt/frontier/candidate/launch"]
         )
         self.assertNotIn("FRONTIER_CODEX_TIMEOUT_SECONDS", config["execution"]["env"])
-        self.assertNotIn("FRONTIER_TRAIN_POLL_TIMEOUT_SECONDS", config["execution"]["env"])
+        self.assertNotIn(
+            "FRONTIER_TRAIN_POLL_TIMEOUT_SECONDS", config["execution"]["env"]
+        )
         self.assertEqual(
             config["model_api"], {"allowed_domains": [], "secret_refs": []}
         )
@@ -439,20 +439,37 @@ class TaskDocumentTests(unittest.TestCase):
         )
         job = json.loads(encoded)["items"][0]
         from test_frontier_deploy import Fixture
-        bootstrap = json.loads(frontier_deploy.render_bootstrap_manifest(
-            self.config, Fixture.outputs(self.config)))
-        policy = next(item for item in bootstrap["items"]
-                      if item["metadata"]["name"] == "frontier-registry-boundary")
-        seed_peer = next(peer for rule in policy["spec"]["ingress"]
-                         for peer in rule["from"]
-                         if peer.get("podSelector", {}).get("matchLabels", {}).get(
-                             "app.kubernetes.io/name") == "frontier-task-seed")
+
+        bootstrap = json.loads(
+            frontier_deploy.render_bootstrap_manifest(
+                self.config, Fixture.outputs(self.config)
+            )
+        )
+        policy = next(
+            item
+            for item in bootstrap["items"]
+            if item["metadata"]["name"] == "frontier-registry-boundary"
+        )
+        seed_peer = next(
+            peer
+            for rule in policy["spec"]["ingress"]
+            for peer in rule["from"]
+            if peer.get("podSelector", {})
+            .get("matchLabels", {})
+            .get("app.kubernetes.io/name")
+            == "frontier-task-seed"
+        )
         self.assertEqual(job["metadata"]["namespace"], policy["metadata"]["namespace"])
         self.assertNotIn("namespaceSelector", seed_peer)
-        self.assertLessEqual(seed_peer["podSelector"]["matchLabels"].items(),
-                             job["spec"]["template"]["metadata"]["labels"].items())
-        seed_egress = next(item for item in bootstrap["items"]
-                           if item["metadata"]["name"] == "frontier-task-seed-registry-egress")
+        self.assertLessEqual(
+            seed_peer["podSelector"]["matchLabels"].items(),
+            job["spec"]["template"]["metadata"]["labels"].items(),
+        )
+        seed_egress = next(
+            item
+            for item in bootstrap["items"]
+            if item["metadata"]["name"] == "frontier-task-seed-registry-egress"
+        )
         self.assertEqual(seed_egress["spec"]["podSelector"], seed_peer["podSelector"])
         pod = job["spec"]["template"]["spec"]
         container = pod["containers"][0]
@@ -485,7 +502,9 @@ class TaskDocumentTests(unittest.TestCase):
         local_digest = "sha256:" + "f" * 64
         self.catalog["candidate"]["overlay_image"]["digest"] = local_digest
         self.catalog["candidate"]["overlay_image"]["reference"] = (
-            self.catalog["candidate"]["overlay_image"]["repository"] + "@" + local_digest
+            self.catalog["candidate"]["overlay_image"]["repository"]
+            + "@"
+            + local_digest
         )
         references = publication.load_manifest()
         for task in self.catalog["tasks"]:
@@ -524,9 +543,15 @@ class TaskDocumentTests(unittest.TestCase):
             if call.args[0][1:3] == ["pull", "--platform"]
         ]
         self.assertEqual(
-            len(pulls), 1 + len(references) + 3 * len(self.catalog["tasks"])
-            + sum(name in task for task in self.catalog["tasks"]
-                  for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image"))
+            len(pulls),
+            1
+            + len(references)
+            + 3 * len(self.catalog["tasks"])
+            + sum(
+                name in task
+                for task in self.catalog["tasks"]
+                for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")
+            ),
         )
         self.assertTrue(all(command[3] == "linux/amd64" for command in pulls))
         self.assertTrue(all("@sha256:" in command[4] for command in pulls))
@@ -907,7 +932,9 @@ class DeclaredSidecarDocumentTests(unittest.TestCase):
         config = document["driver_config"]
         sidecars = config["images"]["gpu_sidecars"]
         self.assertEqual(list(sidecars), ["scheduler", "swe-000", "swe-000-check"])
-        self.assertEqual(sidecars["swe-000-check"]["image"], sidecars["swe-000"]["image"])
+        self.assertEqual(
+            sidecars["swe-000-check"]["image"], sidecars["swe-000"]["image"]
+        )
         self.assertEqual(
             sidecars["swe-000"]["image"]["tag"],
             f"{task['sidecar_images']['swe-000']['repository']}:{task['sidecar_images']['swe-000']['tag']}",
@@ -941,16 +968,11 @@ class DeclaredSidecarDocumentTests(unittest.TestCase):
         )
         self.assertEqual(
             receipt["images"]["gpu_sidecars"],
-            {
-                name: profile["image"]
-                for name, profile in sidecars.items()
-            },
+            {name: profile["image"] for name, profile in sidecars.items()},
         )
         self.assertNotIn("gpu_parent_resources", receipt["images"])
         # The sidecar images are public Modal-side images: recorded, not mirrored.
-        self.assertEqual(
-            set(mirrors[self.name]) & {"sidecar_images"}, set()
-        )
+        self.assertEqual(set(mirrors[self.name]) & {"sidecar_images"}, set())
 
     def test_catalog_rejects_wrong_or_missing_sidecar_images(self) -> None:
         broken = copy.deepcopy(self.raw)

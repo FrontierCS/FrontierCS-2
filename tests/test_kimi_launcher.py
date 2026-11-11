@@ -72,14 +72,22 @@ class KimiLauncherTests(unittest.TestCase):
                     retain.assert_called_once_with(7)
 
     def test_native_config_uses_run_proxy_and_selected_context(self):
-        config = tomllib.loads(launcher.render_config(
-            "http://10.0.0.7:8082/v1", "kimi-k2.7-code", "run-token",
-            max_context_tokens=1048576,
-        ))
-        self.assertEqual(config["providers"]["frontier"], {
-            "type": "openai", "base_url": "http://10.0.0.7:8082/v1",
-            "api_key": "run-token",
-        })
+        config = tomllib.loads(
+            launcher.render_config(
+                "http://10.0.0.7:8082/v1",
+                "kimi-k2.7-code",
+                "run-token",
+                max_context_tokens=1048576,
+            )
+        )
+        self.assertEqual(
+            config["providers"]["frontier"],
+            {
+                "type": "openai",
+                "base_url": "http://10.0.0.7:8082/v1",
+                "api_key": "run-token",
+            },
+        )
         self.assertEqual(config["models"]["frontier"]["max_context_size"], 1048576)
         self.assertEqual(config["loop_control"]["max_steps_per_turn"], 0)
 

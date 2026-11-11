@@ -36,17 +36,33 @@ def in_work_tree(root: Path) -> bool:
 def check_clean(root: Path, paths: list[str] | None = None) -> None:
     """Fail when `root` (in a git work tree), or only `paths` below it, holds untracked or
     ignored files."""
-    status = _git(root, "status", "--porcelain=v1", "-z", "--ignored=matching",
-                  "--untracked-files=all", "--", *(paths or ["."]))
+    status = _git(
+        root,
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "--ignored=matching",
+        "--untracked-files=all",
+        "--",
+        *(paths or ["."]),
+    )
     if status.returncode != 0:
-        raise ValueError(f"git status failed in {root}: {status.stderr.decode().strip()}")
-    stray = [entry[3:].decode() for entry in status.stdout.split(b"\0")
-             if entry[:3] in (b"?? ", b"!! ")]
+        raise ValueError(
+            f"git status failed in {root}: {status.stderr.decode().strip()}"
+        )
+    stray = [
+        entry[3:].decode()
+        for entry in status.stdout.split(b"\0")
+        if entry[:3] in (b"?? ", b"!! ")
+    ]
     if stray:
-        listed = ", ".join(stray[:10]) + (f" (+{len(stray) - 10} more)" if len(stray) > 10 else "")
+        listed = ", ".join(stray[:10]) + (
+            f" (+{len(stray) - 10} more)" if len(stray) > 10 else ""
+        )
         raise UntrackedFiles(
             f"{root} holds files git does not track, which would change the source identity or "
-            f"reach the image: {listed}. Remove them (git clean -dfx -- <dir>) or commit them.")
+            f"reach the image: {listed}. Remove them (git clean -dfx -- <dir>) or commit them."
+        )
 
 
 def tracked_files(root: Path, paths: list[str] | None = None) -> list[str] | None:
@@ -58,12 +74,15 @@ def tracked_files(root: Path, paths: list[str] | None = None) -> list[str] | Non
     check_clean(root, paths)
     listed = _git(root, "ls-files", "-z", "--cached", "--", *(paths or ["."]))
     if listed.returncode != 0:
-        raise ValueError(f"git ls-files failed in {root}: {listed.stderr.decode().strip()}")
+        raise ValueError(
+            f"git ls-files failed in {root}: {listed.stderr.decode().strip()}"
+        )
     return sorted(os.fsdecode(path) for path in listed.stdout.split(b"\0") if path)
 
 
-def stage(root: Path, target: Path, *, link: bool = False,
-          paths: list[str] | None = None) -> None:
+def stage(
+    root: Path, target: Path, *, link: bool = False, paths: list[str] | None = None
+) -> None:
     """Copy `root`'s source files (optionally only those at or below `paths`) into the new
     directory `target`, preserving modes; `link` hard-links them instead (same filesystem, read
     only use). Outside a git work tree the whole tree is copied."""

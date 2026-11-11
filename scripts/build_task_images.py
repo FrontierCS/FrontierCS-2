@@ -17,7 +17,6 @@ import re
 import shlex
 import shutil
 import subprocess
-import sys
 import tarfile
 import tempfile
 from pathlib import Path
@@ -88,7 +87,9 @@ def gpu_ssh_base() -> str:
     try:
         reference = task_manifest.base_reference("gpu-tools")
     except (OSError, ValueError, task_manifest.ManifestError) as exc:
-        raise BuildFailure("cannot resolve the shared gpu-tools image from bases.json") from exc
+        raise BuildFailure(
+            "cannot resolve the shared gpu-tools image from bases.json"
+        ) from exc
     if (
         not reference.startswith("docker.io/")
         or DIGEST_REFERENCE_RE.fullmatch(reference) is None
@@ -122,9 +123,16 @@ def shared_base_reference(argument: str) -> str:
     try:
         reference = task_manifest.base_reference(SHARED_BASE_ARGUMENTS[argument])
     except (OSError, ValueError, task_manifest.ManifestError) as exc:
-        raise BuildFailure(f"cannot resolve {argument} from tasks/shared/bases.json") from exc
-    if not reference.startswith("docker.io/") or DIGEST_REFERENCE_RE.fullmatch(reference) is None:
-        raise BuildFailure(f"bases.json {argument} must be a Docker Hub digest reference")
+        raise BuildFailure(
+            f"cannot resolve {argument} from tasks/shared/bases.json"
+        ) from exc
+    if (
+        not reference.startswith("docker.io/")
+        or DIGEST_REFERENCE_RE.fullmatch(reference) is None
+    ):
+        raise BuildFailure(
+            f"bases.json {argument} must be a Docker Hub digest reference"
+        )
     return reference
 
 
@@ -163,7 +171,9 @@ def dockerfile_bases(
     sources, stages = [], set()
     for line in dockerfile_instructions(dockerfile):
         # A global ARG default (before the first FROM) applies unless the build passes it.
-        default = re.fullmatch(r"\s*ARG\s+([A-Za-z_][A-Za-z0-9_]*)=(\S*)\s*", line, re.IGNORECASE)
+        default = re.fullmatch(
+            r"\s*ARG\s+([A-Za-z_][A-Za-z0-9_]*)=(\S*)\s*", line, re.IGNORECASE
+        )
         if default is not None and not sources and not stages:
             build_args.setdefault(default.group(1), default.group(2))
         if re.match(r"^\s*FROM(?:\s|$)", line, re.IGNORECASE) is None:
@@ -183,8 +193,11 @@ def dockerfile_bases(
             source,
         )
         if source.lower() not in stages:
-            if (source not in {"scratch", SSH_BASE_ARGUMENT}
-                    and shared_base_argument(source) is None and not approved_base(source)):
+            if (
+                source not in {"scratch", SSH_BASE_ARGUMENT}
+                and shared_base_argument(source) is None
+                and not approved_base(source)
+            ):
                 raise BuildFailure(
                     f"unreviewed or private base image in {dockerfile}: {source}"
                 )
@@ -271,7 +284,9 @@ def image_names(
     # Declared sidecars are task-owned images too; Modal imports them beside
     # the GPU runner, so they follow the GPU image naming and source tag.
     for sidecar in sidecars:
-        names[f"sidecar-{sidecar}"] = f"{prefix}/fcs2-task-{problem}-sidecar-{sidecar}:{tag}"
+        names[f"sidecar-{sidecar}"] = (
+            f"{prefix}/fcs2-task-{problem}-sidecar-{sidecar}:{tag}"
+        )
     return names
 
 
@@ -436,7 +451,9 @@ def smoke_records() -> dict:
     except (OSError, ValueError) as error:
         raise BuildFailure(f"unreadable {SMOKE_RECORD.name}: {error}") from error
     if document.get("schema_version") != SMOKE_SCHEMA:
-        raise BuildFailure(f"{SMOKE_RECORD.name} must have schema_version {SMOKE_SCHEMA}")
+        raise BuildFailure(
+            f"{SMOKE_RECORD.name} must have schema_version {SMOKE_SCHEMA}"
+        )
     return document
 
 
@@ -444,8 +461,11 @@ def smoke_payload(root: Path, definition: dict) -> tuple[str, bytes]:
     """The payload tar the smoke judges: the task's judge/reference.patch, else the empty patch
     (the unchanged starter), as the submission entrypoint member."""
     reference = root / "judge" / "reference.patch"
-    label, patch = ("judge/reference.patch", reference.read_bytes()) if reference.is_file() \
+    label, patch = (
+        ("judge/reference.patch", reference.read_bytes())
+        if reference.is_file()
         else (STARTER, b"")
+    )
     stream = io.BytesIO()
     with tarfile.open(fileobj=stream, mode="w", format=tarfile.USTAR_FORMAT) as archive:
         member = tarfile.TarInfo(definition["submission"]["entrypoint"])
@@ -454,8 +474,9 @@ def smoke_payload(root: Path, definition: dict) -> tuple[str, bytes]:
     return label, stream.getvalue()
 
 
-def check_smoke_result(problem: str, result: dict | None, label: str, payload: bytes,
-                       records: dict) -> str:
+def check_smoke_result(
+    problem: str, result: dict | None, label: str, payload: bytes, records: dict
+) -> str:
     """The smoke verdict: the payload must be judged (status passed, not an edit-scope
     rejection) and, when the task has a record for this payload, return the recorded train
     metric names and score within the tolerance of the recorded production-layout score."""
@@ -463,30 +484,42 @@ def check_smoke_result(problem: str, result: dict | None, label: str, payload: b
         raise BuildFailure("the Verifier wrote no result.json")
     if result.get("status") != "passed":
         failure = result.get("failure") or {}
-        raise BuildFailure(f"status {result.get('status')!r}: "
-                           f"{failure.get('code', '')} {result.get('summary', '')}".strip())
+        raise BuildFailure(
+            f"status {result.get('status')!r}: "
+            f"{failure.get('code', '')} {result.get('summary', '')}".strip()
+        )
     if "rejected" in result.get("metrics", {}):
-        raise BuildFailure(f"{label} was rejected ({result['metrics']['rejected']}): "
-                           f"{result.get('summary', '')}")
+        raise BuildFailure(
+            f"{label} was rejected ({result['metrics']['rejected']}): "
+            f"{result.get('summary', '')}"
+        )
     score = result.get("raw_score")
     record = records["tasks"].get(problem)
     if record is None:
         return f"{label}: passed, raw_score {score} (no recorded score)"
     digest = "sha256:" + hashlib.sha256(payload).hexdigest()
     if record["payload_sha256"] != digest:
-        raise BuildFailure(f"{label} ({digest}) is not the payload recorded in "
-                           f"{SMOKE_RECORD.name}; re-record with --record-smoke")
+        raise BuildFailure(
+            f"{label} ({digest}) is not the payload recorded in "
+            f"{SMOKE_RECORD.name}; re-record with --record-smoke"
+        )
     keys = sorted(result.get("metrics", {}))
     if keys != record["train_metric_keys"]:
         # A starter that scores zero either way (metaopt) still loses its feedback metrics
         # when the evaluator falls into a failure path (build_failed).
-        raise BuildFailure(f"{label}: train metrics {keys}, recorded "
-                           f"{record['train_metric_keys']}: {result.get('summary', '')}")
+        raise BuildFailure(
+            f"{label}: train metrics {keys}, recorded "
+            f"{record['train_metric_keys']}: {result.get('summary', '')}"
+        )
     expected = record["train_raw_score"]
-    tolerance = max(records["tolerance"]["abs"], records["tolerance"]["rel"] * abs(expected))
+    tolerance = max(
+        records["tolerance"]["abs"], records["tolerance"]["rel"] * abs(expected)
+    )
     if not isinstance(score, (int, float)) or abs(score - expected) > tolerance:
-        raise BuildFailure(f"{label}: raw_score {score}, recorded {expected} "
-                           f"(tolerance {tolerance:g}): {result.get('summary', '')}")
+        raise BuildFailure(
+            f"{label}: raw_score {score}, recorded {expected} "
+            f"(tolerance {tolerance:g}): {result.get('summary', '')}"
+        )
     return f"{label}: passed, raw_score {score} (recorded {expected} +/- {tolerance:g})"
 
 
@@ -509,17 +542,31 @@ def registry_digest(reference: str) -> str | None:
     """The digest the registry holds for `reference`, or None when it has no such tag. Image
     tags are derived from content (the task's source identity), so an existing tag is the image
     this build would produce."""
-    result = subprocess.run([CRANE, "digest", reference], capture_output=True, text=True)
+    result = subprocess.run(
+        [CRANE, "digest", reference], capture_output=True, text=True
+    )
     return result.stdout.strip() if result.returncode == 0 else None
 
 
 def kubectl(*arguments: str, **kwargs) -> subprocess.CompletedProcess:
-    return subprocess.run(["kubectl", "-n", verifier_layout.SMOKE_NAMESPACE, *arguments],
-                          capture_output=True, text=True, **kwargs)
+    return subprocess.run(
+        ["kubectl", "-n", verifier_layout.SMOKE_NAMESPACE, *arguments],
+        capture_output=True,
+        text=True,
+        **kwargs,
+    )
 
 
-def run_in_pod(image: str, verifier: dict, mode: str, work: Path, command: list[str] | None,
-               *, timeout: int, label: str) -> subprocess.CompletedProcess:
+def run_in_pod(
+    image: str,
+    verifier: dict,
+    mode: str,
+    work: Path,
+    command: list[str] | None,
+    *,
+    timeout: int,
+    label: str,
+) -> subprocess.CompletedProcess:
     """Run `command` (default: the task's verifier.command) in the production Verifier layout on
     the cluster's Verifier nodes: a Pod from verifier_layout.pod_manifest (read-only root, an
     emptyDir /frontier, uid 65532, a user namespace, the task's own CPU and memory, offline),
@@ -528,29 +575,50 @@ def run_in_pod(image: str, verifier: dict, mode: str, work: Path, command: list[
     image must be pullable by digest."""
     name = f"verifier-smoke-{os.getpid()}-{abs(hash((label, image))) % 10**8}"
     manifest = verifier_layout.pod_manifest(
-        name, image, verifier, mode, node_selector=verifier_layout.NODE_SELECTOR,
-        labels={"app": "frontier-verifier-smoke"})
+        name,
+        image,
+        verifier,
+        mode,
+        node_selector=verifier_layout.NODE_SELECTOR,
+        labels={"app": "frontier-verifier-smoke"},
+    )
     applied = kubectl("apply", "-f", "-", input=json.dumps(manifest))
     if applied.returncode != 0:
         raise BuildFailure(f"cannot create the smoke Pod: {applied.stderr.strip()}")
     try:
-        ready = kubectl("wait", "--for=condition=Ready", f"pod/{name}", "--timeout=1800s")
+        ready = kubectl(
+            "wait", "--for=condition=Ready", f"pod/{name}", "--timeout=1800s"
+        )
         if ready.returncode != 0:
             raise BuildFailure(f"the smoke Pod did not start: {ready.stderr.strip()}")
-        kubectl("exec", name, "--", "mkdir", "-p", f"{verifier_layout.WORK}/input",
-                f"{verifier_layout.WORK}/output", check=True)
+        kubectl(
+            "exec",
+            name,
+            "--",
+            "mkdir",
+            "-p",
+            f"{verifier_layout.WORK}/input",
+            f"{verifier_layout.WORK}/output",
+            check=True,
+        )
         for path in sorted((work / "input").iterdir()):
-            copied = kubectl("cp", str(path), f"{name}:{verifier_layout.WORK}/input/{path.name}")
+            copied = kubectl(
+                "cp", str(path), f"{name}:{verifier_layout.WORK}/input/{path.name}"
+            )
             if copied.returncode != 0:
                 raise BuildFailure(f"cannot copy {path.name}: {copied.stderr.strip()}")
         try:
-            completed = kubectl("exec", name, "--", *(command or verifier["command"]),
-                                timeout=timeout)
+            completed = kubectl(
+                "exec", name, "--", *(command or verifier["command"]), timeout=timeout
+            )
         except subprocess.TimeoutExpired as error:
             raise BuildFailure(f"the {mode} run exceeded {timeout} s") from error
         for output in ("result.json", "evidence.tar.zst"):
-            kubectl("cp", f"{name}:{verifier_layout.WORK}/output/{output}",
-                    str(work / "output" / output))
+            kubectl(
+                "cp",
+                f"{name}:{verifier_layout.WORK}/output/{output}",
+                str(work / "output" / output),
+            )
         return completed
     finally:
         kubectl("delete", "pod", name, "--wait=false")
@@ -591,7 +659,9 @@ def metrics_fixtures(problem: str) -> dict[str, dict]:
         path = FIXTURES / problem / f"{mode}.json"
         if path.is_file():
             fixture = json.loads(path.read_text(encoding="utf-8"))
-            if not {"raw_score", "score_unbounded", "message", "metrics"} <= set(fixture):
+            if not {"raw_score", "score_unbounded", "message", "metrics"} <= set(
+                fixture
+            ):
                 raise BuildFailure(f"{path} is not an evaluator output")
             fixtures[mode] = fixture
     return fixtures
@@ -599,7 +669,9 @@ def metrics_fixtures(problem: str) -> dict[str, dict]:
 
 def metrics_depth(value: object, level: int = 0) -> int:
     if isinstance(value, dict):
-        return max([metrics_depth(item, level + 1) for item in value.values()] or [level])
+        return max(
+            [metrics_depth(item, level + 1) for item in value.values()] or [level]
+        )
     if isinstance(value, list):
         return max([metrics_depth(item, level + 1) for item in value] or [level])
     return level
@@ -610,8 +682,9 @@ def evidence_metrics(path: Path) -> dict | None:
     try:
         import zstandard
 
-        body = zstandard.ZstdDecompressor().decompress(path.read_bytes(),
-                                                      max_output_size=1 << 27)
+        body = zstandard.ZstdDecompressor().decompress(
+            path.read_bytes(), max_output_size=1 << 27
+        )
         with tarfile.open(fileobj=io.BytesIO(body)) as archive:
             member = archive.extractfile("metrics.json")
             return json.load(member).get("metrics") if member else None
@@ -623,52 +696,86 @@ def depth_note(metrics: dict | None) -> str:
     if not isinstance(metrics, dict):
         return ""
     depth = metrics_depth(metrics)
-    return (f"; metrics depth {depth} of {MAX_METRICS_DEPTH}"
-            + (" (AT THE LIMIT)" if depth >= MAX_METRICS_DEPTH else ""))
+    return f"; metrics depth {depth} of {MAX_METRICS_DEPTH}" + (
+        " (AT THE LIMIT)" if depth >= MAX_METRICS_DEPTH else ""
+    )
 
 
-def run_in_layout(image: str, problem: str, definition: dict, work: Path, mode: str,
-                  command: list[str] | None = None) -> tuple[dict | None, dict | None, str]:
+def run_in_layout(
+    image: str,
+    problem: str,
+    definition: dict,
+    work: Path,
+    mode: str,
+    command: list[str] | None = None,
+) -> tuple[dict | None, dict | None, str]:
     """Run `command` (default: the task's verifier.command) in the production layout on the
     inputs staged in `work`; return result.json, the evidence metrics and the end of the
     Verifier's stderr (the private evaluator exception tail a failed verdict needs)."""
     verifier = definition["verifier"]
     timeout = definition["quota"]["eval_timeout_seconds"] + 300
-    completed = run_in_pod(image, verifier, mode, work, command, timeout=timeout,
-                           label=f"{problem}-{mode}")
+    completed = run_in_pod(
+        image, verifier, mode, work, command, timeout=timeout, label=f"{problem}-{mode}"
+    )
     try:
-        result = json.loads((work / "output" / "result.json").read_text(encoding="utf-8"))
+        result = json.loads(
+            (work / "output" / "result.json").read_text(encoding="utf-8")
+        )
     except (OSError, ValueError):
         result = None
     if completed.returncode != 0 and result is None:
-        raise BuildFailure(f"the Verifier exited {completed.returncode}: "
-                           f"{completed.stderr[-2000:].strip()}")
-    return (result, evidence_metrics(work / "output" / "evidence.tar.zst"),
-            completed.stderr[-2000:].strip())
+        raise BuildFailure(
+            f"the Verifier exited {completed.returncode}: "
+            f"{completed.stderr[-2000:].strip()}"
+        )
+    return (
+        result,
+        evidence_metrics(work / "output" / "evidence.tar.zst"),
+        completed.stderr[-2000:].strip(),
+    )
 
 
-def fixture_smoke(image: str, problem: str, root: Path, definition: dict, directory: Path,
-                  ) -> list[str]:
+def fixture_smoke(
+    image: str,
+    problem: str,
+    root: Path,
+    definition: dict,
+    directory: Path,
+) -> list[str]:
     """Each recorded evaluator output through the shared verifier's result path in the image."""
     verdicts = []
     for mode, fixture in metrics_fixtures(problem).items():
         work = directory / f"fixture-{mode}"
         try:
             label, payload = smoke_payload(root, definition)
-            dataset = dataset_path(root, mode, definition["dataset_extension"]).read_bytes()
+            dataset = dataset_path(
+                root, mode, definition["dataset_extension"]
+            ).read_bytes()
             verifier_layout.stage_work(work, payload, dataset)
             (work / "input" / "fixture.json").write_text(json.dumps(fixture))
             result, metrics, log = run_in_layout(
-                image, problem, definition, work, mode,
-                command=["/opt/frontier/runtime-python", "-c", FIXTURE_CHECK,
-                         f"{verifier_layout.WORK}/input/fixture.json"])
+                image,
+                problem,
+                definition,
+                work,
+                mode,
+                command=[
+                    "/opt/frontier/runtime-python",
+                    "-c",
+                    FIXTURE_CHECK,
+                    f"{verifier_layout.WORK}/input/fixture.json",
+                ],
+            )
             try:
-                check_smoke_result(problem, result, f"recorded {mode} metrics", payload,
-                                   {"tasks": {}})
+                check_smoke_result(
+                    problem, result, f"recorded {mode} metrics", payload, {"tasks": {}}
+                )
             except BuildFailure as error:
-                raise BuildFailure(f"{label} with the recorded {mode} evaluator output "
-                                   f"({FIXTURES.name}/{problem}/{mode}.json): {error}"
-                                   + (f"\n{log}" if log else "")) from error
+                raise BuildFailure(
+                    f"{label} with the recorded {mode} evaluator output "
+                    f"({FIXTURES.name}/{problem}/{mode}.json): {error}"
+                    + (f"\n{log}" if log else "")
+                ) from error
             verdicts.append(f"recorded {mode} metrics: passed{depth_note(metrics)}")
         finally:
             if work.exists():
@@ -676,8 +783,9 @@ def fixture_smoke(image: str, problem: str, root: Path, definition: dict, direct
     return verdicts
 
 
-def verifier_smoke(image: str, problem: str, root: Path, definition: dict, *,
-                   record: bool = False) -> str:
+def verifier_smoke(
+    image: str, problem: str, root: Path, definition: dict, *, record: bool = False
+) -> str:
     """Fail unless the Verifier image (pushed: `image` names its digest) works in the production
     layout on the production Verifier nodes (run_in_pod: read-only root, an empty /frontier of
     its own, uid 65532, the Driver's environment, no network). A CPU task's Verifier judges its smoke payload in train mode through the whole
@@ -687,62 +795,104 @@ def verifier_smoke(image: str, problem: str, root: Path, definition: dict, *,
     verifier's result path in the image. A legacy policy.json GPU task has none of these."""
     verifier = definition["verifier"]
     gpu = definition.get("gpu", {}).get("verifier", {}).get("max_gpu_instances", 0) > 0
-    sandboxes = (task_manifest.verifier_parameters(task_manifest.read_task(root)).get("sandboxes")
-                 if not gpu and "verifier_cpu" in definition else None)
-    with tempfile.TemporaryDirectory(prefix="frontier-verifier-smoke-",
-                                     ignore_cleanup_errors=True) as directory:
+    sandboxes = (
+        task_manifest.verifier_parameters(task_manifest.read_task(root)).get(
+            "sandboxes"
+        )
+        if not gpu and "verifier_cpu" in definition
+        else None
+    )
+    with tempfile.TemporaryDirectory(
+        prefix="frontier-verifier-smoke-", ignore_cleanup_errors=True
+    ) as directory:
         work = Path(directory) / "frontier"
         try:
             if gpu:
                 placement = task_placement(root)
                 if placement is None:
-                    return ("no control-image placement check: the task's Verifier does not "
-                            "use the shared GPU adapter (legacy policy.json or standalone)")
+                    return (
+                        "no control-image placement check: the task's Verifier does not "
+                        "use the shared GPU adapter (legacy policy.json or standalone)"
+                    )
                 verifier_layout.stage_work(work, b"", b"")
-                command = ["/opt/frontier/runtime-python", "-c", PLACEMENT_CHECK, placement]
+                command = [
+                    "/opt/frontier/runtime-python",
+                    "-c",
+                    PLACEMENT_CHECK,
+                    placement,
+                ]
                 try:
-                    completed = run_in_pod(image, verifier, "train", work, command,
-                                           timeout=1800, label=f"{problem}-placement")
+                    completed = run_in_pod(
+                        image,
+                        verifier,
+                        "train",
+                        work,
+                        command,
+                        timeout=1800,
+                        label=f"{problem}-placement",
+                    )
                     if completed.returncode != 0:
-                        raise BuildFailure(f"exit {completed.returncode}: "
-                                           f"{completed.stderr[-2000:].strip()}")
+                        raise BuildFailure(
+                            f"exit {completed.returncode}: "
+                            f"{completed.stderr[-2000:].strip()}"
+                        )
                     verdicts = [completed.stdout.strip()]
                 except BuildFailure as error:
-                    raise BuildFailure(f"{image} does not report the task.toml GPU placement "
-                                       f"{placement!r} in the production layout: {error}") \
-                        from error
+                    raise BuildFailure(
+                        f"{image} does not report the task.toml GPU placement "
+                        f"{placement!r} in the production layout: {error}"
+                    ) from error
             elif sandboxes is not None:
                 verifier_layout.stage_work(work, b"", b"")
-                command = ["/opt/frontier/runtime-python", "-c", SANDBOX_CHECK,
-                           json.dumps(sandboxes)]
-                completed = run_in_pod(image, verifier, "train", work, command,
-                                       timeout=1800, label=f"{problem}-sandboxes")
+                command = [
+                    "/opt/frontier/runtime-python",
+                    "-c",
+                    SANDBOX_CHECK,
+                    json.dumps(sandboxes),
+                ]
+                completed = run_in_pod(
+                    image,
+                    verifier,
+                    "train",
+                    work,
+                    command,
+                    timeout=1800,
+                    label=f"{problem}-sandboxes",
+                )
                 if completed.returncode != 0:
-                    raise BuildFailure(f"{image} does not read task.toml's command test sandboxes "
-                                       f"in the production layout: exit {completed.returncode}: "
-                                       f"{completed.stderr[-2000:].strip()}")
+                    raise BuildFailure(
+                        f"{image} does not read task.toml's command test sandboxes "
+                        f"in the production layout: exit {completed.returncode}: "
+                        f"{completed.stderr[-2000:].strip()}"
+                    )
                 verdicts = [completed.stdout.strip()]
             else:
                 records = smoke_records()
                 label, payload = smoke_payload(root, definition)
-                dataset = dataset_path(root, "train",
-                                       definition["dataset_extension"]).read_bytes()
+                dataset = dataset_path(
+                    root, "train", definition["dataset_extension"]
+                ).read_bytes()
                 verifier_layout.stage_work(work, payload, dataset)
                 log = ""
                 try:
-                    result, metrics, log = run_in_layout(image, problem, definition, work,
-                                                         "train")
+                    result, metrics, log = run_in_layout(
+                        image, problem, definition, work, "train"
+                    )
                     if record:
-                        check_smoke_result(problem, result, label, payload,
-                                           {**records, "tasks": {}})
+                        check_smoke_result(
+                            problem, result, label, payload, {**records, "tasks": {}}
+                        )
                         record_smoke(problem, payload, result)
                         verdict = f"{label}: recorded raw_score {result['raw_score']}"
                     else:
-                        verdict = check_smoke_result(problem, result, label, payload,
-                                                     records)
+                        verdict = check_smoke_result(
+                            problem, result, label, payload, records
+                        )
                 except BuildFailure as error:
-                    raise BuildFailure(f"{image} fails in the production layout: {error}"
-                                       + (f"\n{log}" if log else "")) from error
+                    raise BuildFailure(
+                        f"{image} fails in the production layout: {error}"
+                        + (f"\n{log}" if log else "")
+                    ) from error
                 verdicts = [verdict + depth_note(metrics)]
         finally:
             if work.exists():
@@ -750,7 +900,9 @@ def verifier_smoke(image: str, problem: str, root: Path, definition: dict, *,
         try:
             verdicts += fixture_smoke(image, problem, root, definition, Path(directory))
         except BuildFailure as error:
-            raise BuildFailure(f"{image} fails in the production layout: {error}") from error
+            raise BuildFailure(
+                f"{image} fails in the production layout: {error}"
+            ) from error
     return "; ".join(verdicts)
 
 
@@ -788,7 +940,9 @@ def build_problem(
     )
     ssh_base = pull_digest_reference(gpu_ssh_base()) if needs_ssh else None
     built, reused = {}, {}
-    context = build_context(root, paths, REPOSITORY_ROOT / ".generated/build-contexts" / problem)
+    context = build_context(
+        root, paths, REPOSITORY_ROOT / ".generated/build-contexts" / problem
+    )
     for directory, component in (
         ("agent-base", "agent"),
         ("verifier", "verifier"),
@@ -801,7 +955,9 @@ def build_problem(
         ):
             continue
         if not paths.has_role(directory):
-            raise BuildFailure(f"missing enabled image recipe: {paths.dockerfile(directory)}")
+            raise BuildFailure(
+                f"missing enabled image recipe: {paths.dockerfile(directory)}"
+            )
         digest = registry_digest(names[component])
         if digest is not None:
             reused[component] = digest
@@ -840,8 +996,11 @@ def build_problem(
     # carries; freeze_bases pins gpu-tools from bases.json like every shared base. A newly built
     # task image without a push has no registry digest, so its runner cannot be built.
     runner_bases = {"agent-cpu-runner": "agent", "verifier-cpu-runner": "verifier"}
-    for component in (task_manifest.cpu_runner_roles(task_manifest.read_task(root))
-                      if task_manifest.is_native(root) else ()):
+    for component in (
+        task_manifest.cpu_runner_roles(task_manifest.read_task(root))
+        if task_manifest.is_native(root)
+        else ()
+    ):
         digest = registry_digest(names[component])
         if digest is not None:
             reused[component] = digest
@@ -849,13 +1008,34 @@ def build_problem(
         base = runner_bases[component]
         base_digest = reused.get(base) or registry_digest(names[base])
         if base_digest is None:
-            raise BuildFailure(f"{component} is built FROM the {base} image by its registry "
-                               f"digest: build with --push")
-        dockerfile = context / task_manifest.GENERATED / "runner" / "cpu-runner.Dockerfile"
-        arguments = freeze_bases(dockerfile, bases, None, {
-            "RUNNER_BASE": names[base].rsplit(":", 1)[0] + "@" + base_digest})
-        run(["docker", "build", "--provenance=false", "--platform", "linux/amd64",
-             "-f", str(dockerfile), *arguments, "--tag", names[component], str(context)])
+            raise BuildFailure(
+                f"{component} is built FROM the {base} image by its registry "
+                f"digest: build with --push"
+            )
+        dockerfile = (
+            context / task_manifest.GENERATED / "runner" / "cpu-runner.Dockerfile"
+        )
+        arguments = freeze_bases(
+            dockerfile,
+            bases,
+            None,
+            {"RUNNER_BASE": names[base].rsplit(":", 1)[0] + "@" + base_digest},
+        )
+        run(
+            [
+                "docker",
+                "build",
+                "--provenance=false",
+                "--platform",
+                "linux/amd64",
+                "-f",
+                str(dockerfile),
+                *arguments,
+                "--tag",
+                names[component],
+                str(context),
+            ]
+        )
         built[component] = names[component]
         if push:
             run(["docker", "push", names[component]])
@@ -908,20 +1088,21 @@ def smoke_catalog(problems: Sequence[str], *, record: bool = False) -> int:
         reference = image["repository"] + "@" + image["digest"]
         try:
             root = renderer.task_directory(problem)
-            verdict = verifier_smoke(reference, problem, root, renderer.render(root, problem),
-                                     record=record).strip()
+            verdict = verifier_smoke(
+                reference, problem, root, renderer.render(root, problem), record=record
+            ).strip()
             checked = not verdict.startswith("no control-image placement check")
             if not checked:
                 unchecked.append(problem)
-            print(f"{'pass' if checked else 'n/a '} {problem}: {verdict}",
-                  flush=True)
+            print(f"{'pass' if checked else 'n/a '} {problem}: {verdict}", flush=True)
         except (BuildFailure, OSError, ValueError) as error:
             failures.append(problem)
             print(f"FAIL {problem}: {error}", flush=True)
-    print(f"{len(problems) - len(failures) - len(unchecked)} of {len(problems)} catalog Verifier "
-          f"images pass the production-layout smoke, {len(unchecked)} without a shared-adapter "
-          "check"
-          + (": failing " + ", ".join(failures) if failures else ""))
+    print(
+        f"{len(problems) - len(failures) - len(unchecked)} of {len(problems)} catalog Verifier "
+        f"images pass the production-layout smoke, {len(unchecked)} without a shared-adapter "
+        "check" + (": failing " + ", ".join(failures) if failures else "")
+    )
     return 1 if failures else 0
 
 
@@ -983,9 +1164,13 @@ def main(arguments: Sequence[str] | None = None) -> int:
     if catalog_error is not None:
         raise BuildFailure(str(catalog_error)) from catalog_error
     if IMAGE_PREFIX_RE.fullmatch(options.image_namespace) is None:
-        raise BuildFailure("--image-namespace is not a bounded Docker repository prefix")
-    if any(options.manifest.resolve().is_relative_to(layer.problems.resolve())
-           for layer in task_layers.layers()):
+        raise BuildFailure(
+            "--image-namespace is not a bounded Docker repository prefix"
+        )
+    if any(
+        options.manifest.resolve().is_relative_to(layer.problems.resolve())
+        for layer in task_layers.layers()
+    ):
         raise BuildFailure("build manifest must live outside task trees")
     requested = options.problem or ["all"]
     try:
@@ -1009,10 +1194,9 @@ def main(arguments: Sequence[str] | None = None) -> int:
                 ("agent", "max_instances"),
                 ("verifier", "max_gpu_instances"),
             ):
-                if (
-                    gpu.get(role, {}).get(quota, 0) > 0
-                    and not task_manifest.layout(root).has_role(f"{role}-gpu")
-                ):
+                if gpu.get(role, {}).get(quota, 0) > 0 and not task_manifest.layout(
+                    root
+                ).has_role(f"{role}-gpu"):
                     raise ValueError(
                         f"GPU definition disagrees with {role}-gpu/ directory: {name}"
                     )
@@ -1046,7 +1230,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
     if options.smoke_catalog:
         return smoke_catalog(problems, record=options.record_smoke)
     if options.incremental_from:
-        from preview import images as incremental
+        from deploy import images as incremental
 
         commit = incremental.resolve_commit(REPOSITORY_ROOT, options.incremental_from)
         directory = options.manifest.with_suffix(".layers")

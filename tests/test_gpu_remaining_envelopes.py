@@ -18,7 +18,8 @@ import task_layers  # noqa: E402
 
 # Every forked GPU adapter in the repository's task layers.
 FORKED = sorted(
-    path for layer in task_layers.layers()
+    path
+    for layer in task_layers.layers()
     for path in layer.problems.rglob("verifier/fcs2_verifier_gpu.py")
 )
 # Population's scientific handoff and setup classification have a separate suite.
@@ -76,7 +77,8 @@ class RemainingEnvelopeTests(unittest.TestCase):
                     self.assertEqual(
                         adapter._WaitWindow(deadline, "phase_timeout").remaining()
                         if phase_controlled(adapter)
-                        else adapter._remaining(deadline), 399
+                        else adapter._remaining(deadline),
+                        399,
                     )
                     with mock.patch.object(
                         adapter if phase_controlled(adapter) else adapter.subprocess,
@@ -84,12 +86,29 @@ class RemainingEnvelopeTests(unittest.TestCase):
                         return_value=SimpleNamespace(returncode=0, stderr=b""),
                     ) as child:
                         adapter._upload_inputs(
-                            ["ssh"], inputs, 600, {}, runner_deadline=deadline,
-                            **({"window": adapter._WaitWindow(deadline, "phase_timeout")}
-                               if phase_controlled(adapter) else {})
+                            ["ssh"],
+                            inputs,
+                            600,
+                            {},
+                            runner_deadline=deadline,
+                            **(
+                                {
+                                    "window": adapter._WaitWindow(
+                                        deadline, "phase_timeout"
+                                    )
+                                }
+                                if phase_controlled(adapter)
+                                else {}
+                            ),
                         )
-                        self.assertLessEqual((child.call_args.args[3] if phase_controlled(adapter)
-                                              else child.call_args.kwargs["timeout"]), 120)
+                        self.assertLessEqual(
+                            (
+                                child.call_args.args[3]
+                                if phase_controlled(adapter)
+                                else child.call_args.kwargs["timeout"]
+                            ),
+                            120,
+                        )
                 with (
                     mock.patch.object(adapter.time, "monotonic", return_value=680),
                     mock.patch.object(
@@ -99,12 +118,25 @@ class RemainingEnvelopeTests(unittest.TestCase):
                     ) as child,
                 ):
                     adapter._upload_inputs(
-                        ["ssh"], inputs, 600, {}, runner_deadline=deadline,
-                            **({"window": adapter._WaitWindow(deadline, "phase_timeout")}
-                               if phase_controlled(adapter) else {})
+                        ["ssh"],
+                        inputs,
+                        600,
+                        {},
+                        runner_deadline=deadline,
+                        **(
+                            {"window": adapter._WaitWindow(deadline, "phase_timeout")}
+                            if phase_controlled(adapter)
+                            else {}
+                        ),
                     )
-                    self.assertLessEqual((child.call_args.args[3] if phase_controlled(adapter)
-                                              else child.call_args.kwargs["timeout"]), 19)
+                    self.assertLessEqual(
+                        (
+                            child.call_args.args[3]
+                            if phase_controlled(adapter)
+                            else child.call_args.kwargs["timeout"]
+                        ),
+                        19,
+                    )
                 with (
                     mock.patch.object(adapter.time, "monotonic", return_value=700),
                     mock.patch.object(adapter.subprocess, "Popen") as child,
@@ -127,6 +159,7 @@ class RemainingEnvelopeTests(unittest.TestCase):
             adapter = load(path, f"cleanup_adapter_{index}")
             if phase_controlled(adapter):
                 from test_flow_gpu_phase_control import assert_grant_cleanup
+
                 # Flow reserves cleanup inside the grant: consume its work
                 # window while retaining the actual deletion reserve.
                 for grant, elapsed in ((True, 0), (100, 50)):
@@ -141,9 +174,7 @@ class RemainingEnvelopeTests(unittest.TestCase):
             with (
                 self.subTest(task=path.parent.parent.name, grant=grant),
                 tempfile.TemporaryDirectory() as temp,
-                mock.patch.dict(
-                    os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192"}
-                ),
+                mock.patch.dict(os.environ, {"FRONTIER_MAX_EVIDENCE_BYTES": "8192"}),
                 mock.patch.object(
                     adapter,
                     "_config",
@@ -173,10 +204,9 @@ class RemainingEnvelopeTests(unittest.TestCase):
                     else "deadline is exhausted",
                     str(caught.exception),
                 )
-                delete.assert_called_once_with(
-                    "url", "verification", "token", "owned"
-                )
+                delete.assert_called_once_with("url", "verification", "token", "owned")
                 upload.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

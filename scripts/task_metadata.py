@@ -36,7 +36,12 @@ METADATA = ROOT / "tasks/metadata"
 TABLE = ROOT / "TASKS.md"
 GIB = 1 << 30
 
-PAPER_FIELDS = {"summary": "summary", "paper_title": "title", "paper_venue": "venue", "paper_url": "url"}
+PAPER_FIELDS = {
+    "summary": "summary",
+    "paper_title": "title",
+    "paper_venue": "venue",
+    "paper_url": "url",
+}
 FIELDS = (
     "id",
     "display_name",
@@ -85,17 +90,32 @@ def task_directory(name: str) -> Path:
 def verifier_gpu_type(directory: Path) -> str | None:
     """GPU type of the Verifier's GPUs: what the task's images declare (FRONTIER_VERIFIER_GPU_TYPE in
     docker/) and, for Driver-managed verifier GPUs, task.toml [accelerator] allowed_types."""
-    accelerator = tomllib.loads((directory / "task.toml").read_text(encoding="utf-8")).get("accelerator", {})
-    types = set(accelerator.get("allowed_types", [])) if accelerator.get("verifier_gpu") else set()
+    accelerator = tomllib.loads(
+        (directory / "task.toml").read_text(encoding="utf-8")
+    ).get("accelerator", {})
+    types = (
+        set(accelerator.get("allowed_types", []))
+        if accelerator.get("verifier_gpu")
+        else set()
+    )
     for path in sorted((directory / "docker").glob("*.Dockerfile")):
-        types.update(re.findall(r"FRONTIER_VERIFIER_GPU_TYPE=([A-Za-z0-9-]+)", path.read_text(encoding="utf-8")))
+        types.update(
+            re.findall(
+                r"FRONTIER_VERIFIER_GPU_TYPE=([A-Za-z0-9-]+)",
+                path.read_text(encoding="utf-8"),
+            )
+        )
     if len(types) > 1:
-        raise SystemExit(f"{directory.name}: ambiguous verifier GPU types {sorted(types)}")
+        raise SystemExit(
+            f"{directory.name}: ambiguous verifier GPU types {sorted(types)}"
+        )
     return types.pop() if types else None
 
 
 def paper(directory: Path) -> dict:
-    table = tomllib.loads((directory / "task.toml").read_text(encoding="utf-8")).get("paper", {})
+    table = tomllib.loads((directory / "task.toml").read_text(encoding="utf-8")).get(
+        "paper", {}
+    )
     return {field: table.get(key) for field, key in PAPER_FIELDS.items()}
 
 
@@ -150,7 +170,9 @@ def derived(name: str, definition: dict) -> dict:
         "eval_timeout_seconds": quota["eval_timeout_seconds"],
     }
     if record["verifier_gpu_count"] and record["verifier_gpu_type"] is None:
-        raise SystemExit(f"{name}: GPU verifier image declares no FRONTIER_VERIFIER_GPU_TYPE")
+        raise SystemExit(
+            f"{name}: GPU verifier image declares no FRONTIER_VERIFIER_GPU_TYPE"
+        )
     return record
 
 
@@ -211,7 +233,11 @@ def gpu_cell(kind: str | None, count: int, seconds: int) -> str:
 
 
 # Full domain names for TASKS.md; `category` itself stays the task's folder name.
-CATEGORY_NAMES = {"Arch": "Architecture", "Crypto": "Cryptography", "Programming Language": "Programming Languages"}
+CATEGORY_NAMES = {
+    "Arch": "Architecture",
+    "Crypto": "Cryptography",
+    "Programming Language": "Programming Languages",
+}
 
 
 def table(records: dict[str, dict]) -> str:
@@ -226,7 +252,13 @@ def table(records: dict[str, dict]) -> str:
         "| Task | Category | Paper | Agent CPU / mem / disk | Agent GPU | Verifier CPU / mem | Verifier GPU | Agent time | Train calls | Eval timeout |",
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    ordered = sorted(records.values(), key=lambda r: (CATEGORY_NAMES.get(r["category"], r["category"]), r["display_name"]))
+    ordered = sorted(
+        records.values(),
+        key=lambda r: (
+            CATEGORY_NAMES.get(r["category"], r["category"]),
+            r["display_name"],
+        ),
+    )
     for r in ordered:
         if r["paper_title"]:
             paper = r["paper_title"].split(":")[0]
@@ -253,7 +285,9 @@ def table(records: dict[str, dict]) -> str:
         "The Agent's model calls go through the Candidate's provider route.",
     ]
     if not keyed:
-        lines.append("No task needs model keys of its own (`task_model_keys` is empty for every task).")
+        lines.append(
+            "No task needs model keys of its own (`task_model_keys` is empty for every task)."
+        )
     for r in keyed:
         lines.append(
             f"`{r['id']}` also uses a task model: the site must serve the LiteLLM alias "

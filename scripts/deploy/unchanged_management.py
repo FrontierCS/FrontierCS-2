@@ -1,4 +1,5 @@
 """Preserve a verified site-native Management image during a Driver-only upgrade."""
+
 from __future__ import annotations
 
 import copy
@@ -12,16 +13,23 @@ def require_native_management_record(config, record):
     """Bind this alternate repository to the requested source and exact digest."""
     source = config["images"]["management"]
     commit = runtime_source_commit(config, "management")
-    repository = f"{config['network']['registry_cluster_ip']}:5000/frontier/runtime/management"
-    if (source["repository"] != image_namespace.repository("fcs2-management")
-            or source["tag"] != "sha-" + commit
-            or source["reference"] != source["repository"] + "@" + source["digest"]
-            or record != {"tag": repository + ":git-" + commit[:20],
-                          "digest": source["digest"],
-                          "reference": repository + "@" + source["digest"],
-                          "source_sha256": source["digest"]}):
+    repository = (
+        f"{config['network']['registry_cluster_ip']}:5000/frontier/runtime/management"
+    )
+    if (
+        source["repository"] != image_namespace.repository("fcs2-management")
+        or source["tag"] != "sha-" + commit
+        or source["reference"] != source["repository"] + "@" + source["digest"]
+        or record
+        != {
+            "tag": repository + ":git-" + commit[:20],
+            "digest": source["digest"],
+            "reference": repository + "@" + source["digest"],
+            "source_sha256": source["digest"],
+        }
+    ):
         raise DeployError("unchanged Management native record/source tuple differs")
-    return repository.split('/', 1)[1]
+    return repository.split("/", 1)[1]
 
 
 def unchanged_native_management(config, configmap, deployment, images):
@@ -34,7 +42,9 @@ def unchanged_native_management(config, configmap, deployment, images):
     expected = config["images"]["management"]["digest"]
     if not isinstance(live, str) or live.rsplit("@", 1)[-1] != expected:
         return None  # Management really changes: retain ordinary upgrade behavior.
-    native_prefix = f"{config['network']['registry_cluster_ip']}:5000/frontier/runtime/management@"
+    native_prefix = (
+        f"{config['network']['registry_cluster_ip']}:5000/frontier/runtime/management@"
+    )
     if not live.startswith(native_prefix):
         ordinary = native_prefix.replace("/frontier/runtime/", "/frontier/") + expected
         public = config["images"]["management"]["reference"]
@@ -46,10 +56,17 @@ def unchanged_native_management(config, configmap, deployment, images):
         raise DeployError("unchanged Management live image differs from state")
     if configmap["data"].get("MANAGEMENT_LITELLM_KEY_WORKER_IMAGE") != live:
         raise DeployError("unchanged Management key-worker image differs")
-    if any(e.get("name") in {"MANAGEMENT_DRIVER_IMAGE", "MANAGEMENT_LITELLM_KEY_WORKER_IMAGE"}
-           for e in containers[0].get("env", [])):
+    if any(
+        e.get("name")
+        in {"MANAGEMENT_DRIVER_IMAGE", "MANAGEMENT_LITELLM_KEY_WORKER_IMAGE"}
+        for e in containers[0].get("env", [])
+    ):
         raise DeployError("unchanged Management rejects image environment overrides")
-    inits = [c for c in pod.get("initContainers", []) if c.get("name") == "gateway-artifact-retention"]
+    inits = [
+        c
+        for c in pod.get("initContainers", [])
+        if c.get("name") == "gateway-artifact-retention"
+    ]
     if len(inits) != 1 or inits[0].get("image") != live:
         raise DeployError("unchanged Management retention initializer image differs")
     return repository
@@ -65,24 +82,32 @@ def require_driver_only_patches(configmap, deployment, data, patches):
         if patch["op"] == "test":
             continue
         current = deployment
-        for part in patch["path"].strip('/').split('/'):
-            part = part.replace('~1', '/').replace('~0', '~')
-            current = current[int(part)] if isinstance(current, list) else current.get(part)
+        for part in patch["path"].strip("/").split("/"):
+            part = part.replace("~1", "/").replace("~0", "~")
+            current = (
+                current[int(part)] if isinstance(current, list) else current.get(part)
+            )
             if current is None:
                 break
         expected = copy.deepcopy(current)
         if patch["path"] == "/spec/template/metadata/annotations":
             expected = dict(current or {})
             expected["frontier.dev/config-sha256"] = canonical_object_sha256(data)
-        elif patch["path"] == "/spec/template/spec/initContainers" and isinstance(expected, list):
+        elif patch["path"] == "/spec/template/spec/initContainers" and isinstance(
+            expected, list
+        ):
             for init in expected:
                 if init.get("name") == "gateway-artifact-retention":
-                    for key, default in (("terminationMessagePath", "/dev/termination-log"),
-                                         ("terminationMessagePolicy", "File")):
+                    for key, default in (
+                        ("terminationMessagePath", "/dev/termination-log"),
+                        ("terminationMessagePolicy", "File"),
+                    ):
                         if init.get(key) == default:
                             init.pop(key)
         if patch["op"] not in ("add", "replace") or patch.get("value") != expected:
-            raise DeployError("unchanged Management has extra Deployment changes: " + patch["path"])
+            raise DeployError(
+                "unchanged Management has extra Deployment changes: " + patch["path"]
+            )
 
 
 def require_unchanged_observer(expected, live):
@@ -90,6 +115,7 @@ def require_unchanged_observer(expected, live):
     expected_body = {k: v for k, v in expected.items() if k != "metadata"}
     live_body = {k: v for k, v in live.items() if k != "metadata"}
     metadata = live.get("metadata", {})
-    if (live_body != expected_body
-            or any(metadata.get(k) != v for k, v in expected["metadata"].items())):
+    if live_body != expected_body or any(
+        metadata.get(k) != v for k, v in expected["metadata"].items()
+    ):
         raise DeployError("unchanged Management Modal observer differs")

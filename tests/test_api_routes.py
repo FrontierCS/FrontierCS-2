@@ -5,14 +5,17 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from preview import api_routes as routes
-from preview import cli
+from deploy import api_routes as routes
+from deploy import cli
 
 
 class ApiRouteTests(unittest.TestCase):
     def setUp(self):
         self.config = {
-            "network": {"service_ipv4_cidr": "172.20.0.0/16", "vpc_cidr": "10.42.0.0/16"}
+            "network": {
+                "service_ipv4_cidr": "172.20.0.0/16",
+                "vpc_cidr": "10.42.0.0/16",
+            }
         }
         self.allowed = ["10.42.200.0/28", "10.42.200.16/28", "172.20.0.1/32"]
         self.outputs = {"kubernetes_api_cidrs": list(self.allowed)}
@@ -95,7 +98,10 @@ class ApiRouteTests(unittest.TestCase):
 
     def test_rotated_endpoints_inside_the_control_plane_subnets_are_admitted(self):
         # EKS replaces its ENIs; any address inside the dedicated /28s is fine.
-        for addresses in (("10.42.200.6", "10.42.200.20"), ("10.42.200.14", "10.42.200.17")):
+        for addresses in (
+            ("10.42.200.6", "10.42.200.20"),
+            ("10.42.200.14", "10.42.200.17"),
+        ):
             with self.subTest(addresses=addresses):
                 self.rotate(*addresses)
                 snapshot = self.discover()
@@ -146,7 +152,13 @@ class ApiRouteTests(unittest.TestCase):
         allowed = routes.allowed_api_cidrs(self.config, self.outputs)
         self.assertEqual(
             allowed,
-            ["10.42.0.60/32", "10.42.1.54/32", "10.42.200.0/28", "10.42.200.16/28", "172.20.0.1/32"],
+            [
+                "10.42.0.60/32",
+                "10.42.1.54/32",
+                "10.42.200.0/28",
+                "10.42.200.16/28",
+                "172.20.0.1/32",
+            ],
         )
         self.rotate("10.42.0.60", "10.42.1.54")  # before the cluster subnet move
         self.allowed = allowed

@@ -5,6 +5,7 @@ compares such an image's repository, derives it from namespace(), read on first 
 at import). Pinned references (digest-bound, in config/ and tasks/) keep their own full
 repository.
 """
+
 from __future__ import annotations
 
 import functools

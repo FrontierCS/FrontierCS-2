@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from vllm_task import REPO_ROOT  # noqa: E402
 
 # Enforce offline tests before project imports.
@@ -17,7 +18,10 @@ import task_manifest  # noqa: E402
 import validate_task_layout as layout  # noqa: E402
 
 TASK = ROOT / "tasks/problems/MLSys/vllm_llm_serving_optimization"
-EVALUATION = {"solver_visible_metrics": native.SOLVER_FEEDBACK, "authored_max_dev_submissions": 25}
+EVALUATION = {
+    "solver_visible_metrics": native.SOLVER_FEEDBACK,
+    "authored_max_dev_submissions": 25,
+}
 
 
 def reviewed_copy(root: Path) -> None:
@@ -31,21 +35,35 @@ class NativeVllmContractTests(unittest.TestCase):
     def test_train_projection_exact_whitelist_rejects_leaked_or_missing_feedback(self):
         functions = native.load_reviewed_functions(TASK)
         native.check_projection(functions)
-        original = functions['result_projection']
-        for mutation in ('leak', 'missing'):
+        original = functions["result_projection"]
+
+        def case(mutation):
+
             def altered(result, mode):
                 value = original(result, mode)
-                if mode == 'train':
-                    if mutation == 'leak':
-                        value['metrics']['reference_threshold'] = 999
+                if mode == "train":
+                    if mutation == "leak":
+                        value["metrics"]["reference_threshold"] = 999
                     else:
-                        value['metrics'].pop('swe_public_geometric_mean_latency_seconds')
+                        value["metrics"].pop(
+                            "swe_public_geometric_mean_latency_seconds"
+                        )
                 return value
-            with self.subTest(mutation=mutation), self.assertRaisesRegex(
-                    native.NativeContractFailure, 'reviewed public aggregates'):
+
+            with (
+                self.subTest(mutation=mutation),
+                self.assertRaisesRegex(
+                    native.NativeContractFailure, "reviewed public aggregates"
+                ),
+            ):
                 native.check_projection(dict(functions, result_projection=altered))
 
-    def test_reviewed_native_source_projects_every_group_decision_and_public_train(self):
+        for mutation in ("leak", "missing"):
+            case(mutation)
+
+    def test_reviewed_native_source_projects_every_group_decision_and_public_train(
+        self,
+    ):
         native.check_native_contract(TASK, EVALUATION)
         evaluation = task_manifest.load_policy(TASK)["metadata"]["evaluation"]
         self.assertEqual(evaluation["solver_visible_metrics"], native.SOLVER_FEEDBACK)
@@ -55,11 +73,19 @@ class NativeVllmContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as text:
             root = Path(text) / "vllm_llm_serving_optimization"
             root.mkdir()
-            with self.assertRaisesRegex(native.NativeContractFailure, "regular reviewed"):
+            with self.assertRaisesRegex(
+                native.NativeContractFailure, "regular reviewed"
+            ):
                 native.check_native_contract(root, EVALUATION)
-            with self.assertRaisesRegex(native.NativeContractFailure, "public whitelist"):
-                native.check_native_contract(TASK, dict(EVALUATION, solver_visible_metrics=["p99"]))
-            with self.assertRaisesRegex(native.NativeContractFailure, "unreviewed task"):
+            with self.assertRaisesRegex(
+                native.NativeContractFailure, "public whitelist"
+            ):
+                native.check_native_contract(
+                    TASK, dict(EVALUATION, solver_visible_metrics=["p99"])
+                )
+            with self.assertRaisesRegex(
+                native.NativeContractFailure, "unreviewed task"
+            ):
                 native.check_native_contract(root.parent, EVALUATION)
 
     def test_every_reviewed_protocol_source_drift_is_rejected_before_execution(self):
@@ -69,9 +95,13 @@ class NativeVllmContractTests(unittest.TestCase):
                 reviewed_copy(root)
                 (root / member).write_bytes((root / member).read_bytes() + b"\n")
                 with mock.patch.object(
-                    native, "load_reviewed_functions", side_effect=AssertionError("executed drift")
+                    native,
+                    "load_reviewed_functions",
+                    side_effect=AssertionError("executed drift"),
                 ):
-                    with self.assertRaisesRegex(native.NativeContractFailure, "unreviewed native"):
+                    with self.assertRaisesRegex(
+                        native.NativeContractFailure, "unreviewed native"
+                    ):
                         native.check_native_contract(root, EVALUATION)
 
     def test_symlink_cannot_select_native_compatibility(self):
@@ -81,13 +111,17 @@ class NativeVllmContractTests(unittest.TestCase):
             source = root / "verifier/verify.py"
             source.unlink()
             source.symlink_to(TASK / "verifier/verify.py")
-            with self.assertRaisesRegex(native.NativeContractFailure, "regular reviewed"):
+            with self.assertRaisesRegex(
+                native.NativeContractFailure, "regular reviewed"
+            ):
                 native.check_native_contract(root, EVALUATION)
             source.unlink()
             shutil.copyfile(TASK / "verifier/verify.py", source)
             (root / "datasets").mkdir(exist_ok=True)
             for mode in ("train", "eval"):
-                shutil.copyfile(TASK / f"datasets/{mode}.json", root / f"datasets/{mode}.json")
+                shutil.copyfile(
+                    TASK / f"datasets/{mode}.json", root / f"datasets/{mode}.json"
+                )
             native.check_native_contract(root, EVALUATION)
             native.check_native_contract(TASK, EVALUATION)
 
@@ -103,7 +137,9 @@ class NativeVllmContractTests(unittest.TestCase):
             return value
 
         hidden["result_projection"] = without_progress
-        with self.assertRaisesRegex(native.NativeContractFailure, "count every group decision"):
+        with self.assertRaisesRegex(
+            native.NativeContractFailure, "count every group decision"
+        ):
             native.check_projection(hidden)
         generous = dict(functions)
 
@@ -114,25 +150,42 @@ class NativeVllmContractTests(unittest.TestCase):
             return value
 
         generous["result_projection"] = always_passing
-        with self.assertRaisesRegex(native.NativeContractFailure, "failed group decision"):
+        with self.assertRaisesRegex(
+            native.NativeContractFailure, "failed group decision"
+        ):
             native.check_projection(generous)
         chatty = dict(functions)
-        chatty["result_projection"] = lambda result, mode: {**original(result, mode), "metrics": {"p99": 1.0}}
-        with self.assertRaisesRegex(native.NativeContractFailure, "reviewed public aggregates"):
+        chatty["result_projection"] = lambda result, mode: {
+            **original(result, mode),
+            "metrics": {"p99": 1.0},
+        }
+        with self.assertRaisesRegex(
+            native.NativeContractFailure, "reviewed public aggregates"
+        ):
             native.check_projection(chatty)
 
     def test_synthetic_operator_results_follow_the_reviewed_verdict_shape(self):
         complete = native.operator_result("eval")
         self.assertTrue(complete["pass"])
-        self.assertEqual(set(complete["reference_verdict"]["groups"]), set(native.GROUPS["eval"]))
+        self.assertEqual(
+            set(complete["reference_verdict"]["groups"]), set(native.GROUPS["eval"])
+        )
         self.assertEqual(complete["validity"]["groups"], {})
         self.assertIs(complete["bfcl_flip_gate_enabled"], False)
-        failing = native.operator_result("eval", failing={"swe/public": ("correctness",)})
+        failing = native.operator_result(
+            "eval", failing={"swe/public": ("correctness",)}
+        )
         self.assertFalse(failing["pass"])
-        self.assertFalse(failing["reference_verdict"]["groups"]["swe/public"]["comparisons"]["correctness"])
+        self.assertFalse(
+            failing["reference_verdict"]["groups"]["swe/public"]["comparisons"][
+                "correctness"
+            ]
+        )
         self.assertTrue(failing["valid"])
         train = native.operator_result("train")
-        self.assertEqual(set(train["reference_verdict"]["groups"]), {"swe/public", "bfcl/public"})
+        self.assertEqual(
+            set(train["reference_verdict"]["groups"]), {"swe/public", "bfcl/public"}
+        )
 
 
 if __name__ == "__main__":

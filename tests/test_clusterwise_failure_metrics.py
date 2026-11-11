@@ -52,6 +52,8 @@ selected = [
         }
     )
 ]
+
+
 class ResourceCeiling(RuntimeError):
     pass
 
@@ -114,19 +116,41 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
         budget and a measured memory ceiling in the candidate phase score zero."""
         killed = ValueError("native process failed")
         killed.process_returncode = -9
-        ceiling = namespace["ResourceCeiling"]("total measured memory exceeds 56-GiB acceptance target")
-        for error in (killed, ceiling, TimeoutError("native process deadline exceeded")):
-            with self.subTest(error=type(error).__name__), patch.dict(namespace, {
-                    "Context": lambda **kwargs: SimpleNamespace(receipt={}),
-                    "LIMITS": SimpleNamespace(evaluator_seconds=60, build_seconds=600),
-                    "CONFIG": {}, "install": lambda *args: None, "_workloads": lambda final: [],
-                    "remaining": lambda *args, **kwargs: None,
-                    "require_disk_capture": lambda *args: None,
-                    "_reference_tree": lambda scratch, deadline: Path(scratch) / "reference",
-                    "_editable_files": lambda tree: {str(tree): b""},
-                    "PRISTINE": JUDGE / "pristine",
-                    "build": lambda tree, *args, error=error: (_ for _ in ()).throw(error)
-                    if Path(tree).name == "candidate" else None}):
+        ceiling = namespace["ResourceCeiling"](
+            "total measured memory exceeds 56-GiB acceptance target"
+        )
+        for error in (
+            killed,
+            ceiling,
+            TimeoutError("native process deadline exceeded"),
+        ):
+            with (
+                self.subTest(error=type(error).__name__),
+                patch.dict(
+                    namespace,
+                    {
+                        "Context": lambda **kwargs: SimpleNamespace(receipt={}),
+                        "LIMITS": SimpleNamespace(
+                            evaluator_seconds=60, build_seconds=600
+                        ),
+                        "CONFIG": {},
+                        "install": lambda *args: None,
+                        "_workloads": lambda final: [],
+                        "remaining": lambda *args, **kwargs: None,
+                        "require_disk_capture": lambda *args: None,
+                        "_reference_tree": lambda scratch, deadline: (
+                            Path(scratch) / "reference"
+                        ),
+                        "_editable_files": lambda tree: {str(tree): b""},
+                        "PRISTINE": JUDGE / "pristine",
+                        "build": lambda tree, *args, error=error: (
+                            (_ for _ in ()).throw(error)
+                            if Path(tree).name == "candidate"
+                            else None
+                        ),
+                    },
+                ),
+            ):
                 result = namespace["evaluate"]("candidate")
             self.assertEqual(result[:2], (0.0, 0.0))
             self.assertEqual(result[3]["beats_reference"], 0)
@@ -144,13 +168,19 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
                     "_workloads": lambda final: [],
                     "remaining": lambda *args, **kwargs: None,
                     "require_disk_capture": lambda *args: None,
-                    "_reference_tree": lambda scratch, deadline: Path(scratch) / "reference",
+                    "_reference_tree": lambda scratch, deadline: (
+                        Path(scratch) / "reference"
+                    ),
                     "_editable_files": lambda tree: {str(tree): b""},
                     "PRISTINE": JUDGE / "pristine",
                     # The candidate's build fails a gate: a candidate rejection.
-                    "build": lambda tree, *args: (_ for _ in ()).throw(
-                        ValueError("forbidden symbol in the candidate object")
-                    ) if Path(tree).name == "candidate" else None,
+                    "build": lambda tree, *args: (
+                        (_ for _ in ()).throw(
+                            ValueError("forbidden symbol in the candidate object")
+                        )
+                        if Path(tree).name == "candidate"
+                        else None
+                    ),
                 },
             ),
             patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": "final"}),
@@ -232,8 +262,14 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
                 raise ValueError("forbidden symbol in the reference object")
 
         with patch.dict(
-            namespace, {**common, "build": invalid_reference,
-                        "_reference_tree": lambda scratch, deadline: Path(scratch) / "reference"}
+            namespace,
+            {
+                **common,
+                "build": invalid_reference,
+                "_reference_tree": lambda scratch, deadline: (
+                    Path(scratch) / "reference"
+                ),
+            },
         ):
             with self.assertRaises(ValueError):
                 namespace["evaluate"]("candidate")
@@ -270,12 +306,15 @@ class ClusterwiseFailureMetricsTests(unittest.TestCase):
             with patch.object(
                 adapter,
                 "load_evaluator",
-                return_value=(lambda tree: (
-                    0.0,
-                    0.0,
-                    "correctness gate failed",
-                    metrics,
-                ), None),
+                return_value=(
+                    lambda tree: (
+                        0.0,
+                        0.0,
+                        "correctness gate failed",
+                        metrics,
+                    ),
+                    None,
+                ),
             ):
                 result = adapter.verify(
                     bundle=task_manifest.judge_bundle(TASK),

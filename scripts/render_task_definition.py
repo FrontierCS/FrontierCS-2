@@ -14,10 +14,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-from native_datasets import dataset_hashes
 import source_tree
 import task_layers
 import task_manifest
+from native_datasets import dataset_hashes
 from task_layers import json_text
 from task_manifest import load_policy
 
@@ -48,26 +48,58 @@ def validate_additional_keys(value: object) -> list[dict]:
     names = set()
     for index, entry in enumerate(value):
         where = f"additional_keys[{index}]"
-        if not isinstance(entry, dict) or set(entry) != {"name", "model_aliases", "budget_usd", "envs"}:
-            raise ValueError(f"{where} must have exactly name, model_aliases, budget_usd, envs")
+        if not isinstance(entry, dict) or set(entry) != {
+            "name",
+            "model_aliases",
+            "budget_usd",
+            "envs",
+        }:
+            raise ValueError(
+                f"{where} must have exactly name, model_aliases, budget_usd, envs"
+            )
         name = entry["name"]
-        if not isinstance(name, str) or KEY_NAME_RE.fullmatch(name) is None or name in names:
+        if (
+            not isinstance(name, str)
+            or KEY_NAME_RE.fullmatch(name) is None
+            or name in names
+        ):
             raise ValueError(f"{where}.name must be a unique key name")
         names.add(name)
         aliases = entry["model_aliases"]
-        if (not isinstance(aliases, list) or not aliases or len(set(aliases)) != len(aliases)
-                or any(not isinstance(a, str) or MODEL_ALIAS_RE.fullmatch(a) is None for a in aliases)):
-            raise ValueError(f"{where}.model_aliases must be non-empty unique model aliases")
+        if (
+            not isinstance(aliases, list)
+            or not aliases
+            or len(set(aliases)) != len(aliases)
+            or any(
+                not isinstance(a, str) or MODEL_ALIAS_RE.fullmatch(a) is None
+                for a in aliases
+            )
+        ):
+            raise ValueError(
+                f"{where}.model_aliases must be non-empty unique model aliases"
+            )
         budget = entry["budget_usd"]
         if isinstance(budget, bool) or not isinstance(budget, (int, float)):
             raise ValueError(f"{where}.budget_usd must be a number")
         micro = round(budget * 1_000_000)
-        if not 0 < budget or abs(micro - budget * 1_000_000) > 1e-6 or micro > MAX_BUDGET_MICRO_USD:
-            raise ValueError(f"{where}.budget_usd must be positive with at most six decimals")
+        if (
+            not 0 < budget
+            or abs(micro - budget * 1_000_000) > 1e-6
+            or micro > MAX_BUDGET_MICRO_USD
+        ):
+            raise ValueError(
+                f"{where}.budget_usd must be positive with at most six decimals"
+            )
         envs = entry["envs"]
-        if (not isinstance(envs, list) or not envs or len(set(envs)) != len(envs)
-                or any(e not in KEY_ENVS for e in envs)):
-            raise ValueError(f"{where}.envs must be non-empty unique values of {sorted(KEY_ENVS)}")
+        if (
+            not isinstance(envs, list)
+            or not envs
+            or len(set(envs)) != len(envs)
+            or any(e not in KEY_ENVS for e in envs)
+        ):
+            raise ValueError(
+                f"{where}.envs must be non-empty unique values of {sorted(KEY_ENVS)}"
+            )
     return value
 
 
@@ -76,8 +108,11 @@ def catalog_task_names(catalog_path: Path | None = None) -> list[str]:
     order; ambiguous JSON and a task in two layers are errors."""
     if catalog_path is not None:
         return _catalog_file_names(catalog_path)
-    names = [name for layer in task_layers.layers(ROOT)
-             for name in _catalog_file_names(layer.catalog)]
+    names = [
+        name
+        for layer in task_layers.layers(ROOT)
+        for name in _catalog_file_names(layer.catalog)
+    ]
     if len(set(names)) != len(names):
         raise ValueError("a task is in more than one layer's catalog")
     return names
@@ -135,10 +170,17 @@ def problem_directory(problems: Path, name: str) -> Path:
 def task_directory(name: str, root: Path = ROOT) -> Path:
     """The directory of task `name` in `root`'s task layers (task_layers), flat or one domain
     deep; a task found in two layers is an error."""
-    found = [path for layer in task_layers.layers(root) if layer.problems.is_dir()
-             for path in [problem_directory(layer.problems, name)] if path.is_dir()]
+    found = [
+        path
+        for layer in task_layers.layers(root)
+        if layer.problems.is_dir()
+        for path in [problem_directory(layer.problems, name)]
+        if path.is_dir()
+    ]
     if len(found) != 1:
-        raise ValueError(f"task {name} must have one directory in the task layers: {found}")
+        raise ValueError(
+            f"task {name} must have one directory in the task layers: {found}"
+        )
     return found[0]
 
 
@@ -152,7 +194,9 @@ def catalog_problem_directories(
         try:
             directories[name] = task_directory(name, root)
         except ValueError as error:
-            raise ValueError(f"catalog task {name} has no problem directory: {error}") from error
+            raise ValueError(
+                f"catalog task {name} has no problem directory: {error}"
+            ) from error
     for layer in task_layers.layers(root):
         for path in sorted(layer.problems.iterdir()) if layer.problems.is_dir() else ():
             if (
@@ -268,8 +312,14 @@ def render(root: Path, name: str) -> dict:
             },
         }
     )
-    for key in ("network", "gpu", "sidecars", "gpu_parent_resources", "verifier_cpu",
-                "cpu_runner_images"):
+    for key in (
+        "network",
+        "gpu",
+        "sidecars",
+        "gpu_parent_resources",
+        "verifier_cpu",
+        "cpu_runner_images",
+    ):
         if key in policy:
             row[key] = policy[key]
     if "additional_keys" in policy:

@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from preview import infra
+from deploy import infra
 from test_frontier_deploy import ROOT, Fixture, frontier_deploy
 
 

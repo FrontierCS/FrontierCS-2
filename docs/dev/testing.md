@@ -5,7 +5,8 @@ The rules for writing FrontierCS 2's tests and fixtures.
 - ALWAYS pass `make ci` before finishing; it runs `make test` and
   `make validate CONFIG=config/site.example.json`
 - PREFER running the narrowest relevant test while iterating:
-  `./python -m unittest tests.test_<module>`
+  `./python -m unittest tests.test_<module>`, or for a task's maintenance suite
+  `PYTHONPATH=tests:tasks/shared/lib ./python -m pytest -q -p no:cacheprovider tests/maintenance/<task>`
 - WRITE few tests, at the module's public boundary; do not test what the parser or the type of
   a value already guarantees
 - IMPORT `deployment_test_guard` first in every test module: tests never write real state,

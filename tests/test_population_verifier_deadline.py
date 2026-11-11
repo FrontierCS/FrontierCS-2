@@ -5,7 +5,6 @@ import deployment_test_guard  # noqa: F401  # isort: skip
 import importlib.util
 import json
 import os
-import runpy
 import subprocess
 import sys
 import tempfile
@@ -33,10 +32,19 @@ def population_evaluator(name):
 
 
 def failed(side, error, phase="train"):
-    return {"schema_version": 1, "events": [
-        {"event": "scientific_started"},
-        {"event": "phase_started", "side": side, "phase": phase},
-        {"event": "phase_failed", "side": side, "phase": phase, "error_type": error}]}
+    return {
+        "schema_version": 1,
+        "events": [
+            {"event": "scientific_started"},
+            {"event": "phase_started", "side": side, "phase": phase},
+            {
+                "event": "phase_failed",
+                "side": side,
+                "phase": phase,
+                "error_type": error,
+            },
+        ],
+    }
 
 
 def load(path, name):
@@ -50,8 +58,11 @@ class DeadlineEnvelopeTests(unittest.TestCase):
     def test_all_published_adapters_inventory(self):
         # A forked GPU adapter belongs to a policy.json task; a task.toml task uses the shared
         # adapter (gpu-tools) and must not carry one.
-        forked = sorted(path for layer in task_layers.layers()
-                        for path in layer.problems.rglob("verifier/fcs2_verifier_gpu.py"))
+        forked = sorted(
+            path
+            for layer in task_layers.layers()
+            for path in layer.problems.rglob("verifier/fcs2_verifier_gpu.py")
+        )
         for path in forked:
             self.assertFalse((path.parent.parent / "task.toml").is_file(), path)
         for index, path in enumerate(ADAPTERS):
@@ -171,20 +182,27 @@ class DeadlineEnvelopeTests(unittest.TestCase):
             # Suite start/end, two sides x two phases x start/end, one new marker.
             self.assertLessEqual(2 + len(workloads) * 8 + 1, 32)
 
-
     def test_population_evaluator_debits_setup_and_forwards_deadline(self):
         evaluator = population_evaluator("population_evaluator")
         for end, expected in ((1000, 840), (10000, 7140), (150, None), (180, None)):
             with (
                 self.subTest(end=end),
                 tempfile.TemporaryDirectory() as temp,
-                mock.patch.dict(os.environ, {"FRONTIER_VERIFIER_LOCAL_DEADLINE": str(end)}),
+                mock.patch.dict(
+                    os.environ, {"FRONTIER_VERIFIER_LOCAL_DEADLINE": str(end)}
+                ),
                 mock.patch.object(evaluator.time, "monotonic", return_value=100),
                 mock.patch.object(evaluator, "OFFLINE_TARGETS", ()),
-                mock.patch.object(evaluator, "read_private_evidence",
-                                  return_value=failed("candidate", "TimeoutExpired")),
-                mock.patch.object(evaluator.subprocess, "run",
-                                  side_effect=subprocess.TimeoutExpired("workload", expected or 0)) as process,
+                mock.patch.object(
+                    evaluator,
+                    "read_private_evidence",
+                    return_value=failed("candidate", "TimeoutExpired"),
+                ),
+                mock.patch.object(
+                    evaluator.subprocess,
+                    "run",
+                    side_effect=subprocess.TimeoutExpired("workload", expected or 0),
+                ) as process,
             ):
                 if expected is None:
                     with self.assertRaises(evaluator.VerifierSetupDeadlineExpired):
@@ -192,33 +210,63 @@ class DeadlineEnvelopeTests(unittest.TestCase):
                     process.assert_not_called()
                 else:
                     result = evaluator._evaluate(temp, Path(temp) / "evidence")
-                    self.assertEqual(result[:3], (0.0, 0.0,
-                                     "the submission's train exceeded the suite time limit"))
+                    self.assertEqual(
+                        result[:3],
+                        (
+                            0.0,
+                            0.0,
+                            "the submission's train exceeded the suite time limit",
+                        ),
+                    )
                     self.assertEqual(process.call_args.kwargs["timeout"], expected)
-                    self.assertEqual(process.call_args.kwargs["env"]["FRONTIER_VERIFIER_LOCAL_DEADLINE"], str(end))
+                    self.assertEqual(
+                        process.call_args.kwargs["env"][
+                            "FRONTIER_VERIFIER_LOCAL_DEADLINE"
+                        ],
+                        str(end),
+                    )
 
     def test_reference_failures_raise_and_candidate_failures_are_zero(self):
         evaluator = population_evaluator("reference_failure_evaluator")
         for side, error, expected in (
             ("reference", "TimeoutExpired", "verifier_reference_failed"),
             ("reference", "RuntimeError", "verifier_reference_failed"),
-            ("candidate", "TimeoutExpired", "the submission's train exceeded the suite time limit"),
-            ("candidate", "SuiteDeadlineExpired", "the submission's train exceeded the suite time limit"),
+            (
+                "candidate",
+                "TimeoutExpired",
+                "the submission's train exceeded the suite time limit",
+            ),
+            (
+                "candidate",
+                "SuiteDeadlineExpired",
+                "the submission's train exceeded the suite time limit",
+            ),
             ("candidate", "RuntimeError", "the submission's train failed"),
             ("candidate", "ValueError", "the submission's train failed"),
         ):
             evidence = failed(side, error)
             with self.subTest(side=side, error=error):
                 if side == "reference":
-                    with self.assertRaises(evaluator.VerifierScientificFailure) as failure:
+                    with self.assertRaises(
+                        evaluator.VerifierScientificFailure
+                    ) as failure:
                         evaluator._runtime_failure(evidence)
                     self.assertEqual(failure.exception.verifier_failure_code, expected)
                 else:
-                    self.assertEqual(evaluator._runtime_failure(evidence)[:3], (0.0, 0.0, expected))
+                    self.assertEqual(
+                        evaluator._runtime_failure(evidence)[:3], (0.0, 0.0, expected)
+                    )
         # A parent timeout while the candidate's phase is still running is the candidate's.
-        running = {"schema_version": 1, "events": [{"event": "phase_started", "side": "candidate", "phase": "eval"}]}
-        self.assertEqual(evaluator._runtime_failure(running, parent_timeout=True)[2],
-                         "the submission's eval exceeded the suite time limit")
+        running = {
+            "schema_version": 1,
+            "events": [
+                {"event": "phase_started", "side": "candidate", "phase": "eval"}
+            ],
+        }
+        self.assertEqual(
+            evaluator._runtime_failure(running, parent_timeout=True)[2],
+            "the submission's eval exceeded the suite time limit",
+        )
 
     def test_a_queue_worker_the_judge_could_not_start_is_unscored(self):
         # Round 5 (verification_01M6Q3TA5WT65GBGZS9EAF18KK): a restored queue's worker missed
@@ -227,40 +275,70 @@ class DeadlineEnvelopeTests(unittest.TestCase):
         for side in ("candidate", "reference"):
             evidence = failed(side, "RuntimeError")
             evidence["events"][-1]["report"] = {
-                "gpu": True, "queue_worker_returncodes": [-9, -9, -9],
-                "trusted_fault": "QueueWorkerStartError: queue worker did not start: TimeoutError"}
-            with self.subTest(side=side), self.assertRaises(evaluator.VerifierScientificFailure) as failure:
+                "gpu": True,
+                "queue_worker_returncodes": [-9, -9, -9],
+                "trusted_fault": "QueueWorkerStartError: queue worker did not start: TimeoutError",
+            }
+            with (
+                self.subTest(side=side),
+                self.assertRaises(evaluator.VerifierScientificFailure) as failure,
+            ):
                 evaluator._runtime_failure(evidence)
-            self.assertEqual(failure.exception.verifier_failure_code, "verifier_queue_worker_failed")
+            self.assertEqual(
+                failure.exception.verifier_failure_code, "verifier_queue_worker_failed"
+            )
         # Without a trusted fault in the report the candidate's failed phase stays a scored zero.
         evidence = failed("candidate", "RuntimeError")
-        evidence["events"][-1]["report"] = {"gpu": True, "queue_worker_returncodes": [-9]}
-        self.assertEqual(evaluator._runtime_failure(evidence)[:3], (0.0, 0.0, "the submission's train failed"))
+        evidence["events"][-1]["report"] = {
+            "gpu": True,
+            "queue_worker_returncodes": [-9],
+        }
+        self.assertEqual(
+            evaluator._runtime_failure(evidence)[:3],
+            (0.0, 0.0, "the submission's train failed"),
+        )
 
     def test_failed_child_replay_respects_trusted_side_and_error(self):
         evaluator = population_evaluator("child_failure_replay_evaluator")
         for side, kind, expected in (
             ("candidate", "ValueError", "the submission's train failed"),
             ("reference", "ValueError", "verifier_reference_failed"),
-            ("candidate", "SuiteDeadlineExpired", "the submission's train exceeded the suite time limit"),
+            (
+                "candidate",
+                "SuiteDeadlineExpired",
+                "the submission's train exceeded the suite time limit",
+            ),
         ):
             with (
                 self.subTest(side=side, kind=kind),
                 tempfile.TemporaryDirectory() as temp,
-                mock.patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": "development"}),
+                mock.patch.dict(
+                    os.environ, {"FRONTIER_SUBMISSION_ROLE": "development"}
+                ),
                 mock.patch.object(evaluator, "OFFLINE_TARGETS", ()),
-                mock.patch.object(evaluator, "read_private_evidence", return_value=failed(side, kind)),
-                mock.patch.object(evaluator.subprocess, "run", return_value=SimpleNamespace(
-                    returncode=1, stdout="", stderr="candidate-controlled text")),
+                mock.patch.object(
+                    evaluator, "read_private_evidence", return_value=failed(side, kind)
+                ),
+                mock.patch.object(
+                    evaluator.subprocess,
+                    "run",
+                    return_value=SimpleNamespace(
+                        returncode=1, stdout="", stderr="candidate-controlled text"
+                    ),
+                ),
             ):
                 if side == "reference":
-                    with self.assertRaises(evaluator.VerifierScientificFailure) as failure:
+                    with self.assertRaises(
+                        evaluator.VerifierScientificFailure
+                    ) as failure:
                         evaluator._evaluate(temp, Path(temp) / "evidence")
                     self.assertEqual(failure.exception.verifier_failure_code, expected)
                 else:
                     # Train metrics stay empty: the shared verifier admits only [feedback] there.
-                    self.assertEqual(evaluator._evaluate(temp, Path(temp) / "evidence"),
-                                     (0.0, 0.0, expected, {}))
+                    self.assertEqual(
+                        evaluator._evaluate(temp, Path(temp) / "evidence"),
+                        (0.0, 0.0, expected, {}),
+                    )
 
     def test_missing_trusted_journal_never_manufactures_zero(self):
         evaluator = population_evaluator("missing_journal_evaluator")
@@ -268,16 +346,25 @@ class DeadlineEnvelopeTests(unittest.TestCase):
             for parent_timeout in (False, True):
                 with self.assertRaises(evaluator.VerifierScientificFailure) as failure:
                     evaluator._runtime_failure(evidence, parent_timeout=parent_timeout)
-                self.assertEqual(failure.exception.verifier_failure_code,
-                                 "verifier_execution_evidence_invalid")
-        with mock.patch.object(evaluator, "read_private_evidence", side_effect=ValueError("bad journal")):
+                self.assertEqual(
+                    failure.exception.verifier_failure_code,
+                    "verifier_execution_evidence_invalid",
+                )
+        with mock.patch.object(
+            evaluator, "read_private_evidence", side_effect=ValueError("bad journal")
+        ):
             with self.assertRaises(evaluator.VerifierScientificFailure) as failure:
                 evaluator._runtime_evidence("journal")
-            self.assertEqual(failure.exception.verifier_failure_code, "verifier_execution_evidence_invalid")
+            self.assertEqual(
+                failure.exception.verifier_failure_code,
+                "verifier_execution_evidence_invalid",
+            )
 
     def test_final_budget_changes_only_final_and_total_verifier_capacity(self):
         task = task_manifest.read_task(POPULATION)
-        config = json.loads((task_manifest.judge_bundle(POPULATION) / "config.yaml").read_text())
+        config = json.loads(
+            (task_manifest.judge_bundle(POPULATION) / "config.yaml").read_text()
+        )
         self.assertEqual(config["runtime"]["timeout_seconds"], 7200)
         self.assertEqual(config["runtime"]["final_timeout_seconds"], 10800)
         self.assertEqual(task["quota"]["eval_timeout_seconds"], 10800)
@@ -289,15 +376,25 @@ class DeadlineEnvelopeTests(unittest.TestCase):
 
     def test_parent_timeout_before_scientific_launch_is_unscored(self):
         evaluator = population_evaluator("parent_timeout_evaluator")
-        for events in (None, {"events": [{"event": "suite_started"}, {"event": "phase_started"}]}):
+        for events in (
+            None,
+            {"events": [{"event": "suite_started"}, {"event": "phase_started"}]},
+        ):
             with (
                 tempfile.TemporaryDirectory() as temp,
-                mock.patch.dict(os.environ, {"FRONTIER_VERIFIER_LOCAL_DEADLINE": "1000"}),
+                mock.patch.dict(
+                    os.environ, {"FRONTIER_VERIFIER_LOCAL_DEADLINE": "1000"}
+                ),
                 mock.patch.object(evaluator.time, "monotonic", return_value=100),
                 mock.patch.object(evaluator, "OFFLINE_TARGETS", ()),
-                mock.patch.object(evaluator, "read_private_evidence", return_value=events),
-                mock.patch.object(evaluator.subprocess, "run",
-                                  side_effect=subprocess.TimeoutExpired("prepare_assets", 840)),
+                mock.patch.object(
+                    evaluator, "read_private_evidence", return_value=events
+                ),
+                mock.patch.object(
+                    evaluator.subprocess,
+                    "run",
+                    side_effect=subprocess.TimeoutExpired("prepare_assets", 840),
+                ),
             ):
                 with self.assertRaises(evaluator.VerifierSetupDeadlineExpired):
                     evaluator._evaluate(temp, Path(temp) / "evidence")

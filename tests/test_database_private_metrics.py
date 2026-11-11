@@ -34,7 +34,7 @@ PRIVATE_SCHEMA = {"$ref": "#/$defs/PrivateMetrics", "$defs": CONTRACT["$defs"]}
 class DatabasePrivateMetrics(unittest.TestCase):
     @patch.object(sys, "dont_write_bytecode", True)
     def test_closed_projection_preserves_decisions_and_rejects_malformed_results(self):
-        for name in TASKS:
+        def case(name):
             export_root = os.environ.get("FRONTIER_PRIVATE_METRICS_EXPORT_ROOT")
             task = (
                 Path(export_root) / name
@@ -44,7 +44,9 @@ class DatabasePrivateMetrics(unittest.TestCase):
             self.assertEqual(layout.validate_task(task), "patch-workspace")
             spec_path = task / "judge/beat_spec.json"
             if not spec_path.is_file():  # a task.toml task: provenance copy
-                spec_path = ROOT / "docs/task-authoring" / name / "provenance/beat_spec.json"
+                spec_path = (
+                    ROOT / "docs/task-authoring" / name / "provenance/beat_spec.json"
+                )
             beat_spec = json.loads(spec_path.read_text())
             # A task.toml task has no verifier/ of its own: the shared helper projects it.
             own = task / "verifier/beat_spec_feedback.py"
@@ -59,12 +61,19 @@ class DatabasePrivateMetrics(unittest.TestCase):
             # The shared helper (task.toml tasks) reads no spec file: progress comes from
             # the rows and the evaluator's beats_reference is the authority.
             def private(metrics):
-                return (helper.private_metrics(metrics) if shared
-                        else helper.private_metrics(metrics, beat_spec_path=spec_path))
+                return (
+                    helper.private_metrics(metrics)
+                    if shared
+                    else helper.private_metrics(metrics, beat_spec_path=spec_path)
+                )
 
             def public(metrics):
-                return (helper.public_metrics(metrics, visible=[]) if shared
-                        else helper.public_metrics(metrics, beat_spec_path=spec_path))
+                return (
+                    helper.public_metrics(metrics, visible=[])
+                    if shared
+                    else helper.public_metrics(metrics, beat_spec_path=spec_path)
+                )
+
             for wins in (False, True):
                 with self.subTest(task=name, wins=wins):
                     metrics = {
@@ -87,26 +96,32 @@ class DatabasePrivateMetrics(unittest.TestCase):
                     self.assertEqual(metrics, before)
                     self.assertEqual(projected["beats_reference"], int(wins))
                     if not shared:  # the shared envelope has no aggregation field
-                        self.assertEqual(projected["aggregation"], {"kind": "conjunction"})
+                        self.assertEqual(
+                            projected["aggregation"], {"kind": "conjunction"}
+                        )
                     self.assertEqual(
                         projected["beat_spec_progress"],
-                        public(metrics)[
-                            "beat_spec_progress"
-                        ],
+                        public(metrics)["beat_spec_progress"],
                     )
                     self.assertNotIn("private-workload", json.dumps(projected))
                     with self.assertRaises(jsonschema.ValidationError):
                         jsonschema.validate(metrics, PRIVATE_SCHEMA)
                     # The shared helper reads a boolean verdict as 0/1 (as the shared
                     # verifier always has); every other non-integer verdict is refused.
-                    for verdict in ((float(wins), 2, None) if shared
-                                    else (wins, float(wins), 2, None)):
+                    for verdict in (
+                        (float(wins), 2, None)
+                        if shared
+                        else (wins, float(wins), 2, None)
+                    ):
                         invalid = {**metrics, "beats_reference": verdict}
                         with self.assertRaises(ValueError):
                             private(invalid)
                     invalid = {**metrics, "beats_reference": int(not wins)}
-                    with (contextlib.nullcontext() if shared
-                          else self.assertRaises(ValueError)):
+                    with (
+                        contextlib.nullcontext()
+                        if shared
+                        else self.assertRaises(ValueError)
+                    ):
                         private(invalid)
                     for rows in (
                         [],
@@ -120,6 +135,9 @@ class DatabasePrivateMetrics(unittest.TestCase):
                             with self.assertRaises(ValueError):
                                 private({**metrics, key: value})
             self.assertIsNone(private({}))
+
+        for name in TASKS:
+            case(name)
 
 
 if __name__ == "__main__":

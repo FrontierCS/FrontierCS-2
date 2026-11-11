@@ -20,8 +20,8 @@ sys.path.insert(0, str(ROOT / "runtime/storage-controller"))
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy
 import task_manifest
-from preview import cli
-from preview import images as image_ops
+from deploy import cli
+from deploy import images as image_ops
 
 
 def load_storage_controller(*, enabled: bool = True):
@@ -117,7 +117,11 @@ class Fixture:
         service = ipaddress.ip_network(config["network"]["service_ipv4_cidr"])
         subnets = list(vpc.subnets(new_prefix=28))
         return sorted(
-            [str(subnets[3200]), str(subnets[3201]), f"{service.network_address + 1}/32"]
+            [
+                str(subnets[3200]),
+                str(subnets[3201]),
+                f"{service.network_address + 1}/32",
+            ]
         )
 
     @staticmethod
@@ -197,8 +201,12 @@ class ConfigTests(unittest.TestCase):
         self.assertIs(config["application"]["require_source"], False)
         self.assertEqual(
             config["features"],
-            {"run_execution": True, "litellm": True, "modal_gpu": False,
-             "task_model_aliases": ["progent-agent-gpt-4o-mini"]},
+            {
+                "run_execution": True,
+                "litellm": True,
+                "modal_gpu": False,
+                "task_model_aliases": ["progent-agent-gpt-4o-mini"],
+            },
         )
         self.assertTrue(config["litellm"]["store_model_in_db"])
         self.assertIs(config["execution"]["agent_external_egress"], False)
@@ -226,16 +234,24 @@ class ConfigTests(unittest.TestCase):
         raw["application"]["runtime_source_commits"]["driver"] = "d" * 40
         raw["images"]["driver"]["tag"] = "sha-" + "d" * 40
         config = frontier_deploy.validate_config(copy.deepcopy(raw))
-        self.assertNotEqual(config["application"]["runtime_source_commits"]["driver"], config["application"]["commit"])
+        self.assertNotEqual(
+            config["application"]["runtime_source_commits"]["driver"],
+            config["application"]["commit"],
+        )
         for role in ("management", "driver"):
-            self.assertEqual(config["images"][role]["tag"], "sha-" + config["application"]["runtime_source_commits"][role])
+            self.assertEqual(
+                config["images"][role]["tag"],
+                "sha-" + config["application"]["runtime_source_commits"][role],
+            )
         legacy = copy.deepcopy(raw)
         del legacy["application"]["runtime_source_commits"]
         legacy["images"]["driver"]["tag"] = "sha-" + legacy["application"]["commit"]
         frontier_deploy.validate_config(legacy)
-        for sources in ({"management": "f" * 40, "driver": "e" * 40},
-                        {"management": self.raw["application"]["commit"]},
-                        {"management": self.raw["application"]["commit"], "driver": "main"}):
+        for sources in (
+            {"management": "f" * 40, "driver": "e" * 40},
+            {"management": self.raw["application"]["commit"]},
+            {"management": self.raw["application"]["commit"], "driver": "main"},
+        ):
             candidate = copy.deepcopy(raw)
             candidate["application"]["runtime_source_commits"] = sources
             with self.assertRaises(frontier_deploy.DeployError):
@@ -278,11 +294,14 @@ class ConfigTests(unittest.TestCase):
             "application.require_source=true requires application.repository",
         ):
             frontier_deploy.validate_config(candidate)
-        candidate["application"]["repository"] = "https://git.example.invalid/frontier.git"
+        candidate["application"]["repository"] = (
+            "https://git.example.invalid/frontier.git"
+        )
         jsonschema.validate(candidate["application"], application_schema)
         config = frontier_deploy.validate_config(candidate)
         self.assertEqual(
-            config["application"]["repository"], "https://git.example.invalid/frontier.git"
+            config["application"]["repository"],
+            "https://git.example.invalid/frontier.git",
         )
 
     def test_mutable_platform_image_or_application_commit_is_rejected(self) -> None:
@@ -434,39 +453,81 @@ class RenderTests(unittest.TestCase):
         self.assertNotIn('kind":"Secret', text)
 
     def test_registry_admits_only_owned_same_namespace_task_seed_pods(self) -> None:
-        value = json.loads(frontier_deploy.render_bootstrap_manifest(self.config, self.outputs))
-        policy = next(item for item in value["items"]
-                      if item["metadata"]["name"] == "frontier-registry-boundary")
-        seed_rules = [rule for rule in policy["spec"]["ingress"]
-                      if any(peer.get("podSelector", {}).get("matchLabels", {}).get(
-                          "app.kubernetes.io/name") == "frontier-task-seed"
-                             for peer in rule["from"])]
+        value = json.loads(
+            frontier_deploy.render_bootstrap_manifest(self.config, self.outputs)
+        )
+        policy = next(
+            item
+            for item in value["items"]
+            if item["metadata"]["name"] == "frontier-registry-boundary"
+        )
+        seed_rules = [
+            rule
+            for rule in policy["spec"]["ingress"]
+            if any(
+                peer.get("podSelector", {})
+                .get("matchLabels", {})
+                .get("app.kubernetes.io/name")
+                == "frontier-task-seed"
+                for peer in rule["from"]
+            )
+        ]
         self.assertEqual(len(seed_rules), 1)
         self.assertEqual(policy["metadata"]["namespace"], "frontier-system")
-        self.assertEqual(seed_rules[0], {
-            "from": [{"podSelector": {"matchLabels": {
-                "app.kubernetes.io/name": "frontier-task-seed",
-                "app.kubernetes.io/part-of": "frontiercs2",
-                "frontier.dev/owner": "frontier-deploy",
-                "frontier.dev/site": self.config["site"]["name"],
-            }}}],
-            "ports": [{"protocol": "TCP", "port": 5000}],
-        })
-        self.assertEqual(policy["spec"]["egress"], [])
-        egress = next(item for item in value["items"]
-                      if item["metadata"]["name"] == "frontier-task-seed-registry-egress")
-        self.assertEqual(egress["metadata"]["namespace"], "frontier-system")
-        self.assertEqual(egress["spec"], {
-            "podSelector": seed_rules[0]["from"][0]["podSelector"],
-            "policyTypes": ["Egress"],
-            "egress": [{
-                "to": [
-                    {"podSelector": {"matchLabels": {"frontier.dev/network-role": "registry"}}},
-                    {"ipBlock": {"cidr": self.config["network"]["registry_cluster_ip"] + "/32"}},
+        self.assertEqual(
+            seed_rules[0],
+            {
+                "from": [
+                    {
+                        "podSelector": {
+                            "matchLabels": {
+                                "app.kubernetes.io/name": "frontier-task-seed",
+                                "app.kubernetes.io/part-of": "frontiercs2",
+                                "frontier.dev/owner": "frontier-deploy",
+                                "frontier.dev/site": self.config["site"]["name"],
+                            }
+                        }
+                    }
                 ],
                 "ports": [{"protocol": "TCP", "port": 5000}],
-            }],
-        })
+            },
+        )
+        self.assertEqual(policy["spec"]["egress"], [])
+        egress = next(
+            item
+            for item in value["items"]
+            if item["metadata"]["name"] == "frontier-task-seed-registry-egress"
+        )
+        self.assertEqual(egress["metadata"]["namespace"], "frontier-system")
+        self.assertEqual(
+            egress["spec"],
+            {
+                "podSelector": seed_rules[0]["from"][0]["podSelector"],
+                "policyTypes": ["Egress"],
+                "egress": [
+                    {
+                        "to": [
+                            {
+                                "podSelector": {
+                                    "matchLabels": {
+                                        "frontier.dev/network-role": "registry"
+                                    }
+                                }
+                            },
+                            {
+                                "ipBlock": {
+                                    "cidr": self.config["network"][
+                                        "registry_cluster_ip"
+                                    ]
+                                    + "/32"
+                                }
+                            },
+                        ],
+                        "ports": [{"protocol": "TCP", "port": 5000}],
+                    }
+                ],
+            },
+        )
 
     def test_runtime_contains_management_controller_seed_and_run_enabled_config(
         self,
@@ -516,16 +577,29 @@ class RenderTests(unittest.TestCase):
             if item["kind"] == "Deployment"
             and item["metadata"]["name"] == "frontier-management"
         )["spec"]["template"]["spec"]
-        management = next(c for c in deployment_spec['containers'] if c['name'] == 'management')
-        self.assertEqual(management['resources'], {
-            'requests': {'cpu': '100m', 'memory': '4Gi', 'ephemeral-storage': '34Gi'},
-            'limits': {'cpu': '1', 'memory': '4Gi', 'ephemeral-storage': '34Gi'},
-        })
-        tmp = next(volume for volume in deployment_spec['volumes'] if volume['name'] == 'tmp')
-        self.assertEqual(tmp['emptyDir'], {'sizeLimit': '34Gi'})
-        self.assertEqual(self.config['compute']['system']['instance_types'], ['m6i.xlarge'])
-        self.assertEqual(self.config['compute']['system']['min_size'], 1)
-        self.assertEqual(self.config['compute']['system']['desired_size'], 1)
+        management = next(
+            c for c in deployment_spec["containers"] if c["name"] == "management"
+        )
+        self.assertEqual(
+            management["resources"],
+            {
+                "requests": {
+                    "cpu": "100m",
+                    "memory": "4Gi",
+                    "ephemeral-storage": "34Gi",
+                },
+                "limits": {"cpu": "1", "memory": "4Gi", "ephemeral-storage": "34Gi"},
+            },
+        )
+        tmp = next(
+            volume for volume in deployment_spec["volumes"] if volume["name"] == "tmp"
+        )
+        self.assertEqual(tmp["emptyDir"], {"sizeLimit": "34Gi"})
+        self.assertEqual(
+            self.config["compute"]["system"]["instance_types"], ["m6i.xlarge"]
+        )
+        self.assertEqual(self.config["compute"]["system"]["min_size"], 1)
+        self.assertEqual(self.config["compute"]["system"]["desired_size"], 1)
         objects_volume = next(
             volume
             for volume in deployment_spec["volumes"]
@@ -857,7 +931,9 @@ class RenderTests(unittest.TestCase):
             },
         )
         self.assertEqual(proxy_config["router_settings"]["fallbacks"], [])
-        self.assertEqual(proxy_config["router_settings"]["context_window_fallbacks"], [])
+        self.assertEqual(
+            proxy_config["router_settings"]["context_window_fallbacks"], []
+        )
         deployment = next(
             item for item in value["items"] if item["kind"] == "Deployment"
         )
@@ -1061,7 +1137,7 @@ class ModalConfigTests(unittest.TestCase):
 
 class SourceTests(unittest.TestCase):
     def test_installer_retains_exact_application_source_and_task_handoff(self) -> None:
-        source = (ROOT / "scripts/preview/images.py").read_text()
+        source = (ROOT / "scripts/deploy/images.py").read_text()
         self.assertIn('"management-plane/Dockerfile"', source)
         self.assertIn('"driver/Dockerfile"', source)
         self.assertIn("FRONTIERCS2_SOURCE_DIR", source)
@@ -1238,7 +1314,7 @@ class SourceTests(unittest.TestCase):
 
     def test_litellm_verification_forwards_the_litellm_namespace(self) -> None:
         source = ast.unparse(
-            ast.parse((ROOT / "scripts/preview/acceptance.py").read_text())
+            ast.parse((ROOT / "scripts/deploy/acceptance.py").read_text())
         )
         self.assertIn(
             "port_forward(kubeconfig, LITELLM_SERVICE, 4000, namespace=LITELLM_NAMESPACE)",
@@ -1405,10 +1481,13 @@ class StorageControllerTests(unittest.TestCase):
         remove.assert_called_once_with("frontier-run-01arz3ndektsv4rrffq69g5fav")
 
     def test_enabled_controller_never_deletes_agent_external_egress(self) -> None:
-        with mock.patch.object(
-            self.controller, "remove_agent_external_egress_policy"
-        ) as remove, mock.patch.object(
-            self.controller, "api", side_effect=RuntimeError("PV 403")
+        with (
+            mock.patch.object(
+                self.controller, "remove_agent_external_egress_policy"
+            ) as remove,
+            mock.patch.object(
+                self.controller, "api", side_effect=RuntimeError("PV 403")
+            ),
         ):
             with self.assertRaises(RuntimeError):
                 self.controller.reconcile_namespace(

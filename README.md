@@ -262,10 +262,14 @@ Publishing needs push access to your Docker Hub namespace. See
 ## Development
 
 ```bash
-make test       # unit tests (needs Git LFS objects: git lfs pull)
-make validate   # task layouts and site configuration
-./x check       # lint, formatting, tests and validation
+make bootstrap  # pinned contributor tools and the Git LFS inputs the tests read
+make ci         # every check: unit tests, then task layouts and site configuration
+make lint       # Python lint and formatting, ShellCheck
+make fmt        # apply the safe lint fixes and formatting
 ```
+
+`make` is the only entry point. `./python scripts/<name>.py` runs a single script on the
+pinned interpreter.
 
 Further reading: [deployment architecture](docs/deploy.md),
 [site configuration](docs/configuration.md),

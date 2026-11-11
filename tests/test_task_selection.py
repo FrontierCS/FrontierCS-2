@@ -14,9 +14,9 @@ import jsonschema
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
+import task_layers  # noqa: E402
 import task_selection
 from task_selection import attested_agent_gpu_interfaces, requirements, select_tasks
-import task_layers  # noqa: E402
 
 SPARSE = "sparse_video_attention_policy"
 
@@ -218,11 +218,18 @@ class SelectionTests(unittest.TestCase):
             ):
                 attested_agent_gpu_interfaces()
 
-    def test_pure_leaf_publication_needs_no_parent_index(self):
+    def test_parent_index_is_optional(self):
         receipt = deploy.load_json(ROOT / "config/kimi-candidate-image.json")
-        del receipt["manifest_selection"]["index_digest"]
-        with mock.patch.object(task_selection, "load_json", return_value=receipt):
-            self.assertIn("frontier.gpu-helper/v3", attested_agent_gpu_interfaces())
+        with_index = copy.deepcopy(receipt)
+        with_index["manifest_selection"]["index_digest"] = "sha256:" + "1" * 64
+        pure_leaf = copy.deepcopy(receipt)
+        pure_leaf["manifest_selection"].pop("index_digest", None)
+        for name, changed in (("with index", with_index), ("pure leaf", pure_leaf)):
+            with (
+                self.subTest(name),
+                mock.patch.object(task_selection, "load_json", return_value=changed),
+            ):
+                self.assertIn("frontier.gpu-helper/v3", attested_agent_gpu_interfaces())
 
     def test_kimi_core_source_and_registry_readback_cannot_drift(self):
         receipt = deploy.load_json(ROOT / "config/kimi-candidate-image.json")

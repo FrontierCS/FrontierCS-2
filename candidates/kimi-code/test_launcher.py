@@ -49,7 +49,7 @@ class LauncherTests(unittest.TestCase):
         self.assertIn("max_steps_per_turn = 0", config)
         self.assertIn("max_context_size = 262144", config)
 
-    def test_context_budget_is_explicit_and_does_not_add_an_output_cap(self) -> None:
+    def test_context_budget_is_explicit_and_output_cap_matches_native_ceiling(self) -> None:
         with mock.patch.dict(launcher.os.environ, {}, clear=True):
             self.assertEqual(launcher.context_tokens(), 262144)
         with mock.patch.dict(launcher.os.environ,
@@ -59,7 +59,9 @@ class LauncherTests(unittest.TestCase):
                                         "run-token", max_context_tokens=budget)
         self.assertIn("max_context_size = 1048576", config)
         self.assertIn('model = "kimi-k3"', config)
-        self.assertNotIn("max_output_size", config)
+        # Only the former Kimi 0.31.0 client-native ceiling, never a smaller production cap.
+        self.assertEqual(launcher.CHAT_COMPLETIONS_OUTPUT_CEILING, 131072)
+        self.assertEqual(tomllib.loads(config)["models"]["frontier"]["max_output_size"], 131072)
         self.assertNotIn("max_tokens", config)
         for invalid in ("", "0", "-1", "1.5", "1e6", " 1048576", "2147483648"):
             with self.subTest(invalid=invalid), mock.patch.dict(
@@ -197,6 +199,7 @@ class LauncherTests(unittest.TestCase):
             self.assertNotIn("KIMI_LOOP_MAX_STEPS_PER_TURN", child)
             self.assertNotIn("LD_LIBRARY_PATH", child)
             self.assertTrue(child["PATH"].startswith(str(submit.parent)))
+            self.assertEqual(child["KIMI_CODE_NO_AUTO_UPDATE"], "1")
 
     def test_submission_skill_allows_long_gpu_train_and_terminal_final(self) -> None:
         skill = (MODULE_PATH.parent / "submit/SKILL.md").read_text(
@@ -223,9 +226,15 @@ class LauncherTests(unittest.TestCase):
         self.assertTrue(kimi.startswith(shared.rstrip("\n")), "Kimi train policy diverged from Codex/Muse")
 
         dockerfile = (MODULE_PATH.parent / "Dockerfile").read_text(encoding="utf-8")
-        self.assertIn("MAX_TIMEOUT_S$1 = 300", dockerfile)
-        self.assertIn("MAX_TIMEOUT_S$1 = 3600", dockerfile)
-        self.assertIn("grep -Fc", dockerfile)
+        self.assertIn("ARG KIMI_CODE_VERSION=2.3.3", dockerfile)
+        for upstream, widened, sites in (
+            ("isBackground ? MAX_BACKGROUND_TIMEOUT_S : 300;",
+             "isBackground ? MAX_BACKGROUND_TIMEOUT_S : 3600;", 3),
+            ("MAX_TIMEOUT_S: 300,", "MAX_TIMEOUT_S: 3600,", 1),
+            ("${String(300)}", "${String(3600)}", 3),
+        ):
+            self.assertIn(f"test \"$(count '{upstream}')\" -eq {sites}", dockerfile)
+            self.assertIn(f"test \"$(count '{widened}')\" -eq {sites}", dockerfile)
 
     def test_only_private_accepted_final_receipt_recovers_nonzero_exit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -17,7 +17,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from preview import publication
+from deploy import publication
 from test_task_seeding import mirrored_images, resolved_catalog
 
 
@@ -32,7 +32,9 @@ class SeedJobInvocationTests(unittest.TestCase):
         self.task = self.catalog["tasks"][0]
         self.mirrors = mirrored_images(self.catalog)
         self.definitions = publication.load_task_definitions()
-        self.selection = publication.select_tasks(self.config, self.catalog, self.definitions)
+        self.selection = publication.select_tasks(
+            self.config, self.catalog, self.definitions
+        )
         for name, value in (
             ("load_task_selection", (self.catalog, self.selection)),
             ("mirror_task_images", self.mirrors),
@@ -43,11 +45,16 @@ class SeedJobInvocationTests(unittest.TestCase):
             self.enterContext(mock.patch.object(publication, name, return_value=value))
         forward = self.enterContext(mock.patch.object(publication, "port_forward"))
         forward.return_value.__enter__.return_value = 58080
-        self.ensure = self.enterContext(mock.patch.object(
-            publication, "ensure_version", side_effect=lambda base, path, identity, document: {
-                **document, "id": identity
-            }
-        ))
+        self.ensure = self.enterContext(
+            mock.patch.object(
+                publication,
+                "ensure_version",
+                side_effect=lambda base, path, identity, document: {
+                    **document,
+                    "id": identity,
+                },
+            )
+        )
         self.apply = self.enterContext(mock.patch.object(publication, "kubectl_apply"))
         self.sizes = {value[7:]: 123 for value in self.task["datasets"].values()}
 
@@ -70,7 +77,8 @@ class SeedJobInvocationTests(unittest.TestCase):
                 self.assertLessEqual(len(local.job), 63)
                 self.assertRegex(local.job, r"^[a-z0-9-]+$")
                 content_name = publication.task_dataset_seed_job_name(
-                    self.task, self.mirrors[self.task["name"]]["dataset_image"]["digest"]
+                    self.task,
+                    self.mirrors[self.task["name"]]["dataset_image"]["digest"],
                 )
                 self.assertIn(content_name.rsplit("-", 1)[1], local.job)
                 script = job["spec"]["template"]["spec"]["containers"][0]["command"][2]
@@ -79,9 +87,14 @@ class SeedJobInvocationTests(unittest.TestCase):
                 return ""
             self.assertIn(operation, {"wait", "logs"})
             self.assertIn("job/" + local.job, args)
-            return json.dumps({"dataset_sizes": self.sizes}) if operation == "logs" else ""
+            return (
+                json.dumps({"dataset_sizes": self.sizes}) if operation == "logs" else ""
+            )
 
-        with mock.patch.object(publication, "run_command", side_effect=command), ThreadPoolExecutor(2) as pool:
+        with (
+            mock.patch.object(publication, "run_command", side_effect=command),
+            ThreadPoolExecutor(2) as pool,
+        ):
             futures = [pool.submit(self.seed) for _ in range(2)]
             results = [future.result(timeout=20) for future in futures]
         self.assertEqual(results[0], results[1])
@@ -103,17 +116,29 @@ class SeedJobInvocationTests(unittest.TestCase):
                 existing[name] = body
                 return ""
             self.assertIn(args[3], {"wait", "logs"})
-            return json.dumps({"dataset_sizes": self.sizes}) if args[3] == "logs" else ""
+            return (
+                json.dumps({"dataset_sizes": self.sizes}) if args[3] == "logs" else ""
+            )
 
-        with mock.patch.object(publication.secrets, "token_hex", return_value="a" * 16), mock.patch.object(publication, "run_command", side_effect=command):
+        with (
+            mock.patch.object(publication.secrets, "token_hex", return_value="a" * 16),
+            mock.patch.object(publication, "run_command", side_effect=command),
+        ):
             self.seed()
             snapshot = copy.deepcopy(existing)
             self.ensure.reset_mock()
             with self.assertRaisesRegex(publication.DeployError, "AlreadyExists"):
                 self.seed()
         self.assertEqual(existing, snapshot)
-        self.assertEqual([args[3] for args in commands], ["create", "wait", "logs", "create"])
-        self.assertTrue(all(call.args[1] == "/api/v1/candidate-versions" for call in self.ensure.call_args_list))
+        self.assertEqual(
+            [args[3] for args in commands], ["create", "wait", "logs", "create"]
+        )
+        self.assertTrue(
+            all(
+                call.args[1] == "/api/v1/candidate-versions"
+                for call in self.ensure.call_args_list
+            )
+        )
         self.apply.assert_not_called()
 
     def test_fresh_jobs_recheck_pvc_hashes_and_sizes_with_same_pod_pid(self):
@@ -136,13 +161,17 @@ class SeedJobInvocationTests(unittest.TestCase):
             manifest = publication.render_task_dataset_seed_manifest(
                 self.config, task, self.mirrors[task["name"]], "runner", job_name=name
             )
-            script = json.loads(manifest)["items"][0]["spec"]["template"]["spec"]["containers"][0]["command"][2]
+            script = json.loads(manifest)["items"][0]["spec"]["template"]["spec"][
+                "containers"
+            ][0]["command"][2]
             scripts.append(script.replace("/data/", str(self.root) + "/"))
         barrier = threading.Barrier(2)
 
         def urlopen(request, **kwargs):
             if not isinstance(request, str):
-                return io.BytesIO(json.dumps({"layers": [{"digest": "sha256:fixture"}]}).encode())
+                return io.BytesIO(
+                    json.dumps({"layers": [{"digest": "sha256:fixture"}]}).encode()
+                )
             if barrier is not None:
                 barrier.wait(timeout=10)
             return io.BytesIO(archive_bytes.getvalue())
@@ -158,16 +187,24 @@ class SeedJobInvocationTests(unittest.TestCase):
                     namespace["archive"].close()
             return json.loads(output[0])
 
-        with mock.patch("urllib.request.urlopen", side_effect=urlopen), mock.patch("os.getpid", return_value=1):
+        with (
+            mock.patch("urllib.request.urlopen", side_effect=urlopen),
+            mock.patch("os.getpid", return_value=1),
+        ):
             with ThreadPoolExecutor(2) as pool:
                 futures = [pool.submit(execute, script) for script in scripts[:2]]
                 results = [future.result(timeout=20) for future in futures]
-            expected = {task["datasets"][mode + "_sha256"][7:]: len(body) for mode, body in bodies.items()}
+            expected = {
+                task["datasets"][mode + "_sha256"][7:]: len(body)
+                for mode, body in bodies.items()
+            }
             self.assertEqual(results, [{"dataset_sizes": expected}] * 2)
             self.assertFalse(list(self.root.glob(".seed-scratch-*")))
             barrier = None
             self.assertEqual(execute(scripts[2]), {"dataset_sizes": expected})
-            target = self.root / publication.task_dataset_relative_path(task["name"], "train", task["datasets"]["train_sha256"])
+            target = self.root / publication.task_dataset_relative_path(
+                task["name"], "train", task["datasets"]["train_sha256"]
+            )
             target.chmod(0o644)
             target.write_bytes(b"X" * len(bodies["train"]))
             with self.assertRaisesRegex(AssertionError, "existing file differs"):

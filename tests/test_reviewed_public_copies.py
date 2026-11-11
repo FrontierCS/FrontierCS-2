@@ -27,36 +27,63 @@ class ReviewedPublicCopyTests(unittest.TestCase):
         private = self.root / "runtime-context/actor-weights/private.pt"
         private.parent.mkdir()
         private.write_bytes(b"private fixture")
-        (self.root / "policy.json").write_text('{"problem_id":"semantic_robot_world_model"}')
+        (self.root / "policy.json").write_text(
+            '{"problem_id":"semantic_robot_world_model"}'
+        )
         self.recipe = self.root / "agent-gpu/Dockerfile"
         self.recipe.parent.mkdir()
-        self.recipe.write_text("FROM scratch\nCOPY runtime-context/runtime/ /runtime/\n")
+        self.recipe.write_text(
+            "FROM scratch\nCOPY runtime-context/runtime/ /runtime/\n"
+        )
         files = [
-            {"path": p.relative_to(self.root).as_posix(), "bytes": p.stat().st_size,
-             "sha256": layout.digest(p)}
-            for p in sorted(self.root.rglob("*")) if p.is_file()
+            {
+                "path": p.relative_to(self.root).as_posix(),
+                "bytes": p.stat().st_size,
+                "sha256": layout.digest(p),
+            }
+            for p in sorted(self.root.rglob("*"))
+            if p.is_file()
         ]
-        (self.root / "upstream.lock.json").write_text(json.dumps({
-            "problem_id": self.root.name, "file_count": len(files), "files": files,
-        }))
+        (self.root / "upstream.lock.json").write_text(
+            json.dumps(
+                {
+                    "problem_id": self.root.name,
+                    "file_count": len(files),
+                    "files": files,
+                }
+            )
+        )
         self.review = {
             "schema": "preview.reviewed-public-copies/v1",
-            "problem_id": self.root.name, "role": "agent-gpu",
-            "bindings": {name: layout.digest(self.root / name) for name in (
-                "upstream.lock.json", "policy.json", "agent-gpu/Dockerfile",
-            )},
+            "problem_id": self.root.name,
+            "role": "agent-gpu",
+            "bindings": {
+                name: layout.digest(self.root / name)
+                for name in (
+                    "upstream.lock.json",
+                    "policy.json",
+                    "agent-gpu/Dockerfile",
+                )
+            },
             "copies": {"runtime-context/runtime": "directory"},
             "directories": ["runtime-context/runtime"],
-            "files": {"runtime-context/runtime/tool.py": {
-                "bytes": (self.public / "tool.py").stat().st_size,
-                "sha256": layout.digest(self.public / "tool.py"), "executable": False,
-            }},
+            "files": {
+                "runtime-context/runtime/tool.py": {
+                    "bytes": (self.public / "tool.py").stat().st_size,
+                    "sha256": layout.digest(self.public / "tool.py"),
+                    "executable": False,
+                }
+            },
         }
         self.review_path = Path(self.temp.name) / "review.json"
         self.write_review()
-        self.mapping = patch.dict(layout.PUBLIC_COPY_REVIEWS, {
-            (self.root.name, "agent-gpu"): self.review_path,
-        }, clear=True)
+        self.mapping = patch.dict(
+            layout.PUBLIC_COPY_REVIEWS,
+            {
+                (self.root.name, "agent-gpu"): self.review_path,
+            },
+            clear=True,
+        )
         self.mapping.start()
         self.addCleanup(self.mapping.stop)
 
@@ -101,7 +128,9 @@ class ReviewedPublicCopyTests(unittest.TestCase):
         for changed in (b"X" * len(original), original + b"extra"):
             with self.subTest(body=changed):
                 path.write_bytes(changed)
-                with self.assertRaisesRegex(layout.LayoutFailure, "bytes or executable"):
+                with self.assertRaisesRegex(
+                    layout.LayoutFailure, "bytes or executable"
+                ):
                     self.check()
         path.write_bytes(original)
         path.chmod(0o755)
@@ -112,8 +141,9 @@ class ReviewedPublicCopyTests(unittest.TestCase):
         for name, directory in (("private.pt", False), ("unreviewed", True)):
             path = self.public / name
             path.mkdir() if directory else path.write_bytes(b"unexpected")
-            with self.subTest(member=name), self.assertRaisesRegex(
-                layout.LayoutFailure, "inventory mismatch"
+            with (
+                self.subTest(member=name),
+                self.assertRaisesRegex(layout.LayoutFailure, "inventory mismatch"),
             ):
                 self.check()
             path.rmdir() if directory else path.unlink()
@@ -140,8 +170,12 @@ class ReviewedPublicCopyTests(unittest.TestCase):
 
     def test_review_schema_task_role_and_required_bindings_are_checked(self):
         original = copy.deepcopy(self.review)
-        for key, value in (("schema", "other"), ("problem_id", "other"),
-                           ("role", "verifier-gpu"), ("bindings", {})):
+        for key, value in (
+            ("schema", "other"),
+            ("problem_id", "other"),
+            ("role", "verifier-gpu"),
+            ("bindings", {}),
+        ):
             self.review = copy.deepcopy(original)
             self.review[key] = value
             self.write_review()
@@ -155,11 +189,19 @@ class ReviewedPublicCopyTests(unittest.TestCase):
             layout.check_inventory(self.root)
 
     def test_directory_slash_accepts_only_directory_and_rejects_unsafe_paths(self):
-        self.assertEqual(layout.copy_source(self.root, "runtime-context/runtime/"),
-                         "runtime-context/runtime")
-        for source in ("runtime-context/runtime/tool.py/", "runtime-context/runtime//",
-                       "runtime-context/../runtime-context/runtime", "./runtime-context/runtime",
-                       "/runtime-context/runtime", "runtime-context//runtime", "/"):
+        self.assertEqual(
+            layout.copy_source(self.root, "runtime-context/runtime/"),
+            "runtime-context/runtime",
+        )
+        for source in (
+            "runtime-context/runtime/tool.py/",
+            "runtime-context/runtime//",
+            "runtime-context/../runtime-context/runtime",
+            "./runtime-context/runtime",
+            "/runtime-context/runtime",
+            "runtime-context//runtime",
+            "/",
+        ):
             with self.subTest(source=source), self.assertRaises(layout.LayoutFailure):
                 layout.copy_source(self.root, source)
         link = self.root / "alias"
@@ -180,28 +222,45 @@ class ReviewedPublicCopyTests(unittest.TestCase):
         layout.check_dockerfile(self.root, "verifier")
 
     def test_shipped_review_binds_original_freeze_without_private_copy_roots(self):
-        review = json.loads((ROOT / "tests/fixtures/reviewed/semantic-public-runtime-reviewed-v1.json").read_text())
-        self.assertEqual(review["bindings"]["upstream.lock.json"],
-                         "sha256:de8f662e557b753545ed284527977227c8f83e0271894a188d8eb0256ab6255f")
+        review = json.loads(
+            (
+                ROOT
+                / "tests/fixtures/reviewed/semantic-public-runtime-reviewed-v1.json"
+            ).read_text()
+        )
+        self.assertEqual(
+            review["bindings"]["upstream.lock.json"],
+            "sha256:de8f662e557b753545ed284527977227c8f83e0271894a188d8eb0256ab6255f",
+        )
         self.assertEqual(len(review["files"]), 128)
         for name in [*review["copies"], *review["files"]]:
             self.assertTrue(name.startswith("runtime-context/"))
             self.assertNotIn(name.split("/")[1], {"actor-weights", "qualification"})
-        self.assertEqual(set(review["copies"]), {
-            "runtime-context/" + name for name in (
-                "wheelhouse", "runtime", "runtime/requirements.cuda.lock.txt",
-                "os-packages/bubblewrap_0.6.1-1ubuntu0.1_amd64.deb", "os-packages/bwrap-netlink-readback",
-                "model-assets/semantic-wm/README.md", "model-assets/semantic-wm/webssl/DiT-S_D96.pt",
-                "model-assets/semantic-wm/webssl/adapter_webssl_96.pt",
-                "model-assets/webssl-dino300m-full2b-224/README.md",
-                "model-assets/webssl-dino300m-full2b-224/config.json",
-                "model-assets/webssl-dino300m-full2b-224/model.safetensors",
-                "model-assets/webssl-dino300m-full2b-224/preprocessor_config.json",
-                "debug/episode_0/bridge/test/000000000.mp4", "debug/episode_0/bridge/test/000000000.npz",
-                "debug/episode_1/bridge/test/000000000.mp4", "debug/episode_1/bridge/test/000000000.npz",
-                "metric-assets/alexnet-owt-7be5be79.pth",
-            )
-        })
+        self.assertEqual(
+            set(review["copies"]),
+            {
+                "runtime-context/" + name
+                for name in (
+                    "wheelhouse",
+                    "runtime",
+                    "runtime/requirements.cuda.lock.txt",
+                    "os-packages/bubblewrap_0.6.1-1ubuntu0.1_amd64.deb",
+                    "os-packages/bwrap-netlink-readback",
+                    "model-assets/semantic-wm/README.md",
+                    "model-assets/semantic-wm/webssl/DiT-S_D96.pt",
+                    "model-assets/semantic-wm/webssl/adapter_webssl_96.pt",
+                    "model-assets/webssl-dino300m-full2b-224/README.md",
+                    "model-assets/webssl-dino300m-full2b-224/config.json",
+                    "model-assets/webssl-dino300m-full2b-224/model.safetensors",
+                    "model-assets/webssl-dino300m-full2b-224/preprocessor_config.json",
+                    "debug/episode_0/bridge/test/000000000.mp4",
+                    "debug/episode_0/bridge/test/000000000.npz",
+                    "debug/episode_1/bridge/test/000000000.mp4",
+                    "debug/episode_1/bridge/test/000000000.npz",
+                    "metric-assets/alexnet-owt-7be5be79.pth",
+                )
+            },
+        )
 
 
 if __name__ == "__main__":

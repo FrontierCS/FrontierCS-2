@@ -50,8 +50,12 @@ def _object(path: Path) -> dict[str, Any]:
 
 
 def shared_layer(root: Path = ROOT) -> Layer:
-    return Layer(root, root / SHARED_PROBLEMS, root / "config/task-catalog.json",
-                 root / "config/task-definitions.json")
+    return Layer(
+        root,
+        root / SHARED_PROBLEMS,
+        root / "config/task-catalog.json",
+        root / "config/task-definitions.json",
+    )
 
 
 def layers(root: Path = ROOT) -> list[Layer]:
@@ -63,8 +67,14 @@ def layers(root: Path = ROOT) -> list[Layer]:
         if set(body) != LAYER_KEYS:
             raise ValueError(f"{declaration} must declare exactly {sorted(LAYER_KEYS)}")
         base = declaration.parent
-        found.append(Layer(base, base / body["problems"], base / body["catalog"],
-                           base / body["definitions"]))
+        found.append(
+            Layer(
+                base,
+                base / body["problems"],
+                base / body["catalog"],
+                base / body["definitions"],
+            )
+        )
     return found
 
 
@@ -80,8 +90,13 @@ def merge_catalogs(documents: list[tuple[Path, dict[str, Any]]]) -> dict[str, An
     catalog = dict(shared)
     names = {task["name"] for task in shared["tasks"]}
     for path, rows in others:
-        if set(rows) != {"schema_version", "tasks"} or rows["schema_version"] != CATALOG_SCHEMA:
-            raise ValueError(f"{path} must hold schema_version {CATALOG_SCHEMA} and tasks")
+        if (
+            set(rows) != {"schema_version", "tasks"}
+            or rows["schema_version"] != CATALOG_SCHEMA
+        ):
+            raise ValueError(
+                f"{path} must hold schema_version {CATALOG_SCHEMA} and tasks"
+            )
         for task in rows["tasks"]:
             if task["name"] in names:
                 raise ValueError(f"{path}: task {task['name']} is in another layer")
@@ -103,17 +118,24 @@ def load_definitions(root: Path = ROOT) -> dict[str, Any]:
     for layer in layers(root):
         for name, definition in _object(layer.definitions).items():
             if name in merged:
-                raise ValueError(f"{layer.definitions}: task {name} is in another layer")
+                raise ValueError(
+                    f"{layer.definitions}: task {name} is in another layer"
+                )
             merged[name] = definition
     return merged
 
 
 def layer_of(name: str, root: Path = ROOT) -> Layer:
     """The layer whose catalog lists task `name`."""
-    owners = [layer for layer in layers(root)
-              if any(task["name"] == name for task in _object(layer.catalog)["tasks"])]
+    owners = [
+        layer
+        for layer in layers(root)
+        if any(task["name"] == name for task in _object(layer.catalog)["tasks"])
+    ]
     if len(owners) != 1:
-        raise ValueError(f"task {name} must be in exactly one layer's catalog, not {len(owners)}")
+        raise ValueError(
+            f"task {name} must be in exactly one layer's catalog, not {len(owners)}"
+        )
     return owners[0]
 
 
@@ -123,7 +145,9 @@ def json_text(value: object) -> str:
 
 
 def layer_files(
-    catalog: dict[str, Any], definitions: dict[str, Any], new_layer: Path | None = None,
+    catalog: dict[str, Any],
+    definitions: dict[str, Any],
+    new_layer: Path | None = None,
     root: Path = ROOT,
 ) -> dict[Path, str]:
     """The text of every layer's catalog and definitions file (and declaration), keyed by path
@@ -131,22 +155,34 @@ def layer_files(
     in the layer that lists it, and a task no layer lists goes to the layer whose directory is
     `new_layer` (the shared tree when None)."""
     found = layers(root)
-    owners = {task["name"]: layer for layer in found
-              for task in _object(layer.catalog)["tasks"]}
+    owners = {
+        task["name"]: layer
+        for layer in found
+        for task in _object(layer.catalog)["tasks"]
+    }
     targets = [layer for layer in found if layer.root == (new_layer or root).resolve()]
     if len(targets) != 1:
         raise ValueError(f"{new_layer} is not a task layer of {root}")
     files = {}
     for index, layer in enumerate(found):
-        mine = {name for name in [task["name"] for task in catalog["tasks"]] + list(definitions)
-                if owners.get(name, targets[0]) == layer}
+        mine = {
+            name
+            for name in [task["name"] for task in catalog["tasks"]] + list(definitions)
+            if owners.get(name, targets[0]) == layer
+        }
         rows = [task for task in catalog["tasks"] if task["name"] in mine]
-        document = ({**catalog, "tasks": rows} if index == 0
-                    else {"schema_version": catalog["schema_version"], "tasks": rows})
+        document = (
+            {**catalog, "tasks": rows}
+            if index == 0
+            else {"schema_version": catalog["schema_version"], "tasks": rows}
+        )
         files[layer.catalog.relative_to(root)] = json_text(document)
         files[layer.definitions.relative_to(root)] = json_text(
-            {name: definitions[name] for name in sorted(definitions) if name in mine})
+            {name: definitions[name] for name in sorted(definitions) if name in mine}
+        )
         if index:
             declaration = layer.root / DECLARATION
-            files[declaration.relative_to(root)] = declaration.read_text(encoding="utf-8")
+            files[declaration.relative_to(root)] = declaration.read_text(
+                encoding="utf-8"
+            )
     return files

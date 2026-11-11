@@ -27,9 +27,21 @@ TEMPLATE = REPO / "tasks/template/Theory/template_task"
 
 
 def git(root: Path, *arguments: str) -> str:
-    return subprocess.run(["git", "-C", str(root), "-c", "user.email=t@example.com",
-                           "-c", "user.name=t", *arguments],
-                          check=True, capture_output=True, text=True).stdout.strip()
+    return subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=t",
+            *arguments,
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 def files_under(root: Path) -> set[str]:
@@ -41,7 +53,9 @@ class TaskSource(unittest.TestCase):
         self.repo = Path(tempfile.mkdtemp(prefix="source-tree-"))
         self.addCleanup(shutil.rmtree, self.repo, True)
         self.task = self.repo / "problems/Theory/template_task"
-        shutil.copytree(TEMPLATE, self.task, ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(
+            TEMPLATE, self.task, ignore=shutil.ignore_patterns("__pycache__")
+        )
         (self.repo / ".gitignore").write_text("__pycache__/\n*.pyc\n")
         git(self.repo, "init", "-q")
         git(self.repo, "add", "-A")
@@ -60,14 +74,19 @@ class TaskSource(unittest.TestCase):
         self.assertEqual(renderer.source_sha256(exported), identity)
 
     def test_ignored_or_untracked_files_fail_the_identity(self):
-        for relative in ("judge/__pycache__/evaluator.cpython-312.pyc", "judge/scratch.txt"):
+        for relative in (
+            "judge/__pycache__/evaluator.cpython-312.pyc",
+            "judge/scratch.txt",
+        ):
             with self.subTest(path=relative):
                 stray = self.task / relative
                 stray.parent.mkdir(parents=True, exist_ok=True)
                 stray.write_bytes(b"junk")
                 with self.assertRaisesRegex(source_tree.UntrackedFiles, "judge/"):
                     renderer.source_sha256(self.task)
-                shutil.rmtree(stray.parent) if "__pycache__" in relative else stray.unlink()
+                shutil.rmtree(
+                    stray.parent
+                ) if "__pycache__" in relative else stray.unlink()
         renderer.source_sha256(self.task)
 
     def test_an_empty_untracked_directory_changes_nothing(self):
@@ -81,7 +100,9 @@ class TaskSource(unittest.TestCase):
             directory.chmod(directory.stat().st_mode | 0o2000)
         exported = self.repo.parent / f"{self.repo.name}-sg" / "Theory/template_task"
         self.addCleanup(shutil.rmtree, exported.parents[1], True)
-        shutil.copytree(self.task, exported)  # copies the setgid bits; outside git: hashed as is
+        shutil.copytree(
+            self.task, exported
+        )  # copies the setgid bits; outside git: hashed as is
         self.assertTrue(exported.stat().st_mode & 0o2000)
         self.assertEqual(renderer.source_sha256(exported), identity)
 
@@ -92,12 +113,15 @@ class TaskSource(unittest.TestCase):
         self.addCleanup(shutil.rmtree, scratch, True)
         (self.task / "judge/empty").mkdir()
         context = build_task_images.build_context(
-            self.task, task_manifest.layout(self.task), scratch)
+            self.task, task_manifest.layout(self.task), scratch
+        )
         self.assertEqual(files_under(context), tracked | generated)
         (self.task / "judge/__pycache__").mkdir()
         (self.task / "judge/__pycache__/x.pyc").write_bytes(b"junk")
         with self.assertRaises(source_tree.UntrackedFiles):
-            build_task_images.build_context(self.task, task_manifest.layout(self.task), scratch)
+            build_task_images.build_context(
+                self.task, task_manifest.layout(self.task), scratch
+            )
 
 
 class BaseContext(unittest.TestCase):
@@ -105,8 +129,11 @@ class BaseContext(unittest.TestCase):
         self.root = Path(tempfile.mkdtemp(prefix="base-context-"))
         self.addCleanup(shutil.rmtree, self.root, True)
         self.shared = self.root / "tasks/shared"
-        shutil.copytree(build_base_images.SHARED, self.shared,
-                        ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(
+            build_base_images.SHARED,
+            self.shared,
+            ignore=shutil.ignore_patterns("__pycache__"),
+        )
         (self.root / ".gitignore").write_text("__pycache__/\n")
         git(self.root, "init", "-q")
         git(self.root, "add", "-A")
@@ -117,12 +144,19 @@ class BaseContext(unittest.TestCase):
 
     def test_context_is_the_roles_tracked_sources_and_refuses_ignored_files(self):
         context = build_base_images.source_context("verifier", self.root / "scratch")
-        expected = {f for f in git(self.shared, "ls-files").splitlines()
-                    if any(f == s or f.startswith(s + "/")
-                           for s in build_base_images.SOURCES["verifier"])}
+        expected = {
+            f
+            for f in git(self.shared, "ls-files").splitlines()
+            if any(
+                f == s or f.startswith(s + "/")
+                for s in build_base_images.SOURCES["verifier"]
+            )
+        }
         self.assertEqual(files_under(context), expected)
         (self.shared / "verifier/__pycache__").mkdir()
-        (self.shared / "verifier/__pycache__/fcs2_verifier.cpython-312.pyc").write_bytes(b"x")
+        (
+            self.shared / "verifier/__pycache__/fcs2_verifier.cpython-312.pyc"
+        ).write_bytes(b"x")
         with self.assertRaises(source_tree.UntrackedFiles):
             build_base_images.source_context("verifier", self.root / "scratch2")
 

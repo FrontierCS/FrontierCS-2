@@ -6,6 +6,7 @@ distinguishable processes, and a submission switched implementations on
 candidate-owned file (task.toml ``forbidden_content``, applied by the shared edit
 scope) and runs candidate calls under the training process's argv.
 """
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import difflib
@@ -39,8 +40,12 @@ PROBES = (
 
 def _diff(path: str, before: str, after: str) -> bytes:
     new = not before
-    lines = difflib.unified_diff(before.splitlines(True), after.splitlines(True),
-                                 "/dev/null" if new else f"a/{path}", f"b/{path}")
+    lines = difflib.unified_diff(
+        before.splitlines(True),
+        after.splitlines(True),
+        "/dev/null" if new else f"a/{path}",
+        f"b/{path}",
+    )
     head = f"diff --git a/{path} b/{path}\n" + ("new file mode 100644\n" if new else "")
     return (head + "".join(lines)).encode()
 
@@ -60,29 +65,47 @@ class DynamicTanhIntrospectionTests(unittest.TestCase):
     def test_argv_switch_and_other_probes_are_rejected(self):
         for text in PROBES:
             with self.subTest(text=text.splitlines()[-1]):
-                in_module = self.check(_diff("dynamic_tanh.py", self.base, self.base + "\n" + text))
-                self.assertEqual((in_module.ok, in_module.category), (False, "content_policy"))
+                in_module = self.check(
+                    _diff("dynamic_tanh.py", self.base, self.base + "\n" + text)
+                )
+                self.assertEqual(
+                    (in_module.ok, in_module.category), (False, "content_policy")
+                )
                 helper = self.check(_diff("solver_extensions/fast.py", "", text))
-                self.assertEqual((helper.ok, helper.category), (False, "content_policy"))
+                self.assertEqual(
+                    (helper.ok, helper.category), (False, "content_policy")
+                )
 
     def test_the_pattern_is_judge_only(self):
         task = task_manifest.read_task(DYT)
-        self.assertNotIn("forbidden_content", task_manifest.edit_scope_rules(task, agent=True))
+        self.assertNotIn(
+            "forbidden_content", task_manifest.edit_scope_rules(task, agent=True)
+        )
 
     def test_reference_and_shipped_sources_pass(self):
         with tempfile.TemporaryDirectory() as tmp:
             tree = Path(tmp) / "repo"
             shutil.copytree(DYT / "repo", tree)
-            subprocess.run(["git", "apply", "--whitespace=nowarn", str(DYT / "judge/reference.patch")],
-                           cwd=tree, check=True, capture_output=True,
-                           env={**os.environ, "GIT_CEILING_DIRECTORIES": str(tree.parent)})
+            subprocess.run(
+                [
+                    "git",
+                    "apply",
+                    "--whitespace=nowarn",
+                    str(DYT / "judge/reference.patch"),
+                ],
+                cwd=tree,
+                check=True,
+                capture_output=True,
+                env={**os.environ, "GIT_CEILING_DIRECTORIES": str(tree.parent)},
+            )
             reference = (tree / "dynamic_tanh.py").read_text()
         result = self.check(_diff("dynamic_tanh.py", self.base, reference))
         self.assertTrue(result.ok, result.message)
 
     def test_candidate_calls_see_the_training_argv(self):
         spec = importlib.util.spec_from_file_location(
-            "dyt_guard_evaluator", task_manifest.judge_bundle(DYT) / "evaluator.py")
+            "dyt_guard_evaluator", task_manifest.judge_bundle(DYT) / "evaluator.py"
+        )
         evaluator = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(evaluator)
         saved = list(sys.argv)

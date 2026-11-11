@@ -1,4 +1,4 @@
-"""Hardware admission for the sealed naive timing constants (issue #639).
+"""Hardware admission for the sealed naive timing constants.
 
 Ln and Tn are wall-clock measurements, so an admitted host must have the sealed
 architecture and exact CPU model strings. The kernel patch release and the CPU

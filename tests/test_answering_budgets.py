@@ -10,16 +10,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-import task_layers  # noqa: E402
 import render_task_definition as renderer
+import task_layers  # noqa: E402
 import task_manifest
 
 
 def declares_answering_and_independent_final(root, final_seconds):
     """Accept the same contract in the entry or its explicitly linked guide. A task.toml
     task's entry is the generated Agent README (its own opening + the shared platform text)."""
-    entry = (task_manifest.agent_readme(root) if task_manifest.is_native(root)
-             else task_manifest.layout(root).statement.read_text())
+    entry = (
+        task_manifest.agent_readme(root)
+        if task_manifest.is_native(root)
+        else task_manifest.layout(root).statement.read_text()
+    )
     if all(
         part in " ".join(entry.replace("18,000 seconds", "18000 seconds").split())
         for part in (
@@ -32,11 +35,14 @@ def declares_answering_and_independent_final(root, final_seconds):
     # The shared platform text every task.toml task's Agent README ends with
     # (tasks/shared/agent/README.platform.md). Only for task.toml tasks: there it is generated
     # from task.toml, so its numbers cannot drift from the configuration.
-    if task_manifest.is_native(root) and all(part in " ".join(entry.split()) for part in (
-        "The overall answering window is **18000 seconds**;",
-        f"Final evaluation has a separate **{final_seconds}-second** allowance; it does not "
-        "consume train calls or the train wall-time budget. It runs after you exit,",
-    )):
+    if task_manifest.is_native(root) and all(
+        part in " ".join(entry.split())
+        for part in (
+            "The overall answering window is **18000 seconds**;",
+            f"Final evaluation has a separate **{final_seconds}-second** allowance; it does not "
+            "consume train calls or the train wall-time budget. It runs after you exit,",
+        )
+    ):
         return True
     # This native contract states that final is measured independently after
     # the Agent exits, with the exact policy timeout. Comma punctuation does
@@ -69,11 +75,14 @@ def declares_answering_and_independent_final(root, final_seconds):
         return True
     # QuarterPIR's qualified native entry explicitly names both clocks and
     # puts final scoring after exit. Preserve the measured Agent image bytes.
-    if all(part in normalized_entry for part in (
-        "The answering window is 18000 seconds, including development evaluations.",
-        f"Final verification has its own independent {final_seconds:,}-second timeout.",
-        "exactly once, and exit. The final score is produced after you exit;",
-    )):
+    if all(
+        part in normalized_entry
+        for part in (
+            "The answering window is 18000 seconds, including development evaluations.",
+            f"Final verification has its own independent {final_seconds:,}-second timeout.",
+            "exactly once, and exit. The final score is produced after you exit;",
+        )
+    ):
         return True
     # Opal states the same independent post-answering limit with Markdown
     # emphasis. Keep the full sentence, both exact budgets and all boundaries.
@@ -123,7 +132,8 @@ def declares_answering_and_independent_final(root, final_seconds):
         in normalized_entry
         and f"Independent final has a separate {final_seconds:,} seconds beginning after Agent and train cleanup."
         in normalized_entry
-        and "Its score is computed independently after Agent cleanup" in normalized_entry
+        and "Its score is computed independently after Agent cleanup"
+        in normalized_entry
     ):
         return True
     # LeJEPA spells out the answering budget and independent post-answering
@@ -137,57 +147,74 @@ def declares_answering_and_independent_final(root, final_seconds):
     ):
         return True
     # Preserve Binary Fuse's frozen numeric clocks and independent final boundary.
-    if all(part in normalized_entry for part in (
-        "You have **100 train calls**, a **12,000-second cumulative train pool**, and "
-        "**18000 seconds total answering time**, including development evaluations.",
-        f"Each verification and the independent final evaluation have a {final_seconds}-second timeout.",
-        "Final has its own clock after answering.",
-    )):
+    if all(
+        part in normalized_entry
+        for part in (
+            "You have **100 train calls**, a **12,000-second cumulative train pool**, and "
+            "**18000 seconds total answering time**, including development evaluations.",
+            f"Each verification and the independent final evaluation have a {final_seconds}-second timeout.",
+            "Final has its own clock after answering.",
+        )
+    ):
         return True
     # CKKS's frozen native entry separates answering, cumulative train and final.
     # Follow its exact public statement link for the explicit post-exit boundary.
     ckks_statement = task_manifest.layout(root).repo / "README.md"
     if (
         root.name == "ckks_composable_noise"
-        and "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
+        and "The task statement is at `/frontier/task/repo/README.md`."
+        in normalized_entry
         and not ckks_statement.is_symlink()
         and not ckks_statement.parent.is_symlink()
         and ckks_statement.is_file()
-        and all(part in normalized_entry for part in (
-            "The task's configured per-evaluation timeout is **600 seconds**, and the overall answering window is **18000 seconds**.",
-            "Agent work and train share that answering window; their limits are not additive.",
-            "Final evaluation has a separate **600-second** allowance; it does not consume train calls or the train wall-time budget.",
-        ))
+        and all(
+            part in normalized_entry
+            for part in (
+                "The task's configured per-evaluation timeout is **600 seconds**, and the overall answering window is **18000 seconds**.",
+                "Agent work and train share that answering window; their limits are not additive.",
+                "Final evaluation has a separate **600-second** allowance; it does not consume train calls or the train wall-time budget.",
+            )
+        )
         and final_seconds == 600
     ):
         linked = " ".join(ckks_statement.read_text().split())
-        if all(part in linked for part in (
-            "The inclusive answering window is 18000 seconds (five hours), including development verification.",
-            "The independent 600-second final evaluation starts after Agent exit and is outside that answering window.",
-        )):
+        if all(
+            part in linked
+            for part in (
+                "The inclusive answering window is 18000 seconds (five hours), including development verification.",
+                "The independent 600-second final evaluation starts after Agent exit and is outside that answering window.",
+            )
+        ):
             return True
     # Edlib declares the exact clocks in its linked immutable statement and
     # the post-exit scoring boundary in the submission entry.
     edlib_statement = task_manifest.layout(root).repo / "README.md"
     if (
         root.name == "edlib_exact_alignment"
-        and "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
+        and "The task statement is at `/frontier/task/repo/README.md`."
+        in normalized_entry
         and not edlib_statement.is_symlink()
         and not edlib_statement.parent.is_symlink()
         and edlib_statement.is_file()
         and final_seconds == 600
-        and all(part in normalized_entry for part in (
-            "The task's configured per-evaluation timeout is **600 seconds**, and the overall answering window is **18000 seconds**.",
-            "Agent work and train share that answering window; their limits are not additive.",
-            "Final evaluation has a separate **600-second** allowance; it does not consume train calls or the train wall-time budget.",
-            "exactly once, and exit. The final score is produced after you exit;",
-        ))
+        and all(
+            part in normalized_entry
+            for part in (
+                "The task's configured per-evaluation timeout is **600 seconds**, and the overall answering window is **18000 seconds**.",
+                "Agent work and train share that answering window; their limits are not additive.",
+                "Final evaluation has a separate **600-second** allowance; it does not consume train calls or the train wall-time budget.",
+                "exactly once, and exit. The final score is produced after you exit;",
+            )
+        )
     ):
         linked = " ".join(edlib_statement.read_text().split())
-        if all(part in linked for part in (
-            "Answering lasts exactly 18,000 seconds (five hours), including train work.",
-            "Final has its own independent 600-second allowance after answering; it does not add to the answering clock.",
-        )):
+        if all(
+            part in linked
+            for part in (
+                "Answering lasts exactly 18,000 seconds (five hours), including train work.",
+                "Final has its own independent 600-second allowance after answering; it does not add to the answering clock.",
+            )
+        ):
             return True
     # Ripser declares the five-hour answering window and the separate post-
     # answering final clock in its linked immutable statement; the generated
@@ -195,23 +222,30 @@ def declares_answering_and_independent_final(root, final_seconds):
     ripser_statement = task_manifest.layout(root).repo / "README.md"
     if (
         root.name == "ripser_persistence"
-        and "The task statement is at `/frontier/task/repo/README.md`." in normalized_entry
+        and "The task statement is at `/frontier/task/repo/README.md`."
+        in normalized_entry
         and not ripser_statement.is_symlink()
         and not ripser_statement.parent.is_symlink()
         and ripser_statement.is_file()
         and final_seconds == 300
-        and all(part in normalized_entry for part in (
-            "The task's configured per-evaluation timeout is **300 seconds**, and the overall answering window is **18000 seconds**.",
-            "Agent work and train share that answering window; their limits are not additive.",
-            "Final evaluation has a separate **300-second** allowance; it does not consume train calls or the train wall-time budget.",
-            "exactly once, and exit. The final score is produced after you exit;",
-        ))
+        and all(
+            part in normalized_entry
+            for part in (
+                "The task's configured per-evaluation timeout is **300 seconds**, and the overall answering window is **18000 seconds**.",
+                "Agent work and train share that answering window; their limits are not additive.",
+                "Final evaluation has a separate **300-second** allowance; it does not consume train calls or the train wall-time budget.",
+                "exactly once, and exit. The final score is produced after you exit;",
+            )
+        )
     ):
         linked = " ".join(ripser_statement.read_text().split())
-        if all(part in linked for part in (
-            "The answering window is 18000 seconds (five hours), including training and other Agent work.",
-            "final verification has a separate 300-second clock after the answering phase.",
-        )):
+        if all(
+            part in linked
+            for part in (
+                "The answering window is 18000 seconds (five hours), including training and other Agent work.",
+                "final verification has a separate 300-second clock after the answering phase.",
+            )
+        ):
             return True
     # Glenside links its existing public statement, which contains both exact
     # clocks and the independent post-exit boundary. Preserve measured bytes.
@@ -223,11 +257,14 @@ def declares_answering_and_independent_final(root, final_seconds):
         and statement.is_file()
     ):
         linked = " ".join(statement.read_text().split())
-        if all(part in linked for part in (
-            "| Answering allowance | 18000 seconds |",
-            f"| Independent final evaluation allowance | {final_seconds} seconds |",
-            f"Final evaluation has its own {final_seconds}-second timeout after the Agent exits, independent of remaining answering time.",
-        )):
+        if all(
+            part in linked
+            for part in (
+                "| Answering allowance | 18000 seconds |",
+                f"| Independent final evaluation allowance | {final_seconds} seconds |",
+                f"Final evaluation has its own {final_seconds}-second timeout after the Agent exits, independent of remaining answering time.",
+            )
+        ):
             return True
     # Native exports may put their complete budget/lifecycle description in
     # the linked usage guide. Do not rewrite an immutable measured source just
@@ -339,37 +376,58 @@ def declares_answering_and_independent_final(root, final_seconds):
     )
 
 
-
 def declares_public_budget(task_name, root, policy):
     """Uniform five-hour answering, preserving Clusterwise train/final clocks."""
     quota = policy["quota"]
     if task_name == "lrr" and not task_manifest.is_native(root):
-        expected = {"wall_time_seconds": 18000, "max_train_calls": 100,
-                    "max_train_wall_seconds": 5400, "eval_timeout_seconds": 3600}
-        notice = " ".join((task_manifest.layout(root).agent_tool("README.md")).read_text().split())
+        expected = {
+            "wall_time_seconds": 18000,
+            "max_train_calls": 100,
+            "max_train_wall_seconds": 5400,
+            "eval_timeout_seconds": 3600,
+        }
+        notice = " ".join(
+            (task_manifest.layout(root).agent_tool("README.md")).read_text().split()
+        )
         entry = (task_manifest.layout(root).statement).read_text()
-        return (policy.get("problem_id") == task_name and quota == expected
-                and "[the testbed guide](bin/README.md)" in entry
-                and all(type(value) is int for value in quota.values())
-                and all(part in notice for part in (
-                    "**100 train calls**", "**5400 seconds**",
+        return (
+            policy.get("problem_id") == task_name
+            and quota == expected
+            and "[the testbed guide](bin/README.md)" in entry
+            and all(type(value) is int for value in quota.values())
+            and all(
+                part in notice
+                for part in (
+                    "**100 train calls**",
+                    "**5400 seconds**",
                     "overall answering window is **18000 seconds**.",
                     "Agent work and train share that answering window; their limits are not additive.",
                     "Final evaluation has a separate **3600-second** allowance; it does not consume train calls or the train wall-time budget.",
-                    "The final score is produced after you exit;")))
+                    "The final score is produced after you exit;",
+                )
+            )
+        )
     if task_name == "ckks_composable_noise":
         release = json.loads((root / "judge/judge/release.json").read_text())
         if release.get("mode") == "calibration":
             entry = (task_manifest.layout(root).statement).read_text()
             return (
-                quota == {"wall_time_seconds": 600, "max_train_calls": 1,
-                          "max_train_wall_seconds": 60, "eval_timeout_seconds": 7200}
+                quota
+                == {
+                    "wall_time_seconds": 600,
+                    "max_train_calls": 1,
+                    "max_train_wall_seconds": 60,
+                    "eval_timeout_seconds": 7200,
+                }
                 and release.get("formal_calibration") is None
-                and "This private calibration release accepts only the exact reference payload" in entry
+                and "This private calibration release accepts only the exact reference payload"
+                in entry
                 and "it is not dispatched to model evaluations" in entry
             )
     if task_name != "clusterwise_spgemm":
-        return quota["wall_time_seconds"] == 18000 and declares_answering_and_independent_final(
+        return quota[
+            "wall_time_seconds"
+        ] == 18000 and declares_answering_and_independent_final(
             root, quota["eval_timeout_seconds"]
         )
     expected = {
@@ -386,12 +444,15 @@ def declares_public_budget(task_name, root, policy):
         # A task.toml task states its clocks once, in the generated Agent README (the shared
         # platform text filled from task.toml); its statement must not restate them.
         notice = " ".join(task_manifest.agent_readme(root).split())
-        return all(part in notice for part in (
-            "**3 train calls**; a call is consumed when the submit is accepted and is never refunded,",
-            "Cumulative train wall time: **21600 seconds**, counted from verifier start to result.",
-            "The overall answering window is **18000 seconds**; Agent work and train share it.",
-            "Final evaluation has a separate **7200-second** allowance; it does not consume train calls or the train wall-time budget.",
-        ))
+        return all(
+            part in notice
+            for part in (
+                "**3 train calls**; a call is consumed when the submit is accepted and is never refunded,",
+                "Cumulative train wall time: **21600 seconds**, counted from verifier start to result.",
+                "The overall answering window is **18000 seconds**; Agent work and train share it.",
+                "Final evaluation has a separate **7200-second** allowance; it does not consume train calls or the train wall-time budget.",
+            )
+        )
     entry = task_manifest.layout(root).statement
     notice = " ".join(entry.read_text().split())
     # The native entry links the actual solver-facing task statement. Require
@@ -400,21 +461,27 @@ def declares_public_budget(task_name, root, policy):
         guide = entry.parent / "repo/README.md"
         if guide.is_symlink() or guide.parent.is_symlink() or not guide.is_file():
             return False
-        if not all(part in notice for part in (
-            "The train-call ceiling is **3 train calls**",
-            "The separate cumulative train wall-time budget is **21600 seconds**.",
-            "The task's configured per-evaluation timeout is **7200 seconds**, and the overall answering window is **18000 seconds (5 hours)**.",
-            "Agent work and train share that answering window; their limits are not additive.",
-            "Final evaluation has a separate **7200-second** allowance; it does not consume train calls or the train wall-time budget.",
-        )):
+        if not all(
+            part in notice
+            for part in (
+                "The train-call ceiling is **3 train calls**",
+                "The separate cumulative train wall-time budget is **21600 seconds**.",
+                "The task's configured per-evaluation timeout is **7200 seconds**, and the overall answering window is **18000 seconds (5 hours)**.",
+                "Agent work and train share that answering window; their limits are not additive.",
+                "Final evaluation has a separate **7200-second** allowance; it does not consume train calls or the train wall-time budget.",
+            )
+        ):
             return False
         notice = " ".join(guide.read_text().split())
-    return all(part in notice for part in (
-        "The answering window is 18,000 seconds (5 hours), including preparation, editing, and waits for development submissions.",
-        "At most 3 train calls may consume a cumulative 21,600 seconds within the remaining answering window; a train call cannot extend that window.",
-        "Independent final evaluation begins after answering and Agent cleanup and has its own 7,200-second budget.",
-        "The final budget does not consume or extend the answering window.",
-    ))
+    return all(
+        part in notice
+        for part in (
+            "The answering window is 18,000 seconds (5 hours), including preparation, editing, and waits for development submissions.",
+            "At most 3 train calls may consume a cumulative 21,600 seconds within the remaining answering window; a train call cannot extend that window.",
+            "Independent final evaluation begins after answering and Agent cleanup and has its own 7,200-second budget.",
+            "The final budget does not consume or extend the answering window.",
+        )
+    )
 
 
 class FormalAnsweringBudgetTests(unittest.TestCase):
@@ -449,17 +516,25 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
             entry.write_text("No statement link.")
             self.assertFalse(declares_answering_and_independent_final(root, 300))
 
-    def test_fargo_and_kami_native_budgets_preserve_exact_limits_and_final_boundary(self):
+    def test_fargo_and_kami_native_budgets_preserve_exact_limits_and_final_boundary(
+        self,
+    ):
         import tempfile
 
         notices = [
-            (900, "You have 18,000 seconds of answering time, 50 train calls, and a "
-             "separate 900-second independent final evaluation budget. "
-             "The final score is produced after you exit; the command does not print it."),
-            (1800, "Formal answering lasts 18,000 seconds (5 hours), including startup "
-             "and train waits. Independent final has a separate 1,800 seconds beginning "
-             "after Agent and train cleanup. Its score is computed independently after "
-             "Agent cleanup and is not printed by the submission command."),
+            (
+                900,
+                "You have 18,000 seconds of answering time, 50 train calls, and a "
+                "separate 900-second independent final evaluation budget. "
+                "The final score is produced after you exit; the command does not print it.",
+            ),
+            (
+                1800,
+                "Formal answering lasts 18,000 seconds (5 hours), including startup "
+                "and train waits. Independent final has a separate 1,800 seconds beginning "
+                "after Agent and train cleanup. Its score is computed independently after "
+                "Agent cleanup and is not printed by the submission command.",
+            ),
         ]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -468,17 +543,29 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
             for final_seconds, notice in notices:
                 for valid in (notice, " ".join(notice.split())):
                     entry.write_text(valid)
-                    self.assertTrue(declares_answering_and_independent_final(root, final_seconds))
+                    self.assertTrue(
+                        declares_answering_and_independent_final(root, final_seconds)
+                    )
                 for invalid in (
                     notice.replace("18,000", "1,800"),
-                    notice.replace("900-second", "901-second").replace("1,800 seconds", "1,801 seconds"),
-                    notice.replace("independent final", "shared final").replace("Independent final", "Shared final"),
-                    notice.replace("after you exit", "while you answer").replace("after Agent and train cleanup", "during train"),
+                    notice.replace("900-second", "901-second").replace(
+                        "1,800 seconds", "1,801 seconds"
+                    ),
+                    notice.replace("independent final", "shared final").replace(
+                        "Independent final", "Shared final"
+                    ),
+                    notice.replace("after you exit", "while you answer").replace(
+                        "after Agent and train cleanup", "during train"
+                    ),
                 ):
                     entry.write_text(invalid)
-                    self.assertFalse(declares_answering_and_independent_final(root, final_seconds))
+                    self.assertFalse(
+                        declares_answering_and_independent_final(root, final_seconds)
+                    )
                 entry.write_text(notice)
-                self.assertFalse(declares_answering_and_independent_final(root, final_seconds + 1))
+                self.assertFalse(
+                    declares_answering_and_independent_final(root, final_seconds + 1)
+                )
 
     def test_native_timeout_notice_requires_exact_limits_and_exit_boundary(self):
         import tempfile
@@ -682,15 +769,17 @@ class FormalAnsweringBudgetTests(unittest.TestCase):
                 entry.write_text(invalid)
                 self.assertFalse(declares_answering_and_independent_final(root, 9000))
 
-    def test_every_public_task_preserves_its_approved_answering_and_final_contract(self):
+    def test_every_public_task_preserves_its_approved_answering_and_final_contract(
+        self,
+    ):
         definitions = task_layers.load_definitions()
-        for name, root in renderer.catalog_problem_directories(renderer.catalog_task_names()).items():
+        for name, root in renderer.catalog_problem_directories(
+            renderer.catalog_task_names()
+        ).items():
             with self.subTest(task=name):
                 policy = task_manifest.load_policy(root)
                 self.assertEqual(definitions[name]["quota"], policy["quota"])
-                self.assertTrue(
-                    declares_public_budget(name, root, policy)
-                )
+                self.assertTrue(declares_public_budget(name, root, policy))
 
 
 class LrrApprovedBudgetTests(unittest.TestCase):
@@ -700,13 +789,23 @@ class LrrApprovedBudgetTests(unittest.TestCase):
         source = renderer.task_directory("lrr")
         self.assertTrue(task_manifest.is_native(source))
         policy = task_manifest.load_policy(source)
-        self.assertEqual(policy["quota"], {"wall_time_seconds": 18000, "max_train_calls": 100,
-                                           "max_train_wall_seconds": 5400,
-                                           "eval_timeout_seconds": 3600})
+        self.assertEqual(
+            policy["quota"],
+            {
+                "wall_time_seconds": 18000,
+                "max_train_calls": 100,
+                "max_train_wall_seconds": 5400,
+                "eval_timeout_seconds": 3600,
+            },
+        )
         self.assertTrue(declares_public_budget("lrr", source, policy))
         notice = " ".join(task_manifest.agent_readme(source).split())
-        for part in ("**100 train calls**", "**5400 seconds**", "**18000 seconds**",
-                     "separate **3600-second** allowance"):
+        for part in (
+            "**100 train calls**",
+            "**5400 seconds**",
+            "**18000 seconds**",
+            "separate **3600-second** allowance",
+        ):
             self.assertIn(part, notice)
         changed = json.loads(json.dumps(policy))
         changed["quota"]["eval_timeout_seconds"] += 1
@@ -740,20 +839,31 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
                 self.assertTrue(declares_answering_and_independent_final(root, 600))
                 self.assertFalse(declares_answering_and_independent_final(root, 601))
             statement.write_text(statement_text)
-            for before, after in (("18000", "18001"), ("600-second", "601-second"),
-                                  ("after you exit", "before you exit"),
-                                  ("`/frontier/task/repo/README.md`", "`/elsewhere`")):
+            for before, after in (
+                ("18000", "18001"),
+                ("600-second", "601-second"),
+                ("after you exit", "before you exit"),
+                ("`/frontier/task/repo/README.md`", "`/elsewhere`"),
+            ):
                 with self.subTest(entry_mutation=(before, after)):
                     entry.write_text(entry_text.replace(before, after))
-                    self.assertFalse(declares_answering_and_independent_final(root, 600))
+                    self.assertFalse(
+                        declares_answering_and_independent_final(root, 600)
+                    )
             entry.write_text(entry_text)
-            for before, after in (("18,000", "18,001"), ("five hours", "six hours"),
-                                  ("600-second", "601-second"), ("independent", "shared"),
-                                  ("after answering", "during answering"),
-                                  ("does not add", "adds")):
+            for before, after in (
+                ("18,000", "18,001"),
+                ("five hours", "six hours"),
+                ("600-second", "601-second"),
+                ("independent", "shared"),
+                ("after answering", "during answering"),
+                ("does not add", "adds"),
+            ):
                 with self.subTest(statement_mutation=(before, after)):
                     statement.write_text(statement_text.replace(before, after))
-                    self.assertFalse(declares_answering_and_independent_final(root, 600))
+                    self.assertFalse(
+                        declares_answering_and_independent_final(root, 600)
+                    )
             statement.unlink()
             self.assertFalse(declares_answering_and_independent_final(root, 600))
             outside = Path(directory) / "outside.md"
@@ -787,19 +897,30 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
                 self.assertTrue(declares_answering_and_independent_final(root, 300))
                 self.assertFalse(declares_answering_and_independent_final(root, 301))
             statement.write_text(statement_text)
-            for before, after in (("18000", "18001"), ("300-second", "301-second"),
-                                  ("after you exit", "before you exit"),
-                                  ("`/frontier/task/repo/README.md`", "`/elsewhere`")):
+            for before, after in (
+                ("18000", "18001"),
+                ("300-second", "301-second"),
+                ("after you exit", "before you exit"),
+                ("`/frontier/task/repo/README.md`", "`/elsewhere`"),
+            ):
                 with self.subTest(entry_mutation=(before, after)):
                     entry.write_text(entry_text.replace(before, after))
-                    self.assertFalse(declares_answering_and_independent_final(root, 300))
+                    self.assertFalse(
+                        declares_answering_and_independent_final(root, 300)
+                    )
             entry.write_text(entry_text)
-            for before, after in (("18000", "18001"), ("five hours", "six hours"),
-                                  ("300-second clock", "301-second clock"), ("separate", "shared"),
-                                  ("after the answering phase", "during the answering phase")):
+            for before, after in (
+                ("18000", "18001"),
+                ("five hours", "six hours"),
+                ("300-second clock", "301-second clock"),
+                ("separate", "shared"),
+                ("after the answering phase", "during the answering phase"),
+            ):
                 with self.subTest(statement_mutation=(before, after)):
                     statement.write_text(statement_text.replace(before, after))
-                    self.assertFalse(declares_answering_and_independent_final(root, 300))
+                    self.assertFalse(
+                        declares_answering_and_independent_final(root, 300)
+                    )
             statement.unlink()
             self.assertFalse(declares_answering_and_independent_final(root, 300))
             outside = Path(directory) / "outside.md"
@@ -809,7 +930,9 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
             other = Path(directory) / "other_task"
             (other / "agent-base/frontier/task/repo").mkdir(parents=True)
             (other / "agent-base/frontier/task/README.md").write_text(entry_text)
-            (other / "agent-base/frontier/task/repo/README.md").write_text(statement_text)
+            (other / "agent-base/frontier/task/repo/README.md").write_text(
+                statement_text
+            )
             self.assertFalse(declares_answering_and_independent_final(other, 300))
 
     def test_quarter_native_contract_requires_exact_clocks_and_exit(self):
@@ -826,8 +949,12 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
             entry.parent.mkdir(parents=True)
             entry.write_text(original)
             self.assertTrue(declares_answering_and_independent_final(root, 1800))
-            for before, after in (("18,000", "18,001"), ("1,800", "1,801"),
-                                  ("independent", "shared"), ("after you exit", "before you exit")):
+            for before, after in (
+                ("18,000", "18,001"),
+                ("1,800", "1,801"),
+                ("independent", "shared"),
+                ("after you exit", "before you exit"),
+            ):
                 entry.write_text(original.replace(before, after))
                 self.assertFalse(declares_answering_and_independent_final(root, 1800))
 
@@ -844,18 +971,28 @@ class NativeIndependentBudgetNoticeTests(unittest.TestCase):
             root = Path(directory)
             entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
-            for valid in (notice, " ".join(notice.split()), notice.replace("18,000", "18000")):
+            for valid in (
+                notice,
+                " ".join(notice.split()),
+                notice.replace("18,000", "18000"),
+            ):
                 entry.write_text(valid)
                 self.assertTrue(declares_answering_and_independent_final(root, 180))
                 self.assertFalse(declares_answering_and_independent_final(root, 181))
-            for before, after in (("100 train", "101 train"), ("12,000", "12,001"),
-                                  ("18,000", "18,001"), ("180-second", "181-second"),
-                                  ("independent final", "shared final"),
-                                  ("after answering", "during answering"),
-                                  ("its own clock", "the train clock")):
+            for before, after in (
+                ("100 train", "101 train"),
+                ("12,000", "12,001"),
+                ("18,000", "18,001"),
+                ("180-second", "181-second"),
+                ("independent final", "shared final"),
+                ("after answering", "during answering"),
+                ("its own clock", "the train clock"),
+            ):
                 with self.subTest(mutation=(before, after)):
                     entry.write_text(notice.replace(before, after))
-                    self.assertFalse(declares_answering_and_independent_final(root, 180))
+                    self.assertFalse(
+                        declares_answering_and_independent_final(root, 180)
+                    )
 
     def test_jointree_linked_guide_preserves_exact_clocks_and_cleanup_boundary(self):
         import tempfile
@@ -1134,11 +1271,11 @@ class StructuredBudgetGuideTests(unittest.TestCase):
                     )
 
 
-
 class ClusterwiseApprovedBudgetTests(unittest.TestCase):
     def test_exact_contract_and_counterexamples(self):
         import copy
         import tempfile
+
         notice = (
             "The answering window is 18,000 seconds (5 hours), including preparation, "
             "editing, and waits for development submissions. At most 3 train calls may "
@@ -1147,33 +1284,55 @@ class ClusterwiseApprovedBudgetTests(unittest.TestCase):
             "after answering and Agent cleanup and has its own 7,200-second budget. "
             "The final budget does not consume or extend the answering window."
         )
-        policy = {"problem_id": "clusterwise_spgemm", "quota": {
-            "wall_time_seconds": 18000, "max_train_calls": 3,
-            "max_train_wall_seconds": 21600, "eval_timeout_seconds": 7200,
-        }}
+        policy = {
+            "problem_id": "clusterwise_spgemm",
+            "quota": {
+                "wall_time_seconds": 18000,
+                "max_train_calls": 3,
+                "max_train_wall_seconds": 21600,
+                "eval_timeout_seconds": 7200,
+            },
+        }
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             entry = task_manifest.layout(root).statement
             entry.parent.mkdir(parents=True)
             for valid in (notice, notice.replace(". ", ".\n")):
                 entry.write_text(valid)
-                self.assertTrue(declares_public_budget("clusterwise_spgemm", root, policy))
+                self.assertTrue(
+                    declares_public_budget("clusterwise_spgemm", root, policy)
+                )
             for key in policy["quota"]:
-                for value in (0, policy["quota"][key] + 1, float(policy["quota"][key]), True):
+                for value in (
+                    0,
+                    policy["quota"][key] + 1,
+                    float(policy["quota"][key]),
+                    True,
+                ):
                     wrong = copy.deepcopy(policy)
                     wrong["quota"][key] = value
                     with self.subTest(quota=key, value=value):
-                        self.assertFalse(declares_public_budget("clusterwise_spgemm", root, wrong))
+                        self.assertFalse(
+                            declares_public_budget("clusterwise_spgemm", root, wrong)
+                        )
             for before, after in (
-                ("18,000", "32,400"), ("5 hours", "9 hours"), ("At most 3", "At most 4"),
-                ("21,600", "28,800"), ("7,200", "3,600"), ("cannot extend", "can extend"),
-                ("within the remaining", "outside the remaining"), ("Independent final", "Final"),
+                ("18,000", "32,400"),
+                ("5 hours", "9 hours"),
+                ("At most 3", "At most 4"),
+                ("21,600", "28,800"),
+                ("7,200", "3,600"),
+                ("cannot extend", "can extend"),
+                ("within the remaining", "outside the remaining"),
+                ("Independent final", "Final"),
                 ("after answering and Agent cleanup", "during answering"),
-                ("has its own", "has a"), ("does not consume or extend", "consumes"),
+                ("has its own", "has a"),
+                ("does not consume or extend", "consumes"),
             ):
                 with self.subTest(before=before):
                     entry.write_text(notice.replace(before, after))
-                    self.assertFalse(declares_public_budget("clusterwise_spgemm", root, policy))
+                    self.assertFalse(
+                        declares_public_budget("clusterwise_spgemm", root, policy)
+                    )
             entry.write_text(notice)
             self.assertFalse(declares_public_budget("another_task", root, policy))
             wrong = copy.deepcopy(policy)
@@ -1185,14 +1344,18 @@ class ClusterwiseApprovedBudgetTests(unittest.TestCase):
             # The structured contract still requires all separate-clock clauses.
             self.assertFalse(declares_answering_and_independent_final(root, 7200))
 
-
     def test_native_linked_statement_requires_exact_entry_and_real_guide(self):
         import tempfile
 
-        policy = {"problem_id": "clusterwise_spgemm", "quota": {
-            "wall_time_seconds": 18000, "max_train_calls": 3,
-            "max_train_wall_seconds": 21600, "eval_timeout_seconds": 7200,
-        }}
+        policy = {
+            "problem_id": "clusterwise_spgemm",
+            "quota": {
+                "wall_time_seconds": 18000,
+                "max_train_calls": 3,
+                "max_train_wall_seconds": 21600,
+                "eval_timeout_seconds": 7200,
+            },
+        }
         entry_text = (
             "The task statement is at `/frontier/task/repo/README.md`. "
             "The train-call ceiling is **3 train calls**; every accepted request consumes one. "
@@ -1215,19 +1378,34 @@ class ClusterwiseApprovedBudgetTests(unittest.TestCase):
             entry.write_text(entry_text)
             guide.write_text(statement)
             self.assertTrue(declares_public_budget("clusterwise_spgemm", root, policy))
-            for old, new in (("/frontier/task/repo/README.md", "/elsewhere/README.md"),
-                             ("18000", "32400"), ("7200", "600"), ("21600", "21601"),
-                             ("**3 train calls**", "**4 train calls**"), ("not additive", "additive")):
+            for old, new in (
+                ("/frontier/task/repo/README.md", "/elsewhere/README.md"),
+                ("18000", "32400"),
+                ("7200", "600"),
+                ("21600", "21601"),
+                ("**3 train calls**", "**4 train calls**"),
+                ("not additive", "additive"),
+            ):
                 with self.subTest(entry=old):
                     entry.write_text(entry_text.replace(old, new))
-                    self.assertFalse(declares_public_budget("clusterwise_spgemm", root, policy))
+                    self.assertFalse(
+                        declares_public_budget("clusterwise_spgemm", root, policy)
+                    )
             entry.write_text(entry_text)
-            for old, new in (("18,000", "18,001"), ("21,600", "21,601"), ("7,200", "7,201"),
-                             ("Independent final", "Final"), ("Agent cleanup", "Agent execution"),
-                             ("has its own", "has a"), ("does not consume or extend", "extends")):
+            for old, new in (
+                ("18,000", "18,001"),
+                ("21,600", "21,601"),
+                ("7,200", "7,201"),
+                ("Independent final", "Final"),
+                ("Agent cleanup", "Agent execution"),
+                ("has its own", "has a"),
+                ("does not consume or extend", "extends"),
+            ):
                 with self.subTest(statement=old):
                     guide.write_text(statement.replace(old, new))
-                    self.assertFalse(declares_public_budget("clusterwise_spgemm", root, policy))
+                    self.assertFalse(
+                        declares_public_budget("clusterwise_spgemm", root, policy)
+                    )
             guide.unlink()
             self.assertFalse(declares_public_budget("clusterwise_spgemm", root, policy))
             outside = root / "unlinked.md"

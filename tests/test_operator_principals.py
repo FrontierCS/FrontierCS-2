@@ -16,7 +16,7 @@ import jsonschema
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
-from preview import config as site_config
+from deploy import config as site_config
 
 
 class OperatorPrincipalsTests(unittest.TestCase):

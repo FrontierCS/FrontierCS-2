@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import image_namespace
-from preview.infra import load_json
+from deploy.infra import load_json
 
 
 @dataclass
@@ -26,7 +26,7 @@ class TaskSelection:
 
 
 def requirements(definition: dict) -> dict:
-    from preview import infra as deploy
+    from deploy import infra as deploy
 
     result = {"modal_gpu": False}
     if "gpu" in definition:
@@ -93,8 +93,12 @@ def requirements(definition: dict) -> dict:
         # (a LiteLLM route with a nonzero price, so budget_usd is enforced).
         import render_task_definition
 
-        keys = render_task_definition.validate_additional_keys(definition["additional_keys"])
-        result["task_model_aliases"] = sorted({a for k in keys for a in k["model_aliases"]})
+        keys = render_task_definition.validate_additional_keys(
+            definition["additional_keys"]
+        )
+        result["task_model_aliases"] = sorted(
+            {a for k in keys for a in k["model_aliases"]}
+        )
     return result
 
 
@@ -119,7 +123,7 @@ def deployment_catalog(catalog: dict) -> dict:
 
 
 def select_tasks(config: dict, catalog: dict, definitions: dict) -> TaskSelection:
-    from preview import infra as deploy
+    from deploy import infra as deploy
 
     selected, excluded = [], {}
     for task in catalog["tasks"]:
@@ -128,11 +132,15 @@ def select_tasks(config: dict, catalog: dict, definitions: dict) -> TaskSelectio
             raise deploy.DeployError(f"task has no definition: {name}")
         needs = requirements(definitions[name])
         served = set(config["features"].get("task_model_aliases", []))
-        missing_aliases = [a for a in needs.get("task_model_aliases", []) if a not in served]
+        missing_aliases = [
+            a for a in needs.get("task_model_aliases", []) if a not in served
+        ]
         if needs["modal_gpu"] and not config["features"]["modal_gpu"]:
             excluded[name] = "requires features.modal_gpu"
         elif missing_aliases:
-            excluded[name] = "requires features.task_model_aliases: " + ", ".join(missing_aliases)
+            excluded[name] = "requires features.task_model_aliases: " + ", ".join(
+                missing_aliases
+            )
         else:
             interface = needs.get("agent_gpu_interface")
             if (
@@ -193,7 +201,7 @@ def select_tasks(config: dict, catalog: dict, definitions: dict) -> TaskSelectio
 
 
 def verifier_workspace_budgets(config: dict) -> dict[str, int]:
-    from preview import infra as deploy
+    from deploy import infra as deploy
 
     budgets = deploy.require_mapping(
         config.get("execution", {}).get("task_verifier_workspace_bytes", {}),
@@ -212,7 +220,7 @@ def attested_agent_gpu_interfaces() -> set[str]:
     This does not change the seeded Codex identity or make it a V3 Candidate.
     Kimi's additional contract must bind its checked-in image and source receipt.
     """
-    from preview import infra as deploy
+    from deploy import infra as deploy
 
     interfaces = {deploy.CODEX_AGENT_GPU_INTERFACE}
     path = deploy.REPOSITORY_ROOT / "config/kimi-candidate-image.json"

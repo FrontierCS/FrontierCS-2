@@ -54,10 +54,19 @@ DOCKERFILE = "candidate-overlays/kimi-code/Dockerfile"
 INSTALLED = {
     "launcher.py": ("/opt/frontier/candidate/launch", 0o555),
     "submit/frontier_submit.py": ("/opt/frontier/candidate/bin/frontier-submit", 0o555),
-    "submit/SKILL.md": ("/opt/frontier/candidate/skills/frontier-submit/SKILL.md", 0o444),
+    "submit/SKILL.md": (
+        "/opt/frontier/candidate/skills/frontier-submit/SKILL.md",
+        0o444,
+    ),
     "gpu-helper/frontier_gpu.py": ("/opt/frontier/candidate/bin/frontier-gpu", 0o555),
-    "gpu-helper/frontier_gpu_connect_proxy.py": ("/opt/frontier/candidate/bin/frontier-gpu-connect-proxy", 0o555),
-    "gpu-helper/SKILL.md": ("/opt/frontier/candidate/skills/frontier-gpu/SKILL.md", 0o444),
+    "gpu-helper/frontier_gpu_connect_proxy.py": (
+        "/opt/frontier/candidate/bin/frontier-gpu-connect-proxy",
+        0o555,
+    ),
+    "gpu-helper/SKILL.md": (
+        "/opt/frontier/candidate/skills/frontier-gpu/SKILL.md",
+        0o444,
+    ),
 }
 
 
@@ -102,7 +111,11 @@ def adapted_dockerfile(body: bytes, harness: str = KIMI) -> bytes:
     lines = body.decode().split("\n")
     for index, line in enumerate(lines):
         words = line.split()
-        if not words or words[0] != "COPY" or any(w.startswith("--from") for w in words):
+        if (
+            not words
+            or words[0] != "COPY"
+            or any(w.startswith("--from") for w in words)
+        ):
             continue
         for word in [w for w in words[1:] if not w.startswith("--")][:-1]:
             old = f" {word} "
@@ -121,7 +134,15 @@ def require_commit(source: Path, commit: str) -> None:
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("Platform source must be an explicit full commit")
     subprocess.run(
-        ["git", "-C", str(source), "merge-base", "--is-ancestor", commit, "origin/main"],
+        [
+            "git",
+            "-C",
+            str(source),
+            "merge-base",
+            "--is-ancestor",
+            commit,
+            "origin/main",
+        ],
         check=True,
     )
 
@@ -134,31 +155,57 @@ def roster_commit(harness: str, root: Path = ROOT) -> str:
 # Wording-only edits applied to the public copy (env deny-list names and comments that
 # name internal services). The receipt keeps the source hash and adds the local one.
 PUBLIC_EDITS: dict[tuple[str, str], list[tuple[bytes, bytes]]] = {
-    ("zcode", "launcher.py"): [(b'"META_API_KEY", "CRS_API_KEY", "LD_LIBRARY_PATH",',
-                                b'"META_API_KEY", "LD_LIBRARY_PATH",')],
+    ("zcode", "launcher.py"): [
+        (
+            b'"META_API_KEY", "CRS_API_KEY", "LD_LIBRARY_PATH",',
+            b'"META_API_KEY", "LD_LIBRARY_PATH",',
+        )
+    ],
     # Public copy authenticates with a standard Anthropic API key.
     ("claude-code", "launcher.py"): [
-        (b"Official Claude Code, subscription or Driver gateway auth, bounded",
-         b"Official Claude Code, API-key or Driver gateway auth, bounded"),
-        (b"Driver gateway mode: no subscription token;",
-         b"Driver gateway mode: no API key;"),
-        (b"oauth = os.environ.get('CLAUDE_CODE_OAUTH_TOKEN', '').strip()",
-         b"api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()"),
-        (b"gateway = None if oauth else gateway_environment()",
-         b"gateway = None if api_key else gateway_environment()"),
-        (b"if gateway: oauth, model = gateway['ANTHROPIC_AUTH_TOKEN']",
-         b"if gateway: api_key, model = gateway['ANTHROPIC_AUTH_TOKEN']"),
-        (b"if not oauth.startswith('sk-ant-oat01-') or len(oauth) > 16384 or",
-         b"if not api_key.startswith('sk-ant-') or len(api_key) > 16384 or"),
-        (b"raise LaunchError('missing or invalid subscription credential/model')",
-         b"raise LaunchError('missing or invalid API key/model')"),
-        (b"child.update({**({'CLAUDE_CODE_OAUTH_TOKEN': oauth} if gateway is None else {}),",
-         b"child.update({**({'ANTHROPIC_API_KEY': api_key} if gateway is None else {}),"),
-        (b"return child, upload, [oauth.encode(), bearer.encode()], model, effort",
-         b"return child, upload, [api_key.encode(), bearer.encode()], model, effort"),
+        (
+            b"Official Claude Code, subscription or Driver gateway auth, bounded",
+            b"Official Claude Code, API-key or Driver gateway auth, bounded",
+        ),
+        (
+            b"Driver gateway mode: no subscription token;",
+            b"Driver gateway mode: no API key;",
+        ),
+        (
+            b"oauth = os.environ.get('CLAUDE_CODE_OAUTH_TOKEN', '').strip()",
+            b"api_key = os.environ.get('ANTHROPIC_API_KEY', '').strip()",
+        ),
+        (
+            b"gateway = None if oauth else gateway_environment()",
+            b"gateway = None if api_key else gateway_environment()",
+        ),
+        (
+            b"if gateway: oauth, model = gateway['ANTHROPIC_AUTH_TOKEN']",
+            b"if gateway: api_key, model = gateway['ANTHROPIC_AUTH_TOKEN']",
+        ),
+        (
+            b"if not oauth.startswith('sk-ant-oat01-') or len(oauth) > 16384 or",
+            b"if not api_key.startswith('sk-ant-') or len(api_key) > 16384 or",
+        ),
+        (
+            b"raise LaunchError('missing or invalid subscription credential/model')",
+            b"raise LaunchError('missing or invalid API key/model')",
+        ),
+        (
+            b"child.update({**({'CLAUDE_CODE_OAUTH_TOKEN': oauth} if gateway is None else {}),",
+            b"child.update({**({'ANTHROPIC_API_KEY': api_key} if gateway is None else {}),",
+        ),
+        (
+            b"return child, upload, [oauth.encode(), bearer.encode()], model, effort",
+            b"return child, upload, [api_key.encode(), bearer.encode()], model, effort",
+        ),
     ],
-    ("codex", "launcher.py"): [(b"# Explicit Preview mode preserves its operator-supplied provider key.",
-                                b"# Explicit direct mode keeps its operator-supplied provider key.")],
+    ("codex", "launcher.py"): [
+        (
+            b"# Explicit Preview mode preserves its operator-supplied provider key.",
+            b"# Explicit direct mode keeps its operator-supplied provider key.",
+        )
+    ],
 }
 
 
@@ -199,9 +246,11 @@ def mirror(source: Path, harness: str, commit: str) -> tuple[dict[str, bytes], d
 def receipts_for(receipt: dict) -> dict[str, dict]:
     receipts = {"source.json": receipt}
     for subdirectory in ("submit", "gpu-helper"):
-        nested = {name.removeprefix(subdirectory + "/"): value
-                  for name, value in receipt["files"].items()
-                  if name.startswith(subdirectory + "/")}
+        nested = {
+            name.removeprefix(subdirectory + "/"): value
+            for name, value in receipt["files"].items()
+            if name.startswith(subdirectory + "/")
+        }
         if nested:
             receipts[f"{subdirectory}/source.json"] = {
                 "platform_source_commit": receipt["platform_source_commit"],
@@ -210,8 +259,9 @@ def receipts_for(receipt: dict) -> dict[str, dict]:
     return receipts
 
 
-def synchronize(source: Path, commit: str, *, check: bool, root: Path = ROOT,
-                harness: str = KIMI) -> None:
+def synchronize(
+    source: Path, commit: str, *, check: bool, root: Path = ROOT, harness: str = KIMI
+) -> None:
     contents, receipt = mirror(source, harness, commit)
     destination = root / CANDIDATES / harness
     receipts = receipts_for(receipt)
@@ -221,7 +271,9 @@ def synchronize(source: Path, commit: str, *, check: bool, root: Path = ROOT,
                 raise ValueError(f"{harness} recipe mirror differs from source: {name}")
         for name, value in receipts.items():
             if json.loads((destination / name).read_text()) != value:
-                raise ValueError(f"{harness} source receipt differs from source: {name}")
+                raise ValueError(
+                    f"{harness} source receipt differs from source: {name}"
+                )
         return
     destination.mkdir(parents=True, exist_ok=True)
     for name, body in contents.items():
@@ -233,11 +285,20 @@ def synchronize(source: Path, commit: str, *, check: bool, root: Path = ROOT,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--source", type=Path, required=True,
-                        help="clean clone of the platform source repository")
-    parser.add_argument("--harness", required=True,
-                        help="directory name under candidates/, e.g. kimi-code")
-    parser.add_argument("--commit", help="full source commit (default: config/candidates.json)")
+    parser.add_argument(
+        "--source",
+        type=Path,
+        required=True,
+        help="clean clone of the platform source repository",
+    )
+    parser.add_argument(
+        "--harness",
+        required=True,
+        help="directory name under candidates/, e.g. kimi-code",
+    )
+    parser.add_argument(
+        "--commit", help="full source commit (default: config/candidates.json)"
+    )
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     commit = args.commit or roster_commit(args.harness)

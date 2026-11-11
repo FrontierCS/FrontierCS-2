@@ -57,13 +57,18 @@ def copy_repository(source: Path, target: Path) -> None:
         if member == "tasks" and source_tree.in_work_tree(source / member):
             # A checkout's tasks as the build sees them: the git-tracked files, not the ignored
             # __pycache__ other tests leave in tasks/shared. An exported tree is copied whole.
-            listed = subprocess.run(["git", "-C", str(source / member), "ls-files", "-z"],
-                                    check=True, capture_output=True).stdout
+            listed = subprocess.run(
+                ["git", "-C", str(source / member), "ls-files", "-z"],
+                check=True,
+                capture_output=True,
+            ).stdout
             for relative in filter(None, listed.split(b"\0")):
                 path = os.fsdecode(relative)
                 (target / member / path).parent.mkdir(parents=True, exist_ok=True)
                 if (source / member / path).is_symlink():
-                    (target / member / path).symlink_to(os.readlink(source / member / path))
+                    (target / member / path).symlink_to(
+                        os.readlink(source / member / path)
+                    )
                 else:
                     shutil.copy2(source / member / path, target / member / path)
             continue
@@ -150,9 +155,19 @@ class RepositoryCopyTests(unittest.TestCase):
     def test_task_copy_mutations_are_isolated_in_both_directions(self):
         with tempfile.TemporaryDirectory() as directory:
             source, target = Path(directory) / "source", Path(directory) / "target"
-            shutil.copytree(ROOT / "tests/fixtures/export-minimal", source / "tasks/task")
-            for member in ("config", "scripts", "tests", "docs",
-                           "runtime", "smoke", "terraform", "candidates"):
+            shutil.copytree(
+                ROOT / "tests/fixtures/export-minimal", source / "tasks/task"
+            )
+            for member in (
+                "config",
+                "scripts",
+                "tests",
+                "docs",
+                "runtime",
+                "smoke",
+                "terraform",
+                "candidates",
+            ):
                 (source / member).mkdir()
             for member in ("Makefile", ".gitattributes"):
                 (source / member).write_text("fixture\n")
@@ -308,10 +323,12 @@ class ImportIntegrationTests(unittest.TestCase):
             original = makefile.read_text()
             full_suite = "$(PYTHON) -m unittest discover -s tests -p 'test_*.py'"
             self.assertEqual(original.count(full_suite), 1)
-            makefile.write_text(original.replace(
-                full_suite,
-                "$(PYTHON) -m unittest discover -v -s import-gate-tests -p 'test_*.py'",
-            ))
+            makefile.write_text(
+                original.replace(
+                    full_suite,
+                    "$(PYTHON) -m unittest discover -v -s import-gate-tests -p 'test_*.py'",
+                )
+            )
             env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 
             def run_import():
@@ -327,8 +344,12 @@ class ImportIntegrationTests(unittest.TestCase):
                 self.assertIn(
                     "validate --config config/site.example.json", result.stdout
                 )
-                self.assertIn("unittest discover -v -s import-gate-tests", result.stdout)
-                self.assertIn("test_imported_catalog_and_definition_exist", result.stderr)
+                self.assertIn(
+                    "unittest discover -v -s import-gate-tests", result.stdout
+                )
+                self.assertIn(
+                    "test_imported_catalog_and_definition_exist", result.stderr
+                )
                 self.assertRegex(result.stderr, r"(?m)^Ran 1 test in ")
                 self.assertRegex(result.stderr, r"(?m)^OK$")
                 return result

@@ -27,8 +27,11 @@ The Version column is the harness version each model was evaluated with. Two
 further recipes have no evaluated model or published image yet:
 [`candidates/agy-gemini`](../candidates/agy-gemini) (Antigravity CLI 1.4.7) and
 [`candidates/opencode`](../candidates/opencode) (OpenCode 1.19.5). The Claude Code
-recipe is now 2.1.311 with Driver gateway mode; its evaluated image was built
+recipe is now 2.1.321 with Driver gateway mode; its evaluated image was built
 from 2.1.296.
+Recipes follow the platform source, so a recipe can be newer than the image its
+models were evaluated with; each evaluated model keeps that image and its
+`image_source_commit`.
 
 Publishing or registering a Candidate does not establish that a model works
 with it. Each new model/harness pair still needs its own smoke run covering
@@ -95,7 +98,7 @@ The commit defaults to `harnesses.<name>.recipe.source_commit` in
 2. Before registration, verify the deployment mirror's manifest, configuration
    blob and every layer against the published digest. Pass the explicit site
    registry authority as `deployment_registry` to
-   `preview.publication.candidate_version_document`, along with the verified
+   `deploy.publication.candidate_version_document`, along with the verified
    `mirrored_overlay`. The helper rejects a missing mirror or a reference outside
    that registry.
 3. Register a CandidateVersion with entrypoint `/opt/frontier/candidate/launch`,

@@ -107,9 +107,12 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         binding = self.evaluator.measurement_binding()
         self.assertEqual(manifest["measurement_sha256"], binding)
         self.assertEqual(self.profile["measurement_sha256"], binding)
-        digest = "sha256:" + hashlib.sha256(
-            (TASK / "judge/reference/statistical-calibration.json").read_bytes()
-        ).hexdigest()
+        digest = (
+            "sha256:"
+            + hashlib.sha256(
+                (TASK / "judge/reference/statistical-calibration.json").read_bytes()
+            ).hexdigest()
+        )
         self.assertEqual(manifest["statistical_profile_sha256"], digest)
         with tempfile.TemporaryDirectory() as temp:
             judge = Path(temp) / "judge"
@@ -154,29 +157,53 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         anchors = self.anchors()
         cases = {
             # workload, nominal count, counts that must pass, counts that must fail
-            "b16-n1000000-f0-s20261007-mix0": (128, (0, 100, 128, 150, 190), (260, 512)),
-            "b8-n1000000-f0-s20261007-mix0": (32768, (30000, 32768, 33500), (35500, 65536)),
+            "b16-n1000000-f0-s20261007-mix0": (
+                128,
+                (0, 100, 128, 150, 190),
+                (260, 512),
+            ),
+            "b8-n1000000-f0-s20261007-mix0": (
+                32768,
+                (30000, 32768, 33500),
+                (35500, 65536),
+            ),
         }
         for workload, (nominal, passing, failing) in cases.items():
             anchor = anchors[workload]["effective_fpr"]
-            self.assertAlmostEqual(nominal / QUERIES, self.metrics.nominal_false_positive_rate(workload))
+            self.assertAlmostEqual(
+                nominal / QUERIES, self.metrics.nominal_false_positive_rate(workload)
+            )
             for k in passing:
                 with self.subTest(workload=workload, k=k):
-                    self.assertTrue(self.metrics.non_inferior(self.sample(k)["effective_fpr"], anchor))
+                    self.assertTrue(
+                        self.metrics.non_inferior(
+                            self.sample(k)["effective_fpr"], anchor
+                        )
+                    )
             for k in failing:
                 with self.subTest(workload=workload, k=k):
-                    self.assertFalse(self.metrics.non_inferior(self.sample(k)["effective_fpr"], anchor))
+                    self.assertFalse(
+                        self.metrics.non_inferior(
+                            self.sample(k)["effective_fpr"], anchor
+                        )
+                    )
 
     def test_space_guard_rejects_certified_overhead_above_the_anchor(self):
         anchors = self.anchors()
         workload = "b16-n1000000-f0-s20261007-mix0"
         anchor = anchors[workload]["space_overhead_pct"]
         reference = self.sample(114, resident_bytes=2261032)
-        self.assertTrue(self.metrics.non_inferior(reference["space_overhead_pct"], anchor))
+        self.assertTrue(
+            self.metrics.non_inferior(reference["space_overhead_pct"], anchor)
+        )
         smaller = self.sample(128, resident_bytes=2100000)
-        self.assertTrue(self.metrics.non_inferior(smaller["space_overhead_pct"], anchor))
+        self.assertTrue(
+            self.metrics.non_inferior(smaller["space_overhead_pct"], anchor)
+        )
         bloated = self.sample(128, resident_bytes=3000000)
-        self.assertFalse(self.metrics.non_inferior(bloated["space_overhead_pct"], anchor))
+        self.assertFalse(
+            self.metrics.non_inferior(bloated["space_overhead_pct"], anchor)
+        )
 
     def test_unresolved_domain_and_invalid_inputs_cannot_pass(self):
         anchor = self.anchors()["b16-n1000000-f0-s20261007-mix0"]["space_overhead_pct"]
@@ -184,13 +211,22 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         self.assertIsNone(zero["space_overhead_pct"]["point"])
         self.assertFalse(self.metrics.non_inferior(zero["space_overhead_pct"], anchor))
         everything = self.sample(QUERIES)
-        self.assertFalse(self.metrics.non_inferior(everything["space_overhead_pct"], anchor))
+        self.assertFalse(
+            self.metrics.non_inferior(everything["space_overhead_pct"], anchor)
+        )
         with self.assertRaises(ValueError):
-            self.metrics.non_inferior({"point": 0.5, "lower": 0.6, "upper": 0.7}, anchor)
+            self.metrics.non_inferior(
+                {"point": 0.5, "lower": 0.6, "upper": 0.7}, anchor
+            )
         with self.assertRaises(ValueError):
-            self.metrics.non_inferior({"point": float("nan"), "lower": 0.0, "upper": 1.0}, anchor)
+            self.metrics.non_inferior(
+                {"point": float("nan"), "lower": 0.0, "upper": 1.0}, anchor
+            )
         for bad in (None, float("inf"), "0.1"):
-            with self.subTest(anchor=bad), self.assertRaises(self.metrics.CalibrationRequired):
+            with (
+                self.subTest(anchor=bad),
+                self.assertRaises(self.metrics.CalibrationRequired),
+            ):
                 self.metrics.non_inferior(self.sample(128)["effective_fpr"], bad)
 
     def test_anchor_derivation_rejects_incomplete_or_unresolved_rounds(self):
@@ -218,8 +254,18 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         def row(resident, build, lookup, acc):
             return {
                 "workload": workload,
-                "candidate": {"resident_bytes": resident, "build_ns": build, "lookup_ns": lookup, **acc},
-                "reference": {"resident_bytes": 2261032, "build_ns": 100.0, "lookup_ns": 20.0, **reference},
+                "candidate": {
+                    "resident_bytes": resident,
+                    "build_ns": build,
+                    "lookup_ns": lookup,
+                    **acc,
+                },
+                "reference": {
+                    "resident_bytes": 2261032,
+                    "build_ns": 100.0,
+                    "lookup_ns": 20.0,
+                    **reference,
+                },
             }
 
         score, decisions, beats = self.measurement.score_rows(
@@ -229,14 +275,20 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         self.assertTrue(all(decisions[0]["metrics"].values()))
         self.assertGreater(score, 50.0)
         # A tie on any performance metric, or a certified accuracy excess, fails.
-        _, decisions, beats = self.measurement.score_rows([row(2261032, 90.0, 19.0, accuracy)], anchors)
+        _, decisions, beats = self.measurement.score_rows(
+            [row(2261032, 90.0, 19.0, accuracy)], anchors
+        )
         self.assertEqual((beats, decisions[0]["metrics"]["resident_bytes"]), (0, False))
         _, decisions, beats = self.measurement.score_rows(
-            [row(2200000, 90.0, 19.0, self.sample(512, resident_bytes=2200000))], anchors
+            [row(2200000, 90.0, 19.0, self.sample(512, resident_bytes=2200000))],
+            anchors,
         )
         self.assertEqual((beats, decisions[0]["metrics"]["effective_fpr"]), (0, False))
         with self.assertRaises(self.metrics.CalibrationRequired):
-            self.measurement.score_rows([row(2200000, 90.0, 19.0, accuracy)], {workload: {"effective_fpr": 1e-5}})
+            self.measurement.score_rows(
+                [row(2200000, 90.0, 19.0, accuracy)],
+                {workload: {"effective_fpr": 1e-5}},
+            )
 
     # ---------------------------------------------- existing hard gates
 
@@ -244,15 +296,31 @@ class BinaryFuseNonInferiorityTests(unittest.TestCase):
         e = self.measurement
         q = e.QUERIES
         good = {
-            "construction": True, "false_negatives": 0, "mixed_false_negatives": 0, "leaked_bytes": 0,
-            "absent_queries": q, "false_positives": 16, "effective_false_positives": 128,
-            "effective_absent_queries": 8 * q, "mixed_false_positives": [16, 8, 0, 12],
-            "mixed_absent_queries": [q, q // 2, 0, 3 * q // 4], "shuffled_hit_queries": q // 4,
-            "resident_bytes": 2261032, "build_ns": 1000.0, "lookup_ns": [10.0, 10.0, 10.0, 10.0],
+            "construction": True,
+            "false_negatives": 0,
+            "mixed_false_negatives": 0,
+            "leaked_bytes": 0,
+            "absent_queries": q,
+            "false_positives": 16,
+            "effective_false_positives": 128,
+            "effective_absent_queries": 8 * q,
+            "mixed_false_positives": [16, 8, 0, 12],
+            "mixed_absent_queries": [q, q // 2, 0, 3 * q // 4],
+            "shuffled_hit_queries": q // 4,
+            "resident_bytes": 2261032,
+            "build_ns": 1000.0,
+            "lookup_ns": [10.0, 10.0, 10.0, 10.0],
         }
         e.validate_sample(good, 16, q)
         for name, change in (
-            ("always_true", {"false_positives": q, "effective_false_positives": 8 * q, "mixed_false_positives": [q, q // 2, 0, 3 * q // 4]}),
+            (
+                "always_true",
+                {
+                    "false_positives": q,
+                    "effective_false_positives": 8 * q,
+                    "mixed_false_positives": [q, q // 2, 0, 3 * q // 4],
+                },
+            ),
             ("false_negative", {"false_negatives": 1}),
             ("leaked_allocation", {"leaked_bytes": 64}),
             ("short_effective_stream", {"effective_absent_queries": 4 * q}),

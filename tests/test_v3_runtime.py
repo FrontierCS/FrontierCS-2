@@ -20,9 +20,9 @@ from unittest import mock
 from urllib.error import HTTPError, URLError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from preview import acceptance, cli, infra, publication
-from preview import config as site_config
-from preview import images as image_ops
+from deploy import acceptance, cli, infra, publication
+from deploy import config as site_config
+from deploy import images as image_ops
 from test_frontier_deploy import ROOT, Fixture
 from test_frontier_deploy import frontier_deploy as deploy
 

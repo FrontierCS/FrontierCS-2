@@ -28,6 +28,7 @@ RUN install -d -m 0555 \
         /out/overlay/opt/frontier/candidate/skills/frontier-submit \
     && test -z "$(find /out/overlay/opt/frontier/candidate -type d ! -perm /0111 -print -quit)"
 COPY --chmod=0555 launcher.py /out/overlay/opt/frontier/candidate/launch
+COPY --chmod=0444 fallback-base-instructions.md /out/overlay/opt/frontier/candidate/codex-fallback-base-instructions.md
 COPY --chmod=0555 frontier_submit.py /out/overlay/opt/frontier/candidate/bin/frontier-submit
 COPY --chmod=0555 frontier_gpu.py /out/overlay/opt/frontier/candidate/bin/frontier-gpu
 COPY --chmod=0555 frontier_gpu_connect_proxy.py /out/overlay/opt/frontier/candidate/bin/frontier-gpu-connect-proxy

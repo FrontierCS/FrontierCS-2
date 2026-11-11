@@ -17,7 +17,9 @@ COPIES = sorted(PROBLEMS.glob("*/*/verifier/patch_payload.py"))
 
 
 def load(path: Path):
-    spec = importlib.util.spec_from_file_location(f"patch_payload_{path.parts[-3]}", path)
+    spec = importlib.util.spec_from_file_location(
+        f"patch_payload_{path.parts[-3]}", path
+    )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -58,7 +60,9 @@ class PatchPayloadTests(unittest.TestCase):
 
     def test_all_task_copies_are_identical(self) -> None:
         bodies = {path.read_bytes() for path in COPIES}
-        self.assertEqual(len(bodies), 1, [str(path.relative_to(ROOT)) for path in COPIES])
+        self.assertEqual(
+            len(bodies), 1, [str(path.relative_to(ROOT)) for path in COPIES]
+        )
 
     def test_empty_patch_returns_the_starter(self) -> None:
         self.assertEqual(self.apply(b""), {"payload/solution.json": b'{"a": 1}\n'})
@@ -86,7 +90,9 @@ class PatchPayloadTests(unittest.TestCase):
         with self.assertRaisesRegex(self.module.PatchRejected, "outside the answer"):
             self.apply(patch)
         executable = patch.replace(b"new file mode 100644", b"new file mode 100755")
-        with self.assertRaisesRegex(self.module.PatchRejected, "regular non-executable"):
+        with self.assertRaisesRegex(
+            self.module.PatchRejected, "regular non-executable"
+        ):
             self.apply(executable, allowed=("src/",))
 
     def test_rejections(self) -> None:
@@ -107,13 +113,17 @@ class PatchPayloadTests(unittest.TestCase):
             "same file twice": (
                 b"--- a/payload/solution.json\n+++ b/payload/solution.json\n@@ -1 +1 @@\n"
                 b'-{"a": 1}\n+{"a": 2}\n'
-            ) * 2,
+            )
+            * 2,
             "without file headers": b"@@ -1 +1 @@\n-x\n+y\n",
             "UTF-8": b"--- a/payload/solution.json\n+++ b/payload/solution.json\n@@ -1 +1 @@\n"
             b'-{"a": 1}\n+\xff\n',
         }
         for message, patch in cases.items():
-            with self.subTest(message), self.assertRaisesRegex(self.module.PatchRejected, message):
+            with (
+                self.subTest(message),
+                self.assertRaisesRegex(self.module.PatchRejected, message),
+            ):
                 self.apply(patch, allowed=("payload/solution.json", "src/main.py"))
 
     def test_size_and_file_count_limits(self) -> None:
@@ -130,7 +140,10 @@ class PatchPayloadTests(unittest.TestCase):
         directory = Path(self.temporary.name)
         cases = {
             "only payload/solution.patch": [("payload/solution.json", b"{}")],
-            "duplicate": [("payload/solution.patch", b""), ("payload/solution.patch", b"")],
+            "duplicate": [
+                ("payload/solution.patch", b""),
+                ("payload/solution.patch", b""),
+            ],
             "missing": [],
             "byte limit": [("payload/solution.patch", b"x" * 100)],
         }
@@ -145,7 +158,9 @@ class PatchPayloadTests(unittest.TestCase):
 
     def test_matches_git_and_diff_on_random_edits(self) -> None:
         rng = random.Random(126)
-        lines = [f"line {index} {'x' * rng.randrange(8)}\n".encode() for index in range(60)]
+        lines = [
+            f"line {index} {'x' * rng.randrange(8)}\n".encode() for index in range(60)
+        ]
         for case in range(40):
             original = b"".join(lines)
             edited_lines = list(lines)
@@ -164,7 +179,10 @@ class PatchPayloadTests(unittest.TestCase):
             if rng.random() < 0.2:
                 original = original.rstrip(b"\n")
             with self.subTest(case=case):
-                for patch in (self.git_diff(original, edited), self.unified_diff(original, edited)):
+                for patch in (
+                    self.git_diff(original, edited),
+                    self.unified_diff(original, edited),
+                ):
                     (self.starter / "src/main.py").write_bytes(original)
                     result = self.apply(patch, allowed=("src/main.py",))
                     self.assertEqual(result["src/main.py"], edited)
@@ -178,7 +196,9 @@ class PatchPayloadTests(unittest.TestCase):
             subprocess.run([*git, "init", "-q"], check=True)
             subprocess.run([*git, "add", "-A"], check=True)
             (work / "src/main.py").write_bytes(after)
-            return subprocess.run([*git, "diff", "--binary"], check=True, capture_output=True).stdout
+            return subprocess.run(
+                [*git, "diff", "--binary"], check=True, capture_output=True
+            ).stdout
 
     def unified_diff(self, before: bytes, after: bytes) -> bytes:
         with tempfile.TemporaryDirectory() as directory:
@@ -186,8 +206,18 @@ class PatchPayloadTests(unittest.TestCase):
             old.write_bytes(before)
             new.write_bytes(after)
             completed = subprocess.run(
-                ["diff", "-u", "--label", "a/src/main.py", "--label", "b/src/main.py", str(old), str(new)],
-                capture_output=True, check=False,
+                [
+                    "diff",
+                    "-u",
+                    "--label",
+                    "a/src/main.py",
+                    "--label",
+                    "b/src/main.py",
+                    str(old),
+                    str(new),
+                ],
+                capture_output=True,
+                check=False,
             )
             self.assertIn(completed.returncode, {0, 1})
             return completed.stdout

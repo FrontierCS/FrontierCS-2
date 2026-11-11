@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import deployment_test_guard  # noqa: F401  # isort: skip
 
-import dataclasses
 import glob
 import json
 import os
@@ -38,13 +37,19 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tasks/shared/lib"))
 import isolate  # noqa: E402
-from isolate_layers import Connect, KeptFile, Pinned, Recording, Undeclared  # noqa: E402
+from isolate_layers import (  # noqa: E402
+    Connect,
+    KeptFile,
+    Pinned,
+    Recording,
+    Undeclared,
+)
 
 PYTHON = sys.executable
 
 
 class Backend:
-    backend = "auto"   # set per generated class
+    backend = "auto"  # set per generated class
 
     def python(self, code: str, **kwargs) -> isolate.Result:
         kwargs.setdefault("timeout_seconds", 30)
@@ -99,12 +104,15 @@ for action in (lambda: open({str(self.secret)!r}).read(), lambda: os.listdir({st
         tree = Path(tempfile.mkdtemp(prefix="tree-"))
         (tree / "answers").symlink_to(self.secret)
         try:
-            result = self.python("""
+            result = self.python(
+                """
 try:
     print('LEAK', open('answers').read())
 except OSError:
     print('denied')
-""", tree=tree)
+""",
+                tree=tree,
+            )
             self.assertEqual(result.stdout.strip(), b"denied", result.stderr)
             with self.assertRaises(isolate.IsolateError):
                 self.python("pass", read_paths=[tree / "answers"])
@@ -115,24 +123,37 @@ except OSError:
         shared = self.judge / "public"
         shared.mkdir()
         (shared / "graph.txt").write_text("1 2")
-        result = self.python(f"""
-print(open({str(shared / 'graph.txt')!r}).read())
-for action in (lambda: open({str(shared / 'graph.txt')!r}, 'a').write('x'),
+        result = self.python(
+            f"""
+print(open({str(shared / "graph.txt")!r}).read())
+for action in (lambda: open({str(shared / "graph.txt")!r}, 'a').write('x'),
                lambda: open({str(self.secret)!r}).read()):
     try:
         action(); print('LEAK')
     except OSError:
         print('denied')
-""", read_paths=[shared])
-        self.assertEqual(result.stdout.split(b"\n")[:3], [b"1 2", b"denied", b"denied"],
-                         result.stderr)
-        for bad in ("/", "/tmp", "/opt", "relative", "/opt/frontier", str(self.judge / "absent")):
+""",
+            read_paths=[shared],
+        )
+        self.assertEqual(
+            result.stdout.split(b"\n")[:3],
+            [b"1 2", b"denied", b"denied"],
+            result.stderr,
+        )
+        for bad in (
+            "/",
+            "/tmp",
+            "/opt",
+            "relative",
+            "/opt/frontier",
+            str(self.judge / "absent"),
+        ):
             with self.subTest(bad=bad), self.assertRaises(isolate.IsolateError):
                 self.python("pass", read_paths=[bad])
 
     def test_cannot_write_outside_private_dirs(self):
         result = self.python(f"""
-for path in ({str(self.judge / 'planted')!r}, '/tmp/planted', '/dev/shm/planted', '/var/tmp/x'):
+for path in ({str(self.judge / "planted")!r}, '/tmp/planted', '/dev/shm/planted', '/var/tmp/x'):
     try:
         open(path, 'w').write('x'); print('WROTE', path)
     except OSError:
@@ -145,13 +166,20 @@ for path in ({str(self.judge / 'planted')!r}, '/tmp/planted', '/dev/shm/planted'
         os.environ["FRONTIER_VERIFIER_TOKEN"] = "driver-capability"
         os.environ["FRONTIER_SUBMISSION_ROLE"] = "final"
         try:
-            result = self.python("import os, json; print(json.dumps(dict(os.environ)))",
-                            env={"OMP_NUM_THREADS": "2"})
+            result = self.python(
+                "import os, json; print(json.dumps(dict(os.environ)))",
+                env={"OMP_NUM_THREADS": "2"},
+            )
         finally:
-            del os.environ["FRONTIER_VERIFIER_TOKEN"], os.environ["FRONTIER_SUBMISSION_ROLE"]
+            del (
+                os.environ["FRONTIER_VERIFIER_TOKEN"],
+                os.environ["FRONTIER_SUBMISSION_ROLE"],
+            )
         seen = json.loads(result.stdout)
-        self.assertEqual(set(seen) - {"PWD"},
-                         {"PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "OMP_NUM_THREADS"})
+        self.assertEqual(
+            set(seen) - {"PWD"},
+            {"PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "OMP_NUM_THREADS"},
+        )
         self.assertNotIn(b"driver-capability", result.stdout)
 
     def test_cannot_read_judge_environment_or_memory(self):
@@ -161,7 +189,7 @@ judge = {os.getpid()}
 # (userns: the instance has its own PID namespace, where the judge's pid is another process)
 def is_judge():
     try:
-        return open('/proc/%d/cmdline' % judge, 'rb').read() == {Path('/proc/self/cmdline').read_bytes()!r}
+        return open('/proc/%d/cmdline' % judge, 'rb').read() == {Path("/proc/self/cmdline").read_bytes()!r}
     except OSError:
         return False
 for path in ('/proc/%d/environ' % judge, '/proc/%d/mem' % judge, '/proc/%d/cwd/x' % judge):
@@ -190,10 +218,18 @@ daemon = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(600.42
         self.assertEqual(first.returncode, 0, first.stderr)
         time.sleep(0.2)
         survivors = []
-        for entry in os.listdir("/proc"):   # by command line: the instance may have its own pids
+        for entry in os.listdir(
+            "/proc"
+        ):  # by command line: the instance may have its own pids
             try:
-                if b"600.4242" in Path(f"/proc/{entry}/cmdline").read_bytes() and \
-                        Path(f"/proc/{entry}/stat").read_text().rsplit(")", 1)[1].split()[0] != "Z":
+                if (
+                    b"600.4242" in Path(f"/proc/{entry}/cmdline").read_bytes()
+                    and Path(f"/proc/{entry}/stat")
+                    .read_text()
+                    .rsplit(")", 1)[1]
+                    .split()[0]
+                    != "Z"
+                ):
                     survivors.append(entry)
             except (OSError, IndexError):
                 continue
@@ -232,7 +268,7 @@ attempts = [(socket.AF_INET, socket.SOCK_STREAM, ('127.0.0.1', {listener.getsock
             (socket.AF_INET, socket.SOCK_DGRAM, ('1.1.1.1', 53)),
             (socket.AF_INET6, socket.SOCK_STREAM, ('::1', 80)),
             (socket.AF_NETLINK, socket.SOCK_RAW, None),
-            (socket.AF_UNIX, socket.SOCK_STREAM, {str(unix_dir / 'validator.sock')!r}),
+            (socket.AF_UNIX, socket.SOCK_STREAM, {str(unix_dir / "validator.sock")!r}),
             (socket.AF_UNIX, socket.SOCK_STREAM, '\\0judge-{os.getpid()}')]
 for family, kind, address in attempts:
     try:
@@ -266,7 +302,8 @@ print(libc.unshare(0x10000000), libc.mount(b'none', b'/tmp', b'tmpfs', 0, None))
         tree = Path(tempfile.mkdtemp(prefix="tree-"))
         (tree / "main.c").write_text("int main(){}")
         try:
-            result = self.python("""
+            result = self.python(
+                """
 import os
 open('main.c', 'a').write('// edited')
 try:
@@ -274,14 +311,20 @@ try:
 except OSError:
     print('read-only')
 print(open(os.path.join(os.environ['HOME'], '..', 'in', 'workload')).read())
-""", tree=tree, inputs={"workload": b"n=5"})
-            self.assertEqual(result.stdout.split(), [b"read-only", b"n=5"], result.stderr)
+""",
+                tree=tree,
+                inputs={"workload": b"n=5"},
+            )
+            self.assertEqual(
+                result.stdout.split(), [b"read-only", b"n=5"], result.stderr
+            )
             self.assertEqual((tree / "main.c").read_text(), "int main(){}")
         finally:
             isolate._remove(tree)
 
     def test_no_fork_profile_keeps_threads(self):
-        result = self.python("""
+        result = self.python(
+            """
 import os, threading
 seen = []
 t = threading.Thread(target=lambda: seen.append(1)); t.start(); t.join()
@@ -290,11 +333,16 @@ try:
     os.fork(); print('FORKED')
 except OSError:
     print('denied')
-""", syscalls="no_fork")
-        self.assertEqual(result.stdout.split(), [b"thread", b"1", b"denied"], result.stderr)
+""",
+            syscalls="no_fork",
+        )
+        self.assertEqual(
+            result.stdout.split(), [b"thread", b"1", b"denied"], result.stderr
+        )
 
     def test_no_clone_profile_has_no_processes_or_threads(self):
-        result = self.python("""
+        result = self.python(
+            """
 import os, threading
 for name, start in (('thread', lambda: threading.Thread(target=print).start()),
                     ('fork', os.fork)):
@@ -302,15 +350,22 @@ for name, start in (('thread', lambda: threading.Thread(target=print).start()),
         start(); print(name, 'CREATED')
     except (OSError, RuntimeError):
         print(name, 'denied')
-""", syscalls="no_clone")
-        self.assertEqual(result.stdout.split(), [b"thread", b"denied", b"fork", b"denied"],
-                         result.stderr)
+""",
+            syscalls="no_clone",
+        )
+        self.assertEqual(
+            result.stdout.split(),
+            [b"thread", b"denied", b"fork", b"denied"],
+            result.stderr,
+        )
 
     def test_strict_profile_has_no_processes(self):
-        result = self.python("import os\ntry:\n os.fork(); print('FORKED')\n"
-                        "except OSError:\n print('denied')", syscalls="strict")
+        result = self.python(
+            "import os\ntry:\n os.fork(); print('FORKED')\n"
+            "except OSError:\n print('denied')",
+            syscalls="strict",
+        )
         self.assertEqual(result.stdout.strip(), b"denied", result.stderr)
-
 
     def test_gpu_devices_only_when_requested(self):
         nodes = [p for p in glob.glob("/dev/nvidia*") if not os.path.isdir(p)]
@@ -337,8 +392,9 @@ print(os.environ.get('CUDA_VISIBLE_DEVICES'))
                 del os.environ["CUDA_VISIBLE_DEVICES"]
             else:
                 os.environ["CUDA_VISIBLE_DEVICES"] = saved
-        self.assertEqual(hidden.stdout.split(), [b"closed"] * len(nodes) + [b"None"],
-                         hidden.stderr)
+        self.assertEqual(
+            hidden.stdout.split(), [b"closed"] * len(nodes) + [b"None"], hidden.stderr
+        )
         self.assertIn(b"open", granted.stdout, granted.stderr)
         self.assertEqual(granted.stdout.split()[-1], b"0")
 
@@ -350,14 +406,20 @@ print(os.environ.get('CUDA_VISIBLE_DEVICES'))
             self.skipTest("no torch here")
         if not torch.cuda.is_available():
             self.skipTest("no CUDA device here")
-        code = ("import torch\nx = torch.ones(1024, device='cuda')\n"
-                "print(torch.cuda.get_device_name(0), int(x.sum().item()))")
+        code = (
+            "import torch\nx = torch.ones(1024, device='cuda')\n"
+            "print(torch.cuda.get_device_name(0), int(x.sum().item()))"
+        )
         # without -S: torch is in the interpreter's site-packages (a venv on the runners)
-        result = self.run_([PYTHON, "-I", "-c", code], devices=["nvidia"], timeout_seconds=300)
+        result = self.run_(
+            [PYTHON, "-I", "-c", code], devices=["nvidia"], timeout_seconds=300
+        )
         self.assertEqual(result.returncode, 0, result.stderr[-2000:])
         self.assertTrue(result.stdout.strip().endswith(b"1024"), result.stdout)
-        denied = self.run_([PYTHON, "-I", "-c", "import torch\nprint(torch.cuda.is_available())"],
-                           timeout_seconds=300)
+        denied = self.run_(
+            [PYTHON, "-I", "-c", "import torch\nprint(torch.cuda.is_available())"],
+            timeout_seconds=300,
+        )
         self.assertEqual(denied.stdout.strip(), b"False", denied.stderr[-2000:])
 
 
@@ -365,18 +427,24 @@ class UsernsTests(Backend):
     backend = "userns"
 
     def test_runs_as_its_own_uid_without_capabilities(self):
-        result = self.python("import os\nprint(os.getuid())\n"
-                             "print([l.split()[1] for l in open('/proc/self/status')"
-                             " if l.startswith('CapEff')][0])")
-        self.assertEqual(result.stdout.split(), [str(isolate.USERNS_UID).encode(),
-                                                 b"0000000000000000"], result.stderr)
+        result = self.python(
+            "import os\nprint(os.getuid())\n"
+            "print([l.split()[1] for l in open('/proc/self/status')"
+            " if l.startswith('CapEff')][0])"
+        )
+        self.assertEqual(
+            result.stdout.split(),
+            [str(isolate.USERNS_UID).encode(), b"0000000000000000"],
+            result.stderr,
+        )
 
     def test_loopback_is_private(self):
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listener.bind(("127.0.0.1", 0))
         listener.listen(1)
         try:
-            result = self.python(f"""
+            result = self.python(
+                f"""
 import socket
 server = socket.socket(); server.bind(('127.0.0.1', 0)); server.listen(1)
 client = socket.create_connection(server.getsockname()); peer, _ = server.accept()
@@ -386,7 +454,9 @@ try:
     print('CONNECTED')
 except OSError:
     print('denied')
-""", network="loopback")
+""",
+                network="loopback",
+            )
         finally:
             listener.close()
         self.assertEqual(result.stdout.split(), [b"ok", b"denied"], result.stderr)
@@ -396,24 +466,29 @@ except OSError:
             self.python("pass", layers=[isolate.PeakRss()])
 
     def test_dev_shm_is_private_and_counted(self):
-        result = self.python("open('/dev/shm/x', 'wb').write(b'1' * 4096); print('ok')",
-                             dev_shm=True)
+        result = self.python(
+            "open('/dev/shm/x', 'wb').write(b'1' * 4096); print('ok')", dev_shm=True
+        )
         self.assertEqual(result.stdout.strip(), b"ok", result.stderr)
         self.assertFalse(os.path.exists("/dev/shm/x"))
-        hog = self.python("import time\nf = open('/dev/shm/hog', 'wb')\n"
-                          "while True: f.write(b'1' * (16 << 20)); f.flush()",
-                          dev_shm=True, memory_bytes=256 << 20)
+        hog = self.python(
+            "import time\nf = open('/dev/shm/hog', 'wb')\n"
+            "while True: f.write(b'1' * (16 << 20)); f.flush()",
+            dev_shm=True,
+            memory_bytes=256 << 20,
+        )
         self.assertEqual(hog.limit, "memory")
-
 
 
 class AccountTests(Backend):
     def test_the_command_has_an_account(self):
         # torch._inductor and others call getpass.getuser(): the instance's uid needs an entry
         # (userns: the launcher's USERNS_USER; landlock: the judge's own account).
-        result = self.python("import getpass, os, pwd\n"
-                             "entry = pwd.getpwuid(os.getuid())\n"
-                             "print(entry.pw_name, getpass.getuser(), entry.pw_dir == os.environ['HOME'])")
+        result = self.python(
+            "import getpass, os, pwd\n"
+            "entry = pwd.getpwuid(os.getuid())\n"
+            "print(entry.pw_name, getpass.getuser(), entry.pw_dir == os.environ['HOME'])"
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         name, user, home = result.stdout.split()
         self.assertEqual(name, user)
@@ -424,9 +499,12 @@ class AccountTests(Backend):
 class LimitTests(Backend):
     def test_wall_time_kills_the_whole_tree(self):
         started = time.monotonic()
-        result = self.python("import subprocess, sys, time\n"
-                        "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
-                        "time.sleep(60)", timeout_seconds=2)
+        result = self.python(
+            "import subprocess, sys, time\n"
+            "subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\n"
+            "time.sleep(60)",
+            timeout_seconds=2,
+        )
         self.assertTrue(result.timed_out)
         self.assertEqual(result.limit, "time")
         self.assertLess(time.monotonic() - started, 20)
@@ -484,44 +562,55 @@ class LimitTests(Backend):
         judge_tmp.mkdir()
         saved, tempfile.tempdir = tempfile.tempdir, str(judge_tmp)
         try:
-            result = self.python("""
+            result = self.python(
+                """
 import multiprocessing
 manager = multiprocessing.Manager()
 print(manager.list([1, 2])[1])
 manager.shutdown()
-""", unix_sockets=True)
+""",
+                unix_sockets=True,
+            )
         finally:
             tempfile.tempdir = saved
             isolate._remove(scratch)
         self.assertEqual((result.returncode, result.stdout), (0, b"2\n"), result.stderr)
 
     def test_memory_limit(self):
-        result = self.python("x = []\nwhile True: x.append(bytearray(16 << 20))",
-                        memory_bytes=200 << 20)
+        result = self.python(
+            "x = []\nwhile True: x.append(bytearray(16 << 20))", memory_bytes=200 << 20
+        )
         self.assertEqual(result.limit, "memory")
 
     def test_cpu_limit(self):
         result = self.python("while True: pass", cpu_seconds=1)
-        self.assertIn(result.returncode, (-24, -9))   # SIGXCPU, then SIGKILL at the hard limit
+        self.assertIn(
+            result.returncode, (-24, -9)
+        )  # SIGXCPU, then SIGKILL at the hard limit
         self.assertIsNone(result.limit)
 
     def test_output_limit(self):
-        result = self.python("import sys\nwhile True: sys.stdout.write('x' * 65536)",
-                        output_bytes=4096)
+        result = self.python(
+            "import sys\nwhile True: sys.stdout.write('x' * 65536)", output_bytes=4096
+        )
         self.assertEqual(result.limit, "output")
         self.assertLessEqual(len(result.stdout), 4096)
 
     def test_file_size_limit(self):
         # (Python itself ignores SIGXFSZ; a native writer is killed by it)
-        result = self.run_(["/bin/sh", "-c", "head -c 10000 /dev/zero >&2"], file_bytes=4096)
-        self.assertEqual(result.returncode, -25)      # SIGXFSZ
+        result = self.run_(
+            ["/bin/sh", "-c", "head -c 10000 /dev/zero >&2"], file_bytes=4096
+        )
+        self.assertEqual(result.returncode, -25)  # SIGXFSZ
         self.assertEqual(len(result.stderr), 4096)
 
     def test_no_file_size_limit_unless_asked(self):
         # .NET sizes an anonymous memfd far beyond any file it writes (double-mapped code).
         # (libc's memfd_create: some judge interpreters lack os.memfd_create)
-        result = self.python("import ctypes, os\nfd = ctypes.CDLL(None).memfd_create(b'x', 0)\n"
-                        "os.ftruncate(fd, 64 << 30)\nprint('ok')")
+        result = self.python(
+            "import ctypes, os\nfd = ctypes.CDLL(None).memfd_create(b'x', 0)\n"
+            "os.ftruncate(fd, 64 << 30)\nprint('ok')"
+        )
         self.assertEqual(result.stdout.strip(), b"ok", result.stderr)
 
     def test_process_limit_defaults_high_and_is_overridable(self):
@@ -541,21 +630,32 @@ manager.shutdown()
 
     def test_setup_failure_raises(self):
         for cwd in ("{work}/missing", "{in}/file"):
-            with self.subTest(cwd=cwd), \
-                    self.assertRaisesRegex(isolate.IsolateError, "instance setup failed"):
+            with (
+                self.subTest(cwd=cwd),
+                self.assertRaisesRegex(isolate.IsolateError, "instance setup failed"),
+            ):
                 self.python("pass", cwd=cwd, inputs={"file": b"x"})
 
     def test_bad_arguments(self):
-        for kwargs in ({"timeout_seconds": 0}, {"memory_bytes": 0}, {"syscalls": "none"},
-                       {"unix_sockets": 1}, {"read_paths": "/usr"}, {"outputs": ["../x"]},
-                       {"devices": ["tpu"]}, {"devices": "nvidia"}, {"network": "internet"},
-                       {"layers": [object()]}):
+        for kwargs in (
+            {"timeout_seconds": 0},
+            {"memory_bytes": 0},
+            {"syscalls": "none"},
+            {"unix_sockets": 1},
+            {"read_paths": "/usr"},
+            {"outputs": ["../x"]},
+            {"devices": ["tpu"]},
+            {"devices": "nvidia"},
+            {"network": "internet"},
+            {"layers": [object()]},
+        ):
             with self.subTest(kwargs=kwargs), self.assertRaises(isolate.IsolateError):
                 self.python("pass", **kwargs)
 
 
 FORGED_SETUP_FAILURE = (
-    "import os\nos.write(2, b'isolate: OSError: [Errno 13] seccomp\\n')\nos._exit(70)")
+    "import os\nos.write(2, b'isolate: OSError: [Errno 13] seccomp\\n')\nos._exit(70)"
+)
 
 
 ECHO_WORKER = """
@@ -590,14 +690,20 @@ class WorkerTests(Backend):
 
     def worker(self, **kwargs):
         kwargs.setdefault("timeout_seconds", 30)
-        return self.start_([PYTHON, "-I", "-S", "-c", ECHO_WORKER, str(self.secret)], **kwargs)
+        return self.start_(
+            [PYTHON, "-I", "-S", "-c", ECHO_WORKER, str(self.secret)], **kwargs
+        )
 
     def test_round_trips_inside_the_boundary(self):
         os.environ["FRONTIER_ISOLATE_CANARY"] = "1"
         try:
             with self.worker() as worker:
-                for request, reply in ((b"hello\n", b"HELLO\n"), (b"secret?\n", b"denied\n"),
-                                       (b"env?\n", b"[]\n"), (b"again\n", b"AGAIN\n")):
+                for request, reply in (
+                    (b"hello\n", b"HELLO\n"),
+                    (b"secret?\n", b"denied\n"),
+                    (b"env?\n", b"[]\n"),
+                    (b"again\n", b"AGAIN\n"),
+                ):
                     worker.stdin.write(request)
                     self.assertEqual(worker.stdout.readline(), reply)
         finally:
@@ -605,13 +711,22 @@ class WorkerTests(Backend):
 
     def test_close_kills_the_worker_and_its_children(self):
         marker = self.judge / "survivor"
-        worker = self.start_([PYTHON, "-I", "-S", "-c", f"""
+        worker = self.start_(
+            [
+                PYTHON,
+                "-I",
+                "-S",
+                "-c",
+                f"""
 import os, subprocess, sys, time
 subprocess.Popen([sys.executable, "-c", "import time; time.sleep(5); open({str(marker)!r}, 'w')"],
                  start_new_session=True)
 print("up", flush=True)
 time.sleep(60)
-"""], timeout_seconds=60)
+""",
+            ],
+            timeout_seconds=60,
+        )
         self.assertEqual(worker.stdout.readline(), b"up\n")
         started = time.monotonic()
         result = worker.close()
@@ -624,13 +739,20 @@ time.sleep(60)
 
     def test_lifetime_limit_ends_the_worker(self):
         with self.worker(timeout_seconds=1) as worker:
-            self.assertEqual(worker.stdout.read(), b"")    # EOF once the lifetime is over
+            self.assertEqual(worker.stdout.read(), b"")  # EOF once the lifetime is over
             result = worker.close()
         self.assertTrue(result.timed_out)
 
     def test_worker_exit_is_seen_as_eof(self):
-        worker = self.start_([PYTHON, "-I", "-S", "-c",
-                              "import sys; sys.stderr.write('bye'); sys.exit(3)"])
+        worker = self.start_(
+            [
+                PYTHON,
+                "-I",
+                "-S",
+                "-c",
+                "import sys; sys.stderr.write('bye'); sys.exit(3)",
+            ]
+        )
         self.assertEqual(worker.stdout.read(), b"")
         result = worker.close()
         self.assertEqual((result.returncode, result.stderr), (3, b"bye"))
@@ -640,7 +762,9 @@ time.sleep(60)
         with self.worker() as worker:
             worker.stdin.write(b"x\n")
             worker.stdout.readline()
-        self.assertEqual(set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before)
+        self.assertEqual(
+            set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before
+        )
 
     def test_bad_arguments(self):
         with self.assertRaises(isolate.IsolateError):
@@ -659,7 +783,9 @@ time.sleep(60)
         self.assertEqual(worker.stdout.read(), b"")
         with self.assertRaisesRegex(isolate.IsolateError, "instance setup failed"):
             worker.close()
-        self.assertEqual(set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before)
+        self.assertEqual(
+            set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before
+        )
 
     def test_missing_command_is_exit_127(self):
         result = self.start_(["no-such-command-here"]).close()
@@ -711,9 +837,22 @@ class ExecTests(Backend):
         options.setdefault("failure_record", str(self.record))
         options.setdefault("syscalls", "no_clone")
         return subprocess.Popen(
-            [PYTHON, "-I", "-S", "-c", EXEC_CALLER, str(ROOT / "tasks/shared/lib"), self.backend,
-             json.dumps(argv), json.dumps(options)],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env={})
+            [
+                PYTHON,
+                "-I",
+                "-S",
+                "-c",
+                EXEC_CALLER,
+                str(ROOT / "tasks/shared/lib"),
+                self.backend,
+                json.dumps(argv),
+                json.dumps(options),
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env={},
+        )
 
     def outcome(self, process):
         """(waitstatus as an exit code, ru_utime + ru_stime) of the ended caller, by wait4."""
@@ -723,8 +862,11 @@ class ExecTests(Backend):
 
     def test_round_trips_on_the_callers_pipes_inside_the_boundary(self):
         process = self.spawn([PYTHON, "-I", "-S", "-c", ECHO_WORKER, str(self.secret)])
-        for request, reply in ((b"hello\n", b"HELLO\n"), (b"secret?\n", b"denied\n"),
-                               (b"env?\n", b"[]\n")):
+        for request, reply in (
+            (b"hello\n", b"HELLO\n"),
+            (b"secret?\n", b"denied\n"),
+            (b"env?\n", b"[]\n"),
+        ):
             process.stdin.write(request)
             process.stdin.flush()
             self.assertEqual(process.stdout.readline(), reply)
@@ -736,11 +878,14 @@ class ExecTests(Backend):
     def test_the_exit_code_and_the_killing_signal_pass_through(self):
         # Every status is the command's own, the codes a harness gives a meaning (70-72, 127)
         # included: the launcher reports its own failures only in the failure record.
-        for code, expected in (("raise SystemExit(3)", 3), ("raise SystemExit(71)", 71),
-                               ("raise SystemExit(1)", 1),
-                               ("import os, signal; os.kill(os.getpid(), signal.SIGSEGV)", -11),
-                               ("import os, signal; os.kill(os.getpid(), signal.SIGSYS)", -31),
-                               ("import os, signal; os.kill(os.getpid(), signal.SIGTERM)", -15)):
+        for code, expected in (
+            ("raise SystemExit(3)", 3),
+            ("raise SystemExit(71)", 71),
+            ("raise SystemExit(1)", 1),
+            ("import os, signal; os.kill(os.getpid(), signal.SIGSEGV)", -11),
+            ("import os, signal; os.kill(os.getpid(), signal.SIGSYS)", -31),
+            ("import os, signal; os.kill(os.getpid(), signal.SIGTERM)", -15),
+        ):
             with self.subTest(code=code):
                 process = self.spawn([PYTHON, "-I", "-S", "-c", code])
                 process.stdin.close()
@@ -749,8 +894,9 @@ class ExecTests(Backend):
                 self.assertFalse(self.record.exists())
 
     def test_a_limit_ends_the_caller_by_sigkill(self):
-        process = self.spawn([PYTHON, "-I", "-S", "-c", "import time; time.sleep(60)"],
-                             timeout_seconds=1)
+        process = self.spawn(
+            [PYTHON, "-I", "-S", "-c", "import time; time.sleep(60)"], timeout_seconds=1
+        )
         process.stdin.close()
         self.assertEqual(process.stdout.read(), b"")
         process.stdout.close()
@@ -778,12 +924,15 @@ class ExecTests(Backend):
         self.assertEqual(process.stdout.read(), b"x\n")
         process.stdout.close()
         self.assertEqual(self.outcome(process)[0], 0)
-        self.assertEqual(set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before)
+        self.assertEqual(
+            set(Path(tempfile.gettempdir()).glob(isolate.INSTANCE_PREFIX + "*")), before
+        )
 
     def test_a_failure_before_the_launch_is_reported_out_of_band(self):
         # An invalid read path: the call fails in the caller, before any instance exists.
-        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"],
-                             read_paths=["/nonexistent/path"])
+        process = self.spawn(
+            [PYTHON, "-I", "-S", "-c", "print('ran')"], read_paths=["/nonexistent/path"]
+        )
         process.stdin.close()
         self.assertEqual(process.stdout.read(), b"")
         process.stdout.close()
@@ -794,30 +943,50 @@ class ExecTests(Backend):
         # The launcher cannot build the instance (a spec it cannot use): it writes the record.
         control = Path(tempfile.mkdtemp(prefix=isolate.INSTANCE_PREFIX)) / "control"
         control.mkdir()
-        (control / "spec.json").write_text(json.dumps({
-            "backend": self.backend, "options": {"timeout_seconds": 5},
-            "exec": {"failure_record": str(self.record)}}))
-        process = subprocess.run([PYTHON, "-I", "-S", isolate.LAUNCHER, str(control)],
-                                 capture_output=True, env={})
+        (control / "spec.json").write_text(
+            json.dumps(
+                {
+                    "backend": self.backend,
+                    "options": {"timeout_seconds": 5},
+                    "exec": {"failure_record": str(self.record)},
+                }
+            )
+        )
+        process = subprocess.run(
+            [PYTHON, "-I", "-S", isolate.LAUNCHER, str(control)],
+            capture_output=True,
+            env={},
+        )
         self.assertEqual(process.returncode, 1)
         self.assertIn("error", json.loads(self.record.read_text()))
         self.assertFalse(control.exists())
 
     def test_bad_arguments(self):
         self.record.write_text("stale")
-        for record in ("relative/record.json", "/nonexistent/dir/record.json", str(self.record)):
+        for record in (
+            "relative/record.json",
+            "/nonexistent/dir/record.json",
+            str(self.record),
+        ):
             with self.subTest(record=record), self.assertRaises(isolate.IsolateError):
-                isolate.exec_on_stdio([PYTHON], timeout_seconds=5, failure_record=record)
+                isolate.exec_on_stdio(
+                    [PYTHON], timeout_seconds=5, failure_record=record
+                )
 
     def test_a_command_that_may_fork_is_refused_out_of_band(self):
         # The command must be the instance's only process (see test_the_command_dies_...).
-        for syscalls in ("default", "no_fork"):   # a thread could escape the death signal
+        for syscalls in (
+            "default",
+            "no_fork",
+        ):  # a thread could escape the death signal
             with self.subTest(syscalls=syscalls):
                 self.record.unlink(missing_ok=True)
                 self.refused_profile(syscalls)
 
     def refused_profile(self, syscalls):
-        process = self.spawn([PYTHON, "-I", "-S", "-c", "print('ran')"], syscalls=syscalls)
+        process = self.spawn(
+            [PYTHON, "-I", "-S", "-c", "print('ran')"], syscalls=syscalls
+        )
         process.stdin.close()
         self.assertEqual(process.stdout.read(), b"")
         process.stdout.close()
@@ -842,11 +1011,13 @@ class ExecTests(Backend):
         # A harness SIGKILLs the launcher at its budget: the command (which ignores every
         # catchable signal) must not survive it as an orphan.
         token = f"orphan-probe-{os.getpid()}-{time.time_ns()}"
-        code = ("import signal\n"
-                "for name in ('SIGPIPE', 'SIGHUP', 'SIGTERM', 'SIGINT'):\n"
-                "    signal.signal(getattr(signal, name), signal.SIG_IGN)\n"
-                "print('up', flush=True)\n"
-                "while True: pass\n")
+        code = (
+            "import signal\n"
+            "for name in ('SIGPIPE', 'SIGHUP', 'SIGTERM', 'SIGINT'):\n"
+            "    signal.signal(getattr(signal, name), signal.SIG_IGN)\n"
+            "print('up', flush=True)\n"
+            "while True: pass\n"
+        )
         process = self.spawn([PYTHON, "-I", "-S", "-c", code, token])
         self.assertEqual(process.stdout.readline(), b"up\n")
         self.assertTrue(self.running(token))
@@ -865,15 +1036,17 @@ class ExecTests(Backend):
         # command may create none, so an exec from a thread never runs.
         token = f"thread-probe-{os.getpid()}-{time.time_ns()}"
         loop = f"import sys\nwhile True: pass  # {token}"
-        code = ("import os, sys, threading\n"
-                "def run():\n"
-                f"    os.execv(sys.executable, [sys.executable, '-c', {loop!r}, {token!r}])\n"
-                "try:\n"
-                "    threading.Thread(target=run).start()\n"
-                "    print('thread', flush=True)\n"
-                "except (OSError, RuntimeError):\n"
-                "    print('denied', flush=True)\n"
-                "while True: pass\n")
+        code = (
+            "import os, sys, threading\n"
+            "def run():\n"
+            f"    os.execv(sys.executable, [sys.executable, '-c', {loop!r}, {token!r}])\n"
+            "try:\n"
+            "    threading.Thread(target=run).start()\n"
+            "    print('thread', flush=True)\n"
+            "except (OSError, RuntimeError):\n"
+            "    print('denied', flush=True)\n"
+            "while True: pass\n"
+        )
         process = self.spawn([PYTHON, "-I", "-S", "-c", code])
         self.assertEqual(process.stdout.readline(), b"denied\n")
         os.kill(process.pid, signal.SIGKILL)
@@ -942,9 +1115,11 @@ class HostileTreeTests(Cleanup, Backend):
 
     def test_worker(self):
         before = self.sandbox_dirs()
-        code = (HOSTILE_TREE.format(outside=str(self.outside)) +
-                "import sys\nsys.stdout.buffer.write(b'ready\\n'); sys.stdout.flush()\n"
-                "sys.stdin.read()\n")
+        code = (
+            HOSTILE_TREE.format(outside=str(self.outside))
+            + "import sys\nsys.stdout.buffer.write(b'ready\\n'); sys.stdout.flush()\n"
+            "sys.stdin.read()\n"
+        )
         worker = self.start_([PYTHON, "-I", "-S", "-c", code])
         self.assertEqual(worker.stdout.readline(), b"ready\n")
         worker.close()  # must not raise
@@ -956,8 +1131,10 @@ class NetworkTests(unittest.TestCase):
     def test_loopback_needs_userns(self):
         if not isolate.backend_available("landlock"):
             self.skipTest("no landlock backend here")
-        with mock.patch.object(isolate, "BACKENDS", ("landlock",)), \
-                self.assertRaises(isolate.IsolateError):
+        with (
+            mock.patch.object(isolate, "BACKENDS", ("landlock",)),
+            self.assertRaises(isolate.IsolateError),
+        ):
             isolate.run(["true"], timeout_seconds=5, network="loopback")
 
 
@@ -966,36 +1143,56 @@ class LayerTests(Backend):
 
     def test_hooks_run_in_order(self):
         with tempfile.NamedTemporaryFile("r") as log:
-            result = self.python("pass", layers=[Recording("a", log.name),
-                                                 Recording("b", log.name)])
-            self.assertEqual(log.read().split("\n"), [
-                "a prepare", "b prepare", "a preexec", "b preexec", "a result", "b result", ""])
+            result = self.python(
+                "pass", layers=[Recording("a", log.name), Recording("b", log.name)]
+            )
+            self.assertEqual(
+                log.read().split("\n"),
+                [
+                    "a prepare",
+                    "b prepare",
+                    "a preexec",
+                    "b preexec",
+                    "a result",
+                    "b result",
+                    "",
+                ],
+            )
         self.assertEqual(result.measurements, {"a": True, "b": True})
 
     def test_child_setup_and_rules_hold_before_exec(self):
         cpu = min(os.sched_getaffinity(0))
-        result = self.python("""
+        result = self.python(
+            """
 import os
 print(sorted(os.sched_getaffinity(0)))
 try:
     os.sched_setaffinity(0, range(os.cpu_count())); print('moved')
 except PermissionError:
     print('pinned')
-""", layers=[Pinned(cpu)])
-        self.assertEqual(result.stdout.split(), [f"[{cpu}]".encode(), b"pinned"], result.stderr)
+""",
+            layers=[Pinned(cpu)],
+        )
+        self.assertEqual(
+            result.stdout.split(), [f"[{cpu}]".encode(), b"pinned"], result.stderr
+        )
 
     def test_kept_fd(self):
         with tempfile.NamedTemporaryFile("w") as handle:
             handle.write("passed")
             handle.flush()
-            result = self.python("import os\nprint(os.read(100, 6).decode())",
-                                 layers=[KeptFile(handle.name)])
+            result = self.python(
+                "import os\nprint(os.read(100, 6).decode())",
+                layers=[KeptFile(handle.name)],
+            )
         self.assertEqual(result.stdout.strip(), b"passed", result.stderr)
 
     def test_peak_rss_is_the_command_peak(self):
         # A layer defined in isolate.py itself: the launcher resolves it to its own module.
-        result = self.python("b = bytearray(200 << 20)\nb[::4096] = b'x' * len(b[::4096])",
-                             layers=[isolate.PeakRss()])
+        result = self.python(
+            "b = bytearray(200 << 20)\nb[::4096] = b'x' * len(b[::4096])",
+            layers=[isolate.PeakRss()],
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertGreater(result.measurements["max_rss_bytes"], 200 << 20)
         self.assertLess(result.measurements["max_rss_bytes"], 400 << 20)
@@ -1010,7 +1207,8 @@ except PermissionError:
             with socket.socket() as other:
                 other.bind(("127.0.0.1", 0))
                 other.listen(1)
-                result = self.python(f"""
+                result = self.python(
+                    f"""
 import socket
 for port in ({port}, {other.getsockname()[1]}):
     try:
@@ -1021,13 +1219,17 @@ try:
     socket.socket(socket.AF_INET, socket.SOCK_DGRAM); print('udp')
 except OSError:
     print('denied')
-""", layers=[Connect(port)])
-        self.assertEqual(result.stdout.split(), [b"connected", b"denied", b"denied"],
-                         result.stderr)
+""",
+                    layers=[Connect(port)],
+                )
+        self.assertEqual(
+            result.stdout.split(), [b"connected", b"denied", b"denied"], result.stderr
+        )
 
     def test_bad_layers(self):
         class Nested(isolate.Layer):
             pass
+
         unserializable = Pinned(0)
         unserializable.cpu = {0}
         for layers in (Pinned(0), [object()], [Nested()], [unserializable]):
@@ -1047,22 +1249,35 @@ class ProgramTests(unittest.TestCase):
         def families(**kwargs):
             program = isolate.seccomp_program("default", False, "none", **kwargs)
             start = program.index((0x20, 0, 0, 16))
-            return {k for code, _, _, k in program[start + 1:] if code == 0x15}
+            return {k for code, _, _, k in program[start + 1 :] if code == 0x15}
+
         self.assertEqual(families(), set())
         self.assertEqual(families(devices=["nvidia"]), {isolate.AF_UNIX})
 
 
-
 for _name in isolate.BACKENDS:
-    for _base in (EscapeTests, AccountTests, LimitTests, WorkerTests, ExecTests, UsernsTests,
-                  HostileTreeTests, LayerTests):
-        if (_base is UsernsTests and _name != "userns") \
-                or (_base is LayerTests and _name != "landlock"):
+    for _base in (
+        EscapeTests,
+        AccountTests,
+        LimitTests,
+        WorkerTests,
+        ExecTests,
+        UsernsTests,
+        HostileTreeTests,
+        LayerTests,
+    ):
+        if (_base is UsernsTests and _name != "userns") or (
+            _base is LayerTests and _name != "landlock"
+        ):
             continue
-        _class = type(f"{_base.__name__.removesuffix('Tests')}Tests_{_name}",
-                      (_base, unittest.TestCase), {"backend": _name})
+        _class = type(
+            f"{_base.__name__.removesuffix('Tests')}Tests_{_name}",
+            (_base, unittest.TestCase),
+            {"backend": _name},
+        )
         globals()[_class.__name__] = unittest.skipUnless(
-            isolate.backend_available(_name), f"needs the {_name} backend")(_class)
+            isolate.backend_available(_name), f"needs the {_name} backend"
+        )(_class)
 del _name, _base, _class
 
 

@@ -23,13 +23,21 @@ class PopulationVerifierClockTests(unittest.TestCase):
         lease = task["gpu"]["verifier"]["lease_seconds"]
         self.assertEqual(lease, {"train": 7200, "eval": 10800})
         self.assertEqual(task["quota"]["eval_timeout_seconds"], lease["eval"])
-        self.assertEqual(task["gpu"]["verifier"]["max_gpu_seconds"],
-                         task["quota"]["max_train_calls"] * lease["train"] + lease["eval"])
+        self.assertEqual(
+            task["gpu"]["verifier"]["max_gpu_seconds"],
+            task["quota"]["max_train_calls"] * lease["train"] + lease["eval"],
+        )
 
     def test_judge_suite_timeouts_match_the_leases(self):
         import json
-        runtime = json.loads((task_manifest.judge_bundle(TASK) / "config.yaml").read_text())["runtime"]
-        self.assertEqual((runtime["timeout_seconds"], runtime["final_timeout_seconds"]), (7200, 10800))
+
+        runtime = json.loads(
+            (task_manifest.judge_bundle(TASK) / "config.yaml").read_text()
+        )["runtime"]
+        self.assertEqual(
+            (runtime["timeout_seconds"], runtime["final_timeout_seconds"]),
+            (7200, 10800),
+        )
 
 
 if __name__ == "__main__":

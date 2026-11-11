@@ -5,10 +5,10 @@ import unittest
 from unittest import mock
 
 import test_native_local_publication as fixtures
-from preview import infra
-from preview import native_definition_publication as definitions
-from preview import native_image_publication as images
-from preview import native_local_publication as datasets
+from deploy import infra
+from deploy import native_definition_publication as definitions
+from deploy import native_image_publication as images
+from deploy import native_local_publication as datasets
 
 
 class FakeS3:
@@ -170,10 +170,10 @@ class NativeDefinitionPublicationTests(unittest.TestCase):
             "site": {"aws_region": "us-west-1", "expected_account_id": "123456789012"}
         }
         with (
-            mock.patch("preview.infra.state_directory", return_value=self.fixture.root),
-            mock.patch("preview.infra.executable", side_effect=lambda x: x),
+            mock.patch("deploy.infra.state_directory", return_value=self.fixture.root),
+            mock.patch("deploy.infra.executable", side_effect=lambda x: x),
             mock.patch(
-                "preview.infra.run_command", return_value='{"VersionId":"v1"}'
+                "deploy.infra.run_command", return_value='{"VersionId":"v1"}'
             ) as run,
         ):
             definitions.AwsDefinitions(config).put(
@@ -191,7 +191,7 @@ class NativeDefinitionPublicationTests(unittest.TestCase):
         import json
         from contextlib import nullcontext
 
-        from preview import publication
+        from deploy import publication
 
         candidate = publication.candidate_version_document(
             {
@@ -239,18 +239,18 @@ class NativeDefinitionPublicationTests(unittest.TestCase):
 
         with (
             mock.patch(
-                "preview.config.read_and_validate", return_value=(self.site, None)
+                "deploy.config.read_and_validate", return_value=(self.site, None)
             ),
             mock.patch(
-                "preview.native_image_publication.mirror",
+                "deploy.native_image_publication.mirror",
                 return_value=[{"status": "MATCH"}],
             ),
             mock.patch.object(definitions, "AwsDefinitions", return_value=self.s3),
             mock.patch(
-                "preview.native_local_publication.read_definition", side_effect=artifact
+                "deploy.native_local_publication.read_definition", side_effect=artifact
             ),
-            mock.patch("preview.infra.state_directory", return_value=self.fixture.root),
-            mock.patch("preview.infra.port_forward", return_value=nullcontext(12345)),
+            mock.patch("deploy.infra.state_directory", return_value=self.fixture.root),
+            mock.patch("deploy.infra.port_forward", return_value=nullcontext(12345)),
         ):
             self.assertEqual(
                 definitions.command(args)["definitions"]["document"]["status"],
@@ -264,8 +264,8 @@ class NativeDefinitionPublicationTests(unittest.TestCase):
             args.stage = "candidate"
             args.check = True
             with (
-                mock.patch("preview.publication.find_version", return_value=None),
-                mock.patch("preview.publication.ensure_version") as ensure,
+                mock.patch("deploy.publication.find_version", return_value=None),
+                mock.patch("deploy.publication.ensure_version") as ensure,
             ):
                 self.assertEqual(
                     definitions.command(args)["candidate_registration"]["status"],
@@ -277,9 +277,9 @@ class NativeDefinitionPublicationTests(unittest.TestCase):
             actual["id"] = actual["driver_config"]["candidate_version_id"]
             with (
                 mock.patch(
-                    "preview.publication.find_version", side_effect=[None, actual]
+                    "deploy.publication.find_version", side_effect=[None, actual]
                 ),
-                mock.patch("preview.publication.ensure_version") as ensure,
+                mock.patch("deploy.publication.ensure_version") as ensure,
             ):
                 result = definitions.command(args)
                 self.assertTrue(result["registration_performed"])

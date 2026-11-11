@@ -6,6 +6,7 @@ the same unbounded log ratio: zero at the shipped backend, strictly increasing,
 below 100 for every finite quality. The beat-reference rule is unchanged. Every
 workload's candidate, reference and shipped-backend values are kept in evidence.
 """
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import importlib.util
@@ -15,7 +16,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,22 +37,33 @@ def load(path: Path, name: str, extra_path: Path):
 
 
 def observation(tps, create, restore, retained):
-    return {"throughput": tps, "create_ns": create, "restore_ns": restore, "retained_bytes": retained}
+    return {
+        "throughput": tps,
+        "create_ns": create,
+        "restore_ns": restore,
+        "retained_bytes": retained,
+    }
 
 
 class EvmScoreScaleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.e = load(EVM / "judge/evaluator.py", "evm_score_scale_evaluator", EVM / "judge")
+        cls.e = load(
+            EVM / "judge/evaluator.py", "evm_score_scale_evaluator", EVM / "judge"
+        )
         # The task runs on the shared verifier; its feedback helper is the shared one.
         shared = ROOT / "tasks/shared/verifier"
-        cls.feedback = load(shared / "beat_spec_feedback.py", "evm_score_scale_feedback", shared)
+        cls.feedback = load(
+            shared / "beat_spec_feedback.py", "evm_score_scale_feedback", shared
+        )
 
     def setUp(self):
         self.e._REFERENCE_ANCHOR.clear()
         self.addCleanup(self.e._REFERENCE_ANCHOR.clear)
 
-    def test_mapping_is_zero_at_the_shipped_backend_and_strictly_increasing_below_100(self):
+    def test_mapping_is_zero_at_the_shipped_backend_and_strictly_increasing_below_100(
+        self,
+    ):
         bounded = self.e._bounded_score
         for value in (0.0, -0.1, -40.0, float("nan"), float("-inf")):
             self.assertEqual(bounded(value), 0.0)
@@ -67,19 +78,27 @@ class EvmScoreScaleTests(unittest.TestCase):
     def test_recorded_finals_no_longer_clip(self):
         bounded = self.e._bounded_score
         # Unbounded finals recorded on the uniform-metrics version: three were clipped to 100.
-        recorded = {"gemini-agy": 107.74601365893348, "carbon-g": 106.44073372448088,
-                    "fable51": 102.54355766242458, "k31": 83.70437128299251,
-                    "terra": 63.860724954667035}
+        recorded = {
+            "gemini-agy": 107.74601365893348,
+            "carbon-g": 106.44073372448088,
+            "fable51": 102.54355766242458,
+            "k31": 83.70437128299251,
+            "terra": 63.860724954667035,
+        }
         scores = {name: bounded(value) for name, value in recorded.items()}
         self.assertAlmostEqual(scores["gemini-agy"], 65.97, places=2)
         self.assertAlmostEqual(scores["carbon-g"], 65.42, places=2)
         self.assertAlmostEqual(scores["fable51"], 63.75, places=2)
-        self.assertEqual(sorted(scores, key=scores.get), sorted(recorded, key=recorded.get))
+        self.assertEqual(
+            sorted(scores, key=scores.get), sorted(recorded, key=recorded.get)
+        )
         self.assertTrue(all(score < 70 for score in scores.values()))
         # The platform's reference anchor (median 74.76 unbounded) sits at 50.
         self.assertAlmostEqual(bounded(74.76154275002324), 50.0, delta=0.05)
         # A further doubling of the best recorded quality still earns about 11 points.
-        self.assertGreater(bounded(107.746 + 100 * math.log10(2)) - scores["gemini-agy"], 10)
+        self.assertGreater(
+            bounded(107.746 + 100 * math.log10(2)) - scores["gemini-agy"], 10
+        )
 
     def test_gate_failure_reports_the_mapped_reference_score(self):
         self.e._REFERENCE_ANCHOR[True] = 74.76
@@ -91,11 +110,26 @@ class EvmScoreScaleTests(unittest.TestCase):
         samples, profiles = {}, {}
         for index, name in enumerate(("candidate", "naive", "reference")):
             scale = (3.0, 1.0, 2.0)[index]
-            samples[name] = {case: [observation(1000 * scale + r, 100 / scale + r, 50 / scale, 4096 / scale)
-                                    for r in range(5)] for case, _ in suite}
-            profiles[name] = {"per_seed": {seed: [observation(10 * scale + r, 40 / scale, 30 / scale + r,
-                                                              2048 / scale) for r in range(5)]
-                                           for _, seed in suite}}
+            samples[name] = {
+                case: [
+                    observation(
+                        1000 * scale + r, 100 / scale + r, 50 / scale, 4096 / scale
+                    )
+                    for r in range(5)
+                ]
+                for case, _ in suite
+            }
+            profiles[name] = {
+                "per_seed": {
+                    seed: [
+                        observation(
+                            10 * scale + r, 40 / scale, 30 / scale + r, 2048 / scale
+                        )
+                        for r in range(5)
+                    ]
+                    for _, seed in suite
+                }
+            }
         return samples, profiles
 
     def test_workload_values_reproduce_the_composite_for_every_variant(self):
@@ -104,10 +138,12 @@ class EvmScoreScaleTests(unittest.TestCase):
         samples, profiles = self.synthetic(suite)
         values = e._workload_values(suite, samples, profiles)
         self.assertEqual(set(values), set(e._workload_ids(suite)))
-        for workload, row in values.items():
+        for row in values.values():
             self.assertEqual(set(row), {"candidate", "naive", "reference"})
             for variant in row.values():
-                self.assertEqual(set(variant), set(FIELDS) | {"quality", "observations"})
+                self.assertEqual(
+                    set(variant), set(FIELDS) | {"quality", "observations"}
+                )
                 self.assertEqual(len(variant["observations"]["throughput"]), 5)
         binaries = {name: Path("/bin/true") for name in samples}
         # Recompute each variant's composite from the exported values alone.
@@ -115,16 +151,21 @@ class EvmScoreScaleTests(unittest.TestCase):
             logs = [math.log(values[w][name]["quality"]) for w in values]
             exported = math.exp(sum(logs) / len(logs))
             fake = iter([run for case, _ in suite for run in samples[name][case]])
-            with mock.patch.object(e, "_one_benchmark", side_effect=lambda *a: next(fake)):
-                measured = e._qualities({name: binaries[name]}, Path("/"), suite,
-                                        {name: profiles[name]}, 5)[0][name]
+            with mock.patch.object(
+                e, "_one_benchmark", side_effect=lambda *a, fake=fake: next(fake)
+            ):
+                measured = e._qualities(
+                    {name: binaries[name]}, Path("/"), suite, {name: profiles[name]}, 5
+                )[0][name]
             self.assertAlmostEqual(exported, measured, places=9)
 
-    def test_evaluate_scores_with_the_mapping_and_keeps_workload_values_out_of_feedback(self):
+    def test_evaluate_scores_with_the_mapping_and_keeps_workload_values_out_of_feedback(
+        self,
+    ):
         e = self.e
         suite = e.FINAL_SUITE
         samples, profiles = self.synthetic(suite)
-        qualities = {"candidate": 11.95, "naive": 1.0, "reference": 10 ** 0.7476}
+        qualities = {"candidate": 11.95, "naive": 1.0, "reference": 10**0.7476}
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             work = tmp / "submission" / "work"
@@ -134,24 +175,45 @@ class EvmScoreScaleTests(unittest.TestCase):
             (cache / "source" / e.EDITABLE).parent.mkdir(parents=True)
 
             def profile(tree, output, seeds):
-                name = "candidate" if tree == work else ("naive" if tree == e.APP_DIR else "reference")
-                return {"create_ns": 1.0, "restore_ns": 1.0, "retained_bytes": 1.0,
-                        "per_seed": {seed: profiles[name]["per_seed"][seed][:1] for seed in seeds}}
+                name = (
+                    "candidate"
+                    if tree == work
+                    else ("naive" if tree == e.APP_DIR else "reference")
+                )
+                return {
+                    "create_ns": 1.0,
+                    "restore_ns": 1.0,
+                    "retained_bytes": 1.0,
+                    "per_seed": {
+                        seed: profiles[name]["per_seed"][seed][:1] for seed in seeds
+                    },
+                }
 
             def repeat(profs, binaries, seeds):
                 for name in ("candidate", "reference"):
                     for seed in seeds:
                         profs[name]["per_seed"][seed] = profiles[name]["per_seed"][seed]
 
-            with mock.patch.dict("os.environ", {"FRONTIER_SUBMISSION_ROLE": "final",
-                                                "FRONTIER_SPECTRUM_CACHE": str(cache)}), \
-                    mock.patch.object(e, "APP_DIR", EVM / "repo"), \
-                    mock.patch.object(e, "_ensure_cache", return_value=(cache, cache / "source")), \
-                    mock.patch.object(e, "_reference_header", return_value=b"// reference\n"), \
-                    mock.patch.object(e, "_checkpoint_profile", side_effect=profile), \
-                    mock.patch.object(e, "_build_variant"), \
-                    mock.patch.object(e, "_qualities", return_value=(qualities, samples)), \
-                    mock.patch.object(e, "_repeat_checkpoint_profiles", side_effect=repeat):
+            with (
+                mock.patch.dict(
+                    "os.environ",
+                    {
+                        "FRONTIER_SUBMISSION_ROLE": "final",
+                        "FRONTIER_SPECTRUM_CACHE": str(cache),
+                    },
+                ),
+                mock.patch.object(e, "APP_DIR", EVM / "repo"),
+                mock.patch.object(
+                    e, "_ensure_cache", return_value=(cache, cache / "source")
+                ),
+                mock.patch.object(
+                    e, "_reference_header", return_value=b"// reference\n"
+                ),
+                mock.patch.object(e, "_checkpoint_profile", side_effect=profile),
+                mock.patch.object(e, "_build_variant"),
+                mock.patch.object(e, "_qualities", return_value=(qualities, samples)),
+                mock.patch.object(e, "_repeat_checkpoint_profiles", side_effect=repeat),
+            ):
                 # The shared verifier hands the judge the tree (pristine + the edited header).
                 score, unbounded, message, metrics = e.evaluate(str(work))
         self.assertIn("valid Spectrum checkpoint backend", message)

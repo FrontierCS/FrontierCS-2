@@ -42,19 +42,35 @@ import source_tree
 from task_manifest import SHARED
 
 ROLES = ("agent", "verifier", "gpu-tools")
-IMAGE_NAMES = {"agent": "frontier-agent-base", "verifier": "frontier-verifier-base",
-               "gpu-tools": "frontier-gpu-tools"}
-RECIPES = {"agent": "agent-base.Dockerfile", "verifier": "verifier-base.Dockerfile",
-           "gpu-tools": "gpu-tools.Dockerfile"}
+IMAGE_NAMES = {
+    "agent": "frontier-agent-base",
+    "verifier": "frontier-verifier-base",
+    "gpu-tools": "frontier-gpu-tools",
+}
+RECIPES = {
+    "agent": "agent-base.Dockerfile",
+    "verifier": "verifier-base.Dockerfile",
+    "gpu-tools": "gpu-tools.Dockerfile",
+}
 BASES = SHARED / "bases.json"
 # Everything each role's image is built from, relative to tasks/shared (the build context). The
 # recipe's COPY sources must lie inside these (tests/test_build_base_images.py checks it).
 SOURCES = {
     "agent": ("images/agent-base.Dockerfile", "agent/bin", "lib/edit_scope.py"),
-    "verifier": ("images/verifier-base.Dockerfile", "verifier", "lib/edit_scope.py",
-                 "lib/isolate.py", "lib/install_frontier_pth.py"),
-    "gpu-tools": ("images/gpu-tools.Dockerfile", "gpu-tools", "verifier-gpu",
-                  "lib/isolate.py", "lib/install_frontier_pth.py"),
+    "verifier": (
+        "images/verifier-base.Dockerfile",
+        "verifier",
+        "lib/edit_scope.py",
+        "lib/isolate.py",
+        "lib/install_frontier_pth.py",
+    ),
+    "gpu-tools": (
+        "images/gpu-tools.Dockerfile",
+        "gpu-tools",
+        "verifier-gpu",
+        "lib/isolate.py",
+        "lib/install_frontier_pth.py",
+    ),
 }
 TAG_HEX = 12
 
@@ -63,8 +79,10 @@ def source_files(role: str) -> list[str]:
     """The role's source files, relative to tasks/shared: git's tracked files under its SOURCES in
     a checkout (ignored files such as a __pycache__ are not sources), every file under them in an
     exported tree."""
-    listed = subprocess.run(["git", "-C", str(SHARED), "ls-files", "-z", "--", *SOURCES[role]],
-                            capture_output=True)
+    listed = subprocess.run(
+        ["git", "-C", str(SHARED), "ls-files", "-z", "--", *SOURCES[role]],
+        capture_output=True,
+    )
     if source_tree.in_work_tree(SHARED):
         if listed.returncode != 0:
             raise SystemExit(f"git ls-files failed: {listed.stderr.decode().strip()}")
@@ -72,7 +90,11 @@ def source_files(role: str) -> list[str]:
     files = []
     for source in SOURCES[role]:
         path = SHARED / source
-        found = [path] if not path.is_dir() else [p for p in path.rglob("*") if not p.is_dir()]
+        found = (
+            [path]
+            if not path.is_dir()
+            else [p for p in path.rglob("*") if not p.is_dir()]
+        )
         files += [p.relative_to(SHARED).as_posix() for p in found]
     return sorted(files)
 
@@ -80,9 +102,13 @@ def source_files(role: str) -> list[str]:
 def _git_tree(entries: dict) -> bytes:
     """The git object id of a tree: entries maps a name to bytes (a blob) or a nested dict."""
     body = b""
-    def order(item):  # git orders a tree entry by its name, with "/" after a tree's name
+
+    def order(
+        item,
+    ):  # git orders a tree entry by its name, with "/" after a tree's name
         name, value = item
         return name + ("/" if isinstance(value, dict) else "")
+
     for name, value in sorted(entries.items(), key=order):
         if isinstance(value, dict):
             mode, oid = b"40000", _git_tree(value)
@@ -117,10 +143,22 @@ def source_tag(role: str) -> str:
 
 def uncommitted_sources(role: str) -> list[str]:
     """Source files that differ from HEAD (staged, unstaged or untracked)."""
-    status = subprocess.run(["git", "-C", str(SHARED), "status", "--porcelain", "-z",
-                             "--untracked-files=all", "--",
-                             *[str(SHARED / path) for path in SOURCES[role]]],
-                            check=True, capture_output=True, text=True).stdout
+    status = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(SHARED),
+            "status",
+            "--porcelain",
+            "-z",
+            "--untracked-files=all",
+            "--",
+            *[str(SHARED / path) for path in SOURCES[role]],
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
     return [entry[3:] for entry in status.split("\0") if entry]
 
 
@@ -130,7 +168,9 @@ def run(command: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 
 def remote_digest(reference: str) -> str | None:
-    result = subprocess.run(["crane", "digest", reference], capture_output=True, text=True)
+    result = subprocess.run(
+        ["crane", "digest", reference], capture_output=True, text=True
+    )
     return result.stdout.strip() if result.returncode == 0 else None
 
 
@@ -149,24 +189,36 @@ def gpu_tools_context(scratch: Path) -> Path:
     pin = json.loads((SHARED / "gpu-tools/bootstrap.json").read_text())
     context = source_context("gpu-tools", scratch)
     image = pin["source_image"].split("@")[0]
-    blob = run(["crane", "blob", f"{image}@{pin['source_layer']}"], capture_output=True).stdout
+    blob = run(
+        ["crane", "blob", f"{image}@{pin['source_layer']}"], capture_output=True
+    ).stdout
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as layer:
         body = layer.extractfile(pin["path"]).read()
     if hashlib.sha256(body).hexdigest() != pin["sha256"]:
         raise SystemExit("GPU SSH bootstrap hash differs from gpu-tools/bootstrap.json")
-    files = {pin["path"]: (body, 0o555),
-             "opt/frontier/shared-gpu/fcs2_verifier_gpu.py":
-                 ((context / "verifier-gpu/fcs2_verifier_gpu.py").read_bytes(), 0o444),
-             "opt/frontier/shared-gpu/isolate.py":
-                 ((context / "lib/isolate.py").read_bytes(), 0o444),
-             "opt/frontier/shared-gpu/install_frontier_pth.py":
-                 ((context / "lib/install_frontier_pth.py").read_bytes(), 0o444)}
+    files = {
+        pin["path"]: (body, 0o555),
+        "opt/frontier/shared-gpu/fcs2_verifier_gpu.py": (
+            (context / "verifier-gpu/fcs2_verifier_gpu.py").read_bytes(),
+            0o444,
+        ),
+        "opt/frontier/shared-gpu/isolate.py": (
+            (context / "lib/isolate.py").read_bytes(),
+            0o444,
+        ),
+        "opt/frontier/shared-gpu/install_frontier_pth.py": (
+            (context / "lib/install_frontier_pth.py").read_bytes(),
+            0o444,
+        ),
+    }
     for relative, (content, mode) in files.items():
         target = context / ".root" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
         target.chmod(mode)
-    for path in sorted((context / ".root").rglob("*"), reverse=True):  # files, then parents
+    for path in sorted(
+        (context / ".root").rglob("*"), reverse=True
+    ):  # files, then parents
         os.utime(path, (0, 0))  # fixed mtimes: the same inputs give the same image
         if path.is_dir():
             path.chmod(0o555)
@@ -175,15 +227,26 @@ def gpu_tools_context(scratch: Path) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--image-namespace", default=image_namespace.namespace(),
-                        help="<registry>/<namespace> to push under "
-                        "(default: config/image-namespace.json)")
-    parser.add_argument("--print-tags", action="store_true",
-                        help="print each role's derived tag and exit")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--image-namespace",
+        default=image_namespace.namespace(),
+        help="<registry>/<namespace> to push under "
+        "(default: config/image-namespace.json)",
+    )
+    parser.add_argument(
+        "--print-tags",
+        action="store_true",
+        help="print each role's derived tag and exit",
+    )
     parser.add_argument("--push", action="store_true")
-    parser.add_argument("--roles", default="agent,verifier",
-                        help=f"comma-separated subset of {','.join(ROLES)}")
+    parser.add_argument(
+        "--roles",
+        default="agent,verifier",
+        help=f"comma-separated subset of {','.join(ROLES)}",
+    )
     options = parser.parse_args()
     roles = options.roles.split(",")
     if not roles or any(role not in ROLES for role in roles):
@@ -194,18 +257,35 @@ def main() -> int:
         return 0
     for role in roles:
         if uncommitted_sources(role):
-            raise SystemExit(f"{role}: commit its sources first (the tag names committed "
-                             f"content): {', '.join(uncommitted_sources(role))}")
+            raise SystemExit(
+                f"{role}: commit its sources first (the tag names committed "
+                f"content): {', '.join(uncommitted_sources(role))}"
+            )
     recorded = json.loads(BASES.read_text())
     references = {}
     scratch = Path(tempfile.mkdtemp(prefix="frontier-bases-"))
     for role in roles:
         repository = f"{options.image_namespace}/{IMAGE_NAMES[role]}"
         tag = f"{repository}:{source_tag(role)}"
-        context = (gpu_tools_context(scratch) if role == "gpu-tools"
-                   else source_context(role, scratch))
-        run(["docker", "build", "--provenance=false", "--platform", "linux/amd64",
-             "-f", str(context / "images" / RECIPES[role]), "--tag", tag, str(context)])
+        context = (
+            gpu_tools_context(scratch)
+            if role == "gpu-tools"
+            else source_context(role, scratch)
+        )
+        run(
+            [
+                "docker",
+                "build",
+                "--provenance=false",
+                "--platform",
+                "linux/amd64",
+                "-f",
+                str(context / "images" / RECIPES[role]),
+                "--tag",
+                tag,
+                str(context),
+            ]
+        )
         if not options.push:
             continue
         existing = remote_digest(tag)
@@ -214,8 +294,10 @@ def main() -> int:
         if digest is None:
             raise SystemExit(f"cannot read back {tag}")
         if existing and existing != digest:
-            raise SystemExit(f"{tag} already named {existing}: the same sources built a different "
-                             "image (a non-reproducible recipe); fix the recipe")
+            raise SystemExit(
+                f"{tag} already named {existing}: the same sources built a different "
+                "image (a non-reproducible recipe); fix the recipe"
+            )
         reference = f"{tag}@{digest}"
         references[role] = reference
         print(f"{role}: {reference}")

@@ -32,8 +32,13 @@ class Recording(isolate.Layer):
 
     def result(self, result, run):
         self.note("result")
-        return dataclasses.replace(result, measurements={
-            **result.measurements, self.name: run.rusage["ru_maxrss"] > 0})
+        return dataclasses.replace(
+            result,
+            measurements={
+                **result.measurements,
+                self.name: run.rusage["ru_maxrss"] > 0,
+            },
+        )
 
 
 class Pinned(isolate.Layer):
@@ -43,7 +48,7 @@ class Pinned(isolate.Layer):
         self.cpu = cpu
 
     def prepare(self, rules):
-        rules.deny_syscall(203)   # sched_setaffinity
+        rules.deny_syscall(203)  # sched_setaffinity
 
     def preexec(self):
         os.sched_setaffinity(0, [self.cpu])
@@ -64,6 +69,7 @@ class KeptFile(isolate.Layer):
 
 class Connect(isolate.Layer):
     """A relaxing layer: TCP stream sockets that may connect to one port."""
+
     relaxes = ("tcp connect",)
 
     def __init__(self, port: int):

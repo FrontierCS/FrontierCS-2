@@ -1,7 +1,8 @@
 """Load task modules without leaking generic names into repository test imports."""
+
 import importlib
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 TASK = ROOT / "tasks/problems/Software Engineering/cute_crest"
@@ -10,14 +11,24 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import task_manifest  # noqa: E402
 
 # The search machine as the judge's verifier.json declares it (task.toml [test_sandboxes.search]).
-SEARCH_SANDBOX = task_manifest.verifier_parameters(task_manifest.read_task(TASK))["sandboxes"]["search"]
+SEARCH_SANDBOX = task_manifest.verifier_parameters(task_manifest.read_task(TASK))[
+    "sandboxes"
+]["search"]
 
 # The judge as the Verifier image holds it: judge/ with the starter at pristine/.
 JUDGE = task_manifest.judge_bundle(TASK)
 SHARED_VERIFIER = task_manifest.SHARED / "verifier"
 SHARED_VERIFIER_GPU = task_manifest.SHARED / "verifier-gpu"
-NAMES = ("evaluator", "gate", "beat_spec_feedback", "fcs2_verifier", "fcs2_verifier_gpu",
-         "solution_policy", "crest_runner", "frontier_build")
+NAMES = (
+    "evaluator",
+    "gate",
+    "beat_spec_feedback",
+    "fcs2_verifier",
+    "fcs2_verifier_gpu",
+    "solution_policy",
+    "crest_runner",
+    "frontier_build",
+)
 
 
 def load_runtime():
@@ -26,8 +37,13 @@ def load_runtime():
     try:
         for name in NAMES:
             sys.modules.pop(name, None)
-        sys.path[:0] = [str(JUDGE), str(SHARED_VERIFIER), str(SHARED_VERIFIER_GPU), str(task_manifest.SHARED / "lib"),
-                        str(REPO_TREE)]
+        sys.path[:0] = [
+            str(JUDGE),
+            str(SHARED_VERIFIER),
+            str(SHARED_VERIFIER_GPU),
+            str(task_manifest.SHARED / "lib"),
+            str(REPO_TREE),
+        ]
         return {name: importlib.import_module(name) for name in NAMES}
     finally:
         sys.path[:] = old_path

@@ -38,9 +38,14 @@ FIT = (TEMPLATE / "repo/model/fit.py").read_text()
 
 def patch_of(text: str) -> str:
     """A patch that replaces model/fit.py with `text`."""
-    return "".join(difflib.unified_diff(FIT.splitlines(keepends=True),
-                                        text.splitlines(keepends=True),
-                                        "a/model/fit.py", "b/model/fit.py"))
+    return "".join(
+        difflib.unified_diff(
+            FIT.splitlines(keepends=True),
+            text.splitlines(keepends=True),
+            "a/model/fit.py",
+            "b/model/fit.py",
+        )
+    )
 
 
 REFERENCE = (TEMPLATE / "judge/reference.patch").read_text()
@@ -52,9 +57,13 @@ def setUpModule():
     scratch = Path(tempfile.mkdtemp(prefix="sandbox-template-ref-"))
     try:
         shutil.copytree(TEMPLATE / "repo", scratch / "repo")
-        subprocess.run(["git", "apply", str(TEMPLATE / "judge/reference.patch")],
-                       cwd=scratch / "repo", check=True, capture_output=True,
-                       env={**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch)})
+        subprocess.run(
+            ["git", "apply", str(TEMPLATE / "judge/reference.patch")],
+            cwd=scratch / "repo",
+            check=True,
+            capture_output=True,
+            env={**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch)},
+        )
         REFERENCE_FIT = (scratch / "repo/model/fit.py").read_text()
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
@@ -64,13 +73,16 @@ class SandboxTemplate(AdapterCase):
     def setUp(self):
         super().setUp()
         generated = task_manifest.generated_files(TEMPLATE)
-        self.parameters.write_bytes(generated[".frontier-generated/verifier/verifier.json"])
+        self.parameters.write_bytes(
+            generated[".frontier-generated/verifier/verifier.json"]
+        )
         self.bundle = self.scratch / "task"
         shutil.copytree(task_manifest.judge_bundle(TEMPLATE), self.bundle)
         # The timing machine's interpreter imports isolate from frontier.pth in the Verifier
         # GPU image; the fake runner is this host, so the step inherits this import path.
-        environment = mock.patch.dict(os.environ, {
-            "PYTHONPATH": str(REPO / "tasks/shared/lib")})
+        environment = mock.patch.dict(
+            os.environ, {"PYTHONPATH": str(REPO / "tasks/shared/lib")}
+        )
         environment.start()
         self.addCleanup(environment.stop)
         self.judge_globals = {"PYTHON": sys.executable}
@@ -89,48 +101,72 @@ class SandboxTemplate(AdapterCase):
         os.environ["FRONTIER_VERIFICATION_MODE"] = mode
         work = Path(tempfile.mkdtemp(dir=self.scratch))
         result = work / "result.json"
-        self.verifier.verify(bundle=self.bundle, entrypoint="payload/solution.patch",
-                             payload=payload(patch, work),
-                             dataset=TEMPLATE / "datasets" / f"{mode}.json", mode=mode,
-                             result_path=result, evidence_path=work / "evidence.tar.zst")
+        self.verifier.verify(
+            bundle=self.bundle,
+            entrypoint="payload/solution.patch",
+            payload=payload(patch, work),
+            dataset=TEMPLATE / "datasets" / f"{mode}.json",
+            mode=mode,
+            result_path=result,
+            evidence_path=work / "evidence.tar.zst",
+        )
         return json.loads(result.read_text())
 
     def assertScoredZero(self, patch: str, reason: str, modes=("train", "eval")):
         for mode in modes:
             result = self.verify(patch, mode)
-            self.assertEqual((result["status"], result["raw_score"]), ("passed", 0.0),
-                             (mode, result))
+            self.assertEqual(
+                (result["status"], result["raw_score"]), ("passed", 0.0), (mode, result)
+            )
             self.assertIn(reason, result["summary"])
         if "eval" in modes:
             self.assertEqual(result["private_metrics"]["beats_reference"], 0)
 
     def test_layout_is_valid(self):
-        self.assertEqual(validate_task_layout.validate_task(TEMPLATE), "patch-workspace")
+        self.assertEqual(
+            validate_task_layout.validate_task(TEMPLATE), "patch-workspace"
+        )
 
     def test_the_two_classes_are_declared_as_the_judge_uses_them(self):
         task = task_manifest.read_task(TEMPLATE)
         parameters = task_manifest.verifier_parameters(task)
         self.assertEqual(parameters["gpu"]["placement"], "control")
-        self.assertEqual({name: (s["image"], s["max_concurrent"])
-                          for name, s in parameters["sandboxes"].items()},
-                         {"candidate": ("agent_gpu", 2), "timing": ("verifier_gpu", 1)})
-        self.assertEqual(task_manifest.policy_from_task(task)["gpu"]["verifier"],
-                         {"max_gpu_instances": 3, "max_gpu_seconds": 10800})
-        self.assertNotIn("sidecars", task)  # command sandboxes are never platform sidecars
+        self.assertEqual(
+            {
+                name: (s["image"], s["max_concurrent"])
+                for name, s in parameters["sandboxes"].items()
+            },
+            {"candidate": ("agent_gpu", 2), "timing": ("verifier_gpu", 1)},
+        )
+        self.assertEqual(
+            task_manifest.policy_from_task(task)["gpu"]["verifier"],
+            {"max_gpu_instances": 3, "max_gpu_seconds": 10800},
+        )
+        self.assertNotIn(
+            "sidecars", task
+        )  # command sandboxes are never platform sidecars
 
     def test_reference_scores_fifty_on_three_machines_per_verification(self):
         train = self.verify(REFERENCE, "train")
         self.assertEqual((train["status"], train["raw_score"]), ("passed", 50.0), train)
-        self.assertEqual(set(train["metrics"]), {"score_unbounded", "beat_spec_progress", "mse"})
+        self.assertEqual(
+            set(train["metrics"]), {"score_unbounded", "beat_spec_progress", "mse"}
+        )
         self.assertEqual(len(train["metrics"]["mse"]), 3)
         self.assertEqual(train["metrics"]["beat_spec_progress"]["mse"]["total"], 3)
-        self.assertEqual(sorted(c["image"] for c in self.driver.creates),
-                         ["agent_gpu", "agent_gpu", "verifier_gpu"])
+        self.assertEqual(
+            sorted(c["image"] for c in self.driver.creates),
+            ["agent_gpu", "agent_gpu", "verifier_gpu"],
+        )
         self.assertEqual(len(self.driver.deleted), 3)
         final = self.verify(REFERENCE, "eval")
         self.assertEqual(final["raw_score"], 50.0)
-        self.assertEqual(final["private_metrics"]["beat_spec_progress"]["mse"]["total"], 5)
-        self.assertEqual(final["private_metrics"]["beats_reference"], 0)  # ties do not beat it
+        self.assertEqual(
+            final["private_metrics"]["beat_spec_progress"]["mse"]["total"], 5
+        )
+        self.assertEqual(
+            final["private_metrics"]["beats_reference"], 0
+        )  # ties do not beat it
 
     def test_a_better_fit_scores_above_fifty_and_beats_the_reference(self):
         better = REFERENCE_FIT.replace("DEGREE = 3", "DEGREE = 9")
@@ -139,37 +175,60 @@ class SandboxTemplate(AdapterCase):
         self.assertEqual(final["private_metrics"]["beats_reference"], 1)
 
     def test_the_starter_scores_below_fifty(self):
-        result = self.verify(patch_of(FIT.replace("Starter: a straight", "Starter, as shipped: a straight")),
-                             "train")
+        result = self.verify(
+            patch_of(
+                FIT.replace("Starter: a straight", "Starter, as shipped: a straight")
+            ),
+            "train",
+        )
         self.assertLess(result["raw_score"], 50.0)
 
     def test_a_crashing_fit_is_a_scored_zero(self):
-        self.assertScoredZero(patch_of(FIT.replace("    n = len(xs)\n", "    raise ValueError('no')\n")),
-                              "the fit exited with status 1")
+        self.assertScoredZero(
+            patch_of(FIT.replace("    n = len(xs)\n", "    raise ValueError('no')\n")),
+            "the fit exited with status 1",
+        )
 
     def test_malformed_predictions_are_a_scored_zero(self):
-        self.assertScoredZero(patch_of(FIT.replace(
-            'return [params["slope"] * x + params["intercept"] for x in xs]',
-            'return [float("nan") for x in xs]')), "not one finite number per query")
+        self.assertScoredZero(
+            patch_of(
+                FIT.replace(
+                    'return [params["slope"] * x + params["intercept"] for x in xs]',
+                    'return [float("nan") for x in xs]',
+                )
+            ),
+            "not one finite number per query",
+        )
 
     def test_a_fit_past_its_limit_is_a_scored_zero(self):
         self.judge_globals["FIT_SECONDS"] = 2
-        self.assertScoredZero(patch_of(FIT.replace("    n = len(xs)\n", "    while True:\n        pass\n")),
-                              "exceeded its 2-second limit", modes=("train",))
+        self.assertScoredZero(
+            patch_of(
+                FIT.replace("    n = len(xs)\n", "    while True:\n        pass\n")
+            ),
+            "exceeded its 2-second limit",
+            modes=("train",),
+        )
 
-    def test_a_predict_that_fails_in_isolate_on_the_timing_machine_is_a_scored_zero(self):
+    def test_a_predict_that_fails_in_isolate_on_the_timing_machine_is_a_scored_zero(
+        self,
+    ):
         # isolate builds the instance's environment from nothing: no FRONTIER_* variable reaches
         # it, while the candidate's own machine has its step deadline.
         needs_runner = FIT.replace(
             '    return [params["slope"]',
             '    import os\n    os.environ["FRONTIER_VERIFIER_LOCAL_DEADLINE"]\n'
-            '    return [params["slope"]')
-        self.assertScoredZero(patch_of(needs_runner), "on the timing machine", modes=("train",))
+            '    return [params["slope"]',
+        )
+        self.assertScoredZero(
+            patch_of(needs_runner), "on the timing machine", modes=("train",)
+        )
 
     def test_a_failing_reference_is_not_a_score(self):
         (self.bundle / "reference.patch").chmod(0o644)
         (self.bundle / "reference.patch").write_text(
-            patch_of(FIT.replace("    n = len(xs)\n", "    raise ValueError('no')\n")))
+            patch_of(FIT.replace("    n = len(xs)\n", "    raise ValueError('no')\n"))
+        )
         result = self.verify(REFERENCE, "train")
         self.assertEqual(result["status"], "failed", result)
         self.assertNotIn("raw_score", result)
@@ -177,8 +236,10 @@ class SandboxTemplate(AdapterCase):
     def test_a_lost_machine_is_an_unscored_gpu_failure(self):
         self.driver.fail_scope_suffix = 1
         result = self.verify(REFERENCE, "train")
-        self.assertEqual((result["status"], result["failure"]["code"]),
-                         ("failed", "verifier_gpu_error"))
+        self.assertEqual(
+            (result["status"], result["failure"]["code"]),
+            ("failed", "verifier_gpu_error"),
+        )
 
 
 if __name__ == "__main__":

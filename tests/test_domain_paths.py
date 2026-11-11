@@ -43,13 +43,16 @@ class PreviousDomainPaths(unittest.TestCase):
     def test_flat_and_grouped_layouts(self):
         from unittest import mock
 
-        from preview import images
+        from deploy import images
 
         prefix = "tasks/problems/"
         for relative in ("sample_task", "databases/sample_task"):
-            with mock.patch.object(
-                images, "command", return_value=prefix + relative + "/policy.json"
-            ), mock.patch.object(images, "previous_layers", return_value=[]):
+            with (
+                mock.patch.object(
+                    images, "command", return_value=prefix + relative + "/policy.json"
+                ),
+                mock.patch.object(images, "previous_layers", return_value=[]),
+            ):
                 self.assertEqual(
                     images.previous_problem_path(
                         pathlib.Path("."), "commit", "sample_task"
@@ -62,8 +65,10 @@ class PreviousDomainPaths(unittest.TestCase):
             + prefix
             + "databases/sample_task/policy.json"
         )
-        with mock.patch.object(images, "command", return_value=duplicate), \
-                mock.patch.object(images, "previous_layers", return_value=[]):
+        with (
+            mock.patch.object(images, "command", return_value=duplicate),
+            mock.patch.object(images, "previous_layers", return_value=[]),
+        ):
             with self.assertRaisesRegex(
                 images.IncrementalFailure, "one source directory"
             ):

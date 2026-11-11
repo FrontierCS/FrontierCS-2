@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Replay native reference overlays against seeded Preview tasks, resumably."""
 
-from preview.acceptance import (
+from deploy.acceptance import (
     CANCEL_ATTEMPTS,
     CLASSIFICATION_KEYS,
     ERROR_HISTORY_LIMIT,
@@ -20,7 +20,7 @@ from preview.acceptance import (
     successful_train,
     verdict,
 )
-from preview.acceptance import (
+from deploy.acceptance import (
     reference_parity_main as main,
 )
 

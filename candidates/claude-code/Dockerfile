@@ -4,8 +4,8 @@ FROM ${FRONTIER_NODE_BUILD_IMAGE} AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 # Fixed official native Linux/x64 package; never fetch "latest" at runtime.
-RUN curl -fsSL https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.311.tgz -o /tmp/claude.tgz \
-    && echo '764d6554cb7b9fe36562e70a33b74ba7f3dfacadf6a5aff8a0a42469c7dace54a3f2b1be8641faef09c39da146f46b366a5dce8caf0f4d51e06765861d7a1652  /tmp/claude.tgz' | sha512sum -c - \
+RUN curl -fsSL https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.321.tgz -o /tmp/claude.tgz \
+    && echo '956f8c8544e19d4da1afa42743dc600fc73a3960096d836988ccc843838968bc5c0724ece77bfbc15ff62331aca416dc3219f1168c75befa25b6e5b29bf87abb  /tmp/claude.tgz' | sha512sum -c - \
     && mkdir /source && tar -xzf /tmp/claude.tgz -C /source \
     && install -d /out/opt/frontier/candidate/claude-code/lib /out/opt/frontier/candidate/bin \
          /out/opt/frontier/candidate/skills/frontier-submit /out/opt/frontier/candidate/skills/frontier-gpu \
@@ -15,7 +15,7 @@ RUN curl -fsSL https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/
        | sort -u | while read -r library; do cp -L "$library" /out/opt/frontier/candidate/claude-code/lib/; done \
     && /out/opt/frontier/candidate/claude-code/lib/ld-linux-x86-64.so.2 \
          --library-path /out/opt/frontier/candidate/claude-code/lib \
-         /out/opt/frontier/candidate/claude-code/claude --version | grep -Fx '2.1.311 (Claude Code)'
+         /out/opt/frontier/candidate/claude-code/claude --version | grep -Fx '2.1.321 (Claude Code)'
 
 COPY --chmod=0555 launcher.py /out/opt/frontier/candidate/launch
 COPY --chmod=0555 submit/frontier_submit.py /out/opt/frontier/candidate/bin/frontier-submit

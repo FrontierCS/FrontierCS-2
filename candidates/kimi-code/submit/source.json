@@ -1,9 +1,9 @@
 {
-  "platform_source_commit": "341949767be14411465bbb704ce87e8453773965",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "files": {
     "frontier_submit.py": {
       "source": "candidate-overlays/codex/frontier_submit.py",
-      "sha256": "sha256:75acb40e013f498edd905fce2edfaea35c154b080de79cf676b0e3c19f71492f"
+      "sha256": "sha256:f4cbc551acd10a729e5cade5cc3a70b653d9aee1dee4b1cbfeb20b3208df6f00"
     },
     "SKILL.md": {
       "source": "candidate-overlays/kimi-code/skills/frontier-submit/SKILL.md",

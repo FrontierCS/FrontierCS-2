@@ -48,9 +48,19 @@ def remote_exec(sandbox_id: str, command: str) -> int:
     sandbox = modal.Sandbox.from_id(sandbox_id)
     body = sys.stdin.buffer.read()
     process = sandbox.exec(
-        "setpriv", f"--reuid={RUNNER_UID}", f"--regid={RUNNER_UID}", "--clear-groups",
-        "env", "-i", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-        "HOME=/workspace", "/bin/sh", "-c", command, text=False)
+        "setpriv",
+        f"--reuid={RUNNER_UID}",
+        f"--regid={RUNNER_UID}",
+        "--clear-groups",
+        "env",
+        "-i",
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "HOME=/workspace",
+        "/bin/sh",
+        "-c",
+        command,
+        text=False,
+    )
     if body:
         process.stdin.write(body)
     process.stdin.write_eof()
@@ -61,7 +71,9 @@ def remote_exec(sandbox_id: str, command: str) -> int:
             target.write(chunk)
             target.flush()
 
-    errors = threading.Thread(target=pump, args=(process.stderr, sys.stderr.buffer), daemon=True)
+    errors = threading.Thread(
+        target=pump, args=(process.stderr, sys.stderr.buffer), daemon=True
+    )
     errors.start()
     pump(process.stdout, sys.stdout.buffer)
     errors.join()
@@ -79,13 +91,24 @@ def load(name: str, path: Path):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--task", type=Path, required=True)
-    parser.add_argument("--image", action="append", required=True, metavar="KIND=REF",
-                        help="the published image of a runner image kind (agent_gpu, "
-                             "verifier_gpu, agent_cpu, verifier_cpu)")
-    parser.add_argument("--bundle", type=Path,
-                        help="a staged judge bundle (default: task_manifest.judge_bundle)")
-    parser.add_argument("--candidate", required=True,
-                        help="'reference' (judge/reference.patch) or a patch file")
+    parser.add_argument(
+        "--image",
+        action="append",
+        required=True,
+        metavar="KIND=REF",
+        help="the published image of a runner image kind (agent_gpu, "
+        "verifier_gpu, agent_cpu, verifier_cpu)",
+    )
+    parser.add_argument(
+        "--bundle",
+        type=Path,
+        help="a staged judge bundle (default: task_manifest.judge_bundle)",
+    )
+    parser.add_argument(
+        "--candidate",
+        required=True,
+        help="'reference' (judge/reference.patch) or a patch file",
+    )
     parser.add_argument("--mode", choices=["train", "eval"], default="train")
     options = parser.parse_args()
 
@@ -97,45 +120,83 @@ def main() -> int:
     scratch = Path(tempfile.mkdtemp(prefix="sandbox-runner-"))
     parameters = scratch / "verifier.json"
     parameters.write_text(json.dumps(task_manifest.verifier_parameters(task)))
-    gpu = load("fcs2_verifier_gpu", REPO / "tasks/shared/verifier-gpu/fcs2_verifier_gpu.py")
+    gpu = load(
+        "fcs2_verifier_gpu", REPO / "tasks/shared/verifier-gpu/fcs2_verifier_gpu.py"
+    )
     gpu.PARAMETERS = parameters
 
-    bundle = options.bundle.resolve() if options.bundle else task_manifest.judge_bundle(root)
+    bundle = (
+        options.bundle.resolve() if options.bundle else task_manifest.judge_bundle(root)
+    )
     app = modal.App.lookup("sandbox-runner-check", create_if_missing=True)
     references = dict(item.split("=", 1) for item in options.image)
-    images = {kind: modal.Image.from_registry(reference) for kind, reference in references.items()}
+    images = {
+        kind: modal.Image.from_registry(reference)
+        for kind, reference in references.items()
+    }
     if "verifier_gpu" in images:
         images["verifier_gpu"] = images["verifier_gpu"].add_local_dir(
-            bundle, "/opt/frontier/task", copy=True)
+            bundle, "/opt/frontier/task", copy=True
+        )
     sandboxes: dict[str, modal.Sandbox] = {}
     lock = threading.Lock()
 
-    def create_runner(driver_url, verification_id, token, gpu_type, seconds, gpu_count=1, *,
-                      window=None, idempotency_scope=None, image=None, machine=None):
+    def create_runner(
+        driver_url,
+        verification_id,
+        token,
+        gpu_type,
+        seconds,
+        gpu_count=1,
+        *,
+        window=None,
+        idempotency_scope=None,
+        image=None,
+        machine=None,
+    ):
         started = time.monotonic()
         if machine is not None:
             # A CPU machine as the Driver makes it (core driver-modal sandbox_resources): request
             # and limit are the declared cores and memory.
-            cores, memory = machine["cpu_millis"] / 1000, machine["memory_bytes"] // (1024 * 1024)
+            cores, memory = (
+                machine["cpu_millis"] / 1000,
+                machine["memory_bytes"] // (1024 * 1024),
+            )
             shape = {"cpu": (cores, cores), "memory": (memory, memory)}
         else:
             # The Driver's Modal GPU name (core driver-modal modal_gpu_type): H100 is the
             # exact-H100 selector "H100!"; a plain "H100" may run on an H200.
             modal_gpu = "H100!" if gpu_type.upper() == "H100" else gpu_type.upper()
-            shape = {"gpu": modal_gpu if gpu_count == 1 else f"{modal_gpu}:{gpu_count}",
-                     "cpu": 8, "memory": 64 * 1024}
-        sandbox = modal.Sandbox.create(app=app, image=images[image], timeout=seconds + 900,
-                                       block_network=True, **shape)
+            shape = {
+                "gpu": modal_gpu if gpu_count == 1 else f"{modal_gpu}:{gpu_count}",
+                "cpu": 8,
+                "memory": 64 * 1024,
+            }
+        sandbox = modal.Sandbox.create(
+            app=app,
+            image=images[image],
+            timeout=seconds + 900,
+            block_network=True,
+            **shape,
+        )
         with lock:
             number = len(sandboxes)
             runner_id = "gpurunner_0" + "".join(
-                CROCKFORD[(number >> (5 * i)) & 31] for i in range(25))
+                CROCKFORD[(number >> (5 * i)) & 31] for i in range(25)
+            )
             sandboxes[runner_id] = sandbox
-        print(f"### runner {runner_id} ({idempotency_scope}) = {sandbox.object_id}, "
-              f"up after {time.monotonic() - started:.0f} s", flush=True)
-        return {"runner_id": runner_id, "state": "ready",
-                **(dict(machine) if machine is not None else {"gpu_count": gpu_count}),
-                "granted_seconds": seconds, "image": image}
+        print(
+            f"### runner {runner_id} ({idempotency_scope}) = {sandbox.object_id}, "
+            f"up after {time.monotonic() - started:.0f} s",
+            flush=True,
+        )
+        return {
+            "runner_id": runner_id,
+            "state": "ready",
+            **(dict(machine) if machine is not None else {"gpu_count": gpu_count}),
+            "granted_seconds": seconds,
+            "image": image,
+        }
 
     def terminate_runner(driver_url, verification_id, token, runner_id, *, window=None):
         with lock:
@@ -146,16 +207,26 @@ def main() -> int:
     gpu._create_runner = create_runner
     gpu._terminate_runner = terminate_runner
     gpu._ssh_argv = lambda runner, directory: [
-        sys.executable, str(Path(__file__).resolve()), "_exec",
-        sandboxes[runner["runner_id"]].object_id]
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "_exec",
+        sandboxes[runner["runner_id"]].object_id,
+    ]
     gpu._ssh_environment = lambda directory: dict(os.environ)
     gpu._driver_config = lambda: ("http://driver.invalid", VERIFICATION, "unused")
 
     # As in the task's Verifier image (its ENV, or the shared Verifier base's).
-    os.environ.update({
-        "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": task_manifest.verifier_channel_bytes(root),
-        "FRONTIER_VERIFICATION_MODE": options.mode,
-        "FRONTIER_SUBMISSION_ROLE": "final" if options.mode == "eval" else "development"})
+    os.environ.update(
+        {
+            "FRONTIER_MAX_SSH_BYTES_PER_DIRECTION": task_manifest.verifier_channel_bytes(
+                root
+            ),
+            "FRONTIER_VERIFICATION_MODE": options.mode,
+            "FRONTIER_SUBMISSION_ROLE": "final"
+            if options.mode == "eval"
+            else "development",
+        }
+    )
     sys.path.insert(0, str(bundle))
     evaluator = load("evaluator", bundle / "evaluator.py")
 
@@ -164,19 +235,32 @@ def main() -> int:
     for path in (tree, *tree.rglob("*")):
         if not path.is_symlink():
             path.chmod(path.stat().st_mode | 0o200)
-    patch = bundle / "reference.patch" if options.candidate == "reference" else Path(options.candidate)
-    subprocess.run(["git", "apply", "--whitespace=nowarn", str(patch.resolve())], cwd=tree,
-                   check=True, env={**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch)})
+    patch = (
+        bundle / "reference.patch"
+        if options.candidate == "reference"
+        else Path(options.candidate)
+    )
+    subprocess.run(
+        ["git", "apply", "--whitespace=nowarn", str(patch.resolve())],
+        cwd=tree,
+        check=True,
+        env={**os.environ, "GIT_CEILING_DIRECTORIES": str(scratch)},
+    )
     started = time.monotonic()
     try:
         score, raw, message, metrics = evaluator.evaluate(str(tree))
     finally:
         for runner_id in list(sandboxes):
             terminate_runner(None, None, None, runner_id)
-    summary = {"seconds": round(time.monotonic() - started, 1), "score": score, "raw": raw,
-               "message": message,
-               "metrics": {key: value for key, value in metrics.items()
-                           if key != "private_execution"}}
+    summary = {
+        "seconds": round(time.monotonic() - started, 1),
+        "score": score,
+        "raw": raw,
+        "message": message,
+        "metrics": {
+            key: value for key, value in metrics.items() if key != "private_execution"
+        },
+    }
     print("SANDBOX_RUNNER_RESULT " + json.dumps(summary, sort_keys=True), flush=True)
     return 0
 

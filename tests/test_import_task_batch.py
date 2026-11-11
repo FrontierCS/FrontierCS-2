@@ -17,14 +17,20 @@ class BatchTests(unittest.TestCase):
         legacy.ImportTests.setUp(self)
         legacy.ImportTests.invoke(self)
         self.other = Path(self.temp.name) / "existing_task"
-        shutil.copytree(self.root / importer.task_layers.SHARED_PROBLEMS / "existing_task", self.other)
+        shutil.copytree(
+            self.root / importer.task_layers.SHARED_PROBLEMS / "existing_task",
+            self.other,
+        )
         self.exports = [self.source, self.other]
         self.batch = Path(self.temp.name) / "batch.json"
         self.members = []
         for source in self.exports:
             definition = importer.validate_export(source)
             entry = importer.catalog_entry(
-                source, definition, "docker.io/joyemang33", source / "judge/reference.patch"
+                source,
+                definition,
+                "docker.io/joyemang33",
+                source / "judge/reference.patch",
             )
             images = {
                 role: {k: entry[key][k] for k in ("repository", "tag", "digest")}
@@ -95,7 +101,9 @@ class BatchTests(unittest.TestCase):
 
     def test_complete_batch_and_repeat_are_idempotent(self):
         before_trees = [snapshot(source) for source in self.exports]
-        peer_before = snapshot(self.root / importer.task_layers.SHARED_PROBLEMS / "untouched_peer")
+        peer_before = snapshot(
+            self.root / importer.task_layers.SHARED_PROBLEMS / "untouched_peer"
+        )
         row_before = deploy.load_json(self.root / "config/task-catalog.json")["tasks"][
             -1
         ]
@@ -105,11 +113,17 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(snapshot(self.root), first)
         for source, expected in zip(self.exports, before_trees, strict=True):
             self.assertEqual(
-                snapshot(self.root / importer.task_layers.SHARED_PROBLEMS / source.name), expected
+                snapshot(
+                    self.root / importer.task_layers.SHARED_PROBLEMS / source.name
+                ),
+                expected,
             )
         self.assertEqual(self.checks.call_count, 2)
         self.assertEqual(
-            snapshot(self.root / importer.task_layers.SHARED_PROBLEMS / "untouched_peer"), peer_before
+            snapshot(
+                self.root / importer.task_layers.SHARED_PROBLEMS / "untouched_peer"
+            ),
+            peer_before,
         )
         self.assertEqual(
             deploy.load_json(self.root / "config/task-catalog.json")["tasks"][-1],
@@ -121,13 +135,19 @@ class BatchTests(unittest.TestCase):
             path = source / "judge/evaluator.py"
             path.write_text(path.read_text() + "\n# source-first release change\n")
             shutil.copyfile(
-                path, self.root / importer.task_layers.SHARED_PROBLEMS / source.name / "judge/evaluator.py"
+                path,
+                self.root
+                / importer.task_layers.SHARED_PROBLEMS
+                / source.name
+                / "judge/evaluator.py",
             )
             manifest = Path(member["published_images"])
             body = json.loads(manifest.read_text())
             definition = importer.validate_export(source)
             body["source_sha256"] = definition["source"]["source_set_sha256"]
-            for image in body["images"].values():  # the dataset image too: source-bound tags
+            for image in body[
+                "images"
+            ].values():  # the dataset image too: source-bound tags
                 image["tag"] = definition["image_tag"]
             manifest.write_text(json.dumps(body))
         before = snapshot(self.root)
@@ -171,7 +191,11 @@ class BatchTests(unittest.TestCase):
                 exports=[
                     dict(
                         self.members[0],
-                        export_dir=str(self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task"),
+                        export_dir=str(
+                            self.root
+                            / importer.task_layers.SHARED_PROBLEMS
+                            / "minimal_task"
+                        ),
                     ),
                     self.members[1],
                 ],

@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 RUNTIME = Path('/opt/frontier/candidate/claude-code')
 WORKSPACE = Path('/workspace')
 BIN = Path('/opt/frontier/candidate/bin')
-VERSION = '2.1.311'
+VERSION = '2.1.321'
 EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max')
 # The CLI's own default per-response cap (64000) is below the model limit; at max effort one long
 # thinking turn can exceed it and the CLI exits with max_output_tokens. Use the 128K model limit.

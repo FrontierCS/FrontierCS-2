@@ -45,30 +45,60 @@ app = modal.App("isolate-runner-check")
 
 @app.local_entrypoint()
 def main(image: str, gpu: str = "H100", timeout: int = 1800):
-    built = (modal.Image.from_registry(image)
-             .add_local_file(str(REPO / "tasks/shared/lib/isolate.py"),
-                             f"{CHECK}/tasks/shared/lib/isolate.py", copy=True)
-             .add_local_file(str(REPO / "tests/test_isolate.py"), f"{CHECK}/tests/test_isolate.py", copy=True)
-             .add_local_file(str(REPO / "tests/isolate_layers.py"), f"{CHECK}/tests/isolate_layers.py", copy=True)
-             .add_local_file(str(REPO / "tests/deployment_test_guard.py"), f"{CHECK}/tests/deployment_test_guard.py", copy=True)
-             .run_commands(f"install -d {CHECK}/worker",
-                           f"printf '%s\\n' '{WORKER}' > {CHECK}/worker/evaluator.py",
-                           f"chmod -R a+rX {CHECK}",
-                           f"install -d -o {RUNNER_UID} -g {RUNNER_UID} /workspace"))
-    sandbox = modal.Sandbox.create(app=app, image=built, gpu=gpu, cpu=8, memory=64 * 1024,
-                                   timeout=timeout, block_network=True)
-    as_runner = (f"setpriv --reuid={RUNNER_UID} --regid={RUNNER_UID} --clear-groups "
-                 "env -i PATH=/opt/frontier/python/bin:/usr/local/bin:/usr/bin:/bin "
-                 "HOME=/workspace TMPDIR=/workspace CUDA_VISIBLE_DEVICES=0 ")
+    built = (
+        modal.Image.from_registry(image)
+        .add_local_file(
+            str(REPO / "tasks/shared/lib/isolate.py"),
+            f"{CHECK}/tasks/shared/lib/isolate.py",
+            copy=True,
+        )
+        .add_local_file(
+            str(REPO / "tests/test_isolate.py"),
+            f"{CHECK}/tests/test_isolate.py",
+            copy=True,
+        )
+        .add_local_file(
+            str(REPO / "tests/isolate_layers.py"),
+            f"{CHECK}/tests/isolate_layers.py",
+            copy=True,
+        )
+        .add_local_file(
+            str(REPO / "tests/deployment_test_guard.py"),
+            f"{CHECK}/tests/deployment_test_guard.py",
+            copy=True,
+        )
+        .run_commands(
+            f"install -d {CHECK}/worker",
+            f"printf '%s\\n' '{WORKER}' > {CHECK}/worker/evaluator.py",
+            f"chmod -R a+rX {CHECK}",
+            f"install -d -o {RUNNER_UID} -g {RUNNER_UID} /workspace",
+        )
+    )
+    sandbox = modal.Sandbox.create(
+        app=app,
+        image=built,
+        gpu=gpu,
+        cpu=8,
+        memory=64 * 1024,
+        timeout=timeout,
+        block_network=True,
+    )
+    as_runner = (
+        f"setpriv --reuid={RUNNER_UID} --regid={RUNNER_UID} --clear-groups "
+        "env -i PATH=/opt/frontier/python/bin:/usr/local/bin:/usr/bin:/bin "
+        "HOME=/workspace TMPDIR=/workspace CUDA_VISIBLE_DEVICES=0 "
+    )
     python = "/opt/frontier/runtime-python"
-    script = (f"set -u; cd {CHECK}; uname -a; (dmesg 2>/dev/null | head -n 3) || true; "
-              "nvidia-smi -L || true; ls -l /dev/nvidia* || true; "
-              f"{as_runner}{python} -I -c '{REPORT}'; "
-              f"(cd / && {as_runner}{python} {CHECK}/worker/evaluator.py && "
-              f"{as_runner}{python} -I {CHECK}/worker/evaluator.py) 2>&1; "
-              "echo WORKER_IMPORT_EXIT=$?; "
-              f"(cd tests && {as_runner}{python} -m unittest -v test_isolate) 2>&1; "
-              "echo ISOLATE_SUITE_EXIT=$?")
+    script = (
+        f"set -u; cd {CHECK}; uname -a; (dmesg 2>/dev/null | head -n 3) || true; "
+        "nvidia-smi -L || true; ls -l /dev/nvidia* || true; "
+        f"{as_runner}{python} -I -c '{REPORT}'; "
+        f"(cd / && {as_runner}{python} {CHECK}/worker/evaluator.py && "
+        f"{as_runner}{python} -I {CHECK}/worker/evaluator.py) 2>&1; "
+        "echo WORKER_IMPORT_EXIT=$?; "
+        f"(cd tests && {as_runner}{python} -m unittest -v test_isolate) 2>&1; "
+        "echo ISOLATE_SUITE_EXIT=$?"
+    )
     try:
         process = sandbox.exec("bash", "-c", script, timeout=timeout)
         for line in process.stdout:

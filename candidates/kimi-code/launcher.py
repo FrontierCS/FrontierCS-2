@@ -47,6 +47,10 @@ RUNTIME_DIRS = {
     "TMPDIR": WORKSPACE / ".frontier-tmp",
 }
 MODEL_ALIAS = re.compile(r"^[a-z](?:[a-z0-9._-]{0,126}[a-z0-9])?$")
+# Kimi 0.31.0 always sent min(131072, remaining context) as max_tokens. Kimi 2.x
+# omits max_tokens unless the model sets max_output_size, then applies the same
+# remaining-context clamp and 128Ki Chat Completions ceiling. Pin the old wire value.
+CHAT_COMPLETIONS_OUTPUT_CEILING = 131072
 
 PROMPT = """\
 Solve the evaluation task in /frontier/task/README.md.
@@ -167,6 +171,7 @@ def render_config(model_url: str, model_alias: str, proxy_token: str,
             'provider = "frontier"',
             f"model = {_toml_string(model_alias)}",
             f"max_context_size = {max_context_tokens}",
+            f"max_output_size = {CHAT_COMPLETIONS_OUTPUT_CEILING}",
             'capabilities = ["thinking", "tool_use"]',
             *([] if efforts is None else [
                 "support_efforts = " + json.dumps(efforts[0]),
@@ -251,6 +256,8 @@ def prepare_environment() -> tuple[dict[str, str], str]:
         destination.flush()
         os.fsync(destination.fileno())
     child["PATH"] = f"{SUBMIT_BIN}:{child.get('PATH', '/usr/bin:/bin')}"
+    # The pinned read-only bundle must not stage or check for self-updates.
+    child["KIMI_CODE_NO_AUTO_UPDATE"] = "1"
     child["FRONTIER_DRIVER_API_URL"] = driver_url
     return child, model_alias
 

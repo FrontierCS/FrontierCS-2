@@ -1091,7 +1091,7 @@
     },
     "display_name": "Closed-loop action sampling",
     "family": "Robotics",
-    "image_tag": "source-f101076070bd22f4754f219afd17cf981185cc0bbcc1ddd56564f51a7253badd",
+    "image_tag": "source-77874ec23717e747bb6bcba443dfba06348f4fb06983076c899fe9df0765143a",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -1143,7 +1143,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:f101076070bd22f4754f219afd17cf981185cc0bbcc1ddd56564f51a7253badd"
+      "source_set_sha256": "sha256:77874ec23717e747bb6bcba443dfba06348f4fb06983076c899fe9df0765143a"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3006,7 +3006,7 @@
         "max_gpu_seconds": 30000
       }
     },
-    "image_tag": "source-51dcb0f8a86656033e9c6c8d6b0cd3455e6c886f444818afb099cb65253f957b",
+    "image_tag": "source-4ec5b4d22d256aed31f3ab175d910377823eb8c0cc4bb8ddcd4eb0c7f19a52f3",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -3073,7 +3073,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:51dcb0f8a86656033e9c6c8d6b0cd3455e6c886f444818afb099cb65253f957b"
+      "source_set_sha256": "sha256:4ec5b4d22d256aed31f3ab175d910377823eb8c0cc4bb8ddcd4eb0c7f19a52f3"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3521,7 +3521,7 @@
     },
     "display_name": "SQL Counterexample Search",
     "family": "Programming Language",
-    "image_tag": "source-dc64200603237e73120a27b6c0b9860ecdb7bfc4fa0fc9a7d62d96e2c2dc3846",
+    "image_tag": "source-1d83200e6d9d646840e77e19d25a4eb382a6a89a5795b53027e918704cd48eb8",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3575,7 +3575,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:dc64200603237e73120a27b6c0b9860ecdb7bfc4fa0fc9a7d62d96e2c2dc3846"
+      "source_set_sha256": "sha256:1d83200e6d9d646840e77e19d25a4eb382a6a89a5795b53027e918704cd48eb8"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
@@ -3649,7 +3649,7 @@
     },
     "display_name": "Privilege Control for Tool-Using LLM Agents",
     "family": "Security",
-    "image_tag": "source-4efbfeaa1b0e61a0b452122f7bbba0b12b6b8c894e7966ce658631c40b55d875",
+    "image_tag": "source-dbcb06e8eed27cb83141eadbf9bdb0287dbeba4fbd916eba7627225f8884f30b",
     "metadata": {
       "accelerator": null,
       "datasets": {
@@ -3721,7 +3721,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:4efbfeaa1b0e61a0b452122f7bbba0b12b6b8c894e7966ce658631c40b55d875"
+      "source_set_sha256": "sha256:dbcb06e8eed27cb83141eadbf9bdb0287dbeba4fbd916eba7627225f8884f30b"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",

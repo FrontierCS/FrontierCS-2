@@ -30,10 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(
     os.environ.get(
         "RESIDUAL_PAPER_SETTING_EXPORT",
-        str(
-            ROOT
-            / "tasks/problems/Database/residual_state_advancement"
-        ),
+        str(ROOT / "tasks/problems/Database/residual_state_advancement"),
     )
 )
 # task.toml layout: the starter is repo/; the shared verifier applies the patch with the
@@ -104,7 +101,8 @@ def _scope():
         sys.path.pop(0)
     scope = task_manifest._edit_scope()
     return scope, scope.Rules.from_mapping(
-        task_manifest.edit_scope_rules(task_manifest.read_task(TASK)))
+        task_manifest.edit_scope_rules(task_manifest.read_task(TASK))
+    )
 
 
 def _judge(evaluator, task, patch_text):
@@ -115,8 +113,9 @@ def _judge(evaluator, task, patch_text):
     try:
         if not result.ok:
             return 0.0, 0.0, result.category, {"rejected": result.category}
-        verdict = evaluator.check_tree(str(result.tree), str(task / "pristine"),
-                                       list(result.changes))
+        verdict = evaluator.check_tree(
+            str(result.tree), str(task / "pristine"), list(result.changes)
+        )
         if verdict is not None:
             return 0.0, 0.0, verdict[0], {"rejected": verdict[0]}
         return evaluator.evaluate(str(result.tree))
@@ -133,7 +132,9 @@ def _screen(patch_text):
 
 def _load_evaluator(case, task):
     _restore_modules(case)
-    sys.path.insert(0, str(ROOT / "tasks/shared/lib"))  # isolate, beside the judge in the Verifier base
+    sys.path.insert(
+        0, str(ROOT / "tasks/shared/lib")
+    )  # isolate, beside the judge in the Verifier base
     sys.path.insert(0, str(task))
     spec = importlib.util.spec_from_file_location(
         "residual_paper_setting_evaluator", task / "evaluator.py"
@@ -547,9 +548,14 @@ class EditableSurface(unittest.TestCase):
         self.assertEqual(private, [f"sales-final-{i}.parquet" for i in range(4)])
         self.assertFalse(list(REPO.rglob("sales-final-*")))
         for name, digest in FACT_SHA256.items():
-            path = (TASK / "judge/judge_data/favorita" if "final" in name
-                    else REPO / "data/favorita") / name
-            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), digest, name)
+            path = (
+                TASK / "judge/judge_data/favorita"
+                if "final" in name
+                else REPO / "data/favorita"
+            ) / name
+            self.assertEqual(
+                hashlib.sha256(path.read_bytes()).hexdigest(), digest, name
+            )
         # The pre-migration lock (provenance) recorded the same bytes.
         lock = json.loads((PROVENANCE / "upstream.lock.json").read_text())
         recorded = {row["path"]: row["sha256"] for row in lock["files"]}
@@ -700,7 +706,8 @@ class EvaluatorPolicy(unittest.TestCase):
         ):
             done = e.isolate.Result(
                 returncode=e.POLICY_EXIT_CODE,
-                stdout=(json.dumps({"policy_violation": code}) + "\n").encode(), stderr=b"",
+                stdout=(json.dumps({"policy_violation": code}) + "\n").encode(),
+                stderr=b"",
             )
             with patch.object(e.isolate, "run", return_value=done):
                 with self.assertRaises(e.PolicyRejection) as caught:
@@ -795,7 +802,9 @@ class RealWorkload(unittest.TestCase):
     def test_in_database_solutions_pass(self):
         e = self.evaluator
         for name in ("reference.patch", "baseline_naive.patch"):
-            score, _, message, metrics = _judge(e, self.task, (self.task / name).read_text())
+            score, _, message, metrics = _judge(
+                e, self.task, (self.task / name).read_text()
+            )
             self.assertIn("correct ensemble", message, name)
             self.assertEqual(metrics["correct"], 1)
         score, _, message, metrics = self._evaluate(["# byte-different reference"])

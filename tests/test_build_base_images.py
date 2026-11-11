@@ -28,8 +28,9 @@ TEMPLATE = REPO / "tasks/template/Theory/template_task"
 
 
 def git(root: Path, *arguments: str) -> str:
-    return subprocess.run(["git", "-C", str(root), *arguments], check=True,
-                          capture_output=True, text=True).stdout.strip()
+    return subprocess.run(
+        ["git", "-C", str(root), *arguments], check=True, capture_output=True, text=True
+    ).stdout.strip()
 
 
 class DerivedTags(unittest.TestCase):
@@ -37,18 +38,31 @@ class DerivedTags(unittest.TestCase):
         self.root = Path(tempfile.mkdtemp(prefix="base-tags-"))
         self.addCleanup(shutil.rmtree, self.root, True)
         self.shared = self.root / "tasks/shared"
-        shutil.copytree(build_base_images.SHARED, self.shared,
-                        ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(
+            build_base_images.SHARED,
+            self.shared,
+            ignore=shutil.ignore_patterns("__pycache__"),
+        )
         git(self.root, "init", "-q")
         git(self.root, "add", "-A")
-        git(self.root, "-c", "user.email=t@example.com", "-c", "user.name=t",
-            "commit", "-qm", "sources")
+        git(
+            self.root,
+            "-c",
+            "user.email=t@example.com",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-qm",
+            "sources",
+        )
         patch = mock.patch.object(build_base_images, "SHARED", self.shared)
         patch.start()
         self.addCleanup(patch.stop)
 
     def tags(self) -> dict[str, str]:
-        return {role: build_base_images.source_tag(role) for role in build_base_images.ROLES}
+        return {
+            role: build_base_images.source_tag(role) for role in build_base_images.ROLES
+        }
 
     def test_the_tag_is_the_tree_hash_of_the_sources_only(self):
         before = self.tags()
@@ -66,10 +80,14 @@ class DerivedTags(unittest.TestCase):
         adapter.write_text(adapter.read_text() + "\n# change\n")
         after = self.tags()
         self.assertNotEqual(after["gpu-tools"], before["gpu-tools"])
-        self.assertEqual({r: after[r] for r in ("agent", "verifier")},
-                         {r: before[r] for r in ("agent", "verifier")})
-        self.assertIn("tasks/shared/verifier-gpu/fcs2_verifier_gpu.py",
-                      build_base_images.uncommitted_sources("gpu-tools"))
+        self.assertEqual(
+            {r: after[r] for r in ("agent", "verifier")},
+            {r: before[r] for r in ("agent", "verifier")},
+        )
+        self.assertIn(
+            "tasks/shared/verifier-gpu/fcs2_verifier_gpu.py",
+            build_base_images.uncommitted_sources("gpu-tools"),
+        )
         self.assertEqual(build_base_images.uncommitted_sources("agent"), [])
         shared = self.shared / "lib/edit_scope.py"
         shared.write_text(shared.read_text() + "\n# change\n")
@@ -81,13 +99,25 @@ class DerivedTags(unittest.TestCase):
         # Anyone can recompute a tag with git alone: build the same tree from HEAD.
         environment_index = self.root / "index"
         env = {"GIT_INDEX_FILE": str(environment_index), "PATH": "/usr/bin:/bin"}
-        run = lambda *a: subprocess.run(["git", "-C", str(self.root), *a], check=True,  # noqa: E731
-                                        capture_output=True, text=True, env=env).stdout.strip()
-        paths = [f"tasks/shared/{path}" for path in build_base_images.SOURCES["gpu-tools"]]
+
+        def run(*a):
+            return subprocess.run(
+                ["git", "-C", str(self.root), *a],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=env,
+            ).stdout.strip()
+
+        paths = [
+            f"tasks/shared/{path}" for path in build_base_images.SOURCES["gpu-tools"]
+        ]
         run("read-tree", "HEAD")  # all of HEAD, then keep only the sources
         run("rm", "-r", "-q", "--cached", "--", ".")
         run("reset", "-q", "HEAD", "--", *paths)
-        self.assertEqual(build_base_images.source_tag("gpu-tools"), "src-" + run("write-tree")[:12])
+        self.assertEqual(
+            build_base_images.source_tag("gpu-tools"), "src-" + run("write-tree")[:12]
+        )
 
 
 class RecipesUseOnlyTheirSources(unittest.TestCase):
@@ -102,8 +132,13 @@ class RecipesUseOnlyTheirSources(unittest.TestCase):
                     with self.subTest(role=role, source=source):
                         if role == "gpu-tools" and source == ".root/":
                             continue  # staged by gpu_tools_context (gpu-tools/, verifier-gpu/, lib/)
-                        self.assertTrue(any(source == s or source.startswith(s.rstrip("/") + "/")
-                                            for s in sources), source)
+                        self.assertTrue(
+                            any(
+                                source == s or source.startswith(s.rstrip("/") + "/")
+                                for s in sources
+                            ),
+                            source,
+                        )
 
 
 class TaskTagsBindResolvedBases(unittest.TestCase):
@@ -119,22 +154,31 @@ class TaskTagsBindResolvedBases(unittest.TestCase):
     def test_a_base_bump_moves_only_tasks_that_take_it_by_argument(self):
         root = self.task()
         pinned = task_manifest.base_reference("verifier")
-        self.assertEqual(task_manifest.resolved_bases(root),
-                         {"agent": task_manifest.base_reference("agent"), "verifier": pinned})
+        self.assertEqual(
+            task_manifest.resolved_bases(root),
+            {"agent": task_manifest.base_reference("agent"), "verifier": pinned},
+        )
         before = renderer.source_sha256(root)
         recipe = root / "docker/verifier.Dockerfile"
         text = recipe.read_text()
         self.assertIn("ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}", text)
-        recipe.write_text(text.replace("ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}", f"FROM {pinned}"))
+        recipe.write_text(
+            text.replace("ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}", f"FROM {pinned}")
+        )
         self.assertNotIn("verifier", task_manifest.resolved_bases(root))
         self.assertNotEqual(renderer.source_sha256(root), before)
         recipe.write_text(text)
         self.assertEqual(renderer.source_sha256(root), before)  # stable
-        bumped = dict(task_manifest.bases(), verifier=pinned.replace("sha256:", "sha256:0", 1)[:-1])
+        bumped = dict(
+            task_manifest.bases(),
+            verifier=pinned.replace("sha256:", "sha256:0", 1)[:-1],
+        )
         with mock.patch.object(task_manifest, "bases", return_value=bumped):
             self.assertNotEqual(renderer.source_sha256(root), before)
         # A base the task does not name leaves its tag alone.
-        other = dict(task_manifest.bases(), **{"gpu-tools": "docker.io/x/y@sha256:" + "1" * 64})
+        other = dict(
+            task_manifest.bases(), **{"gpu-tools": "docker.io/x/y@sha256:" + "1" * 64}
+        )
         with mock.patch.object(task_manifest, "bases", return_value=other):
             self.assertEqual(renderer.source_sha256(root), before)
 

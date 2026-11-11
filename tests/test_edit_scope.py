@@ -20,11 +20,18 @@ from edit_scope import Rules  # noqa: E402
 
 
 def git(cwd: Path, *args: str) -> str:
-    env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
-           "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@invalid",
-           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@invalid"}
-    return subprocess.run(["git", *args], cwd=cwd, env=env, check=True,
-                          capture_output=True, text=True).stdout
+    env = {
+        **os.environ,
+        "GIT_CONFIG_GLOBAL": os.devnull,
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_AUTHOR_NAME": "t",
+        "GIT_AUTHOR_EMAIL": "t@invalid",
+        "GIT_COMMITTER_NAME": "t",
+        "GIT_COMMITTER_EMAIL": "t@invalid",
+    }
+    return subprocess.run(
+        ["git", *args], cwd=cwd, env=env, check=True, capture_output=True, text=True
+    ).stdout
 
 
 @unittest.skipUnless(shutil.which("git"), "needs git")
@@ -59,14 +66,22 @@ class EditScope(unittest.TestCase):
     def diff(self) -> bytes:
         git(self.work, "add", "-A")
         # Bytes, not text: universal newlines would turn CRLF content into LF.
-        return subprocess.run(["git", "diff", "--cached", "--no-renames", "--binary", "HEAD"],
-                              cwd=self.work, check=True, capture_output=True).stdout
+        return subprocess.run(
+            ["git", "diff", "--cached", "--no-renames", "--binary", "HEAD"],
+            cwd=self.work,
+            check=True,
+            capture_output=True,
+        ).stdout
 
     def rename_diff(self) -> bytes:
         """The working tree as a patch with git's rename detection (allow_rename tasks' tool)."""
         git(self.work, "add", "-A")
-        return subprocess.run(["git", "diff", "--cached", "--find-renames", "--binary", "HEAD"],
-                              cwd=self.work, check=True, capture_output=True).stdout
+        return subprocess.run(
+            ["git", "diff", "--cached", "--find-renames", "--binary", "HEAD"],
+            cwd=self.work,
+            check=True,
+            capture_output=True,
+        ).stdout
 
     def run_check(self, patch: bytes, **rules) -> edit_scope.Result:
         rules.setdefault("allowed_paths", ("src/",))
@@ -79,11 +94,20 @@ class EditScope(unittest.TestCase):
         (self.work / "src/new.c").write_text("int n;\n")
         result = self.run_check(self.diff())
         self.assertTrue(result.ok, result.message)
-        self.assertEqual(sorted((c.status, c.path) for c in result.changes),
-                         [("A", "src/new.c"), ("M", "src/a.c")])
-        self.assertIn("int a(void) { return 3; }", dict((c.path, c.added) for c in result.changes)["src/a.c"])
-        self.assertEqual((result.tree / "src/a.c").read_text(), "int a(void) { return 3; }\n")
-        self.assertEqual((result.tree / "tests/t.c").read_text(), "int main(void) { return 0; }\n")
+        self.assertEqual(
+            sorted((c.status, c.path) for c in result.changes),
+            [("A", "src/new.c"), ("M", "src/a.c")],
+        )
+        self.assertIn(
+            "int a(void) { return 3; }",
+            dict((c.path, c.added) for c in result.changes)["src/a.c"],
+        )
+        self.assertEqual(
+            (result.tree / "src/a.c").read_text(), "int a(void) { return 3; }\n"
+        )
+        self.assertEqual(
+            (result.tree / "tests/t.c").read_text(), "int main(void) { return 0; }\n"
+        )
         self.assertFalse((result.tree / ".git").exists())
 
     def test_out_of_scope_edit_is_rejected_with_the_path(self):
@@ -102,8 +126,10 @@ class EditScope(unittest.TestCase):
         (self.work / "src/a.c").write_text("y\n")
         self.assertTrue(self.run_check(self.diff(), allowed_paths=("src/*.c",)).ok)
         self.assertTrue(self.run_check(self.diff(), allowed_paths=("**/a.c",)).ok)
-        self.assertEqual(self.run_check(self.diff(), allowed_suffixes=(".py",)).category,
-                         "out_of_scope")
+        self.assertEqual(
+            self.run_check(self.diff(), allowed_suffixes=(".py",)).category,
+            "out_of_scope",
+        )
         self.assertFalse(edit_scope.matches("github/x", (".github/",)))
         self.assertTrue(edit_scope.matches(".github/x", (".github/",)))
 
@@ -113,11 +139,16 @@ class EditScope(unittest.TestCase):
         self.assertEqual(result.category, "content_policy")
         self.assertIn("src/a.c", result.message)
         self.assertNotIn("SECRET_ORACLE", result.message)
-        self.assertTrue(self.run_check(self.diff(), forbidden_added=("SECRET_ORACLE",)).ok
-                        is False)
-        pre = edit_scope.check(self.diff(), self.pristine, Rules(allowed_paths=("src/",),
-                               forbidden_added=("SECRET_ORACLE",)), content_rules=False,
-                               build_tree=False)
+        self.assertTrue(
+            self.run_check(self.diff(), forbidden_added=("SECRET_ORACLE",)).ok is False
+        )
+        pre = edit_scope.check(
+            self.diff(),
+            self.pristine,
+            Rules(allowed_paths=("src/",), forbidden_added=("SECRET_ORACLE",)),
+            content_rules=False,
+            build_tree=False,
+        )
         self.assertTrue(pre.ok)
 
     def test_rename_counts_both_paths(self):
@@ -154,29 +185,37 @@ class EditScope(unittest.TestCase):
         self.assertEqual(self.run_check(self.diff()).category, "forbidden_file_type")
 
     def test_patch_that_does_not_apply_is_malformed_not_out_of_scope(self):
-        patch = (b"--- a/src/a.c\n+++ b/src/a.c\n@@ -1 +1 @@\n-int nothing;\n+int x;\n")
+        patch = b"--- a/src/a.c\n+++ b/src/a.c\n@@ -1 +1 @@\n-int nothing;\n+int x;\n"
         self.assertEqual(self.run_check(patch).category, "malformed")
         # Patch text that names an allowed file but escapes through "..": git refuses it.
-        escape = (b"--- a/src/../../escape\n+++ b/src/../../escape\n@@ -0,0 +1 @@\n+x\n")
+        escape = b"--- a/src/../../escape\n+++ b/src/../../escape\n@@ -0,0 +1 @@\n+x\n"
         self.assertIn(self.run_check(escape).category, ("malformed", "out_of_scope"))
 
     def test_empty_and_oversize(self):
         self.assertEqual(self.run_check(b"").category, "empty")
         self.assertTrue(self.run_check(b"", allow_empty=True).ok)
-        self.assertEqual(self.run_check(b"  \n", allow_empty=True).category, "malformed")
+        self.assertEqual(
+            self.run_check(b"  \n", allow_empty=True).category, "malformed"
+        )
         (self.work / "src/a.c").write_text("z" * 5000 + "\n")
-        self.assertEqual(self.run_check(self.diff(), max_patch_bytes=1000).category, "too_large")
+        self.assertEqual(
+            self.run_check(self.diff(), max_patch_bytes=1000).category, "too_large"
+        )
 
     def test_crlf_content_is_kept_byte_for_byte(self):
         (self.work / "src/a.c").write_bytes(b"int a(void) {\r\n  return 4;\r\n}\r\n")
         result = self.run_check(self.diff())
         self.assertTrue(result.ok, result.message)
-        self.assertEqual((result.tree / "src/a.c").read_bytes(),
-                         b"int a(void) {\r\n  return 4;\r\n}\r\n")
+        self.assertEqual(
+            (result.tree / "src/a.c").read_bytes(),
+            b"int a(void) {\r\n  return 4;\r\n}\r\n",
+        )
 
     def test_dispose_removes_the_scratch_tree(self):
         (self.work / "src/a.c").write_text("q\n")
-        result = edit_scope.check(self.diff(), self.pristine, Rules(allowed_paths=("src/",)))
+        result = edit_scope.check(
+            self.diff(), self.pristine, Rules(allowed_paths=("src/",))
+        )
         tree = result.tree
         result.dispose()
         self.assertFalse(tree.exists())
@@ -189,7 +228,9 @@ class EditScope(unittest.TestCase):
             path = root / name
             if root == self.pristine:
                 path.parent.chmod(0o755)
-            path.write_text("".join(f"int f{i}(void) {{ return {i}; }}\n" for i in range(40)))
+            path.write_text(
+                "".join(f"int f{i}(void) {{ return {i}; }}\n" for i in range(40))
+            )
             if root == self.pristine:
                 path.chmod(0o444)
                 path.parent.chmod(0o555)
@@ -206,21 +247,29 @@ class EditScope(unittest.TestCase):
         self.assertIn("src/big.c", result.message)
         allowed = self.run_check(patch, allow_delete=True)
         self.assertTrue(allowed.ok, allowed.message)
-        self.assertEqual(sorted((c.status, c.path) for c in allowed.changes),
-                         [("A", "src/moved.c"), ("D", "src/big.c")])
+        self.assertEqual(
+            sorted((c.status, c.path) for c in allowed.changes),
+            [("A", "src/moved.c"), ("D", "src/big.c")],
+        )
 
     def test_allowed_rename_with_an_edit_is_one_change(self):
         self.big_file("src/big.c")
         git(self.work, "mv", "src/big.c", "src/moved.c")
         with (self.work / "src/moved.c").open("a") as stream:
             stream.write("int extra;\n")
-        result = self.run_check(self.rename_diff(), allow_rename=True, max_changed_files=1)
+        result = self.run_check(
+            self.rename_diff(), allow_rename=True, max_changed_files=1
+        )
         self.assertTrue(result.ok, result.message)
-        self.assertEqual([(c.status, c.old_path, c.path, c.added) for c in result.changes],
-                         [("R", "src/big.c", "src/moved.c", ("int extra;",))])
+        self.assertEqual(
+            [(c.status, c.old_path, c.path, c.added) for c in result.changes],
+            [("R", "src/big.c", "src/moved.c", ("int extra;",))],
+        )
         self.assertEqual(result.metrics["changed_files"], 1)
         self.assertFalse((result.tree / "src/big.c").exists())
-        self.assertTrue((result.tree / "src/moved.c").read_text().endswith("int extra;\n"))
+        self.assertTrue(
+            (result.tree / "src/moved.c").read_text().endswith("int extra;\n")
+        )
         # The same tree as a hand-made delete + add is detected as the same rename.
         self.assertTrue(self.run_check(self.diff(), allow_rename=True).ok)
 
@@ -228,31 +277,48 @@ class EditScope(unittest.TestCase):
         self.big_file("src/big.c")
         git(self.work, "mv", "src/big.c", "tests/big.c")
         result = self.run_check(self.rename_diff(), allow_rename=True)
-        self.assertEqual((result.category, result.paths), ("out_of_scope", ("tests/big.c",)))
+        self.assertEqual(
+            (result.category, result.paths), ("out_of_scope", ("tests/big.c",))
+        )
         git(self.work, "reset", "-q", "--hard")
         self.big_file("tests/big2.c")
         git(self.work, "mv", "tests/big2.c", "src/big2.c")
         result = self.run_check(self.rename_diff(), allow_rename=True)
-        self.assertEqual((result.category, result.paths), ("out_of_scope", ("tests/big2.c",)))
+        self.assertEqual(
+            (result.category, result.paths), ("out_of_scope", ("tests/big2.c",))
+        )
         git(self.work, "reset", "-q", "--hard")
         git(self.work, "mv", "src/big.c", "src/big.h")
-        result = self.run_check(self.rename_diff(), allow_rename=True, allowed_suffixes=(".c",))
-        self.assertEqual((result.category, result.paths), ("out_of_scope", ("src/big.h",)))
-        result = self.run_check(self.rename_diff(), allow_rename=True, deny_paths=("src/big.c",))
-        self.assertEqual((result.category, result.paths), ("out_of_scope", ("src/big.c",)))
+        result = self.run_check(
+            self.rename_diff(), allow_rename=True, allowed_suffixes=(".c",)
+        )
+        self.assertEqual(
+            (result.category, result.paths), ("out_of_scope", ("src/big.h",))
+        )
+        result = self.run_check(
+            self.rename_diff(), allow_rename=True, deny_paths=("src/big.c",)
+        )
+        self.assertEqual(
+            (result.category, result.paths), ("out_of_scope", ("src/big.c",))
+        )
 
     def test_allowed_rename_keeps_mode_and_content_rules(self):
         self.big_file("src/big.c")
         git(self.work, "mv", "src/big.c", "src/moved.c")
         (self.work / "src/moved.c").chmod(0o755)
-        self.assertEqual(self.run_check(self.rename_diff(), allow_rename=True).category,
-                         "forbidden_file_type")
+        self.assertEqual(
+            self.run_check(self.rename_diff(), allow_rename=True).category,
+            "forbidden_file_type",
+        )
         (self.work / "src/moved.c").chmod(0o644)
         with (self.work / "src/moved.c").open("a") as stream:
             stream.write("int SECRET_ORACLE;\n")
-        result = self.run_check(self.rename_diff(), allow_rename=True,
-                                forbidden_added=("SECRET_ORACLE",))
-        self.assertEqual((result.category, result.paths), ("content_policy", ("src/moved.c",)))
+        result = self.run_check(
+            self.rename_diff(), allow_rename=True, forbidden_added=("SECRET_ORACLE",)
+        )
+        self.assertEqual(
+            (result.category, result.paths), ("content_policy", ("src/moved.c",))
+        )
 
 
 @unittest.skipUnless(shutil.which("git"), "needs git")
@@ -263,13 +329,15 @@ class SubmissionTool(unittest.TestCase):
     def setUp(self):
         sys.path.insert(0, str(REPO / "tasks/shared/agent/bin"))
         import fcs2_submission
+
         self.tool = fcs2_submission
         self.scratch = Path(tempfile.mkdtemp(prefix="submission-test-"))
         self.addCleanup(shutil.rmtree, self.scratch, ignore_errors=True)
         self.starter = self.scratch / "starter"
         (self.starter / "src").mkdir(parents=True)
         (self.starter / "src/big.c").write_text(
-            "".join(f"int f{i}(void) {{ return {i}; }}\n" for i in range(40)))
+            "".join(f"int f{i}(void) {{ return {i}; }}\n" for i in range(40))
+        )
         self.workspace = self.scratch / "workspace"
         self.repo = self.workspace / "repo"
         shutil.copytree(self.starter, self.repo)
@@ -282,10 +350,17 @@ class SubmissionTool(unittest.TestCase):
             stream.write("int extra;\n")
 
     def submit(self, **rules) -> bytes:
-        policy = {"member": "solution.patch",
-                  "edit_scope": {"allowed_paths": ["src/"], "max_patch_bytes": 100000, **rules}}
-        path = self.tool.make_submission(self.repo, policy, starter=self.starter,
-                                         workspace=self.workspace)
+        policy = {
+            "member": "solution.patch",
+            "edit_scope": {
+                "allowed_paths": ["src/"],
+                "max_patch_bytes": 100000,
+                **rules,
+            },
+        }
+        path = self.tool.make_submission(
+            self.repo, policy, starter=self.starter, workspace=self.workspace
+        )
         return path.read_bytes()
 
     def test_rename_is_refused_without_allow_rename(self):
@@ -295,17 +370,19 @@ class SubmissionTool(unittest.TestCase):
     def test_rename_patch_with_allow_rename(self):
         patch = self.submit(allow_rename=True)
         self.assertIn(b"rename from src/big.c\nrename to src/moved.c", patch)
-        result = edit_scope.check(patch, self.starter,
-                                  Rules(allowed_paths=("src/",), allow_rename=True))
+        result = edit_scope.check(
+            patch, self.starter, Rules(allowed_paths=("src/",), allow_rename=True)
+        )
         self.addCleanup(result.dispose)
         self.assertTrue(result.ok, result.message)
-        self.assertEqual(sorted(p.name for p in (result.tree / "src").iterdir()), ["moved.c"])
+        self.assertEqual(
+            sorted(p.name for p in (result.tree / "src").iterdir()), ["moved.c"]
+        )
 
     def test_without_allow_rename_the_patch_is_a_delete_and_an_add(self):
         patch = self.submit(allow_delete=True)
         self.assertNotIn(b"rename from", patch)
         self.assertIn(b"deleted file mode", patch)
-
 
 
 @unittest.skipUnless(shutil.which("git") and shutil.which("sh"), "needs git and sh")
@@ -316,6 +393,7 @@ class SubmissionBaseline(unittest.TestCase):
     def setUp(self):
         sys.path.insert(0, str(REPO / "tasks/shared/agent/bin"))
         import fcs2_submission
+
         self.tool = fcs2_submission
         self.scratch = Path(tempfile.mkdtemp(prefix="submission-baseline-"))
         self.addCleanup(shutil.rmtree, self.scratch, ignore_errors=True)
@@ -331,24 +409,44 @@ class SubmissionBaseline(unittest.TestCase):
         script = (REPO / "tasks/shared/agent/bin/prepare_workspace.sh").read_text()
         script = script.replace("/frontier/task/repo", str(self.starter))
         script = script.replace("/workspace", str(self.workspace))
-        env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
-        subprocess.run(["sh", "-c", script, "prepare", str(self.repo)], env=env, check=True,
-                       capture_output=True)
+        env = {
+            **os.environ,
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+        }
+        subprocess.run(
+            ["sh", "-c", script, "prepare", str(self.repo)],
+            env=env,
+            check=True,
+            capture_output=True,
+        )
 
     def submit(self, **rules) -> bytes:
-        policy = {"member": "solution.patch",
-                  "edit_scope": {"allowed_paths": ["src/"], "max_patch_bytes": 100000,
-                                 "allow_delete": True, **rules}}
-        return self.tool.make_submission(self.repo, policy, starter=self.starter,
-                                         workspace=self.workspace).read_bytes()
+        policy = {
+            "member": "solution.patch",
+            "edit_scope": {
+                "allowed_paths": ["src/"],
+                "max_patch_bytes": 100000,
+                "allow_delete": True,
+                **rules,
+            },
+        }
+        return self.tool.make_submission(
+            self.repo, policy, starter=self.starter, workspace=self.workspace
+        ).read_bytes()
 
     def changed(self, patch: bytes) -> set[str]:
-        return {line.split(" b/", 1)[1] for line in patch.decode().splitlines()
-                if line.startswith("diff --git ")}
+        return {
+            line.split(" b/", 1)[1]
+            for line in patch.decode().splitlines()
+            if line.startswith("diff --git ")
+        }
 
     def test_prepare_records_the_baseline_ref(self):
-        self.assertEqual(git(self.repo, "rev-parse", "refs/frontier/baseline"),
-                         git(self.repo, "rev-parse", "HEAD"))
+        self.assertEqual(
+            git(self.repo, "rev-parse", "refs/frontier/baseline"),
+            git(self.repo, "rev-parse", "HEAD"),
+        )
 
     def test_commit_then_submit(self):
         (self.repo / "src/a.c").write_text("int a = 1;\n")
@@ -403,7 +501,9 @@ class SubmissionBaseline(unittest.TestCase):
         (self.repo / "src/b.c").write_text("int b = 1;\n")  # not committed
         (self.repo / "src/untracked.c").write_text("int u;\n")  # new, allowed path
         (self.repo / "build.log").write_text("noise\n")  # new, outside: left out
-        self.assertEqual(self.changed(self.submit()), {"src/a.c", "src/b.c", "src/untracked.c"})
+        self.assertEqual(
+            self.changed(self.submit()), {"src/a.c", "src/b.c", "src/untracked.c"}
+        )
 
     def test_committed_out_of_scope_edit_is_refused(self):
         (self.repo / "README.md").write_text("changed\n")

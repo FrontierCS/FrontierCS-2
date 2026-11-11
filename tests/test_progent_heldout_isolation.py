@@ -4,6 +4,7 @@ The judge keeps the full AgentDojo suites (judge/upstream_app); the agent-visibl
 copy (repo/, the Agent's /frontier/task/repo) drops every user task in the final split of
 judge/workloads.py, and every combined user task built from one of them.
 """
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import ast
@@ -17,7 +18,8 @@ import unittest
 from pathlib import Path
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/problems/Security/progent_privilege_control")
+    "tasks/problems/Security/progent_privilege_control"
+)
 # Everything the Agent image holds from the task: its README and repo/ (with the episode runner
 # and its public harness under repo/tools/).
 AGENT_REPO = TASK / "repo"
@@ -29,7 +31,9 @@ MIN_LITERAL = 16
 
 
 def _load_workloads():
-    spec = importlib.util.spec_from_file_location("progent_workloads", TASK / "judge/workloads.py")
+    spec = importlib.util.spec_from_file_location(
+        "progent_workloads", TASK / "judge/workloads.py"
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -48,13 +52,19 @@ def _user_task_files(repo, suite):
 
 
 def _combinator(node):
-    if not (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)
-            and isinstance(node.value.func, ast.Attribute)
-            and node.value.func.attr in ("create_combined_task", "update_combined_task")):
+    if not (
+        isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Call)
+        and isinstance(node.value.func, ast.Attribute)
+        and node.value.func.attr in ("create_combined_task", "update_combined_task")
+    ):
         return None
     call = node.value
     new = int(re.fullmatch(r"UserTask(\d+)", call.args[0].value).group(1))
-    parts = [int(re.search(r"user_task_(\d+)", ast.unparse(arg)).group(1)) for arg in call.args[1:3]]
+    parts = [
+        int(re.search(r"user_task_(\d+)", ast.unparse(arg)).group(1))
+        for arg in call.args[1:3]
+    ]
     return node.value.func.attr, new, parts
 
 
@@ -113,14 +123,19 @@ def _judge_split_literals():
             continue
         for node in ast.parse(text).body:
             if _node_id(node) in removed[suite]:
-                needles[suite].update(s for s in _literals(node) if len(s) >= MIN_LITERAL)
+                needles[suite].update(
+                    s for s in _literals(node) if len(s) >= MIN_LITERAL
+                )
             else:
                 kept.append(ast.get_source_segment(text, node, padded=True))
     return needles, "\n".join(kept)
 
 
 def _agent_files():
-    files = [TASK / "README.md", *(p for p in sorted(AGENT_REPO.rglob("*")) if p.is_file())]
+    files = [
+        TASK / "README.md",
+        *(p for p in sorted(AGENT_REPO.rglob("*")) if p.is_file()),
+    ]
     return {p: p.read_text(errors="replace") for p in files}
 
 
@@ -134,7 +149,10 @@ class ProgentHeldoutIsolationTests(unittest.TestCase):
         }
         for suite in workloads.SUITES:
             self.assertEqual(sorted(_held_out(suite)), expected[suite], suite)
-            self.assertEqual(FULL[suite]["user"], [f"user_task_{i}" for i in range(len(FULL[suite]["user"]))])
+            self.assertEqual(
+                FULL[suite]["user"],
+                [f"user_task_{i}" for i in range(len(FULL[suite]["user"]))],
+            )
 
     def test_agent_suite_tasks_lists_only_runnable_dev_tasks(self):
         agent = json.loads((AGENT_HARNESS / "suite_tasks.json").read_text())
@@ -149,35 +167,63 @@ class ProgentHeldoutIsolationTests(unittest.TestCase):
             dev = {_num(t) for t in _agent_dev(suite)}
             registered, updated = set(), set()
             for path in _user_task_files(AGENT_REPO, suite):
-                judge_nodes = {ast.dump(n) for n in ast.parse(
-                    (JUDGE_REPO / path.relative_to(AGENT_REPO)).read_text()).body}
+                judge_nodes = {
+                    ast.dump(n)
+                    for n in ast.parse(
+                        (JUDGE_REPO / path.relative_to(AGENT_REPO)).read_text()
+                    ).body
+                }
                 for node in ast.parse(path.read_text()).body:
                     # Everything kept is byte-for-byte the judge's definition.
-                    self.assertIn(ast.dump(node), judge_nodes, f"{path}: {ast.unparse(node)[:80]}")
+                    self.assertIn(
+                        ast.dump(node), judge_nodes, f"{path}: {ast.unparse(node)[:80]}"
+                    )
                     ident = _node_id(node)
                     if ident is None:
                         continue
                     if isinstance(node, ast.ClassDef):
                         decorators = [ast.unparse(d) for d in node.decorator_list]
-                        target = registered if "task_suite.register_user_task" in decorators else updated
+                        target = (
+                            registered
+                            if "task_suite.register_user_task" in decorators
+                            else updated
+                        )
                     else:
-                        target = registered if _combinator(node)[0] == "create_combined_task" else updated
+                        target = (
+                            registered
+                            if _combinator(node)[0] == "create_combined_task"
+                            else updated
+                        )
                     target.add(ident)
                     if _combinator(node):
-                        self.assertTrue(set(_combinator(node)[2]) <= dev, f"{path}: {ident}")
+                        self.assertTrue(
+                            set(_combinator(node)[2]) <= dev, f"{path}: {ident}"
+                        )
             self.assertEqual(registered, dev, suite)
             self.assertTrue(updated <= dev, suite)
 
     def test_only_user_task_modules_and_harness_split_differ_from_judge(self):
-        agent = {p.relative_to(AGENT_REPO) for p in AGENT_REPO.rglob("*")
-                 if p.is_file() and not p.relative_to(AGENT_REPO).is_relative_to("tools")}
-        judge = {p.relative_to(JUDGE_REPO) for p in JUDGE_REPO.rglob("*") if p.is_file()}
+        agent = {
+            p.relative_to(AGENT_REPO)
+            for p in AGENT_REPO.rglob("*")
+            if p.is_file() and not p.relative_to(AGENT_REPO).is_relative_to("tools")
+        }
+        judge = {
+            p.relative_to(JUDGE_REPO) for p in JUDGE_REPO.rglob("*") if p.is_file()
+        }
         self.assertEqual(agent, judge)
-        changed = {p for p in agent if (AGENT_REPO / p).read_bytes() != (JUDGE_REPO / p).read_bytes()}
+        changed = {
+            p
+            for p in agent
+            if (AGENT_REPO / p).read_bytes() != (JUDGE_REPO / p).read_bytes()
+        }
         self.assertTrue(all(p.name == "user_tasks.py" for p in changed), changed)
         for path in (AGENT_REPO / DATA_REL).rglob("*"):
             if path.is_file():
-                self.assertEqual(path.read_bytes(), (JUDGE_REPO / path.relative_to(AGENT_REPO)).read_bytes())
+                self.assertEqual(
+                    path.read_bytes(),
+                    (JUDGE_REPO / path.relative_to(AGENT_REPO)).read_bytes(),
+                )
 
     def test_no_removed_task_literal_anywhere_in_agent_tree(self):
         """Every distinctive string literal of a removed task is absent from the Agent-visible files."""
@@ -187,7 +233,11 @@ class ProgentHeldoutIsolationTests(unittest.TestCase):
             needles[suite] = {s for s in needles[suite] if s not in kept_text}
             self.assertGreater(len(needles[suite]), 10, suite)
             for needle in sorted(needles[suite]):
-                hits = [str(p.relative_to(TASK)) for p, text in files.items() if needle in text]
+                hits = [
+                    str(p.relative_to(TASK))
+                    for p, text in files.items()
+                    if needle in text
+                ]
                 self.assertEqual(hits, [], f"{suite}: {needle[:80]!r}")
 
 
@@ -214,8 +264,10 @@ print(json.dumps(out))
 
 def _probe_python():
     python = os.environ.get("PROGENT_AGENTDOJO_PYTHON", sys.executable)
-    probe = subprocess.run([python, "-I", "-B", "-c", "import pydantic, yaml, deepdiff, openai"],
-                           capture_output=True)
+    probe = subprocess.run(
+        [python, "-I", "-B", "-c", "import pydantic, yaml, deepdiff, openai"],
+        capture_output=True,
+    )
     return python if probe.returncode == 0 else None
 
 
@@ -230,14 +282,31 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
     def setUpClass(cls):
         python = _probe_python()
         if python is None:
-            raise unittest.SkipTest("AgentDojo dependencies unavailable; set PROGENT_AGENTDOJO_PYTHON")
+            raise unittest.SkipTest(
+                "AgentDojo dependencies unavailable; set PROGENT_AGENTDOJO_PYTHON"
+            )
 
         def load(repo, trusted):
-            env = {"PATH": os.environ.get("PATH", ""), "SECAGENT_SUITE": "banking",
-                   "PYTHONDONTWRITEBYTECODE": "1"}
+            env = {
+                "PATH": os.environ.get("PATH", ""),
+                "SECAGENT_SUITE": "banking",
+                "PYTHONDONTWRITEBYTECODE": "1",
+            }
             result = subprocess.run(
-                [python, "-I", "-B", "-c", _PROBE, str(repo / "agentdojo/src"), str(trusted)],
-                capture_output=True, text=True, env=env, timeout=300)
+                [
+                    python,
+                    "-I",
+                    "-B",
+                    "-c",
+                    _PROBE,
+                    str(repo / "agentdojo/src"),
+                    str(trusted),
+                ],
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=300,
+            )
             if result.returncode:
                 raise AssertionError(result.stderr[-4000:])
             return json.loads(result.stdout)
@@ -249,7 +318,9 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
         for suite in workloads.SUITES:
             agent, judge = self.agent[suite]["v1.1.2"], self.judge[suite]["v1.1.2"]
             self.assertEqual(sorted(agent["user"], key=_num), _agent_dev(suite), suite)
-            self.assertEqual(sorted(judge["user"], key=_num), FULL[suite]["user"], suite)
+            self.assertEqual(
+                sorted(judge["user"], key=_num), FULL[suite]["user"], suite
+            )
             self.assertEqual(agent["injection"], judge["injection"], suite)
             for tid, value in agent["user"].items():
                 self.assertEqual(value, judge["user"][tid], f"{suite}/{tid}")
@@ -262,8 +333,12 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
             _, final = workloads.split(suite, FULL[suite]["user"])
             kept = []
             for version in self.judge[suite].values():
-                kept += [v for tid, pair in version["user"].items() if _num(tid) not in _removed(suite)
-                         for v in pair]
+                kept += [
+                    v
+                    for tid, pair in version["user"].items()
+                    if _num(tid) not in _removed(suite)
+                    for v in pair
+                ]
                 kept += [v for pair in version["injection"].values() for v in pair]
             kept_text = "\n".join(kept) + shared_text
             checked = 0
@@ -275,7 +350,11 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
                     # The environment (identical to the judge's) is world state the
                     # tools return in every episode; a prompt quoted there (a TODO
                     # page) is not a task definition.
-                    hits = [p for p, text in files.items() if prompt in text and p not in data]
+                    hits = [
+                        p
+                        for p, text in files.items()
+                        if prompt in text and p not in data
+                    ]
                     self.assertEqual(hits, [], f"{suite}/{tid}@{version} PROMPT")
                     checked += 1
                     # Short answers (a rating) and answers shared with the rest of
@@ -283,8 +362,14 @@ class ProgentAgentDojoImportTests(unittest.TestCase):
                     # injection task sends) are not attributable to the task.
                     if len(truth) < 6 or truth in kept_text:
                         continue
-                    hits = [p for p, text in files.items() if truth in text and p not in data]
-                    self.assertEqual(hits, [], f"{suite}/{tid}@{version} GROUND_TRUTH_OUTPUT")
+                    hits = [
+                        p
+                        for p, text in files.items()
+                        if truth in text and p not in data
+                    ]
+                    self.assertEqual(
+                        hits, [], f"{suite}/{tid}@{version} GROUND_TRUTH_OUTPUT"
+                    )
             self.assertGreaterEqual(checked, len(final), suite)
 
 

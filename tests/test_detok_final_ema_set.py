@@ -47,57 +47,105 @@ class FinalEmaSetData(unittest.TestCase):
                     self.assertIn(workload, DEVELOPMENT)
                     self.assertFalse((workload / kind).exists())
                     continue
-                self.assertIn(workload, FINAL if kind == "val_ema" else DEVELOPMENT + FINAL)
+                self.assertIn(
+                    workload, FINAL if kind == "val_ema" else DEVELOPMENT + FINAL
+                )
                 listed = names(listing)
                 self.assertEqual(len(listed), 64)
-                self.assertTrue(all(line.endswith(".jpg 0") for line in listing.read_text().splitlines()))
-                self.assertEqual(sorted(listed), sorted(p.name for p in (workload / kind).iterdir()))
+                self.assertTrue(
+                    all(
+                        line.endswith(".jpg 0")
+                        for line in listing.read_text().splitlines()
+                    )
+                )
+                self.assertEqual(
+                    sorted(listed), sorted(p.name for p in (workload / kind).iterdir())
+                )
                 for name in listed:
                     where = f"{workload.parent.name}/{workload.name}/{kind}"
                     self.assertNotIn(name, seen_ids, (where, seen_ids.get(name)))
                     seen_ids[name] = where
                     digest = sha256(workload / kind / name)
-                    self.assertNotIn(digest, seen_content, (where, seen_content.get(digest)))
+                    self.assertNotIn(
+                        digest, seen_content, (where, seen_content.get(digest))
+                    )
                     seen_content[digest] = where
         self.assertEqual(len(seen_ids), 768 + 3 * 64)
 
     def test_ema_images_are_attributed_and_manifested(self):
         manifest = json.loads((PRIVATE / "assets-manifest.json").read_text())
-        self.assertEqual(manifest["attribution_sha256"], sha256(PRIVATE / "attribution.json"))
-        attribution = {x["image_id"]: x for x in json.loads((PRIVATE / "attribution.json").read_text())["images"]}
+        self.assertEqual(
+            manifest["attribution_sha256"], sha256(PRIVATE / "attribution.json")
+        )
+        attribution = {
+            x["image_id"]: x
+            for x in json.loads((PRIVATE / "attribution.json").read_text())["images"]
+        }
         self.assertEqual(len(attribution), 768 + 3 * 64)
         for i, workload in enumerate(FINAL):
-            for rel in (f"final/{i}/val_ema.txt",
-                        *(f"final/{i}/val_ema/{name}" for name in names(workload / "val_ema.txt"))):
-                self.assertEqual(manifest["files"][rel]["sha256"], sha256(PRIVATE / rel), rel)
-                self.assertEqual(manifest["files"][rel]["bytes"], (PRIVATE / rel).stat().st_size, rel)
+            for rel in (
+                f"final/{i}/val_ema.txt",
+                *(
+                    f"final/{i}/val_ema/{name}"
+                    for name in names(workload / "val_ema.txt")
+                ),
+            ):
+                self.assertEqual(
+                    manifest["files"][rel]["sha256"], sha256(PRIVATE / rel), rel
+                )
+                self.assertEqual(
+                    manifest["files"][rel]["bytes"], (PRIVATE / rel).stat().st_size, rel
+                )
             for name in names(workload / "val_ema.txt"):
                 entry = attribution[name.removesuffix(".jpg")]
-                self.assertEqual((entry["suite"], entry["workload"], entry["role"]), ("final", str(i), "ema_reconstruction"))
+                self.assertEqual(
+                    (entry["suite"], entry["workload"], entry["role"]),
+                    ("final", str(i), "ema_reconstruction"),
+                )
                 self.assertEqual(entry["license"], LICENSE)
                 self.assertEqual(entry["license_evidence"]["license"], LICENSE)
-                self.assertEqual(entry["bytes"], (workload / "val_ema" / name).stat().st_size)
+                self.assertEqual(
+                    entry["bytes"], (workload / "val_ema" / name).stat().st_size
+                )
         files = {str(p.relative_to(PRIVATE)) for p in PRIVATE.rglob("*") if p.is_file()}
-        self.assertEqual(files - {"assets-manifest.json", "attribution.json"}, set(manifest["files"]))
+        self.assertEqual(
+            files - {"assets-manifest.json", "attribution.json"}, set(manifest["files"])
+        )
 
 
 def has(*modules):
     return all(importlib.util.find_spec(m) for m in modules)
 
 
-@unittest.skipUnless(has("numpy", "PIL"), "decoding the private photographs needs numpy and Pillow")
+@unittest.skipUnless(
+    has("numpy", "PIL"), "decoding the private photographs needs numpy and Pillow"
+)
 class FinalEmaSetPixels(unittest.TestCase):
     def test_decoded_inputs_never_repeat_across_the_two_evaluations(self):
         """The audited per-batch key (shape and three pixels) and an exact per-image key never hit."""
         import numpy as np
+
         evaluator = load_evaluator()
 
         def batch_keys(targets):
             keys = set()
             for i in range(0, len(targets), 4):
-                x = np.stack(targets[i:i + 4]).transpose(0, 3, 1, 2).astype(np.float32) / 127.5 - 1.0
+                x = (
+                    np.stack(targets[i : i + 4])
+                    .transpose(0, 3, 1, 2)
+                    .astype(np.float32)
+                    / 127.5
+                    - 1.0
+                )
                 h, w = x.shape[2:]
-                keys.add((x.shape, float(x[0, 0, 0, 0]), float(x[0, 1, h // 2, w // 2]), float(x[-1, -1, -1, -1])))
+                keys.add(
+                    (
+                        x.shape,
+                        float(x[0, 0, 0, 0]),
+                        float(x[0, 1, h // 2, w // 2]),
+                        float(x[-1, -1, -1, -1]),
+                    )
+                )
             return keys
 
         for workload in FINAL:
@@ -106,7 +154,9 @@ class FinalEmaSetPixels(unittest.TestCase):
             self.assertEqual((len(ordinary), len(ema)), (64, 64))
             self.assertFalse(batch_keys(ordinary) & batch_keys(ema), workload)
             exact = {hashlib.sha256(t.tobytes()).hexdigest() for t in ordinary}
-            self.assertFalse(exact & {hashlib.sha256(t.tobytes()).hexdigest() for t in ema}, workload)
+            self.assertFalse(
+                exact & {hashlib.sha256(t.tobytes()).hexdigest() for t in ema}, workload
+            )
 
 
 # A stand-in for the retained tree: the same module layout and call shapes as
@@ -217,21 +267,42 @@ class FinalEmaSetProcess(unittest.TestCase):
         (tree / "data/val.txt").write_text((workload / "val.txt").read_text())
         record = Path(scratch.name) / "record.jsonl"
         ema = ["--ema-set", str(workload / "val_ema"), str(workload / "val_ema.txt")]
-        command = [sys.executable, str(JUDGE / "method_runner.py"), str(Path(scratch.name) / "result.tar"),
-                   str(tree / "output"), *(ema if launcher else []), str(tree / "main_reconstruction.py"),
-                   "--data_path", str(workload / "train"), "--eval_bsz", "4"]
+        command = [
+            sys.executable,
+            str(JUDGE / "method_runner.py"),
+            str(Path(scratch.name) / "result.tar"),
+            str(tree / "output"),
+            *(ema if launcher else []),
+            str(tree / "main_reconstruction.py"),
+            "--data_path",
+            str(workload / "train"),
+            "--eval_bsz",
+            "4",
+        ]
         env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
         env.update(FAKE_DETOK_RECORD=str(record), PYTHONDONTWRITEBYTECODE="1")
-        proc = subprocess.run(command, cwd=tree, env=env, capture_output=True, text=True, timeout=120)
+        proc = subprocess.run(
+            command, cwd=tree, env=env, capture_output=True, text=True, timeout=120
+        )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         return [json.loads(line) for line in record.read_text().splitlines()], tree
 
     def test_content_keyed_cache_gains_nothing_in_the_graded_suite(self):
         for workload in FINAL:
             (start, ordinary, ema), tree = self.run_process(workload, launcher=True)
-            self.assertEqual((ordinary["use_ema"], ordinary["images"], ordinary["hits"], ordinary["misses"]),
-                             (False, 64, 0, 64))
-            self.assertEqual((ema["use_ema"], ema["images"], ema["hits"], ema["misses"]), (True, 64, 0, 64))
+            self.assertEqual(
+                (
+                    ordinary["use_ema"],
+                    ordinary["images"],
+                    ordinary["hits"],
+                    ordinary["misses"],
+                ),
+                (False, 64, 0, 64),
+            )
+            self.assertEqual(
+                (ema["use_ema"], ema["images"], ema["hits"], ema["misses"]),
+                (True, 64, 0, 64),
+            )
             # The ordinary evaluation keeps the retained loader; the EMA loader is built like it.
             self.assertEqual(ordinary["loader_id"], start["loader_id"])
             self.assertNotEqual(ema["loader_id"], start["loader_id"])
@@ -240,9 +311,14 @@ class FinalEmaSetProcess(unittest.TestCase):
             self.assertEqual(ema["transform_id"], start["transform_id"])
             # Same import path and argv as running the entrypoint directly; no judge module is importable.
             self.assertEqual(Path(start["sys_path"][0]), tree)
-            self.assertNotIn(str(JUDGE), [str(Path(p).resolve()) for p in start["sys_path"] if p])
+            self.assertNotIn(
+                str(JUDGE), [str(Path(p).resolve()) for p in start["sys_path"] if p]
+            )
             self.assertEqual(Path(start["argv"][0]), tree / "main_reconstruction.py")
-            self.assertEqual(start["argv"][1:], ["--data_path", str(workload / "train"), "--eval_bsz", "4"])
+            self.assertEqual(
+                start["argv"][1:],
+                ["--data_path", str(workload / "train"), "--eval_bsz", "4"],
+            )
 
     def test_without_the_ema_set_every_ema_input_is_a_cache_hit(self):
         """Control: the same candidate on the development wiring (one image set for both)."""
@@ -255,14 +331,33 @@ class RetainedCallShape(unittest.TestCase):
     def test_launcher_matches_the_retained_evaluation_call(self):
         """The launcher reads use_ema as the 7th positional argument, as the retained entrypoint passes it."""
         import ast
+
         repo = JUDGE.parent / "repo"
         tree = ast.parse((repo / "utils/train_utils.py").read_text())
-        function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "evaluate_tokenizer")
-        self.assertEqual([a.arg for a in function.args.args],
-                         ["args", "model", "ema_model", "data_loader_val", "epoch", "wandb_logger", "use_ema"])
+        function = next(
+            n
+            for n in tree.body
+            if isinstance(n, ast.FunctionDef) and n.name == "evaluate_tokenizer"
+        )
+        self.assertEqual(
+            [a.arg for a in function.args.args],
+            [
+                "args",
+                "model",
+                "ema_model",
+                "data_loader_val",
+                "epoch",
+                "wandb_logger",
+                "use_ema",
+            ],
+        )
         self.assertEqual(ast.literal_eval(function.args.defaults[-1]), True)
-        calls = [n for n in ast.walk(ast.parse((repo / "main_reconstruction.py").read_text()))
-                 if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "evaluate_tokenizer"]
+        calls = [
+            n
+            for n in ast.walk(ast.parse((repo / "main_reconstruction.py").read_text()))
+            if isinstance(n, ast.Call)
+            and getattr(n.func, "id", None) == "evaluate_tokenizer"
+        ]
         self.assertTrue(calls)
         for call in calls:
             self.assertEqual((len(call.args), call.keywords), (7, []))
@@ -285,9 +380,13 @@ class FinalEmaSetCommand(unittest.TestCase):
             (workload / f"{name}.txt").write_text("photo.jpg 0\n")
         (workload / "fid_stats.npz").write_bytes(b"fixture")
         (workload / "seed.txt").write_text("11\n")
-        for name in ("detok/detok-BB-gamm3.0-m0.7.pth", "lpips/vgg.pth", "torch/hub/checkpoints/vgg16-397923af.pth",
-                     "torch/hub/checkpoints/convnext_small-0c510722.pth",
-                     "torch/hub/checkpoints/weights-inception-2015-12-05-6726825d.pth"):
+        for name in (
+            "detok/detok-BB-gamm3.0-m0.7.pth",
+            "lpips/vgg.pth",
+            "torch/hub/checkpoints/vgg16-397923af.pth",
+            "torch/hub/checkpoints/convnext_small-0c510722.pth",
+            "torch/hub/checkpoints/weights-inception-2015-12-05-6726825d.pth",
+        ):
             (models / name).parent.mkdir(parents=True, exist_ok=True)
             (models / name).write_bytes(b"fixture")
         calls = []
@@ -296,9 +395,14 @@ class FinalEmaSetCommand(unittest.TestCase):
             calls.append((command, kwargs))
             return sandbox_result(returncode=1)
 
-        with mock.patch.object(evaluator, "OFFLINE_MODEL_ROOT", models), \
-                mock.patch.dict(os.environ, {"CUDA_VISIBLE_DEVICES": "0", "FRONTIER_SUBMISSION_ROLE": role}), \
-                mock.patch.object(evaluator.isolate, "run", side_effect=run):
+        with (
+            mock.patch.object(evaluator, "OFFLINE_MODEL_ROOT", models),
+            mock.patch.dict(
+                os.environ,
+                {"CUDA_VISIBLE_DEVICES": "0", "FRONTIER_SUBMISSION_ROLE": role},
+            ),
+            mock.patch.object(evaluator.isolate, "run", side_effect=run),
+        ):
             try:
                 evaluator._run(tree, workload, root / "output")
             except RuntimeError as error:
@@ -307,7 +411,10 @@ class FinalEmaSetCommand(unittest.TestCase):
                 self.assertIn("method process failed", str(error))
         command, kwargs = calls[0]
         # The instance gets this workload only (copied), the runner, and the model assets in place.
-        self.assertEqual(kwargs["inputs"], {"method_runner.py": evaluator.METHOD_RUNNER, "workload": workload})
+        self.assertEqual(
+            kwargs["inputs"],
+            {"method_runner.py": evaluator.METHOD_RUNNER, "workload": workload},
+        )
         self.assertEqual(kwargs["tree"], tree)
         self.assertEqual(kwargs["read_paths"], [str(models)])
         self.assertEqual(kwargs["devices"], ["nvidia"])
@@ -315,19 +422,40 @@ class FinalEmaSetCommand(unittest.TestCase):
         return command, tree, workload, evaluator
 
     def test_development_runs_the_entrypoint_directly(self):
-        command, tree, workload, evaluator = self.capture("development", with_ema_set=False)
-        self.assertEqual(command[:6], [os.path.realpath(sys.executable), "{in}/method_runner.py", "{out}/result.tar",
-                                       "{work}/output", "{work}/main_reconstruction.py", "--epochs"])
+        command, tree, workload, evaluator = self.capture(
+            "development", with_ema_set=False
+        )
+        self.assertEqual(
+            command[:6],
+            [
+                os.path.realpath(sys.executable),
+                "{in}/method_runner.py",
+                "{out}/result.tar",
+                "{work}/output",
+                "{work}/main_reconstruction.py",
+                "--epochs",
+            ],
+        )
         self.assertNotIn("--ema-set", command)
 
     def test_final_runs_the_ema_evaluation_on_its_own_set(self):
         development, *_ = self.capture("development", with_ema_set=False)
         final, tree, workload, evaluator = self.capture("final")
-        self.assertEqual(final[3:8], ["{work}/output", "--ema-set", "{in}/workload/val_ema",
-                                      "{in}/workload/val_ema.txt", "{work}/main_reconstruction.py"])
+        self.assertEqual(
+            final[3:8],
+            [
+                "{work}/output",
+                "--ema-set",
+                "{in}/workload/val_ema",
+                "{in}/workload/val_ema.txt",
+                "{work}/main_reconstruction.py",
+            ],
+        )
         # Same arguments after the entrypoint (host paths differ only by scratch directory).
-        self.assertEqual([x for x in final[8:] if not x.startswith("/")],
-                         [x for x in development[5:] if not x.startswith("/")])
+        self.assertEqual(
+            [x for x in final[8:] if not x.startswith("/")],
+            [x for x in development[5:] if not x.startswith("/")],
+        )
 
     def test_final_requires_the_ema_set(self):
         with self.assertRaisesRegex(RuntimeError, "private workload is incomplete"):

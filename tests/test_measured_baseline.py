@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import import_task as importer
 import test_import_task as import_tests
-from preview import measured_baseline as measured
+from deploy import measured_baseline as measured
 
 
 def archive(files):
@@ -567,7 +567,9 @@ class MeasuredBaselineTests(unittest.TestCase):
         payload = self.source / (
             "judge/reference.json" if json_payload else "judge/reference.patch"
         )
-        entry = importer.catalog_entry(self.source, definition, "docker.io/joyemang33", payload)
+        entry = importer.catalog_entry(
+            self.source, definition, "docker.io/joyemang33", payload
+        )
         for image, _ in importer.resolver.task_images(entry):
             image["digest"] = "sha256:" + "c" * 64
         directory = Path(self.harness.temp.name) / (
@@ -680,7 +682,9 @@ class MeasuredBaselineTests(unittest.TestCase):
         self.assertEqual(
             import_tests.snapshot(self.source),
             import_tests.snapshot(
-                self.harness.root / importer.task_layers.SHARED_PROBLEMS / self.source.name
+                self.harness.root
+                / importer.task_layers.SHARED_PROBLEMS
+                / self.source.name
             ),
         )
         with self.assertRaisesRegex(ValueError, "catalog baseline differs"):

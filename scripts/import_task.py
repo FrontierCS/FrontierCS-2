@@ -34,20 +34,18 @@ import build_task_images as builder
 import frontier_deploy as deploy
 import image_namespace
 import render_task_definition as renderer
+import resolve_catalog_digests as resolver
 import task_layers
 import task_manifest
-import resolve_catalog_digests as resolver
+from deploy import publication
+from deploy.infra import atomic_write
+from deploy.measured_baseline import baseline_from_measurement
+from deploy.publication import baseline_from_result_json, file_sha
 from native_datasets import dataset_extension, dataset_path
-from preview import publication
-from preview.infra import atomic_write
-from preview.measured_baseline import baseline_from_measurement
-from preview.publication import baseline_from_result_json, file_sha
 from task_selection import requirements
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-LAUNCHER = Path(
-    "tasks/shared/reference-candidate/fcs2_reference_candidate.py"
-)
+LAUNCHER = Path("tasks/shared/reference-candidate/fcs2_reference_candidate.py")
 MAX_FILE_BYTES = 512 * 1024 * 1024
 PLACEHOLDER = deploy.TASK_PLACEHOLDER_DIGEST
 ROLE_KEYS = {
@@ -91,10 +89,19 @@ def validate_export(root: Path) -> dict:
         raise ValueError("export directory must have a valid problem name")
     native = (root / task_manifest.MANIFEST).is_file()
     members = (
-        (task_manifest.MANIFEST, "docker/agent.Dockerfile", "docker/verifier.Dockerfile")
+        (
+            task_manifest.MANIFEST,
+            "docker/agent.Dockerfile",
+            "docker/verifier.Dockerfile",
+        )
         if native
-        else ("policy.json", "upstream.lock.json", "agent-base/Dockerfile",
-              "verifier/Dockerfile", "verifier/verify.py")
+        else (
+            "policy.json",
+            "upstream.lock.json",
+            "agent-base/Dockerfile",
+            "verifier/Dockerfile",
+            "verifier/verify.py",
+        )
     )
     for member in members:
         if not (root / member).is_file():
@@ -128,9 +135,14 @@ def validate_export(root: Path) -> dict:
             "policy schema or problem_id differs from export directory name"
         )
     lock = (
-        {"problem_id": root.name, "files": []}  # task.toml tasks keep provenance in docs/
+        {
+            "problem_id": root.name,
+            "files": [],
+        }  # task.toml tasks keep provenance in docs/
         if native
-        else deploy.require_mapping(deploy.load_json(root / "upstream.lock.json"), "upstream.lock")
+        else deploy.require_mapping(
+            deploy.load_json(root / "upstream.lock.json"), "upstream.lock"
+        )
     )
     for row in lock.get("files", []):
         safe_member(row.get("path"))
@@ -149,7 +161,9 @@ def validate_export(root: Path) -> dict:
             policy.get("gpu", {}).get(role, {}).get(quota, 0) > 0
             and not paths.dockerfile(f"{role}-gpu").is_file()
         ):
-            raise ValueError(f"missing enabled GPU Dockerfile: {paths.dockerfile(f'{role}-gpu')}")
+            raise ValueError(
+                f"missing enabled GPU Dockerfile: {paths.dockerfile(f'{role}-gpu')}"
+            )
     # Apply the same bounded base policy in plan/published modes too; no pulls.
     for dockerfile in (
         paths.dockerfile(role)
@@ -532,10 +546,7 @@ def validate_replacement_catalog(
 def validate_staged(root: Path, name: str, identity: str) -> None:
     catalog = task_layers.load_catalog(root=root)
     definitions = task_layers.load_definitions(root)
-    if (
-        renderer.source_sha256(renderer.task_directory(name, root))
-        != identity
-    ):
+    if renderer.source_sha256(renderer.task_directory(name, root)) != identity:
         raise ValueError("copied tree identity differs from source")
     verify_definitions(catalog, definitions, root=root)
     deploy.validate_task_catalog(catalog, definitions=definitions, root=root)
@@ -624,14 +635,22 @@ def run_checks() -> None:
 def task_target(name: str, layer: Path | None = None) -> Path:
     """Where task `name` is installed: its directory in the task layers, or for a new task a
     directory in the problems of the layer at `layer` (the shared tree when None)."""
-    found = [path for item in task_layers.layers(REPOSITORY_ROOT) if item.problems.is_dir()
-             for path in [renderer.problem_directory(item.problems, name)] if path.is_dir()]
+    found = [
+        path
+        for item in task_layers.layers(REPOSITORY_ROOT)
+        if item.problems.is_dir()
+        for path in [renderer.problem_directory(item.problems, name)]
+        if path.is_dir()
+    ]
     if len(found) > 1:
         raise ValueError(f"task {name} has directories in two layers: {found}")
     if found:
         return found[0]
-    targets = [item for item in task_layers.layers(REPOSITORY_ROOT)
-               if item.root == (layer or REPOSITORY_ROOT).resolve()]
+    targets = [
+        item
+        for item in task_layers.layers(REPOSITORY_ROOT)
+        if item.root == (layer or REPOSITORY_ROOT).resolve()
+    ]
     if len(targets) != 1:
         raise ValueError(f"{layer} is not a task layer")
     return targets[0].problems / name
@@ -639,12 +658,16 @@ def task_target(name: str, layer: Path | None = None) -> Path:
 
 def layer_paths(root: Path) -> list[Path]:
     """The catalog and definitions files of `root`'s task layers, relative to it."""
-    return [path.relative_to(root.resolve()) for layer in task_layers.layers(root)
-            for path in (layer.definitions, layer.catalog)]
+    return [
+        path.relative_to(root.resolve())
+        for layer in task_layers.layers(root)
+        for path in (layer.definitions, layer.catalog)
+    ]
 
 
-def stage_layers(staged: Path, catalog: dict, definitions: dict,
-                 new_layer: Path | None = None) -> None:
+def stage_layers(
+    staged: Path, catalog: dict, definitions: dict, new_layer: Path | None = None
+) -> None:
     """Write the layers' catalog and definitions files, holding `catalog` and `definitions`,
     into the staged copy."""
     for relative, body in task_layers.layer_files(
@@ -791,8 +814,7 @@ def batch_main(arguments) -> int:
         prepared[name] = (source, payload, entry)
         names.append(name)
     destinations = [
-        renderer.task_directory(name, REPOSITORY_ROOT).resolve()
-        for name in names
+        renderer.task_directory(name, REPOSITORY_ROOT).resolve() for name in names
     ]
     for source, _, _ in prepared.values():
         for destination in destinations:
@@ -870,7 +892,8 @@ def main(arguments=None) -> int:
     mode.add_argument("--check", action="store_true")
     parser.add_argument("--replace", action="store_true")
     parser.add_argument(
-        "--layer", type=Path,
+        "--layer",
+        type=Path,
         help="the task layer directory a new task joins (default: the shared tree)",
     )
     reference = parser.add_mutually_exclusive_group()
@@ -885,7 +908,9 @@ def main(arguments=None) -> int:
     # Publication and verification speak the Docker Hub registry API.
     namespace = r"docker\.io/[a-z0-9]+(?:[._-][a-z0-9]+)*"
     if re.fullmatch(namespace, options.image_namespace) is None:
-        raise ValueError("image namespace must be docker.io/<bounded Docker Hub namespace>")
+        raise ValueError(
+            "image namespace must be docker.io/<bounded Docker Hub namespace>"
+        )
     image_mode = (
         ("published" if options.published_images else "build")
         if options.images == "auto"
@@ -1160,8 +1185,13 @@ def main(arguments=None) -> int:
         if build_receipt is not None:
             record["build"] = build_receipt
         install_staged(staged, workspace, name, record)
-    changed_files([target, *(REPOSITORY_ROOT / path for path in layer_paths(REPOSITORY_ROOT)),
-                   receipt_path])
+    changed_files(
+        [
+            target,
+            *(REPOSITORY_ROOT / path for path in layer_paths(REPOSITORY_ROOT)),
+            receipt_path,
+        ]
+    )
     return 0
 
 
