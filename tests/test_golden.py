@@ -20,8 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 GOLDEN = ROOT / "tests/fixtures/golden"
 sys.dont_write_bytecode = True
 sys.path[:0] = [str(ROOT / "tests"), str(ROOT / "scripts")]
-from preview import config as site_config
-from preview import publication
+from deploy import config as site_config
+from deploy import publication
 from render_task_definition import json_text
 from test_frontier_deploy import Fixture
 from test_frontier_deploy import frontier_deploy as deploy

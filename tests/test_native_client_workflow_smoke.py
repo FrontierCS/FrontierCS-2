@@ -2,16 +2,17 @@
 import deployment_test_guard  # noqa: F401
 
 import json
-from pathlib import Path
 import unittest
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class NativeClientWorkflowSmokeTests(unittest.TestCase):
     def test_source_only_proposal_requires_native_explicit_final(self):
-        proposal = json.loads((ROOT / "smoke/client-workflow/proposal.json").read_text())
+        proposal = json.loads(
+            (ROOT / "smoke/client-workflow/proposal.json").read_text()
+        )
         self.assertEqual(proposal["status"], "SOURCE_ONLY_NOT_PUBLISHED_OR_REGISTERED")
         self.assertEqual(proposal["submission_authority"], "native-model-client")
         self.assertTrue(proposal["explicit_final_required"])

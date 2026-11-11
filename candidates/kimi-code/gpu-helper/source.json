@@ -1,9 +1,9 @@
 {
-  "platform_source_commit": "341949767be14411465bbb704ce87e8453773965",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "files": {
     "frontier_gpu.py": {
       "source": "candidate-overlays/codex/frontier_gpu.py",
-      "sha256": "sha256:a27d7b3ddbd9f85fd149e4f34ec79cbbccda1fbe4d1c0261f80c07f08ba36f49"
+      "sha256": "sha256:c6e26af56f6fb1b81d89c684959394eb31ae884400581ceab2146a835bdc52d2"
     },
     "frontier_gpu_connect_proxy.py": {
       "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",

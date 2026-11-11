@@ -59,11 +59,16 @@ args = ["/py", "-m", "check", "--instance-id={instance}"]
 
 MANIFEST = {
     "schema": "any task schema",
-    "test_sandboxes": {"swe": {
-        "repo__b-2": {"index": "002", "base": BASE_B},
-        "repo__a-1": {"index": "000", "base": BASE_A,
-                      "build_args": {"TEST_SANDBOX_SOURCE": "restored"}},
-    }},
+    "test_sandboxes": {
+        "swe": {
+            "repo__b-2": {"index": "002", "base": BASE_B},
+            "repo__a-1": {
+                "index": "000",
+                "base": BASE_A,
+                "build_args": {"TEST_SANDBOX_SOURCE": "restored"},
+            },
+        }
+    },
 }
 
 SANDBOX_RECIPE = """\
@@ -85,20 +90,36 @@ SERVICE_RECIPE = "FROM docker.io/library/ubuntu@sha256:%s\n" % ("d" * 64)
 
 EXPECTED = {
     "scheduler": {
-        "args": ["/py", "scheduler.py", "--port", "8002"], "attestation_key": True,
-        "image": "scheduler", "phases": ["train", "eval"], "workdir": "/tmp"},
+        "args": ["/py", "scheduler.py", "--port", "8002"],
+        "attestation_key": True,
+        "image": "scheduler",
+        "phases": ["train", "eval"],
+        "workdir": "/tmp",
+    },
     "swe-000-candidate": {
         "args": ["/py", "-m", "tool", "--instance-id", "repo__a-1", "--port", "8001"],
-        "image": "swe-000", "phases": ["train", "eval"], "workdir": "/testbed"},
+        "image": "swe-000",
+        "phases": ["train", "eval"],
+        "workdir": "/testbed",
+    },
     "swe-000-check": {
         "args": ["/py", "-m", "check", "--instance-id=repo__a-1"],
-        "image": "swe-000", "phases": ["train", "eval"], "workdir": "/testbed"},
+        "image": "swe-000",
+        "phases": ["train", "eval"],
+        "workdir": "/testbed",
+    },
     "swe-002-candidate": {
         "args": ["/py", "-m", "tool", "--instance-id", "repo__b-2", "--port", "8001"],
-        "image": "swe-002", "phases": ["eval"], "workdir": "/testbed"},
+        "image": "swe-002",
+        "phases": ["eval"],
+        "workdir": "/testbed",
+    },
     "swe-002-check": {
         "args": ["/py", "-m", "check", "--instance-id=repo__b-2"],
-        "image": "swe-002", "phases": ["eval"], "workdir": "/testbed"},
+        "image": "swe-002",
+        "phases": ["eval"],
+        "workdir": "/testbed",
+    },
 }
 
 
@@ -117,7 +138,9 @@ class Fixture(unittest.TestCase):
             path.write_text(json.dumps(selector))
 
     def manifest(self, document=None) -> None:
-        (self.root / "judge/instances.json").write_text(json.dumps(document or MANIFEST))
+        (self.root / "judge/instances.json").write_text(
+            json.dumps(document or MANIFEST)
+        )
 
     def write(self, extra: str) -> Path:
         if "test_sandboxes" in extra:
@@ -126,21 +149,26 @@ class Fixture(unittest.TestCase):
             if "swe_ids" not in (self.root / "datasets/train.json").read_text():
                 self.datasets()
         manifest = self.root / "task.toml"
-        manifest.write_text((TEMPLATE / "task.toml").read_text(encoding="utf-8") + extra,
-                            encoding="utf-8")
+        manifest.write_text(
+            (TEMPLATE / "task.toml").read_text(encoding="utf-8") + extra,
+            encoding="utf-8",
+        )
         return self.root
 
     def recipes(self, services: bool = True, sandboxes: bool = True) -> None:
         if services:
-            (self.root / "docker/test-sandbox-scheduler.Dockerfile").write_text(SERVICE_RECIPE)
+            (self.root / "docker/test-sandbox-scheduler.Dockerfile").write_text(
+                SERVICE_RECIPE
+            )
         if sandboxes:
             (self.root / "docker/test-sandbox.Dockerfile").write_text(SANDBOX_RECIPE)
 
 
 class ExpansionTest(Fixture):
     def test_expands_into_the_exact_legacy_sidecars_mapping_in_order(self) -> None:
-        policy = task_manifest.policy_from_task(task_manifest.read_task(
-            self.write(GPU + SERVICES + SANDBOXES)))
+        policy = task_manifest.policy_from_task(
+            task_manifest.read_task(self.write(GPU + SERVICES + SANDBOXES))
+        )
         self.assertEqual(policy["sidecars"], EXPECTED)
         self.assertEqual(list(policy["sidecars"]), list(EXPECTED))
         for name, profile in policy["sidecars"].items():
@@ -152,20 +180,36 @@ class ExpansionTest(Fixture):
 
     def test_images_and_build_args(self) -> None:
         task = task_manifest.read_task(self.write(GPU + SERVICES + SANDBOXES))
-        self.assertEqual(task["sidecar_images"], {
-            "scheduler": ("docker/test-sandbox-scheduler.Dockerfile", {}),
-            "swe-000": ("docker/test-sandbox.Dockerfile",
-                        {"TEST_SANDBOX_BASE": BASE_A, "TEST_SANDBOX_INSTANCE": "repo__a-1",
-                         "TEST_SANDBOX_SOURCE": "restored"}),
-            "swe-002": ("docker/test-sandbox.Dockerfile",
-                        {"TEST_SANDBOX_BASE": BASE_B, "TEST_SANDBOX_INSTANCE": "repo__b-2"}),
-        })
+        self.assertEqual(
+            task["sidecar_images"],
+            {
+                "scheduler": ("docker/test-sandbox-scheduler.Dockerfile", {}),
+                "swe-000": (
+                    "docker/test-sandbox.Dockerfile",
+                    {
+                        "TEST_SANDBOX_BASE": BASE_A,
+                        "TEST_SANDBOX_INSTANCE": "repo__a-1",
+                        "TEST_SANDBOX_SOURCE": "restored",
+                    },
+                ),
+                "swe-002": (
+                    "docker/test-sandbox.Dockerfile",
+                    {"TEST_SANDBOX_BASE": BASE_B, "TEST_SANDBOX_INSTANCE": "repo__b-2"},
+                ),
+            },
+        )
         paths = task_manifest.layout(self.root)
-        self.assertEqual(paths.dockerfile("sidecar-swe-002"),
-                         self.root / "docker/test-sandbox.Dockerfile")
-        self.assertEqual(paths.dockerfile("sidecar-scheduler"),
-                         self.root / "docker/test-sandbox-scheduler.Dockerfile")
-        self.assertEqual(paths.build_args("sidecar-swe-000")["TEST_SANDBOX_INSTANCE"], "repo__a-1")
+        self.assertEqual(
+            paths.dockerfile("sidecar-swe-002"),
+            self.root / "docker/test-sandbox.Dockerfile",
+        )
+        self.assertEqual(
+            paths.dockerfile("sidecar-scheduler"),
+            self.root / "docker/test-sandbox-scheduler.Dockerfile",
+        )
+        self.assertEqual(
+            paths.build_args("sidecar-swe-000")["TEST_SANDBOX_INSTANCE"], "repo__a-1"
+        )
         self.assertEqual(paths.build_args("sidecar-scheduler"), {})
         self.assertEqual(paths.build_args("verifier"), {})
         with self.assertRaises(task_manifest.ManifestError):
@@ -181,17 +225,25 @@ class ExpansionTest(Fixture):
         return document
 
     def test_refuses_repeated_index(self) -> None:
-        self.manifest(self.broken_manifest(lambda i: i["repo__b-2"].update(index="000")))
+        self.manifest(
+            self.broken_manifest(lambda i: i["repo__b-2"].update(index="000"))
+        )
         self.refused(GPU + SANDBOXES, "repeated")
 
     def test_refuses_unpinned_base(self) -> None:
-        self.manifest(self.broken_manifest(
-            lambda i: i["repo__b-2"].update(base="docker.io/swebench/b:latest")))
+        self.manifest(
+            self.broken_manifest(
+                lambda i: i["repo__b-2"].update(base="docker.io/swebench/b:latest")
+            )
+        )
         self.refused(GPU + SANDBOXES, "digest")
 
     def test_refuses_build_args_that_override_base_or_instance(self) -> None:
-        self.manifest(self.broken_manifest(
-            lambda i: i["repo__b-2"].update(build_args={"TEST_SANDBOX_BASE": "x"})))
+        self.manifest(
+            self.broken_manifest(
+                lambda i: i["repo__b-2"].update(build_args={"TEST_SANDBOX_BASE": "x"})
+            )
+        )
         self.refused(GPU + SANDBOXES, "build_args")
 
     def test_manifest_must_cover_exactly_the_selected_instances(self) -> None:
@@ -208,31 +260,55 @@ class ExpansionTest(Fixture):
         self.assertEqual(policy["sidecars"]["swe-002-check"]["phases"], ["train"])
 
     def test_refuses_role_without_placeholder(self) -> None:
-        self.refused(GPU + SANDBOXES.replace('"--instance-id={instance}"', '"--x"'), "{instance}")
+        self.refused(
+            GPU + SANDBOXES.replace('"--instance-id={instance}"', '"--x"'), "{instance}"
+        )
 
     def test_refuses_other_instance_sources_and_unknown_keys(self) -> None:
-        self.refused(GPU + SANDBOXES.replace('dataset_key', 'key'), "unknown keys")
-        self.refused(GPU + SANDBOXES.replace('workdir = "/testbed"',
-                                             'workdir = "/testbed"\nargs = ["/x"]'), "never both")
+        self.refused(GPU + SANDBOXES.replace("dataset_key", "key"), "unknown keys")
+        self.refused(
+            GPU
+            + SANDBOXES.replace(
+                'workdir = "/testbed"', 'workdir = "/testbed"\nargs = ["/x"]'
+            ),
+            "never both",
+        )
         self.refused(GPU + SERVICES.replace("workdir", "cwd"), "unknown keys")
-        self.refused(GPU + SERVICES.replace('phases = ["train", "eval"]', 'phases = ["final"]'),
-                     "phases")
+        self.refused(
+            GPU + SERVICES.replace('phases = ["train", "eval"]', 'phases = ["final"]'),
+            "phases",
+        )
 
     def test_refuses_name_clash(self) -> None:
-        self.refused(GPU + SERVICES.replace("test_sandboxes.scheduler",
-                                            "test_sandboxes.swe-000-check")
-                     + SANDBOXES, "share the names")
+        self.refused(
+            GPU
+            + SERVICES.replace(
+                "test_sandboxes.scheduler", "test_sandboxes.swe-000-check"
+            )
+            + SANDBOXES,
+            "share the names",
+        )
 
     def test_attestation_key_needs_a_trusted_sandbox(self) -> None:
-        self.refused(GPU + SERVICES.replace('trust = "trusted"\n', ''), "trusted")
-        self.refused(GPU + SERVICES.replace('trust = "trusted"', 'trust = "untrusted"'),
-                     "trusted")
-        self.refused(GPU + SERVICES.replace('trust = "trusted"', 'trust = "half"'), "trust")
-        self.refused(GPU + SANDBOXES.replace('workdir = "/testbed"',
-                                             'workdir = "/testbed"\nattestation_key = true'),
-                     "trusted")
-        self.refused(GPU + SERVICES.replace("test-sandbox-scheduler", "service-scheduler"),
-                     "dockerfile")
+        self.refused(GPU + SERVICES.replace('trust = "trusted"\n', ""), "trusted")
+        self.refused(
+            GPU + SERVICES.replace('trust = "trusted"', 'trust = "untrusted"'),
+            "trusted",
+        )
+        self.refused(
+            GPU + SERVICES.replace('trust = "trusted"', 'trust = "half"'), "trust"
+        )
+        self.refused(
+            GPU
+            + SANDBOXES.replace(
+                'workdir = "/testbed"', 'workdir = "/testbed"\nattestation_key = true'
+            ),
+            "trusted",
+        )
+        self.refused(
+            GPU + SERVICES.replace("test-sandbox-scheduler", "service-scheduler"),
+            "dockerfile",
+        )
 
 
 class BuildTest(Fixture):
@@ -245,41 +321,73 @@ class BuildTest(Fixture):
             build_task_images.dockerfile_bases(path)
         with self.assertRaisesRegex(build_task_images.BuildFailure, "unreviewed"):
             build_task_images.dockerfile_bases(
-                path, {**arguments, "TEST_SANDBOX_BASE": "docker.io/x/y:latest"})
+                path, {**arguments, "TEST_SANDBOX_BASE": "docker.io/x/y:latest"}
+            )
         bases = {"docker.io/astral/uv@sha256:" + "c" * 64: "x", BASE_A: BASE_A}
         self.assertEqual(
             build_task_images.freeze_bases(path, bases, None, arguments),
-            ["--build-arg", f"TEST_SANDBOX_BASE={BASE_A}",
-             "--build-arg", "TEST_SANDBOX_INSTANCE=repo__a-1"])
+            [
+                "--build-arg",
+                f"TEST_SANDBOX_BASE={BASE_A}",
+                "--build-arg",
+                "TEST_SANDBOX_INSTANCE=repo__a-1",
+            ],
+        )
 
     def test_build_problem_builds_one_image_per_sandbox_with_its_args(self) -> None:
         self.write(GPU + SERVICES + SANDBOXES)
         self.recipes()
         (self.root / "docker/verifier-gpu.Dockerfile").write_text(SERVICE_RECIPE)
-        definition = {"image_tag": "source-x", "sidecars": EXPECTED,
-                      "gpu": {"verifier": {"max_gpu_instances": 1}},
-                      "source": {}, "datasets": {}, "dataset_extension": "json"}
+        definition = {
+            "image_tag": "source-x",
+            "sidecars": EXPECTED,
+            "gpu": {"verifier": {"max_gpu_instances": 1}},
+            "source": {},
+            "datasets": {},
+            "dataset_extension": "json",
+        }
         commands = []
-        with mock.patch.object(build_task_images, "run",
-                               side_effect=lambda c, **k: commands.append(list(c)) or ""), \
-                mock.patch.object(build_task_images, "stage_datasets", return_value={}), \
-                mock.patch.object(build_task_images, "verify_dataset_image"), \
-                mock.patch.object(build_task_images, "registry_digest", return_value=None), \
-                mock.patch.object(build_task_images, "verifier_smoke", return_value=""), \
-                mock.patch.object(build_task_images, "pull_digest_reference",
-                                  side_effect=lambda source: source), \
-                mock.patch.object(build_task_images, "REPOSITORY_ROOT", self.tmp):
+        with (
+            mock.patch.object(
+                build_task_images,
+                "run",
+                side_effect=lambda c, **k: commands.append(list(c)) or "",
+            ),
+            mock.patch.object(build_task_images, "stage_datasets", return_value={}),
+            mock.patch.object(build_task_images, "verify_dataset_image"),
+            mock.patch.object(build_task_images, "registry_digest", return_value=None),
+            mock.patch.object(build_task_images, "verifier_smoke", return_value=""),
+            mock.patch.object(
+                build_task_images,
+                "pull_digest_reference",
+                side_effect=lambda source: source,
+            ),
+            mock.patch.object(build_task_images, "REPOSITORY_ROOT", self.tmp),
+        ):
             built = build_task_images.build_problem(
-                "template_task", "docker.io/p", push=False, bases={}, root=self.root,
-                definition=definition)
-        self.assertEqual(sorted(k for k in built["images"] if k.startswith("sidecar-")),
-                         ["sidecar-scheduler", "sidecar-swe-000", "sidecar-swe-002"])
-        builds = {c[c.index("--tag") + 1]: c for c in commands if c[:2] == ["docker", "build"]}
+                "template_task",
+                "docker.io/p",
+                push=False,
+                bases={},
+                root=self.root,
+                definition=definition,
+            )
+        self.assertEqual(
+            sorted(k for k in built["images"] if k.startswith("sidecar-")),
+            ["sidecar-scheduler", "sidecar-swe-000", "sidecar-swe-002"],
+        )
+        builds = {
+            c[c.index("--tag") + 1]: c for c in commands if c[:2] == ["docker", "build"]
+        }
         sandbox = builds["docker.io/p/fcs2-task-template_task-sidecar-swe-002:source-x"]
-        self.assertTrue(sandbox[sandbox.index("-f") + 1].endswith("docker/test-sandbox.Dockerfile"))
+        self.assertTrue(
+            sandbox[sandbox.index("-f") + 1].endswith("docker/test-sandbox.Dockerfile")
+        )
         self.assertIn(f"TEST_SANDBOX_BASE={BASE_B}", sandbox)
         self.assertIn("TEST_SANDBOX_INSTANCE=repo__b-2", sandbox)
-        service = builds["docker.io/p/fcs2-task-template_task-sidecar-scheduler:source-x"]
+        service = builds[
+            "docker.io/p/fcs2-task-template_task-sidecar-scheduler:source-x"
+        ]
         self.assertNotIn("--build-arg", service)
 
 
@@ -289,7 +397,9 @@ class ValidatorTest(Fixture):
         self.recipes()
         validate_task_layout.check_native_sidecar_recipes(self.root)
         (self.root / "docker/test-sandbox-extra.Dockerfile").write_text(SERVICE_RECIPE)
-        with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "test-sandbox-extra"):
+        with self.assertRaisesRegex(
+            validate_task_layout.LayoutFailure, "test-sandbox-extra"
+        ):
             validate_task_layout.check_native_sidecar_recipes(self.root)
 
     def test_missing_sandbox_recipe_or_base_arg_is_refused(self) -> None:
@@ -298,8 +408,11 @@ class ValidatorTest(Fixture):
         with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "test-sandbox"):
             validate_task_layout.check_native_sidecar_recipes(self.root)
         (self.root / "docker/test-sandbox.Dockerfile").write_text(
-            SANDBOX_RECIPE.replace("${TEST_SANDBOX_BASE}", BASE_A))
-        with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "TEST_SANDBOX_BASE"):
+            SANDBOX_RECIPE.replace("${TEST_SANDBOX_BASE}", BASE_A)
+        )
+        with self.assertRaisesRegex(
+            validate_task_layout.LayoutFailure, "TEST_SANDBOX_BASE"
+        ):
             validate_task_layout.check_native_sidecar_recipes(self.root)
 
     def test_sandbox_recipe_may_copy_from_its_own_stages_only(self) -> None:
@@ -317,8 +430,10 @@ class StandaloneVerifierTest(Fixture):
         text = (TEMPLATE / "task.toml").read_text(encoding="utf-8")
         head, tail = text.split("[verifier]\n", 1)
         (self.root / "task.toml").write_text(
-            head + "[verifier]\ncommand = [\"/opt/frontier/python/bin/python\", "
-            "\"/opt/frontier/verifier/verify.py\"]\n" + tail, encoding="utf-8")
+            head + '[verifier]\ncommand = ["/opt/frontier/python/bin/python", '
+            '"/opt/frontier/verifier/verify.py"]\n' + tail,
+            encoding="utf-8",
+        )
 
     def test_template_passes_and_refuses_a_verifier_dir(self) -> None:
         validate_task_layout.validate_task(self.root)
@@ -329,20 +444,26 @@ class StandaloneVerifierTest(Fixture):
 
     def test_own_command_needs_and_allows_verifier_verify_py(self) -> None:
         self.with_command()
-        with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "standalone Verifier"):
+        with self.assertRaisesRegex(
+            validate_task_layout.LayoutFailure, "standalone Verifier"
+        ):
             validate_task_layout.validate_task(self.root)
         (self.root / "verifier").mkdir()
         (self.root / "verifier/verify.py").write_text("")
         with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "docstring"):
             validate_task_layout.validate_task(self.root)
         (self.root / "verifier/verify.py").write_text(
-            '"""Scoring note."""\nRESULT = {"beats_reference": 0}\n')
-        with self.assertRaisesRegex(validate_task_layout.LayoutFailure, "beat_spec_progress"):
+            '"""Scoring note."""\nRESULT = {"beats_reference": 0}\n'
+        )
+        with self.assertRaisesRegex(
+            validate_task_layout.LayoutFailure, "beat_spec_progress"
+        ):
             validate_task_layout.validate_task(self.root)
         # A standalone Verifier names the template's [feedback] metric itself.
         (self.root / "verifier/verify.py").write_text(
             '"""Scoring note."""\nRESULT = {"beats_reference": 0, "beat_spec_progress": {},'
-            ' "wall_seconds_total": 0.0}\n')
+            ' "wall_seconds_total": 0.0}\n'
+        )
         validate_task_layout.validate_task(self.root)
 
 

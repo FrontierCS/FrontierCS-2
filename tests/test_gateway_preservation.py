@@ -7,9 +7,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from preview import cli
-from preview.gateway_preservation import validate_snapshot
-from preview.infra import DeployError, litellm_serving_receipt
+from deploy import cli
+from deploy.gateway_preservation import validate_snapshot
+from deploy.infra import DeployError, litellm_serving_receipt
 
 
 def fixture():
@@ -234,7 +234,7 @@ class GatewayPreservationTests(unittest.TestCase):
         config = dict(
             execution=dict(verifier_node_allowlists=[]),
             application=dict(commit="c" * 40),
-            site=dict(aws_region='us-west-1'),
+            site=dict(aws_region="us-west-1"),
             network=dict(
                 registry_cluster_ip="172.20.0.50", litellm_cluster_ip="172.20.0.51"
             ),
@@ -269,9 +269,19 @@ class GatewayPreservationTests(unittest.TestCase):
             return ["172.20.0.1/32"]
 
         def run(command, **kwargs):
-            if 'get' in command and 'clusterrole' in command:
-                return json.dumps({'metadata': {'uid': 'role-uid', 'resourceVersion': '3'},
-                                   'rules': [{'apiGroups': [''], 'resources': ['nodes'], 'verbs': ['get', 'list']}]})
+            if "get" in command and "clusterrole" in command:
+                return json.dumps(
+                    {
+                        "metadata": {"uid": "role-uid", "resourceVersion": "3"},
+                        "rules": [
+                            {
+                                "apiGroups": [""],
+                                "resources": ["nodes"],
+                                "verbs": ["get", "list"],
+                            }
+                        ],
+                    }
+                )
             if "get" in command and "networkpolicy" in command:
                 return json.dumps({"spec": {}})
             if "get" in command:
@@ -326,7 +336,11 @@ class GatewayPreservationTests(unittest.TestCase):
             mock.patch.object(cli, "api_json"),
             mock.patch.object(cli, "state_directory", return_value=Path(tmp)),
             mock.patch.object(cli, "deploy_litellm") as install,
-            mock.patch.object(cli, "platform_outputs", return_value={'cluster_name': 'frontiercs2-preview'}) as outputs,
+            mock.patch.object(
+                cli,
+                "platform_outputs",
+                return_value={"cluster_name": "frontiercs2-preview"},
+            ) as outputs,
         ):
             if gateway_changed:
                 with self.assertRaisesRegex(DeployError, "changed before"):

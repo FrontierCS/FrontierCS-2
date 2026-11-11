@@ -14,7 +14,8 @@ from pathlib import Path
 from unittest import mock
 
 MODULE_PATH = (
-    Path(__file__).resolve().parents[1] / "candidates/kimi-code/submit/frontier_submit.py"
+    Path(__file__).resolve().parents[1]
+    / "candidates/kimi-code/submit/frontier_submit.py"
 )
 SPEC = importlib.util.spec_from_file_location("frontier_submit", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None
@@ -126,7 +127,7 @@ class SubmitTests(unittest.TestCase):
             {"remaining_runtime_s": 900},
             {"remaining_runtime_s": True, "remaining_checkpoint_submissions": 99},
             {"remaining_runtime_s": 0, "remaining_checkpoint_submissions": -1},
-            {"remaining_runtime_s": 0, "remaining_checkpoint_submissions": 100},
+            {"remaining_runtime_s": 0, "remaining_checkpoint_submissions": True},
         ):
             client = mock.Mock()
             client.request.side_effect = [{"payload_id": "payload_checkpoint"}, view]

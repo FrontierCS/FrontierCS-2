@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import ipaddress
 import json
 import os
@@ -21,6 +22,16 @@ CODEX_TOOLS = Path("/opt/frontier/candidate/codex/codex-path")
 SKILLS = Path("/opt/frontier/candidate/skills")
 SUBMIT_BIN = Path("/opt/frontier/candidate/bin")
 FINAL_RECEIPT = WORKSPACE / ".frontier" / "final-submission.json"
+# Byte-exact instructions that pinned Codex 0.162.1 sends for a model slug that
+# is absent from its bundled catalog. Only read when a Candidate opts into an
+# explicit context window (see model_catalog below).
+FALLBACK_INSTRUCTIONS = Path("/opt/frontier/candidate/codex-fallback-base-instructions.md")
+FALLBACK_INSTRUCTIONS_SHA256 = "3b08633fa672906666659d764864dfda1d7af5b5111ea5817c8f46e5de4e1a8d"
+MODEL_CATALOG_NAME = "frontier-model-catalog.json"
+REASONING_EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
+QWEN_MODEL = "qwen3.8-max-vl-thinking"
+QWEN_REASONING_EFFORTS = ("none", "high")
+CONTEXT_WINDOW_RANGE = (16_384, 2**31 - 1)
 RUNTIME_DIRS = {
     "CODEX_HOME": WORKSPACE / ".frontier-codex-home",
     "HOME": WORKSPACE / ".frontier-home",
@@ -156,19 +167,88 @@ def prepare_environment() -> dict[str, str]:
     return child
 
 
-def command(model_url: str, *, direct: bool = False) -> list[str]:
+def context_window() -> int | None:
+    value = os.environ.get("FRONTIER_CODEX_CONTEXT_WINDOW", "").strip()
+    if not value:
+        return None
+    low, high = CONTEXT_WINDOW_RANGE
+    if not (value.isascii() and value.isdigit() and len(value) <= 10 and low <= int(value) <= high):
+        raise LaunchError("FRONTIER_CODEX_CONTEXT_WINDOW is invalid")
+    return int(value)
+
+
+def reasoning_effort(model: str) -> str:
+    effort = os.environ.get("FRONTIER_CODEX_REASONING_EFFORT", "").strip()
+    if model == QWEN_MODEL:
+        effort = effort or "high"
+        if effort not in QWEN_REASONING_EFFORTS:
+            raise LaunchError("Qwen reasoning effort must be none or high")
+    elif effort and effort not in REASONING_EFFORTS:
+        raise LaunchError("FRONTIER_CODEX_REASONING_EFFORT is invalid")
+    return effort
+
+
+def model_catalog(codex_home: Path) -> Path | None:
+    """Write a one-row native model catalog when a context window is explicit.
+
+    Pinned Codex gives an unknown model slug fallback metadata with a 272,000
+    token window; `model_context_window` and `model_auto_compact_token_limit`
+    cannot raise it. A catalog row is the native way to declare another
+    window. Every other field reproduces the fallback request (tools and
+    instructions), except that reasoning summaries are not requested, so the
+    request carries `reasoning: {"effort": ...}` only.
+    """
+    window = context_window()
+    if window is None:
+        return None
     model = os.environ.get("FRONTIER_CODEX_MODEL", "").strip()
     if not model:
         raise LaunchError("FRONTIER_CODEX_MODEL is missing")
-    effort = os.environ.get("FRONTIER_CODEX_REASONING_EFFORT", "").strip()
-    if effort and effort not in {"none", "minimal", "low", "medium", "high", "xhigh"}:
-        raise LaunchError("FRONTIER_CODEX_REASONING_EFFORT is invalid")
+    reasoning_effort(model)
+    _regular(FALLBACK_INSTRUCTIONS, "Codex fallback instructions")
+    raw = FALLBACK_INSTRUCTIONS.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != FALLBACK_INSTRUCTIONS_SHA256:
+        raise LaunchError("Codex fallback instructions do not match the pinned text")
+    row = {
+        "slug": model, "display_name": model, "description": "",
+        "default_reasoning_level": "high" if model == QWEN_MODEL else "medium",
+        "supported_reasoning_levels": [
+            {"effort": effort, "description": effort}
+            for effort in (QWEN_REASONING_EFFORTS if model == QWEN_MODEL
+                           else REASONING_EFFORTS[2:])
+        ],
+        "shell_type": "unified_exec", "visibility": "none", "supported_in_api": True,
+        "priority": 99, "additional_speed_tiers": [], "service_tiers": [],
+        "availability_nux": None, "upgrade": None,
+        "base_instructions": raw.decode("utf-8"),
+        "supports_reasoning_summaries": True, "default_reasoning_summary": "none",
+        "support_verbosity": False, "default_verbosity": None,
+        "apply_patch_tool_type": None, "web_search_tool_type": "text",
+        "truncation_policy": {"mode": "bytes", "limit": 10000},
+        "supports_parallel_tool_calls": True,
+        "context_window": window, "max_context_window": window,
+        "effective_context_window_percent": 95,
+        "experimental_supported_tools": [], "input_modalities": ["text", "image"],
+        "supports_search_tool": False,
+    }
+    path = codex_home / MODEL_CATALOG_NAME
+    path.write_text(json.dumps({"models": [row]}), encoding="utf-8")
+    path.chmod(0o600)
+    return path
+
+
+def command(model_url: str, *, direct: bool = False, catalog: Path | None = None) -> list[str]:
+    model = os.environ.get("FRONTIER_CODEX_MODEL", "").strip()
+    if not model:
+        raise LaunchError("FRONTIER_CODEX_MODEL is missing")
+    effort = reasoning_effort(model)
     return [
         str(CODEX), "--model", model, "--config", "approval_policy=\"never\"",
         "--config", "web_search=\"disabled\"",
         "--config", "allow_login_shell=false",
         "--config", "model_verbosity=\"medium\"",
         *(["--config", "model_reasoning_effort=" + json.dumps(effort)] if effort else []),
+        *(["--config", "model_catalog_json=" + json.dumps(str(catalog))] if catalog else []),
         "--config", "model_provider=\"frontier\"",
         "--config", 'model_providers.frontier.name=' + json.dumps("Frontier Direct" if direct else "Frontier LiteLLM"),
         "--config", "model_providers.frontier.base_url=" + json.dumps(model_url),
@@ -204,8 +284,10 @@ def main() -> int:
         child = prepare_environment()
         direct = child.get("FRONTIER_MODEL_DIRECT_BASE_URL", "")
         model_url = direct or child["FRONTIER_MODEL_API_BASE_URL"]
+        catalog = model_catalog(RUNTIME_DIRS["CODEX_HOME"])
         completed = subprocess.run(
-            command(model_url, direct=bool(direct)), input=PROMPT, text=True, env=child, check=False
+            command(model_url, direct=bool(direct), catalog=catalog),
+            input=PROMPT, text=True, env=child, check=False
         )
         if completed.returncode != 0:
             raise LaunchError(f"Codex exited with status {completed.returncode}")

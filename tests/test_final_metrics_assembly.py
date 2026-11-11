@@ -16,6 +16,7 @@ import jsonschema
 ROOT = Path(__file__).resolve().parents[1] / "tasks/problems"
 sys.path.insert(0, str(ROOT.parents[1] / "scripts"))
 import task_manifest  # noqa: E402
+
 TASKS = (
     "batch_local_counting",
     "bounded_evm_path_prediction",
@@ -37,8 +38,10 @@ class _AcceptingScope:
 
     def check(self, *_args, **_kwargs):
         from types import SimpleNamespace
-        return SimpleNamespace(ok=True, tree=self.tree, changes=(), metrics={},
-                               dispose=lambda: None)
+
+        return SimpleNamespace(
+            ok=True, tree=self.tree, changes=(), metrics={}, dispose=lambda: None
+        )
 
 
 class FinalMetricsAssembly(unittest.TestCase):
@@ -52,8 +55,11 @@ class FinalMetricsAssembly(unittest.TestCase):
                 task = Path(export_root) / name
             native = task_manifest.is_native(task)
             # A task.toml task runs the shared verifier.
-            path = (task_manifest.SHARED / "verifier/fcs2_verifier.py" if native
-                    else task / "verifier/fcs2_verifier.py")
+            path = (
+                task_manifest.SHARED / "verifier/fcs2_verifier.py"
+                if native
+                else task / "verifier/fcs2_verifier.py"
+            )
             for helper in ("beat_spec_feedback", "candidate_diagnostic"):
                 sys.modules.pop(helper, None)
             sys.path.insert(0, str(path.parent))
@@ -63,8 +69,14 @@ class FinalMetricsAssembly(unittest.TestCase):
             sys.path.pop(0)
             # A task.toml task has no judge/beat_spec.json: its metric names are in the
             # archived spec, and the shared verifier reads [feedback] from config.yaml.
-            spec_path = (ROOT.parents[1] / "docs/task-authoring" / name / "provenance/beat_spec.json"
-                         if native else task / "judge/beat_spec.json")
+            spec_path = (
+                ROOT.parents[1]
+                / "docs/task-authoring"
+                / name
+                / "provenance/beat_spec.json"
+                if native
+                else task / "judge/beat_spec.json"
+            )
             beat_spec = json.loads(spec_path.read_text())
             for mode in ("train", "eval"):
                 for wins, score in ((True, 17.0), (False, 17.0), (False, 0.0)):
@@ -76,8 +88,11 @@ class FinalMetricsAssembly(unittest.TestCase):
                         (scratch / "beat_spec.json").write_text(json.dumps(beat_spec))
                         (scratch / "solution").write_bytes(b"")
                         if native:
-                            (scratch / "config.yaml").write_bytes(task_manifest.generated_files(task)[
-                                f"{task_manifest.GENERATED}/judge/config.yaml"])
+                            (scratch / "config.yaml").write_bytes(
+                                task_manifest.generated_files(task)[
+                                    f"{task_manifest.GENERATED}/judge/config.yaml"
+                                ]
+                            )
                         metrics = {
                             "beats_reference": int(wins),
                             "reference_score": 15.0,
@@ -113,10 +128,17 @@ class FinalMetricsAssembly(unittest.TestCase):
                                 return_value=scratch / "solution",
                             ),
                             patch.object(module, "stage_task", return_value=scratch),
-                            patch.object(module, "load_evaluator",
-                                         return_value=(None, None) if native else None),
-                            patch.object(module, "load_edit_scope", create=True,
-                                         return_value=(_AcceptingScope(scratch), None)),
+                            patch.object(
+                                module,
+                                "load_evaluator",
+                                return_value=(None, None) if native else None,
+                            ),
+                            patch.object(
+                                module,
+                                "load_edit_scope",
+                                create=True,
+                                return_value=(_AcceptingScope(scratch), None),
+                            ),
                             patch.object(
                                 module,
                                 "run_evaluator",

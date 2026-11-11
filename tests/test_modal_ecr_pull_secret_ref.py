@@ -1,13 +1,14 @@
 """An optional named ECR Secret reference never widens site permissions."""
+
 import deployment_test_guard  # noqa: F401
 
 import copy
 import json
 import sys
 import unittest
+from pathlib import Path
 
 import jsonschema
-from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -23,7 +24,9 @@ class ModalEcrReferenceTests(unittest.TestCase):
     def render(self, raw):
         config = frontier_deploy.validate_config(raw)
         return frontier_deploy.render_runtime_manifest(
-            config, Fixture.outputs(config), Fixture.images(config),
+            config,
+            Fixture.outputs(config),
+            Fixture.images(config),
             ["172.20.0.1/32", "10.42.1.20/32"],
         )
 
@@ -34,23 +37,43 @@ class ModalEcrReferenceTests(unittest.TestCase):
 
     def test_named_reference_changes_only_reference_and_management_rollout_hash(self):
         expected = json.loads(self.render(self.raw))
-        configmap = next(item for item in expected["items"]
-                         if item["kind"] == "ConfigMap"
-                         and item["metadata"]["name"] == "frontier-management-config")
+        configmap = next(
+            item
+            for item in expected["items"]
+            if item["kind"] == "ConfigMap"
+            and item["metadata"]["name"] == "frontier-management-config"
+        )
         configmap["data"]["MANAGEMENT_MODAL_ECR_PULL_SECRET_REF"] = "modal-ecr-pull"
-        deployment = next(item for item in expected["items"]
-                          if item["kind"] == "Deployment"
-                          and item["metadata"]["name"] == "frontier-management")
+        deployment = next(
+            item
+            for item in expected["items"]
+            if item["kind"] == "Deployment"
+            and item["metadata"]["name"] == "frontier-management"
+        )
         annotations = deployment["spec"]["template"]["metadata"]["annotations"]
         previous_hash = annotations["frontier.dev/config-sha256"]
-        annotations["frontier.dev/config-sha256"] = frontier_deploy.canonical_object_sha256(configmap["data"])
+        annotations["frontier.dev/config-sha256"] = (
+            frontier_deploy.canonical_object_sha256(configmap["data"])
+        )
         self.assertNotEqual(previous_hash, annotations["frontier.dev/config-sha256"])
         self.raw["modal"]["ecr_pull_secret_ref"] = "modal-ecr-pull"
         self.assertEqual(expected, json.loads(self.render(self.raw)))
 
     def test_malformed_reference_and_secret_values_are_rejected(self):
-        for value in (None, True, False, 0, [], {}, " bad", "bad ", "Secret_Name",
-                      "../../role", "arn:aws:iam::123456789012:role/ecr", "x" * 64):
+        for value in (
+            None,
+            True,
+            False,
+            0,
+            [],
+            {},
+            " bad",
+            "bad ",
+            "Secret_Name",
+            "../../role",
+            "arn:aws:iam::123456789012:role/ecr",
+            "x" * 64,
+        ):
             with self.subTest(value=value):
                 self.raw["modal"]["ecr_pull_secret_ref"] = value
                 with self.assertRaises(frontier_deploy.DeployError):
@@ -64,7 +87,18 @@ class ModalEcrReferenceTests(unittest.TestCase):
                 self.raw["modal"]["ecr_pull_secret_ref"] = value
                 validator.validate(self.raw)
                 frontier_deploy.validate_config(self.raw)
-        for value in (None, True, 0, [], {}, "a", "a" * 64, "bad\n", "Secret_Name", "../../role"):
+        for value in (
+            None,
+            True,
+            0,
+            [],
+            {},
+            "a",
+            "a" * 64,
+            "bad\n",
+            "Secret_Name",
+            "../../role",
+        ):
             with self.subTest(invalid=value):
                 self.raw["modal"]["ecr_pull_secret_ref"] = value
                 with self.assertRaises(jsonschema.ValidationError):

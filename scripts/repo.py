@@ -1,4 +1,4 @@
-"""Prepare pinned tools and task inputs for explicit repository workflows."""
+"""Prepare the pinned tools and Git LFS inputs behind make bootstrap, doctor and lint."""
 
 from __future__ import annotations
 
@@ -201,7 +201,7 @@ class Toolchain:
         archive = downloads / digest
         if not archive.is_file() or sha256(archive) != digest:
             if self.offline:
-                raise ToolError(f"{name} is not cached; rerun ./x bootstrap online")
+                raise ToolError(f"{name} is not cached; rerun make bootstrap online")
             with tempfile.TemporaryDirectory(
                 prefix="download-", dir=downloads
             ) as scratch:
@@ -274,13 +274,8 @@ class Toolchain:
             return directory / artifact["executable"]
 
 
-TOOLS = ("python", "uv", "ruff", "git-lfs", "tar", "make", "shellcheck")
+TOOLS = ("git-lfs", "tar", "make", "shellcheck")
 CONTRIBUTOR_TOOLS = ("tar", "make", "shellcheck")
-# Existing application parsers own every argument after the workflow name.
-WORKFLOWS = {
-    "import-task": ("import_task.py", ("tar", "make"), ()),
-    "validate": ("frontier_deploy.py", (), ("validate",)),
-}
 
 
 def run(
@@ -333,9 +328,7 @@ def hydrate_inputs(chain: Toolchain) -> None:
         run([str(lfs), "checkout"], cwd=chain.root, env=environment, stdout=sys.stderr)
         if lfs_missing(chain.root, lfs):
             if chain.offline:
-                raise ToolError(
-                    "Git LFS inputs are missing; run ./x bootstrap --profile contributor online"
-                )
+                raise ToolError("Git LFS inputs are missing; run make bootstrap online")
             run([str(lfs), "pull"], cwd=chain.root, env=environment, stdout=sys.stderr)
         if lfs_missing(chain.root, lfs):
             raise ToolError("Git LFS still contains pointer files after hydration")
@@ -364,14 +357,14 @@ def doctor(chain: Toolchain, profile: str) -> int:
     print(f"Python: {actual} ({sys.executable})")
     if actual != expected:
         failures.append(
-            f"expected Python {expected}; invoke ./x instead of a system interpreter"
+            f"expected Python {expected}; run make or ./python instead of a system interpreter"
         )
     for name in ("jsonschema", "pytest", "zstandard", "ruff"):
         try:
             print(f"{name}: {importlib.metadata.version(name)}")
         except importlib.metadata.PackageNotFoundError:
             failures.append(
-                f"{name} is missing; invoke ./x to synchronize the locked environment"
+                f"{name} is missing; run ./python to synchronize the locked environment"
             )
     if profile == "contributor":
         try:
@@ -379,14 +372,12 @@ def doctor(chain: Toolchain, profile: str) -> int:
             for name in (*CONTRIBUTOR_TOOLS, "git-lfs"):
                 executable = chain.installed(name)
                 if executable is None:
-                    failures.append(
-                        f"{name} is not prepared; run ./x bootstrap --profile contributor"
-                    )
+                    failures.append(f"{name} is not prepared; run make bootstrap")
                 else:
                     print(f"{name}: {chain.artifact(name)['version']} ({executable})")
                     if name == "git-lfs" and lfs_missing(chain.root, executable):
                         failures.append(
-                            "Git LFS inputs are missing; run ./x bootstrap --profile contributor"
+                            "Git LFS inputs are missing; run make bootstrap"
                         )
         except (ToolError, subprocess.CalledProcessError, OSError, ValueError) as error:
             failures.append(str(error))
@@ -397,63 +388,25 @@ def doctor(chain: Toolchain, profile: str) -> int:
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(
-        prog="./x", description=__doc__, allow_abbrev=False
-    )
-    result.add_argument(
-        "--offline",
-        action="store_true",
-        default=os.environ.get("FRONTIER_BOOTSTRAP_OFFLINE") == "1",
-        help="prepare from cache only; forwarded commands may still use the network",
+        prog="scripts/repo.py", description=__doc__, allow_abbrev=False
     )
     commands = result.add_subparsers(dest="command", required=True)
     for name, help_text in (
-        ("bootstrap", "prepare pinned tools and selected inputs"),
+        ("bootstrap", "prepare pinned tools and Git LFS inputs"),
         ("doctor", "diagnose the local environment without cloud access"),
     ):
         command = commands.add_parser(name, help=help_text)
         command.add_argument(
             "--profile", choices=("tooling", "contributor"), default="contributor"
         )
-    commands.add_parser(
-        "lint-shell", help="run pinned ShellCheck on the shell launchers"
-    )
-    commands.add_parser("check", help="run all local contributor checks")
-    commands.add_parser("fmt", help="apply safe Python lint fixes and formatting")
-    command = commands.add_parser(
-        "run", help="run a command with the selected managed environment"
-    )
-    command.add_argument(
-        "--profile", choices=("tooling", "contributor"), default="contributor"
-    )
+    command = commands.add_parser("tool", help="run a pinned tool")
+    command.add_argument("name", choices=TOOLS)
     command.add_argument("arguments", nargs=argparse.REMAINDER)
-    for name in (*TOOLS, *WORKFLOWS, "test"):
-        kind = "managed tool" if name in TOOLS else "repository workflow"
-        command = commands.add_parser(name, help=f"run {kind} {name}", add_help=False)
-        command.add_argument("arguments", nargs=argparse.REMAINDER)
     return result
 
 
-def forwarding_argv(arguments: list[str]) -> list[str]:
-    for index, argument in enumerate(arguments):
-        if not argument.startswith("-"):
-            if argument in (*TOOLS, *WORKFLOWS, "test"):
-                # The inserted separator is removed once; an original -- survives.
-                return [*arguments[: index + 1], "--", *arguments[index + 1 :]]
-            break
-    return arguments
-
-
 def dispatch_tool(chain: Toolchain, name: str, arguments: list[str]) -> None:
-    if name == "python":
-        executable = Path(sys.executable)
-    elif name == "ruff":
-        executable = Path(sys.executable).with_name("ruff")
-    elif name == "uv":
-        if not (uv := os.environ.get("FRONTIER_UV")):
-            raise ToolError("invoke ./x to select the pinned uv")
-        executable = Path(uv)
-    else:
-        executable = chain.ensure(name)
+    executable = chain.ensure(name)
     environment = os.environ.copy()
     environment["PATH"] = os.pathsep.join(
         [
@@ -466,155 +419,22 @@ def dispatch_tool(chain: Toolchain, name: str, arguments: list[str]) -> None:
     os.execve(executable, [str(executable), *arguments], environment)
 
 
-def workflow_command(name: str, arguments: list[str]) -> list[str]:
-    if name == "test":
-        return [
-            sys.executable,
-            "-m",
-            "unittest",
-            "discover",
-            "-s",
-            "tests",
-            "-p",
-            "test_*.py",
-            *arguments,
-        ]
-    script, _, prefix = WORKFLOWS[name]
-    return [sys.executable, str(ROOT / "scripts" / script), *prefix, *arguments]
-
-
-def check(chain: Toolchain) -> int:
-    environment = prepare(chain, CONTRIBUTOR_TOOLS, task_inputs=True)
-    gates = [
-        ("Python lint", [[sys.executable, "-m", "ruff", "check"]]),
-        ("Python formatting", [[sys.executable, "-m", "ruff", "format", "--check"]]),
-        (
-            "Shell lint",
-            [
-                [
-                    str(chain.ensure("shellcheck")),
-                    "python",
-                    "x",
-                    "scripts/bootstrap-uv.sh",
-                ]
-            ],
-        ),
-        (
-            "Tests",
-            [
-                [sys.executable, "scripts/check_test_prerequisites.py"],
-                workflow_command("test", []),
-            ],
-        ),
-        ("Task layouts", [[sys.executable, "scripts/validate_task_layout.py"]]),
-        (
-            "Example configuration",
-            [workflow_command("validate", ["--config", "config/site.example.json"])],
-        ),
-    ]
-    if (ROOT / "config/site.json").is_file():
-        gates.append(
-            (
-                "Local configuration",
-                [workflow_command("validate", ["--config", "config/site.json"])],
-            )
-        )
-    status = 0
-    for name, commands in gates:
-        print(f"Checking {name}", file=sys.stderr, flush=True)
-        try:
-            for command in commands:
-                run(command, cwd=ROOT, env=environment)
-        except (subprocess.CalledProcessError, OSError) as error:
-            code = (
-                error.returncode
-                if isinstance(error, subprocess.CalledProcessError)
-                else 1
-            )
-            status = status or max(code, 1)
-            print(f"FAIL: {name}: {error}", file=sys.stderr, flush=True)
-        else:
-            print(f"PASS: {name}", file=sys.stderr, flush=True)
-    return status
-
-
 def main(argv: list[str] | None = None) -> int:
-    arguments = list(sys.argv[1:] if argv is None else argv)
-    options = parser().parse_args(forwarding_argv(arguments))
-    forwarded = getattr(options, "arguments", [])
-    if forwarded[:1] == ["--"]:
-        forwarded = forwarded[1:]
+    options = parser().parse_args(argv)
+    chain = Toolchain(offline=os.environ.get("FRONTIER_BOOTSTRAP_OFFLINE") == "1")
     try:
-        if options.command in (*WORKFLOWS, "test"):
-            command = workflow_command(options.command, forwarded)
-            cwd = ROOT if options.command == "test" else None
-            # Application help is available before tool or task-input preparation.
-            if forwarded in (["--help"], ["-h"]):
-                run(command, cwd=cwd)
-                return 0
-            chain = Toolchain(offline=options.offline)
-            names = (
-                ("tar", "make")
-                if options.command == "test"
-                else WORKFLOWS[options.command][1]
-            )
-            if options.command == "import-task" and {"--plan", "--check"}.intersection(
-                forwarded
-            ):
-                names = ("tar",)
-            environment = prepare(chain, names, task_inputs=True)
-            if options.command == "test":
-                run(
-                    [sys.executable, str(ROOT / "scripts/check_test_prerequisites.py")],
-                    cwd=ROOT,
-                    env=environment,
-                )
-            elif options.command == "validate":
-                run(
-                    [sys.executable, str(ROOT / "scripts/validate_task_layout.py")],
-                    env=environment,
-                )
-            run(command, cwd=cwd, env=environment)
-            return 0
-        chain = Toolchain(offline=options.offline)
-        if options.command in TOOLS:
-            dispatch_tool(chain, options.command, forwarded)
+        if options.command == "tool":
+            dispatch_tool(chain, options.name, options.arguments)
             return 0
         if options.command == "doctor":
             return doctor(chain, options.profile)
-        if options.command == "check":
-            return check(chain)
-        if options.command == "fmt":
-            for arguments in (("check", "--fix-only"), ("format",), ("check",)):
-                run([sys.executable, "-m", "ruff", *arguments], cwd=ROOT)
-            return 0
-        if options.command == "lint-shell":
-            run(
-                [
-                    str(chain.ensure("shellcheck")),
-                    *(
-                        str(ROOT / path)
-                        for path in ("python", "x", "scripts/bootstrap-uv.sh")
-                    ),
-                ]
-            )
-            return 0
-        if options.command == "run":
-            if not forwarded:
-                raise ToolError("run requires a command after --")
-            contributor = options.profile == "contributor"
-            environment = prepare(
-                chain, CONTRIBUTOR_TOOLS if contributor else (), task_inputs=contributor
-            )
-            run(forwarded, env=environment)
-            return 0
         if options.profile == "contributor":
             prepare(chain, CONTRIBUTOR_TOOLS, task_inputs=True)
             print("Contributor inputs: ready (Git LFS hydrated)", file=sys.stderr)
         print("Tooling environment: ready", file=sys.stderr)
         return 0
     except (ToolError, OSError, ValueError) as error:
-        print(f"x: {error}", file=sys.stderr)
+        print(f"repo: {error}", file=sys.stderr)
         return 1
     except subprocess.CalledProcessError as error:
         return error.returncode if error.returncode > 0 else 1

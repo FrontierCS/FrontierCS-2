@@ -14,15 +14,30 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 import frontier_deploy
 import render_task_definition as renderer
-from preview import publication
+import task_layers  # noqa: E402
+from deploy import publication
 from task_selection import requirements, select_tasks
 from test_task_seeding import mirrored_images, resolved_catalog
-import task_layers  # noqa: E402
 
 KEYS = [
-    {"name": "explore", "model_aliases": ["progent-agent-gpt-4o-mini"], "budget_usd": 15, "envs": ["agent"]},
-    {"name": "train", "model_aliases": ["progent-agent-gpt-4o-mini"], "budget_usd": 20, "envs": ["verifier-train"]},
-    {"name": "final", "model_aliases": ["progent-agent-gpt-4o-mini"], "budget_usd": 30.5, "envs": ["verifier-eval"]},
+    {
+        "name": "explore",
+        "model_aliases": ["progent-agent-gpt-4o-mini"],
+        "budget_usd": 15,
+        "envs": ["agent"],
+    },
+    {
+        "name": "train",
+        "model_aliases": ["progent-agent-gpt-4o-mini"],
+        "budget_usd": 20,
+        "envs": ["verifier-train"],
+    },
+    {
+        "name": "final",
+        "model_aliases": ["progent-agent-gpt-4o-mini"],
+        "budget_usd": 30.5,
+        "envs": ["verifier-eval"],
+    },
 ]
 
 
@@ -54,9 +69,13 @@ class PublicationTests(unittest.TestCase):
 
     def setUp(self):
         # One task keeps the fixture independent of other tasks' publication pins.
-        self.definitions = {self.name: copy.deepcopy(publication.load_task_definitions()[self.name])}
+        self.definitions = {
+            self.name: copy.deepcopy(publication.load_task_definitions()[self.name])
+        }
         self.catalog = frontier_deploy.validate_task_catalog(
-            resolved_catalog([self.name]), require_resolved=True, definitions=self.definitions
+            resolved_catalog([self.name]),
+            require_resolved=True,
+            definitions=self.definitions,
         )
         self.task = next(t for t in self.catalog["tasks"] if t["name"] == self.name)
         self.mirrors = mirrored_images(self.catalog)
@@ -76,7 +95,10 @@ class PublicationTests(unittest.TestCase):
 
     def test_task_config_with_keys_matches_contract_schema(self):
         import jsonschema
-        schema = json.loads((ROOT / "docs/contract/schemas/task-config-v1.schema.json").read_text())
+
+        schema = json.loads(
+            (ROOT / "docs/contract/schemas/task-config-v1.schema.json").read_text()
+        )
         self.definitions[self.name]["additional_keys"] = copy.deepcopy(KEYS)
         jsonschema.validate(self.document()["driver_config"], schema)
         bad = self.document()["driver_config"]
@@ -100,24 +122,34 @@ class SelectionTests(unittest.TestCase):
         self.definitions[self.name]["additional_keys"] = copy.deepcopy(KEYS)
 
     def test_requirement_lists_aliases(self):
-        self.assertEqual(requirements(self.definitions[self.name])["task_model_aliases"],
-                         ["progent-agent-gpt-4o-mini"])
+        self.assertEqual(
+            requirements(self.definitions[self.name])["task_model_aliases"],
+            ["progent-agent-gpt-4o-mini"],
+        )
 
     def test_site_without_alias_excludes_task(self):
         self.config["features"].pop("task_model_aliases", None)
         selection = select_tasks(self.config, self.catalog, self.definitions)
-        self.assertEqual(selection.excluded[self.name],
-                         "requires features.task_model_aliases: progent-agent-gpt-4o-mini")
+        self.assertEqual(
+            selection.excluded[self.name],
+            "requires features.task_model_aliases: progent-agent-gpt-4o-mini",
+        )
         self.assertNotIn(self.name, selection.selected)
 
     def test_config_validator_accepts_and_checks_aliases(self):
-        from preview import config as site_config
+        from deploy import config as site_config
+
         raw = frontier_deploy.load_json(ROOT / "config/site.example.json")
         site_config.validate_config(copy.deepcopy(raw))
         for bad in (["Bad-Alias"], ["a-1", "a-1"], "progent-agent-gpt-4o-mini"):
             changed = copy.deepcopy(raw)
             changed["features"]["task_model_aliases"] = bad
-            with self.subTest(bad=bad), self.assertRaises(Exception):
+            with (
+                self.subTest(bad=bad),
+                self.assertRaisesRegex(
+                    site_config.DeployError, "features.task_model_aliases"
+                ),
+            ):
                 site_config.validate_config(changed)
 
     def test_site_serving_alias_selects_task(self):

@@ -218,7 +218,7 @@ def run_store_final(client: Client, archive: Path) -> dict[str, object]:
     runtime = view.get("remaining_runtime_s")
     remaining = view.get("remaining_checkpoint_submissions")
     if (type(runtime) is not int or runtime < 0 or "remaining_checkpoint_submissions" not in view
-            or (remaining is not None and (type(remaining) is not int or not 0 <= remaining < 100))):
+            or (remaining is not None and (type(remaining) is not int or remaining < 0))):
         raise SubmitError("Driver store-final response has invalid remaining runtime or submission count")
     return {"schema_version": SCHEMA, "operation": "store-final", "state": "stored",
             "payload_id": payload_id, "remaining_runtime_s": runtime,

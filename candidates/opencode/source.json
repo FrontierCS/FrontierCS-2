@@ -1,5 +1,5 @@
 {
-  "platform_source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "dockerfile": {
     "source": "candidate-overlays/opencode/Dockerfile",
     "sha256": "sha256:e03eae8d360acb9bea0c3224fe0f391bed6f677731642f3327874a711ecae0cf",

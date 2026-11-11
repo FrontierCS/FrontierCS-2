@@ -18,16 +18,15 @@ from urllib.error import HTTPError
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "tests"), str(ROOT / "scripts")]
 import frontier_deploy as deploy
-from preview import acceptance, cli, infra, publication
-from preview import config as site_config
-from preview import images as image_ops
+from deploy import acceptance, cli, infra, publication
+from deploy import config as site_config
+from deploy import images as image_ops
 from test_task_seeding import (
     exact_version,
     mirrored_images,
     not_found,
     resolved_catalog,
 )
-import task_layers  # noqa: E402
 
 
 class SeedSelectionTests(unittest.TestCase):
@@ -239,9 +238,9 @@ class SeedSelectionTests(unittest.TestCase):
     def test_capacity_diagnostics_do_not_mask_seed_mismatches_or_write_state(self):
         documents = self.documents()
         documents["/api/v1/candidate-versions"] = []
-        snapshot = deploy.load_json(
-            ROOT / "tests/fixtures/v3-runtime/dispatch.json"
-        )["observed"]["scheduler_capacity_snapshot"]
+        snapshot = deploy.load_json(ROOT / "tests/fixtures/v3-runtime/dispatch.json")[
+            "observed"
+        ]["scheduler_capacity_snapshot"]
         capacity_path = "/api/v1/infrastructure/scheduler-capacity"
         before = self.state_bytes()
         for capacity in (
@@ -305,9 +304,9 @@ class SeedSelectionTests(unittest.TestCase):
     def test_truncated_http_response_diagnostics_preserve_seed_verdict(self):
         overview_path = "/api/v1/overview"
         capacity_path = "/api/v1/infrastructure/scheduler-capacity"
-        snapshot = deploy.load_json(
-            ROOT / "tests/fixtures/v3-runtime/dispatch.json"
-        )["observed"]["scheduler_capacity_snapshot"]
+        snapshot = deploy.load_json(ROOT / "tests/fixtures/v3-runtime/dispatch.json")[
+            "observed"
+        ]["scheduler_capacity_snapshot"]
         before = self.state_bytes()
         for truncated_path in (overview_path, capacity_path):
             for missing in (False, True):
@@ -428,9 +427,7 @@ class SeedSelectionTests(unittest.TestCase):
                 with mock.patch.object(
                     publication, "api_json", return_value=response
                 ) as api:
-                    with self.assertRaisesRegex(
-                        deploy.DeployError, "wrong version"
-                    ):
+                    with self.assertRaisesRegex(deploy.DeployError, "wrong version"):
                         deploy.seed_tasks(
                             self.config,
                             self.state / "kubeconfig",
@@ -554,7 +551,9 @@ class SeedSelectionTests(unittest.TestCase):
         self.assertNotIn("sparse_video_attention_policy", receipt["tasks"])
         self.assertEqual(
             {
-                json.loads(p.read_text())["items"][0]["metadata"]["labels"]["frontier.dev/task"]
+                json.loads(p.read_text())["items"][0]["metadata"]["labels"][
+                    "frontier.dev/task"
+                ]
                 for p in (self.state / "task-seeds").iterdir()
             },
             {name.replace("_", "-")[:63] for name in selection.selected},
@@ -593,10 +592,12 @@ class SeedSelectionTests(unittest.TestCase):
             mock.patch.object(image_ops, "executable", return_value="docker"),
             mock.patch.object(image_ops, "cached_registry_image", return_value=None),
             mock.patch.object(
-                image_ops, "registry_digest",
+                image_ops,
+                "registry_digest",
                 side_effect=lambda port, repository, tag: (
                     catalog["candidate"]["overlay_image"]["digest"]
-                    if repository == "frontier/candidates/codex" else "sha256:" + "f" * 64
+                    if repository == "frontier/candidates/codex"
+                    else "sha256:" + "f" * 64
                 ),
             ),
             mock.patch.object(image_ops, "run_command") as commands,
@@ -617,10 +618,16 @@ class SeedSelectionTests(unittest.TestCase):
         ]
         self.assertEqual(
             len(pulled),
-            1 + 3 * len(selection.selected) + len(selection.reference_names)
+            1
+            + 3 * len(selection.selected)
+            + len(selection.reference_names)
             # The selected tasks' CPU runner images are cluster images too.
-            + sum(name in task for task in raw["tasks"] if task["name"] in selection.selected
-                  for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")),
+            + sum(
+                name in task
+                for task in raw["tasks"]
+                if task["name"] in selection.selected
+                for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")
+            ),
         )
         self.assertFalse(
             any(
@@ -712,9 +719,7 @@ class SeedSelectionTests(unittest.TestCase):
                     deploy.canonical_json(seed)
                 )
                 with (
-                    mock.patch.object(
-                        publication, "CATALOG", self.catalog_path
-                    ),
+                    mock.patch.object(publication, "CATALOG", self.catalog_path),
                     mock.patch.object(acceptance, "api_json", side_effect=api),
                     mock.patch.object(
                         acceptance,

@@ -19,15 +19,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.dont_write_bytecode = True
 import render_task_definition as renderer
-import task_manifest
 import task_layers  # noqa: E402
-
+import task_manifest
 
 
 def temporary_layers(directory: Path) -> list:
     """The repository's task layers, with each definitions file redirected below `directory`."""
     return [
-        task_layers.Layer(layer.root, layer.problems, layer.catalog, directory / f"definitions-{index}.json")
+        task_layers.Layer(
+            layer.root,
+            layer.problems,
+            layer.catalog,
+            directory / f"definitions-{index}.json",
+        )
         for index, layer in enumerate(task_layers.layers())
     ]
 
@@ -37,6 +41,7 @@ def written(layers: list) -> dict:
     for layer in layers:
         merged.update(json.loads(layer.definitions.read_text()))
     return merged
+
 
 class RendererTests(unittest.TestCase):
     @classmethod
@@ -161,10 +166,7 @@ class RendererTests(unittest.TestCase):
                 mock.patch("sys.stderr", new_callable=io.StringIO) as stderr,
             ):
                 self.assertEqual(renderer.main(["--all"]), 0)
-            names = [
-                task["name"]
-                for task in task_layers.load_catalog()["tasks"]
-            ]
+            names = [task["name"] for task in task_layers.load_catalog()["tasks"]]
             self.assertEqual(
                 [call.args[1] for call in render.call_args_list], sorted(names)
             )
@@ -233,8 +235,7 @@ class RendererTests(unittest.TestCase):
 
     def test_sparse_has_native_identity_and_preserves_scoring_inputs(self):
         row = renderer.render(
-            renderer.task_directory(renderer.SPARSE
-            ),
+            renderer.task_directory(renderer.SPARSE),
             renderer.SPARSE,
         )
         historical = json.loads(
@@ -269,14 +270,18 @@ class RendererTests(unittest.TestCase):
         # docs/task-authoring/sparse_video_attention_policy/provenance/policy-metadata.json;
         # runtime.language is no longer emitted for task.toml tasks.
         provenance = json.loads(
-            (ROOT / "docs/task-authoring/sparse_video_attention_policy/provenance/"
-             "policy-metadata.json").read_text()
+            (
+                ROOT / "docs/task-authoring/sparse_video_attention_policy/provenance/"
+                "policy-metadata.json"
+            ).read_text()
         )["metadata"]
         metadata = expected["metadata"]
         for key in ("conversion", "generator", "isolation", "paper"):
             self.assertEqual(metadata.pop(key), provenance[key], key)
         for key in ("beat_spec_sha256", "suite_relation"):
-            self.assertEqual(metadata["evaluation"].pop(key), provenance["evaluation"][key], key)
+            self.assertEqual(
+                metadata["evaluation"].pop(key), provenance["evaluation"][key], key
+            )
         metadata["runtime"].pop("language")
         for field in (
             "quota",
@@ -301,9 +306,12 @@ class RendererTests(unittest.TestCase):
                 renderer.main(["--all"])
                 first = [layer.definitions.read_bytes() for layer in layers]
                 renderer.main(["--all"])
-            self.assertEqual(first, [layer.definitions.read_bytes() for layer in layers])
             self.assertEqual(
-                first, [layer.definitions.read_bytes() for layer in task_layers.layers()]
+                first, [layer.definitions.read_bytes() for layer in layers]
+            )
+            self.assertEqual(
+                first,
+                [layer.definitions.read_bytes() for layer in task_layers.layers()],
             )
 
     def test_identity_repeatability_includes_hidden_and_lock_files(self):
@@ -340,7 +348,9 @@ class RendererTests(unittest.TestCase):
                 renderer.source_sha256(root)
             (root / "fifo").unlink()
             with (
-                mock.patch.object(renderer.source_tree, "in_work_tree", return_value=False),
+                mock.patch.object(
+                    renderer.source_tree, "in_work_tree", return_value=False
+                ),
                 mock.patch.object(renderer.subprocess, "Popen") as popen,
             ):
                 proc = popen.return_value.__enter__.return_value
@@ -350,8 +360,7 @@ class RendererTests(unittest.TestCase):
                     renderer.source_sha256(root)
 
     def test_policy_and_dataset_errors(self):
-        source = renderer.task_directory("batch_local_counting"
-        )
+        source = renderer.task_directory("batch_local_counting")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             shutil.copytree(source / "datasets", root / "datasets")

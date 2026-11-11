@@ -7,7 +7,7 @@ import json
 import unittest
 from unittest import mock
 
-from preview import cli, infra
+from deploy import cli, infra
 from test_frontier_deploy import ROOT, Fixture, frontier_deploy
 
 
@@ -22,25 +22,68 @@ class GatewayTests(unittest.TestCase):
     def test_key_worker_namespace_absence_grant_is_read_only_and_worker_only(self):
         items = infra.litellm_worker_resources(self.config, self.outputs, {})
         name = "frontier-key-worker-namespace-reader"
-        role = next(x for x in items if x["kind"] == "ClusterRole" and x["metadata"]["name"] == name)
-        self.assertEqual(role["rules"], [{"apiGroups": [""], "resources": ["namespaces"], "verbs": ["get"]}])
-        binding = next(x for x in items if x["kind"] == "ClusterRoleBinding" and x["metadata"]["name"] == name)
-        self.assertEqual(binding["roleRef"], {"apiGroup": "rbac.authorization.k8s.io", "kind": "ClusterRole", "name": name})
-        self.assertEqual(binding["subjects"], [{"kind": "ServiceAccount", "name": "frontier-litellm-key-worker", "namespace": "frontier-litellm"}])
+        role = next(
+            x
+            for x in items
+            if x["kind"] == "ClusterRole" and x["metadata"]["name"] == name
+        )
+        self.assertEqual(
+            role["rules"],
+            [{"apiGroups": [""], "resources": ["namespaces"], "verbs": ["get"]}],
+        )
+        binding = next(
+            x
+            for x in items
+            if x["kind"] == "ClusterRoleBinding" and x["metadata"]["name"] == name
+        )
+        self.assertEqual(
+            binding["roleRef"],
+            {
+                "apiGroup": "rbac.authorization.k8s.io",
+                "kind": "ClusterRole",
+                "name": name,
+            },
+        )
+        self.assertEqual(
+            binding["subjects"],
+            [
+                {
+                    "kind": "ServiceAccount",
+                    "name": "frontier-litellm-key-worker",
+                    "namespace": "frontier-litellm",
+                }
+            ],
+        )
 
     def test_key_worker_gateway_egress_binds_service_and_backend(self):
         config = copy.deepcopy(self.config)
         config["network"]["litellm_cluster_ip"] = "172.20.0.77"
         items = infra.litellm_worker_resources(config, self.outputs, {})
         policy = next(x for x in items if x["kind"] == "NetworkPolicy")
-        gateway = [x for x in policy["spec"]["egress"]
-                   if x["ports"] == [{"protocol": "TCP", "port": 4000}]]
-        self.assertEqual(gateway, [
-            {"to": [{"podSelector": {"matchLabels": {"frontier.dev/network-role": "litellm"}}}],
-             "ports": [{"protocol": "TCP", "port": 4000}]},
-            {"to": [{"ipBlock": {"cidr": "172.20.0.77/32"}}],
-             "ports": [{"protocol": "TCP", "port": 4000}]},
-        ])
+        gateway = [
+            x
+            for x in policy["spec"]["egress"]
+            if x["ports"] == [{"protocol": "TCP", "port": 4000}]
+        ]
+        self.assertEqual(
+            gateway,
+            [
+                {
+                    "to": [
+                        {
+                            "podSelector": {
+                                "matchLabels": {"frontier.dev/network-role": "litellm"}
+                            }
+                        }
+                    ],
+                    "ports": [{"protocol": "TCP", "port": 4000}],
+                },
+                {
+                    "to": [{"ipBlock": {"cidr": "172.20.0.77/32"}}],
+                    "ports": [{"protocol": "TCP", "port": 4000}],
+                },
+            ],
+        )
 
     def test_adapter_change_rolls_gateway_but_not_postgres(self):
         def rendered():

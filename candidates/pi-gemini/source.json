@@ -1,5 +1,5 @@
 {
-  "platform_source_commit": "68fb0550ec1e10f64a98463b663289259e0d712e",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "dockerfile": {
     "source": "candidate-overlays/pi-gemini/Dockerfile",
     "sha256": "sha256:bf9300137971dc83633fd8736a36d0623e00960b5f7a59741cd8c8605097922e",
@@ -24,7 +24,7 @@
     },
     "gpu-helper/frontier_gpu.py": {
       "source": "candidate-overlays/codex/frontier_gpu.py",
-      "sha256": "sha256:b0e659a8c67447a14f405eea1e21b7e54b5c7e5f3ddc3103021e5d5305c9adfc"
+      "sha256": "sha256:c6e26af56f6fb1b81d89c684959394eb31ae884400581ceab2146a835bdc52d2"
     },
     "gpu-helper/frontier_gpu_connect_proxy.py": {
       "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",

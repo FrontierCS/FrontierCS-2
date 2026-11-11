@@ -1,5 +1,5 @@
 {
-  "platform_source_commit": "69dc7de7d780076557de84f9a191f3b4a41aa883",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "files": {
     "frontier_submit.py": {
       "source": "candidate-overlays/codex/frontier_submit.py",

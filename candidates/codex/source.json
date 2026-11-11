@@ -1,15 +1,19 @@
 {
-  "platform_source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "dockerfile": {
     "source": "candidate-overlays/codex/Dockerfile",
-    "sha256": "sha256:9f301a3d2ac4d696a80175cf17893f00f43fa0d4296db05c964b7c5202cc9fad",
-    "local_sha256": "sha256:9f301a3d2ac4d696a80175cf17893f00f43fa0d4296db05c964b7c5202cc9fad"
+    "sha256": "sha256:f0e8cb741c32c1921bd558b0102a5c00aae438fca0610198eaccf2073fa5561d",
+    "local_sha256": "sha256:f0e8cb741c32c1921bd558b0102a5c00aae438fca0610198eaccf2073fa5561d"
   },
   "files": {
     "launcher.py": {
       "source": "candidate-overlays/codex/launcher.py",
-      "sha256": "sha256:50f4862706c42b3f2eff5e443c8a37b187b28aebc9d8ec3ef4a511a9b2dc0720",
-      "local_sha256": "sha256:a405f7d95cd63914678442588f313ba2328678f9fb9ff50fb62e637c3b32ceee"
+      "sha256": "sha256:29920ef59a193b68ec565d76b92e1974112ea022892463f7545f2d080b2751ea",
+      "local_sha256": "sha256:5f3108c3190d10817e51ee11bba6dbc58281b113b79fc9337d4a3063da0f92ac"
+    },
+    "fallback-base-instructions.md": {
+      "source": "candidate-overlays/codex/fallback-base-instructions.md",
+      "sha256": "sha256:3b08633fa672906666659d764864dfda1d7af5b5111ea5817c8f46e5de4e1a8d"
     },
     "frontier_submit.py": {
       "source": "candidate-overlays/codex/frontier_submit.py",
@@ -17,7 +21,7 @@
     },
     "frontier_gpu.py": {
       "source": "candidate-overlays/codex/frontier_gpu.py",
-      "sha256": "sha256:b0e659a8c67447a14f405eea1e21b7e54b5c7e5f3ddc3103021e5d5305c9adfc"
+      "sha256": "sha256:c6e26af56f6fb1b81d89c684959394eb31ae884400581ceab2146a835bdc52d2"
     },
     "frontier_gpu_connect_proxy.py": {
       "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",

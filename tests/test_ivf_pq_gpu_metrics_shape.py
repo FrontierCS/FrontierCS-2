@@ -11,6 +11,7 @@ result and evidence) on worker rows recorded by a real H100 train verification o
 pre-migration judge; only the GPU worker processes and the SIFT file check are replaced by
 those rows. The Agent-visible train metrics must equal what that verification returned.
 """
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import io
@@ -59,15 +60,19 @@ class IvfPqMetricsShapeTests(unittest.TestCase):
         self.work = Path(temp.name)
         payload = self.work / "payload.tar"
         with tarfile.open(payload, "w") as archive:
-            info = tarfile.TarInfo("payload/solution.patch")  # empty patch: allowed, the starter
+            info = tarfile.TarInfo(
+                "payload/solution.patch"
+            )  # empty patch: allowed, the starter
             archive.addfile(info, io.BytesIO(b""))
         self.payload = payload
 
     def rows(self, workload_ids):
         """The recorded rows, relabelled in order when the suite has more workloads (eval)."""
         recorded = (self.recorded["reference_rows"], self.recorded["candidate_rows"])
-        return [[{**rows[i % len(rows)], "id": wid} for i, wid in enumerate(workload_ids)]
-                for rows in recorded]
+        return [
+            [{**rows[i % len(rows)], "id": wid} for i, wid in enumerate(workload_ids)]
+            for rows in recorded
+        ]
 
     def verify(self, mode):
         original = fcs2_verifier.load_evaluator
@@ -81,19 +86,34 @@ class IvfPqMetricsShapeTests(unittest.TestCase):
                 return reference if source_root.name == "reference" else candidate
 
             self.enterContext(mock.patch.dict(judge, {"_measure": measure}))
-            self.enterContext(mock.patch.object(judge["ivfpq_worker"], "verified_data_path",
-                                                return_value=None))
+            self.enterContext(
+                mock.patch.object(
+                    judge["ivfpq_worker"], "verified_data_path", return_value=None
+                )
+            )
             return evaluate, check_tree
 
-        result_path, evidence_path = self.work / f"{mode}.json", self.work / f"{mode}.tar.zst"
-        with mock.patch.object(fcs2_verifier, "load_evaluator", load_evaluator), \
-                mock.patch.dict(os.environ, {"FRONTIER_VERIFIER_SCRATCH": str(self.work)}):
-            fcs2_verifier.verify(bundle=self.bundle, entrypoint="payload/solution.patch",
-                                 payload=self.payload, dataset=TASK / f"datasets/{mode}.json",
-                                 mode=mode, result_path=result_path, evidence_path=evidence_path)
+        result_path, evidence_path = (
+            self.work / f"{mode}.json",
+            self.work / f"{mode}.tar.zst",
+        )
+        with (
+            mock.patch.object(fcs2_verifier, "load_evaluator", load_evaluator),
+            mock.patch.dict(os.environ, {"FRONTIER_VERIFIER_SCRATCH": str(self.work)}),
+        ):
+            fcs2_verifier.verify(
+                bundle=self.bundle,
+                entrypoint="payload/solution.patch",
+                payload=self.payload,
+                dataset=TASK / f"datasets/{mode}.json",
+                mode=mode,
+                result_path=result_path,
+                evidence_path=evidence_path,
+            )
         result = json.loads(result_path.read_text())
-        raw = zstandard.ZstdDecompressor().decompress(evidence_path.read_bytes(),
-                                                      max_output_size=1 << 26)
+        raw = zstandard.ZstdDecompressor().decompress(
+            evidence_path.read_bytes(), max_output_size=1 << 26
+        )
         with tarfile.open(fileobj=io.BytesIO(raw)) as archive:
             evidence = json.load(archive.extractfile("metrics.json"))
         return result, evidence
@@ -104,8 +124,10 @@ class IvfPqMetricsShapeTests(unittest.TestCase):
         self.assertEqual(result["raw_score"], self.recorded["raw_score"])
         self.assertEqual(result["metrics"], self.recorded["result_metrics"])
         metrics = evidence["metrics"]
-        self.assertEqual(metrics["beat_spec_workload_passes"],
-                         self.recorded["beat_spec_workload_passes"])
+        self.assertEqual(
+            metrics["beat_spec_workload_passes"],
+            self.recorded["beat_spec_workload_passes"],
+        )
         self.assertEqual(metrics["beats_reference"], self.recorded["beats_reference"])
         self.assertEqual(metrics["reference_score"], self.recorded["reference_score"])
         # Every timed sample of both sides is kept, flat.
@@ -117,8 +139,12 @@ class IvfPqMetricsShapeTests(unittest.TestCase):
         self.assertEqual(result["status"], "passed", result)
         self.assertEqual(result["metrics"], {"score_unbounded": result["raw_score"]})
         private = result["private_metrics"]
-        self.assertEqual(private["beats_reference"], evidence["metrics"]["beats_reference"])
-        self.assertEqual(sum(row["total"] for row in private["beat_spec_progress"].values()), 3 * 8)
+        self.assertEqual(
+            private["beats_reference"], evidence["metrics"]["beats_reference"]
+        )
+        self.assertEqual(
+            sum(row["total"] for row in private["beat_spec_progress"].values()), 3 * 8
+        )
         self.assertLessEqual(depth(evidence["metrics"]), 6)
 
 

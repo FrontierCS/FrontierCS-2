@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from preview import api_routes, infra
+from deploy import api_routes, infra
 from test_frontier_deploy import Fixture
 
 
@@ -92,7 +92,7 @@ class ApiRouteReaderRbacTests(unittest.TestCase):
 
     def test_fresh_manifest_grants_only_native_management(self):
         raw = infra.load_json(infra.REPOSITORY_ROOT / "config/site.example.json")
-        from preview.config import validate_config
+        from deploy.config import validate_config
 
         config = validate_config(raw)
         for simulator in (True, False):

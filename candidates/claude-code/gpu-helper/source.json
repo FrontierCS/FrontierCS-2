@@ -1,5 +1,5 @@
 {
-  "platform_source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "files": {
     "frontier_gpu.py": {
       "source": "candidate-overlays/codex/frontier_gpu.py",

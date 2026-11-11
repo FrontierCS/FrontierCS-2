@@ -9,25 +9,25 @@
       "version": "1.4.7",
       "recipe": {
         "path": "candidates/agy-gemini",
-        "source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.7-5900205422411776/linux-x64/cli_linux_x64.tar.gz"
     },
     "claude-code": {
       "display_name": "Claude Code",
-      "version": "2.1.311",
+      "version": "2.1.321",
       "recipe": {
         "path": "candidates/claude-code",
-        "source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
-      "upstream": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.311.tgz"
+      "upstream": "https://registry.npmjs.org/@anthropic-ai/claude-code-linux-x64/-/claude-code-linux-x64-2.1.321.tgz"
     },
     "codex": {
       "display_name": "Codex CLI",
       "version": "0.162.1",
       "recipe": {
         "path": "candidates/codex",
-        "source_commit": "61533f7351f8762ac8f6c3dac71cf24cc34a2b12"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://registry.npmjs.org/@openai/codex/-/codex-0.162.1-linux-x64.tgz"
     },
@@ -36,18 +36,18 @@
       "version": "0.2.0-rc.2",
       "recipe": {
         "path": "candidates/deepseek-harness",
-        "source_commit": "69dc7de7d780076557de84f9a191f3b4a41aa883"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.0-rc.2.tgz"
     },
     "kimi-code": {
       "display_name": "Kimi Code",
-      "version": "0.31.0",
+      "version": "2.3.3",
       "recipe": {
         "path": "candidates/kimi-code",
-        "source_commit": "341949767be14411465bbb704ce87e8453773965"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
-      "upstream": "https://registry.npmjs.org/@moonshot-ai/kimi-code/-/kimi-code-0.31.0.tgz",
+      "upstream": "https://registry.npmjs.org/@moonshot-ai/kimi-code/-/kimi-code-2.3.3.tgz",
       "attestation": "config/kimi-candidate-image.json"
     },
     "muse-code": {
@@ -55,7 +55,7 @@
       "version": "1.4.2",
       "recipe": {
         "path": "candidates/muse-code",
-        "source_commit": "4b67d95cfb6d426e26b7bf4261508c2d7e119d33"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://lookaside.facebook.com/lookaside/muse/download/?channel=muse&version=1.4.2-R4684.1&file=muse-x86-linux"
     },
@@ -64,7 +64,7 @@
       "version": "1.19.5",
       "recipe": {
         "path": "candidates/opencode",
-        "source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://registry.npmjs.org/opencode-ai/-/opencode-ai-1.19.5.tgz"
     },
@@ -73,7 +73,7 @@
       "version": "1.2.0",
       "recipe": {
         "path": "candidates/pi-gemini",
-        "source_commit": "68fb0550ec1e10f64a98463b663289259e0d712e"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-1.2.0.tgz"
     },
@@ -82,7 +82,7 @@
       "version": "0.25.0",
       "recipe": {
         "path": "candidates/qwen-code",
-        "source_commit": "0c26747c4cb53baf2221b3fdc16a14a1e157c156"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://registry.npmjs.org/@qwen-code/qwen-code/-/qwen-code-0.25.0.tgz"
     },
@@ -91,7 +91,7 @@
       "version": "0.1.0",
       "recipe": {
         "path": "candidates/stepcode-step5",
-        "source_commit": "5c62641a2e208d0a8c72829f63890dd537e98150"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://github.com/stepfun-ai/Step-Code/tree/d0ec996df81f4089054f2cc80f1ae11139761f81"
     },
@@ -100,7 +100,7 @@
       "version": "0.16.9",
       "recipe": {
         "path": "candidates/zcode",
-        "source_commit": "13abe33b780794267158eb19cfc1a5d689d31ce8"
+        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
       },
       "upstream": "https://github.com/zai-org/ZCode/tree/29628c9acdb81b703bbd4080c207a0e7ce5e276e"
     }
@@ -248,7 +248,7 @@
         "digest": "sha256:8b033f2fce4e84e2db2cbe07f4369e7a2543098c61892433bc70e9c8a64c4470"
       },
       "image_source_commit": "4755adb77a6b11cff0b1d2461f6f441ef32a2f03",
-      "recipe_note": "Same Dockerfile, launcher and skills as candidates/kimi-code; the shared submit/GPU clients are the versions in candidates/codex."
+      "recipe_note": "Built from an earlier revision of candidates/kimi-code (Kimi Code 0.31.0 runtime, its launcher and skills)."
     },
     {
       "id": "kimi-code-k2.7",

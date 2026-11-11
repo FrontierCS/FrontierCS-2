@@ -4,20 +4,28 @@ The shipped table is checked against the task tree (its reproduction from the
 reference receipts is a Preview test). Evaluations below use invented simulator outputs and a temporary table;
 no predictor is built or run.
 """
+
 import deployment_test_guard  # noqa: F401  # isort: skip
 
 import hashlib
 import io
 import json
-from pathlib import Path
 import shutil
 import sys
 import tarfile
 import types
+from pathlib import Path
 
 import pytest
+import zstandard
+
 from tests.maintenance.runlts_predictor.runtime_imports import (
-    JUDGE, MODULES, REPOSITORY_ROOT, check_runtime_telemetry, write_payload)
+    JUDGE,
+    MODULES,
+    REPOSITORY_ROOT,
+    check_runtime_telemetry,
+    write_payload,
+)
 
 e = MODULES["evaluator"]
 adapter = MODULES["fcs2_verifier"]
@@ -31,10 +39,16 @@ SHIPPED_TABLE = e.PINNED_REFERENCE
 
 def output(misp=3000, wp=140000):
     row = f"{N} 500000 2.0000 100000 {misp} 0.2000 0.0060 3.0000% {1000 * misp / N:.4f} {wp} 46.6667 {1000 * wp / N:.4f}"
-    return "\n".join([
-        "--DIRECT CONDITIONAL BRANCH PREDICTION MEASUREMENTS (50 Perc instructions)--", HEADER, row,
-        "--DIRECT CONDITIONAL BRANCH PREDICTION MEASUREMENTS (Full Simulation i.e. Counts Not Reset When Warmup Ends)--",
-        HEADER, row])
+    return "\n".join(
+        [
+            "--DIRECT CONDITIONAL BRANCH PREDICTION MEASUREMENTS (50 Perc instructions)--",
+            HEADER,
+            row,
+            "--DIRECT CONDITIONAL BRANCH PREDICTION MEASUREMENTS (Full Simulation i.e. Counts Not Reset When Warmup Ends)--",
+            HEADER,
+            row,
+        ]
+    )
 
 
 def workloads():
@@ -52,66 +66,122 @@ def refused(reason, suite, tree):
         e.pinned_reference(suite, tree)
     assert str(caught.value) == "pinned reference " + reason
     evidence = caught.value.private_execution_evidence
-    assert evidence["execution_valid"] is False and evidence["reference_phase"] == "pinned_table"
+    assert (
+        evidence["execution_valid"] is False
+        and evidence["reference_phase"] == "pinned_table"
+    )
     return evidence
 
 
 # ----------------------------------------------------------- the shipped table
 
+
 def test_shipped_table_is_pinned_and_covers_every_workload(restored):
-    assert hashlib.sha256(e.PINNED_REFERENCE.read_bytes()).hexdigest() == e.PINNED_REFERENCE_SHA256
+    assert (
+        hashlib.sha256(e.PINNED_REFERENCE.read_bytes()).hexdigest()
+        == e.PINNED_REFERENCE_SHA256
+    )
     rows = workloads()
     reference = e.pinned_reference(rows, restored)
     assert list(reference) == [row["id"] for row in rows] and len(reference) == 105
     for row in rows:
         measured = reference[row["id"]]
-        assert (measured.instr, measured.full_instr) == (row["measured_instr"], row["full_instr"])
-        assert 0 < measured.misp_br and 0 < measured.cyc_wp  # strict improvement stays attainable
+        assert (measured.instr, measured.full_instr) == (
+            row["measured_instr"],
+            row["full_instr"],
+        )
+        assert (
+            0 < measured.misp_br and 0 < measured.cyc_wp
+        )  # strict improvement stays attainable
     development = [row for row in rows if row["development"]]
-    assert set(e.pinned_reference(development, restored)) == {row["id"] for row in development}
+    assert set(e.pinned_reference(development, restored)) == {
+        row["id"] for row in development
+    }
 
 
 def test_shipped_identity_is_the_pinned_reference_and_documents(restored):
     identity = json.loads(e.PINNED_REFERENCE.read_text())["identity"]
     assert identity == e.reference_identity(restored)
     provenance = json.loads((PROVENANCE / "judge-provenance.json").read_text())
-    assert identity["reference_core_sha256"] == provenance["submission_files"]["my_cond_branch_predictor.cc"]
-    assert identity["workload_manifest_sha256"] == provenance["data_checksums"]["manifest_sha256"]
-    assert identity["invocation"]["build_argv"] == ["make", "-j1", "OPT=-O3 -D_GLIBCXX_ASSERTIONS"]
+    assert (
+        identity["reference_core_sha256"]
+        == provenance["submission_files"]["my_cond_branch_predictor.cc"]
+    )
+    assert (
+        identity["workload_manifest_sha256"]
+        == provenance["data_checksums"]["manifest_sha256"]
+    )
+    assert identity["invocation"]["build_argv"] == [
+        "make",
+        "-j1",
+        "OPT=-O3 -D_GLIBCXX_ASSERTIONS",
+    ]
     # The restored reference is the tree the logical-storage audit recognises.
     assert policy.audit(restored)["logical_bits"] == policy.REFERENCE_BITS
 
 
 # ------------------------------------------------------ refusals of the table
 
+
 def test_changed_simulator_or_reference_source_is_an_identity_mismatch(restored):
     suite = workloads()[:1]
     with (restored / "lib/bp.cc").open("a") as stream:
         stream.write("\n")
-    assert refused("identity mismatch", suite, restored)["mismatched"] == ["reference_tree_sha256"]
+    assert refused("identity mismatch", suite, restored)["mismatched"] == [
+        "reference_tree_sha256"
+    ]
     with (restored / "my_cond_branch_predictor.cc").open("a") as stream:
         stream.write("\n")
-    assert refused("identity mismatch", suite, restored)["mismatched"] == ["reference_core_sha256", "reference_tree_sha256"]
+    assert refused("identity mismatch", suite, restored)["mismatched"] == [
+        "reference_core_sha256",
+        "reference_tree_sha256",
+    ]
 
 
-def test_added_source_file_or_changed_command_is_an_identity_mismatch(restored, monkeypatch):
+def test_added_source_file_or_changed_command_is_an_identity_mismatch(
+    restored, monkeypatch
+):
     suite = workloads()[:1]
     (restored / "lib/extra.h").write_text("")
-    assert refused("identity mismatch", suite, restored)["mismatched"] == ["reference_tree_sha256"]
+    assert refused("identity mismatch", suite, restored)["mismatched"] == [
+        "reference_tree_sha256"
+    ]
     (restored / "lib/extra.h").unlink()
     assert e.pinned_reference(suite, restored)
     monkeypatch.setattr(e, "BUILD_ARGV", ["make", "-j1", "OPT=-O2"])
     assert refused("identity mismatch", suite, restored)["mismatched"] == ["invocation"]
 
 
-@pytest.mark.parametrize("document", ["reference.patch", "integrity.json", "source_contract.json", "workload_manifest.json"])
-def test_changed_pinned_document_is_an_identity_mismatch(restored, monkeypatch, tmp_path, document):
-    for name in ("reference.patch", "integrity.json", "source_contract.json", "workload_manifest.json"):
+@pytest.mark.parametrize(
+    "document",
+    [
+        "reference.patch",
+        "integrity.json",
+        "source_contract.json",
+        "workload_manifest.json",
+    ],
+)
+def test_changed_pinned_document_is_an_identity_mismatch(
+    restored, monkeypatch, tmp_path, document
+):
+    for name in (
+        "reference.patch",
+        "integrity.json",
+        "source_contract.json",
+        "workload_manifest.json",
+    ):
         shutil.copy(e.ROOT / name, tmp_path / name)
     with (tmp_path / document).open("a") as stream:
         stream.write("\n")
     monkeypatch.setattr(e, "ROOT", tmp_path)
-    assert len(refused("identity mismatch", workloads_of(tmp_path)[:1], restored)["mismatched"]) == 1
+    assert (
+        len(
+            refused("identity mismatch", workloads_of(tmp_path)[:1], restored)[
+                "mismatched"
+            ]
+        )
+        == 1
+    )
 
 
 def workloads_of(root):
@@ -125,12 +195,19 @@ def retable(monkeypatch, tmp_path, change, pin=True):
     path.write_text(json.dumps(doc))
     monkeypatch.setattr(e, "PINNED_REFERENCE", path)
     if pin:
-        monkeypatch.setattr(e, "PINNED_REFERENCE_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
+        monkeypatch.setattr(
+            e, "PINNED_REFERENCE_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()
+        )
 
 
 def test_edited_or_absent_table_is_refused(restored, monkeypatch, tmp_path):
     suite = workloads()[:1]
-    retable(monkeypatch, tmp_path, lambda doc: doc["rows"][0].update(misp_br=doc["rows"][0]["misp_br"] + 1), pin=False)
+    retable(
+        monkeypatch,
+        tmp_path,
+        lambda doc: doc["rows"][0].update(misp_br=doc["rows"][0]["misp_br"] + 1),
+        pin=False,
+    )
     refused("table checksum mismatch", suite, restored)
     monkeypatch.setattr(e, "PINNED_REFERENCE", tmp_path / "absent.json")
     refused("table missing", suite, restored)
@@ -140,20 +217,47 @@ def test_missing_row_is_refused(restored, monkeypatch, tmp_path):
     rows = workloads()
     retable(monkeypatch, tmp_path, lambda doc: doc["rows"].pop(3))
     refused("table coverage invalid", rows, restored)
-    retable(monkeypatch, tmp_path, lambda doc: doc["rows"][3].update(id="int/another_trace"))
+    retable(
+        monkeypatch, tmp_path, lambda doc: doc["rows"][3].update(id="int/another_trace")
+    )
     assert refused("row missing", rows, restored)["workload"] == rows[3]["id"]
     assert e.pinned_reference(rows[:3], restored)  # rows that are present still load
 
 
-@pytest.mark.parametrize("change,reason", [
-    (lambda row: row.update(trace_sha256="0" * 64), "row does not match the workload manifest"),
-    (lambda row: row.update(path="int/other.gz"), "row does not match the workload manifest"),
-    (lambda row: row.update(misp_br=str(row["misp_br"])), "row invalid"),
-    (lambda row: row.update(misp_br=row["misp_br"] + 1000), "row invalid"),  # no longer the printed rate
-    (lambda row: row.pop("printed_cyc_wp_pki"), "row invalid"),
-    (lambda row: row.update(instr=row["instr"] + 1), "row does not match the workload manifest"),
-], ids=["trace_sha256", "path", "string_counter", "counter_off_printed_rate", "rate_absent", "instr_off_manifest"])
-def test_row_that_is_not_this_trace_or_not_a_measurement_is_refused(restored, monkeypatch, tmp_path, change, reason):
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        (
+            lambda row: row.update(trace_sha256="0" * 64),
+            "row does not match the workload manifest",
+        ),
+        (
+            lambda row: row.update(path="int/other.gz"),
+            "row does not match the workload manifest",
+        ),
+        (lambda row: row.update(misp_br=str(row["misp_br"])), "row invalid"),
+        (
+            lambda row: row.update(misp_br=row["misp_br"] + 1000),
+            "row invalid",
+        ),  # no longer the printed rate
+        (lambda row: row.pop("printed_cyc_wp_pki"), "row invalid"),
+        (
+            lambda row: row.update(instr=row["instr"] + 1),
+            "row does not match the workload manifest",
+        ),
+    ],
+    ids=[
+        "trace_sha256",
+        "path",
+        "string_counter",
+        "counter_off_printed_rate",
+        "rate_absent",
+        "instr_off_manifest",
+    ],
+)
+def test_row_that_is_not_this_trace_or_not_a_measurement_is_refused(
+    restored, monkeypatch, tmp_path, change, reason
+):
     rows = workloads()
     retable(monkeypatch, tmp_path, lambda doc: change(doc["rows"][0]))
     assert refused(reason, rows[:1], restored)["workload"] == rows[0]["id"]
@@ -161,12 +265,18 @@ def test_row_that_is_not_this_trace_or_not_a_measurement_is_refused(restored, mo
 
 # ------------------------------------------------------------ whole evaluations
 
+
 @pytest.fixture
 def stage(tmp_path, monkeypatch):
     """_evaluate over a temporary task root with a real, self-consistent table."""
     root = tmp_path / "task"
     root.mkdir()
-    for name in ("reference.patch", "integrity.json", "source_contract.json", "workload_manifest.json"):
+    for name in (
+        "reference.patch",
+        "integrity.json",
+        "source_contract.json",
+        "workload_manifest.json",
+    ):
         (root / name).write_text(name)
     trees = {}
     for name in ("candidate", "reference"):
@@ -175,36 +285,86 @@ def stage(tmp_path, monkeypatch):
         (tree / "lib/cbp.cc").write_text("// fixture\n")
         (tree / "my_cond_branch_predictor.cc").write_text("// " + name + "\n")
         trees[name] = tree
-    suite = [{"id": f"unit/w{i}", "path": f"unit/w{i}.gz", "sha256": f"{i:064x}", "full_instr": N, "measured_instr": N}
-             for i in range(105)]
-    state = types.SimpleNamespace(root=root, trees=trees, suite=suite[:2], calls=[],
-                                  outputs={"candidate": output(2999, 139999), "reference": output()})
+    suite = [
+        {
+            "id": f"unit/w{i}",
+            "path": f"unit/w{i}.gz",
+            "sha256": f"{i:064x}",
+            "full_instr": N,
+            "measured_instr": N,
+        }
+        for i in range(105)
+    ]
+    state = types.SimpleNamespace(
+        root=root,
+        trees=trees,
+        suite=suite[:2],
+        calls=[],
+        outputs={"candidate": output(2999, 139999), "reference": output()},
+    )
     monkeypatch.setattr(e, "ROOT", root)
-    table = {"schema": e.PINNED_REFERENCE_SCHEMA, "identity": e.reference_identity(trees["reference"]),
-             "rows": [{"id": row["id"], "path": row["path"], "trace_sha256": row["sha256"], "instr": N, "misp_br": 3000,
-                       "cyc_wp": 140000, "full_instr": N, "printed_br_mis_pki": "3.0000", "printed_cyc_wp_pki": "140.0000"}
-                      for row in suite]}
+    table = {
+        "schema": e.PINNED_REFERENCE_SCHEMA,
+        "identity": e.reference_identity(trees["reference"]),
+        "rows": [
+            {
+                "id": row["id"],
+                "path": row["path"],
+                "trace_sha256": row["sha256"],
+                "instr": N,
+                "misp_br": 3000,
+                "cyc_wp": 140000,
+                "full_instr": N,
+                "printed_br_mis_pki": "3.0000",
+                "printed_cyc_wp_pki": "140.0000",
+            }
+            for row in suite
+        ],
+    }
+
     def install(doc):
         path = root / "reference_counts.json"
         path.write_text(json.dumps(doc))
         monkeypatch.setattr(e, "PINNED_REFERENCE", path)
-        monkeypatch.setattr(e, "PINNED_REFERENCE_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
+        monkeypatch.setattr(
+            e, "PINNED_REFERENCE_SHA256", hashlib.sha256(path.read_bytes()).hexdigest()
+        )
+
     state.table, state.install = table, install
     install(table)
 
-
     def command(argv, cwd, timeout, deadline):
         side = "reference" if Path(cwd) == trees["reference"] else "candidate"
-        step = "audit" if argv[0] == sys.executable else "build" if argv[0] == "make" else "trace"
+        step = (
+            "audit"
+            if argv[0] == sys.executable
+            else "build"
+            if argv[0] == "make"
+            else "trace"
+        )
         state.calls.append((side, step))
         if step == "audit":
-            return json.dumps({"valid": True, "logical_bits": policy.REFERENCE_BITS, "method": "fixture"})
+            return json.dumps(
+                {
+                    "valid": True,
+                    "logical_bits": policy.REFERENCE_BITS,
+                    "method": "fixture",
+                }
+            )
         return state.outputs[side] if step == "trace" else ""
 
-    monkeypatch.setattr(e, "predictor_copy", lambda source, scratch, name: trees["candidate"])
+    monkeypatch.setattr(
+        e, "predictor_copy", lambda source, scratch, name: trees["candidate"]
+    )
     monkeypatch.setattr(e, "reference_tree", lambda scratch: trees["reference"])
     monkeypatch.setattr(e, "run_command", command)
-    monkeypatch.setattr(e, "run_sandboxed", lambda argv, cwd, timeout, deadline, **sandbox: command(argv, cwd, timeout, deadline))
+    monkeypatch.setattr(
+        e,
+        "run_sandboxed",
+        lambda argv, cwd, timeout, deadline, **sandbox: command(
+            argv, cwd, timeout, deadline
+        ),
+    )
     monkeypatch.setattr(e, "manifest", lambda final: list(state.suite))
     monkeypatch.delenv("FRONTIER_SUBMISSION_ROLE", raising=False)
     monkeypatch.delenv(e.REFERENCE_AUDIT_ENV, raising=False)
@@ -213,14 +373,31 @@ def stage(tmp_path, monkeypatch):
 
 def test_default_evaluation_never_builds_or_runs_the_reference(stage):
     score, _, message, metrics = e.evaluate("candidate-tree")
-    assert message == "evaluation complete" and score > 0 and metrics["beats_reference"] == 1
-    assert stage.calls == [("candidate", "audit"), ("candidate", "build"), ("candidate", "trace"), ("candidate", "trace")]
-    assert [row["role"] for row in metrics["private_runtime_telemetry"]["traces"]] == ["candidate", "candidate"]
-    assert metrics["pinned_reference"] == {"table_sha256": e.PINNED_REFERENCE_SHA256, "live_check": "none",
-                                           "workloads_equal_to_live_execution": 0}
+    assert (
+        message == "evaluation complete"
+        and score > 0
+        and metrics["beats_reference"] == 1
+    )
+    assert stage.calls == [
+        ("candidate", "audit"),
+        ("candidate", "build"),
+        ("candidate", "trace"),
+        ("candidate", "trace"),
+    ]
+    assert [row["role"] for row in metrics["private_runtime_telemetry"]["traces"]] == [
+        "candidate",
+        "candidate",
+    ]
+    assert metrics["pinned_reference"] == {
+        "table_sha256": e.PINNED_REFERENCE_SHA256,
+        "live_check": "none",
+        "workloads_equal_to_live_execution": 0,
+    }
     # The comparison still uses the reference's exact counters, from the table.
-    assert [(row["reference_instr"], row["reference_misp_br"], row["reference_cyc_wp"])
-            for row in metrics["paired_measurements"]] == [(N, 3000, 140000)] * 2
+    assert [
+        (row["reference_instr"], row["reference_misp_br"], row["reference_cyc_wp"])
+        for row in metrics["paired_measurements"]
+    ] == [(N, 3000, 140000)] * 2
     check_runtime_telemetry(metrics["private_runtime_telemetry"])
 
 
@@ -229,32 +406,55 @@ def test_tie_with_the_pinned_counts_does_not_clear_the_strict_comparison(stage):
     metrics = e.evaluate("candidate-tree")[3]
     assert metrics["beats_reference"] == 0
     assert metrics["beat_spec_workload_passes"][0]["metrics"] == {
-        "br_mis_pki": False, "cyc_wp_pki": True, "logical_storage_bits": True}
+        "br_mis_pki": False,
+        "cyc_wp_pki": True,
+        "logical_storage_bits": True,
+    }
 
 
 def test_candidate_instruction_count_is_still_paired_against_the_pinned_value(stage):
     with pytest.raises(e.CandidateError) as caught:
-        e.grade(stage.suite[:1], {"unit/w0": e.Measurement(N - 1, 1, 1, N, e.Decimal("0.0010"), e.Decimal("0.0010"))},
-                e.pinned_reference(stage.suite[:1], stage.trees["reference"]), False,
-                logical_storage_bits=policy.REFERENCE_BITS)
+        e.grade(
+            stage.suite[:1],
+            {
+                "unit/w0": e.Measurement(
+                    N - 1, 1, 1, N, e.Decimal("0.0010"), e.Decimal("0.0010")
+                )
+            },
+            e.pinned_reference(stage.suite[:1], stage.trees["reference"]),
+            False,
+            logical_storage_bits=policy.REFERENCE_BITS,
+        )
     assert caught.value.category == "instruction_count_mismatch"
 
 
 @pytest.mark.parametrize("role", ["development", "final"])
-def test_identity_mismatch_is_an_infrastructure_error_not_a_candidate_score(stage, monkeypatch, role):
+def test_identity_mismatch_is_an_infrastructure_error_not_a_candidate_score(
+    stage, monkeypatch, role
+):
     monkeypatch.setenv("FRONTIER_SUBMISSION_ROLE", role)
     (stage.trees["reference"] / "lib/cbp.cc").write_text("// a different simulator\n")
-    with pytest.raises(e.EvaluationError, match="pinned reference identity mismatch") as caught:
+    with pytest.raises(
+        e.EvaluationError, match="pinned reference identity mismatch"
+    ) as caught:
         e.evaluate("candidate-tree")
     evidence = caught.value.private_execution_evidence
-    assert evidence["mismatched"] == ["reference_tree_sha256"] and "private_runtime_telemetry" in evidence
-    assert ("candidate", "build") not in stage.calls and ("candidate", "trace") not in stage.calls
+    assert (
+        evidence["mismatched"] == ["reference_tree_sha256"]
+        and "private_runtime_telemetry" in evidence
+    )
+    assert ("candidate", "build") not in stage.calls and (
+        "candidate",
+        "trace",
+    ) not in stage.calls
 
 
 def test_missing_row_is_an_infrastructure_error(stage):
     stage.table["rows"][1]["id"] = "unit/renamed"
     stage.install(stage.table)
-    with pytest.raises(e.EvaluationError, match="pinned reference row missing") as caught:
+    with pytest.raises(
+        e.EvaluationError, match="pinned reference row missing"
+    ) as caught:
         e.evaluate("candidate-tree")
     assert caught.value.private_execution_evidence["workload"] == "unit/w1"
     stage.suite = stage.suite[:1]
@@ -265,22 +465,41 @@ def test_live_audit_passes_when_the_reference_reproduces_the_table(stage, monkey
     monkeypatch.setenv(e.REFERENCE_AUDIT_ENV, "live")
     score, _, message, metrics = e.evaluate("candidate-tree")
     assert message == "evaluation complete" and metrics["beats_reference"] == 1
-    assert stage.calls == [("candidate", "audit"), ("reference", "build"), ("candidate", "build"),
-                           ("reference", "trace"), ("candidate", "trace"), ("reference", "trace"), ("candidate", "trace")]
+    assert stage.calls == [
+        ("candidate", "audit"),
+        ("reference", "build"),
+        ("candidate", "build"),
+        ("reference", "trace"),
+        ("candidate", "trace"),
+        ("reference", "trace"),
+        ("candidate", "trace"),
+    ]
     assert metrics["pinned_reference"]["live_check"] == "live_reference"
     assert metrics["pinned_reference"]["workloads_equal_to_live_execution"] == 2
     monkeypatch.delenv(e.REFERENCE_AUDIT_ENV)
-    assert e.evaluate("candidate-tree")[0] == score  # the audit does not change the result
+    assert (
+        e.evaluate("candidate-tree")[0] == score
+    )  # the audit does not change the result
 
 
-@pytest.mark.parametrize("live,field", [((3001, 140000), "misp_br"), ((3000, 139999), "cyc_wp")])
-def test_live_audit_fails_as_infrastructure_when_one_counter_differs(stage, monkeypatch, live, field):
+@pytest.mark.parametrize(
+    "live,field", [((3001, 140000), "misp_br"), ((3000, 139999), "cyc_wp")]
+)
+def test_live_audit_fails_as_infrastructure_when_one_counter_differs(
+    stage, monkeypatch, live, field
+):
     monkeypatch.setenv(e.REFERENCE_AUDIT_ENV, "live")
     stage.outputs["reference"] = output(*live)
-    with pytest.raises(e.EvaluationError, match="pinned reference counts differ from live reference execution") as caught:
+    with pytest.raises(
+        e.EvaluationError,
+        match="pinned reference counts differ from live reference execution",
+    ) as caught:
         e.evaluate("candidate-tree")
     evidence = caught.value.private_execution_evidence
-    assert evidence["reference_phase"] == "pinned_audit" and evidence["audit_source"] == "live_reference"
+    assert (
+        evidence["reference_phase"] == "pinned_audit"
+        and evidence["audit_source"] == "live_reference"
+    )
     assert evidence["workload"] == "unit/w0" and field in evidence["fields"]
     assert evidence["fields"][field]["pinned"] != evidence["fields"][field]["live"]
     assert ("candidate", "trace") not in stage.calls
@@ -294,37 +513,66 @@ def test_unknown_audit_mode_is_refused(stage, monkeypatch):
 
 def test_reference_submission_is_checked_against_the_table_without_a_second_run(stage):
     # The reference qualification run: the candidate tree is the reference tree.
-    (stage.trees["candidate"] / "my_cond_branch_predictor.cc").write_text("// reference\n")
+    (stage.trees["candidate"] / "my_cond_branch_predictor.cc").write_text(
+        "// reference\n"
+    )
     stage.outputs["candidate"] = output()
     metrics = e.evaluate("reference-as-candidate-tree")[3]
     assert metrics["beats_reference"] == 0 and metrics["margin"] == 0
     assert metrics["pinned_reference"]["live_check"] == "reference_submission"
     assert metrics["pinned_reference"]["workloads_equal_to_live_execution"] == 2
-    assert ("reference", "trace") not in stage.calls and ("reference", "build") not in stage.calls
+    assert ("reference", "trace") not in stage.calls and (
+        "reference",
+        "build",
+    ) not in stage.calls
     stage.outputs["candidate"] = output(2999, 140000)
-    with pytest.raises(e.EvaluationError, match="pinned reference counts differ from live reference execution") as caught:
+    with pytest.raises(
+        e.EvaluationError,
+        match="pinned reference counts differ from live reference execution",
+    ) as caught:
         e.evaluate("reference-as-candidate-tree")
-    assert caught.value.private_execution_evidence["audit_source"] == "reference_submission"
+    assert (
+        caught.value.private_execution_evidence["audit_source"]
+        == "reference_submission"
+    )
 
 
-def test_adapter_reports_a_refused_table_as_a_failed_verification(stage, monkeypatch, tmp_path):
-    zstandard = pytest.importorskip("zstandard")
+def test_adapter_reports_a_refused_table_as_a_failed_verification(
+    stage, monkeypatch, tmp_path
+):
     (stage.trees["reference"] / "lib/cbp.cc").write_text("// a different simulator\n")
     # The shared verifier: the real bundle, payload, edit scope and check_tree.
-    payload = write_payload(tmp_path / "payload.tar", (JUDGE / "baseline_naive.patch").read_bytes())
+    payload = write_payload(
+        tmp_path / "payload.tar", (JUDGE / "baseline_naive.patch").read_bytes()
+    )
     result_path, evidence_path = tmp_path / "result.json", tmp_path / "evidence.tar.zst"
     scratch = tmp_path / "adapter-scratch"
     scratch.mkdir()
-    for key, value in {"FRONTIER_VERIFIER_SCRATCH": scratch, "FRONTIER_RESULT_PATH": result_path,
-                       "FRONTIER_EVIDENCE_PATH": evidence_path, "FRONTIER_PAYLOAD_PATH": payload,
-                       "FRONTIER_DATASET_PATH": tmp_path / "dataset.json", "FRONTIER_VERIFICATION_MODE": "train"}.items():
+    for key, value in {
+        "FRONTIER_VERIFIER_SCRATCH": scratch,
+        "FRONTIER_RESULT_PATH": result_path,
+        "FRONTIER_EVIDENCE_PATH": evidence_path,
+        "FRONTIER_PAYLOAD_PATH": payload,
+        "FRONTIER_DATASET_PATH": tmp_path / "dataset.json",
+        "FRONTIER_VERIFICATION_MODE": "train",
+    }.items():
         monkeypatch.setenv(key, str(value))
-    monkeypatch.setattr(adapter, "load_evaluator", lambda *a: (e.evaluate, e.check_tree))
-    assert adapter.main(JUDGE, "payload/solution.patch") == 0
+    monkeypatch.setattr(
+        adapter, "load_evaluator", lambda *a: (e.evaluate, e.check_tree)
+    )
+    assert adapter.main(JUDGE, "payload/solution.patch", sandboxes=False) == 0
     result = json.loads(result_path.read_text())
-    assert result["status"] == "failed" and "raw_score" not in result and result["metrics"] == {}
+    assert (
+        result["status"] == "failed"
+        and "raw_score" not in result
+        and result["metrics"] == {}
+    )
     assert "rejected" not in result_path.read_text()
     raw = zstandard.ZstdDecompressor().decompress(evidence_path.read_bytes())
     with tarfile.open(fileobj=io.BytesIO(raw)) as archive:
-        private = json.loads(archive.extractfile("metrics.json").read())["metrics"]["private_execution"]
-    assert private["reference_phase"] == "pinned_table" and private["mismatched"] == ["reference_tree_sha256"]
+        private = json.loads(archive.extractfile("metrics.json").read())["metrics"][
+            "private_execution"
+        ]
+    assert private["reference_phase"] == "pinned_table" and private["mismatched"] == [
+        "reference_tree_sha256"
+    ]

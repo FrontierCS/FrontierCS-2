@@ -12,9 +12,10 @@ PUBLISH ?=
 IMAGE_NAMESPACE ?=
 IMAGE_NAMESPACE_ARGUMENT = $(if $(strip $(IMAGE_NAMESPACE)),--image-namespace "$(IMAGE_NAMESPACE)",)
 # The checks `make ci` runs, on the example site unless CONFIG is given.
-CI_CHECKS ?= test validate
+CI_CHECKS ?= lint test validate
 
-.PHONY: ci test validate render preflight plan apply deploy build-images build-task-images smoke seed-tasks verify import-task
+# The repository's one entry point. ./python runs any single script on the pinned interpreter.
+.PHONY: ci test validate lint fmt lock bootstrap doctor render preflight plan apply deploy build-images build-task-images smoke seed-tasks verify import-task
 
 ci: CONFIG = config/site.example.json
 ci: $(CI_CHECKS)
@@ -27,6 +28,29 @@ validate:
 	$(PYTHON) scripts/validate_task_layout.py
 	$(PYTHON) scripts/validate_task_layout.py --problems-root tasks/template
 	$(PYTHON) scripts/frontier_deploy.py validate --config $(CONFIG)
+
+# Python lint and formatting, and ShellCheck on the shell launchers.
+lint:
+	$(PYTHON) -m ruff check
+	$(PYTHON) -m ruff format --check
+	$(PYTHON) scripts/repo.py tool shellcheck python scripts/bootstrap-uv.sh
+
+# Apply the safe lint fixes and formatting; what remains needs a manual fix.
+fmt:
+	$(PYTHON) -m ruff check --fix-only
+	$(PYTHON) -m ruff format
+
+# Refresh uv.lock with the pinned uv, which works even when the locked environment is stale.
+lock:
+	sh -c '. scripts/bootstrap-uv.sh && uv=$$(bootstrap_uv . make) && "$$uv" lock'
+
+# Prefetch the pinned contributor tools and the Git LFS inputs the tests read.
+bootstrap:
+	$(PYTHON) scripts/repo.py bootstrap
+
+# Diagnose the local environment without cloud access.
+doctor:
+	$(PYTHON) scripts/repo.py doctor
 
 render:
 	$(PYTHON) scripts/frontier_deploy.py render --config $(CONFIG)

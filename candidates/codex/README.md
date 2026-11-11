@@ -28,9 +28,17 @@ docker build --platform linux/amd64 -t frontier-candidate-codex:0.162.1 candidat
 | Variable | Meaning |
 | --- | --- |
 | `FRONTIER_CODEX_MODEL` | Model alias accepted by the provider or LiteLLM gateway |
-| `FRONTIER_CODEX_REASONING_EFFORT` | Optional `none`, `minimal`, `low`, `medium`, `high` or `xhigh` |
+| `FRONTIER_CODEX_REASONING_EFFORT` | Optional `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max` (`qwen3.8-max-vl-thinking`: `none` or `high`, default `high`) |
+| `FRONTIER_CODEX_CONTEXT_WINDOW` | Optional context window (16384 to 2147483647) for a model outside Codex's bundled catalog |
 | `FRONTIER_MODEL_DIRECT_BASE_URL` | Optional HTTPS OpenAI-compatible endpoint for direct mode |
 | `CODEX_API_KEY` | Provider key, direct mode only |
+
+A model outside Codex's bundled catalog gets its fallback metadata: a 272,000-token
+context window and `reasoning.summary="auto"`. With `FRONTIER_CODEX_CONTEXT_WINDOW`
+the launcher writes a one-row native `model_catalog_json` for the alias with that
+window. The row reuses the fallback instructions byte for byte from the
+checksum-pinned `fallback-base-instructions.md` and requests no reasoning summary;
+without the variable the command is unchanged.
 
 Without a direct endpoint the launcher uses the Run-local Driver model proxy and
 the child receives no provider key. The launcher sets `allow_login_shell=false`

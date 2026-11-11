@@ -21,9 +21,10 @@ must be built and pinned again.
 ## Entry points
 
 `make` is the front door (`Makefile`): `make ci` runs every check, `make test` the unit tests and
-`make validate` the offline validation of tasks, catalog and site configuration. `./python` and
-`./x` run repository code on the pinned interpreter and tools (`scripts/bootstrap-uv.sh`,
-`scripts/repo.py`). The operator's command line is `scripts/frontier_deploy.py`.
+`make validate` the offline validation of tasks, catalog and site configuration, `make lint` and
+`make fmt` lint and format, `make bootstrap` prepares the pinned tools and Git LFS inputs
+(`scripts/repo.py`). `./python` runs a single script on the pinned interpreter
+(`scripts/bootstrap-uv.sh`). The operator's command line is `scripts/frontier_deploy.py`.
 
 ## Code map
 
@@ -66,7 +67,7 @@ example task that covers every `task.toml` feature.
 `candidates/<harness>/`, one directory per harness.
 - **Architecture Invariant:** a harness knows no task.
 
-**Deploy.** `scripts/frontier_deploy.py` and the `scripts/preview/` package (`config`, `infra`,
+**Deploy.** `scripts/frontier_deploy.py` and the `scripts/deploy/` package (`config`, `infra`,
 `images`, `publication`, `acceptance`, `cli`; to be renamed `deploy/`), `terraform/`,
 `runtime/` (the storage controller and the LiteLLM hooks) and `smoke/`. It installs and upgrades
 a site and publishes tasks through the Management API. The package's own layering is in
@@ -82,7 +83,9 @@ the tool pins.
 
 **`tests/`.** The unit tests `make test` runs, with golden fixtures under `tests/fixtures/golden/`
 that lock rendered manifests and CLI help byte for byte. `tests/deployment_test_guard.py` keeps
-every test away from real state, the network and cluster tools.
+every test away from real state, the network and cluster tools. A task's maintenance suite,
+`tests/maintenance/<task>/`, is pytest files; `tests/test_maintenance_suites.py` runs each suite
+in its own process.
 
 ## Cross-cutting concerns
 

@@ -28,7 +28,9 @@ def node_major() -> int:
     node = shutil.which("node")
     if node is None:
         return 0
-    version = subprocess.run([node, "--version"], capture_output=True, text=True, check=False)
+    version = subprocess.run(
+        [node, "--version"], capture_output=True, text=True, check=False
+    )
     match = re.match(r"v(\d+)\.", version.stdout)
     return int(match.group(1)) if match else 0
 
@@ -37,7 +39,9 @@ class RosterTests(unittest.TestCase):
     def test_every_candidate_names_a_recipe_and_pinned_image(self):
         harnesses = ROSTER["harnesses"]
         self.assertEqual(
-            sorted(path.name for path in (ROOT / "candidates").iterdir() if path.is_dir()),
+            sorted(
+                path.name for path in (ROOT / "candidates").iterdir() if path.is_dir()
+            ),
             sorted(harnesses),
         )
         self.assertIn(ROSTER["builtin_candidate"], harnesses)
@@ -49,8 +53,10 @@ class RosterTests(unittest.TestCase):
                 # A candidate evaluated with an earlier recipe keeps the version it ran; only
                 # then may it differ from the recipe's.
                 if candidate["harness_version"] != harness["version"]:
-                    self.assertNotEqual(candidate["image_source_commit"],
-                                        harness["recipe"]["source_commit"])
+                    self.assertNotEqual(
+                        candidate["image_source_commit"],
+                        harness["recipe"]["source_commit"],
+                    )
                 self.assertIn(candidate["reasoning_effort"], EFFORTS)
                 image = candidate["overlay_image"]
                 self.assertTrue(image["repository"].startswith("docker.io/"))
@@ -59,8 +65,12 @@ class RosterTests(unittest.TestCase):
         for name, harness in harnesses.items():
             with self.subTest(harness=name):
                 self.assertEqual(harness["recipe"]["path"], f"candidates/{name}")
-                self.assertTrue((ROOT / harness["recipe"]["path"] / "Dockerfile").is_file())
-                self.assertTrue((ROOT / harness["recipe"]["path"] / "README.md").is_file())
+                self.assertTrue(
+                    (ROOT / harness["recipe"]["path"] / "Dockerfile").is_file()
+                )
+                self.assertTrue(
+                    (ROOT / harness["recipe"]["path"] / "README.md").is_file()
+                )
                 self.assertTrue(harness["upstream"].startswith("https://"))
 
     def test_attested_kimi_image_is_the_mirrored_recipe(self):
@@ -68,7 +78,9 @@ class RosterTests(unittest.TestCase):
         recipe = ROSTER["harnesses"]["kimi-code"]
         self.assertEqual(recipe["attestation"], "config/kimi-candidate-image.json")
         self.assertEqual(receipt["source_commit"], recipe["recipe"]["source_commit"])
-        self.assertEqual(receipt["source"]["provenance"], "candidates/kimi-code/source.json")
+        self.assertEqual(
+            receipt["source"]["provenance"], "candidates/kimi-code/source.json"
+        )
 
 
 class HarnessUnitTests(unittest.TestCase):
@@ -80,11 +92,25 @@ class HarnessUnitTests(unittest.TestCase):
                 continue
             with self.subTest(harness=name):
                 result = subprocess.run(
-                    [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", *tests],
-                    cwd=directory, capture_output=True, text=True, timeout=600, check=False,
+                    [
+                        sys.executable,
+                        "-m",
+                        "pytest",
+                        "-q",
+                        "-p",
+                        "no:cacheprovider",
+                        *tests,
+                    ],
+                    cwd=directory,
+                    capture_output=True,
+                    text=True,
+                    timeout=600,
+                    check=False,
                     env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
                 )
-                self.assertEqual(result.returncode, 0, result.stdout[-4000:] + result.stderr[-2000:])
+                self.assertEqual(
+                    result.returncode, 0, result.stdout[-4000:] + result.stderr[-2000:]
+                )
 
     @unittest.skipUnless(node_major() >= 18, "Requires Node.js 18 or newer")
     def test_node_harness_tests(self):
@@ -92,10 +118,15 @@ class HarnessUnitTests(unittest.TestCase):
             with self.subTest(harness=name):
                 result = subprocess.run(
                     [shutil.which("node"), "--test", *tests],
-                    cwd=ROOT / "candidates" / name, capture_output=True, text=True,
-                    timeout=600, check=False,
+                    cwd=ROOT / "candidates" / name,
+                    capture_output=True,
+                    text=True,
+                    timeout=600,
+                    check=False,
                 )
-                self.assertEqual(result.returncode, 0, result.stdout[-4000:] + result.stderr[-2000:])
+                self.assertEqual(
+                    result.returncode, 0, result.stdout[-4000:] + result.stderr[-2000:]
+                )
 
 
 if __name__ == "__main__":

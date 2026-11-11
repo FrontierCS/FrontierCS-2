@@ -48,14 +48,18 @@ class FormalTenOperatorContract(unittest.TestCase):
                 # A task.toml task's Agent README is generated: its own opening plus the shared
                 # platform text, which states the save rules in its own words.
                 text = " ".join(
-                    (task_manifest.agent_readme(task) if native
-                     else " ".join(p.read_text() for p in paths if p.is_file())).split()
+                    (
+                        task_manifest.agent_readme(task)
+                        if native
+                        else " ".join(p.read_text() for p in paths if p.is_file())
+                    ).split()
                 )
                 if name == "bounded_evm_path_prediction":
                     # The saved selection is the final answer, kept up to date; a task.toml
                     # task states it in the shared store-final text.
                     self.assertIn(
-                        "Save your chosen answer early and update it with" if native
+                        "Save your chosen answer early and update it with"
+                        if native
                         else "You must save the final answer you select",
                         text,
                     )

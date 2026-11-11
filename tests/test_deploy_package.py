@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
-from preview import cli, config, publication
+from deploy import cli, config, publication
 
 MODULES = ("config", "infra", "images", "publication", "acceptance", "cli")
 IMPORT_PROBE = r"""
@@ -60,8 +60,8 @@ for name in sys.argv[2:]:
 
 class PackageImportsTests(unittest.TestCase):
     def test_each_module_and_shim_import_from_empty_directory_without_data_reads(self):
-        names = [*("preview." + name for name in MODULES), "frontier_deploy"]
-        with tempfile.TemporaryDirectory(prefix="preview-import-") as directory:
+        names = [*("deploy." + name for name in MODULES), "frontier_deploy"]
+        with tempfile.TemporaryDirectory(prefix="deploy-import-") as directory:
             for first in names:
                 with self.subTest(first=first):
                     result = subprocess.run(
@@ -93,7 +93,7 @@ class PackageImportsTests(unittest.TestCase):
             "resolve_catalog_digests",
             "check_test_prerequisites",
         )
-        with tempfile.TemporaryDirectory(prefix="preview-script-import-") as directory:
+        with tempfile.TemporaryDirectory(prefix="deploy-script-import-") as directory:
             for name in scripts:
                 with self.subTest(script=name):
                     result = subprocess.run(
@@ -116,7 +116,7 @@ class PackageImportsTests(unittest.TestCase):
     def test_entire_package_import_graph_is_acyclic(self):
         edges = {}
         for name in MODULES:
-            tree = ast.parse((ROOT / "scripts/preview" / (name + ".py")).read_text())
+            tree = ast.parse((ROOT / "scripts/deploy" / (name + ".py")).read_text())
             edges[name] = {
                 node.module
                 for node in ast.walk(tree)
@@ -140,7 +140,7 @@ class PackageImportsTests(unittest.TestCase):
             (ROOT / "tests/fixtures/cli/frontier-deploy-exports.json").read_text()
         )
         for module, names in exports.items():
-            owner = __import__("preview." + module, fromlist=["unused"])
+            owner = __import__("deploy." + module, fromlist=["unused"])
             for name in names:
                 with self.subTest(module=module, name=name):
                     self.assertIs(getattr(deploy, name), getattr(owner, name))
@@ -223,7 +223,8 @@ class ShimPatchGuardTests(unittest.TestCase):
     def test_tests_never_patch_the_compatibility_shim(self):
         failures = []
         # The modules this suite runs (unittest discovery of tests/); the per-task maintenance
-        # suites under tests/maintenance/ run separately with their own import paths.
+        # suites under tests/maintenance/ run in their own pytest processes
+        # (tests/test_maintenance_suites.py) with their own import paths.
         for path in (ROOT / "tests").glob("test_*.py"):
             module = importlib.import_module(
                 ".".join(path.relative_to(ROOT).with_suffix("").parts)
@@ -340,7 +341,7 @@ class CliSubprocessTests(unittest.TestCase):
                 )
 
     def test_invalid_config_keeps_exit_two_and_stderr(self):
-        with tempfile.TemporaryDirectory(prefix="preview-invalid-config-") as directory:
+        with tempfile.TemporaryDirectory(prefix="deploy-invalid-config-") as directory:
             path = Path(directory) / "invalid.json"
             path.write_text("{}")
             result = self.run_cli("validate", "--config", str(path))

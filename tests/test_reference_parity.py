@@ -17,9 +17,9 @@ from urllib.parse import parse_qs, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
-from preview import acceptance as parity
-from preview import infra
-from preview import publication as references
+from deploy import acceptance as parity
+from deploy import infra
+from deploy import publication as references
 from test_task_seeding import mirrored_images, resolved_catalog
 
 

@@ -29,7 +29,7 @@ from typing import Any, Iterable, Iterator, Mapping, Sequence
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
-from preview.acceptance import (
+from deploy.acceptance import (
     check_smoke_replay,
     gpu_smoke_candidate,
     prepare_smoke_operation,
@@ -44,7 +44,7 @@ from preview.acceptance import (
     verify_litellm,
     verify_runtime,
 )
-from preview.cli import (
+from deploy.cli import (
     apply_site,
     deploy_existing_platform,
     deploy_modal_credentials,
@@ -61,7 +61,7 @@ from preview.cli import (
     upgrade_runtime,
     validate_command,
 )
-from preview.config import (
+from deploy.config import (
     generated_directory,
     read_and_validate,
     reject_secret_fields,
@@ -70,7 +70,7 @@ from preview.config import (
     validate_config,
     validate_node_group,
 )
-from preview.images import (
+from deploy.images import (
     build_runtime_images,
     cached_registry_image,
     ensure_application_source,
@@ -80,7 +80,7 @@ from preview.images import (
     source_tree_sha256,
     validate_application_source,
 )
-from preview.infra import (
+from deploy.infra import (
     ACCOUNT_RE,
     ADMISSION_BOOTSTRAP_COMMAND,
     ADMISSION_BOOTSTRAP_RECEIPT,
@@ -171,7 +171,7 @@ from preview.infra import (
     validate_outputs,
     validate_runtime_images,
 )
-from preview.publication import (
+from deploy.publication import (
     candidate_version_document,
     check_seed_tasks,
     ensure_version,
@@ -194,7 +194,7 @@ from task_selection import TaskSelection, requirements, select_tasks
 
 def __getattr__(name: str):
     if name == "TASK_DEFINITIONS":
-        from preview import publication
+        from deploy import publication
 
         return publication.load_task_definitions()
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

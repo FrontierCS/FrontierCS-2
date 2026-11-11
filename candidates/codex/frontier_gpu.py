@@ -12,12 +12,14 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shlex
+import socket
 import stat
 import subprocess
 import sys
 import tarfile
 import tempfile
 import time
+import threading
 from urllib.parse import urlsplit
 import uuid
 
@@ -28,6 +30,16 @@ SSH = Path("/usr/bin/ssh")
 PROXY = Path("/opt/frontier/candidate/bin/frontier-gpu-connect-proxy")
 MAX_RESPONSE = 64 * 1024 * 1024
 REQUEST_ATTEMPTS = 16
+CREATE_RECOVERY_ATTEMPTS = 1024
+MAX_PROBLEM = 4096
+PUBLIC_PROBLEMS = {
+    "idempotency_in_progress": "The same operation is still pending; reuse this key and body.",
+    "mutation_rate_exhausted": "Driver mutation request rate exceeded; retry this same operation later.",
+    "quota_exhausted": "The task's GPU instance or GPU-second allowance is exhausted.",
+    "gpu_type_not_allowed": "The task does not allow this GPU type.",
+    "idempotency_conflict": "This idempotency key was already used with different arguments.",
+    "gpu_backend_unavailable": "GPU backend unavailable; provider details withheld.",
+}
 MAX_TOKEN = 16 * 1024
 # Driver create waits for image import and sandbox readiness. Each provider
 # phase can take one hour; keep a small response margin, not a 30s RPC timeout.
@@ -85,31 +97,122 @@ class Client:
             headers.update({"Content-Type": "application/json", "Content-Length": str(len(encoded))})
         if idempotency:
             headers["Idempotency-Key"] = idempotency
-        attempts = REQUEST_ATTEMPTS if method in {"GET", "DELETE"} or idempotency else 1
+        recover_create = method == "POST" and path == "/v1/gpu-runners" and bool(idempotency)
+        attempts = CREATE_RECOVERY_ATTEMPTS if recover_create else (
+            REQUEST_ATTEMPTS if method in {"GET", "DELETE"} or idempotency else 1
+        )
+        deadline = time.monotonic() + timeout
+        last_error = "no response"
+        last_typed_error = "none"
         for attempt in range(attempts):
-            connection = http.client.HTTPConnection(self.host, self.port, timeout=timeout)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise GpuError(f"Driver request deadline exceeded after {attempt} attempts; last error: {last_error}")
+            connection = http.client.HTTPConnection(self.host, self.port, timeout=remaining)
+            response_slot: list[object] = []
+            connected_sockets: list[object] = []
+
+            def interrupt(connection=connection, response_slot=response_slot, connected_sockets=connected_sockets) -> None:
+                # A socket inactivity timeout alone does not bound trickling headers/body.
+                sockets = [connection.sock, *connected_sockets]
+                if response_slot:
+                    sockets.append(getattr(getattr(getattr(response_slot[0], "fp", None), "raw", None), "_sock", None))
+                for active in sockets:
+                    if active is not None:
+                        try:
+                            active.shutdown(socket.SHUT_RDWR)
+                        except OSError:
+                            pass
+                connection.close()
+
+            watchdog = threading.Timer(remaining, interrupt)
+            watchdog.daemon = True
+            watchdog.start()
+            retry = False
             try:
                 connection.request(method, path, body=encoded, headers=headers)
+                # Keep the socket even if getresponse detaches it for Connection: close.
+                connected_sockets.append(connection.sock)
                 response = connection.getresponse()
-                data = response.read(MAX_RESPONSE + 1)
-                if len(data) > MAX_RESPONSE:
+                response_slot.append(response)
+                limit = MAX_RESPONSE if 200 <= response.status < 300 else MAX_PROBLEM
+                data = response.read(limit + 1)
+                if len(data) > limit:
                     raise GpuError("Driver response exceeded its size limit")
-                if response.status in {408, 429, 500, 502, 503, 504} and attempt + 1 < attempts:
-                    time.sleep(min(10, 0.25 * (2 ** attempt)))
-                    continue
+                if time.monotonic() >= deadline:
+                    raise GpuError(f"Driver request deadline exceeded after {attempt + 1} attempts; last error: {last_error}")
                 if not 200 <= response.status < 300:
-                    raise GpuError(f"Driver returned HTTP {response.status}")
-                try:
-                    return json.loads(data)
-                except json.JSONDecodeError as error:
-                    raise GpuError("Driver response was not JSON") from error
+                    code = None
+                    try:
+                        problem = json.loads(data)
+                        if isinstance(problem, dict) and problem.get("status") == response.status:
+                            candidate = problem.get("code")
+                            if isinstance(candidate, str) and candidate in PUBLIC_PROBLEMS:
+                                code = candidate
+                    except (ValueError, UnicodeError):
+                        pass
+                    last_error = f"HTTP {response.status} code={code or 'unrecognized_problem'}"
+                    if code:
+                        detail = PUBLIC_PROBLEMS[code]
+                        title = problem.get("title")
+                        if code == "quota_exhausted" and isinstance(title, str) and title in {
+                            "GPU instance limit reached", "GPU seconds exhausted",
+                        }:
+                            detail = problem["title"]
+                        if code == "idempotency_in_progress" and isinstance(title, str) and title in {
+                            "GPU create is pending; retry the same key and arguments",
+                            "GPU create cleanup is uncertain; retry the same key and arguments",
+                        }:
+                            detail = problem["title"]
+                        last_error += f" detail={detail}"
+                        quota = problem.get("quota_failure")
+                        if code == "quota_exhausted" and isinstance(quota, dict):
+                            resource = quota.get("resource")
+                            fields = {
+                                "gpu_instances": ("limit", "current", "requested"),
+                                "gpu_seconds": ("limit", "used", "reserved", "remaining", "requested_count", "requested_seconds"),
+                            }.get(resource) if isinstance(resource, str) else None
+                            if fields and quota.get("principal") in ("agent", "verifier") and all(
+                                type(quota.get(k)) is int and 0 <= quota[k] <= 2**64 - 1 for k in fields
+                            ):
+                                safe = {"resource": resource, "principal": quota["principal"],
+                                        **{k: quota[k] for k in fields}}
+                                last_error += " quota=" + json.dumps(safe, sort_keys=True, separators=(",", ":"))
+                        last_typed_error = last_error
+                    retry = (response.status, code) in {
+                        (425, "idempotency_in_progress"),
+                        (429, "mutation_rate_exhausted"),
+                    }
+                    # Keep the existing read/delete transport policy. CREATE
+                    # requires typed recovery because acceptance may be ambiguous.
+                    if method in {"GET", "DELETE"} and response.status in {408, 500, 502, 503, 504}:
+                        retry = True
+                    if not retry or attempt + 1 == attempts:
+                        raise GpuError(f"Driver returned {last_error} after {attempt + 1} attempts")
+                else:
+                    try:
+                        return json.loads(data)
+                    except (ValueError, UnicodeError) as error:
+                        raise GpuError("Driver response was not JSON") from error
             except (OSError, http.client.HTTPException) as error:
+                last_error = ("transport_error (connection interrupted; completion unknown); "
+                              f"last typed error: {last_typed_error}")
                 if attempt + 1 == attempts:
-                    raise GpuError("Driver request failed") from error
-                time.sleep(min(10, 0.25 * (2 ** attempt)))
+                    raise GpuError(f"Driver request failed after {attempt + 1} attempts; last error: {last_error}") from error
+                retry = True
             finally:
+                watchdog.cancel()
+                if response_slot:
+                    response_slot[0].close()
                 connection.close()
-        raise GpuError("Driver request failed")
+            if retry:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise GpuError(f"Driver request deadline exceeded after {attempt + 1} attempts; last error: {last_error}")
+                print(f"frontier-gpu: recovery attempt {attempt + 1}/{attempts}; {last_error}; "
+                      f"reusing the same request{' and idempotency key' if idempotency else ''}", file=sys.stderr)
+                time.sleep(min(remaining, 10, 0.25 * (2 ** min(attempt, 6))))
+        raise GpuError(f"Driver request failed after {attempts} attempts; last error: {last_error}")
 
 
 def validate_runner_id(value: str) -> str:

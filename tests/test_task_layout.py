@@ -8,19 +8,19 @@ import copy
 import io
 import json
 import shutil
-import sys
 import subprocess
+import sys
 import tempfile
 import unittest
-from unittest import mock
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import render_task_definition as renderer
+import task_layers  # noqa: E402
 import task_manifest
 import validate_task_layout as layout
-import task_layers  # noqa: E402
 
 
 class TaskLayoutTests(unittest.TestCase):
@@ -29,9 +29,7 @@ class TaskLayoutTests(unittest.TestCase):
         for name in names:
             with self.subTest(task=name):
                 self.assertIn(
-                    layout.validate_task(
-                        renderer.task_directory(name)
-                    ),
+                    layout.validate_task(renderer.task_directory(name)),
                     ("patch-workspace", "direct-payload", "patch-starter"),
                 )
 
@@ -43,11 +41,17 @@ class TaskLayoutTests(unittest.TestCase):
             except layout.LayoutFailure:
                 return False
 
-        source = next((path for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
-                       if (path / "policy.json").is_file()
-                       and (path / "upstream.lock.json").is_file()
-                       and (path / "agent-base/frontier/task").is_dir()
-                       and valid(path)), None)
+        source = next(
+            (
+                path
+                for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
+                if (path / "policy.json").is_file()
+                and (path / "upstream.lock.json").is_file()
+                and (path / "agent-base/frontier/task").is_dir()
+                and valid(path)
+            ),
+            None,
+        )
         if source is None:
             self.skipTest("no policy.json task with a lock remains")
         with tempfile.TemporaryDirectory() as directory:
@@ -485,10 +489,15 @@ class BeatSpecGateTests(unittest.TestCase):
         )
         (root / "judge/beat_spec.json").write_text(json.dumps(self.spec))
         # The legacy (policy.json) helper contract: a legacy task's own copy.
-        legacy = next((path / "verifier/beat_spec_feedback.py"
-                       for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
-                       if (path / "policy.json").is_file()
-                       and (path / "verifier/beat_spec_feedback.py").is_file()), None)
+        legacy = next(
+            (
+                path / "verifier/beat_spec_feedback.py"
+                for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
+                if (path / "policy.json").is_file()
+                and (path / "verifier/beat_spec_feedback.py").is_file()
+            ),
+            None,
+        )
         if legacy is None:
             self.skipTest("no policy.json task with its own feedback helper remains")
         shutil.copyfile(legacy, root / "verifier/beat_spec_feedback.py")
@@ -582,7 +591,6 @@ class BeatSpecGateTests(unittest.TestCase):
                 layout.check_beat_spec(root, self.evaluation)
 
 
-
 class RelaxationListingTests(unittest.TestCase):
     """scripts/validate_task_layout.py lists the layers that relax the boundary."""
 
@@ -593,18 +601,23 @@ class RelaxationListingTests(unittest.TestCase):
             return layout.sandbox_relaxations(Path(task))
 
     def test_lists_relaxing_layers_only(self):
-        self.assertEqual(self.relaxations("""
+        self.assertEqual(
+            self.relaxations("""
 import isolate
 class Tight(isolate.Layer):
     pass
 class Ports(isolate.Layer):
     relaxes = ("tcp connect", "tcp bind")
-"""), ["judge/layers.py:Ports relaxes tcp connect, tcp bind"])
+"""),
+            ["judge/layers.py:Ports relaxes tcp connect, tcp bind"],
+        )
 
     def test_relaxes_must_be_literal(self):
         with self.assertRaisesRegex(Exception, "literal tuple"):
-            self.relaxations("from isolate import Layer\n"
-                             "class Ports(Layer):\n    relaxes = tuple(['tcp'])\n")
+            self.relaxations(
+                "from isolate import Layer\n"
+                "class Ports(Layer):\n    relaxes = tuple(['tcp'])\n"
+            )
 
 
 if __name__ == "__main__":
@@ -616,13 +629,17 @@ class SharedBaseArgumentTests(unittest.TestCase):
     release moves every task at once; a literal reference, an undeclared argument, or a Verifier-
     GPU task without the shared adapter/verifier stages is refused."""
 
-    CONTROL = ("ARG GPU_TOOLS\nARG VERIFIER_BASE\nFROM ${GPU_TOOLS} AS frontier_gpu_tools\n"
-               "FROM ${VERIFIER_BASE}\n"
-               "COPY --from=frontier_gpu_tools /opt/frontier/shared-gpu/fcs2_verifier_gpu.py /opt/frontier/\n"
-               "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n")
-    GPU = ("ARG VERIFIER_BASE\nARG GPU_TOOLS\nFROM ${VERIFIER_BASE} AS frontier_verifier\n"
-           "FROM ${GPU_TOOLS} AS frontier_gpu_tools\nFROM scratch\n"
-           "COPY --from=frontier_verifier /opt/frontier/fcs2_verifier.py /opt/frontier/\n")
+    CONTROL = (
+        "ARG GPU_TOOLS\nARG VERIFIER_BASE\nFROM ${GPU_TOOLS} AS frontier_gpu_tools\n"
+        "FROM ${VERIFIER_BASE}\n"
+        "COPY --from=frontier_gpu_tools /opt/frontier/shared-gpu/fcs2_verifier_gpu.py /opt/frontier/\n"
+        "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n"
+    )
+    GPU = (
+        "ARG VERIFIER_BASE\nARG GPU_TOOLS\nFROM ${VERIFIER_BASE} AS frontier_verifier\n"
+        "FROM ${GPU_TOOLS} AS frontier_gpu_tools\nFROM scratch\n"
+        "COPY --from=frontier_verifier /opt/frontier/fcs2_verifier.py /opt/frontier/\n"
+    )
 
     LEASE = "lease_seconds = { train = 60, eval = 60 }\n"
     COMMAND = '\n[test_sandboxes.shard]\naccess = "command"\n'
@@ -631,7 +648,8 @@ class SharedBaseArgumentTests(unittest.TestCase):
         root = Path(directory) / "gpu_task"
         (root / "docker").mkdir(parents=True)
         (root / "task.toml").write_text(
-            "[gpu.verifier]\nmax_gpu_instances = 2\nmax_gpu_seconds = 60\n" + settings)
+            "[gpu.verifier]\nmax_gpu_instances = 2\nmax_gpu_seconds = 60\n" + settings
+        )
         (root / "docker/verifier.Dockerfile").write_text(control or self.CONTROL)
         (root / "docker/verifier-gpu.Dockerfile").write_text(gpu or self.GPU)
         return root
@@ -642,66 +660,113 @@ class SharedBaseArgumentTests(unittest.TestCase):
 
     def test_a_literal_shared_reference_is_refused(self):
         literal = task_manifest.base_reference("verifier")
-        for control in (self.CONTROL.replace("FROM ${VERIFIER_BASE}\n", f"FROM {literal}\n"),
-                        self.CONTROL.replace("${GPU_TOOLS} AS",
-                                             task_manifest.base_reference("gpu-tools") + " AS")):
-            with self.subTest(control=control), tempfile.TemporaryDirectory() as directory:
+        for control in (
+            self.CONTROL.replace("FROM ${VERIFIER_BASE}\n", f"FROM {literal}\n"),
+            self.CONTROL.replace(
+                "${GPU_TOOLS} AS", task_manifest.base_reference("gpu-tools") + " AS"
+            ),
+        ):
+            with (
+                self.subTest(control=control),
+                tempfile.TemporaryDirectory() as directory,
+            ):
                 with self.assertRaisesRegex(layout.LayoutFailure, "by build argument"):
-                    layout.check_gpu_adapter_pins(self.fixture(directory, control=control))
-        gpu = self.GPU.replace("--from=frontier_verifier",
-                               "--from=docker.io/joyemang33/frontier-verifier-base@"
-                               + literal.partition("@")[2])
+                    layout.check_gpu_adapter_pins(
+                        self.fixture(directory, control=control)
+                    )
+        gpu = self.GPU.replace(
+            "--from=frontier_verifier",
+            "--from=docker.io/joyemang33/frontier-verifier-base@"
+            + literal.partition("@")[2],
+        )
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(layout.LayoutFailure, "by build argument"):
                 layout.check_gpu_adapter_pins(self.fixture(directory, gpu=gpu))
 
     def test_an_undeclared_or_defaulted_argument_is_refused(self):
-        for control in (self.CONTROL.replace("ARG GPU_TOOLS\n", ""),
-                        self.CONTROL.replace("ARG GPU_TOOLS\n", "ARG GPU_TOOLS=docker.io/x/y\n")):
-            with self.subTest(control=control), tempfile.TemporaryDirectory() as directory:
-                with self.assertRaisesRegex(layout.LayoutFailure, "without a global `ARG GPU_TOOLS`"):
-                    layout.check_gpu_adapter_pins(self.fixture(directory, control=control))
+        for control in (
+            self.CONTROL.replace("ARG GPU_TOOLS\n", ""),
+            self.CONTROL.replace("ARG GPU_TOOLS\n", "ARG GPU_TOOLS=docker.io/x/y\n"),
+        ):
+            with (
+                self.subTest(control=control),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                with self.assertRaisesRegex(
+                    layout.LayoutFailure, "without a global `ARG GPU_TOOLS`"
+                ):
+                    layout.check_gpu_adapter_pins(
+                        self.fixture(directory, control=control)
+                    )
 
     def test_only_lease_or_command_sandbox_tasks_need_the_shared_adapter_stages(self):
         bare = "ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n"
-        with tempfile.TemporaryDirectory() as directory:  # e.g. a standalone Verifier (vllm)
-            layout.check_gpu_adapter_pins(self.fixture(directory, control=bare, gpu=bare, settings=""))
-        for settings, feature in ((self.LEASE, "lease_seconds"), (self.COMMAND, "access")):
-            with self.subTest(settings=settings), tempfile.TemporaryDirectory() as directory:
+        with (
+            tempfile.TemporaryDirectory() as directory
+        ):  # e.g. a standalone Verifier (vllm)
+            layout.check_gpu_adapter_pins(
+                self.fixture(directory, control=bare, gpu=bare, settings="")
+            )
+        for settings, feature in (
+            (self.LEASE, "lease_seconds"),
+            (self.COMMAND, "access"),
+        ):
+            with (
+                self.subTest(settings=settings),
+                tempfile.TemporaryDirectory() as directory,
+            ):
                 with self.assertRaisesRegex(layout.LayoutFailure, feature):
                     layout.check_gpu_adapter_pins(
-                        self.fixture(directory, control=bare, settings=settings))
+                        self.fixture(directory, control=bare, settings=settings)
+                    )
 
     def test_a_gpu_verifier_needs_the_shared_adapter_and_verifier_stages(self):
         with tempfile.TemporaryDirectory() as directory:
             control = "ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n"
-            with self.assertRaisesRegex(layout.LayoutFailure, r"FROM \$\{GPU_TOOLS\} AS"):
+            with self.assertRaisesRegex(
+                layout.LayoutFailure, r"FROM \$\{GPU_TOOLS\} AS"
+            ):
                 layout.check_gpu_adapter_pins(self.fixture(directory, control=control))
         with tempfile.TemporaryDirectory() as directory:
             gpu = "ARG GPU_TOOLS\nFROM ${GPU_TOOLS} AS t\nFROM scratch\n"
-            with self.assertRaisesRegex(layout.LayoutFailure, r"FROM \$\{VERIFIER_BASE\} AS"):
+            with self.assertRaisesRegex(
+                layout.LayoutFailure, r"FROM \$\{VERIFIER_BASE\} AS"
+            ):
                 layout.check_gpu_adapter_pins(self.fixture(directory, gpu=gpu))
-
 
     def test_a_command_sandbox_control_pod_needs_no_gpu_environment(self):
         # The shared verifier keeps the Driver bearer for declared sandboxes (verifier.json
         # `sandboxes`), so the control image sets no FRONTIER_VERIFIER_GPU_TYPE for it.
         bare = self.CONTROL.replace(
-            "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n", "")
+            "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n",
+            "",
+        )
         with tempfile.TemporaryDirectory() as directory:
-            layout.check_gpu_adapter_pins(self.fixture(directory, control=bare, settings=self.COMMAND))
+            layout.check_gpu_adapter_pins(
+                self.fixture(directory, control=bare, settings=self.COMMAND)
+            )
 
-    def test_a_cpu_only_task_with_command_sandboxes_needs_only_the_control_adapter(self):
+    def test_a_cpu_only_task_with_command_sandboxes_needs_only_the_control_adapter(
+        self,
+    ):
         bare = self.CONTROL.replace(
-            "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n", "")
+            "ENV FRONTIER_VERIFIER_GPU_TYPE=A100-80GB FRONTIER_VERIFIER_GPU_COUNT=1\n",
+            "",
+        )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "cpu_task"
             (root / "docker").mkdir(parents=True)
             (root / "task.toml").write_text(self.COMMAND)
             (root / "docker/verifier.Dockerfile").write_text(bare)
-            layout.check_gpu_adapter_pins(root)  # no verifier-gpu recipe exists or is needed
-            (root / "docker/verifier.Dockerfile").write_text("ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n")
-            with self.assertRaisesRegex(layout.LayoutFailure, r"FROM \$\{GPU_TOOLS\} AS"):
+            layout.check_gpu_adapter_pins(
+                root
+            )  # no verifier-gpu recipe exists or is needed
+            (root / "docker/verifier.Dockerfile").write_text(
+                "ARG VERIFIER_BASE\nFROM ${VERIFIER_BASE}\n"
+            )
+            with self.assertRaisesRegex(
+                layout.LayoutFailure, r"FROM \$\{GPU_TOOLS\} AS"
+            ):
                 layout.check_gpu_adapter_pins(root)
 
 
@@ -711,19 +776,35 @@ class BasesTagTests(unittest.TestCase):
     def test_a_hand_picked_or_stale_tag_is_refused(self):
         recorded = task_manifest.bases()
         for tag in ("v11", "src-000000000000"):
-            bad = dict(recorded, **{"gpu-tools": "docker.io/joyemang33/frontier-gpu-tools:"
-                                    f"{tag}@sha256:" + "0" * 64})
-            with self.subTest(tag=tag), mock.patch.object(task_manifest, "bases", return_value=bad):
-                with self.assertRaisesRegex(layout.LayoutFailure, "its sources are src-"):
+            bad = dict(
+                recorded,
+                **{
+                    "gpu-tools": "docker.io/joyemang33/frontier-gpu-tools:"
+                    f"{tag}@sha256:" + "0" * 64
+                },
+            )
+            with (
+                self.subTest(tag=tag),
+                mock.patch.object(task_manifest, "bases", return_value=bad),
+            ):
+                with self.assertRaisesRegex(
+                    layout.LayoutFailure, "its sources are src-"
+                ):
                     layout.check_bases()
 
     def test_the_derived_tags_pass(self):
         import build_base_images
-        derived = {role: f"docker.io/joyemang33/{build_base_images.IMAGE_NAMES[role]}:"
-                         f"{build_base_images.source_tag(role)}@sha256:" + "0" * 64
-                   for role in task_manifest.BASE_ROLES}
-        with mock.patch.object(task_manifest, "bases",
-                               return_value={**derived, "schema_version": "frontier.task-bases/v2"}):
+
+        derived = {
+            role: f"docker.io/joyemang33/{build_base_images.IMAGE_NAMES[role]}:"
+            f"{build_base_images.source_tag(role)}@sha256:" + "0" * 64
+            for role in task_manifest.BASE_ROLES
+        }
+        with mock.patch.object(
+            task_manifest,
+            "bases",
+            return_value={**derived, "schema_version": "frontier.task-bases/v2"},
+        ):
             layout.check_bases()
 
 
@@ -734,7 +815,9 @@ class SidecarLayoutTests(unittest.TestCase):
         self.root = Path(self.temp.name) / "minimal_task"
         shutil.copytree(ROOT / "tests/fixtures/export-minimal", self.root)
         self.policy = json.loads((self.root / "policy.json").read_text())
-        self.policy["gpu"] = {"verifier": {"max_gpu_instances": 1, "max_gpu_seconds": 60}}
+        self.policy["gpu"] = {
+            "verifier": {"max_gpu_instances": 1, "max_gpu_seconds": 60}
+        }
 
     def declare(self, name, recipe=True, **profile):
         if recipe:
@@ -778,7 +861,9 @@ class SidecarLayoutTests(unittest.TestCase):
         self.declare("swe-000-vanilla", image="swe-000")
         with self.assertRaises(layout.LayoutFailure):
             layout.check_sidecars(self.root, self.policy)
-        shutil.move(self.root / "sidecar-swe-000-vanilla", self.root / "sidecar-swe-000")
+        shutil.move(
+            self.root / "sidecar-swe-000-vanilla", self.root / "sidecar-swe-000"
+        )
         self.declare("swe-000-reference", recipe=False, image="swe-000")
         self.declare("swe-000-check", recipe=False, image="swe-000")
         layout.check_sidecars(self.root, self.policy)
@@ -789,7 +874,9 @@ class SidecarLayoutTests(unittest.TestCase):
     def test_stray_sidecar_directory_is_rejected(self):
         self.declare("swe-000")
         (self.root / "sidecar-extra").mkdir()
-        (self.root / "sidecar-extra/Dockerfile").write_text("FROM python:3.11-slim-bookworm\n")
+        (self.root / "sidecar-extra/Dockerfile").write_text(
+            "FROM python:3.11-slim-bookworm\n"
+        )
         with self.assertRaises(layout.LayoutFailure):
             layout.check_sidecars(self.root, self.policy)
 
@@ -819,7 +906,9 @@ class UniformWorkloadMetricsTests(unittest.TestCase):
     def check(self, task: str, spec: dict) -> str:
         stderr = io.StringIO()
         with contextlib.redirect_stderr(stderr):
-            layout.check_uniform_workload_metrics(Path("/tasks") / task, spec, self.NAMES)
+            layout.check_uniform_workload_metrics(
+                Path("/tasks") / task, spec, self.NAMES
+            )
         return stderr.getvalue()
 
     def test_workloads_carrying_every_metric_pass(self):
@@ -828,8 +917,10 @@ class UniformWorkloadMetricsTests(unittest.TestCase):
             {"workloads": [{"name": "spectrum"}, {"name": "micro"}]},
             {"workloads": ["spectrum", "micro"]},
             {"workloads": [{"name": "micro", "metrics": list(reversed(self.NAMES))}]},
-            {"final_only_workloads": [{"name": "large"}],
-             "final_only_metrics": list(self.NAMES)},
+            {
+                "final_only_workloads": [{"name": "large"}],
+                "final_only_metrics": list(self.NAMES),
+            },
         ):
             with self.subTest(spec=spec):
                 self.assertEqual(self.check("evm_state_checkpoints", spec), "")
@@ -837,26 +928,37 @@ class UniformWorkloadMetricsTests(unittest.TestCase):
     def test_workload_measuring_a_metric_subset_is_rejected(self):
         for spec in (
             # EVM: the micro-workload measured restore time but no throughput.
-            {"workloads": [{"name": "spectrum", "metrics": ["throughput"]},
-                           {"name": "micro", "metrics": ["restore_ns", "bytes"]}]},
+            {
+                "workloads": [
+                    {"name": "spectrum", "metrics": ["throughput"]},
+                    {"name": "micro", "metrics": ["restore_ns", "bytes"]},
+                ]
+            },
             {"workloads": [{"name": "micro", "metrics": {"throughput": "x"}}]},
             {"workloads": [{"name": "micro", "metrics": self.NAMES + ["extra"]}]},
-            {"workloads": [{"name": "spectrum"}],
-             "final_only_workloads": [{"name": "large"}],
-             "final_only_metrics": ["restore_ns", "bytes"]},
+            {
+                "workloads": [{"name": "spectrum"}],
+                "final_only_workloads": [{"name": "large"}],
+                "final_only_metrics": ["restore_ns", "bytes"],
+            },
         ):
             with self.subTest(spec=spec):
                 with self.assertRaisesRegex(
-                    layout.LayoutFailure, "every workload must measure every declared metric"
+                    layout.LayoutFailure,
+                    "every workload must measure every declared metric",
                 ):
                     self.check("evm_state_checkpoints", spec)
 
     def test_workload_groups_are_retired(self):
-        spec = {"workload_groups": {
-            "rpc": {"metrics": ["throughput"], "counts": {"train": 2, "final": 4}},
-            "experiment": {"metrics": ["restore_ns", "bytes"],
-                           "counts": {"train": 1, "final": 2}},
-        }}
+        spec = {
+            "workload_groups": {
+                "rpc": {"metrics": ["throughput"], "counts": {"train": 2, "final": 4}},
+                "experiment": {
+                    "metrics": ["restore_ns", "bytes"],
+                    "counts": {"train": 1, "final": 2},
+                },
+            }
+        }
         with self.assertRaisesRegex(layout.LayoutFailure, "workload_groups is retired"):
             self.check("evm_state_checkpoints", spec)
 
@@ -890,12 +992,20 @@ class UniformWorkloadMetricsTests(unittest.TestCase):
     def test_feedback_probe_rejects_a_row_missing_a_declared_metric(self):
         # The legacy (policy.json) feedback probe, on a legacy task that still has a beat spec and
         # its own helper (task.toml tasks have neither).
-        source = next((path for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
-                       if (path / "policy.json").is_file()
-                       and (path / "judge/beat_spec.json").is_file()
-                       and (path / "verifier/beat_spec_feedback.py").is_file()), None)
+        source = next(
+            (
+                path
+                for path in sorted(layout.DEFAULT_PROBLEMS_ROOT.glob("*/*"))
+                if (path / "policy.json").is_file()
+                and (path / "judge/beat_spec.json").is_file()
+                and (path / "verifier/beat_spec_feedback.py").is_file()
+            ),
+            None,
+        )
         if source is None:
-            self.skipTest("no policy.json task with a beat spec and its own helper remains")
+            self.skipTest(
+                "no policy.json task with a beat spec and its own helper remains"
+            )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / source.name
             for name in ("judge/beat_spec.json", "verifier/beat_spec_feedback.py"):
@@ -907,7 +1017,9 @@ class UniformWorkloadMetricsTests(unittest.TestCase):
             layout.check_beat_spec_feedback(root, spec, names, visible)
             # A helper that fills in a row's missing metrics instead of rejecting it.
             helper = root / "verifier/beat_spec_feedback.py"
-            helper.write_text(helper.read_text() + """
+            helper.write_text(
+                helper.read_text()
+                + """
 
 import copy as _copy
 import json as _json
@@ -922,7 +1034,8 @@ def public_metrics(metrics, **kwargs):
             for entry in spec["metrics"]:
                 row["metrics"].setdefault(entry["name"], True)
     return _strict_public_metrics(metrics, **kwargs)
-""")
+"""
+            )
             with self.assertRaisesRegex(
                 layout.LayoutFailure, "workload row missing a declared metric"
             ):
@@ -934,8 +1047,20 @@ class SharedFromTests(unittest.TestCase):
     tasks/shared, so every branch builds the same bases."""
 
     def git(self, root, *arguments):
-        subprocess.run(["git", "-C", str(root), "-c", "user.email=t@example.com",
-                        "-c", "user.name=t", *arguments], check=True, capture_output=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "-c",
+                "user.email=t@example.com",
+                "-c",
+                "user.name=t",
+                *arguments,
+            ],
+            check=True,
+            capture_output=True,
+        )
 
     def test_a_differing_or_lagging_shared_tree_is_refused(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -948,11 +1073,15 @@ class SharedFromTests(unittest.TestCase):
             self.git(root, "commit", "-qm", "main")
             self.git(root, "checkout", "-q", "-b", "landing")
             (root / "tasks/task.txt").write_text("a task change\n")
-            layout.check_shared_from("main", root)   # task changes are landing's business
+            layout.check_shared_from(
+                "main", root
+            )  # task changes are landing's business
             (root / "tasks/shared/lib/isolate.py").write_text("landing\n")
             self.git(root, "commit", "-qam", "shared edit on landing")
-            with self.assertRaisesRegex(layout.LayoutFailure,
-                                        "tasks/shared differs from main: tasks/shared/lib/isolate.py"):
+            with self.assertRaisesRegex(
+                layout.LayoutFailure,
+                "tasks/shared differs from main: tasks/shared/lib/isolate.py",
+            ):
                 layout.check_shared_from("main", root)
             with self.assertRaisesRegex(layout.LayoutFailure, "cannot compare"):
                 layout.check_shared_from("no-such-ref", root)

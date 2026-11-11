@@ -31,7 +31,11 @@ def module(path, name):
 
 def cand(dp=0.0, dssim=1.0, rlpips=1.0, ref=REF):
     """PSNR delta (dB); ratios (1 - SSIM_cand) / (1 - SSIM_ref) and LPIPS_cand / LPIPS_ref."""
-    return {"psnr": ref["psnr"] + dp, "ssim": 1 - (1 - ref["ssim"]) * dssim, "lpips": ref["lpips"] * rlpips}
+    return {
+        "psnr": ref["psnr"] + dp,
+        "ssim": 1 - (1 - ref["ssim"]) * dssim,
+        "lpips": ref["lpips"] * rlpips,
+    }
 
 
 class NanoWorldModelScoring(unittest.TestCase):
@@ -41,15 +45,23 @@ class NanoWorldModelScoring(unittest.TestCase):
         # The shared verifier and its beat-spec feedback, as the Verifier image holds them.
         sys.path.insert(0, str(ROOT / "tasks/shared/verifier"))
         sys.modules.pop("beat_spec_feedback", None)
-        cls.verifier = module(ROOT / "tasks/shared/verifier/fcs2_verifier.py", "nano_scoring_test_verifier")
+        cls.verifier = module(
+            ROOT / "tasks/shared/verifier/fcs2_verifier.py",
+            "nano_scoring_test_verifier",
+        )
         # The judge as the Verifier image holds it: judge/ with the starter at pristine/.
         sys.path.insert(0, str(ROOT / "scripts"))
         import task_manifest
+
         sys.path.insert(0, str(ROOT / "tasks/shared/verifier-gpu"))
         cls.bundle = task_manifest.judge_bundle(TASK)
         cls.ev = module(cls.bundle / "evaluator.py", "nano_scoring_test_evaluator")
         sys.path[:] = old_path
-        for key in set(sys.modules) - set(old_modules) - {"nano_scoring_test_verifier", "nano_scoring_test_evaluator"}:
+        for key in (
+            set(sys.modules)
+            - set(old_modules)
+            - {"nano_scoring_test_verifier", "nano_scoring_test_evaluator"}
+        ):
             del sys.modules[key]
 
     def score(self, candidate, reference=None, n=6):
@@ -77,10 +89,14 @@ class NanoWorldModelScoring(unittest.TestCase):
         for clip in range(6):
             rows = list(base)
             rows[clip] = cand(dp=0.6)
-            self.assertAlmostEqual(self.ev.continuous_score(rows, base), self.score(cand(dp=0.1)), places=9)
+            self.assertAlmostEqual(
+                self.ev.continuous_score(rows, base), self.score(cand(dp=0.1)), places=9
+            )
         # Only the suite means matter: redistributing a metric across clips keeps the score.
         spread = [cand(dp=d) for d in (1.2, -0.6, 0.0, 0.3, 0.9, -0.6)]
-        self.assertAlmostEqual(self.ev.continuous_score(spread, base), self.score(cand(dp=0.2)), places=9)
+        self.assertAlmostEqual(
+            self.ev.continuous_score(spread, base), self.score(cand(dp=0.2)), places=9
+        )
         with self.assertRaises(ValueError):
             self.ev.continuous_score([dict(REF)] * 5, base)
 
@@ -91,7 +107,9 @@ class NanoWorldModelScoring(unittest.TestCase):
             {"psnr": 99.0, "ssim": 0.0, "lpips": 0.0},
         ):
             value = self.score(row)
-            self.assertTrue(math.isfinite(value) and 0.0 <= value <= 100.0, (row, value))
+            self.assertTrue(
+                math.isfinite(value) and 0.0 <= value <= 100.0, (row, value)
+            )
         self.assertGreater(self.score({"psnr": 99.0, "ssim": 1.0, "lpips": 0.0}), 99.9)
         self.assertLess(self.score({"psnr": 0.0, "ssim": -1.0, "lpips": 5.0}), 0.1)
 
@@ -119,22 +137,39 @@ class NanoWorldModelScoring(unittest.TestCase):
         self.assertLess(self.score(cand(-0.2, 1.0, 0.81)), 50.0)
         # Gains count fully inside the dead zone (every normalised gain >= -0.01).
         full = self.score(cand(1.0, 1.0, 1.0))
-        self.assertAlmostEqual(self.score(cand(1.0, 1.0, 2 ** (0.4 * 0.01))), full - 50 / 3 * math.tanh(0.01), places=9)
+        self.assertAlmostEqual(
+            self.score(cand(1.0, 1.0, 2 ** (0.4 * 0.01))),
+            full - 50 / 3 * math.tanh(0.01),
+            places=9,
+        )
 
     def test_pass_implies_above_reference(self):
         rng = random.Random(3407)
         for _ in range(500):
-            reference = [cand(rng.uniform(-3, 3), rng.uniform(0.5, 1.5), rng.uniform(0.5, 1.5)) for _ in range(6)]
-            candidate = [{"psnr": r["psnr"] + rng.uniform(1e-6, 1.0), "ssim": r["ssim"] + (1 - r["ssim"]) * rng.uniform(1e-6, 0.3),
-                          "lpips": r["lpips"] * rng.uniform(0.7, 1 - 1e-6)} for r in reference]
+            reference = [
+                cand(rng.uniform(-3, 3), rng.uniform(0.5, 1.5), rng.uniform(0.5, 1.5))
+                for _ in range(6)
+            ]
+            candidate = [
+                {
+                    "psnr": r["psnr"] + rng.uniform(1e-6, 1.0),
+                    "ssim": r["ssim"] + (1 - r["ssim"]) * rng.uniform(1e-6, 0.3),
+                    "lpips": r["lpips"] * rng.uniform(0.7, 1 - 1e-6),
+                }
+                for r in reference
+            ]
             self.assertGreater(self.ev.continuous_score(candidate, reference), 50.0)
 
     def test_equal_quality_noise_is_small(self):
         # Magnitudes of A100 reference-vs-reference repeats: |dPSNR| < 1e-4 dB, relative SSIM/LPIPS < 1e-4.
-        for dp, rs, rl in itertools.product((-1e-4, 1e-4), (1 - 1e-4, 1 + 1e-4), (1 - 1e-4, 1 + 1e-4)):
+        for dp, rs, rl in itertools.product(
+            (-1e-4, 1e-4), (1 - 1e-4, 1 + 1e-4), (1 - 1e-4, 1 + 1e-4)
+        ):
             self.assertLess(abs(self.score(cand(dp, rs, rl)) - 50.0), 0.02)
         # Much larger equal-code differences (0.01 dB, 0.1 %) stay within a quarter point.
-        for dp, rs, rl in itertools.product((-0.01, 0.01), (0.999, 1.001), (0.999, 1.001)):
+        for dp, rs, rl in itertools.product(
+            (-0.01, 0.01), (0.999, 1.001), (0.999, 1.001)
+        ):
             self.assertLess(abs(self.score(cand(dp, rs, rl)) - 50.0), 0.25)
 
     def evaluate(self, candidate, reference, role="final"):
@@ -144,8 +179,11 @@ class NanoWorldModelScoring(unittest.TestCase):
             patch.object(self.ev, "_candidate_run"),
             patch.object(self.ev, "run_sandboxes", return_value=[None]),
             patch.object(self.ev, "_candidate_latents", return_value=None),
-            patch.object(self.ev, "_trusted_rows",
-                         return_value={"reference": reference, "candidate": candidate}),
+            patch.object(
+                self.ev,
+                "_trusted_rows",
+                return_value={"reference": reference, "candidate": candidate},
+            ),
             patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": role}),
         ):
             return self.ev.evaluate(str(TASK / "repo"))
@@ -154,13 +192,17 @@ class NanoWorldModelScoring(unittest.TestCase):
         reference = [cand(0.1 * i) for i in range(6)]
         candidate = [cand(0.1 * i + 0.5, 0.9, 0.9) for i in range(6)]
         score, unbounded, _, metrics = self.evaluate(candidate, reference)
-        self.assertAlmostEqual(score, self.ev.continuous_score(candidate, reference), places=12)
+        self.assertAlmostEqual(
+            score, self.ev.continuous_score(candidate, reference), places=12
+        )
         self.assertEqual(score, unbounded)
         self.assertEqual(metrics["reference_score"], 50.0)
         self.assertAlmostEqual(metrics["margin"], score - 50.0, places=12)
         self.assertEqual(metrics["beats_reference"], 1)
         rows = metrics["per_workload_measurements"]
-        self.assertEqual([row["workload"] for row in rows], [f"clip-{i:02d}" for i in range(1, 7)])
+        self.assertEqual(
+            [row["workload"] for row in rows], [f"clip-{i:02d}" for i in range(1, 7)]
+        )
         self.assertEqual([row["candidate"] for row in rows], candidate)
         self.assertEqual([row["reference"] for row in rows], reference)
 
@@ -172,8 +214,12 @@ class NanoWorldModelScoring(unittest.TestCase):
             payload.write_bytes(b"payload")
             dataset.write_bytes(b"dataset")
             # A measured result: edit_scope accepted the patch and evaluate(tree) returned `value`.
-            scope = SimpleNamespace(ok=True, tree=root, changes=(), metrics={}, dispose=lambda: None)
-            edit_scope = SimpleNamespace(check=lambda *args, **kwargs: scope, CATEGORIES={})
+            scope = SimpleNamespace(
+                ok=True, tree=root, changes=(), metrics={}, dispose=lambda: None
+            )
+            edit_scope = SimpleNamespace(
+                check=lambda *args, **kwargs: scope, CATEGORIES={}
+            )
             with (
                 patch.object(v, "extract_payload"),
                 patch.object(v, "entrypoint_path", return_value=payload),
@@ -181,8 +227,15 @@ class NanoWorldModelScoring(unittest.TestCase):
                 patch.object(v, "stage_task", return_value=self.bundle),
                 patch.object(v, "load_evaluator", return_value=(lambda _: value, None)),
             ):
-                return v.verify(bundle=self.bundle, entrypoint="solution.patch", payload=payload, dataset=dataset,
-                                mode=mode, result_path=root / "result.json", evidence_path=root / "evidence.tar.zst")
+                return v.verify(
+                    bundle=self.bundle,
+                    entrypoint="solution.patch",
+                    payload=payload,
+                    dataset=dataset,
+                    mode=mode,
+                    result_path=root / "result.json",
+                    evidence_path=root / "evidence.tar.zst",
+                )
 
     def test_operator_rows_never_reach_solver_feedback(self):
         reference = [dict(REF)] * 4
@@ -190,9 +243,14 @@ class NanoWorldModelScoring(unittest.TestCase):
         value = self.evaluate(candidate, reference, role="train")
         self.assertIn("per_workload_measurements", value[3])
         train = self.verify(value, "train")
-        self.assertEqual(set(train["metrics"]), {"score_unbounded", "psnr", "ssim", "lpips", "beat_spec_progress"})
+        self.assertEqual(
+            set(train["metrics"]),
+            {"score_unbounded", "psnr", "ssim", "lpips", "beat_spec_progress"},
+        )
         self.assertNotIn("private_metrics", train)
-        final = self.verify(self.evaluate([cand(0.4, 0.95, 0.95)] * 6, [dict(REF)] * 6), "eval")
+        final = self.verify(
+            self.evaluate([cand(0.4, 0.95, 0.95)] * 6, [dict(REF)] * 6), "eval"
+        )
         self.assertEqual(final["metrics"], {"score_unbounded": final["raw_score"]})
         self.assertNotIn("per_workload_measurements", final["private_metrics"])
         self.assertEqual(final["private_metrics"]["reference_score"], 50.0)

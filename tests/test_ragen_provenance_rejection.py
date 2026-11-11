@@ -30,10 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TASK = Path(
     os.environ.get(
         "RAGEN_PROVENANCE_EXPORT",
-        str(
-            ROOT
-            / "tasks/problems/Machine Learning/ragen_multi_turn_rl"
-        ),
+        str(ROOT / "tasks/problems/Machine Learning/ragen_multi_turn_rl"),
     )
 )
 SHARED = ROOT / "tasks/shared"
@@ -80,8 +77,12 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             sys.modules.update(old_modules)
 
         self.addCleanup(restore)
-        sys.path[:0] = [str(TASK / "judge"), str(SHARED / "verifier"), str(SHARED / "lib"),
-                        str(SHARED / "verifier-gpu")]
+        sys.path[:0] = [
+            str(TASK / "judge"),
+            str(SHARED / "verifier"),
+            str(SHARED / "lib"),
+            str(SHARED / "verifier-gpu"),
+        ]
         for name in (
             "source_preflight",
             "private_execution",
@@ -139,7 +140,9 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 patch.object(e, "sandbox_workdir", return_value="/workspace/sandbox"),
                 patch.object(e, "_inspect", return_value=None),
                 patch.object(e, "_sandbox_run", return_value=None),
-                patch.object(e, "run_sandboxes", side_effect=lambda runs, into: list(runs)),
+                patch.object(
+                    e, "run_sandboxes", side_effect=lambda runs, into: list(runs)
+                ),
                 patch.object(e, "_machine", return_value={"cuda_available": True}),
                 patch.object(e, "_rollouts", side_effect=rollouts),
             ):
@@ -155,14 +158,20 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             dataset = root / "dataset"
             payload.write_bytes(b"p")
             dataset.write_bytes(b"d")
-            scope = SimpleNamespace(ok=True, tree=TASK / "repo", changes=(), metrics={},
-                                    dispose=lambda: None)
+            scope = SimpleNamespace(
+                ok=True,
+                tree=TASK / "repo",
+                changes=(),
+                metrics={},
+                dispose=lambda: None,
+            )
             with (
                 patch.object(v, "extract_payload"),
                 patch.object(v, "entrypoint_path", return_value=payload),
                 patch("edit_scope.check", return_value=scope),
                 patch.object(
-                    v, "load_evaluator",
+                    v,
+                    "load_evaluator",
                     return_value=(evaluate or (lambda _: value), None),
                 ),
             ):
@@ -186,10 +195,14 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             context = tree / CONTEXT
             context.parent.mkdir(parents=True)
             source = (TASK / "repo" / CONTEXT).read_text(encoding="utf-8")
-            context.write_text(source.replace("def formulate_rollouts", "def renamed"),
-                               encoding="utf-8")
-            self.assertEqual(e.check_tree(str(tree), str(TASK / "repo"), []),
-                             ("out_of_scope", [CONTEXT]))
+            context.write_text(
+                source.replace("def formulate_rollouts", "def renamed"),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                e.check_tree(str(tree), str(TASK / "repo"), []),
+                ("out_of_scope", [CONTEXT]),
+            )
             context.write_text("def broken(:\n", encoding="utf-8")
             self.assertIsNone(e.check_tree(str(tree), str(TASK / "repo"), []))
 
@@ -254,8 +267,12 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         value, roles = self.evaluate(self.failure.CandidateSourceError(diagnostic))
         self.assertEqual(roles, ["candidate"])
         self.assertEqual(value, (0.0, 0.0, PREFLIGHT, {}))
-        self.assertEqual(self.verify(value, "train")["metrics"], {"score_unbounded": 0.0})
-        value, _ = self.evaluate(self.failure.CandidateSourceError(diagnostic), role="final")
+        self.assertEqual(
+            self.verify(value, "train")["metrics"], {"score_unbounded": 0.0}
+        )
+        value, _ = self.evaluate(
+            self.failure.CandidateSourceError(diagnostic), role="final"
+        )
         self.assertEqual(value[3], {"source_diagnostic": diagnostic})
 
     def test_closed_diagnostics_do_not_accept_untrusted_text(self):
@@ -316,11 +333,17 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 evidence = outputs / "work/.frontier-private-execution"
                 evidence.mkdir(parents=True, mode=0o700)
                 (evidence / "provenance-rejection.json").write_text(
-                    json.dumps({"schema": "ragen.action-provenance/v1", "reason": reason}))
+                    json.dumps(
+                        {"schema": "ragen.action-provenance/v1", "reason": reason}
+                    )
+                )
                 done = sandbox.StepResult(0, False, 1.0)
                 result = sandbox.SandboxResult(
-                    [done, done, done, sandbox.StepResult(1, False, 9.0)], outputs, False,
-                    [None] * 4)
+                    [done, done, done, sandbox.StepResult(1, False, 9.0)],
+                    outputs,
+                    False,
+                    [None] * 4,
+                )
                 if declared:
                     with self.assertRaises(self.failure.CandidateSourceError) as caught:
                         e._rollouts(result, {}, "candidate", 271828)
@@ -335,54 +358,93 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         sandbox = sys.modules["fcs2_verifier_gpu"]
         done = sandbox.StepResult(0, False, 1.0)
         lost = sandbox.SandboxResult(
-            [done, done, done, sandbox.StepResult(None, False, 30.0, lost_session=True)], None,
-            False, [None] * 4)
+            [
+                done,
+                done,
+                done,
+                sandbox.StepResult(None, False, 30.0, lost_session=True),
+            ],
+            None,
+            False,
+            [None] * 4,
+        )
         evidence = {}
         with self.assertRaises(self.private.ExecutionEvidenceError):
             self.evaluator._rollouts(lost, evidence, "candidate", 271828)
-        self.assertEqual(self.evaluator._candidate_run_failure(evidence),
-                         "the submission's PPO run lost its session")
+        self.assertEqual(
+            self.evaluator._candidate_run_failure(evidence),
+            "the submission's PPO run lost its session",
+        )
         self.assertIsNone(self.evaluator._machine(lost, "candidate"))
         with self.assertRaises(self.evaluator.InfrastructureError):
             self.evaluator._machine(lost, "reference")
         # From the build step on submitted code has run: the submission's; before, infrastructure.
         build = sandbox.SandboxResult(
-            [done, sandbox.StepResult(None, False, 3.0, lost_session=True), None, None], None,
-            False, [None] * 4)
+            [done, sandbox.StepResult(None, False, 3.0, lost_session=True), None, None],
+            None,
+            False,
+            [None] * 4,
+        )
         self.assertIsNone(self.evaluator._machine(build, "candidate"))
         evidence = {}
         with self.assertRaises(self.private.ExecutionEvidenceError):
             self.evaluator._rollouts(build, evidence, "candidate", 271828)
         self.assertIn("training_session_lost", evidence["candidate"]["issues"])
         device = sandbox.SandboxResult(
-            [sandbox.StepResult(None, False, 3.0, lost_session=True), None, None, None], None,
-            False, [None] * 4)
+            [sandbox.StepResult(None, False, 3.0, lost_session=True), None, None, None],
+            None,
+            False,
+            [None] * 4,
+        )
         with self.assertRaises(self.evaluator.InfrastructureError):
             self.evaluator._machine(device, "candidate")
 
-    def test_scoring_uses_the_replayed_groups_and_a_replay_mismatch_is_invalid_evidence(self):
+    def test_scoring_uses_the_replayed_groups_and_a_replay_mismatch_is_invalid_evidence(
+        self,
+    ):
         sandbox = sys.modules["fcs2_verifier_gpu"]
         e = self.evaluator
         reported = observations(success=1.0, reward=9.0)
         replayed = observations(success=0.25, reward=-0.5)["groups"]
         with tempfile.TemporaryDirectory() as tmp:
             outputs = Path(tmp)
-            (outputs / "work/.frontier-private-execution").mkdir(parents=True, mode=0o700)
-            (outputs / "work/.frontier_rollouts.json").write_text(json.dumps(
-                {**reported, "structural_ok": True, "episodes": [{"env_id": 0}]}))
+            (outputs / "work/.frontier-private-execution").mkdir(
+                parents=True, mode=0o700
+            )
+            (outputs / "work/.frontier_rollouts.json").write_text(
+                json.dumps(
+                    {**reported, "structural_ok": True, "episodes": [{"env_id": 0}]}
+                )
+            )
             done = sandbox.StepResult(0, False, 1.0)
             result = sandbox.SandboxResult([done] * 4, outputs, False, [None] * 4)
             valid = {"valid": True, "issues": []}
-            with (patch.object(e, "collect_execution", side_effect=lambda _: dict(valid, issues=[])),
-                  patch.object(e, "_replay", return_value={"groups": replayed, "mismatch": None})):
+            with (
+                patch.object(
+                    e, "collect_execution", side_effect=lambda _: dict(valid, issues=[])
+                ),
+                patch.object(
+                    e, "_replay", return_value={"groups": replayed, "mismatch": None}
+                ),
+            ):
                 payload = e._rollouts(result, {}, "candidate", 271828)
             self.assertEqual(payload["groups"], replayed)
             self.assertEqual(payload["reported_groups"], reported["groups"])
             evidence = {}
-            with (patch.object(e, "collect_execution", side_effect=lambda _: dict(valid, issues=[])),
-                  patch.object(e, "_replay", return_value={"groups": replayed,
-                                                           "mismatch": "episode 3: initial state"}),
-                  self.assertRaises(self.private.ExecutionEvidenceError)):
+            with (
+                patch.object(
+                    e, "collect_execution", side_effect=lambda _: dict(valid, issues=[])
+                ),
+                patch.object(
+                    e,
+                    "_replay",
+                    return_value={
+                        "groups": replayed,
+                        "mismatch": "episode 3: initial state",
+                    },
+                ),
+                self.assertRaises(self.private.ExecutionEvidenceError),
+            ):
                 e._rollouts(result, evidence, "candidate", 271828)
             self.assertIn("rollout_replay_mismatch", evidence["candidate"]["issues"])
 
@@ -391,14 +453,19 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             done = sandbox.StepResult(0, False, 1.0)
             result = sandbox.SandboxResult(
-                [done, done, done, sandbox.StepResult(None, True, 755.0)], Path(tmp), False,
-                [None] * 4)
+                [done, done, done, sandbox.StepResult(None, True, 755.0)],
+                Path(tmp),
+                False,
+                [None] * 4,
+            )
             evidence = {}
             with self.assertRaises(self.private.ExecutionEvidenceError):
                 self.evaluator._rollouts(result, evidence, "candidate", 271828)
         self.assertIn("training_process_timeout", evidence["candidate"]["issues"])
-        self.assertEqual(self.evaluator._candidate_run_failure(evidence),
-                         "the submission's PPO run exceeded its 750-second deadline")
+        self.assertEqual(
+            self.evaluator._candidate_run_failure(evidence),
+            "the submission's PPO run exceeded its 750-second deadline",
+        )
 
     # ------------------------------------------------ unscored failures
 
@@ -433,12 +500,22 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
 
     def test_candidate_crash_or_timeout_is_a_scored_zero_after_the_reference(self):
         for issue, message in (
-                ("training_process_failed", "the submission's PPO run failed"),
-                ("training_process_timeout",
-                 "the submission's PPO run exceeded its 750-second deadline")):
+            ("training_process_failed", "the submission's PPO run failed"),
+            (
+                "training_process_timeout",
+                "the submission's PPO run exceeded its 750-second deadline",
+            ),
+        ):
             with self.subTest(issue=issue):
-                error = self.private.ExecutionEvidenceError({"candidate": {
-                    "valid": False, "process_returncode": 1, "issues": [issue]}})
+                error = self.private.ExecutionEvidenceError(
+                    {
+                        "candidate": {
+                            "valid": False,
+                            "process_returncode": 1,
+                            "issues": [issue],
+                        }
+                    }
+                )
                 value, roles = self.evaluate(error, observations())
                 self.assertEqual(roles, ["candidate", "reference"])
                 self.assertEqual(value, (0.0, 0.0, message, {}))
@@ -449,7 +526,9 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         with self.assertRaises(self.evaluator.InfrastructureError) as caught:
             self.evaluate(observations(), RuntimeError("reference failed"))
         evidence = caught.exception.private_execution_evidence
-        self.assertEqual(evidence["candidate"], {"valid": True, "process_returncode": 0})
+        self.assertEqual(
+            evidence["candidate"], {"valid": True, "process_returncode": 0}
+        )
         self.assertIsNone(evidence["reference"])
 
     def test_generic_structure_runtime_error_has_no_candidate_marker(self):
@@ -469,15 +548,26 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
         record.add(event="structure", status="failed")
         record.add(event="candidate_rejection", reason=reason)
         record.failure("structure", self.private.CandidateStructureError(reason))
-        return self.private.ExecutionEvidenceError({"candidate": {
-            "valid": False, "process_returncode": 1, "diagnostics": record.record,
-        }})
+        return self.private.ExecutionEvidenceError(
+            {
+                "candidate": {
+                    "valid": False,
+                    "process_returncode": 1,
+                    "diagnostics": record.record,
+                }
+            }
+        )
 
     def test_typed_candidate_rejection_scores_zero_in_train_and_final(self):
         for mode, role in (("train", "development"), ("eval", "final")):
-            value, roles = self.evaluate(self.typed_failure(), observations(), role=role)
+            value, roles = self.evaluate(
+                self.typed_failure(), observations(), role=role
+            )
             self.assertEqual(roles, ["candidate", "reference"])
-            self.assertEqual(value[:3], (0.0, 0.0, "candidate training DataProto violates the task contract"))
+            self.assertEqual(
+                value[:3],
+                (0.0, 0.0, "candidate training DataProto violates the task contract"),
+            )
             if mode == "train":
                 self.assertEqual(value[3], {})
             else:
@@ -504,7 +594,9 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
 
     def test_typed_rejection_requires_successful_exact_reference(self):
         with self.assertRaises(self.evaluator.InfrastructureError):
-            self.evaluate(self.typed_failure(), RuntimeError("trusted reference failed"))
+            self.evaluate(
+                self.typed_failure(), RuntimeError("trusted reference failed")
+            )
         failure = self.typed_failure()
         with self.assertRaises(self.private.ExecutionEvidenceError):
             self.evaluate(failure, failure)
@@ -516,12 +608,17 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
             if fault == "drop":
                 candidate["diagnostics"]["dropped_events"] = 1
             elif fault == "duplicate":
-                candidate["diagnostics"]["events"].append({"event":"candidate_rejection", "reason":"terminal_reward"})
+                candidate["diagnostics"]["events"].append(
+                    {"event": "candidate_rejection", "reason": "terminal_reward"}
+                )
             elif fault == "bad_returncode":
                 candidate["process_returncode"] = 137
             else:
                 candidate["diagnostics"]["events"][2]["reason"] = "unknown"
-            with self.subTest(fault=fault), self.assertRaises((self.private.ExecutionEvidenceError, ValueError)):
+            with (
+                self.subTest(fault=fault),
+                self.assertRaises((self.private.ExecutionEvidenceError, ValueError)),
+            ):
                 self.evaluate(failure, observations())
 
     # ------------------------------------------------- measured scoring
@@ -541,7 +638,9 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
 
     def test_differing_initial_states_are_a_scored_zero(self):
         value, _ = self.evaluate(observations(state="other"), observations())
-        self.assertEqual(value, (0.0, 0.0, "candidate and reference initial states differ", {}))
+        self.assertEqual(
+            value, (0.0, 0.0, "candidate and reference initial states differ", {})
+        )
 
     # --------------------------------------------- emitted tensor guard
 
@@ -554,8 +653,11 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 (folder / filename).write_text("# pristine fixture\n")
             with patch.object(self.evaluator, "install_execution"):
                 self.evaluator._install_instrumentation(
-                    root, PurePosixPath("/workspace/sandbox/work"),
-                    PurePosixPath("/workspace/sandbox/observer"), 1)
+                    root,
+                    PurePosixPath("/workspace/sandbox/work"),
+                    PurePosixPath("/workspace/sandbox/observer"),
+                    1,
+                )
             source = (folder / "ctx_manager.py").read_text()
             tree = ast.parse(source)
             compile(tree, "ctx_manager.py", "exec")
@@ -565,7 +667,9 @@ class RagenProvenanceRejectionTests(unittest.TestCase):
                 if isinstance(node, ast.FunctionDef)
                 and node.name == "_frontier_validate_result"
             )
-            raises = [node for node in ast.walk(validator) if isinstance(node, ast.Raise)]
+            raises = [
+                node for node in ast.walk(validator) if isinstance(node, ast.Raise)
+            ]
             self.assertTrue(raises)
             for node in raises:
                 self.assertIsInstance(node.exc, ast.Call)

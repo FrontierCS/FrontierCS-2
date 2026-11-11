@@ -27,16 +27,29 @@ import task_manifest  # noqa: E402
 
 class PopulationObserverClockTests(unittest.TestCase):
     def setUp(self):
-        self.tree = ast.parse((DEPS / "queue_boundary/src/queue_observer_entry.py").read_text())
-        function = next(node for node in self.tree.body
-                        if isinstance(node, ast.FunctionDef) and node.name == "validate_deadline")
+        self.tree = ast.parse(
+            (DEPS / "queue_boundary/src/queue_observer_entry.py").read_text()
+        )
+        function = next(
+            node
+            for node in self.tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "validate_deadline"
+        )
         namespace = {}
-        exec(compile(ast.Module(body=[function], type_ignores=[]), "observer", "exec"), namespace)
+        exec(
+            compile(ast.Module(body=[function], type_ignores=[]), "observer", "exec"),
+            namespace,
+        )
         self.validate = namespace["validate_deadline"]
 
     def test_gpu_bound_matches_each_published_suite(self):
-        runtime = yaml.safe_load((task_manifest.judge_bundle(TASK) / "config.yaml").read_text())["runtime"]
-        for suite, field in (("development", "timeout_seconds"), ("final", "final_timeout_seconds")):
+        runtime = yaml.safe_load(
+            (task_manifest.judge_bundle(TASK) / "config.yaml").read_text()
+        )["runtime"]
+        for suite, field in (
+            ("development", "timeout_seconds"),
+            ("final", "final_timeout_seconds"),
+        ):
             ceiling = runtime[field]
             with self.subTest(suite=suite):
                 self.validate(1, "cuda:0", suite)
@@ -64,21 +77,45 @@ class PopulationObserverClockTests(unittest.TestCase):
 
     def test_trusted_launcher_passes_suite_independently_of_phase(self):
         tree = ast.parse((DEPS / "run_workload.py").read_text())
-        argv = next(node.value for node in ast.walk(tree)
-                    if isinstance(node, ast.Assign)
-                    and any(isinstance(target, ast.Name) and target.id == "argv" for target in node.targets))
+        argv = next(
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Assign)
+            and any(
+                isinstance(target, ast.Name) and target.id == "argv"
+                for target in node.targets
+            )
+        )
         values = argv.elts
-        suite_flag = next(index for index, node in enumerate(values)
-                          if isinstance(node, ast.Constant) and node.value == "--suite")
+        suite_flag = next(
+            index
+            for index, node in enumerate(values)
+            if isinstance(node, ast.Constant) and node.value == "--suite"
+        )
         self.assertIsInstance(values[suite_flag + 1], ast.Name)
         self.assertEqual(values[suite_flag + 1].id, "suite")
-        main = next(node for node in self.tree.body
-                    if isinstance(node, ast.FunctionDef) and node.name == "main")
-        suite_arg = next(node for node in ast.walk(main)
-                         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
-                         and node.func.attr == "add_argument" and node.args
-                         and isinstance(node.args[0], ast.Constant) and node.args[0].value == "--suite")
-        self.assertTrue(next(node.value.value for node in suite_arg.keywords if node.arg == "required"))
+        main = next(
+            node
+            for node in self.tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "main"
+        )
+        suite_arg = next(
+            node
+            for node in ast.walk(main)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "add_argument"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "--suite"
+        )
+        self.assertTrue(
+            next(
+                node.value.value
+                for node in suite_arg.keywords
+                if node.arg == "required"
+            )
+        )
 
     def run_main(self, suite, seconds, phase="train"):
         with tempfile.TemporaryDirectory() as temporary:
@@ -93,31 +130,56 @@ class PopulationObserverClockTests(unittest.TestCase):
             report = root / "report.json"
             queue_import = mock.Mock(return_value=contextlib.nullcontext())
             spec = importlib.util.spec_from_file_location(
-                "population_actual_observer_main", DEPS / "queue_boundary/src/queue_observer_entry.py"
+                "population_actual_observer_main",
+                DEPS / "queue_boundary/src/queue_observer_entry.py",
             )
             module = importlib.util.module_from_spec(spec)
-            argv = [str(spec.origin), "--phase", phase, "--trusted-repo", str(root),
-                    "--queue-source", str(root),
-                    "--queue-python", sys.executable,
-                    "--observer", str(observer), "--report", str(report),
-                    "--seconds", str(seconds), "--device", "cuda:0"]
+            argv = [
+                str(spec.origin),
+                "--phase",
+                phase,
+                "--trusted-repo",
+                str(root),
+                "--queue-source",
+                str(root),
+                "--queue-python",
+                sys.executable,
+                "--observer",
+                str(observer),
+                "--report",
+                str(report),
+                "--seconds",
+                str(seconds),
+                "--device",
+                "cuda:0",
+            ]
             if suite is not None:
                 argv += ["--suite", suite]
             original_path = sys.path[:]
             try:
-                with mock.patch.dict(sys.modules, {"observer_queue": SimpleNamespace(
-                        trusted_queue_import=queue_import)}):
+                with mock.patch.dict(
+                    sys.modules,
+                    {
+                        "observer_queue": SimpleNamespace(
+                            trusted_queue_import=queue_import
+                        )
+                    },
+                ):
                     spec.loader.exec_module(module)
-                with mock.patch.object(module, "bind_parent_lifetime"), \
-                     mock.patch.object(module.time, "monotonic", return_value=1000), \
-                     mock.patch.object(sys, "argv", argv):
+                with (
+                    mock.patch.object(module, "bind_parent_lifetime"),
+                    mock.patch.object(module.time, "monotonic", return_value=1000),
+                    mock.patch.object(sys, "argv", argv),
+                ):
                     try:
                         module.main()
                     except BaseException:
                         self.assertFalse(queue_import.called)
                         self.assertFalse(report.exists())
                         raise
-                self.assertEqual(queue_import.call_args.kwargs["deadline"], 1000 + seconds)
+                self.assertEqual(
+                    queue_import.call_args.kwargs["deadline"], 1000 + seconds
+                )
                 self.assertTrue(queue_import.call_args.kwargs["allow_cuda"])
                 self.assertTrue(json.loads(report.read_text())["observed"])
             finally:

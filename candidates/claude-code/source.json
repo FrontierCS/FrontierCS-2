@@ -1,15 +1,15 @@
 {
-  "platform_source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "dockerfile": {
     "source": "candidate-overlays/claude-code/Dockerfile",
-    "sha256": "sha256:c6935c597e2768621bcd45a3a992f6d45f5ef26c7872190de7090236ba6d20d4",
-    "local_sha256": "sha256:025769c75a6b9ad26b63afaacc0f1044011a2a1a442ff0526f7f518c49ad27dd"
+    "sha256": "sha256:e345f19815daa0e096f72378e6772b4294a647ba7a2244d29f72536ddfbfb828",
+    "local_sha256": "sha256:ccfa6e24d0da916665c085a8a267dd730fc153130f676666d1063f5b8d03967f"
   },
   "files": {
     "launcher.py": {
       "source": "candidate-overlays/claude-code/launcher.py",
-      "sha256": "sha256:dfe98d6040b0a6a05aa4bb223f6a7683cadc02ee1f8d2959b3dcc8d68cfa3f87",
-      "local_sha256": "sha256:c4cb052e5bc8172d2d53b8c911b9565e3a0f6a07b86053abf49f06478914ca6a"
+      "sha256": "sha256:fd3471a69143dbfe9d03012e84db4974fea1e6df6f648e1a9bee894ebee5d93e",
+      "local_sha256": "sha256:c22340903c2b727ae7349fd4dfba0e3b238e16e8b6c71af5c7d5826f639f3dec"
     },
     "submit/frontier_submit.py": {
       "source": "candidate-overlays/codex/frontier_submit.py",

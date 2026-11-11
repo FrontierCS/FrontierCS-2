@@ -1,26 +1,22 @@
 {
-  "platform_source_commit": "341949767be14411465bbb704ce87e8453773965",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "dockerfile": {
     "source": "candidate-overlays/kimi-code/Dockerfile",
-    "sha256": "sha256:a26280ad41c44b35cc3fa7e8716bcfcaae9f7ed14bff0030a80af8dc921cad66",
-    "local_sha256": "sha256:d575159c1fd3754042c3cf1d005a4c58c016f6634c738d082c6e2de11068fdde"
+    "sha256": "sha256:d2a9cf51b068156a59bb7e379cbf07b314eceeaee87d8e20cb0b253f977f8bf0",
+    "local_sha256": "sha256:86de8ca09df7868c84168993ab2cb3f06641c875d474f3b390e0069d725dd785"
   },
   "files": {
     "launcher.py": {
       "source": "candidate-overlays/kimi-code/launcher.py",
-      "sha256": "sha256:26642bc5f8f8952515616e90fbaaa9173aa2c42dfcd590ca9136de4dd7b2cbe8"
+      "sha256": "sha256:731b2cb4d3e2ce692e07fa879ddb1df33cb5c2b266e4bf48b78d6a76c3f5b8d0"
     },
     "submit/frontier_submit.py": {
       "source": "candidate-overlays/codex/frontier_submit.py",
-      "sha256": "sha256:75acb40e013f498edd905fce2edfaea35c154b080de79cf676b0e3c19f71492f"
-    },
-    "submit/SKILL.md": {
-      "source": "candidate-overlays/kimi-code/skills/frontier-submit/SKILL.md",
-      "sha256": "sha256:b5ff0cb4bf470695844561b26b2375ca48df1c6ae5169df3ccff482a45d5751d"
+      "sha256": "sha256:f4cbc551acd10a729e5cade5cc3a70b653d9aee1dee4b1cbfeb20b3208df6f00"
     },
     "gpu-helper/frontier_gpu.py": {
       "source": "candidate-overlays/codex/frontier_gpu.py",
-      "sha256": "sha256:a27d7b3ddbd9f85fd149e4f34ec79cbbccda1fbe4d1c0261f80c07f08ba36f49"
+      "sha256": "sha256:c6e26af56f6fb1b81d89c684959394eb31ae884400581ceab2146a835bdc52d2"
     },
     "gpu-helper/frontier_gpu_connect_proxy.py": {
       "source": "candidate-overlays/codex/frontier_gpu_connect_proxy.py",
@@ -29,6 +25,10 @@
     "gpu-helper/SKILL.md": {
       "source": "candidate-overlays/kimi-code/skills/frontier-gpu/SKILL.md",
       "sha256": "sha256:1b9abc2aaa500e4e6cb4084c80e446d8a98f88703b5edf81c9154df7a8c23b0e"
+    },
+    "submit/SKILL.md": {
+      "source": "candidate-overlays/kimi-code/skills/frontier-submit/SKILL.md",
+      "sha256": "sha256:b5ff0cb4bf470695844561b26b2375ca48df1c6ae5169df3ccff482a45d5751d"
     }
   }
 }

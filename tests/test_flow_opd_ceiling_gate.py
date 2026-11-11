@@ -9,10 +9,15 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = Path(os.environ.get("FRONTIER_FLOW_OPD_EXPORT", str(
-    ROOT / "tasks/problems/Machine Learning/flow_opd"
-)))
-spec = importlib.util.spec_from_file_location("flow_opd_scoring", TASK / "judge/judge/scoring.py")
+TASK = Path(
+    os.environ.get(
+        "FRONTIER_FLOW_OPD_EXPORT",
+        str(ROOT / "tasks/problems/Machine Learning/flow_opd"),
+    )
+)
+spec = importlib.util.spec_from_file_location(
+    "flow_opd_scoring", TASK / "judge/judge/scoring.py"
+)
 scoring = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(scoring)
 
@@ -22,11 +27,15 @@ IDS = [f"final-{i}" for i in range(len(REF))]
 
 
 def run(candidate_values):
-    reference = dict(zip(IDS, REF))
-    candidate = dict(zip(IDS, candidate_values))
+    reference = dict(zip(IDS, REF, strict=True))
+    candidate = dict(zip(IDS, candidate_values, strict=False))
     _, _, _, metrics = scoring.aggregate(
-        IDS, candidate, reference,
-        candidate_valid=True, reference_valid=True, final=True,
+        IDS,
+        candidate,
+        reference,
+        candidate_valid=True,
+        reference_valid=True,
+        final=True,
     )
     return metrics
 
@@ -45,12 +54,19 @@ class FlowOpdCeilingGate(unittest.TestCase):
         candidate = [1.0, 1.0, 0.5, 0.5, 0.9, 0.9, 0.9, 0.5]
         metrics = run(candidate)
         self.assertEqual(metrics["beats_reference"], 1)
-        self.assertTrue(all(r["metrics"]["ocr_reward"] for r in metrics["beat_spec_workload_passes"]))
+        self.assertTrue(
+            all(
+                r["metrics"]["ocr_reward"] for r in metrics["beat_spec_workload_passes"]
+            )
+        )
 
     def test_reference_copy_still_fails_on_non_ceiling_rows(self):
         metrics = run(list(REF))
         self.assertEqual(metrics["beats_reference"], 0)
-        passes = {r["workload"]: r["metrics"]["ocr_reward"] for r in metrics["beat_spec_workload_passes"]}
+        passes = {
+            r["workload"]: r["metrics"]["ocr_reward"]
+            for r in metrics["beat_spec_workload_passes"]
+        }
         # The two ceiling rows tie at 1.0 and pass; every below-ceiling row fails.
         self.assertTrue(passes["final-0"] and passes["final-1"])
         self.assertFalse(any(passes[i] for i in IDS[2:]))
@@ -59,7 +75,10 @@ class FlowOpdCeilingGate(unittest.TestCase):
         candidate = [0.9999, 1.0, 0.5, 0.5, 0.9, 0.9, 0.9, 0.5]
         metrics = run(candidate)
         self.assertEqual(metrics["beats_reference"], 0)
-        passes = {r["workload"]: r["metrics"]["ocr_reward"] for r in metrics["beat_spec_workload_passes"]}
+        passes = {
+            r["workload"]: r["metrics"]["ocr_reward"]
+            for r in metrics["beat_spec_workload_passes"]
+        }
         self.assertFalse(passes["final-0"])
 
 

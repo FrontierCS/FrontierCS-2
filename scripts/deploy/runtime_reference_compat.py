@@ -3,6 +3,7 @@
 This is an exact, release-bound transition, not a repository or digest allowlist.
 Other releases continue through the ordinary mirrored upgrade path.
 """
+
 from __future__ import annotations
 
 import copy
@@ -26,8 +27,10 @@ REVIEWED_OLD_INIT = (
 
 
 def preserve_reviewed_public_images(
-    config: Mapping[str, Any], configmap: Mapping[str, Any],
-    deployment: Mapping[str, Any], images: dict[str, Any],
+    config: Mapping[str, Any],
+    configmap: Mapping[str, Any],
+    deployment: Mapping[str, Any],
+    images: dict[str, Any],
 ) -> bool:
     """Select the whole reviewed tuple, or reject an unreviewed same-pin tuple.
 
@@ -57,30 +60,37 @@ def preserve_reviewed_public_images(
         name: f"{config['network']['registry_cluster_ip']}:5000/frontier/{name}@{config['images'][name]['digest']}"
         for name in ("management", "driver")
     }
-    if (live["management"] == mirrored["management"]
-            and live["driver"] == mirrored["driver"]
-            and live["key_worker"] in (None, mirrored["management"])):
+    if (
+        live["management"] == mirrored["management"]
+        and live["driver"] == mirrored["driver"]
+        and live["key_worker"] in (None, mirrored["management"])
+    ):
         return False
     expected = {**REVIEWED_REFERENCES, "key_worker": REVIEWED_REFERENCES["management"]}
     if live != expected or config["application"]["commit"] != REVIEWED_COMMIT:
         raise DeployError("unreviewed same-digest runtime references")
     for name in ("management", "driver"):
         source = config["images"][name]
-        if (source["repository"] != REVIEWED_REFERENCES[name].split("@")[0]
-                or source["digest"] != REVIEWED_DIGESTS[name]
-                or source["tag"] != "sha-" + REVIEWED_COMMIT
-                or source["reference"] != REVIEWED_REFERENCES[name]
-                or images[name]["digest"] != REVIEWED_DIGESTS[name]):
+        if (
+            source["repository"] != REVIEWED_REFERENCES[name].split("@")[0]
+            or source["digest"] != REVIEWED_DIGESTS[name]
+            or source["tag"] != "sha-" + REVIEWED_COMMIT
+            or source["reference"] != REVIEWED_REFERENCES[name]
+            or images[name]["digest"] != REVIEWED_DIGESTS[name]
+        ):
             raise DeployError("reviewed public runtime image pin or commit differs")
-    if any(e.get("name") in {
-        "MANAGEMENT_DRIVER_IMAGE", "MANAGEMENT_LITELLM_KEY_WORKER_IMAGE"
-    } for e in management[0].get("env", [])):
+    if any(
+        e.get("name")
+        in {"MANAGEMENT_DRIVER_IMAGE", "MANAGEMENT_LITELLM_KEY_WORKER_IMAGE"}
+        for e in management[0].get("env", [])
+    ):
         raise DeployError("reviewed public runtime rejects image environment overrides")
     for name in ("management", "driver"):
         source = config["images"][name]
         images[name] = {
             "tag": source["repository"] + ":" + source["tag"],
-            "digest": source["digest"], "reference": source["reference"],
+            "digest": source["digest"],
+            "reference": source["reference"],
             "source_sha256": source["digest"],
         }
     return True
@@ -110,7 +120,9 @@ def require_reviewed_route_only_patches(configmap, deployment, data, patches):
         current = deployment
         for part in path.strip("/").split("/"):
             part = part.replace("~1", "/").replace("~0", "~")
-            current = current[int(part)] if isinstance(current, list) else current.get(part)
+            current = (
+                current[int(part)] if isinstance(current, list) else current.get(part)
+            )
             if current is None:
                 break
         value = patch.get("value")
@@ -120,18 +132,24 @@ def require_reviewed_route_only_patches(configmap, deployment, data, patches):
         elif path == "/spec/template/spec/initContainers":
             expected = copy.deepcopy(current)
             if not isinstance(expected, list):
-                raise DeployError("reviewed public repair requires an existing initializer")
+                raise DeployError(
+                    "reviewed public repair requires an existing initializer"
+                )
             for init in expected:
                 if init.get("name") == "gateway-artifact-retention":
                     init["image"] = REVIEWED_REFERENCES["management"]
-                    for key, default in (("terminationMessagePath", "/dev/termination-log"),
-                                         ("terminationMessagePolicy", "File")):
+                    for key, default in (
+                        ("terminationMessagePath", "/dev/termination-log"),
+                        ("terminationMessagePolicy", "File"),
+                    ):
                         if init.get(key) == default:
                             init.pop(key)
         else:
             expected = current
         if patch["op"] not in ("add", "replace") or value != expected:
-            raise DeployError("reviewed public repair has extra Deployment changes: " + path)
+            raise DeployError(
+                "reviewed public repair has extra Deployment changes: " + path
+            )
 
 
 def reviewed_public_runtime_records(config, records) -> bool:
@@ -141,15 +159,18 @@ def reviewed_public_runtime_records(config, records) -> bool:
     for name in ("management", "driver"):
         source = config["images"][name]
         repository = REVIEWED_REFERENCES[name].split("@")[0]
-        if (source["repository"] != repository
-                or source["tag"] != "sha-" + REVIEWED_COMMIT
-                or source["digest"] != REVIEWED_DIGESTS[name]
-                or source["reference"] != REVIEWED_REFERENCES[name]
-                or records.get(name) != {
-                    "tag": repository + ":sha-" + REVIEWED_COMMIT,
-                    "digest": REVIEWED_DIGESTS[name],
-                    "reference": REVIEWED_REFERENCES[name],
-                    "source_sha256": REVIEWED_DIGESTS[name],
-                }):
+        if (
+            source["repository"] != repository
+            or source["tag"] != "sha-" + REVIEWED_COMMIT
+            or source["digest"] != REVIEWED_DIGESTS[name]
+            or source["reference"] != REVIEWED_REFERENCES[name]
+            or records.get(name)
+            != {
+                "tag": repository + ":sha-" + REVIEWED_COMMIT,
+                "digest": REVIEWED_DIGESTS[name],
+                "reference": REVIEWED_REFERENCES[name],
+                "source_sha256": REVIEWED_DIGESTS[name],
+            }
+        ):
             return False
     return True

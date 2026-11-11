@@ -30,9 +30,11 @@ import task_manifest  # noqa: E402
 
 VERIFIER_DIR = REPO / "tasks/shared/verifier"
 TEMPLATE = REPO / "tasks/template/Theory/template_task"
-SECRETS = {"FRONTIER_VERIFIER_TOKEN": "drv-bearer-0d3c9e",
-           "FRONTIER_MODEL_PROXY_TOKEN": "proxy-bearer-51aa",
-           "FRONTIER_EXAMPLE_API_KEY": "api-key-77b2"}
+SECRETS = {
+    "FRONTIER_VERIFIER_TOKEN": "drv-bearer-0d3c9e",
+    "FRONTIER_MODEL_PROXY_TOKEN": "proxy-bearer-51aa",
+    "FRONTIER_EXAMPLE_API_KEY": "api-key-77b2",
+}
 
 PROBE = r'''
 import ctypes, json, os, subprocess, sys
@@ -95,7 +97,9 @@ class SecretsNeverReachTaskCode(unittest.TestCase):
         (self.bundle / "check_tree.py").unlink(missing_ok=True)
         self.out = self.scratch / "out"
         self.out.mkdir()
-        self.secrets = self.scratch / "secrets.json"  # not in the environment: it would leak them
+        self.secrets = (
+            self.scratch / "secrets.json"
+        )  # not in the environment: it would leak them
         self.secrets.write_text(json.dumps(SECRETS))
         body = (TEMPLATE / "judge/reference.patch").read_bytes()
         self.payload = self.scratch / "payload.tar"
@@ -109,7 +113,8 @@ class SecretsNeverReachTaskCode(unittest.TestCase):
 
     def verify(self, **extra) -> dict:
         environment = {
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"), "LANG": "C.UTF-8",
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "LANG": "C.UTF-8",
             "FRONTIER_PAYLOAD_PATH": str(self.payload),
             "FRONTIER_DATASET_PATH": str(TEMPLATE / "datasets/train.json"),
             "FRONTIER_VERIFICATION_MODE": "train",
@@ -118,13 +123,22 @@ class SecretsNeverReachTaskCode(unittest.TestCase):
             "FRONTIER_VERIFIER_SCRATCH": str(self.scratch),
             "PROBE_OUT": str(self.out / "probe.json"),
             "PROBE_SECRETS_FILE": str(self.secrets),
-            **SECRETS, **extra,
+            **SECRETS,
+            **extra,
         }
-        completed = subprocess.run([sys.executable, "-I", "-c", RUN, str(VERIFIER_DIR), str(self.bundle)],
-                                   env=environment, capture_output=True, text=True, timeout=300)
+        completed = subprocess.run(
+            [sys.executable, "-I", "-c", RUN, str(VERIFIER_DIR), str(self.bundle)],
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
         result = json.loads((self.out / "result.json").read_text())
-        self.assertEqual((completed.returncode, result["status"]), (0, "passed"),
-                         completed.stderr + json.dumps(result))
+        self.assertEqual(
+            (completed.returncode, result["status"]),
+            (0, "passed"),
+            completed.stderr + json.dumps(result),
+        )
         return json.loads((self.out / "probe.json").read_text())
 
     def assert_unreachable_outside_the_handle(self, report: dict):
@@ -135,12 +149,16 @@ class SecretsNeverReachTaskCode(unittest.TestCase):
         self.assertEqual(report["shell"], [])
         self.assertEqual(report["child"]["proc"]["environ"], False)
         self.assertEqual(report["child"]["proc"]["mem"], False)
-        self.assertNotIn(report["child"]["proc"]["cmdline"], [[s] for s in SECRETS.values()])
+        self.assertNotIn(
+            report["child"]["proc"]["cmdline"], [[s] for s in SECRETS.values()]
+        )
 
     def test_cpu_task_code_sees_no_secret_at_all(self):
         report = self.verify()
         self.assert_unreachable_outside_the_handle(report)
-        self.assertIsNone(report["handle"])  # nothing in the process needs it: discarded
+        self.assertIsNone(
+            report["handle"]
+        )  # nothing in the process needs it: discarded
 
     def test_model_gateway_task_keeps_only_the_sealed_bearer(self):
         inventory = self.scratch / "inventory.json"

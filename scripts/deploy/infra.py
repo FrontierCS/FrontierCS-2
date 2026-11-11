@@ -194,8 +194,10 @@ def require_int(value: Any, path: str, minimum: int, maximum: int) -> int:
 
 def runtime_source_commit(config: Mapping[str, Any], role: str) -> str:
     """Use the validated per-role source for staged runtime releases."""
-    return config["application"].get("runtime_source_commits", {}).get(
-        role, config["application"]["commit"]
+    return (
+        config["application"]
+        .get("runtime_source_commits", {})
+        .get(role, config["application"]["commit"])
     )
 
 
@@ -614,9 +616,15 @@ def render_bootstrap_manifest(
             "policyTypes": ["Ingress", "Egress"],
             "ingress": [
                 {
-                    "from": [{"podSelector": {
-                        "matchLabels": platform_labels(config, "frontier-task-seed")
-                    }}],
+                    "from": [
+                        {
+                            "podSelector": {
+                                "matchLabels": platform_labels(
+                                    config, "frontier-task-seed"
+                                )
+                            }
+                        }
+                    ],
                     "ports": [{"protocol": "TCP", "port": 5000}],
                 },
                 {
@@ -649,17 +657,25 @@ def render_bootstrap_manifest(
             "labels": platform_labels(config, "frontier-task-seed"),
         },
         "spec": {
-            "podSelector": {"matchLabels": platform_labels(config, "frontier-task-seed")},
+            "podSelector": {
+                "matchLabels": platform_labels(config, "frontier-task-seed")
+            },
             "policyTypes": ["Egress"],
-            "egress": [{
-                "to": [
-                    {"podSelector": {"matchLabels": {
-                        "frontier.dev/network-role": "registry",
-                    }}},
-                    {"ipBlock": {"cidr": f"{network['registry_cluster_ip']}/32"}},
-                ],
-                "ports": [{"protocol": "TCP", "port": 5000}],
-            }],
+            "egress": [
+                {
+                    "to": [
+                        {
+                            "podSelector": {
+                                "matchLabels": {
+                                    "frontier.dev/network-role": "registry",
+                                }
+                            }
+                        },
+                        {"ipBlock": {"cidr": f"{network['registry_cluster_ip']}/32"}},
+                    ],
+                    "ports": [{"protocol": "TCP", "port": 5000}],
+                }
+            ],
         },
     }
     return k8s_list(
@@ -704,7 +720,10 @@ def validate_runtime_images(
         # a port, so remove only the final colon-delimited component.
         repository = tag.rsplit(":", 1)[0]
         if (
-            not (tag.startswith(endpoint) or (reviewed_public and name in ("management", "driver")))
+            not (
+                tag.startswith(endpoint)
+                or (reviewed_public and name in ("management", "driver"))
+            )
             or not DIGEST_RE.fullmatch(digest)
             or reference != f"{repository}@{digest}"
         ):
@@ -742,7 +761,9 @@ def validate_api_cidrs(cidrs: Any) -> list[str]:
     for cidr in cidrs:
         try:
             network = (
-                ipaddress.ip_network(cidr, strict=True) if isinstance(cidr, str) else None
+                ipaddress.ip_network(cidr, strict=True)
+                if isinstance(cidr, str)
+                else None
             )
         except ValueError:
             network = None
@@ -1521,29 +1542,50 @@ def render_runtime_manifest(
         )
     if "cpu_machines" in config["execution"]:
         # Verifier CPU machines on Kubernetes: their node group and the site envelope.
-        config_data.update(cpu_machine_management_env(config["execution"]["cpu_machines"]))
+        config_data.update(
+            cpu_machine_management_env(config["execution"]["cpu_machines"])
+        )
     required_tasks = config["execution"].get("verifier_placement_required_task_ids", [])
     if required_tasks:
         config_data["MANAGEMENT_VERIFIER_PLACEMENT_REQUIRED_TASK_IDS"] = json.dumps(
             sorted(required_tasks), separators=(",", ":")
         )
     if not simulator_bootstrap:
-        config_data['MANAGEMENT_EKS_STATUS_CLUSTER'] = outputs['cluster_name']
-        config_data['MANAGEMENT_EKS_STATUS_REGION'] = config['site']['aws_region']
-        management_role = next(item for item in items if item['kind'] == 'ClusterRole'
-                               and item['metadata']['name'] == 'frontier-management-preview')
-        management_role['rules'].append(
-            {'apiGroups': [''], 'resources': ['nodes'], 'verbs': ['get', 'list']})
+        config_data["MANAGEMENT_EKS_STATUS_CLUSTER"] = outputs["cluster_name"]
+        config_data["MANAGEMENT_EKS_STATUS_REGION"] = config["site"]["aws_region"]
+        management_role = next(
+            item
+            for item in items
+            if item["kind"] == "ClusterRole"
+            and item["metadata"]["name"] == "frontier-management-preview"
+        )
+        management_role["rules"].append(
+            {"apiGroups": [""], "resources": ["nodes"], "verbs": ["get", "list"]}
+        )
         from .manual_capacity import capacity_settings, observer_rbac
+
         capacity = capacity_settings(config)
         if capacity is not None:
-            if capacity['cluster_arn'].rsplit('/', 1)[-1] != outputs['cluster_name']:
-                raise DeployError('manual capacity cluster differs from Terraform outputs')
-            if capacity['c6i']['node_group_arn'].split('/')[2] != outputs['cpu_node_group_name']:
-                raise DeployError('manual c6i pool must be the exact Terraform CPU nodegroup')
-            if any(capacity[role]['node_group_arn'].split('/')[2] == outputs['system_node_group_name'] for role in ('m6i', 'c6i')):
-                raise DeployError('manual capacity cannot target the system nodegroup')
-            config_data['MANAGEMENT_PREVIEW_CAPACITY'] = json.dumps(capacity, separators=(',', ':'))
+            if capacity["cluster_arn"].rsplit("/", 1)[-1] != outputs["cluster_name"]:
+                raise DeployError(
+                    "manual capacity cluster differs from Terraform outputs"
+                )
+            if (
+                capacity["c6i"]["node_group_arn"].split("/")[2]
+                != outputs["cpu_node_group_name"]
+            ):
+                raise DeployError(
+                    "manual c6i pool must be the exact Terraform CPU nodegroup"
+                )
+            if any(
+                capacity[role]["node_group_arn"].split("/")[2]
+                == outputs["system_node_group_name"]
+                for role in ("m6i", "c6i")
+            ):
+                raise DeployError("manual capacity cannot target the system nodegroup")
+            config_data["MANAGEMENT_PREVIEW_CAPACITY"] = json.dumps(
+                capacity, separators=(",", ":")
+            )
             items.extend(observer_rbac())
         items.extend(management_diagnostics_rbac(config))
         items.extend(management_api_routes_rbac())
@@ -1572,7 +1614,9 @@ def render_runtime_manifest(
             {
                 "MANAGEMENT_MODAL_ENVIRONMENT": modal["environment"],
                 "MANAGEMENT_MODAL_APP_NAME": modal["app_name"],
-                "MANAGEMENT_MODAL_ECR_PULL_SECRET_REF": modal.get("ecr_pull_secret_ref", ""),
+                "MANAGEMENT_MODAL_ECR_PULL_SECRET_REF": modal.get(
+                    "ecr_pull_secret_ref", ""
+                ),
                 "MANAGEMENT_MODAL_CREDENTIALS_SECRET": modal["credentials_secret"],
                 "MANAGEMENT_MODAL_INBOUND_CIDRS": ",".join(
                     f"{value}/32" for value in sorted(set(addresses))
@@ -2563,19 +2607,29 @@ def litellm_worker_resources(config, outputs, labels):
         {
             "apiVersion": "rbac.authorization.k8s.io/v1",
             "kind": "ClusterRole",
-            "metadata": {"name": "frontier-key-worker-namespace-reader", "labels": labels},
-            "rules": [{"apiGroups": [""], "resources": ["namespaces"], "verbs": ["get"]}],
+            "metadata": {
+                "name": "frontier-key-worker-namespace-reader",
+                "labels": labels,
+            },
+            "rules": [
+                {"apiGroups": [""], "resources": ["namespaces"], "verbs": ["get"]}
+            ],
         },
         {
             "apiVersion": "rbac.authorization.k8s.io/v1",
             "kind": "ClusterRoleBinding",
-            "metadata": {"name": "frontier-key-worker-namespace-reader", "labels": labels},
+            "metadata": {
+                "name": "frontier-key-worker-namespace-reader",
+                "labels": labels,
+            },
             "roleRef": {
                 "apiGroup": "rbac.authorization.k8s.io",
                 "kind": "ClusterRole",
                 "name": "frontier-key-worker-namespace-reader",
             },
-            "subjects": [{"kind": "ServiceAccount", "name": name, "namespace": namespace}],
+            "subjects": [
+                {"kind": "ServiceAccount", "name": name, "namespace": namespace}
+            ],
         },
         {
             "apiVersion": "v1",
@@ -2703,7 +2757,14 @@ def litellm_worker_resources(config, outputs, labels):
                     },
                     {
                         # AWS policy enforcement can observe the Service VIP before DNAT.
-                        "to": [{"ipBlock": {"cidr": config["network"]["litellm_cluster_ip"] + "/32"}}],
+                        "to": [
+                            {
+                                "ipBlock": {
+                                    "cidr": config["network"]["litellm_cluster_ip"]
+                                    + "/32"
+                                }
+                            }
+                        ],
                         "ports": [{"protocol": "TCP", "port": 4000}],
                     },
                 ],
@@ -3417,16 +3478,21 @@ def validate_cpu_machines(value: Any) -> None:
     (frontier-contracts CpuMachinePlacement) and the envelope one Run namespace may hold
     (Management's CpuMachineEnvelope)."""
     if not isinstance(value, dict) or set(value) != {
-        "placement", "max_instances", "max_cpu_millis", "max_memory_bytes"
+        "placement",
+        "max_instances",
+        "max_cpu_millis",
+        "max_memory_bytes",
     }:
         raise DeployError(
             "execution.cpu_machines requires exactly placement, max_instances, max_cpu_millis "
             "and max_memory_bytes"
         )
     placement = value["placement"]
-    if not isinstance(placement, dict) or "node_selector" not in placement or not set(
-        placement
-    ) <= {"node_selector", "tolerations"}:
+    if (
+        not isinstance(placement, dict)
+        or "node_selector" not in placement
+        or not set(placement) <= {"node_selector", "tolerations"}
+    ):
         raise DeployError(
             "execution.cpu_machines.placement requires node_selector and optional tolerations"
         )
@@ -3435,8 +3501,10 @@ def validate_cpu_machines(value: Any) -> None:
         not isinstance(selector, dict)
         or not selector
         or any(
-            not isinstance(key, str) or not 1 <= len(key) <= 253
-            or not isinstance(label, str) or len(label) > 63
+            not isinstance(key, str)
+            or not 1 <= len(key) <= 253
+            or not isinstance(label, str)
+            or len(label) > 63
             for key, label in selector.items()
         )
     ):
@@ -3474,7 +3542,9 @@ def cpu_machine_management_env(value: Mapping[str, Any]) -> dict[str, str]:
     canonical JSON CpuMachinePlacement::canonical() prints (serde: fields in declaration order,
     maps sorted, no whitespace, no ASCII escaping)."""
     validate_cpu_machines(value)
-    placement = {"node_selector": dict(sorted(value["placement"]["node_selector"].items()))}
+    placement = {
+        "node_selector": dict(sorted(value["placement"]["node_selector"].items()))
+    }
     if "tolerations" in value["placement"]:
         placement["tolerations"] = value["placement"]["tolerations"]
     return {

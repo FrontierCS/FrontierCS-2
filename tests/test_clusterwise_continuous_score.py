@@ -15,9 +15,22 @@ EVALUATOR = ROOT / "tasks/problems/Arch/clusterwise_spgemm/judge/evaluator.py"
 # extract the standard-library-only score function.
 tree = ast.parse(EVALUATOR.read_text(encoding="utf-8"))
 namespace = {"math": math, "statistics": statistics}
-exec(compile(ast.Module(body=[node for node in tree.body if isinstance(node, ast.FunctionDef)
-                              and node.name == "_continuous_score"], type_ignores=[]),
-             str(EVALUATOR), "exec"), namespace)
+exec(
+    compile(
+        ast.Module(
+            body=[
+                node
+                for node in tree.body
+                if isinstance(node, ast.FunctionDef)
+                and node.name == "_continuous_score"
+            ],
+            type_ignores=[],
+        ),
+        str(EVALUATOR),
+        "exec",
+    ),
+    namespace,
+)
 score = namespace["_continuous_score"]
 
 
@@ -39,10 +52,15 @@ class ContinuousScoreTests(unittest.TestCase):
 
     def test_finite_extremes_stay_bounded_without_ratio_overflow(self):
         smallest = math.nextafter(0.0, 1.0)
-        largest = float.fromhex('0x1.fffffffffffffp+1023')
-        for candidate, reference in ((1.0, 1e17), (1.0, 1e307),
-                                     (1e-308, 1e308), (1e308, 1e-308),
-                                     (smallest, largest), (largest, smallest)):
+        largest = float.fromhex("0x1.fffffffffffffp+1023")
+        for candidate, reference in (
+            (1.0, 1e17),
+            (1.0, 1e307),
+            (1e-308, 1e308),
+            (1e308, 1e-308),
+            (smallest, largest),
+            (largest, smallest),
+        ):
             with self.subTest(candidate=candidate, reference=reference):
                 value = score([candidate], [reference])
                 self.assertTrue(math.isfinite(value))
@@ -52,12 +70,17 @@ class ContinuousScoreTests(unittest.TestCase):
 
     def test_balanced_extreme_ratios_retain_parity(self):
         smallest = math.nextafter(0.0, 1.0)
-        largest = float.fromhex('0x1.fffffffffffffp+1023')
+        largest = float.fromhex("0x1.fffffffffffffp+1023")
         self.assertEqual(score([smallest, largest], [largest, smallest]), 50.0)
 
     def test_rejects_incomplete_or_invalid_measurements(self):
-        for candidate, reference in (([], []), ([1.0], [1.0, 2.0]), ([0.0], [1.0]),
-                                     ([1.0], [math.inf]), ([math.nan], [1.0])):
+        for candidate, reference in (
+            ([], []),
+            ([1.0], [1.0, 2.0]),
+            ([0.0], [1.0]),
+            ([1.0], [math.inf]),
+            ([math.nan], [1.0]),
+        ):
             with self.assertRaises(ValueError):
                 score(candidate, reference)
 

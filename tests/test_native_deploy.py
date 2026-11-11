@@ -14,13 +14,13 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
-from preview import publication as references
 import reference_parity as parity
-from preview import images as image_ops
-from preview import publication
+import task_layers  # noqa: E402
+from deploy import images as image_ops
+from deploy import publication
+from deploy import publication as references
 from task_selection import select_tasks
 from test_task_seeding import mirrored_images, resolved_catalog
-import task_layers  # noqa: E402
 
 
 class NativeDeployTests(unittest.TestCase):
@@ -362,38 +362,69 @@ class CpuMachinePublicationTests(unittest.TestCase):
         # The resolved catalog as is: this test is about the TaskConfig, not the baselines.
         catalog = resolved_catalog()
         mirrors = mirrored_images(catalog)
-        task = copy.deepcopy(next(t for t in catalog["tasks"] if t["name"] == "residual_state_advancement"))
+        task = copy.deepcopy(
+            next(
+                t for t in catalog["tasks"] if t["name"] == "residual_state_advancement"
+            )
+        )
         name = task["name"]
         digest = "sha256:" + "e" * 64
-        task["agent_cpu_runner_image"] = {"repository": f"docker.io/joyemang33/fcs2-task-{name}-agent-runner",
-                                          "tag": "source-x", "digest": digest}
+        task["agent_cpu_runner_image"] = {
+            "repository": f"docker.io/joyemang33/fcs2-task-{name}-agent-runner",
+            "tag": "source-x",
+            "digest": digest,
+        }
         mirror = copy.deepcopy(mirrors[name])
         mirror["agent_cpu_runner_image"] = {
             "reference": f"172.20.0.50:5000/frontier/tasks/{name.replace('_', '-')}/agent-cpu-runner@{digest}",
-            "digest": digest}
+            "digest": digest,
+        }
         definitions = copy.deepcopy(deploy.TASK_DEFINITIONS)
-        quota = {"shapes": [{"cpu_millis": 2000, "memory_bytes": 8 << 30}], "max_instances": 1,
-                 "max_seconds": 3000, "final_seconds": 1500}
+        quota = {
+            "shapes": [{"cpu_millis": 2000, "memory_bytes": 8 << 30}],
+            "max_instances": 1,
+            "max_seconds": 3000,
+            "final_seconds": 1500,
+        }
         definitions[name].update(verifier_cpu=quota, cpu_runner_images=["agent_cpu"])
         document = deploy.task_version_document(task, mirror, definitions=definitions)
         config = document["driver_config"]
         self.assertEqual(config["quota"]["verifier_cpu"], quota)
-        self.assertEqual(config["images"]["agent_cpu_runner"], {
-            "tag": f"docker.io/joyemang33/fcs2-task-{name}-agent-runner:source-x", "digest": digest,
-            "reference": mirror["agent_cpu_runner_image"]["reference"]})
+        self.assertEqual(
+            config["images"]["agent_cpu_runner"],
+            {
+                "tag": f"docker.io/joyemang33/fcs2-task-{name}-agent-runner:source-x",
+                "digest": digest,
+                "reference": mirror["agent_cpu_runner_image"]["reference"],
+            },
+        )
         # Another identity than the task without CPU machines.
         original = next(t for t in catalog["tasks"] if t["name"] == name)
         plain = deploy.task_version_document(original, mirrors[name])
-        self.assertNotEqual(plain["driver_config"]["task_version_id"], config["task_version_id"])
+        self.assertNotEqual(
+            plain["driver_config"]["task_version_id"], config["task_version_id"]
+        )
         # A cluster copy of another digest is refused.
         mirror["agent_cpu_runner_image"]["digest"] = "sha256:" + "f" * 64
-        with self.assertRaisesRegex(deploy.DeployError, "mirrored agent_cpu_runner_image is not the catalog digest"):
+        with self.assertRaisesRegex(
+            deploy.DeployError,
+            "mirrored agent_cpu_runner_image is not the catalog digest",
+        ):
             deploy.task_version_document(task, mirror, definitions=definitions)
 
     def test_import_lists_one_runner_role_per_kind(self):
         import import_task
+
         definition = {"cpu_runner_images": ["agent_cpu", "verifier_cpu"]}
-        self.assertEqual(import_task.image_roles(definition, False),
-                         ["agent", "verifier", "datasets", "agent_cpu_runner", "verifier_cpu_runner"])
+        self.assertEqual(
+            import_task.image_roles(definition, False),
+            [
+                "agent",
+                "verifier",
+                "datasets",
+                "agent_cpu_runner",
+                "verifier_cpu_runner",
+            ],
+        )
         for role in ("agent_cpu_runner", "verifier_cpu_runner"):
             self.assertIn(role, import_task.ROLE_KEYS)

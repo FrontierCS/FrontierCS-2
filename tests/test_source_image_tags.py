@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from preview.infra import DeployError, source_image_tag_matches, validate_image
+from deploy.infra import DeployError, source_image_tag_matches, validate_image
 
 
 class SourceImageTagTests(unittest.TestCase):

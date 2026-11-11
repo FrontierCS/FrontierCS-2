@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from preview import cli, infra
+from deploy import cli, infra
 from test_frontier_deploy import ROOT, Fixture, frontier_deploy
 
 
@@ -22,7 +22,7 @@ def apply_patch(document, patches):
         if operation["op"] == "test":
             if parent[key] != operation["value"]:
                 raise AssertionError("resourceVersion conflict")
-        elif operation['op'] == 'remove':
+        elif operation["op"] == "remove":
             del parent[key]
         else:
             parent[key] = copy.deepcopy(operation["value"])
@@ -32,8 +32,9 @@ def apply_patch(document, patches):
 class RetentionUpgradeTests(unittest.TestCase):
     def fixture(self, *, modal_gpu=False, raw_config=None):
         config = frontier_deploy.validate_config(
-            raw_config if raw_config is not None else
-            json.loads((ROOT / "config/site.example.json").read_text())
+            raw_config
+            if raw_config is not None
+            else json.loads((ROOT / "config/site.example.json").read_text())
         )
         config["features"]["modal_gpu"] = modal_gpu
         images = Fixture.images(config)
@@ -72,22 +73,43 @@ class RetentionUpgradeTests(unittest.TestCase):
         _, images, cm, dep = self.fixture()
         pod = dep["spec"]["template"]["spec"]
         management = next(c for c in pod["containers"] if c["name"] == "management")
-        management["resources"] = {"requests": {"cpu": "100m", "memory": "1Gi"},
-                                   "limits": {"cpu": "1", "memory": "1Gi"}}
-        next(v for v in pod["volumes"] if v["name"] == "tmp")["emptyDir"]["sizeLimit"] = "64Mi"
-        other = {"name": "other", "image": "unchanged", "resources": {"limits": {"memory": "32Mi"}}}
+        management["resources"] = {
+            "requests": {"cpu": "100m", "memory": "1Gi"},
+            "limits": {"cpu": "1", "memory": "1Gi"},
+        }
+        next(v for v in pod["volumes"] if v["name"] == "tmp")["emptyDir"][
+            "sizeLimit"
+        ] = "64Mi"
+        other = {
+            "name": "other",
+            "image": "unchanged",
+            "resources": {"limits": {"memory": "32Mi"}},
+        }
         pod["containers"].append(other)
         original = copy.deepcopy(dep)
-        _, patches, _ = cli.runtime_upgrade_patches(cm, dep, images, large_verifier_results=True)
+        _, patches, _ = cli.runtime_upgrade_patches(
+            cm, dep, images, large_verifier_results=True
+        )
         after = apply_patch(dep, patches)["spec"]["template"]["spec"]
         self.assertEqual(dep, original)
         self.assertEqual(after["containers"][-1], other)
-        self.assertEqual(after["containers"][0]["resources"], infra.management_result_resources())
-        self.assertEqual(next(v for v in after["volumes"] if v["name"] == "tmp")["emptyDir"]["sizeLimit"], "34Gi")
-        self.assertEqual([v for v in after["volumes"] if v["name"] != "tmp"],
-                         [v for v in pod["volumes"] if v["name"] != "tmp"])
+        self.assertEqual(
+            after["containers"][0]["resources"], infra.management_result_resources()
+        )
+        self.assertEqual(
+            next(v for v in after["volumes"] if v["name"] == "tmp")["emptyDir"][
+                "sizeLimit"
+            ],
+            "34Gi",
+        )
+        self.assertEqual(
+            [v for v in after["volumes"] if v["name"] != "tmp"],
+            [v for v in pod["volumes"] if v["name"] != "tmp"],
+        )
 
-    def test_large_result_upgrade_rejects_non_disk_or_mismatched_temporary_storage(self):
+    def test_large_result_upgrade_rejects_non_disk_or_mismatched_temporary_storage(
+        self,
+    ):
         _, images, cm, dep = self.fixture()
         for mutation in ("memory", "persistent", "missing", "wrong-mount"):
             with self.subTest(mutation=mutation):
@@ -102,9 +124,17 @@ class RetentionUpgradeTests(unittest.TestCase):
                 elif mutation == "missing":
                     pod["volumes"].remove(tmp)
                 else:
-                    next(m for m in pod["containers"][0]["volumeMounts"] if m["name"] == "tmp")["mountPath"] = "/custom"
-                with self.assertRaisesRegex(infra.DeployError, "disk-backed Management /tmp"):
-                    cli.runtime_upgrade_patches(cm, altered, images, large_verifier_results=True)
+                    next(
+                        m
+                        for m in pod["containers"][0]["volumeMounts"]
+                        if m["name"] == "tmp"
+                    )["mountPath"] = "/custom"
+                with self.assertRaisesRegex(
+                    infra.DeployError, "disk-backed Management /tmp"
+                ):
+                    cli.runtime_upgrade_patches(
+                        cm, altered, images, large_verifier_results=True
+                    )
 
     def test_existing_site_acquires_paired_roots_and_private_init_without_other_changes(
         self,
@@ -409,7 +439,9 @@ class RetentionUpgradeTests(unittest.TestCase):
             ],
         )
 
-    def check_supported_upgrade(self, modal_gpu, *, retain_existing_init=False, expected_failure=False):
+    def check_supported_upgrade(
+        self, modal_gpu, *, retain_existing_init=False, expected_failure=False
+    ):
         config, images, cm, dep = self.fixture(modal_gpu=modal_gpu)
         if not retain_existing_init:
             for key in (
@@ -418,8 +450,15 @@ class RetentionUpgradeTests(unittest.TestCase):
             ):
                 cm["data"].pop(key)
             dep["spec"]["template"]["spec"].pop("initContainers")
-        observed = {"configmap": cm, "deployment": dep, "networkpolicy": {"spec": {}},
-                    "clusterrole": {"metadata": {"uid": "role-uid", "resourceVersion": "9"}, "rules": []}}
+        observed = {
+            "configmap": cm,
+            "deployment": dep,
+            "networkpolicy": {"spec": {}},
+            "clusterrole": {
+                "metadata": {"uid": "role-uid", "resourceVersion": "9"},
+                "rules": [],
+            },
+        }
 
         def discover(*args, receipt_path=None):
             if receipt_path:
@@ -501,7 +540,9 @@ class RetentionUpgradeTests(unittest.TestCase):
                 ) as cached,
                 mock.patch.object(cli, "run_command", side_effect=command),
                 mock.patch.object(cli, "deploy_litellm") as litellm,
-                mock.patch.object(cli, "platform_outputs", return_value=Fixture.outputs(config)),
+                mock.patch.object(
+                    cli, "platform_outputs", return_value=Fixture.outputs(config)
+                ),
                 mock.patch.object(cli, "api_json", return_value={}),
                 mock.patch.object(cli, "state_directory", return_value=root),
             ):
@@ -509,22 +550,52 @@ class RetentionUpgradeTests(unittest.TestCase):
                     with self.assertRaises(infra.DeployError):
                         cli.upgrade_runtime(config, root, root / "kubeconfig")
                     cached.assert_not_called()
-                    self.assertFalse(any(call.args[1] == cli.REGISTRY_SERVICE for call in forwards.call_args_list))
-                    self.assertFalse(any(any(verb in argv for verb in ("copy", "apply", "patch")) for argv in calls))
+                    self.assertFalse(
+                        any(
+                            call.args[1] == cli.REGISTRY_SERVICE
+                            for call in forwards.call_args_list
+                        )
+                    )
+                    self.assertFalse(
+                        any(
+                            any(verb in argv for verb in ("copy", "apply", "patch"))
+                            for argv in calls
+                        )
+                    )
                     self.assertFalse((root / "runtime-images.json").exists())
                     return
                 cli.upgrade_runtime(config, root, root / "kubeconfig")
             if retain_existing_init:
                 cached.assert_not_called()
-                self.assertFalse(any(call.args[1] == cli.REGISTRY_SERVICE for call in forwards.call_args_list))
+                self.assertFalse(
+                    any(
+                        call.args[1] == cli.REGISTRY_SERVICE
+                        for call in forwards.call_args_list
+                    )
+                )
                 self.assertFalse(any("copy" in argv for argv in calls))
                 persisted = json.loads((root / "runtime-images.json").read_text())
-                self.assertEqual(infra.validate_runtime_images(persisted, config), persisted)
-                receipt = json.loads(next(root.glob("runtime-upgrade-*/accepted.json")).read_text())
+                self.assertEqual(
+                    infra.validate_runtime_images(persisted, config), persisted
+                )
+                receipt = json.loads(
+                    next(root.glob("runtime-upgrade-*/accepted.json")).read_text()
+                )
                 for name in ("management", "driver"):
-                    self.assertEqual(receipt["images"][name]["reference"], config["images"][name]["reference"])
-                self.assertEqual(observed["configmap"]["data"]["MANAGEMENT_DRIVER_IMAGE"], config["images"]["driver"]["reference"])
-                self.assertEqual(observed["configmap"]["data"]["MANAGEMENT_LITELLM_KEY_WORKER_IMAGE"], config["images"]["management"]["reference"])
+                    self.assertEqual(
+                        receipt["images"][name]["reference"],
+                        config["images"][name]["reference"],
+                    )
+                self.assertEqual(
+                    observed["configmap"]["data"]["MANAGEMENT_DRIVER_IMAGE"],
+                    config["images"]["driver"]["reference"],
+                )
+                self.assertEqual(
+                    observed["configmap"]["data"][
+                        "MANAGEMENT_LITELLM_KEY_WORKER_IMAGE"
+                    ],
+                    config["images"]["management"]["reference"],
+                )
             self.assertEqual(idle.call_count, 3)
             litellm.assert_not_called()
             self.assertEqual(gateway.call_count, 3)

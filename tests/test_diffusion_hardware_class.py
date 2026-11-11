@@ -1,4 +1,5 @@
 """Diffusion admits hosts by the sealed hardware class; selection is in the judge."""
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import base64
@@ -12,7 +13,8 @@ from pathlib import Path
 from unittest import mock
 
 TASK = Path(__file__).resolve().parents[1] / (
-    "tasks/problems/Robotics/diffusion_policy_cpu")
+    "tasks/problems/Robotics/diffusion_policy_cpu"
+)
 PATCHED = "6.12.111-136.204.amzn2023.x86_64"
 
 
@@ -27,14 +29,21 @@ class HardwareClassTests(unittest.TestCase):
             sys.path[:] = old_path
 
         self.addCleanup(restore)
-        for name in ("hardware_admission", "hardware_dataset", "native_data", "private_context",
-                     "task_guards"):
+        for name in (
+            "hardware_admission",
+            "hardware_dataset",
+            "native_data",
+            "private_context",
+            "task_guards",
+        ):
             sys.modules.pop(name, None)
         sys.path.insert(0, str(TASK / "judge"))
         from hardware_admission import admits
         from native_data import read_dataset
+
         self.admits, self.read_dataset = admits, read_dataset
         import hardware_dataset
+
         self.selector = vars(hardware_dataset)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -50,19 +59,34 @@ class HardwareClassTests(unittest.TestCase):
 
     def select(self, native, identity):
         scratch = Path(tempfile.mkdtemp(dir=self.scratch))
-        return self.selector["select_dataset"](TASK / "datasets" / f"{native}.json", native, identity,
-                                               scratch, self.read_dataset)
+        return self.selector["select_dataset"](
+            TASK / "datasets" / f"{native}.json",
+            native,
+            identity,
+            scratch,
+            self.read_dataset,
+        )
 
     def admitted(self, identity):
-        return [dict(identity), dict(identity, kernel=PATCHED),
-                dict(identity, kernel="6.12.110-135.202.amzn2023.x86_64"), dict(identity, affinity=[2, 3])]
+        return [
+            dict(identity),
+            dict(identity, kernel=PATCHED),
+            dict(identity, kernel="6.12.110-135.202.amzn2023.x86_64"),
+            dict(identity, affinity=[2, 3]),
+        ]
 
     def rejected(self, identity):
-        return [dict(identity, cpu_models=["Intel(R) Xeon(R) Platinum 8175M CPU @ 2.50GHz"]),
-                dict(identity, kernel="6.1.155-176.282.amzn2023.x86_64"),
-                dict(identity, kernel="6.12.111-136.204.amzn2.x86_64"), dict(identity, kernel="7.0.0-1014-aws"),
-                dict(identity, architecture="aarch64"), dict(identity, affinity=[0]),
-                dict(identity, affinity=[0, 1, 2])]
+        return [
+            dict(
+                identity, cpu_models=["Intel(R) Xeon(R) Platinum 8175M CPU @ 2.50GHz"]
+            ),
+            dict(identity, kernel="6.1.155-176.282.amzn2023.x86_64"),
+            dict(identity, kernel="6.12.111-136.204.amzn2.x86_64"),
+            dict(identity, kernel="7.0.0-1014-aws"),
+            dict(identity, architecture="aarch64"),
+            dict(identity, affinity=[0]),
+            dict(identity, affinity=[0, 1, 2]),
+        ]
 
     def test_rule(self):
         sealed = self.sealed("train")
@@ -86,18 +110,30 @@ class HardwareClassTests(unittest.TestCase):
     def test_runtime_check_admits_the_class_and_keeps_the_sealed_constants(self):
         import private_context as pc
         from native_data import materialize_dataset
+
         sealed = self.sealed("train")
-        with materialize_dataset(self.select("train", sealed), "dev", self.scratch) as root:
+        with materialize_dataset(
+            self.select("train", sealed), "dev", self.scratch
+        ) as root:
             # The judge source and runtime are no longer bound to the seal (owner decision,
             # the hardware class and the sealed constants still are.
             with mock.patch.object(pc, "verify_cgroup", lambda policy: None):
                 for actual in self.admitted(sealed):
-                    with mock.patch.object(pc, "hardware_identity", lambda: actual):
+                    with mock.patch.object(
+                        pc, "hardware_identity", lambda actual=actual: actual
+                    ):
                         context = pc.load_context(root=root, mode="dev")
-                        constants = pc.accepted_calibrations(context)["dev"]["constants"]
-                        self.assertEqual(constants["public0"]["mean_predict_action_seconds"], 0.20545783716411198)
+                        constants = pc.accepted_calibrations(context)["dev"][
+                            "constants"
+                        ]
+                        self.assertEqual(
+                            constants["public0"]["mean_predict_action_seconds"],
+                            0.20545783716411198,
+                        )
                 for actual in self.rejected(sealed):
-                    with mock.patch.object(pc, "hardware_identity", lambda: actual):
+                    with mock.patch.object(
+                        pc, "hardware_identity", lambda actual=actual: actual
+                    ):
                         with self.assertRaisesRegex(Exception, "sealed hardware class"):
                             pc.load_context(root=root, mode="dev")
 

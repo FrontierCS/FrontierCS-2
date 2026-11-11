@@ -2,11 +2,13 @@
 
 Evaluated models: **Kimi K3** (effort `high`) and **Kimi K2.7** (effort `medium`).
 
-The overlay installs the official `@moonshot-ai/kimi-code` **0.31.0** CLI from
+The overlay installs the official `@moonshot-ai/kimi-code` **2.3.3** CLI from
 npm and runs it in non-interactive prompt mode with its native Agent Skills
-support. The pinned bundle caps foreground Bash at 300 seconds; the Dockerfile
-widens that one constant to 3600 and fails if the upstream bundle no longer
-contains exactly one match.
+support. The pinned bundle caps foreground Bash at 300 seconds at three
+enforcement sites, one prompt variable and three model-facing description
+strings; the Dockerfile widens each exact form to 3600 and fails if the upstream
+bundle no longer contains the expected number of matches. K3 and K2.7 were
+evaluated with Kimi Code 0.31.0 images.
 
 This recipe is the attested `frontier.gpu-helper/v3` Candidate: its image pin,
 source receipt and registry file readback are in
@@ -21,7 +23,7 @@ their sources differ from this directory.
 ## Build
 
 ```bash
-docker build --platform linux/amd64 -t frontier-candidate-kimi-code:0.31.0 candidates/kimi-code
+docker build --platform linux/amd64 -t frontier-candidate-kimi-code:2.3.3 candidates/kimi-code
 ```
 
 ## Launcher contract

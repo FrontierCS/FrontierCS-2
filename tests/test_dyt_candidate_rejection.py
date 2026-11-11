@@ -40,15 +40,19 @@ class DynamicTanhCandidateRejectionTests(unittest.TestCase):
         cls.addClassCleanup(lambda: sys.path.__setitem__(slice(None), old_path))
         sys.path.insert(0, str(SHARED / "verifier"))
         sys.path.insert(0, str(SHARED / "lib"))
-        cls.verifier = _load("dyt_shared_verifier", SHARED / "verifier/fcs2_verifier.py")
+        cls.verifier = _load(
+            "dyt_shared_verifier", SHARED / "verifier/fcs2_verifier.py"
+        )
         cls.bundle = task_manifest.judge_bundle(TASK)
         cls.evaluator = _load("dyt_rejection_evaluator", cls.bundle / "evaluator.py")
 
     def candidate_failure(self, mode):
         role = "final" if mode == "eval" else "development"
         error = self.evaluator.CandidateError(self.evaluator.CANDIDATE_FAILURE_MESSAGE)
-        with patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": role}), \
-                patch.object(self.evaluator, "_load_manifest", side_effect=error):
+        with (
+            patch.dict(os.environ, {"FRONTIER_SUBMISSION_ROLE": role}),
+            patch.object(self.evaluator, "_load_manifest", side_effect=error),
+        ):
             return self.evaluator.evaluate(str(TASK / "repo"))
 
     def verify(self, result, mode):
@@ -61,25 +65,49 @@ class DynamicTanhCandidateRejectionTests(unittest.TestCase):
                 info = tarfile.TarInfo("payload/solution.patch")
                 info.size = len(body)
                 import io
+
                 archive.addfile(info, io.BytesIO(body))
             dataset.write_bytes(b"dataset")
-            scope = type("Scope", (), {"ok": True, "tree": TASK / "repo", "changes": (),
-                                       "metrics": {}, "dispose": lambda self: None})()
-            with patch.object(v, "load_evaluator", return_value=(lambda tree: result, None)), \
-                    patch("edit_scope.check", return_value=scope):
-                out = v.verify(bundle=self.bundle, entrypoint="payload/solution.patch",
-                               payload=payload, dataset=dataset, mode=mode,
-                               result_path=root / "result.json",
-                               evidence_path=root / "evidence.tar.zst")
-            with zstandard.ZstdDecompressor().stream_reader(
-                (root / "evidence.tar.zst").open("rb")
-            ) as reader, tarfile.open(fileobj=reader, mode="r|") as archive:
+            scope = type(
+                "Scope",
+                (),
+                {
+                    "ok": True,
+                    "tree": TASK / "repo",
+                    "changes": (),
+                    "metrics": {},
+                    "dispose": lambda self: None,
+                },
+            )()
+            with (
+                patch.object(
+                    v, "load_evaluator", return_value=(lambda tree: result, None)
+                ),
+                patch("edit_scope.check", return_value=scope),
+            ):
+                out = v.verify(
+                    bundle=self.bundle,
+                    entrypoint="payload/solution.patch",
+                    payload=payload,
+                    dataset=dataset,
+                    mode=mode,
+                    result_path=root / "result.json",
+                    evidence_path=root / "evidence.tar.zst",
+                )
+            with (
+                zstandard.ZstdDecompressor().stream_reader(
+                    (root / "evidence.tar.zst").open("rb")
+                ) as reader,
+                tarfile.open(fileobj=reader, mode="r|") as archive,
+            ):
                 evidence = json.load(archive.extractfile(archive.next()))
             return out, evidence
 
     def test_train_failure_is_a_scored_zero_with_empty_metrics(self):
         result = self.candidate_failure("train")
-        self.assertEqual(result, (0.0, 0.0, self.evaluator.CANDIDATE_FAILURE_MESSAGE, {}))
+        self.assertEqual(
+            result, (0.0, 0.0, self.evaluator.CANDIDATE_FAILURE_MESSAGE, {})
+        )
         out, _ = self.verify(result, "train")
         self.assertEqual((out["status"], out["raw_score"]), ("passed", 0.0))
         self.assertEqual(out["metrics"], {"score_unbounded": 0.0})
@@ -96,9 +124,11 @@ class DynamicTanhCandidateRejectionTests(unittest.TestCase):
     def test_timed_path_message_names_block_and_quantity(self):
         error = self.evaluator.TimedPathRejection("nonfinite", "x")
         error.protocol = "training"
-        self.assertEqual(self.evaluator._candidate_message(error),
-                         "submission failed validation or authentic model execution: "
-                         "timed-path validation, training block, nonfinite values that do not match")
+        self.assertEqual(
+            self.evaluator._candidate_message(error),
+            "submission failed validation or authentic model execution: "
+            "timed-path validation, training block, nonfinite values that do not match",
+        )
 
 
 if __name__ == "__main__":

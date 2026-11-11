@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 from urllib.error import HTTPError
 
-from preview import images as image_ops
+from deploy import images as image_ops
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -22,9 +22,15 @@ class RegistryReuseTests(unittest.TestCase):
     def test_candidate_rejects_a_cached_index_resolved_to_another_manifest(self):
         index = "sha256:" + "a" * 64
         leaf = "sha256:" + "b" * 64
-        catalog = {"candidate": {"overlay_image": {
-            "reference": "docker.io/example/image@" + index, "digest": index,
-        }}, "tasks": []}
+        catalog = {
+            "candidate": {
+                "overlay_image": {
+                    "reference": "docker.io/example/image@" + index,
+                    "digest": index,
+                }
+            },
+            "tasks": [],
+        }
         selection = d.TaskSelection([], {}, {}, "", {}, [], ["openrouter.ai"], "", "")
         with (
             mock.patch.object(image_ops, "port_forward") as forward,
@@ -36,19 +42,29 @@ class RegistryReuseTests(unittest.TestCase):
             with self.assertRaisesRegex(d.DeployError, "manifest, not its index"):
                 d.mirror_task_images(
                     {"network": {"registry_cluster_ip": "172.20.0.50"}},
-                    Path("kube"), catalog, selection=selection,
+                    Path("kube"),
+                    catalog,
+                    selection=selection,
                 )
             run.assert_not_called()
 
     def test_candidate_rejects_index_after_copy_without_writing_mirror_state(self):
         index = "sha256:" + "a" * 64
         leaf = "sha256:" + "b" * 64
-        catalog = {"candidate": {"overlay_image": {
-            "reference": "docker.io/example/image@" + index, "digest": index,
-        }}, "tasks": []}
+        catalog = {
+            "candidate": {
+                "overlay_image": {
+                    "reference": "docker.io/example/image@" + index,
+                    "digest": index,
+                }
+            },
+            "tasks": [],
+        }
         selection = d.TaskSelection([], {}, {}, "", {}, [], ["openrouter.ai"], "", "")
         with (
-            mock.patch.dict(image_ops.os.environ, {"FRONTIER_REGISTRY_COPY_TOOL": "/tmp/crane"}),
+            mock.patch.dict(
+                image_ops.os.environ, {"FRONTIER_REGISTRY_COPY_TOOL": "/tmp/crane"}
+            ),
             mock.patch.object(image_ops, "port_forward") as forward,
             mock.patch.object(image_ops, "executable", side_effect=lambda name: name),
             mock.patch.object(image_ops, "cached_registry_image", return_value=None),
@@ -60,7 +76,9 @@ class RegistryReuseTests(unittest.TestCase):
             with self.assertRaisesRegex(d.DeployError, "manifest, not its index"):
                 d.mirror_task_images(
                     {"network": {"registry_cluster_ip": "172.20.0.50"}},
-                    Path("kube"), catalog, selection=selection,
+                    Path("kube"),
+                    catalog,
+                    selection=selection,
                 )
             self.assertEqual(run.call_count, 1)
             state.assert_not_called()

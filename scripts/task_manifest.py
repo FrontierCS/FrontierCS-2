@@ -45,25 +45,60 @@ class ManifestError(ValueError):
 # A task.toml holds only what differs per task; tasks/shared/task-defaults.toml holds the
 # explicit defaults of the optional keys, and the rest is derived (see that file's header).
 TOP = {
-    "schema": True, "id": True, "display_name": True, "version": True,
-    "agent": True, "verifier": True, "quota": True, "submission": True, "network": False,
-    "judge": False, "gpu": False, "accelerator": False, "gpu_parent_resources": False,
-    "additional_keys": False, "pumpkin": False, "paper": False, "feedback": False,
+    "schema": True,
+    "id": True,
+    "display_name": True,
+    "version": True,
+    "agent": True,
+    "verifier": True,
+    "quota": True,
+    "submission": True,
+    "network": False,
+    "judge": False,
+    "gpu": False,
+    "accelerator": False,
+    "gpu_parent_resources": False,
+    "additional_keys": False,
+    "pumpkin": False,
+    "paper": False,
+    "feedback": False,
     "test_sandboxes": False,
 }
 TABLES = {
     "agent": {"cpu_millis": True, "memory_bytes": True, "workspace_bytes": True},
-    "quota": {"wall_time_seconds": True, "max_train_calls": True,
-              "max_train_wall_seconds": True, "eval_timeout_seconds": True},
+    "quota": {
+        "wall_time_seconds": True,
+        "max_train_calls": True,
+        "max_train_wall_seconds": True,
+        "eval_timeout_seconds": True,
+    },
     # Keys of edit_scope.Rules plus the platform's entrypoint and archive cap.
-    "submission": {"max_bytes": True, "allowed_paths": True, "entrypoint": False,
-                   "max_patch_bytes": False,
-                   "max_changed_files": False, "deny_paths": False, "allowed_suffixes": False,
-                   "max_file_bytes": False, "allow_empty": False, "allow_new_files": False,
-                   "allow_delete": False, "allow_rename": False, "allow_executable": False, "forbidden_added": False,
-                   "forbidden_content": False, "ignore_case": False},
-    "verifier": {"cpu_millis": True, "memory_bytes": True, "max_evidence_bytes": False,
-                 "max_metrics_bytes": False, "command": False, "workspace_bytes": False},
+    "submission": {
+        "max_bytes": True,
+        "allowed_paths": True,
+        "entrypoint": False,
+        "max_patch_bytes": False,
+        "max_changed_files": False,
+        "deny_paths": False,
+        "allowed_suffixes": False,
+        "max_file_bytes": False,
+        "allow_empty": False,
+        "allow_new_files": False,
+        "allow_delete": False,
+        "allow_rename": False,
+        "allow_executable": False,
+        "forbidden_added": False,
+        "forbidden_content": False,
+        "ignore_case": False,
+    },
+    "verifier": {
+        "cpu_millis": True,
+        "memory_bytes": True,
+        "max_evidence_bytes": False,
+        "max_metrics_bytes": False,
+        "command": False,
+        "workspace_bytes": False,
+    },
     "network": {"allowed_domains": False, "audit": False},
     "judge": {"config": False},
     "pumpkin": {"slot": False, "trust": False, "result": False},
@@ -77,15 +112,24 @@ TABLES = {
 # verification on one runner; lease_seconds defaults to quota.eval_timeout_seconds in both
 # modes), or "control" for a task that declares a command test sandbox (below): its judge runs
 # on the CPU control image and it sets no lease_seconds (each sandbox declares its own).
-GPU_VERIFIER_KEYS = {"max_gpu_instances": True, "max_gpu_seconds": True, "lease_seconds": False}
+GPU_VERIFIER_KEYS = {
+    "max_gpu_instances": True,
+    "max_gpu_seconds": True,
+    "lease_seconds": False,
+}
 GPU_ADAPTER_KEYS = ("placement", "lease_seconds")
 RUNNER_PLACEMENT = "runner"
 CONTROL_PLACEMENT = "control"
 MAX_LEASE_SECONDS = 7 * 24 * 60 * 60
-AUDIT_KEYS = {"max_bundle_bytes": False, "max_model_request_bytes": False,
-              "max_model_response_bytes": False, "max_model_sessions": False,
-              "max_ssh_bytes_per_direction": False, "max_ssh_sessions": False,
-              "ssh_session_budgets": False}
+AUDIT_KEYS = {
+    "max_bundle_bytes": False,
+    "max_model_request_bytes": False,
+    "max_model_response_bytes": False,
+    "max_model_sessions": False,
+    "max_ssh_bytes_per_direction": False,
+    "max_ssh_sessions": False,
+    "ssh_session_budgets": False,
+}
 # Test sandboxes (the FCS paper's term): containers the Driver starts beside a GPU runner of
 # the task's Verifier or Agent; the platform calls each one a "sidecar" (policy/definition key
 # `sidecars`). [test_sandboxes.<name>] declares one sandbox or a template of many:
@@ -127,23 +171,43 @@ AUDIT_KEYS = {"max_bundle_bytes": False, "max_model_request_bytes": False,
 # cpu-runner.Dockerfile) that the build adds. An untrusted one's recipe copies nothing from judge/.
 # The adapter reads them from verifier.json `sandboxes`; they are never platform sidecars. CPU
 # machines are the Verifier's CPU machine quota (task["verifier_cpu"], derived below).
-TEST_SANDBOX_KEYS = {"access": False, "trust": False, "dockerfile": True, "workdir": True,
-                     "args": False, "phases": False, "attestation_key": False,
-                     "instances": False, "roles": False}
+TEST_SANDBOX_KEYS = {
+    "access": False,
+    "trust": False,
+    "dockerfile": True,
+    "workdir": True,
+    "args": False,
+    "phases": False,
+    "attestation_key": False,
+    "instances": False,
+    "roles": False,
+}
 TEST_SANDBOX_ACCESS = ("service", "command")
-COMMAND_SANDBOX_KEYS = {"access": True, "trust": False, "dockerfile": True, "workdir": True,
-                        "resources": True, "max_concurrent": True, "lease_seconds": True}
+COMMAND_SANDBOX_KEYS = {
+    "access": True,
+    "trust": False,
+    "dockerfile": True,
+    "workdir": True,
+    "resources": True,
+    "max_concurrent": True,
+    "lease_seconds": True,
+}
 # A command sandbox's recipe -> (the Driver runner image, the [gpu.<role>] table that publishes
 # it or None, trusted only, machine kind). Each is an image the platform publishes for the task
 # (TaskConfig images.agent_gpu, images.verifier gpu_tag, images.agent_cpu_runner,
 # images.verifier_cpu_runner); a docker/test-sandbox*.Dockerfile runner image needs a TaskConfig
 # image entry of its own in core first.
-COMMAND_RUNNER_IMAGES = {"docker/agent-gpu.Dockerfile": ("agent_gpu", "agent", False, "gpu"),
-                         "docker/verifier-gpu.Dockerfile": ("verifier_gpu", "verifier", True, "gpu"),
-                         "docker/agent.Dockerfile": ("agent_cpu", None, False, "cpu"),
-                         "docker/verifier.Dockerfile": ("verifier_cpu", None, True, "cpu")}
+COMMAND_RUNNER_IMAGES = {
+    "docker/agent-gpu.Dockerfile": ("agent_gpu", "agent", False, "gpu"),
+    "docker/verifier-gpu.Dockerfile": ("verifier_gpu", "verifier", True, "gpu"),
+    "docker/agent.Dockerfile": ("agent_cpu", None, False, "cpu"),
+    "docker/verifier.Dockerfile": ("verifier_cpu", None, True, "cpu"),
+}
 # The CPU runner images, by Driver image, and the build role each is published as.
-CPU_RUNNER_ROLES = {"agent_cpu": "agent-cpu-runner", "verifier_cpu": "verifier-cpu-runner"}
+CPU_RUNNER_ROLES = {
+    "agent_cpu": "agent-cpu-runner",
+    "verifier_cpu": "verifier-cpu-runner",
+}
 CPU_CORE_MILLIS = 1000
 MAX_CPU_MACHINE_MILLIS = 64_000
 MAX_CPU_MACHINE_MEMORY_BYTES = 256 * 1024 * 1024 * 1024
@@ -163,10 +227,23 @@ SIDECAR_LABEL = re.compile(r"[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?")
 DIGEST_IMAGE = re.compile(r"[^\s@]+@sha256:[0-9a-f]{64}")
 DEFAULTS_FILE = SHARED / "task-defaults.toml"
 # The category folders of FrontierCS-2 main (tasks/problems/<Category>/).
-CATEGORIES = frozenset({
-    "Arch", "Bioinformatics", "Crypto", "Database", "HPC", "MLSys", "Machine Learning",
-    "Network", "Programming Language", "Robotics", "Security", "Software Engineering", "Theory",
-})
+CATEGORIES = frozenset(
+    {
+        "Arch",
+        "Bioinformatics",
+        "Crypto",
+        "Database",
+        "HPC",
+        "MLSys",
+        "Machine Learning",
+        "Network",
+        "Programming Language",
+        "Robotics",
+        "Security",
+        "Software Engineering",
+        "Theory",
+    }
+)
 TEMPLATE_ROOT = REPO / "tasks" / "template"
 
 
@@ -174,9 +251,12 @@ def _edit_scope():
     """tasks/shared/lib/edit_scope.py, loaded once by path (it is not a package)."""
     import importlib.util
     import sys
+
     name = "frontier_shared_edit_scope"
     if name not in sys.modules:
-        spec = importlib.util.spec_from_file_location(name, SHARED / "lib/edit_scope.py")
+        spec = importlib.util.spec_from_file_location(
+            name, SHARED / "lib/edit_scope.py"
+        )
         module = importlib.util.module_from_spec(spec)
         sys.modules[name] = module
         # No __pycache__ in tasks/shared: an ignored file there fails the base builds.
@@ -193,8 +273,12 @@ def _check_keys(where: str, table: object, spec: dict) -> dict:
         raise ManifestError(f"{where} must be a table")
     unknown = sorted(set(table) - set(spec))
     if unknown:
-        raise ManifestError(f"{where}: unknown keys {unknown}; expected some of {sorted(spec)}")
-    missing = sorted(key for key, required in spec.items() if required and key not in table)
+        raise ManifestError(
+            f"{where}: unknown keys {unknown}; expected some of {sorted(spec)}"
+        )
+    missing = sorted(
+        key for key, required in spec.items() if required and key not in table
+    )
     if missing:
         raise ManifestError(f"{where}: missing keys {missing}")
     return table
@@ -226,8 +310,10 @@ def category(root: Path) -> str:
     The template stands in Theory/ like a real task."""
     name = Path(root).resolve().parent.name
     if name not in CATEGORIES:
-        raise ManifestError(f"{root}: task folder must be inside a category folder "
-                            f"({', '.join(sorted(CATEGORIES))}), not {name!r}")
+        raise ManifestError(
+            f"{root}: task folder must be inside a category folder "
+            f"({', '.join(sorted(CATEGORIES))}), not {name!r}"
+        )
     return name
 
 
@@ -235,18 +321,23 @@ def category(root: Path) -> str:
 # These evaluator metrics, and only these, reach the Agent in a train result (besides
 # score_unbounded, beat_spec_progress and rejected, which every task returns).
 FEEDBACK_NAME = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*")
-FEEDBACK_RESERVED = frozenset({"score_unbounded", "beat_spec_progress",
-                               "beat_spec_workload_passes", "rejected"})
+FEEDBACK_RESERVED = frozenset(
+    {"score_unbounded", "beat_spec_progress", "beat_spec_workload_passes", "rejected"}
+)
 
 
 def _check_feedback(feedback: object) -> dict:
     if not isinstance(feedback, dict):
-        raise ManifestError("feedback must be a table of metric = \"meaning\"")
+        raise ManifestError('feedback must be a table of metric = "meaning"')
     for name, meaning in feedback.items():
         if FEEDBACK_NAME.fullmatch(name) is None:
             raise ManifestError(f"feedback.{name}: names are lower_snake_case")
-        if (name in FEEDBACK_RESERVED or "reference" in name or "margin" in name
-                or name.startswith("beats")):
+        if (
+            name in FEEDBACK_RESERVED
+            or "reference" in name
+            or "margin" in name
+            or name.startswith("beats")
+        ):
             raise ManifestError(f"feedback.{name}: a reserved or private metric name")
         if not isinstance(meaning, str) or not meaning.strip():
             raise ManifestError(f"feedback.{name} must be a non-empty sentence")
@@ -267,11 +358,16 @@ def datasets(root: Path) -> dict:
         paths = [Path(root) / "datasets" / f"{mode}.{ext}" for ext in ("json", "tar")]
         present = [path for path in paths if path.is_file()]
         if len(present) != 1:
-            raise ManifestError(f"{root}: needs exactly one of datasets/{mode}.json, .tar")
+            raise ManifestError(
+                f"{root}: needs exactly one of datasets/{mode}.json, .tar"
+            )
         path = present[0]
         body = path.read_bytes()
-        entry = {"path": f"datasets/{path.name}", "bytes": len(body),
-                 "version": "sha256:" + hashlib.sha256(body).hexdigest()}
+        entry = {
+            "path": f"datasets/{path.name}",
+            "bytes": len(body),
+            "version": "sha256:" + hashlib.sha256(body).hexdigest(),
+        }
         if path.suffix == ".tar":
             entry.update(media_type="application/x-tar", source="task")
         found[mode] = entry
@@ -319,7 +415,9 @@ def resolve(root: Path) -> tuple[dict, dict[tuple, str]]:
     if task["schema"] != TASK_SCHEMA:
         raise ManifestError(f"{MANIFEST}: schema must be {TASK_SCHEMA!r}")
     if task["id"] != root.name:
-        raise ManifestError(f"{MANIFEST}: id {task['id']!r} does not match directory {root.name!r}")
+        raise ManifestError(
+            f"{MANIFEST}: id {task['id']!r} does not match directory {root.name!r}"
+        )
     for key in ("display_name", "version"):
         if not isinstance(task[key], str) or not task[key]:
             raise ManifestError(f"{MANIFEST}: {key} must be a non-empty string")
@@ -328,18 +426,27 @@ def resolve(root: Path) -> tuple[dict, dict[tuple, str]]:
             _check_keys(name, task[name], spec)
     if "audit" in task.get("network", {}):
         _check_keys("network.audit", task["network"]["audit"], AUDIT_KEYS)
-    gpu_verifier = task.get("gpu", {}).get("verifier") if isinstance(task.get("gpu"), dict) else None
+    gpu_verifier = (
+        task.get("gpu", {}).get("verifier")
+        if isinstance(task.get("gpu"), dict)
+        else None
+    )
     if gpu_verifier is not None:
         _check_keys("gpu.verifier", gpu_verifier, GPU_VERIFIER_KEYS)
         for key in ("max_gpu_instances", "max_gpu_seconds"):
             _positive_int(f"gpu.verifier.{key}", gpu_verifier[key])
         if "lease_seconds" in gpu_verifier:
-            lease = _check_keys("gpu.verifier.lease_seconds", gpu_verifier["lease_seconds"],
-                                {"train": True, "eval": True})
+            lease = _check_keys(
+                "gpu.verifier.lease_seconds",
+                gpu_verifier["lease_seconds"],
+                {"train": True, "eval": True},
+            )
             for mode, value in lease.items():
                 if type(value) is not int or not 1 <= value <= MAX_LEASE_SECONDS:
-                    raise ManifestError(f"gpu.verifier.lease_seconds.{mode} must be an integer "
-                                        f"in 1..={MAX_LEASE_SECONDS}")
+                    raise ManifestError(
+                        f"gpu.verifier.lease_seconds.{mode} must be an integer "
+                        f"in 1..={MAX_LEASE_SECONDS}"
+                    )
     written = set(_leaves(task))
     task = _merge(defaults(), task)
     for name in ("agent", "quota"):
@@ -352,17 +459,27 @@ def resolve(root: Path) -> tuple[dict, dict[tuple, str]]:
     for key in ("max_bytes", "max_changed_files", "max_patch_bytes"):
         _positive_int(f"submission.{key}", submission[key])
     if submission["max_patch_bytes"] > submission["max_bytes"]:
-        raise ManifestError("submission.max_patch_bytes may not exceed submission.max_bytes "
-                            "(the patch travels inside the archive)")
+        raise ManifestError(
+            "submission.max_patch_bytes may not exceed submission.max_bytes "
+            "(the patch travels inside the archive)"
+        )
     try:  # the shared module is the one definition of what these rules mean
         _edit_scope().Rules.from_mapping(edit_scope_rules(task))
-        for pattern in (*submission["forbidden_added"], *submission["forbidden_content"]):
+        for pattern in (
+            *submission["forbidden_added"],
+            *submission["forbidden_content"],
+        ):
             re.compile(pattern)
     except (TypeError, ValueError, re.error) as error:
         raise ManifestError(f"submission: {error}") from error
-    if (not isinstance(submission["allowed_paths"], list) or not submission["allowed_paths"]
-            or not all(isinstance(p, str) and p for p in submission["allowed_paths"])):
-        raise ManifestError("submission.allowed_paths must be a non-empty list of paths")
+    if (
+        not isinstance(submission["allowed_paths"], list)
+        or not submission["allowed_paths"]
+        or not all(isinstance(p, str) and p for p in submission["allowed_paths"])
+    ):
+        raise ManifestError(
+            "submission.allowed_paths must be a non-empty list of paths"
+        )
     if submission["entrypoint"] != "payload/solution.patch":
         raise ManifestError("submission.entrypoint must be payload/solution.patch")
     _positive_int("verifier.max_evidence_bytes", task["verifier"]["max_evidence_bytes"])
@@ -380,32 +497,47 @@ def resolve(root: Path) -> tuple[dict, dict[tuple, str]]:
     _check_keys("pumpkin.result", pumpkin["result"], {"status": True, "score": True})
     _check_feedback(task["feedback"])
     commands = _command_sandboxes(task)
-    gpu_commands = {name: table for name, table in commands.items()
-                    if "gpus" in table["resources"]}
+    gpu_commands = {
+        name: table for name, table in commands.items() if "gpus" in table["resources"]
+    }
     if gpu_commands and gpu_verifier is None:
-        raise ManifestError("a GPU command test sandbox needs [gpu.verifier] (its runners "
-                            "are the Verifier's GPU quota)")
+        raise ManifestError(
+            "a GPU command test sandbox needs [gpu.verifier] (its runners "
+            "are the Verifier's GPU quota)"
+        )
     if commands and gpu_verifier is not None:
         if "lease_seconds" in gpu_verifier:
-            raise ManifestError("a task with a command test sandbox runs its judge on the "
-                                "control image: [gpu.verifier] sets no lease_seconds (each "
-                                "sandbox declares its own lease_seconds)")
-        needed = sum(table["max_concurrent"] * table["resources"]["gpus"]
-                     for table in gpu_commands.values())
+            raise ManifestError(
+                "a task with a command test sandbox runs its judge on the "
+                "control image: [gpu.verifier] sets no lease_seconds (each "
+                "sandbox declares its own lease_seconds)"
+            )
+        needed = sum(
+            table["max_concurrent"] * table["resources"]["gpus"]
+            for table in gpu_commands.values()
+        )
         if needed > gpu_verifier["max_gpu_instances"]:
-            raise ManifestError(f"the command test sandboxes hold up to {needed} GPUs at once, "
-                                f"more than [gpu.verifier] max_gpu_instances "
-                                f"({gpu_verifier['max_gpu_instances']})")
+            raise ManifestError(
+                f"the command test sandboxes hold up to {needed} GPUs at once, "
+                f"more than [gpu.verifier] max_gpu_instances "
+                f"({gpu_verifier['max_gpu_instances']})"
+            )
         task["gpu"]["verifier"]["placement"] = CONTROL_PLACEMENT
     if len(commands) > len(gpu_commands):
         task["verifier_cpu"] = verifier_cpu_quota(task)
-        task["cpu_runner_images"] = sorted({COMMAND_RUNNER_IMAGES[table["dockerfile"]][0]
-                                            for name, table in commands.items()
-                                            if name not in gpu_commands})
+        task["cpu_runner_images"] = sorted(
+            {
+                COMMAND_RUNNER_IMAGES[table["dockerfile"]][0]
+                for name, table in commands.items()
+                if name not in gpu_commands
+            }
+        )
     if gpu_verifier is not None and not commands:
         timeout = task["quota"]["eval_timeout_seconds"]
         task["gpu"]["verifier"]["placement"] = RUNNER_PLACEMENT
-        task["gpu"]["verifier"].setdefault("lease_seconds", {"train": timeout, "eval": timeout})
+        task["gpu"]["verifier"].setdefault(
+            "lease_seconds", {"train": timeout, "eval": timeout}
+        )
     task["category"] = category(root)
     task["datasets"] = datasets(root)
     expanded, images = _sidecars(root, task)
@@ -427,8 +559,11 @@ def resolve(root: Path) -> tuple[dict, dict[tuple, str]]:
 
 
 def _string_list(where: str, value: object) -> list[str]:
-    if (not isinstance(value, list) or not value
-            or not all(isinstance(item, str) and item for item in value)):
+    if (
+        not isinstance(value, list)
+        or not value
+        or not all(isinstance(item, str) and item for item in value)
+    ):
         raise ManifestError(f"{where} must be a non-empty list of non-empty strings")
     return value
 
@@ -451,37 +586,55 @@ def _selected(root: Path, mode: str, key: str) -> list[str]:
     try:
         selector = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
-        raise ManifestError(f"test_sandboxes: needs the selector {path}: {error}") from error
+        raise ManifestError(
+            f"test_sandboxes: needs the selector {path}: {error}"
+        ) from error
     ids = selector.get(key) if isinstance(selector, dict) else None
-    if (not isinstance(ids, list) or not all(isinstance(i, str) and i for i in ids)
-            or len(set(ids)) != len(ids)):
-        raise ManifestError(f"datasets/{mode}.json: {key} must be a list of distinct ids")
+    if (
+        not isinstance(ids, list)
+        or not all(isinstance(i, str) and i for i in ids)
+        or len(set(ids)) != len(ids)
+    ):
+        raise ManifestError(
+            f"datasets/{mode}.json: {key} must be a list of distinct ids"
+        )
     return ids
 
 
-def _instances(root: Path, name: str, spec: object) -> list[tuple[str, str, str, dict, list]]:
+def _instances(
+    root: Path, name: str, spec: object
+) -> list[tuple[str, str, str, dict, list]]:
     """(index, id, base, build args, phases) of every instance of a template, by index."""
     where = f"test_sandboxes.{name}.instances"
     _check_keys(where, spec, TEST_SANDBOX_INSTANCES_KEYS)
     key, manifest_path = spec["dataset_key"], spec["manifest"]
     if not isinstance(key, str) or not key:
         raise ManifestError(f"{where}.dataset_key must name the selectors' list of ids")
-    if (not isinstance(manifest_path, str) or not manifest_path.startswith("judge/")
-            or ".." in Path(manifest_path).parts):
+    if (
+        not isinstance(manifest_path, str)
+        or not manifest_path.startswith("judge/")
+        or ".." in Path(manifest_path).parts
+    ):
         raise ManifestError(f"{where}.manifest must be a JSON file below judge/")
     selected = {mode: _selected(root, mode, key) for mode in ("train", "eval")}
     try:
         manifest = json.loads((Path(root) / manifest_path).read_text(encoding="utf-8"))
         instances = manifest["test_sandboxes"][name]
     except (OSError, ValueError, KeyError, TypeError) as error:
-        raise ManifestError(f"{manifest_path}: needs \"test_sandboxes\": {{{name!r}: "
-                            f"{{id: {{index, base, build_args?}}}}}} ({error!r})") from error
+        raise ManifestError(
+            f'{manifest_path}: needs "test_sandboxes": {{{name!r}: '
+            f"{{id: {{index, base, build_args?}}}}}} ({error!r})"
+        ) from error
     if not isinstance(instances, dict):
-        raise ManifestError(f"{manifest_path}: test_sandboxes.{name} must map ids to entries")
+        raise ManifestError(
+            f"{manifest_path}: test_sandboxes.{name} must map ids to entries"
+        )
     wanted = set(selected["train"]) | set(selected["eval"])
     if set(instances) != wanted:
-        raise ManifestError(f"{manifest_path}: test_sandboxes.{name} must hold exactly the ids "
-                            f"the datasets select; differs by {sorted(set(instances) ^ wanted)[:5]}")
+        raise ManifestError(
+            f"{manifest_path}: test_sandboxes.{name} must hold exactly the ids "
+            f"the datasets select; differs by {sorted(set(instances) ^ wanted)[:5]}"
+        )
     rows, indexes = [], set()
     for identity, entry in instances.items():
         at = f"{manifest_path}: test_sandboxes.{name}.{identity}"
@@ -498,12 +651,18 @@ def _instances(root: Path, name: str, spec: object) -> list[tuple[str, str, str,
         if not isinstance(base, str) or DIGEST_IMAGE.fullmatch(base) is None:
             raise ManifestError(f"{at}: base must be an image pinned by @sha256 digest")
         extra = entry.get("build_args", {})
-        if (not isinstance(extra, dict)
-                or not all(TEST_SANDBOX_BUILD_ARG.fullmatch(k) and isinstance(v, str)
-                           for k, v in extra.items())
-                or {"TEST_SANDBOX_BASE", "TEST_SANDBOX_INSTANCE"} & set(extra)):
-            raise ManifestError(f"{at}: build_args are TEST_SANDBOX_* = string (not BASE or "
-                                "INSTANCE, which the build sets)")
+        if (
+            not isinstance(extra, dict)
+            or not all(
+                TEST_SANDBOX_BUILD_ARG.fullmatch(k) and isinstance(v, str)
+                for k, v in extra.items()
+            )
+            or {"TEST_SANDBOX_BASE", "TEST_SANDBOX_INSTANCE"} & set(extra)
+        ):
+            raise ManifestError(
+                f"{at}: build_args are TEST_SANDBOX_* = string (not BASE or "
+                "INSTANCE, which the build sets)"
+            )
         phases = [mode for mode in ("train", "eval") if identity in selected[mode]]
         rows.append((index, identity, base, extra, phases))
     return sorted(rows)
@@ -521,28 +680,45 @@ def _test_sandbox(root: Path, name: str, table: object) -> tuple[dict, dict]:
         if type(table["attestation_key"]) is not bool:
             raise ManifestError(f"{where}.attestation_key must be a boolean")
         if table["attestation_key"] and trust != "trusted":
-            raise ManifestError(f"{where}: only a trust = \"trusted\" test sandbox may hold the "
-                                "attestation key")
+            raise ManifestError(
+                f'{where}: only a trust = "trusted" test sandbox may hold the '
+                "attestation key"
+            )
     dockerfile = table["dockerfile"]
-    if not isinstance(dockerfile, str) or TEST_SANDBOX_DOCKERFILE.fullmatch(dockerfile) is None:
-        raise ManifestError(f"{where}.dockerfile must be docker/test-sandbox[-<name>].Dockerfile")
+    if (
+        not isinstance(dockerfile, str)
+        or TEST_SANDBOX_DOCKERFILE.fullmatch(dockerfile) is None
+    ):
+        raise ManifestError(
+            f"{where}.dockerfile must be docker/test-sandbox[-<name>].Dockerfile"
+        )
     workdir = table["workdir"]
     if not isinstance(workdir, str) or not workdir.startswith("/"):
         raise ManifestError(f"{where}.workdir must be an absolute path")
     keys = set(table)
-    if keys & TEST_SANDBOX_SINGLE and keys & TEST_SANDBOX_TEMPLATE or not (
-            TEST_SANDBOX_SINGLE <= keys or TEST_SANDBOX_TEMPLATE <= keys):
-        raise ManifestError(f"{where}: one sandbox needs args and phases; a template needs "
-                            "instances and roles; never both")
+    if (
+        keys & TEST_SANDBOX_SINGLE
+        and keys & TEST_SANDBOX_TEMPLATE
+        or not (TEST_SANDBOX_SINGLE <= keys or TEST_SANDBOX_TEMPLATE <= keys)
+    ):
+        raise ManifestError(
+            f"{where}: one sandbox needs args and phases; a template needs "
+            "instances and roles; never both"
+        )
     if TEST_SANDBOX_SINGLE <= keys:
         profile = {"args": list(_string_list(f"{where}.args", table["args"]))}
         if "attestation_key" in table:
             profile["attestation_key"] = table["attestation_key"]
-        profile.update(image=name, phases=list(_phases(f"{where}.phases", table["phases"])),
-                       workdir=workdir)
+        profile.update(
+            image=name,
+            phases=list(_phases(f"{where}.phases", table["phases"])),
+            workdir=workdir,
+        )
         return {name: profile}, {name: (dockerfile, {})}
     if "attestation_key" in table:
-        raise ManifestError(f"{where}: a template's sandboxes never hold the attestation key")
+        raise ManifestError(
+            f"{where}: a template's sandboxes never hold the attestation key"
+        )
     roles = table["roles"]
     if not isinstance(roles, dict) or not roles:
         raise ManifestError(f"{where}.roles must hold [{where}.roles.<role>] tables")
@@ -551,37 +727,56 @@ def _test_sandbox(root: Path, name: str, table: object) -> tuple[dict, dict]:
         _check_keys(f"{where}.roles.{role}", spec, TEST_SANDBOX_ROLE_KEYS)
         args = _string_list(f"{where}.roles.{role}.args", spec["args"])
         if not any(TEST_SANDBOX_PLACEHOLDER in arg for arg in args):
-            raise ManifestError(f"{where}.roles.{role}.args must pass {TEST_SANDBOX_PLACEHOLDER}")
+            raise ManifestError(
+                f"{where}.roles.{role}.args must pass {TEST_SANDBOX_PLACEHOLDER}"
+            )
     profiles, images = {}, {}
-    for index, identity, base, extra, phases in _instances(root, name, table["instances"]):
+    for index, identity, base, extra, phases in _instances(
+        root, name, table["instances"]
+    ):
         image = f"{name}-{index}"
-        images[image] = (dockerfile, {"TEST_SANDBOX_BASE": base,
-                                      "TEST_SANDBOX_INSTANCE": identity, **extra})
+        images[image] = (
+            dockerfile,
+            {"TEST_SANDBOX_BASE": base, "TEST_SANDBOX_INSTANCE": identity, **extra},
+        )
         for role, spec in roles.items():
             profiles[f"{image}-{role}"] = {
-                "args": [arg.replace(TEST_SANDBOX_PLACEHOLDER, identity) for arg in spec["args"]],
-                "image": image, "phases": list(phases), "workdir": workdir}
+                "args": [
+                    arg.replace(TEST_SANDBOX_PLACEHOLDER, identity)
+                    for arg in spec["args"]
+                ],
+                "image": image,
+                "phases": list(phases),
+                "workdir": workdir,
+            }
     return profiles, images
 
 
 def _access(name: str, table: object) -> str:
     access = table.get("access", "service") if isinstance(table, dict) else "service"
     if access not in TEST_SANDBOX_ACCESS:
-        raise ManifestError(f"test_sandboxes.{name}.access must be one of {list(TEST_SANDBOX_ACCESS)}")
+        raise ManifestError(
+            f"test_sandboxes.{name}.access must be one of {list(TEST_SANDBOX_ACCESS)}"
+        )
     return access
 
 
 def _sandbox_tables(task: dict) -> dict:
     tables = task.get("test_sandboxes", {})
     if not isinstance(tables, dict):
-        raise ManifestError("test_sandboxes must be a table of [test_sandboxes.<name>] tables")
+        raise ManifestError(
+            "test_sandboxes must be a table of [test_sandboxes.<name>] tables"
+        )
     return tables
 
 
 def command_sandboxes(task: dict) -> dict:
     """The resolved task's access = "command" test sandboxes, by name (already validated)."""
-    return {name: table for name, table in _sandbox_tables(task).items()
-            if _access(name, table) == "command"}
+    return {
+        name: table
+        for name, table in _sandbox_tables(task).items()
+        if _access(name, table) == "command"
+    }
 
 
 def _command_sandboxes(task: dict) -> dict:
@@ -594,51 +789,92 @@ def _command_sandboxes(task: dict) -> dict:
         _label(where, name)
         trust = table.get("trust", "untrusted")
         if trust not in TEST_SANDBOX_TRUST:
-            raise ManifestError(f"{where}.trust must be one of {list(TEST_SANDBOX_TRUST)}")
-        resources = _check_keys(f"{where}.resources", table["resources"],
-                                {"gpus": False, "gpu_type": False, "cpu_millis": False,
-                                 "memory_bytes": False})
+            raise ManifestError(
+                f"{where}.trust must be one of {list(TEST_SANDBOX_TRUST)}"
+            )
+        resources = _check_keys(
+            f"{where}.resources",
+            table["resources"],
+            {
+                "gpus": False,
+                "gpu_type": False,
+                "cpu_millis": False,
+                "memory_bytes": False,
+            },
+        )
         kind = "gpu" if "gpus" in resources else "cpu"
         if kind == "gpu" and set(resources) != {"gpus", "gpu_type"}:
-            raise ManifestError(f"{where}.resources of a GPU runner are gpus and gpu_type (the "
-                                "host's CPU and memory are [gpu_parent_resources])")
+            raise ManifestError(
+                f"{where}.resources of a GPU runner are gpus and gpu_type (the "
+                "host's CPU and memory are [gpu_parent_resources])"
+            )
         if kind == "cpu":
             _cpu_machine_shape(where, resources)
         dockerfile = table["dockerfile"]
         if dockerfile not in COMMAND_RUNNER_IMAGES:
-            raise ManifestError(f"{where}.dockerfile must be one of {sorted(COMMAND_RUNNER_IMAGES)} "
-                                "(a runner image the task publishes)")
+            raise ManifestError(
+                f"{where}.dockerfile must be one of {sorted(COMMAND_RUNNER_IMAGES)} "
+                "(a runner image the task publishes)"
+            )
         _image, role, trusted_only, image_kind = COMMAND_RUNNER_IMAGES[dockerfile]
         if image_kind != kind:
-            choices = sorted(name for name, image in COMMAND_RUNNER_IMAGES.items()
-                             if image[3] == kind)
-            raise ManifestError(f"{where}: a {kind.upper()} machine runs one of {choices}, not "
-                                f"{dockerfile}")
+            choices = sorted(
+                name
+                for name, image in COMMAND_RUNNER_IMAGES.items()
+                if image[3] == kind
+            )
+            raise ManifestError(
+                f"{where}: a {kind.upper()} machine runs one of {choices}, not "
+                f"{dockerfile}"
+            )
         if trusted_only and trust != "trusted":
-            raise ManifestError(f"{where}: {dockerfile} carries the judge; only a "
-                                'trust = "trusted" command sandbox may run on it')
+            raise ManifestError(
+                f"{where}: {dockerfile} carries the judge; only a "
+                'trust = "trusted" command sandbox may run on it'
+            )
         if role is not None and role not in task.get("gpu", {}):
-            raise ManifestError(f"{where}.dockerfile = {dockerfile!r} needs [gpu.{role}], which "
-                                "publishes that image")
+            raise ManifestError(
+                f"{where}.dockerfile = {dockerfile!r} needs [gpu.{role}], which "
+                "publishes that image"
+            )
         workdir = table["workdir"]
-        if (not isinstance(workdir, str) or not workdir.startswith("/workspace/")
-                or ".." in Path(workdir).parts or any(c.isspace() for c in workdir)):
-            raise ManifestError(f"{where}.workdir must be a directory below /workspace/ (the "
-                                "runner user's writable home)")
-        if kind == "gpu" and (type(resources["gpus"]) is not int
-                              or not 1 <= resources["gpus"] <= MAX_RUNNER_GPUS):
-            raise ManifestError(f"{where}.resources.gpus must be an integer in 1..={MAX_RUNNER_GPUS}")
-        if kind == "gpu" and (not isinstance(resources["gpu_type"], str)
-                              or GPU_TYPE.fullmatch(resources["gpu_type"]) is None):
-            raise ManifestError(f"{where}.resources.gpu_type must be a Driver GPU type such as "
-                                '"A100-80GB"')
+        if (
+            not isinstance(workdir, str)
+            or not workdir.startswith("/workspace/")
+            or ".." in Path(workdir).parts
+            or any(c.isspace() for c in workdir)
+        ):
+            raise ManifestError(
+                f"{where}.workdir must be a directory below /workspace/ (the "
+                "runner user's writable home)"
+            )
+        if kind == "gpu" and (
+            type(resources["gpus"]) is not int
+            or not 1 <= resources["gpus"] <= MAX_RUNNER_GPUS
+        ):
+            raise ManifestError(
+                f"{where}.resources.gpus must be an integer in 1..={MAX_RUNNER_GPUS}"
+            )
+        if kind == "gpu" and (
+            not isinstance(resources["gpu_type"], str)
+            or GPU_TYPE.fullmatch(resources["gpu_type"]) is None
+        ):
+            raise ManifestError(
+                f"{where}.resources.gpu_type must be a Driver GPU type such as "
+                '"A100-80GB"'
+            )
         _positive_int(f"{where}.max_concurrent", table["max_concurrent"])
-        lease = _check_keys(f"{where}.lease_seconds", table["lease_seconds"],
-                            {"train": True, "eval": True})
+        lease = _check_keys(
+            f"{where}.lease_seconds",
+            table["lease_seconds"],
+            {"train": True, "eval": True},
+        )
         for mode, value in lease.items():
             if type(value) is not int or not 1 <= value <= timeout:
-                raise ManifestError(f"{where}.lease_seconds.{mode} must be an integer in "
-                                    f"1..={timeout} (quota.eval_timeout_seconds)")
+                raise ManifestError(
+                    f"{where}.lease_seconds.{mode} must be an integer in "
+                    f"1..={timeout} (quota.eval_timeout_seconds)"
+                )
     return found
 
 
@@ -646,29 +882,46 @@ def _cpu_machine_shape(where: str, resources: dict) -> None:
     """A CPU machine is exactly { cpu_millis, memory_bytes }: whole cores (a timing-scored
     candidate and its reference never share a core with another tenant) and whole MiB."""
     if set(resources) != {"cpu_millis", "memory_bytes"}:
-        raise ManifestError(f"{where}.resources of a CPU machine are exactly cpu_millis and "
-                            "memory_bytes")
+        raise ManifestError(
+            f"{where}.resources of a CPU machine are exactly cpu_millis and "
+            "memory_bytes"
+        )
     cpu, memory = resources["cpu_millis"], resources["memory_bytes"]
-    if (type(cpu) is not int or not CPU_CORE_MILLIS <= cpu <= MAX_CPU_MACHINE_MILLIS
-            or cpu % CPU_CORE_MILLIS):
-        raise ManifestError(f"{where}.resources.cpu_millis must be whole cores (a multiple of "
-                            f"{CPU_CORE_MILLIS}) in {CPU_CORE_MILLIS}..={MAX_CPU_MACHINE_MILLIS}")
-    if (type(memory) is not int or not 1 <= memory <= MAX_CPU_MACHINE_MEMORY_BYTES
-            or memory % (1024 * 1024)):
-        raise ManifestError(f"{where}.resources.memory_bytes must be whole MiB, at most "
-                            f"{MAX_CPU_MACHINE_MEMORY_BYTES} (256 GiB)")
+    if (
+        type(cpu) is not int
+        or not CPU_CORE_MILLIS <= cpu <= MAX_CPU_MACHINE_MILLIS
+        or cpu % CPU_CORE_MILLIS
+    ):
+        raise ManifestError(
+            f"{where}.resources.cpu_millis must be whole cores (a multiple of "
+            f"{CPU_CORE_MILLIS}) in {CPU_CORE_MILLIS}..={MAX_CPU_MACHINE_MILLIS}"
+        )
+    if (
+        type(memory) is not int
+        or not 1 <= memory <= MAX_CPU_MACHINE_MEMORY_BYTES
+        or memory % (1024 * 1024)
+    ):
+        raise ManifestError(
+            f"{where}.resources.memory_bytes must be whole MiB, at most "
+            f"{MAX_CPU_MACHINE_MEMORY_BYTES} (256 GiB)"
+        )
 
 
 def cpu_command_sandboxes(task: dict) -> dict:
     """The resolved task's command test sandboxes that are CPU machines, by name."""
-    return {name: table for name, table in command_sandboxes(task).items()
-            if "gpus" not in table["resources"]}
+    return {
+        name: table
+        for name, table in command_sandboxes(task).items()
+        if "gpus" not in table["resources"]
+    }
 
 
 def cpu_runner_roles(task: dict) -> list[str]:
     """The CPU runner image roles the task's CPU command sandboxes use (build role names,
     agent-cpu-runner / verifier-cpu-runner), sorted."""
-    return sorted(CPU_RUNNER_ROLES[image] for image in task.get("cpu_runner_images", ()))
+    return sorted(
+        CPU_RUNNER_ROLES[image] for image in task.get("cpu_runner_images", ())
+    )
 
 
 def verifier_cpu_quota(task: dict) -> dict:
@@ -680,23 +933,36 @@ def verifier_cpu_quota(task: dict) -> dict:
     tables = cpu_command_sandboxes(task)
     instances = sum(table["max_concurrent"] for table in tables.values())
     if instances > MAX_CPU_MACHINE_INSTANCES:
-        raise ManifestError(f"the CPU command test sandboxes hold up to {instances} machines at "
-                            f"once, more than the platform's {MAX_CPU_MACHINE_INSTANCES}")
+        raise ManifestError(
+            f"the CPU command test sandboxes hold up to {instances} machines at "
+            f"once, more than the platform's {MAX_CPU_MACHINE_INSTANCES}"
+        )
     per_verification = instances * task["quota"]["eval_timeout_seconds"]
-    shapes = sorted({(table["resources"]["cpu_millis"], table["resources"]["memory_bytes"])
-                     for table in tables.values()})
-    return {"shapes": [{"cpu_millis": cpu, "memory_bytes": memory} for cpu, memory in shapes],
-            "max_instances": instances,
-            "max_seconds": task["quota"]["max_train_calls"] * per_verification,
-            "final_seconds": per_verification}
+    shapes = sorted(
+        {
+            (table["resources"]["cpu_millis"], table["resources"]["memory_bytes"])
+            for table in tables.values()
+        }
+    )
+    return {
+        "shapes": [
+            {"cpu_millis": cpu, "memory_bytes": memory} for cpu, memory in shapes
+        ],
+        "max_instances": instances,
+        "max_seconds": task["quota"]["max_train_calls"] * per_verification,
+        "final_seconds": per_verification,
+    }
 
 
 def _sidecars(root: Path, task: dict) -> tuple[dict, dict]:
     """The platform's `sidecars` mapping and the recipe behind each image, in task.toml order
     (a template's instances by index, then its roles in task.toml order). Only the
     access = "service" tables are sidecars."""
-    tables = {name: table for name, table in _sandbox_tables(task).items()
-              if _access(name, table) == "service"}
+    tables = {
+        name: table
+        for name, table in _sandbox_tables(task).items()
+        if _access(name, table) == "service"
+    }
     found, images = {}, {}
     for name, table in tables.items():
         profiles, recipes = _test_sandbox(root, name, table)
@@ -723,9 +989,16 @@ def policy_from_task(task: dict) -> dict:
         "version": task["version"],
         "agent": dict(task["agent"]),
         "quota": dict(task["quota"]),
-        "submission": {"entrypoint": submission["entrypoint"], "max_bytes": submission["max_bytes"]},
+        "submission": {
+            "entrypoint": submission["entrypoint"],
+            "max_bytes": submission["max_bytes"],
+        },
         # max_metrics_bytes is the shared verifier's own cap (config.yaml), not a platform field.
-        "verifier": {k: v for k, v in task["verifier"].items() if k not in JUDGE_ONLY_VERIFIER_KEYS},
+        "verifier": {
+            k: v
+            for k, v in task["verifier"].items()
+            if k not in JUDGE_ONLY_VERIFIER_KEYS
+        },
         "network": task["network"],
         "metadata": {
             "accelerator": task.get("accelerator"),
@@ -740,14 +1013,25 @@ def policy_from_task(task: dict) -> dict:
             },
         },
     }
-    for key in ("gpu", "gpu_parent_resources", "additional_keys", "verifier_cpu",
-                "cpu_runner_images"):
+    for key in (
+        "gpu",
+        "gpu_parent_resources",
+        "additional_keys",
+        "verifier_cpu",
+        "cpu_runner_images",
+    ):
         if key in task:
             policy[key] = task[key]
     if "sidecars" in task:
         policy["sidecars"] = task["sidecars"]
-    if "verifier" in task.get("gpu", {}):  # the adapter's keys are the judge's, not the platform's
-        verifier = {k: v for k, v in task["gpu"]["verifier"].items() if k not in GPU_ADAPTER_KEYS}
+    if "verifier" in task.get(
+        "gpu", {}
+    ):  # the adapter's keys are the judge's, not the platform's
+        verifier = {
+            k: v
+            for k, v in task["gpu"]["verifier"].items()
+            if k not in GPU_ADAPTER_KEYS
+        }
         policy["gpu"] = {**task["gpu"], "verifier": verifier}
     return policy
 
@@ -859,11 +1143,17 @@ class Layout:
         images = read_task(self.root).get("sidecar_images", {})
         name = role.removeprefix("sidecar-")
         if name not in images:
-            raise ManifestError(f"{self.root.name}: no service or test sandbox image {name!r}")
+            raise ManifestError(
+                f"{self.root.name}: no service or test sandbox image {name!r}"
+            )
         return images[name]
 
     def has_role(self, role: str) -> bool:
-        return self.dockerfile(role).is_file() if self.native else (self.root / role).is_dir()
+        return (
+            self.dockerfile(role).is_file()
+            if self.native
+            else (self.root / role).is_dir()
+        )
 
 
 def layout(root: Path) -> Layout:
@@ -872,16 +1162,28 @@ def layout(root: Path) -> Layout:
 
 # ---------------------------------------------------------------- generated files
 # edit_scope.Rules keys the Agent's pre-check gets; the content rules stay with the judge.
-AGENT_SCOPE_KEYS = ("allowed_paths", "deny_paths", "max_changed_files", "max_file_bytes",
-                    "allowed_suffixes", "allow_empty", "allow_new_files", "allow_delete",
-                    "allow_rename", "allow_executable")
+AGENT_SCOPE_KEYS = (
+    "allowed_paths",
+    "deny_paths",
+    "max_changed_files",
+    "max_file_bytes",
+    "allowed_suffixes",
+    "allow_empty",
+    "allow_new_files",
+    "allow_delete",
+    "allow_rename",
+    "allow_executable",
+)
 
 
 def edit_scope_rules(task: dict, *, agent: bool = False) -> dict:
     """The task's edit_scope.Rules as a mapping (the patch cap is the archive cap)."""
     submission = task["submission"]
-    keys = AGENT_SCOPE_KEYS if agent else (*AGENT_SCOPE_KEYS, "forbidden_added",
-                                           "forbidden_content", "ignore_case")
+    keys = (
+        AGENT_SCOPE_KEYS
+        if agent
+        else (*AGENT_SCOPE_KEYS, "forbidden_added", "forbidden_content", "ignore_case")
+    )
     rules = {key: submission[key] for key in keys if key in submission}
     rules["max_patch_bytes"] = submission["max_patch_bytes"]
     return rules
@@ -907,8 +1209,10 @@ def judge_config(task: dict) -> dict:
 def submission_policy(task: dict) -> dict:
     """`bin/submission-policy.json`: what the shared Agent submission tool checks before it
     writes a patch (the scope rules, never the judge's content rules)."""
-    return {"edit_scope": edit_scope_rules(task, agent=True),
-            "member": Path(task["submission"]["entrypoint"]).name}
+    return {
+        "edit_scope": edit_scope_rules(task, agent=True),
+        "member": Path(task["submission"]["entrypoint"]).name,
+    }
 
 
 def verifier_parameters(task: dict) -> dict:
@@ -919,24 +1223,32 @@ def verifier_parameters(task: dict) -> dict:
     parameters = {"entrypoint": task["submission"]["entrypoint"]}
     if "verifier" in task.get("gpu", {}):
         verifier = task["gpu"]["verifier"]
-        gpu = {"placement": verifier["placement"],
-               "max_gpu_instances": verifier["max_gpu_instances"]}
+        gpu = {
+            "placement": verifier["placement"],
+            "max_gpu_instances": verifier["max_gpu_instances"],
+        }
         if verifier["placement"] == RUNNER_PLACEMENT:
             gpu["lease_seconds"] = dict(verifier["lease_seconds"])
         parameters["gpu"] = gpu
     commands = command_sandboxes(task)
     if commands:
         parameters["sandboxes"] = {
-            name: {"image": COMMAND_RUNNER_IMAGES[table["dockerfile"]][0],
-                   "workdir": table["workdir"], "resources": dict(table["resources"]),
-                   "max_concurrent": table["max_concurrent"],
-                   "lease_seconds": dict(table["lease_seconds"])}
-            for name, table in commands.items()}
+            name: {
+                "image": COMMAND_RUNNER_IMAGES[table["dockerfile"]][0],
+                "workdir": table["workdir"],
+                "resources": dict(table["resources"]),
+                "max_concurrent": table["max_concurrent"],
+                "lease_seconds": dict(table["lease_seconds"]),
+            }
+            for name, table in commands.items()
+        }
     return parameters
 
 
 def _dump(document: dict) -> bytes:
-    return (json.dumps(document, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode()
+    return (
+        json.dumps(document, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    ).encode()
 
 
 def _toml_value(value: object) -> str:
@@ -951,7 +1263,9 @@ def _toml_value(value: object) -> str:
     if isinstance(value, dict):
         if not value:
             return "{}"
-        return "{ " + ", ".join(f"{k} = {_toml_value(v)}" for k, v in value.items()) + " }"
+        return (
+            "{ " + ", ".join(f"{k} = {_toml_value(v)}" for k, v in value.items()) + " }"
+        )
     if value is None:
         return '""'
     raise TypeError(f"no TOML form for {type(value).__name__}")
@@ -961,24 +1275,35 @@ def effective_toml(root: Path) -> str:
     """The complete effective definition of a task.toml task, every value annotated with its
     origin: like `helm template` or `git config --show-origin`. Generated, never committed."""
     task, origins = resolve(root)
-    lines = [f"# Effective definition of {task['id']}, generated from task.toml by",
-             "# scripts/task_manifest.py; do not edit. Each value names its origin:",
-             "#   task.toml | default (tasks/shared/task-defaults.toml) | derived: <source>", ""]
+    lines = [
+        f"# Effective definition of {task['id']}, generated from task.toml by",
+        "# scripts/task_manifest.py; do not edit. Each value names its origin:",
+        "#   task.toml | default (tasks/shared/task-defaults.toml) | derived: <source>",
+        "",
+    ]
     tables: dict[tuple, list[tuple[str, object, str]]] = {}
     for key, value in origins.items():
         leaf = _leaves(task).get(key)
         tables.setdefault(key[:-1], []).append((key[-1], leaf, value))
-    width = max(len(f"{k} = {_toml_value(v)}") for rows in tables.values() for k, v, _ in rows)
+    width = max(
+        len(f"{k} = {_toml_value(v)}") for rows in tables.values() for k, v, _ in rows
+    )
     for table in sorted(tables, key=lambda t: (len(t) > 0, t)):
         if table:
-            lines += ["", "[" + ".".join(json.dumps(p) if " " in p else p for p in table) + "]"]
+            lines += [
+                "",
+                "[" + ".".join(json.dumps(p) if " " in p else p for p in table) + "]",
+            ]
         for key, value, origin in tables[table]:
             text = f"{key} = {_toml_value(value)}"
             lines.append(f"{text.ljust(width)}  # {origin}")
     if "sidecars" in task:
         roles = sorted({profile["image"] for profile in task["sidecars"].values()})
-        lines += ["", f"# sidecars: {len(task['sidecars'])} (platform policy `sidecars`) on "
-                  f"{len(roles)} images, derived: [test_sandboxes], datasets/"]
+        lines += [
+            "",
+            f"# sidecars: {len(task['sidecars'])} (platform policy `sidecars`) on "
+            f"{len(roles)} images, derived: [test_sandboxes], datasets/",
+        ]
     return "\n".join(lines) + "\n"
 
 
@@ -988,31 +1313,48 @@ def agent_readme(root: Path, task: dict | None = None) -> str:
     filled in, so every task states the same platform rules with its actual numbers."""
     task = task or read_task(root)
     quota = task["quota"]
-    platform = (SHARED / "agent/README.platform.md").read_text(encoding="utf-8").format(
-        size_limits=(f"at most {task['submission']['max_bytes']:,} bytes"
-                     if task["submission"]["max_patch_bytes"] == task["submission"]["max_bytes"]
-                     else f"the patch at most {task['submission']['max_patch_bytes']:,} bytes, "
-                          f"the tar at most {task['submission']['max_bytes']:,} bytes"),
-        max_changed_files=(f"{task['submission']['max_changed_files']} file"
-                           + ("" if task["submission"]["max_changed_files"] == 1 else "s")),
-        file_rules="".join(
-            f" It may not {what}." for what, allowed in (
-                ("delete files", task["submission"]["allow_delete"]),
-                ("add new files", task["submission"]["allow_new_files"]))
-            if not allowed) + (
-            " It may rename a file when both the old and the new path are editable."
-            if task["submission"].get("allow_rename") else ""),
-        train_calls=quota["max_train_calls"],
-        train_wall_seconds=quota["max_train_wall_seconds"],
-        eval_timeout_seconds=quota["eval_timeout_seconds"],
-        wall_time_seconds=quota["wall_time_seconds"],
-        cpus=f"{task['agent']['cpu_millis'] / 1000:g}",
-        verifier_cpus=f"{task['verifier']['cpu_millis'] / 1000:g}",
-        verifier_memory_gib=f"{task['verifier']['memory_bytes'] / 2**30:g}",
-        memory_gib=f"{task['agent']['memory_bytes'] / 2**30:g}",
-        workspace_gib=f"{task['agent']['workspace_bytes'] / 2**30:g}",
-        feedback="\n".join(f"- `{name}`: {meaning}" for name, meaning in task["feedback"].items())
-        or "- No task-specific metrics.",
+    platform = (
+        (SHARED / "agent/README.platform.md")
+        .read_text(encoding="utf-8")
+        .format(
+            size_limits=(
+                f"at most {task['submission']['max_bytes']:,} bytes"
+                if task["submission"]["max_patch_bytes"]
+                == task["submission"]["max_bytes"]
+                else f"the patch at most {task['submission']['max_patch_bytes']:,} bytes, "
+                f"the tar at most {task['submission']['max_bytes']:,} bytes"
+            ),
+            max_changed_files=(
+                f"{task['submission']['max_changed_files']} file"
+                + ("" if task["submission"]["max_changed_files"] == 1 else "s")
+            ),
+            file_rules="".join(
+                f" It may not {what}."
+                for what, allowed in (
+                    ("delete files", task["submission"]["allow_delete"]),
+                    ("add new files", task["submission"]["allow_new_files"]),
+                )
+                if not allowed
+            )
+            + (
+                " It may rename a file when both the old and the new path are editable."
+                if task["submission"].get("allow_rename")
+                else ""
+            ),
+            train_calls=quota["max_train_calls"],
+            train_wall_seconds=quota["max_train_wall_seconds"],
+            eval_timeout_seconds=quota["eval_timeout_seconds"],
+            wall_time_seconds=quota["wall_time_seconds"],
+            cpus=f"{task['agent']['cpu_millis'] / 1000:g}",
+            verifier_cpus=f"{task['verifier']['cpu_millis'] / 1000:g}",
+            verifier_memory_gib=f"{task['verifier']['memory_bytes'] / 2**30:g}",
+            memory_gib=f"{task['agent']['memory_bytes'] / 2**30:g}",
+            workspace_gib=f"{task['agent']['workspace_bytes'] / 2**30:g}",
+            feedback="\n".join(
+                f"- `{name}`: {meaning}" for name, meaning in task["feedback"].items()
+            )
+            or "- No task-specific metrics.",
+        )
     )
     own = (Path(root) / "README.md").read_text(encoding="utf-8").rstrip()
     text = own + "\n\n" + platform
@@ -1022,7 +1364,9 @@ def agent_readme(root: Path, task: dict | None = None) -> str:
     if gpu and gpu.get("max_instances", 0) > 0:
         audit = task["network"]["audit"]
         budgets = audit.get("ssh_session_budgets", {})
-        text += "\n" + (SHARED / "agent/README.gpu.md").read_text(encoding="utf-8").format(
+        text += "\n" + (SHARED / "agent/README.gpu.md").read_text(
+            encoding="utf-8"
+        ).format(
             gpu_type=" or ".join(gpu["allowed_types"]),
             max_instances=gpu["max_instances"],
             instance_seconds=gpu["max_instance_seconds"],
@@ -1045,10 +1389,18 @@ def generated_files(root: Path) -> dict[str, bytes]:
         f"{GENERATED}/agent/README.md": agent_readme(root, task).encode(),
         f"{GENERATED}/verifier/verifier.json": _dump(verifier_parameters(task)),
         # A task with CPU machines: the shared runner layer its build adds to those images.
-        **({f"{GENERATED}/runner/cpu-runner.Dockerfile":
-                (SHARED / "images" / "cpu-runner.Dockerfile").read_bytes(),
-            f"{GENERATED}/runner/task-runtime": (SHARED / "lib" / "task_runtime.py").read_bytes()}
-           if cpu_command_sandboxes(task) else {}),
+        **(
+            {
+                f"{GENERATED}/runner/cpu-runner.Dockerfile": (
+                    SHARED / "images" / "cpu-runner.Dockerfile"
+                ).read_bytes(),
+                f"{GENERATED}/runner/task-runtime": (
+                    SHARED / "lib" / "task_runtime.py"
+                ).read_bytes(),
+            }
+            if cpu_command_sandboxes(task)
+            else {}
+        ),
     }
 
 
@@ -1074,10 +1426,14 @@ def base_reference(role: str) -> str:
 
 # A task.toml recipe names a shared base by build argument (`ARG VERIFIER_BASE`, then
 # `FROM ${VERIFIER_BASE}`); the build injects bases.json, so a bump is one bases.json change.
-SHARED_BASE_ARGUMENTS = {"AGENT_BASE": "agent", "VERIFIER_BASE": "verifier",
-                         "GPU_TOOLS": "gpu-tools"}
-_BASE_ARGUMENT_FROM = re.compile(r"^\s*FROM\s+(?:--platform=\S+\s+)?\$\{([A-Z_]+)\}",
-                                 re.IGNORECASE | re.MULTILINE)
+SHARED_BASE_ARGUMENTS = {
+    "AGENT_BASE": "agent",
+    "VERIFIER_BASE": "verifier",
+    "GPU_TOOLS": "gpu-tools",
+}
+_BASE_ARGUMENT_FROM = re.compile(
+    r"^\s*FROM\s+(?:--platform=\S+\s+)?\$\{([A-Z_]+)\}", re.IGNORECASE | re.MULTILINE
+)
 
 
 def resolved_bases(root: Path) -> dict[str, str]:
@@ -1104,15 +1460,26 @@ def verifier_channel_bytes(root: Path | None) -> str:
     """FRONTIER_MAX_SSH_BYTES_PER_DIRECTION of a task.toml task's Verifier image (`root`), or of
     the shared Verifier base (None): the task's docker/verifier*.Dockerfile ENV, else the base's.
     The shared GPU adapter sizes upload chunks and collects by it; the Driver never sets it."""
-    values = set() if root is None else {
-        match for dockerfile in (root / "docker").glob("verifier*.Dockerfile")
-        for match in VERIFIER_CHANNEL_ENV.findall(dockerfile.read_text(encoding="utf-8"))}
+    values = (
+        set()
+        if root is None
+        else {
+            match
+            for dockerfile in (root / "docker").glob("verifier*.Dockerfile")
+            for match in VERIFIER_CHANNEL_ENV.findall(
+                dockerfile.read_text(encoding="utf-8")
+            )
+        }
+    )
     if len(values) > 1:
-        raise ManifestError(f"{root}: the Verifier Dockerfiles set different SSH channel sizes")
+        raise ManifestError(
+            f"{root}: the Verifier Dockerfiles set different SSH channel sizes"
+        )
     if values:
         return values.pop()
     [base] = VERIFIER_CHANNEL_ENV.findall(
-        (SHARED / "images/verifier-base.Dockerfile").read_text(encoding="utf-8"))
+        (SHARED / "images/verifier-base.Dockerfile").read_text(encoding="utf-8")
+    )
     return base
 
 
@@ -1126,10 +1493,13 @@ def judge_bundle(root: Path) -> Path:
     if root not in _BUNDLES:
         import shutil
         import tempfile
+
         bundle = Path(tempfile.mkdtemp(prefix=f"judge-{root.name}-")) / "task"
         shutil.copytree(root / "judge", bundle, symlinks=True)
         shutil.copytree(root / "repo", bundle / "pristine", symlinks=True)
-        (bundle / "config.yaml").write_bytes(generated_files(root)[f"{GENERATED}/judge/config.yaml"])
+        (bundle / "config.yaml").write_bytes(
+            generated_files(root)[f"{GENERATED}/judge/config.yaml"]
+        )
         _BUNDLES[root] = bundle
     return _BUNDLES[root]
 

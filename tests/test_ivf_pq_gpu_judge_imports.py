@@ -6,6 +6,7 @@ sys.path at import time and imported `ivfpq_worker` inside evaluate() failed eve
 ModuleNotFoundError (registrar, source-6b1d7b6e). The worker must come from the judge's own
 pristine copy, never from the candidate tree.
 """
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import ast
@@ -33,7 +34,9 @@ class IvfPqJudgeImportTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.scratch = Path(temp.name)
-        self.task_dir = fcs2_verifier.stage_task(task_manifest.judge_bundle(TASK), self.scratch)
+        self.task_dir = fcs2_verifier.stage_task(
+            task_manifest.judge_bundle(TASK), self.scratch
+        )
         self.path_before = sys.path[:]
         self.evaluate, self.check_tree = fcs2_verifier.load_evaluator(self.task_dir)
 
@@ -43,27 +46,46 @@ class IvfPqJudgeImportTests(unittest.TestCase):
         # Shared modules on the image's default import path (/opt/frontier).
         shared = {path.stem for path in (ROOT / "tasks/shared/lib").glob("*.py")}
         for node in ast.walk(ast.parse(source)):
-            names = ([alias.name for alias in node.names] if isinstance(node, ast.Import)
-                     else [node.module] if isinstance(node, ast.ImportFrom) and node.level == 0
-                     else [])
+            names = (
+                [alias.name for alias in node.names]
+                if isinstance(node, ast.Import)
+                else [node.module]
+                if isinstance(node, ast.ImportFrom) and node.level == 0
+                else []
+            )
             for name in names:
                 top = name.split(".")[0]
                 with self.subTest(module=name):
-                    self.assertTrue(top in sys.stdlib_module_names or top in local or top in shared
-                                    or top == "__future__",
-                                    f"{name} is neither stdlib, a judge/ module nor a shared one")
-        path_edits = [node.lineno for node in ast.walk(ast.parse(source))
-                      if isinstance(node, ast.Attribute) and node.attr == "path"
-                      and isinstance(node.value, ast.Name) and node.value.id == "sys"]
+                    self.assertTrue(
+                        top in sys.stdlib_module_names
+                        or top in local
+                        or top in shared
+                        or top == "__future__",
+                        f"{name} is neither stdlib, a judge/ module nor a shared one",
+                    )
+        path_edits = [
+            node.lineno
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Attribute)
+            and node.attr == "path"
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "sys"
+        ]
         self.assertEqual(path_edits, [], "the judge must not rely on sys.path edits")
 
     def test_worker_is_the_staged_pristine_copy_and_sys_path_is_restored(self):
         self.assertEqual(sys.path, self.path_before)
         evaluator = self.evaluate.__wrapped__.__globals__
         worker = evaluator["ivfpq_worker"]
-        self.assertEqual(Path(worker.__file__).resolve(),
-                         (self.task_dir / "pristine/benchmark/ivfpq_worker.py").resolve())
-        for name in ("verified_data_path", "validate_distance_config", "summarize_samples"):
+        self.assertEqual(
+            Path(worker.__file__).resolve(),
+            (self.task_dir / "pristine/benchmark/ivfpq_worker.py").resolve(),
+        )
+        for name in (
+            "verified_data_path",
+            "validate_distance_config",
+            "summarize_samples",
+        ):
             self.assertTrue(callable(getattr(worker, name)))
 
     def test_evaluate_reaches_the_data_check_not_an_import_error(self):

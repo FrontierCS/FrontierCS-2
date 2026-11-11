@@ -19,8 +19,8 @@ memory_bytes = 8589934592         # 8 GiB
 wall_time_seconds = 18000         # 5 h
 max_train_calls = 100
 max_train_wall_seconds = 12000
-# 330 before the searches moved to [test_sandboxes.search] (owner decision 2026-11-07): the machine's lease plus the
-# judge's validations here. Agent-visible (the generated README states it): owner decision.
+# 330 before the searches moved to [test_sandboxes.search]: the machine's lease plus the
+# judge's validations here. Agent-visible (the generated README states it).
 eval_timeout_seconds = 1800
 
 # A recording capacity only: the Driver does NOT pass it to the Verifier. The Verifier's SSH

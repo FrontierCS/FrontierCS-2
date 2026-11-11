@@ -4,7 +4,7 @@ Evaluated model: **Claude Opus 5.5** (`claude-opus-5-5`), effort `max`, with
 the 2.1.296 recipe (see `image_source_commit` in `config/candidates.json`).
 This recipe adds Driver gateway mode and has no published image yet.
 
-The overlay packages the official Linux/x64 Claude Code **2.1.311** native
+The overlay packages the official Linux/x64 Claude Code **2.1.321** native
 package. The Dockerfile downloads the npm tarball, checks its SHA-512 and the
 `--version` output, and copies the executable with its own dynamic loader and
 shared libraries. It does not modify the executable.
@@ -12,7 +12,7 @@ shared libraries. It does not modify the executable.
 ## Build
 
 ```bash
-docker build --platform linux/amd64 -t frontier-candidate-claude-code:2.1.311 candidates/claude-code
+docker build --platform linux/amd64 -t frontier-candidate-claude-code:2.1.321 candidates/claude-code
 ```
 
 `source.json` records the platform source revision and the SHA-256 of every

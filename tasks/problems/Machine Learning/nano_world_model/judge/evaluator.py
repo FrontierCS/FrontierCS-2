@@ -1,6 +1,6 @@
 """Judge of nano_world_model: action-conditioned Point Maze future-video sampling.
 
-Runs on the CPU control image (design/sandboxes.md, class 1: output-scored with a deadline). The
+Runs on the CPU control image (output-scored with a deadline). The
 shared verifier applies the patch with the task's edit-scope rules, runs check_tree (the sampler
 source policy) and calls evaluate(tree): the starter with only the allowed files overlaid.
 

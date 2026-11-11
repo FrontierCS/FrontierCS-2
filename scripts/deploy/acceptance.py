@@ -1179,7 +1179,8 @@ def task_image_digests(images: Mapping[str, Any]) -> dict[str, str]:
     for key, value in receipt_images(images).items():
         if key == "gpu_sidecars":
             digests.update(
-                (f"gpu_sidecar:{name}", image["digest"]) for name, image in value.items()
+                (f"gpu_sidecar:{name}", image["digest"])
+                for name, image in value.items()
             )
         else:
             digests[key] = value["digest"]
@@ -1407,7 +1408,9 @@ def reference_parity_main(arguments: list[str] | None = None) -> int:
         "--config", type=Path, default=REPOSITORY_ROOT / "config/site.json"
     )
     parser.add_argument(
-        "--catalog", type=Path, help="a catalog file in place of the repository's task layers"
+        "--catalog",
+        type=Path,
+        help="a catalog file in place of the repository's task layers",
     )
     parser.add_argument(
         "--seed-receipt",

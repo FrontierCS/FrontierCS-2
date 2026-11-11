@@ -212,9 +212,7 @@ def digest(value):
 def staging_uri(value, suffix):
     require(
         isinstance(value, str)
-        and re.fullmatch(
-            r"s3://[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]/" + suffix, value
-        ),
+        and re.fullmatch(r"s3://[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]/" + suffix, value),
         "not an immutable native build URI",
     )
 

@@ -1,5 +1,5 @@
 {
-  "platform_source_commit": "1e1d86133b5ba270aca8e349d7c00b63e6ce40f7",
+  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
   "dockerfile": {
     "source": "candidate-overlays/agy-gemini/Dockerfile",
     "sha256": "sha256:93ec1ff89730acf21d2c63ed965869b7b02a8b9dc8899d3a9d25d9f4b178c5f7",

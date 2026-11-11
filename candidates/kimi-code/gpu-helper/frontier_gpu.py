@@ -12,12 +12,14 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shlex
+import socket
 import stat
 import subprocess
 import sys
 import tarfile
 import tempfile
 import time
+import threading
 from urllib.parse import urlsplit
 import uuid
 
@@ -28,8 +30,17 @@ SSH = Path("/usr/bin/ssh")
 PROXY = Path("/opt/frontier/candidate/bin/frontier-gpu-connect-proxy")
 MAX_RESPONSE = 64 * 1024 * 1024
 REQUEST_ATTEMPTS = 16
+CREATE_RECOVERY_ATTEMPTS = 1024
+MAX_PROBLEM = 4096
+PUBLIC_PROBLEMS = {
+    "idempotency_in_progress": "The same operation is still pending; reuse this key and body.",
+    "mutation_rate_exhausted": "Driver mutation request rate exceeded; retry this same operation later.",
+    "quota_exhausted": "The task's GPU instance or GPU-second allowance is exhausted.",
+    "gpu_type_not_allowed": "The task does not allow this GPU type.",
+    "idempotency_conflict": "This idempotency key was already used with different arguments.",
+    "gpu_backend_unavailable": "GPU backend unavailable; provider details withheld.",
+}
 MAX_TOKEN = 16 * 1024
-DEFAULT_TRANSFER_LIMIT = 64 * 1024 * 1024
 # Driver create waits for image import and sandbox readiness. Each provider
 # phase can take one hour; keep a small response margin, not a 30s RPC timeout.
 GPU_CREATE_TIMEOUT_SECONDS = 2 * 60 * 60 + 120
@@ -86,31 +97,122 @@ class Client:
             headers.update({"Content-Type": "application/json", "Content-Length": str(len(encoded))})
         if idempotency:
             headers["Idempotency-Key"] = idempotency
-        attempts = REQUEST_ATTEMPTS if method in {"GET", "DELETE"} or idempotency else 1
+        recover_create = method == "POST" and path == "/v1/gpu-runners" and bool(idempotency)
+        attempts = CREATE_RECOVERY_ATTEMPTS if recover_create else (
+            REQUEST_ATTEMPTS if method in {"GET", "DELETE"} or idempotency else 1
+        )
+        deadline = time.monotonic() + timeout
+        last_error = "no response"
+        last_typed_error = "none"
         for attempt in range(attempts):
-            connection = http.client.HTTPConnection(self.host, self.port, timeout=timeout)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise GpuError(f"Driver request deadline exceeded after {attempt} attempts; last error: {last_error}")
+            connection = http.client.HTTPConnection(self.host, self.port, timeout=remaining)
+            response_slot: list[object] = []
+            connected_sockets: list[object] = []
+
+            def interrupt(connection=connection, response_slot=response_slot, connected_sockets=connected_sockets) -> None:
+                # A socket inactivity timeout alone does not bound trickling headers/body.
+                sockets = [connection.sock, *connected_sockets]
+                if response_slot:
+                    sockets.append(getattr(getattr(getattr(response_slot[0], "fp", None), "raw", None), "_sock", None))
+                for active in sockets:
+                    if active is not None:
+                        try:
+                            active.shutdown(socket.SHUT_RDWR)
+                        except OSError:
+                            pass
+                connection.close()
+
+            watchdog = threading.Timer(remaining, interrupt)
+            watchdog.daemon = True
+            watchdog.start()
+            retry = False
             try:
                 connection.request(method, path, body=encoded, headers=headers)
+                # Keep the socket even if getresponse detaches it for Connection: close.
+                connected_sockets.append(connection.sock)
                 response = connection.getresponse()
-                data = response.read(MAX_RESPONSE + 1)
-                if len(data) > MAX_RESPONSE:
+                response_slot.append(response)
+                limit = MAX_RESPONSE if 200 <= response.status < 300 else MAX_PROBLEM
+                data = response.read(limit + 1)
+                if len(data) > limit:
                     raise GpuError("Driver response exceeded its size limit")
-                if response.status in {408, 429, 500, 502, 503, 504} and attempt + 1 < attempts:
-                    time.sleep(min(10, 0.25 * (2 ** attempt)))
-                    continue
+                if time.monotonic() >= deadline:
+                    raise GpuError(f"Driver request deadline exceeded after {attempt + 1} attempts; last error: {last_error}")
                 if not 200 <= response.status < 300:
-                    raise GpuError(f"Driver returned HTTP {response.status}")
-                try:
-                    return json.loads(data)
-                except json.JSONDecodeError as error:
-                    raise GpuError("Driver response was not JSON") from error
+                    code = None
+                    try:
+                        problem = json.loads(data)
+                        if isinstance(problem, dict) and problem.get("status") == response.status:
+                            candidate = problem.get("code")
+                            if isinstance(candidate, str) and candidate in PUBLIC_PROBLEMS:
+                                code = candidate
+                    except (ValueError, UnicodeError):
+                        pass
+                    last_error = f"HTTP {response.status} code={code or 'unrecognized_problem'}"
+                    if code:
+                        detail = PUBLIC_PROBLEMS[code]
+                        title = problem.get("title")
+                        if code == "quota_exhausted" and isinstance(title, str) and title in {
+                            "GPU instance limit reached", "GPU seconds exhausted",
+                        }:
+                            detail = problem["title"]
+                        if code == "idempotency_in_progress" and isinstance(title, str) and title in {
+                            "GPU create is pending; retry the same key and arguments",
+                            "GPU create cleanup is uncertain; retry the same key and arguments",
+                        }:
+                            detail = problem["title"]
+                        last_error += f" detail={detail}"
+                        quota = problem.get("quota_failure")
+                        if code == "quota_exhausted" and isinstance(quota, dict):
+                            resource = quota.get("resource")
+                            fields = {
+                                "gpu_instances": ("limit", "current", "requested"),
+                                "gpu_seconds": ("limit", "used", "reserved", "remaining", "requested_count", "requested_seconds"),
+                            }.get(resource) if isinstance(resource, str) else None
+                            if fields and quota.get("principal") in ("agent", "verifier") and all(
+                                type(quota.get(k)) is int and 0 <= quota[k] <= 2**64 - 1 for k in fields
+                            ):
+                                safe = {"resource": resource, "principal": quota["principal"],
+                                        **{k: quota[k] for k in fields}}
+                                last_error += " quota=" + json.dumps(safe, sort_keys=True, separators=(",", ":"))
+                        last_typed_error = last_error
+                    retry = (response.status, code) in {
+                        (425, "idempotency_in_progress"),
+                        (429, "mutation_rate_exhausted"),
+                    }
+                    # Keep the existing read/delete transport policy. CREATE
+                    # requires typed recovery because acceptance may be ambiguous.
+                    if method in {"GET", "DELETE"} and response.status in {408, 500, 502, 503, 504}:
+                        retry = True
+                    if not retry or attempt + 1 == attempts:
+                        raise GpuError(f"Driver returned {last_error} after {attempt + 1} attempts")
+                else:
+                    try:
+                        return json.loads(data)
+                    except (ValueError, UnicodeError) as error:
+                        raise GpuError("Driver response was not JSON") from error
             except (OSError, http.client.HTTPException) as error:
+                last_error = ("transport_error (connection interrupted; completion unknown); "
+                              f"last typed error: {last_typed_error}")
                 if attempt + 1 == attempts:
-                    raise GpuError("Driver request failed") from error
-                time.sleep(min(10, 0.25 * (2 ** attempt)))
+                    raise GpuError(f"Driver request failed after {attempt + 1} attempts; last error: {last_error}") from error
+                retry = True
             finally:
+                watchdog.cancel()
+                if response_slot:
+                    response_slot[0].close()
                 connection.close()
-        raise GpuError("Driver request failed")
+            if retry:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise GpuError(f"Driver request deadline exceeded after {attempt + 1} attempts; last error: {last_error}")
+                print(f"frontier-gpu: recovery attempt {attempt + 1}/{attempts}; {last_error}; "
+                      f"reusing the same request{' and idempotency key' if idempotency else ''}", file=sys.stderr)
+                time.sleep(min(remaining, 10, 0.25 * (2 ** min(attempt, 6))))
+        raise GpuError(f"Driver request failed after {attempts} attempts; last error: {last_error}")
 
 
 def validate_runner_id(value: str) -> str:
@@ -175,22 +277,7 @@ def run_ssh(value: dict[str, object], remote: list[str], **kwargs: object) -> su
     with tempfile.TemporaryDirectory(prefix="frontier-gpu-ssh-") as directory:
         known_hosts = Path(directory) / "known_hosts"
         command = ssh_command(value, remote, known_hosts, tty=bool(kwargs.pop("tty", False)))
-        max_output = kwargs.pop("max_output_bytes", None)
-        if max_output is None:
-            return subprocess.run(command, check=False, **kwargs)
-        output = kwargs.pop("stdout")
-        with subprocess.Popen(command, stdout=subprocess.PIPE, **kwargs) as process:
-            try:
-                total = 0
-                while chunk := process.stdout.read(min(65536, max_output + 1 - total)):
-                    total += len(chunk)
-                    if total > max_output:
-                        raise GpuError("pull archive exceeds the transfer byte limit")
-                    output.write(chunk)
-                return subprocess.CompletedProcess(command, process.wait())
-            finally:
-                if process.poll() is None:
-                    process.kill()
+        return subprocess.run(command, check=False, **kwargs)
 
 
 def workspace_path(raw: str, *, existing: bool) -> Path:
@@ -214,44 +301,33 @@ def remote_path(raw: str, *, directory: bool = False) -> PurePosixPath:
     return path
 
 
-def transfer_limit() -> int:
-    try:
-        value = int(os.environ.get("FRONTIER_GPU_TRANSFER_MAX_BYTES", str(DEFAULT_TRANSFER_LIMIT)))
-    except ValueError as error:
-        raise GpuError("FRONTIER_GPU_TRANSFER_MAX_BYTES must be an integer") from error
-    if not 1 <= value <= 1024 * 1024 * 1024:
-        raise GpuError("GPU transfer limit must be between 1 byte and 1 GiB")
-    return value
-
-
 def build_tar(source: Path, output: Path) -> None:
     """Preserve source.basename; push's remote directory is its parent."""
-    total = 0
     with tarfile.open(output, "w", format=tarfile.USTAR_FORMAT) as archive:
-        entries = [source] if source.is_file() else [source, *sorted(source.rglob("*"))]
-        for path in entries:
+        def paths():
+            yield source
+            if source.is_dir():
+                for root, dirs, files in os.walk(source):
+                    dirs.sort(); files.sort()
+                    yield from (Path(root) / name for name in [*dirs, *files])
+        for path in paths():
             metadata = path.lstat()
             if not (stat.S_ISREG(metadata.st_mode) or stat.S_ISDIR(metadata.st_mode)):
                 raise GpuError(f"push rejects links and special files: {path}")
-            total += metadata.st_size if stat.S_ISREG(metadata.st_mode) else 0
-            if total > transfer_limit():
-                raise GpuError("push exceeds the transfer byte limit")
             archive.add(path, arcname=path.relative_to(source.parent), recursive=False)
 
 
 def validate_pull_tar(path: Path) -> None:
-    total = 0
-    with tarfile.open(path, "r:") as archive:
-        members = archive.getmembers()
-        if not members or len(members) > 100_000:
-            raise GpuError("pull archive has an invalid member count")
-        for member in members:
+    seen = False
+    with tarfile.open(path, "r|") as archive:
+        for member in archive:
+            seen = True
+            archive.members.clear()  # tarfile otherwise retains every parsed header.
             name = PurePosixPath(member.name)
             if member.name.startswith("/") or ".." in name.parts or not (member.isdir() or member.isfile()):
                 raise GpuError(f"pull archive has an unsafe member: {member.name}")
-            total += member.size
-            if total > transfer_limit():
-                raise GpuError("pull exceeds the transfer byte limit")
+        if not seen:
+            raise GpuError("pull archive is empty")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -331,15 +407,14 @@ def main(argv: list[str] | None = None) -> int:
             destination.mkdir(mode=0o700, parents=True, exist_ok=True)
             with tempfile.NamedTemporaryFile(prefix="frontier-gpu-pull-", suffix=".tar") as archive:
                 parent, name = str(remote.parent), remote.name
-                result = run_ssh(value, [f"tar -cpf - -C {shlex.quote(parent)} -- {shlex.quote(name)}"], stdout=archive,
-                                 max_output_bytes=transfer_limit() + 10 * 1024 * 1024)
+                result = run_ssh(value, [f"tar -cpf - -C {shlex.quote(parent)} -- {shlex.quote(name)}"], stdout=archive)
                 if result.returncode: return result.returncode
                 archive.flush()
-                if Path(archive.name).stat().st_size > transfer_limit() + 10 * 1024 * 1024:
-                    raise GpuError("pull archive exceeds the transfer byte limit")
                 validate_pull_tar(Path(archive.name))
-                with tarfile.open(archive.name, "r:") as incoming:
-                    incoming.extractall(destination, filter="data")
+                with tarfile.open(archive.name, "r|") as incoming:
+                    for member in incoming:
+                        incoming.members.clear()
+                        incoming.extract(member, destination, filter="data")
             return 0
         raise AssertionError(args.operation)
     except (GpuError, OSError, UnicodeError, http.client.HTTPException, subprocess.SubprocessError, tarfile.TarError) as error:

@@ -22,8 +22,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
 import import_task as importer
 import render_task_definition as renderer
-from preview.publication import baseline_from_result_json, load_baselines
 import task_layers  # noqa: E402
+from deploy.publication import baseline_from_result_json, load_baselines
 
 REAL_RESOLVE_DIGEST = importer.resolver.resolve_digest
 
@@ -124,15 +124,16 @@ class ImportTests(unittest.TestCase):
             (existing / path).write_text(json.dumps(body))
         definition = importer.validate_export(existing)
         entry = importer.catalog_entry(
-            existing, definition, "docker.io/joyemang33", existing / "judge/reference.patch"
+            existing,
+            definition,
+            "docker.io/joyemang33",
+            existing / "judge/reference.patch",
         )
         for image, _ in importer.resolver.task_images(entry):
             image["digest"] = "sha256:" + "b" * 64
         catalog = {
             "schema_version": "frontier.deployment-task-catalog/v2",
-            "candidate": task_layers.load_catalog()[
-                "candidate"
-            ],
+            "candidate": task_layers.load_catalog()["candidate"],
             "tasks": [entry],
         }
         (self.root / "config/task-catalog.json").write_text(renderer.json_text(catalog))
@@ -150,7 +151,10 @@ class ImportTests(unittest.TestCase):
     def manifest(self):
         definition = importer.validate_export(self.source)
         entry = importer.catalog_entry(
-            self.source, definition, "docker.io/joyemang33", self.source / "judge/reference.patch"
+            self.source,
+            definition,
+            "docker.io/joyemang33",
+            self.source / "judge/reference.patch",
         )
         images = {
             role: {k: entry[key][k] for k in ("repository", "tag", "digest")}
@@ -285,9 +289,13 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(
                 snapshot(self.root / importer.task_layers.SHARED_PROBLEMS / name),
                 {
-                    p.removeprefix(str(importer.task_layers.SHARED_PROBLEMS / name) + "/"): body
+                    p.removeprefix(
+                        str(importer.task_layers.SHARED_PROBLEMS / name) + "/"
+                    ): body
                     for p, body in before.items()
-                    if p.startswith(str(importer.task_layers.SHARED_PROBLEMS / name) + "/")
+                    if p.startswith(
+                        str(importer.task_layers.SHARED_PROBLEMS / name) + "/"
+                    )
                 },
             )
             self.assertTrue((staged / "config/task-catalog.json").is_file())
@@ -351,7 +359,9 @@ class ImportTests(unittest.TestCase):
         self.checks.side_effect = ValueError("post-import failure")
         with self.assertRaisesRegex(ValueError, "post-import failure"):
             self.invoke()
-        self.assertFalse((self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task").exists())
+        self.assertFalse(
+            (self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task").exists()
+        )
         self.assertEqual(snapshot(self.root), before)
 
     def test_persistent_catalog_write_failure_restores_tree_and_both_configs(self):
@@ -407,7 +417,10 @@ class ImportTests(unittest.TestCase):
         def remove(path, *args, **kwargs):
             nonlocal rolling_back
             rmtree(path, *args, **kwargs)
-            if path == self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task":
+            if (
+                path
+                == self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task"
+            ):
                 rolling_back = True
                 raise OSError("tree removal reported failure")
 
@@ -557,7 +570,10 @@ class ImportTests(unittest.TestCase):
         path, manifest = self.manifest()
         definition = importer.validate_export(self.source)
         entry = importer.catalog_entry(
-            self.source, definition, "docker.io/joyemang33", self.source / "judge/reference.patch"
+            self.source,
+            definition,
+            "docker.io/joyemang33",
+            self.source / "judge/reference.patch",
         )
         expected = entry["agent_image"]["tag"]
         self.assertEqual(entry["dataset_image"]["tag"], expected)
@@ -580,7 +596,10 @@ class ImportTests(unittest.TestCase):
         path, manifest = self.manifest()
         definition = importer.validate_export(self.source)
         entry = importer.catalog_entry(
-            self.source, definition, "docker.io/joyemang33", self.source / "judge/reference.patch"
+            self.source,
+            definition,
+            "docker.io/joyemang33",
+            self.source / "judge/reference.patch",
         )
         source_tag = definition["image_tag"]
         for _role, image in manifest["images"].items():
@@ -594,12 +613,13 @@ class ImportTests(unittest.TestCase):
         )
         catalog = {
             "schema_version": "frontier.deployment-task-catalog/v2",
-            "candidate": task_layers.load_catalog()[
-                "candidate"
-            ],
+            "candidate": task_layers.load_catalog()["candidate"],
             "tasks": [adopted],
         }
-        shutil.copytree(self.source, self.root / importer.task_layers.SHARED_PROBLEMS / self.source.name)
+        shutil.copytree(
+            self.source,
+            self.root / importer.task_layers.SHARED_PROBLEMS / self.source.name,
+        )
         deploy.validate_task_catalog(
             catalog, definitions={self.source.name: definition}, root=self.root
         )
@@ -661,7 +681,9 @@ class ImportTests(unittest.TestCase):
         shutil.copytree(ROOT / "tasks/template/Theory/template_task", source)
         manifest_path = source / "task.toml"
         text = manifest_path.read_text(encoding="utf-8")
-        manifest_path.write_text(text.replace('id = "template_task"', 'id = "cpu_sandbox_task"', 1) + """
+        manifest_path.write_text(
+            text.replace('id = "template_task"', 'id = "cpu_sandbox_task"', 1)
+            + """
 [test_sandboxes.candidate]
 access = "command"
 dockerfile = "docker/agent.Dockerfile"
@@ -669,41 +691,81 @@ workdir = "/workspace/sandbox"
 resources = { cpu_millis = 2000, memory_bytes = 4294967296 }
 max_concurrent = 1
 lease_seconds = { train = 600, eval = 600 }
-""", encoding="utf-8")
+""",
+            encoding="utf-8",
+        )
         definition = importer.validate_export(source)
         self.assertEqual(definition["cpu_runner_images"], ["agent_cpu"])
         entry = importer.catalog_entry(source, definition, "docker.io/joyemang33", None)
-        self.assertEqual(entry["agent_cpu_runner_image"], {
-            "repository": "docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
-            "tag": entry["agent_image"]["tag"], "digest": importer.PLACEHOLDER})
+        self.assertEqual(
+            entry["agent_cpu_runner_image"],
+            {
+                "repository": "docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
+                "tag": entry["agent_image"]["tag"],
+                "digest": importer.PLACEHOLDER,
+            },
+        )
         self.assertNotIn("verifier_cpu_runner_image", entry)
         with self.assertRaisesRegex(ValueError, "placeholder"):
             importer.verify_images(entry, source, None)
         # Adoption needs the runner role, bound to the source tag, like every other role.
-        images = {role: {k: entry[key][k] for k in ("repository", "tag")} | {"digest": "sha256:" + "c" * 64}
-                  for role, key in importer.ROLE_KEYS.items() if entry.get(key) is not None}
+        images = {
+            role: {k: entry[key][k] for k in ("repository", "tag")}
+            | {"digest": "sha256:" + "c" * 64}
+            for role, key in importer.ROLE_KEYS.items()
+            if entry.get(key) is not None
+        }
         self.assertIn("agent_cpu_runner", images)
-        body = {"schema_version": "frontier.task-release-images/v1",
-                "problem_id": "cpu_sandbox_task",
-                "source_sha256": definition["source"]["source_set_sha256"], "images": images}
+        body = {
+            "schema_version": "frontier.task-release-images/v1",
+            "problem_id": "cpu_sandbox_task",
+            "source_sha256": definition["source"]["source_set_sha256"],
+            "images": images,
+        }
         path = Path(self.temp.name) / "published-cpu.json"
-        path.write_text(json.dumps(dict(body, images={
-            role: image for role, image in images.items() if role != "agent_cpu_runner"})))
-        with self.assertRaisesRegex(deploy.DeployError, r"published image roles keys differ; missing=\['agent_cpu_runner'\]"):
-            importer.published_manifest(path, "cpu_sandbox_task", body["source_sha256"], entry)
-        wrong = dict(images, agent_cpu_runner=dict(images["agent_cpu_runner"], tag="source-other"))
+        path.write_text(
+            json.dumps(
+                dict(
+                    body,
+                    images={
+                        role: image
+                        for role, image in images.items()
+                        if role != "agent_cpu_runner"
+                    },
+                )
+            )
+        )
+        with self.assertRaisesRegex(
+            deploy.DeployError,
+            r"published image roles keys differ; missing=\['agent_cpu_runner'\]",
+        ):
+            importer.published_manifest(
+                path, "cpu_sandbox_task", body["source_sha256"], entry
+            )
+        wrong = dict(
+            images,
+            agent_cpu_runner=dict(images["agent_cpu_runner"], tag="source-other"),
+        )
         path.write_text(json.dumps(dict(body, images=wrong)))
         with self.assertRaisesRegex(deploy.DeployError, "images.agent_cpu_runner"):
-            importer.published_manifest(path, "cpu_sandbox_task", body["source_sha256"], entry)
+            importer.published_manifest(
+                path, "cpu_sandbox_task", body["source_sha256"], entry
+            )
         path.write_text(json.dumps(body))
-        adopted = importer.published_manifest(path, "cpu_sandbox_task", body["source_sha256"], entry)
-        self.assertEqual(adopted["agent_cpu_runner_image"]["digest"], "sha256:" + "c" * 64)
+        adopted = importer.published_manifest(
+            path, "cpu_sandbox_task", body["source_sha256"], entry
+        )
+        self.assertEqual(
+            adopted["agent_cpu_runner_image"]["digest"], "sha256:" + "c" * 64
+        )
         # verify_images resolves the runner image by digest and by tag.
         self.registry.side_effect = None
         self.registry.return_value = "sha256:" + "c" * 64
         importer.verify_images(adopted, source, None)
-        self.assertIn("docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
-                      {c.args[0] for c in self.registry.call_args_list})
+        self.assertIn(
+            "docker.io/joyemang33/fcs2-task-cpu_sandbox_task-agent-runner",
+            {c.args[0] for c in self.registry.call_args_list},
+        )
         adopted["agent_cpu_runner_image"]["digest"] = "sha256:" + "d" * 64
         with self.assertRaisesRegex(ValueError, "same linux/amd64"):
             importer.verify_images(adopted, source, None)
@@ -975,7 +1037,9 @@ lease_seconds = { train = 600, eval = 600 }
         definition = deploy.load_json(self.root / "config/task-definitions.json")[
             "minimal_task"
         ]
-        self.assertEqual(definition["sidecars"]["scheduler"]["phases"], ["train", "eval"])
+        self.assertEqual(
+            definition["sidecars"]["scheduler"]["phases"], ["train", "eval"]
+        )
         self.assertTrue(definition["sidecars"]["scheduler"]["attestation_key"])
         self.assertEqual(
             definition["gpu_parent_resources"]["verifier"]["cpu_millis"], 16000
@@ -989,8 +1053,7 @@ lease_seconds = { train = 600, eval = 600 }
         )
         # Sidecar images are part of the publication set and resolve like roles.
         resolved = {
-            image["repository"]
-            for image, _ in importer.resolver.task_images(entry)
+            image["repository"] for image, _ in importer.resolver.task_images(entry)
         }
         self.assertIn(image["repository"], resolved)
 
@@ -1111,7 +1174,9 @@ lease_seconds = { train = 600, eval = 600 }
 
     def test_check_detects_imported_tree_drift_without_writes(self):
         self.invoke()
-        (self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task/new-file").write_text("drift")
+        (
+            self.root / importer.task_layers.SHARED_PROBLEMS / "minimal_task/new-file"
+        ).write_text("drift")
         before = snapshot(self.root)
         with self.assertRaisesRegex(ValueError, "identity differs"):
             self.invoke("--check")
@@ -1276,7 +1341,7 @@ class BaselineTests(unittest.TestCase):
                 # This catalog regression checks its stored summary and original
                 # source bindings; importer qualification/check are exercised
                 # with complete positive/negative packets in test_measured_baseline.
-                from preview import measured_baseline
+                from deploy import measured_baseline
 
                 measurement = baseline["measurement"]
                 self.assertEqual(
@@ -1302,9 +1367,7 @@ class BaselineTests(unittest.TestCase):
                 self.assertEqual(baseline["historical_spread"], 0.0)
                 task = next(
                     row
-                    for row in task_layers.load_catalog()[
-                        "tasks"
-                    ]
+                    for row in task_layers.load_catalog()["tasks"]
                     if row["name"] == name
                 )
                 importer.publication.validate_baseline(
@@ -1314,12 +1377,14 @@ class BaselineTests(unittest.TestCase):
             count += 1
             definition = deploy.TASK_DEFINITIONS[name]
             task_root = renderer.task_directory(name)
-            authored = ROOT / "docs/task-authoring" / name / "provenance/judge-result.json"
+            authored = (
+                ROOT / "docs/task-authoring" / name / "provenance/judge-result.json"
+            )
             if (task_root / "judge/result.json").is_file() or not authored.is_file():
                 derived = baseline_from_result_json(task_root, definition)
             else:
                 # A task.toml task keeps its authoring result.json under docs/task-authoring
-                #; derive from it on a copy of the task with it back at judge/.
+                # ; derive from it on a copy of the task with it back at judge/.
                 with tempfile.TemporaryDirectory() as directory:
                     copy = Path(directory) / name
                     shutil.copytree(task_root, copy)

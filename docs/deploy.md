@@ -3,17 +3,17 @@
 ## Deployment package
 
 `scripts/frontier_deploy.py` is a compatibility shim. It explicitly re-exports
-existing functions and constants and calls `preview.cli.main()`; the Makefile
+existing functions and constants and calls `deploy.cli.main()`; the Makefile
 and operator command lines keep the same entrypoint and argument order.
 
 | Module | Responsibility |
 | --- | --- |
-| `preview.config` | Site validation, generated bundles, Terraform variables/backend documents; exposes generated/state directory helpers |
-| `preview.infra` | Shared errors, frozen hash/ULID algorithms, process/filesystem helpers, image-field validation, Terraform, Kubernetes/port-forward, runtime/RBAC/admission/LiteLLM manifests |
-| `preview.images` | Source checks, builds, registry readback, mirroring, shared linux/amd64 child selection; separate readback and cache trust checks |
-| `preview.publication` | Definition/catalog/reference/baseline loading and validation, authoring baseline extraction, site selection, immutable version documents, author/seed receipts, seeding and GET-only checks |
-| `preview.acceptance` | CPU/GPU smoke, reference readiness and resumable parity replay, persisted smoke operations, runtime/LiteLLM verification, admission receipt printing; exposes runtime/capacity preflight |
-| `preview.cli` | Argument parser and every command dispatcher, ordered deployment/upgrade orchestration and Modal credential delivery |
+| `deploy.config` | Site validation, generated bundles, Terraform variables/backend documents; exposes generated/state directory helpers |
+| `deploy.infra` | Shared errors, frozen hash/ULID algorithms, process/filesystem helpers, image-field validation, Terraform, Kubernetes/port-forward, runtime/RBAC/admission/LiteLLM manifests |
+| `deploy.images` | Source checks, builds, registry readback, mirroring, shared linux/amd64 child selection; separate readback and cache trust checks |
+| `deploy.publication` | Definition/catalog/reference/baseline loading and validation, authoring baseline extraction, site selection, immutable version documents, author/seed receipts, seeding and GET-only checks |
+| `deploy.acceptance` | CPU/GPU smoke, reference readiness and resumable parity replay, persisted smoke operations, runtime/LiteLLM verification, admission receipt printing; exposes runtime/capacity preflight |
+| `deploy.cli` | Argument parser and every command dispatcher, ordered deployment/upgrade orchestration and Modal credential delivery |
 
 Directory calculation and runtime/capacity preflight implementations are shared
 primitives in `infra`, explicitly re-exported by `config` and `acceptance`.
@@ -34,7 +34,7 @@ acceptance. Internal callers and test patches use the owning package modules;
 the scanner rejects patches on all four compatibility wrappers.
 
 `build_task_images.py` is the local builder used by the importer. Its optional
-source-layer compatibility path lives in `preview.images`, so the former
+source-layer compatibility path lives in `deploy.images`, so the former
 standalone implementation is retired without changing its flags or operations.
 Make aliases and their one-release deprecation are documented in
 [operations](operations.md#build-the-bundled-task-images-locally).

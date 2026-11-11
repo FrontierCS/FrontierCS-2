@@ -11,15 +11,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-INSTALLER = Path(__file__).resolve().parents[1] / "tasks/shared/lib/install_frontier_pth.py"
+INSTALLER = (
+    Path(__file__).resolve().parents[1] / "tasks/shared/lib/install_frontier_pth.py"
+)
 
 
 class InstallFrontierPth(unittest.TestCase):
     def setUp(self):
         self.root = Path(tempfile.mkdtemp(prefix="frontier-pth-"))
         self.addCleanup(subprocess.run, ["rm", "-rf", str(self.root)], check=True)
-        subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(self.root / "venv")],
-                       check=True)
+        subprocess.run(
+            [sys.executable, "-m", "venv", "--without-pip", str(self.root / "venv")],
+            check=True,
+        )
         self.python = str(self.root / "venv/bin/python")
         self.shared = self.root / "opt-frontier"
         self.shared.mkdir()
@@ -30,8 +34,13 @@ class InstallFrontierPth(unittest.TestCase):
         self.worker = str(worker)
 
     def run_worker(self, *flags):
-        return subprocess.run([self.python, *flags, self.worker], cwd="/", capture_output=True,
-                              text=True, env={"PATH": "/usr/bin:/bin"})
+        return subprocess.run(
+            [self.python, *flags, self.worker],
+            cwd="/",
+            capture_output=True,
+            text=True,
+            env={"PATH": "/usr/bin:/bin"},
+        )
 
     def test_a_worker_imports_the_shared_module_only_after_the_install(self):
         before = self.run_worker()
@@ -41,21 +50,30 @@ class InstallFrontierPth(unittest.TestCase):
         for flags in ((), ("-I",)):
             with self.subTest(flags=flags):
                 after = self.run_worker(*flags)
-                self.assertEqual((after.returncode, after.stdout, after.stderr),
-                                 (0, "shared\n", ""))
+                self.assertEqual(
+                    (after.returncode, after.stdout, after.stderr), (0, "shared\n", "")
+                )
 
     def test_a_second_install_fails(self):
         subprocess.run([self.python, str(INSTALLER), str(self.shared)], check=True)
-        again = subprocess.run([self.python, str(INSTALLER), str(self.shared)],
-                               capture_output=True, text=True)
+        again = subprocess.run(
+            [self.python, str(INSTALLER), str(self.shared)],
+            capture_output=True,
+            text=True,
+        )
         self.assertNotEqual(again.returncode, 0)
         self.assertIn("FileExistsError", again.stderr)
 
     def test_a_relative_directory_is_refused(self):
-        refused = subprocess.run([self.python, str(INSTALLER), "opt/frontier"],
-                                 capture_output=True, text=True)
+        refused = subprocess.run(
+            [self.python, str(INSTALLER), "opt/frontier"],
+            capture_output=True,
+            text=True,
+        )
         self.assertEqual(refused.returncode, 1)
-        self.assertIn("usage: install_frontier_pth.py <absolute directory>", refused.stderr)
+        self.assertIn(
+            "usage: install_frontier_pth.py <absolute directory>", refused.stderr
+        )
 
 
 if __name__ == "__main__":

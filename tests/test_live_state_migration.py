@@ -16,11 +16,10 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import frontier_deploy as deploy
-from preview import images as image_ops
-from preview import publication
+from deploy import images as image_ops
+from deploy import publication
 from task_selection import deployment_catalog
 from test_task_seeding import exact_version
-import task_layers  # noqa: E402
 
 FIXTURES = ROOT / "tests/fixtures/live-state-v1"
 FILE_SHA256 = {
@@ -51,9 +50,7 @@ class LiveStateMigrationTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         catalog_path = self.catalog_path = Path(temporary.name) / "task-catalog.json"
         catalog_path.write_bytes(deploy.canonical_json(self.full_catalog))
-        self.enterContext(
-            mock.patch.object(publication, "CATALOG", catalog_path)
-        )
+        self.enterContext(mock.patch.object(publication, "CATALOG", catalog_path))
         self.enterContext(
             mock.patch.object(
                 publication, "load_task_definitions", return_value=definitions
@@ -152,7 +149,9 @@ class LiveStateMigrationTests(unittest.TestCase):
     def test_tracked_reexports_deliberately_differ_from_the_archived_receipt(self):
         with (
             mock.patch.object(
-                publication, "load_task_definitions", return_value=self.current_definitions
+                publication,
+                "load_task_definitions",
+                return_value=self.current_definitions,
             ),
             mock.patch.object(publication, "CATALOG", None),
         ):
@@ -186,12 +185,18 @@ class LiveStateMigrationTests(unittest.TestCase):
             self.catalog["candidate"]["overlay_image"]["digest"],
         )
         historical_execution = {
-            "entrypoint": ["/opt/frontier/candidate/launch"], "args": [],
-            "working_dir": "/workspace", "user": "1000:1000",
-            "env": {"FRONTIER_TRAIN_POLL_TIMEOUT_SECONDS": str(max(
-                definition["quota"]["wall_time_seconds"]
-                for definition in deploy.TASK_DEFINITIONS.values()
-            ))},
+            "entrypoint": ["/opt/frontier/candidate/launch"],
+            "args": [],
+            "working_dir": "/workspace",
+            "user": "1000:1000",
+            "env": {
+                "FRONTIER_TRAIN_POLL_TIMEOUT_SECONDS": str(
+                    max(
+                        definition["quota"]["wall_time_seconds"]
+                        for definition in deploy.TASK_DEFINITIONS.values()
+                    )
+                )
+            },
         }
         document = deploy.candidate_version_document(
             self.catalog["candidate"], overlay, execution=historical_execution
@@ -449,9 +454,7 @@ class LiveStateMigrationTests(unittest.TestCase):
             self.assertEqual(
                 [record["id"] for record in published], self.receipt["task_version_ids"]
             )
-            self.assertEqual(
-                migrated["candidate_version_id"], new_candidate_id
-            )
+            self.assertEqual(migrated["candidate_version_id"], new_candidate_id)
             actual_mirrors = deploy.load_json(mirror_path)
             self.assertEqual(actual_mirrors.pop("reference_candidates"), {})
             self.assertEqual(actual_mirrors, selected_mirrors)
@@ -468,7 +471,10 @@ class LiveStateMigrationTests(unittest.TestCase):
                         f"/api/v1/candidate-versions/{new_candidate_id}",
                     ),
                     mock.call(
-                        "http://127.0.0.1:58080", "POST", "/api/v1/candidate-versions", candidate
+                        "http://127.0.0.1:58080",
+                        "POST",
+                        "/api/v1/candidate-versions",
+                        candidate,
                     ),
                     *[
                         mock.call(

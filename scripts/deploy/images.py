@@ -385,7 +385,9 @@ def mirror_task_images(
             cached = cached_registry_image(port, repository, source["digest"])
             if cached is not None:
                 if plain_manifest and cached != source["digest"]:
-                    raise DeployError("Candidate overlay must pin the linux/amd64 manifest, not its index")
+                    raise DeployError(
+                        "Candidate overlay must pin the linux/amd64 manifest, not its index"
+                    )
                 print(f"verified registry reuse: {repository}@{cached}", flush=True)
                 return {
                     "tag": f"{endpoint}/{repository}:{tag}",
@@ -421,7 +423,9 @@ def mirror_task_images(
                 run_command([docker, "push", local_tag], timeout=3600)
             digest = registry_digest(port, repository, tag)
             if plain_manifest and digest != source["digest"]:
-                raise DeployError("Candidate overlay must pin the linux/amd64 manifest, not its index")
+                raise DeployError(
+                    "Candidate overlay must pin the linux/amd64 manifest, not its index"
+                )
             if (
                 copy_tool
                 and cached_registry_image(port, repository, source["digest"]) != digest
@@ -462,9 +466,17 @@ def mirror_task_images(
             # Pods pull them from this registry (the Modal CPU backend imports the public tag).
             # Every task has its agent, verifier and dataset images; only the runner images are
             # per task.
-            runners = [name for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")
-                       if name in task]
-            for image_name in ("agent_image", "verifier_image", "dataset_image", *runners):
+            runners = [
+                name
+                for name in ("agent_cpu_runner_image", "verifier_cpu_runner_image")
+                if name in task
+            ]
+            for image_name in (
+                "agent_image",
+                "verifier_image",
+                "dataset_image",
+                *runners,
+            ):
                 source = task[image_name]
                 kind = image_name.removesuffix("_image").replace("_", "-")
                 repository = f"frontier/tasks/{problem.replace('_', '-')}/{kind}"
@@ -481,7 +493,10 @@ def mirror_task_images(
             if "sidecar_images" in task:
                 # Declared sidecars are public Modal-side images as well.
                 records[problem]["sidecar_images"] = {
-                    sidecar: {**source, "tag": f"{source['repository']}:{source['tag']}"}
+                    sidecar: {
+                        **source,
+                        "tag": f"{source['repository']}:{source['tag']}",
+                    }
                     for sidecar, source in task["sidecar_images"].items()
                 }
     atomic_write(
@@ -583,8 +598,16 @@ def previous_layers(repository: Path, commit: str) -> list[tuple[str, dict]]:
     return [
         (name, git_json(repository, commit, f"{name}/{task_layers.DECLARATION}"))
         for name in listed
-        if command(["git", "ls-tree", "--name-only", commit, f"{name}/{task_layers.DECLARATION}"],
-                   cwd=repository).strip()
+        if command(
+            [
+                "git",
+                "ls-tree",
+                "--name-only",
+                commit,
+                f"{name}/{task_layers.DECLARATION}",
+            ],
+            cwd=repository,
+        ).strip()
     ]
 
 
@@ -831,16 +854,22 @@ def previous_problem_path(repository: Path, commit: str, problem: str) -> str:
     one domain deep."""
     renderer.problem_directory(repository / task_layers.SHARED_PROBLEMS, problem)
     prefixes = ["tasks/problems/"] + [
-        f"{name}/{body['problems']}/" for name, body in previous_layers(repository, commit)
+        f"{name}/{body['problems']}/"
+        for name, body in previous_layers(repository, commit)
     ]
     matches = []
     for prefix in prefixes:
         paths = command(
-            ["git", "ls-tree", "-r", "--name-only", commit, "--", prefix], cwd=repository
+            ["git", "ls-tree", "-r", "--name-only", commit, "--", prefix],
+            cwd=repository,
         )
         for value in paths.splitlines():
             parts = value[len(prefix) :].split("/")
-            if len(parts) in (2, 3) and parts[-2] == problem and parts[-1] in ("policy.json", "task.toml"):
+            if (
+                len(parts) in (2, 3)
+                and parts[-2] == problem
+                and parts[-1] in ("policy.json", "task.toml")
+            ):
                 matches.append(value.rsplit("/", 1)[0])
     require(
         len(matches) == 1, f"previous task must have one source directory: {problem}"
@@ -890,8 +919,10 @@ def plan_problem(
     tag = definition["image_tag"]
     # CPU runner images are built FROM the task's whole image with the shared runner layer; a
     # source-only layer cannot carry them.
-    require(not definition.get("cpu_runner_images"),
-            "a task with CPU command sandboxes publishes by a full build (its runner images)")
+    require(
+        not definition.get("cpu_runner_images"),
+        "a task with CPU command sandboxes publishes by a full build (its runner images)",
+    )
     plan = {
         "source": definition["source"],
         "datasets": definition["datasets"],

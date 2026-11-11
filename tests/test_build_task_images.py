@@ -23,12 +23,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.dont_write_bytecode = True
 import image_namespace
-import task_layers  # noqa: E402
 import render_task_definition as renderer
+import task_layers  # noqa: E402
 import task_manifest
 import validate_task_layout as native_layout
-from preview import images as incremental
-from preview import infra
+from deploy import images as incremental
+from deploy import infra
 
 SPEC = importlib.util.spec_from_file_location(
     "build_task_images", ROOT / "scripts" / "build_task_images.py"
@@ -38,20 +38,24 @@ build_task_images = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(build_task_images)
 
 
-
 def with_definitions(path: Path) -> list:
     """The repository's task layers, every definition read from `path` instead."""
     empty = path.with_name("no-definitions.json")
     empty.write_text("{}")
     return [
-        task_layers.Layer(layer.root, layer.problems, layer.catalog, path if index == 0 else empty)
+        task_layers.Layer(
+            layer.root, layer.problems, layer.catalog, path if index == 0 else empty
+        )
         for index, layer in enumerate(task_layers.layers())
     ]
+
 
 class DemoImageBuildTests(unittest.TestCase):
     def setUp(self):
         # The production-layout smoke runs built images; VerifierSmokeTests covers it.
-        smoke = mock.patch.object(build_task_images, "verifier_smoke", return_value="smoke")
+        smoke = mock.patch.object(
+            build_task_images, "verifier_smoke", return_value="smoke"
+        )
         smoke.start()
         self.addCleanup(smoke.stop)
 
@@ -262,7 +266,9 @@ with mock.patch.object(Path, 'open', checked_open):
                 path = Path(directory) / "definitions.json"
                 path.write_text(json.dumps({**definitions, name: value}))
                 with (
-                    mock.patch.object(task_layers, "layers", return_value=with_definitions(path)),
+                    mock.patch.object(
+                        task_layers, "layers", return_value=with_definitions(path)
+                    ),
                     mock.patch.object(build_task_images, "build_problem") as build,
                 ):
                     with self.assertRaisesRegex(
@@ -285,9 +291,16 @@ with mock.patch.object(Path, 'open', checked_open):
             definitions.write_text(json.dumps({name: definition}))
             manifest = root / "manifest.json"
             with (
-                mock.patch.object(task_layers, "layers", return_value=[task_layers.Layer(root, root / "problems", root / "catalog.json", definitions)]),
+                mock.patch.object(
+                    task_layers,
+                    "layers",
+                    return_value=[
+                        task_layers.Layer(
+                            root, root / "problems", root / "catalog.json", definitions
+                        )
+                    ],
+                ),
                 mock.patch.object(renderer, "catalog_task_names", return_value=[name]),
-                
                 mock.patch.object(renderer, "render", return_value=definition),
                 mock.patch.object(build_task_images, "gpu_ssh_base") as gpu_base,
                 mock.patch.object(build_task_images, "freeze_bases") as freeze,
@@ -327,9 +340,16 @@ with mock.patch.object(Path, 'open', checked_open):
             definitions.write_text(json.dumps({name: definition}))
             manifest = root / "manifest.json"
             with (
-                mock.patch.object(task_layers, "layers", return_value=[task_layers.Layer(root, root / "problems", root / "catalog.json", definitions)]),
+                mock.patch.object(
+                    task_layers,
+                    "layers",
+                    return_value=[
+                        task_layers.Layer(
+                            root, root / "problems", root / "catalog.json", definitions
+                        )
+                    ],
+                ),
                 mock.patch.object(renderer, "catalog_task_names", return_value=[name]),
-                
                 mock.patch.object(renderer, "render", return_value=definition),
                 mock.patch.object(build_task_images, "gpu_ssh_base") as gpu_base,
                 mock.patch.object(build_task_images, "freeze_bases", return_value=[]),
@@ -353,10 +373,7 @@ with mock.patch.object(Path, 'open', checked_open):
 
     def test_all_ignores_extra_directory_with_one_warning(self):
         paths = list(task_layers.shared_layer().problems.iterdir())
-        names = [
-            task["name"]
-            for task in task_layers.load_catalog()["tasks"]
-        ]
+        names = [task["name"] for task in task_layers.load_catalog()["tasks"]]
         with tempfile.TemporaryDirectory() as directory:
             extra = Path(directory) / "extra_task"
             extra.mkdir()
@@ -407,7 +424,9 @@ with mock.patch.object(Path, 'open', checked_open):
                 path = Path(directory) / "definitions.json"
                 path.write_text(json.dumps(changed))
                 with (
-                    mock.patch.object(task_layers, "layers", return_value=with_definitions(path)),
+                    mock.patch.object(
+                        task_layers, "layers", return_value=with_definitions(path)
+                    ),
                     mock.patch.object(build_task_images, "build_problem") as build,
                 ):
                     with self.assertRaisesRegex(
@@ -418,8 +437,7 @@ with mock.patch.object(Path, 'open', checked_open):
                 build.assert_not_called()
 
     def test_native_gpu_quotas_and_ssh_environment_fix_are_preserved(self) -> None:
-        root = renderer.task_directory(build_task_images.SPARSE_VIDEO
-        )
+        root = renderer.task_directory(build_task_images.SPARSE_VIDEO)
         # svg is a task.toml task: its policy is task.toml over the shared defaults and its
         # recipes are docker/*.Dockerfile on the shared gpu-tools stage.
         policy = task_manifest.load_policy(root)
@@ -430,7 +448,8 @@ with mock.patch.object(Path, 'open', checked_open):
         )
         docker = root / "docker"
         self.assertIn(
-            "FRONTIER_VERIFIER_GPU_COUNT=4", (docker / "verifier.Dockerfile").read_text()
+            "FRONTIER_VERIFIER_GPU_COUNT=4",
+            (docker / "verifier.Dockerfile").read_text(),
         )
         agent_gpu = (docker / "agent-gpu.Dockerfile").read_text()
         self.assertIn("/opt/frontier/runtime-python", agent_gpu)
@@ -492,9 +511,18 @@ with mock.patch.object(Path, 'open', checked_open):
             run.assert_not_called()  # nothing to resolve: bases.json already pins digests
             tools = task_manifest.base_reference("gpu-tools")
             verifier = task_manifest.base_reference("verifier")
-            self.assertEqual(arguments, ["--build-arg", f"GPU_TOOLS={tools}",
-                                         "--build-arg", f"VERIFIER_BASE={verifier}"])
-            self.assertEqual(bases, {"${GPU_TOOLS}": tools, "${VERIFIER_BASE}": verifier})
+            self.assertEqual(
+                arguments,
+                [
+                    "--build-arg",
+                    f"GPU_TOOLS={tools}",
+                    "--build-arg",
+                    f"VERIFIER_BASE={verifier}",
+                ],
+            )
+            self.assertEqual(
+                bases, {"${GPU_TOOLS}": tools, "${VERIFIER_BASE}": verifier}
+            )
             # Any other build argument as a base is still refused.
             dockerfile.write_text("ARG ELSEWHERE\nFROM ${ELSEWHERE}\n")
             with self.assertRaises(build_task_images.BuildFailure):
@@ -591,7 +619,9 @@ with mock.patch.object(Path, 'open', checked_open):
                     for c in run.call_args_list
                     # The build reads the recipe from the staged context, not the task root.
                     if c.args[0][:2] == ["docker", "build"]
-                    and c.args[0][c.args[0].index("-f") + 1].endswith("verifier-gpu/Dockerfile")
+                    and c.args[0][c.args[0].index("-f") + 1].endswith(
+                        "verifier-gpu/Dockerfile"
+                    )
                 )
                 self.assertEqual(
                     "FRONTIER_GPU_SSH_BASE_IMAGE=" + ssh in command, needs_ssh
@@ -604,21 +634,42 @@ with mock.patch.object(Path, 'open', checked_open):
                 (root / role).mkdir()
                 (root / role / "Dockerfile").write_text("FROM scratch\n")
             definition = {"image_tag": "source-fixture", "source": {}, "datasets": {}}
-            names = build_task_images.image_names("example", "a_task", "source-fixture", [])
-            held = {names["agent"]: "sha256:" + "d" * 64, names["datasets"]: "sha256:" + "e" * 64}
+            names = build_task_images.image_names(
+                "example", "a_task", "source-fixture", []
+            )
+            held = {
+                names["agent"]: "sha256:" + "d" * 64,
+                names["datasets"]: "sha256:" + "e" * 64,
+            }
             with (
                 mock.patch.object(build_task_images, "run") as run,
-                mock.patch.object(build_task_images, "registry_digest", side_effect=held.get),
+                mock.patch.object(
+                    build_task_images, "registry_digest", side_effect=held.get
+                ),
                 mock.patch.object(build_task_images, "stage_datasets", return_value={}),
                 mock.patch.object(build_task_images, "verify_dataset_image"),
             ):
                 result = build_task_images.build_problem(
-                    "a_task", "example", push=False, bases={}, root=root, definition=definition)
-            self.assertEqual(result["reused"], {"agent": held[names["agent"]],
-                                                "datasets": held[names["datasets"]]})
+                    "a_task",
+                    "example",
+                    push=False,
+                    bases={},
+                    root=root,
+                    definition=definition,
+                )
+            self.assertEqual(
+                result["reused"],
+                {"agent": held[names["agent"]], "datasets": held[names["datasets"]]},
+            )
             self.assertEqual(set(result["images"]), {"agent", "verifier", "datasets"})
-            builds = [c.args[0] for c in run.call_args_list if c.args[0][:2] == ["docker", "build"]]
-            self.assertEqual([c[c.index("--tag") + 1] for c in builds], [names["verifier"]])
+            builds = [
+                c.args[0]
+                for c in run.call_args_list
+                if c.args[0][:2] == ["docker", "build"]
+            ]
+            self.assertEqual(
+                [c[c.index("--tag") + 1] for c in builds], [names["verifier"]]
+            )
 
     def test_native_bootstrap_rejects_private_or_mutable_input(self) -> None:
         for repository, digest in (
@@ -629,7 +680,9 @@ with mock.patch.object(Path, 'open', checked_open):
             ("docker.io/example/agent", "latest"),
         ):
             bases = {"gpu-tools": f"{repository}@{digest}"}
-            with mock.patch.object(build_task_images.task_manifest, "bases", return_value=bases):
+            with mock.patch.object(
+                build_task_images.task_manifest, "bases", return_value=bases
+            ):
                 with self.assertRaises(build_task_images.BuildFailure):
                     build_task_images.gpu_ssh_base()
 
@@ -659,12 +712,18 @@ with mock.patch.object(Path, 'open', checked_open):
         def built_digest(reference):
             # The registry holds nothing of this release, except what this run built: a CPU
             # runner is built FROM its task image by registry digest (as after --push).
-            tags = {c[c.index("--tag") + 1] for c in commands if c[:2] == ["docker", "build"]}
+            tags = {
+                c[c.index("--tag") + 1]
+                for c in commands
+                if c[:2] == ["docker", "build"]
+            }
             return "sha256:" + "b" * 64 if reference in tags else None
 
         with (
             mock.patch.object(build_task_images, "run", side_effect=fake_run),
-            mock.patch.object(build_task_images, "registry_digest", side_effect=built_digest),
+            mock.patch.object(
+                build_task_images, "registry_digest", side_effect=built_digest
+            ),
             mock.patch.object(
                 renderer, "render", side_effect=lambda root, name: definitions[name]
             ),
@@ -749,13 +808,23 @@ with mock.patch.object(Path, 'open', checked_open):
                 # A task recipe is <context>/<dir>/Dockerfile or <context>/docker/<role>.Dockerfile;
                 # the shared CPU runner layer is <context>/.frontier-generated/runner/....
                 runner = dockerfile.name == "cpu-runner.Dockerfile"
-                self.assertEqual(command[-1], str(dockerfile.parents[2 if runner else 1]))
-                build_args = dict(command[i + 1].split("=", 1)
-                                  for i, value in enumerate(command) if value == "--build-arg")
-                sources = build_task_images.dockerfile_bases(dockerfile, {
-                    name: value for name, value in build_args.items()
-                    if name not in build_task_images.SHARED_BASE_ARGUMENTS
-                    and name != "FRONTIER_GPU_SSH_BASE_IMAGE"})
+                self.assertEqual(
+                    command[-1], str(dockerfile.parents[2 if runner else 1])
+                )
+                build_args = dict(
+                    command[i + 1].split("=", 1)
+                    for i, value in enumerate(command)
+                    if value == "--build-arg"
+                )
+                sources = build_task_images.dockerfile_bases(
+                    dockerfile,
+                    {
+                        name: value
+                        for name, value in build_args.items()
+                        if name not in build_task_images.SHARED_BASE_ARGUMENTS
+                        and name != "FRONTIER_GPU_SSH_BASE_IMAGE"
+                    },
+                )
                 # Already-pinned FROM images need no BuildKit override; a shared base
                 # build argument is passed with --build-arg from bases.json.
                 expected_contexts = [
@@ -789,8 +858,7 @@ with mock.patch.object(Path, 'open', checked_open):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             expected = build_task_images.stage_datasets(
-                renderer.task_directory(name
-                ),
+                renderer.task_directory(name),
                 root,
                 definition,
             )
@@ -881,11 +949,19 @@ with mock.patch.object(Path, 'open', checked_open):
                 ),
                 # After the push the registry holds the image; its digest is what the smoke
                 # judges.
-                mock.patch.object(build_task_images, "registry_digest",
-                                  side_effect=lambda ref: "sha256:" + "f" * 64
-                                  if run.call_args_list and run.call_args_list[-1].args[0][:2]
-                                  == ["docker", "push"] else None),
-                mock.patch.object(build_task_images, "verifier_smoke", return_value="ok") as smoke,
+                mock.patch.object(
+                    build_task_images,
+                    "registry_digest",
+                    side_effect=lambda ref: (
+                        "sha256:" + "f" * 64
+                        if run.call_args_list
+                        and run.call_args_list[-1].args[0][:2] == ["docker", "push"]
+                        else None
+                    ),
+                ),
+                mock.patch.object(
+                    build_task_images, "verifier_smoke", return_value="ok"
+                ) as smoke,
             ):
                 if fails:
                     with self.assertRaises(build_task_images.BuildFailure):
@@ -903,13 +979,12 @@ with mock.patch.object(Path, 'open', checked_open):
                     0 if fails else 3,
                 )
                 if not fails:
-                    self.assertTrue(smoke.call_args.args[0].endswith("@sha256:" + "f" * 64))
+                    self.assertTrue(
+                        smoke.call_args.args[0].endswith("@sha256:" + "f" * 64)
+                    )
 
     def test_selections_manifest_and_prefix(self):
-        names = [
-            task["name"]
-            for task in task_layers.load_catalog()["tasks"]
-        ]
+        names = [task["name"] for task in task_layers.load_catalog()["tasks"]]
         definitions = task_layers.load_definitions()
         cpu = [name for name in names if "gpu" not in definitions[name]]
         for selection in (
@@ -937,8 +1012,10 @@ with mock.patch.object(Path, 'open', checked_open):
                     json.loads(path.read_text())["platform"], "linux/amd64"
                 )
                 self.assertTrue(
-                    all(call.args[1] == image_namespace.namespace()
-                        for call in build.call_args_list)
+                    all(
+                        call.args[1] == image_namespace.namespace()
+                        for call in build.call_args_list
+                    )
                 )
         for value in ("repo;echo", "repo:latest", "UPPER/repo", "repo name"):
             self.assertIsNone(build_task_images.IMAGE_PREFIX_RE.fullmatch(value))
@@ -1220,7 +1297,9 @@ class IncrementalImageTests(unittest.TestCase):
             self.assertEqual(len(records[1]), 1)
             self.assertEqual(records[1][0]["image_path"], "/frontier/task/README.md")
             self.assertEqual(records[1][0]["mode"], 0o444)
-            self.assertEqual(records[1][0]["sha256"], incremental.sha(source / "README.md"))
+            self.assertEqual(
+                records[1][0]["sha256"], incremental.sha(source / "README.md")
+            )
 
     def test_incremental_copy_rejects_unsafe_and_missing_sources(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1474,7 +1553,9 @@ class TaskImageMakeTests(unittest.TestCase):
 
     def test_one_run_can_name_another_namespace(self):
         result = self.run_make(
-            "build-task-images", "TASK_PROBLEM=cpu", "IMAGE_NAMESPACE=localhost:5000/frontier"
+            "build-task-images",
+            "TASK_PROBLEM=cpu",
+            "IMAGE_NAMESPACE=localhost:5000/frontier",
         )
         self.assertEqual((result.returncode, result.stderr), (0, ""))
         self.assertEqual(
@@ -1519,48 +1600,87 @@ class VerifierSmokeTests(unittest.TestCase):
             commands.append(["pod", image, mode, *command])
             if run_side_effect:
                 return run_side_effect(image, command)
-            return subprocess.CompletedProcess(command, 0, "placement control: agree", "")
+            return subprocess.CompletedProcess(
+                command, 0, "placement control: agree", ""
+            )
 
         with (
-            mock.patch.object(task_layers, "layers", return_value=[task_layers.Layer(root, root / "problems", root / "catalog.json", definitions)]),
+            mock.patch.object(
+                task_layers,
+                "layers",
+                return_value=[
+                    task_layers.Layer(
+                        root, root / "problems", root / "catalog.json", definitions
+                    )
+                ],
+            ),
             mock.patch.object(renderer, "catalog_task_names", return_value=[name]),
-            
             mock.patch.object(renderer, "render", return_value=definition),
-            mock.patch.object(build_task_images, "task_placement", return_value="control"),
+            mock.patch.object(
+                build_task_images, "task_placement", return_value="control"
+            ),
             mock.patch.object(build_task_images, "freeze_bases", return_value=[]),
             mock.patch.object(build_task_images, "stage_datasets", return_value={}),
             mock.patch.object(build_task_images, "verify_dataset_image"),
             mock.patch.object(build_task_images, "run", side_effect=helper),
             mock.patch.object(build_task_images, "run_in_pod", side_effect=pod),
-            mock.patch.object(build_task_images, "registry_digest", side_effect=registry.get),
+            mock.patch.object(
+                build_task_images, "registry_digest", side_effect=registry.get
+            ),
             mock.patch("sys.stdout", new_callable=io.StringIO),
         ):
             try:
-                build_task_images.main(["--problem", "all", "--manifest", str(manifest), *arguments])
+                build_task_images.main(
+                    ["--problem", "all", "--manifest", str(manifest), *arguments]
+                )
             finally:
                 self.commands = commands
         return image_namespace.repository(f"fcs2-task-verifier-{name}") + ":source-test"
 
-    GPU = {"image_tag": "source-test", "source": {}, "datasets": {},
-           "gpu": {"verifier": {"max_gpu_instances": 2, "max_gpu_seconds": 60}},
-           "verifier": {"command": ["/opt/frontier/verifier"], "cpu_millis": 2000,
-                        "memory_bytes": 4 << 30, "max_evidence_bytes": 1 << 20}}
+    GPU = {
+        "image_tag": "source-test",
+        "source": {},
+        "datasets": {},
+        "gpu": {"verifier": {"max_gpu_instances": 2, "max_gpu_seconds": 60}},
+        "verifier": {
+            "command": ["/opt/frontier/verifier"],
+            "cpu_millis": 2000,
+            "memory_bytes": 4 << 30,
+            "max_evidence_bytes": 1 << 20,
+        },
+    }
 
     def smoke_calls(self):
         return [c for c in self.commands if c[0] == "pod"]
 
-    def test_control_verifier_image_is_checked_by_its_pushed_digest_in_the_production_layout(self):
+    def test_control_verifier_image_is_checked_by_its_pushed_digest_in_the_production_layout(
+        self,
+    ):
         image = self.build(["--push"], self.GPU)
         [smoke] = self.smoke_calls()
-        self.assertEqual(smoke, ["pod", image.rsplit(":", 1)[0] + "@sha256:" + "c" * 64, "train",
-                                 "/opt/frontier/runtime-python", "-c",
-                                 build_task_images.PLACEMENT_CHECK, "control"])
+        self.assertEqual(
+            smoke,
+            [
+                "pod",
+                image.rsplit(":", 1)[0] + "@sha256:" + "c" * 64,
+                "train",
+                "/opt/frontier/runtime-python",
+                "-c",
+                build_task_images.PLACEMENT_CHECK,
+                "control",
+            ],
+        )
         pushed = self.commands.index(["docker", "push", image])
         self.assertGreater(self.commands.index(smoke), pushed)
-        self.build([], self.GPU)  # not pushed: nothing to pull, the catalog smoke judges it later
+        self.build(
+            [], self.GPU
+        )  # not pushed: nothing to pull, the catalog smoke judges it later
         self.assertEqual(self.smoke_calls(), [])
-        for needed in ("import fcs2_verifier, fcs2_verifier_gpu", "_gpu_placement",
-                       "fcs2_verifier_gpu.placement()"):
+        for needed in (
+            "import fcs2_verifier, fcs2_verifier_gpu",
+            "_gpu_placement",
+            "fcs2_verifier_gpu.placement()",
+        ):
             self.assertIn(needed, build_task_images.PLACEMENT_CHECK)
         # /opt/frontier is on the image interpreter's import path by frontier.pth, not sys.path
         self.assertNotIn("sys.path", build_task_images.PLACEMENT_CHECK)
@@ -1568,11 +1688,14 @@ class VerifierSmokeTests(unittest.TestCase):
     def test_a_placement_mismatch_fails_the_build(self):
         def mismatch(image, command):
             return subprocess.CompletedProcess(
-                command, 1, "", "AssertionError: placement: task.toml 'control'")
+                command, 1, "", "AssertionError: placement: task.toml 'control'"
+            )
 
-        with self.assertRaisesRegex(build_task_images.BuildFailure,
-                                    "does not report the task.toml GPU placement 'control' "
-                                    "in the production layout"):
+        with self.assertRaisesRegex(
+            build_task_images.BuildFailure,
+            "does not report the task.toml GPU placement 'control' "
+            "in the production layout",
+        ):
             self.build(["--push"], self.GPU, run_side_effect=mismatch)
 
     def test_placement_comes_from_task_toml(self):
@@ -1597,15 +1720,26 @@ class VerifierSmokeTests(unittest.TestCase):
             (root / "judge").mkdir()
             (root / "judge/reference.patch").write_bytes(reference)
         record = Path(directory.name) / "verifier-smoke.json"
-        record.write_text(json.dumps(records or {
-            "schema_version": build_task_images.SMOKE_SCHEMA,
-            "tolerance": {"abs": 2.0, "rel": 0.1}, "tasks": {}}))
+        record.write_text(
+            json.dumps(
+                records
+                or {
+                    "schema_version": build_task_images.SMOKE_SCHEMA,
+                    "tolerance": {"abs": 2.0, "rel": 0.1},
+                    "tasks": {},
+                }
+            )
+        )
         definition = {
             "dataset_extension": "json",
             "submission": {"entrypoint": "payload/solution.patch"},
             "quota": {"eval_timeout_seconds": 60},
-            "verifier": {"command": ["/opt/frontier/verifier"], "cpu_millis": 2000,
-                         "memory_bytes": 4 << 30, "max_evidence_bytes": 1 << 20},
+            "verifier": {
+                "command": ["/opt/frontier/verifier"],
+                "cpu_millis": 2000,
+                "memory_bytes": 4 << 30,
+                "max_evidence_bytes": 1 << 20,
+            },
         }
         seen = {}
 
@@ -1624,67 +1758,100 @@ class VerifierSmokeTests(unittest.TestCase):
         ):
             try:
                 return build_task_images.verifier_smoke(
-                    "img@sha256:" + "a" * 64, "a_task", root, definition), seen
+                    "img@sha256:" + "a" * 64, "a_task", root, definition
+                ), seen
             finally:
                 self.seen, self.record = seen, record
 
-    def test_a_cpu_sandbox_task_smokes_that_its_image_reads_the_declared_sandboxes(self):
+    def test_a_cpu_sandbox_task_smokes_that_its_image_reads_the_declared_sandboxes(
+        self,
+    ):
         # polygon's judge leases a Driver CPU machine: without a Driver the smoke checks that
         # the image's shared adapter reads exactly task.toml's command test sandboxes.
         root = renderer.task_directory("polygon")
         definition = renderer.render(root, "polygon")
-        expected = task_manifest.verifier_parameters(task_manifest.read_task(root))["sandboxes"]
+        expected = task_manifest.verifier_parameters(task_manifest.read_task(root))[
+            "sandboxes"
+        ]
         calls = []
 
         def pod(image, verifier, mode, work, command, **_):
             calls.append((image, mode, command))
-            return subprocess.CompletedProcess(command, 0, "command test sandboxes search: ok\n", "")
+            return subprocess.CompletedProcess(
+                command, 0, "command test sandboxes search: ok\n", ""
+            )
 
         with (
             mock.patch.object(build_task_images, "run_in_pod", side_effect=pod),
             mock.patch.object(build_task_images, "fixture_smoke", return_value=[]),
         ):
-            verdict = build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "polygon", root, definition)
+            verdict = build_task_images.verifier_smoke(
+                "img@sha256:" + "a" * 64, "polygon", root, definition
+            )
         self.assertEqual(verdict, "command test sandboxes search: ok")
         [(image, mode, command)] = calls
         self.assertEqual((image, mode), ("img@sha256:" + "a" * 64, "train"))
-        self.assertEqual(command[:3], ["/opt/frontier/runtime-python", "-c", build_task_images.SANDBOX_CHECK])
+        self.assertEqual(
+            command[:3],
+            ["/opt/frontier/runtime-python", "-c", build_task_images.SANDBOX_CHECK],
+        )
         self.assertEqual(json.loads(command[3]), expected)
-        self.assertIn("fcs2_verifier_gpu.sandbox_parameters()", build_task_images.SANDBOX_CHECK)
+        self.assertIn(
+            "fcs2_verifier_gpu.sandbox_parameters()", build_task_images.SANDBOX_CHECK
+        )
 
         def mismatch(image, verifier, mode, work, command, **_):
-            return subprocess.CompletedProcess(command, 1, "", "AssertionError: sandboxes: task.toml")
+            return subprocess.CompletedProcess(
+                command, 1, "", "AssertionError: sandboxes: task.toml"
+            )
 
         with (
             mock.patch.object(build_task_images, "run_in_pod", side_effect=mismatch),
             mock.patch.object(build_task_images, "fixture_smoke", return_value=[]),
-            self.assertRaisesRegex(build_task_images.BuildFailure,
-                                   "does not read task.toml's command test sandboxes"),
+            self.assertRaisesRegex(
+                build_task_images.BuildFailure,
+                "does not read task.toml's command test sandboxes",
+            ),
         ):
-            build_task_images.verifier_smoke("img@sha256:" + "a" * 64, "polygon", root, definition)
+            build_task_images.verifier_smoke(
+                "img@sha256:" + "a" * 64, "polygon", root, definition
+            )
 
     def test_cpu_task_judges_the_reference_in_train_mode_in_the_production_layout(self):
-        verdict, seen = self.cpu_smoke({"status": "passed", "raw_score": 50.0, "metrics": {}})
+        verdict, seen = self.cpu_smoke(
+            {"status": "passed", "raw_score": 50.0, "metrics": {}}
+        )
         self.assertIn("judge/reference.patch: passed, raw_score 50.0", verdict)
         # The task's own verifier.command, in train mode, on the pushed image.
-        self.assertEqual((seen["image"], seen["mode"], seen["command"]),
-                         ("img@sha256:" + "a" * 64, "train", None))
+        self.assertEqual(
+            (seen["image"], seen["mode"], seen["command"]),
+            ("img@sha256:" + "a" * 64, "train", None),
+        )
         self.assertEqual(seen["payload"], b"diff\n")
         self.assertEqual(seen["dataset"], '{"cases": 1}')
 
     def test_a_task_without_reference_judges_the_starter(self):
-        verdict, seen = self.cpu_smoke({"status": "passed", "raw_score": 0.0, "metrics": {}},
-                                       reference=None)
+        verdict, seen = self.cpu_smoke(
+            {"status": "passed", "raw_score": 0.0, "metrics": {}}, reference=None
+        )
         self.assertEqual(seen["payload"], b"")
         self.assertIn(build_task_images.STARTER, verdict)
 
     def test_failed_rejected_or_missing_results_fail_the_build(self):
         for result, message in (
-            ({"status": "failed", "summary": "EXDEV", "failure": {"code": "x"}},
-             # The Verifier's stderr (the private evaluator exception tail) explains it.
-             "fails in the production layout: status 'failed': x EXDEV\nboom"),
-            ({"status": "passed", "raw_score": 0.0, "metrics": {"rejected": "out_of_scope"}},
-             "fails in the production layout: .* rejected"),
+            (
+                {"status": "failed", "summary": "EXDEV", "failure": {"code": "x"}},
+                # The Verifier's stderr (the private evaluator exception tail) explains it.
+                "fails in the production layout: status 'failed': x EXDEV\nboom",
+            ),
+            (
+                {
+                    "status": "passed",
+                    "raw_score": 0.0,
+                    "metrics": {"rejected": "out_of_scope"},
+                },
+                "fails in the production layout: .* rejected",
+            ),
             (None, "fails in the production layout: the Verifier exited 1: boom"),
         ):
             with self.subTest(message=message):
@@ -1693,36 +1860,66 @@ class VerifierSmokeTests(unittest.TestCase):
 
     def test_recorded_score_must_hold_within_tolerance_for_the_recorded_payload(self):
         payload = build_task_images.smoke_payload(
-            Path("/nonexistent"), {"submission": {"entrypoint": "payload/solution.patch"}})[1]
+            Path("/nonexistent"),
+            {"submission": {"entrypoint": "payload/solution.patch"}},
+        )[1]
         self.assertEqual(payload[:22], b"payload/solution.patch")
 
         def records(score, digest=None):
-            return {"schema_version": build_task_images.SMOKE_SCHEMA,
-                    "tolerance": {"abs": 2.0, "rel": 0.1},
-                    "tasks": {"a_task": {"payload_sha256": digest, "train_raw_score": score,
-                                         "train_metric_keys": ["score_unbounded"]}}}
+            return {
+                "schema_version": build_task_images.SMOKE_SCHEMA,
+                "tolerance": {"abs": 2.0, "rel": 0.1},
+                "tasks": {
+                    "a_task": {
+                        "payload_sha256": digest,
+                        "train_raw_score": score,
+                        "train_metric_keys": ["score_unbounded"],
+                    }
+                },
+            }
 
         stream = io.BytesIO()
-        with tarfile.open(fileobj=stream, mode="w", format=tarfile.USTAR_FORMAT) as archive:
+        with tarfile.open(
+            fileobj=stream, mode="w", format=tarfile.USTAR_FORMAT
+        ) as archive:
             info = tarfile.TarInfo("payload/solution.patch")
             info.size, info.mode, info.mtime = 5, 0o644, 0
             archive.addfile(info, io.BytesIO(b"diff\n"))
         digest = "sha256:" + hashlib.sha256(stream.getvalue()).hexdigest()
-        verdict, _ = self.cpu_smoke({"status": "passed", "raw_score": 54.0,
-                                     "metrics": {"score_unbounded": 1.0}},
-                                    records=records(50.0, digest))
+        verdict, _ = self.cpu_smoke(
+            {
+                "status": "passed",
+                "raw_score": 54.0,
+                "metrics": {"score_unbounded": 1.0},
+            },
+            records=records(50.0, digest),
+        )
         self.assertIn("recorded 50.0 +/- 5", verdict)
         with self.assertRaisesRegex(build_task_images.BuildFailure, "train metrics"):
-            self.cpu_smoke({"status": "passed", "raw_score": 50.0,
-                            "metrics": {"score_unbounded": 1.0, "mean_gap": 2.0}},
-                           records=records(50.0, digest))
-        with self.assertRaisesRegex(build_task_images.BuildFailure, "raw_score 0.0, recorded 50.0"):
-            self.cpu_smoke({"status": "passed", "raw_score": 0.0,
-                            "metrics": {"score_unbounded": 1.0}},
-                           records=records(50.0, digest))
+            self.cpu_smoke(
+                {
+                    "status": "passed",
+                    "raw_score": 50.0,
+                    "metrics": {"score_unbounded": 1.0, "mean_gap": 2.0},
+                },
+                records=records(50.0, digest),
+            )
+        with self.assertRaisesRegex(
+            build_task_images.BuildFailure, "raw_score 0.0, recorded 50.0"
+        ):
+            self.cpu_smoke(
+                {
+                    "status": "passed",
+                    "raw_score": 0.0,
+                    "metrics": {"score_unbounded": 1.0},
+                },
+                records=records(50.0, digest),
+            )
         with self.assertRaisesRegex(build_task_images.BuildFailure, "--record-smoke"):
-            self.cpu_smoke({"status": "passed", "raw_score": 50.0, "metrics": {}},
-                           records=records(50.0, "sha256:" + "0" * 64))
+            self.cpu_smoke(
+                {"status": "passed", "raw_score": 50.0, "metrics": {}},
+                records=records(50.0, "sha256:" + "0" * 64),
+            )
 
     def test_the_committed_record_is_well_formed(self):
         document = build_task_images.smoke_records()
@@ -1730,14 +1927,20 @@ class VerifierSmokeTests(unittest.TestCase):
         names = set(renderer.catalog_task_names())
         for name, record in document["tasks"].items():
             self.assertIn(name, names)
-            self.assertEqual(set(record),
-                             {"payload_sha256", "train_raw_score", "train_metric_keys"})
+            self.assertEqual(
+                set(record), {"payload_sha256", "train_raw_score", "train_metric_keys"}
+            )
             self.assertRegex(record["payload_sha256"], r"^sha256:[0-9a-f]{64}$")
 
     def test_catalog_smoke_runs_every_published_image_and_lists_the_failures(self):
         names = list(renderer.catalog_task_names())[:3]
-        verdicts = iter(["passed", build_task_images.BuildFailure("EXDEV"),
-                         "no control-image placement check: the task's Verifier does not use the shared GPU adapter"])
+        verdicts = iter(
+            [
+                "passed",
+                build_task_images.BuildFailure("EXDEV"),
+                "no control-image placement check: the task's Verifier does not use the shared GPU adapter",
+            ]
+        )
 
         def smoke(image, problem, root, definition, *, record):
             self.assertRegex(image, r"@sha256:[0-9a-f]{64}$")
@@ -1752,14 +1955,20 @@ class VerifierSmokeTests(unittest.TestCase):
             mock.patch.object(renderer, "render", return_value={}),
             mock.patch("sys.stdout", new_callable=io.StringIO) as stdout,
         ):
-            code = build_task_images.main(["--smoke-catalog", *sum(
-                (["--problem", name] for name in names), [])])
+            code = build_task_images.main(
+                ["--smoke-catalog", *sum((["--problem", name] for name in names), [])]
+            )
         self.assertEqual(code, 1)
         self.assertFalse(run.called)  # nothing is pulled, built or pushed locally
         self.assertIn(f"FAIL {names[1]}: EXDEV", stdout.getvalue())
-        self.assertIn(f"1 of 3 catalog Verifier images pass the production-layout smoke, "
-                      f"1 without a shared-adapter check: failing {names[1]}", stdout.getvalue())
-        with self.assertRaisesRegex(build_task_images.BuildFailure, "only with --smoke-catalog"):
+        self.assertIn(
+            f"1 of 3 catalog Verifier images pass the production-layout smoke, "
+            f"1 without a shared-adapter check: failing {names[1]}",
+            stdout.getvalue(),
+        )
+        with self.assertRaisesRegex(
+            build_task_images.BuildFailure, "only with --smoke-catalog"
+        ):
             build_task_images.main(["--record-smoke"])
 
     def run_fixture_check(self, metrics):
@@ -1768,33 +1977,64 @@ class VerifierSmokeTests(unittest.TestCase):
         root = renderer.task_directory("edlib_exact_alignment")
         bundle = task_manifest.judge_bundle(root)
         work = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        (work / "verifier.json").write_text(json.dumps({"entrypoint": "payload/solution.patch"}))
-        metrics = {**metrics, "beats_reference": 1, "reference_score": 49.0, "margin": 1.0,
-                   "beat_spec_workload_passes": [{"workload": "w1", "metrics": {"t": True}}]}
-        (work / "fixture.json").write_text(json.dumps(
-            {"raw_score": 50.0, "score_unbounded": 1.0, "message": "recorded", "metrics": metrics}))
-        (work / "payload.tar").write_bytes(build_task_images.smoke_payload(
-            root, {"submission": {"entrypoint": "payload/solution.patch"}})[1])
+        (work / "verifier.json").write_text(
+            json.dumps({"entrypoint": "payload/solution.patch"})
+        )
+        metrics = {
+            **metrics,
+            "beats_reference": 1,
+            "reference_score": 49.0,
+            "margin": 1.0,
+            "beat_spec_workload_passes": [{"workload": "w1", "metrics": {"t": True}}],
+        }
+        (work / "fixture.json").write_text(
+            json.dumps(
+                {
+                    "raw_score": 50.0,
+                    "score_unbounded": 1.0,
+                    "message": "recorded",
+                    "metrics": metrics,
+                }
+            )
+        )
+        (work / "payload.tar").write_bytes(
+            build_task_images.smoke_payload(
+                root, {"submission": {"entrypoint": "payload/solution.patch"}}
+            )[1]
+        )
         (work / "dataset").write_bytes((root / "datasets/train.json").read_bytes())
-        script = (build_task_images.FIXTURE_CHECK
-                  .replace('"/opt/frontier/task"', repr(str(bundle)))
-                  .replace('"/opt/frontier/verifier.json"', repr(str(work / "verifier.json"))))
+        script = build_task_images.FIXTURE_CHECK.replace(
+            '"/opt/frontier/task"', repr(str(bundle))
+        ).replace('"/opt/frontier/verifier.json"', repr(str(work / "verifier.json")))
         self.assertNotIn("sys.path", script)
         sys.path.insert(0, str(ROOT / "tasks/shared/lib"))
         # in the image, frontier.pth puts /opt/frontier (both directories' modules) on the path
-        environment = {**os.environ, "FRONTIER_VERIFIER_SCRATCH": str(work),
-                       "PYTHONPATH": os.pathsep.join([str(ROOT / "tasks/shared/verifier"),
-                                                      str(ROOT / "tasks/shared/lib")]),
-                       **{k: str(v) for k, v in {
-                           "FRONTIER_PAYLOAD_PATH": work / "payload.tar",
-                           "FRONTIER_DATASET_PATH": work / "dataset",
-                           "FRONTIER_VERIFICATION_MODE": "train",
-                           "FRONTIER_RESULT_PATH": work / "result.json",
-                           "FRONTIER_EVIDENCE_PATH": work / "evidence.tar.zst",
-                           "FRONTIER_MAX_EVIDENCE_BYTES": 1 << 20}.items()}}
+        environment = {
+            **os.environ,
+            "FRONTIER_VERIFIER_SCRATCH": str(work),
+            "PYTHONPATH": os.pathsep.join(
+                [str(ROOT / "tasks/shared/verifier"), str(ROOT / "tasks/shared/lib")]
+            ),
+            **{
+                k: str(v)
+                for k, v in {
+                    "FRONTIER_PAYLOAD_PATH": work / "payload.tar",
+                    "FRONTIER_DATASET_PATH": work / "dataset",
+                    "FRONTIER_VERIFICATION_MODE": "train",
+                    "FRONTIER_RESULT_PATH": work / "result.json",
+                    "FRONTIER_EVIDENCE_PATH": work / "evidence.tar.zst",
+                    "FRONTIER_MAX_EVIDENCE_BYTES": 1 << 20,
+                }.items()
+            },
+        }
         environment.pop("FRONTIER_VERIFIER_GPU_TYPE", None)
-        subprocess.run([sys.executable, "-c", script, str(work / "fixture.json")],
-                       env=environment, check=False, capture_output=True, timeout=300)
+        subprocess.run(
+            [sys.executable, "-c", script, str(work / "fixture.json")],
+            env=environment,
+            check=False,
+            capture_output=True,
+            timeout=300,
+        )
         return json.loads((work / "result.json").read_text())
 
     def test_fixture_check_runs_the_shared_verifier_result_path(self):
@@ -1808,7 +2048,9 @@ class VerifierSmokeTests(unittest.TestCase):
         self.assertEqual(at_limit["status"], "passed", at_limit)
         self.assertEqual(at_limit["raw_score"], 50.0, at_limit)
         self.assertEqual(build_task_images.metrics_depth({"m": nested(5)}), 6)
-        too_deep = self.run_fixture_check({"m": nested(6)})  # ivf_pq: depth 8 on the platform
+        too_deep = self.run_fixture_check(
+            {"m": nested(6)}
+        )  # ivf_pq: depth 8 on the platform
         self.assertEqual(too_deep["status"], "failed")
         self.assertIn("nested too deeply", too_deep["summary"])
 
@@ -1816,17 +2058,36 @@ class VerifierSmokeTests(unittest.TestCase):
         directory = Path(self.enterContext(tempfile.TemporaryDirectory()))
         fixtures = directory / "fixtures"
         (fixtures / "a_task").mkdir(parents=True)
-        (fixtures / "a_task/train.json").write_text(json.dumps(
-            {"raw_score": 1.0, "score_unbounded": 1.0, "message": "m", "metrics": {}}))
-        results = iter([
-            {"status": "passed", "raw_score": 50.0, "metrics": {}},  # the reference train
-            {"status": "failed", "summary": "metrics are nested too deeply",
-             "failure": {"code": "invalid_evaluator_result"}},
-        ])
+        (fixtures / "a_task/train.json").write_text(
+            json.dumps(
+                {
+                    "raw_score": 1.0,
+                    "score_unbounded": 1.0,
+                    "message": "m",
+                    "metrics": {},
+                }
+            )
+        )
+        results = iter(
+            [
+                {
+                    "status": "passed",
+                    "raw_score": 50.0,
+                    "metrics": {},
+                },  # the reference train
+                {
+                    "status": "failed",
+                    "summary": "metrics are nested too deeply",
+                    "failure": {"code": "invalid_evaluator_result"},
+                },
+            ]
+        )
         commands = []
 
         def fake_pod(image, verifier, mode, work, command, **_):
-            commands.append((image, command, sorted(p.name for p in (work / "input").iterdir())))
+            commands.append(
+                (image, command, sorted(p.name for p in (work / "input").iterdir()))
+            )
             (work / "output/result.json").write_text(json.dumps(next(results)))
             return subprocess.CompletedProcess(command, 0, "", "")
 
@@ -1834,26 +2095,49 @@ class VerifierSmokeTests(unittest.TestCase):
         (root / "datasets").mkdir(parents=True)
         (root / "datasets/train.json").write_text("{}")
         record = directory / "verifier-smoke.json"
-        record.write_text(json.dumps({"schema_version": build_task_images.SMOKE_SCHEMA,
-                                      "tolerance": {"abs": 2.0, "rel": 0.1}, "tasks": {}}))
-        definition = {"dataset_extension": "json",
-                      "submission": {"entrypoint": "payload/solution.patch"},
-                      "quota": {"eval_timeout_seconds": 60},
-                      "verifier": {"command": ["/opt/frontier/verifier"], "cpu_millis": 2000,
-                                   "memory_bytes": 4 << 30, "max_evidence_bytes": 1 << 20}}
+        record.write_text(
+            json.dumps(
+                {
+                    "schema_version": build_task_images.SMOKE_SCHEMA,
+                    "tolerance": {"abs": 2.0, "rel": 0.1},
+                    "tasks": {},
+                }
+            )
+        )
+        definition = {
+            "dataset_extension": "json",
+            "submission": {"entrypoint": "payload/solution.patch"},
+            "quota": {"eval_timeout_seconds": 60},
+            "verifier": {
+                "command": ["/opt/frontier/verifier"],
+                "cpu_millis": 2000,
+                "memory_bytes": 4 << 30,
+                "max_evidence_bytes": 1 << 20,
+            },
+        }
         with (
             mock.patch.object(build_task_images, "FIXTURES", fixtures),
             mock.patch.object(build_task_images, "SMOKE_RECORD", record),
             mock.patch.object(build_task_images, "run_in_pod", side_effect=fake_pod),
-            self.assertRaisesRegex(build_task_images.BuildFailure,
-                                   "recorded train evaluator output .* nested too deeply"),
+            self.assertRaisesRegex(
+                build_task_images.BuildFailure,
+                "recorded train evaluator output .* nested too deeply",
+            ),
         ):
             build_task_images.verifier_smoke("img", "a_task", root, definition)
         image, command, inputs = commands[1]
         self.assertEqual(image, "img")
-        self.assertEqual(command, ["/opt/frontier/runtime-python", "-c",
-                                   build_task_images.FIXTURE_CHECK, "/frontier/input/fixture.json"])
+        self.assertEqual(
+            command,
+            [
+                "/opt/frontier/runtime-python",
+                "-c",
+                build_task_images.FIXTURE_CHECK,
+                "/frontier/input/fixture.json",
+            ],
+        )
         self.assertEqual(inputs, ["dataset", "fixture.json", "payload.tar"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG KIMI_CODE_VERSION=0.31.0
+ARG KIMI_CODE_VERSION=2.3.3
 ARG FRONTIER_NODE_BUILD_IMAGE=node:22-bookworm-slim
 
 FROM ${FRONTIER_NODE_BUILD_IMAGE} AS kimi-code-builder
@@ -9,16 +9,28 @@ ARG KIMI_CODE_VERSION
 RUN npm install --global --omit=dev "@moonshot-ai/kimi-code@${KIMI_CODE_VERSION}" \
     && kimi --version | grep -F "${KIMI_CODE_VERSION}"
 
-# Kimi 0.31.0 otherwise rejects foreground Bash timeouts above 300 seconds.
-# Preserve the proven Frontier CLI tool runtime by widening this pinned
-# constant, and fail closed if the
-# upstream bundle shape changes.
+# Kimi 2.3.3 otherwise rejects foreground Bash timeouts above 300 seconds.
+# Preserve the proven Frontier CLI tool runtime by widening the foreground cap
+# to 3600 seconds. 2.x inlines the cap at three enforcement sites, one prompt
+# variable and three model-facing description strings; patch each exact form
+# and fail closed if the upstream bundle shape changes.
 RUN set -eu; \
     main=/usr/local/lib/node_modules/@moonshot-ai/kimi-code/dist/main.mjs; \
-    test "$(grep -Fc 'MAX_TIMEOUT_S$1 = 300;' "${main}")" -eq 1; \
-    sed -i 's/MAX_TIMEOUT_S$1 = 300;/MAX_TIMEOUT_S$1 = 3600;/' "${main}"; \
-    test "$(grep -Fc 'MAX_TIMEOUT_S$1 = 3600;' "${main}")" -eq 1; \
-    ! grep -Fq 'MAX_TIMEOUT_S$1 = 300;' "${main}"
+    count() { grep -oF -- "$1" "${main}" | wc -l; }; \
+    test "$(count 'isBackground ? MAX_BACKGROUND_TIMEOUT_S : 300;')" -eq 3; \
+    test "$(count 'MAX_TIMEOUT_S: 300,')" -eq 1; \
+    test "$(count '${String(300)}')" -eq 3; \
+    sed -i \
+        -e 's/isBackground ? MAX_BACKGROUND_TIMEOUT_S : 300;/isBackground ? MAX_BACKGROUND_TIMEOUT_S : 3600;/g' \
+        -e 's/MAX_TIMEOUT_S: 300,/MAX_TIMEOUT_S: 3600,/' \
+        -e 's/\${String(300)}/${String(3600)}/g' \
+        "${main}"; \
+    test "$(count 'isBackground ? MAX_BACKGROUND_TIMEOUT_S : 3600;')" -eq 3; \
+    test "$(count 'MAX_TIMEOUT_S: 3600,')" -eq 1; \
+    test "$(count '${String(3600)}')" -eq 3; \
+    test "$(count 'MAX_BACKGROUND_TIMEOUT_S : 300;')" -eq 0; \
+    test "$(count 'MAX_TIMEOUT_S: 300,')" -eq 0; \
+    test "$(count '${String(300)}')" -eq 0
 
 RUN set -eu; \
     install -d -m 0555 \
@@ -37,7 +49,11 @@ RUN set -eu; \
       | sort -u \
       | while read -r library; do cp -L "${library}" /out/overlay/opt/frontier/candidate/kimi-code/lib/; done; \
     chmod 0555 /out/overlay/opt/frontier/candidate/kimi-code/node; \
-    test -f /out/overlay/opt/frontier/candidate/kimi-code/app/dist/main.mjs
+    test -f /out/overlay/opt/frontier/candidate/kimi-code/app/dist/main.mjs; \
+    test -f /out/overlay/opt/frontier/candidate/kimi-code/app/dist/search-worker.mjs; \
+    for dependency in ws qrcode chokidar; do \
+        test -f "/out/overlay/opt/frontier/candidate/kimi-code/app/node_modules/${dependency}/package.json"; \
+    done
 
 COPY --chmod=0555 launcher.py /out/overlay/opt/frontier/candidate/launch
 COPY --chmod=0555 submit/frontier_submit.py /out/overlay/opt/frontier/candidate/bin/frontier-submit

@@ -94,8 +94,12 @@ def digest(path: Path) -> str:
 
 
 def copy_source(root: Path, value: str, role: str = "") -> str:
-    if task_manifest.is_native(root) and value.startswith(task_manifest.GENERATED + "/"):
-        return value  # written by the build from task.toml (task_manifest.generated_files)
+    if task_manifest.is_native(root) and value.startswith(
+        task_manifest.GENERATED + "/"
+    ):
+        return (
+            value  # written by the build from task.toml (task_manifest.generated_files)
+        )
     # Docker accepts a directory's trailing slash. Do not normalize traversal,
     # repeated slashes, symlinks, or a slash appended to a regular file.
     trailing = value.endswith("/")
@@ -106,7 +110,9 @@ def copy_source(root: Path, value: str, role: str = "") -> str:
         require(not path.is_symlink(), f"symlink COPY source: {source}")
     label = f"{role} " if role else ""
     require(path.is_file() or path.is_dir(), f"missing {label}COPY source: {source}")
-    require(not trailing or path.is_dir(), f"COPY trailing slash needs directory: {source}")
+    require(
+        not trailing or path.is_dir(), f"COPY trailing slash needs directory: {source}"
+    )
     return source
 
 
@@ -118,7 +124,9 @@ def check_reviewed_public_copies(root: Path, role: str, sources: set[str]) -> No
     still independently checked by validate_task.
     """
     review_path = PUBLIC_COPY_REVIEWS.get((root.name, role))
-    require(review_path is not None, f"non-public Agent COPY sources: {sorted(sources)}")
+    require(
+        review_path is not None, f"non-public Agent COPY sources: {sorted(sources)}"
+    )
     review = document(review_path)
     require(
         review.get("schema") == "preview.reviewed-public-copies/v1"
@@ -132,14 +140,19 @@ def check_reviewed_public_copies(root: Path, role: str, sources: set[str]) -> No
         "public COPY review needs lock, policy and recipe bindings",
     )
     for name, expected in bindings.items():
-        require(digest(root / name) == expected, f"public COPY binding mismatch: {name}")
+        require(
+            digest(root / name) == expected, f"public COPY binding mismatch: {name}"
+        )
     copies = review.get("copies", {})
     require(set(copies) == sources, "unreviewed public COPY source set")
     observed_files, observed_directories = set(), set()
     for source, kind in copies.items():
         path = root / copy_source(root, source)
         require(kind in {"file", "directory"}, "invalid reviewed COPY kind")
-        require(path.is_dir() == (kind == "directory"), f"public COPY kind mismatch: {source}")
+        require(
+            path.is_dir() == (kind == "directory"),
+            f"public COPY kind mismatch: {source}",
+        )
         members = [path, *path.rglob("*")] if path.is_dir() else [path]
         for member in members:
             require(
@@ -207,7 +220,8 @@ NATIVE_GENERATED_AGENT = f"{task_manifest.GENERATED}/agent/"
 PINNED_COPY_ROLES = frozenset({"verifier", "verifier-gpu"})
 PINNED_IMAGE = re.compile(
     r"(?:[a-z0-9-]+\.)+[a-z0-9-]+(?::[0-9]+)?(?:/[a-z0-9]+(?:(?:[._]|__|-+)[a-z0-9]+)*)+"
-    r"@sha256:[0-9a-f]{64}")
+    r"@sha256:[0-9a-f]{64}"
+)
 
 
 def check_no_platform_numbers(root: Path) -> None:
@@ -218,6 +232,7 @@ def check_no_platform_numbers(root: Path) -> None:
 
     def forms(value: int) -> str:
         return rf"(?:{value}|{value:,})"
+
     patterns = {
         "answering window": rf"\b{forms(quota['wall_time_seconds'])}\s*(?:-\s*)?s(?:ec(?:ond)?s?)?\b",
         "train calls": rf"\b{quota['max_train_calls']}\s+(?:accepted\s+)?train\s+calls?\b",
@@ -232,14 +247,22 @@ def check_no_platform_numbers(root: Path) -> None:
         text = path.read_text(encoding="utf-8")
         for what, pattern in patterns.items():
             match = re.search(pattern, text, re.IGNORECASE)
-            require(match is None,
-                    f"{name} restates the {what} ({match.group(0) if match else ''}); the generated "
-                    "/frontier/task/README.md states platform numbers, so refer to it instead")
+            require(
+                match is None,
+                f"{name} restates the {what} ({match.group(0) if match else ''}); the generated "
+                "/frontier/task/README.md states platform numbers, so refer to it instead",
+            )
 
 
 # The statement template (repo/README.md of a task.toml task): one title, then these sections.
-STATEMENT_SECTIONS = ("Task", "What you may change", "Interface", "Correctness", "Workload",
-                      "Scoring")
+STATEMENT_SECTIONS = (
+    "Task",
+    "What you may change",
+    "Interface",
+    "Correctness",
+    "Workload",
+    "Scoring",
+)
 STATEMENT_OPTIONAL_SECTIONS = ("Running locally", "Environment", "Notes")
 STATEMENT_MAX_WORDS = 1600
 STATEMENT_WARN_WORDS = 1200
@@ -270,64 +293,99 @@ def check_statement_structure(root: Path) -> None:
     paths = task_manifest.layout(root)
     text = regular(paths.repo / "README.md").read_text(encoding="utf-8")
     headings = _markdown_headings(text)
-    require(sum(1 for level, _ in headings if level == 1) == 1,
-            "repo/README.md must have exactly one '# ' title")
+    require(
+        sum(1 for level, _ in headings if level == 1) == 1,
+        "repo/README.md must have exactly one '# ' title",
+    )
     sections = [title for level, title in headings if level == 2]
     required = list(STATEMENT_SECTIONS)
-    extra = sections[len(required):]
+    extra = sections[len(required) :]
     optional = [name for name in STATEMENT_OPTIONAL_SECTIONS if name in extra]
-    require(sections[:len(required)] == required and extra == optional,
-            "repo/README.md sections must be, in order: " + ", ".join(required)
-            + ", then optionally " + ", ".join(STATEMENT_OPTIONAL_SECTIONS)
-            + f"; found {sections}")
+    require(
+        sections[: len(required)] == required and extra == optional,
+        "repo/README.md sections must be, in order: "
+        + ", ".join(required)
+        + ", then optionally "
+        + ", ".join(STATEMENT_OPTIONAL_SECTIONS)
+        + f"; found {sections}",
+    )
     scoring = text.split("\n## Scoring", 1)[1].split("\n## ", 1)[0]
-    require(re.search(r"(?:^|\n\s*\n)\*\*Beats the reference\*\*", scoring) is not None,
-            "repo/README.md's Scoring section needs a paragraph starting with "
-            "'**Beats the reference**' (the generated README's Objective points to it)")
+    require(
+        re.search(r"(?:^|\n\s*\n)\*\*Beats the reference\*\*", scoring) is not None,
+        "repo/README.md's Scoring section needs a paragraph starting with "
+        "'**Beats the reference**' (the generated README's Objective points to it)",
+    )
     words = len(text.split())
-    require(words <= STATEMENT_MAX_WORDS,
-            f"repo/README.md has {words} words; the limit is {STATEMENT_MAX_WORDS}")
+    require(
+        words <= STATEMENT_MAX_WORDS,
+        f"repo/README.md has {words} words; the limit is {STATEMENT_MAX_WORDS}",
+    )
     if words > STATEMENT_WARN_WORDS:
-        warn(root, f"repo/README.md has {words} words (target at most {STATEMENT_WARN_WORDS})")
+        warn(
+            root,
+            f"repo/README.md has {words} words (target at most {STATEMENT_WARN_WORDS})",
+        )
     own = regular(root / "README.md").read_text(encoding="utf-8")
     for _, title in _markdown_headings(own):
-        require(TASK_README_FORBIDDEN_SECTION.search(title) is None,
-                f"README.md has a {title!r} section; scoring and the objective are stated by "
-                "the statement and the generated README")
+        require(
+            TASK_README_FORBIDDEN_SECTION.search(title) is None,
+            f"README.md has a {title!r} section; scoring and the objective are stated by "
+            "the statement and the generated README",
+        )
 
 
 def base_argument(name: str) -> str:
     return "${" + name + "}"
 
 
-ROLE_ARGUMENT = {role: name for name, role in task_manifest.SHARED_BASE_ARGUMENTS.items()}
+ROLE_ARGUMENT = {
+    role: name for name, role in task_manifest.SHARED_BASE_ARGUMENTS.items()
+}
 
 
 def check_shared_base_arguments(path: Path, recipe: str) -> dict[str, str]:
     """A recipe names the shared bases only by build argument (`ARG VERIFIER_BASE`, then
     `FROM ${VERIFIER_BASE}`); the build injects tasks/shared/bases.json. Returns stage alias ->
     shared role for the `FROM ${...} AS <stage>` stages."""
-    code = "\n".join(line for line in recipe.splitlines() if not line.lstrip().startswith("#"))
+    code = "\n".join(
+        line for line in recipe.splitlines() if not line.lstrip().startswith("#")
+    )
     literal = SHARED_IMAGE_REFERENCE.search(code)
-    require(literal is None,
-            f"{path.name} names {literal.group(0) if literal else ''} by reference; take a shared "
-            "base by build argument (ARG AGENT_BASE / VERIFIER_BASE / GPU_TOOLS, then "
-            "FROM ${NAME}), which the build injects from tasks/shared/bases.json")
+    require(
+        literal is None,
+        f"{path.name} names {literal.group(0) if literal else ''} by reference; take a shared "
+        "base by build argument (ARG AGENT_BASE / VERIFIER_BASE / GPU_TOOLS, then "
+        "FROM ${NAME}), which the build injects from tasks/shared/bases.json",
+    )
     lines = code.splitlines()
-    first = next((i for i, line in enumerate(lines) if line.startswith("FROM ")), len(lines))
-    declared = {line.split()[1] for line in lines[:first]
-                if line.startswith("ARG ") and len(line.split()) == 2}
+    first = next(
+        (i for i, line in enumerate(lines) if line.startswith("FROM ")), len(lines)
+    )
+    declared = {
+        line.split()[1]
+        for line in lines[:first]
+        if line.startswith("ARG ") and len(line.split()) == 2
+    }
     stages = {}
     for line in lines:
         if not line.startswith("FROM "):
             continue
         words = line.split()
-        name = next((n for n in task_manifest.SHARED_BASE_ARGUMENTS if words[1] == base_argument(n)), None)
+        name = next(
+            (
+                n
+                for n in task_manifest.SHARED_BASE_ARGUMENTS
+                if words[1] == base_argument(n)
+            ),
+            None,
+        )
         if name is None:
             continue
-        require(name in declared,
-                f"{path.name} uses ${{{name}}} without a global `ARG {name}` (no default) "
-                "before its first FROM")
+        require(
+            name in declared,
+            f"{path.name} uses ${{{name}}} without a global `ARG {name}` (no default) "
+            "before its first FROM",
+        )
         if len(words) == 4 and words[2] == "AS":
             stages[words[3]] = task_manifest.SHARED_BASE_ARGUMENTS[name]
     return stages
@@ -339,62 +397,96 @@ def check_native_dockerfile(root: Path, role: str) -> None:
     generated Agent files."""
     path = task_manifest.layout(root).dockerfile(role)
     recipe = regular(path).read_text()
-    task = task_manifest.read_task(root)
-    froms = [line.split()[1] for line in recipe.splitlines() if line.startswith("FROM ")]
+    task_manifest.read_task(root)
+    froms = [
+        line.split()[1] for line in recipe.splitlines() if line.startswith("FROM ")
+    ]
     require(bool(froms), f"{path.name} has no FROM")
     shared_stages = check_shared_base_arguments(path, recipe)
     shared = {base_argument(name) for name in task_manifest.SHARED_BASE_ARGUMENTS}
     if role in NATIVE_BASE_ROLE:
         expected = base_argument(ROLE_ARGUMENT[NATIVE_BASE_ROLE[role]])
         # The image is the last stage; earlier stages only name other shared bases.
-        require(froms[-1] == expected,
-                f"{path.name} must build its final stage FROM {expected}")
-        require(all(ref in shared for ref in froms[:-1]),
-                f"{path.name}: an earlier stage may only be FROM a shared base build argument")
+        require(
+            froms[-1] == expected,
+            f"{path.name} must build its final stage FROM {expected}",
+        )
+        require(
+            all(ref in shared for ref in froms[:-1]),
+            f"{path.name}: an earlier stage may only be FROM a shared base build argument",
+        )
     # The other stages a task.toml recipe may copy from: the shared gpu-tools stage, and for a
     # Verifier recipe the shared verifier base stage (the shared verifier modules).
-    allowed_roles = {"gpu-tools"} | ({"verifier"} if role.startswith("verifier") else set())
-    tools_stages = {stage for stage, base in shared_stages.items() if base in allowed_roles}
+    allowed_roles = {"gpu-tools"} | (
+        {"verifier"} if role.startswith("verifier") else set()
+    )
+    tools_stages = {
+        stage for stage, base in shared_stages.items() if base in allowed_roles
+    }
     own_stages = {
-        line.split()[3] for line in recipe.splitlines()
-        if line.startswith("FROM ") and len(line.split()) == 4 and line.split()[2] == "AS"
+        line.split()[3]
+        for line in recipe.splitlines()
+        if line.startswith("FROM ")
+        and len(line.split()) == 4
+        and line.split()[2] == "AS"
     }
     for line in recipe.splitlines():
         if not line.startswith("COPY "):
             continue
-        stage = next((f.removeprefix("--from=") for f in shlex.split(line) if f.startswith("--from=")), None)
+        stage = next(
+            (
+                f.removeprefix("--from=")
+                for f in shlex.split(line)
+                if f.startswith("--from=")
+            ),
+            None,
+        )
         if stage is not None:
             # A Verifier recipe may also copy task-private judge data or toolchains from an
             # image named by full repository and digest (never a tag); an Agent recipe never.
             # An Agent GPU recipe may carry over public Agent-side data from the task's own
             # published Agent images (never a Verifier image), pinned by digest.
-            own_agent = re.compile(re.escape(image_namespace.repository(f"fcs2-task-{root.name}"))
-                                   + r"-agent(?:-gpu)?@sha256:[0-9a-f]{64}")
+            own_agent = re.compile(
+                re.escape(image_namespace.repository(f"fcs2-task-{root.name}"))
+                + r"-agent(?:-gpu)?@sha256:[0-9a-f]{64}"
+            )
             # A service or test-sandbox recipe (judge-side only) may also copy from its own
             # earlier stages.
-            require(stage in tools_stages
-                    or (role.startswith("sidecar-") and stage in own_stages)
-                    or ((role in PINNED_COPY_ROLES or role.startswith("sidecar-"))
-                        and PINNED_IMAGE.fullmatch(stage) is not None)
-                    or (role == "agent-gpu" and own_agent.fullmatch(stage) is not None),
-                    f"{path.name} copies from {stage!r}; only a shared base stage "
-                    "(FROM ${GPU_TOOLS}" + ("" if role.startswith("agent") else
-                                            " or ${VERIFIER_BASE}") + " AS <stage>) is allowed"
-                    + ("" if role.startswith("agent") else
-                       ", or a <registry>/<repository>@sha256:<digest> image"))
+            require(
+                stage in tools_stages
+                or (role.startswith("sidecar-") and stage in own_stages)
+                or (
+                    (role in PINNED_COPY_ROLES or role.startswith("sidecar-"))
+                    and PINNED_IMAGE.fullmatch(stage) is not None
+                )
+                or (role == "agent-gpu" and own_agent.fullmatch(stage) is not None),
+                f"{path.name} copies from {stage!r}; only a shared base stage "
+                "(FROM ${GPU_TOOLS}"
+                + ("" if role.startswith("agent") else " or ${VERIFIER_BASE}")
+                + " AS <stage>) is allowed"
+                + (
+                    ""
+                    if role.startswith("agent")
+                    else ", or a <registry>/<repository>@sha256:<digest> image"
+                ),
+            )
             continue
         fields = [f for f in shlex.split(line)[1:] if not f.startswith("--")]
         require(len(fields) == 2, f"use one task-root source per COPY in {path.name}")
         source = copy_source(root, fields[0], role)
         if role.startswith("agent"):
-            require(source.split("/")[0] in NATIVE_AGENT_SOURCES
-                    or source.startswith(NATIVE_GENERATED_AGENT)
-                    or (role == "agent-gpu" and source == "gpu/task_runtime.py"),
-                    f"Agent image copies a non-public source: {source}")
+            require(
+                source.split("/")[0] in NATIVE_AGENT_SOURCES
+                or source.startswith(NATIVE_GENERATED_AGENT)
+                or (role == "agent-gpu" and source == "gpu/task_runtime.py"),
+                f"Agent image copies a non-public source: {source}",
+            )
 
 
 # A reference to one of the shared images in a recipe (FROM, COPY --from), with tag and digest.
-SHARED_IMAGE_REFERENCE = re.compile(r"\S*/frontier-(?:agent-base|verifier-base|gpu-tools)(?:[:@]\S*)?")
+SHARED_IMAGE_REFERENCE = re.compile(
+    r"\S*/frontier-(?:agent-base|verifier-base|gpu-tools)(?:[:@]\S*)?"
+)
 
 
 def check_gpu_adapter_pins(root: Path) -> None:
@@ -415,15 +507,18 @@ def check_gpu_adapter_pins(root: Path) -> None:
     if not uses:
         return
     feature = " and ".join(uses)
-    roles = (("verifier", "GPU_TOOLS"),) + ((("verifier-gpu", "VERIFIER_BASE"),)
-                                           if "verifier" in raw.get("gpu", {}) else ())
+    roles = (("verifier", "GPU_TOOLS"),) + (
+        (("verifier-gpu", "VERIFIER_BASE"),) if "verifier" in raw.get("gpu", {}) else ()
+    )
     for role, name in roles:
         path = task_manifest.layout(root).dockerfile(role)
         stages = check_shared_base_arguments(path, regular(path).read_text())
-        require(task_manifest.SHARED_BASE_ARGUMENTS[name] in stages.values(),
-                f"{path.name} needs a `FROM ${{{name}}} AS <stage>` stage: task.toml sets "
-                f"{feature}, which the tasks/shared/bases.json shared verifier and GPU adapter "
-                "implement")
+        require(
+            task_manifest.SHARED_BASE_ARGUMENTS[name] in stages.values(),
+            f"{path.name} needs a `FROM ${{{name}}} AS <stage>` stage: task.toml sets "
+            f"{feature}, which the tasks/shared/bases.json shared verifier and GPU adapter "
+            "implement",
+        )
 
 
 def check_bases() -> None:
@@ -433,15 +528,21 @@ def check_bases() -> None:
     import build_base_images
 
     recorded = task_manifest.bases()
-    require(set(recorded) == {*task_manifest.BASE_ROLES, "schema_version"},
-            "tasks/shared/bases.json must name exactly agent, verifier and gpu-tools")
+    require(
+        set(recorded) == {*task_manifest.BASE_ROLES, "schema_version"},
+        "tasks/shared/bases.json must name exactly agent, verifier and gpu-tools",
+    )
     for role in task_manifest.BASE_ROLES:
         tag = build_base_images.source_tag(role)
-        expected = rf"docker\.io/[a-z0-9_-]+/{re.escape(build_base_images.IMAGE_NAMES[role])}:" \
-                   rf"{re.escape(tag)}@sha256:[0-9a-f]{{64}}"
-        require(re.fullmatch(expected, recorded[role]) is not None,
-                f"tasks/shared/bases.json {role} is {recorded[role]}, but its sources are {tag}: "
-                f"build and push the release (scripts/build_base_images.py --roles {role} --push)")
+        expected = (
+            rf"docker\.io/[a-z0-9_-]+/{re.escape(build_base_images.IMAGE_NAMES[role])}:"
+            rf"{re.escape(tag)}@sha256:[0-9a-f]{{64}}"
+        )
+        require(
+            re.fullmatch(expected, recorded[role]) is not None,
+            f"tasks/shared/bases.json {role} is {recorded[role]}, but its sources are {tag}: "
+            f"build and push the release (scripts/build_base_images.py --roles {role} --push)",
+        )
 
 
 def check_inventory(root: Path) -> None:
@@ -487,14 +588,25 @@ def check_inventory(root: Path) -> None:
 
 def check_feedback_statement(root: Path, statement: str, visible: list[str]) -> None:
     for name in (
-        "beat_spec_progress", "passed", "failed", "total", "pass_percent", "fail_percent",
+        "beat_spec_progress",
+        "passed",
+        "failed",
+        "total",
+        "pass_percent",
+        "fail_percent",
     ):
-        require(name in statement, f"public statement does not describe beat-spec feedback {name}")
+        require(
+            name in statement,
+            f"public statement does not describe beat-spec feedback {name}",
+        )
     missing = [name for name in visible if name not in statement]
     if not missing:
         return
     review_path = FEEDBACK_STATEMENT_REVIEWS.get(root.name)
-    require(review_path is not None, f"public statement does not describe beat-spec feedback {missing}")
+    require(
+        review_path is not None,
+        f"public statement does not describe beat-spec feedback {missing}",
+    )
     review = document(review_path)
     require(
         review.get("schema") == "preview.reviewed-feedback-statement/v1"
@@ -502,19 +614,33 @@ def check_feedback_statement(root: Path, statement: str, visible: list[str]) -> 
         "feedback statement review identity mismatch",
     )
     bindings = review.get("bindings", {})
-    require(set(bindings) == {
-        "upstream.lock.json", "policy.json", "judge/beat_spec.json",
-        "agent-base/frontier/task/README.md", "agent-base/frontier/task/repo/README.md",
-    }, "feedback statement review needs exact source bindings")
+    require(
+        set(bindings)
+        == {
+            "upstream.lock.json",
+            "policy.json",
+            "judge/beat_spec.json",
+            "agent-base/frontier/task/README.md",
+            "agent-base/frontier/task/repo/README.md",
+        },
+        "feedback statement review needs exact source bindings",
+    )
     for name, expected in bindings.items():
-        require(digest(root / name) == expected, f"feedback statement binding mismatch: {name}")
+        require(
+            digest(root / name) == expected,
+            f"feedback statement binding mismatch: {name}",
+        )
     descriptions = review.get("fields", {})
     require(set(descriptions) == set(visible), "unreviewed feedback field set")
     sentence = review.get("sentence")
     require(
-        isinstance(sentence, str) and bool(sentence) and sentence in statement
-        and all(isinstance(text, str) and bool(text) and text in sentence
-                for text in descriptions.values()),
+        isinstance(sentence, str)
+        and bool(sentence)
+        and sentence in statement
+        and all(
+            isinstance(text, str) and bool(text) and text in sentence
+            for text in descriptions.values()
+        ),
         "public statement omits reviewed absolute development summaries",
     )
 
@@ -775,7 +901,9 @@ def check_beat_spec_feedback(
                 "beat_spec.json workload_groups is retired: every workload "
                 "must measure every declared metric",
             )
-            require(isinstance(groups, dict) and bool(groups), "invalid workload groups")
+            require(
+                isinstance(groups, dict) and bool(groups), "invalid workload groups"
+            )
             rows = []
             totals = {}
             for group_name, group in groups.items():
@@ -784,21 +912,33 @@ def check_beat_spec_feedback(
                 require(isinstance(counts, dict), "invalid workload group counts")
                 count = counts.get("train")
                 metrics = group.get("metrics")
-                require(type(count) is int and 0 < count <= 100000,
-                        "invalid or excessive grouped feedback probe count")
-                require(isinstance(metrics, list) and bool(metrics),
-                        "invalid workload group metrics")
-                require(len(rows) + count <= 100000,
-                        "grouped feedback probe exceeds bounded layout budget")
+                require(
+                    type(count) is int and 0 < count <= 100000,
+                    "invalid or excessive grouped feedback probe count",
+                )
+                require(
+                    isinstance(metrics, list) and bool(metrics),
+                    "invalid workload group metrics",
+                )
+                require(
+                    len(rows) + count <= 100000,
+                    "grouped feedback probe exceeds bounded layout budget",
+                )
                 for name in metrics:
-                    require(name in names and name not in totals,
-                            "workload groups must partition declared metrics")
+                    require(
+                        name in names and name not in totals,
+                        "workload groups must partition declared metrics",
+                    )
                     totals[name] = count
                 first = len(rows)
-                rows.extend({"workload": f"private-layout-probe-{first + index}",
-                             "group": group_name,
-                             "metrics": {name: True for name in metrics}}
-                            for index in range(count))
+                rows.extend(
+                    {
+                        "workload": f"private-layout-probe-{first + index}",
+                        "group": group_name,
+                        "metrics": {name: True for name in metrics},
+                    }
+                    for index in range(count)
+                )
             require(set(totals) == set(names), "workload groups omit metrics")
             values["beat_spec_workload_passes"] = rows
             values["beat_spec_suite_role"] = "train"
@@ -1005,44 +1145,78 @@ def check_task_feedback(root: Path, evaluation: dict) -> None:
         "docstring of judge/evaluator.py and the Agent's train feedback is task.toml [feedback]",
     )
     visible = evaluation.get("solver_visible_metrics")
-    require(isinstance(visible, list) and all(isinstance(n, str) for n in visible)
-            and len(set(visible)) == len(visible), "invalid solver_visible_metrics")
+    require(
+        isinstance(visible, list)
+        and all(isinstance(n, str) for n in visible)
+        and len(set(visible)) == len(visible),
+        "invalid solver_visible_metrics",
+    )
     # The judge entry: judge/evaluator.py, or a standalone Verifier's verifier/verify.py (it
     # projects its own results, so it emits beat_spec_progress instead of the workload rows).
-    standalone = (task_manifest.read_task(root)["verifier"]["command"]
-                  != task_manifest.defaults()["verifier"]["command"])
+    standalone = (
+        task_manifest.read_task(root)["verifier"]["command"]
+        != task_manifest.defaults()["verifier"]["command"]
+    )
     entry = "verifier/verify.py" if standalone else "judge/evaluator.py"
     evaluator = regular(root / entry)
     try:
         tree = ast.parse(evaluator.read_text(), filename=str(evaluator))
     except SyntaxError as error:
         raise LayoutFailure(f"{entry} is not valid Python") from error
-    require(_nonempty(ast.get_docstring(tree)),
-            f"{entry} needs a module docstring: the task's scoring note")
+    require(
+        _nonempty(ast.get_docstring(tree)),
+        f"{entry} needs a module docstring: the task's scoring note",
+    )
     inspected = list(ast.walk(tree))
     if not standalone:
         inspected += referenced_local_evaluator_nodes(evaluator)
     output_keys = set()
     for node in inspected:
-        keys = (node.keys if isinstance(node, ast.Dict)
-                else [node.slice] if isinstance(node, ast.Subscript) else [])
-        output_keys.update(key.value for key in keys
-                           if isinstance(key, ast.Constant) and isinstance(key.value, str))
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "dict":
+        keys = (
+            node.keys
+            if isinstance(node, ast.Dict)
+            else [node.slice]
+            if isinstance(node, ast.Subscript)
+            else []
+        )
+        output_keys.update(
+            key.value
+            for key in keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        )
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "dict"
+        ):
             output_keys.update(keyword.arg for keyword in node.keywords if keyword.arg)
-    private = (("beat_spec_progress", "beats_reference") if standalone
-               else ("beat_spec_workload_passes", "beats_reference"))
+    private = (
+        ("beat_spec_progress", "beats_reference")
+        if standalone
+        else ("beat_spec_workload_passes", "beats_reference")
+    )
     for name in private:
-        require(name in output_keys, f"{entry} does not emit private beat-spec field {name}")
-    literals = {node.value for node in inspected
-                if isinstance(node, ast.Constant) and isinstance(node.value, str)}
+        require(
+            name in output_keys, f"{entry} does not emit private beat-spec field {name}"
+        )
+    literals = {
+        node.value
+        for node in inspected
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    }
     for name in visible:
-        require(name in literals, f"{entry} does not name task.toml [feedback] metric {name}")
+        require(
+            name in literals,
+            f"{entry} does not name task.toml [feedback] metric {name}",
+        )
     # The generated README lists the shared train fields and every [feedback] metric; the
     # task's own README and statement need not name them.
     readme = task_manifest.agent_readme(root)
     for name in ("beat_spec_progress", *visible):
-        require(f"`{name}`" in readme, f"the generated README does not name train metric {name}")
+        require(
+            f"`{name}`" in readme,
+            f"the generated README does not name train metric {name}",
+        )
     check_shared_feedback(task_manifest.layout(root).beat_spec_helper, visible)
 
 
@@ -1052,44 +1226,91 @@ def check_shared_feedback(helper: Path, visible: list[str]) -> None:
     namespace = {"__name__": "preview_feedback_check", "__file__": str(helper)}
     try:
         exec(compile(regular(helper).read_text(), str(helper), "exec"), namespace)
-        public_metrics, private_metrics = namespace["public_metrics"], namespace["private_metrics"]
+        public_metrics, private_metrics = (
+            namespace["public_metrics"],
+            namespace["private_metrics"],
+        )
         names = list(FEEDBACK_PROBE_METRICS)
         values = {name: [1.0, 2.0] for name in visible}
-        values.update({
-            "beat_spec_workload_passes": [
-                {"workload": f"private-layout-probe-{index}",
-                 "metrics": {name: index == 0 or name == names[0] for name in names}}
-                for index in range(2)
-            ],
-            "beats_reference": 0, "reference_score": 50.0, "margin": -1.0,
-            "private_probe_detail": 3.0,
-        })
+        values.update(
+            {
+                "beat_spec_workload_passes": [
+                    {
+                        "workload": f"private-layout-probe-{index}",
+                        "metrics": {
+                            name: index == 0 or name == names[0] for name in names
+                        },
+                    }
+                    for index in range(2)
+                ],
+                "beats_reference": 0,
+                "reference_score": 50.0,
+                "margin": -1.0,
+                "private_probe_detail": 3.0,
+            }
+        )
         expected = {name: values[name] for name in visible}
         expected["beat_spec_progress"] = {
-            names[0]: {"passed": 2, "failed": 0, "total": 2,
-                       "pass_percent": 100.0, "fail_percent": 0.0},
-            names[1]: {"passed": 1, "failed": 1, "total": 2,
-                       "pass_percent": 50.0, "fail_percent": 50.0},
+            names[0]: {
+                "passed": 2,
+                "failed": 0,
+                "total": 2,
+                "pass_percent": 100.0,
+                "fail_percent": 0.0,
+            },
+            names[1]: {
+                "passed": 1,
+                "failed": 1,
+                "total": 2,
+                "pass_percent": 50.0,
+                "fail_percent": 50.0,
+            },
         }
-        require(public_metrics(values, visible=visible) == expected,
-                "shared feedback helper exposes private fields or returns incorrect progress")
-        require(public_metrics(values, visible=[*visible, "reference_score", "margin"])
-                == expected, "shared feedback helper returns a private metric")
+        require(
+            public_metrics(values, visible=visible) == expected,
+            "shared feedback helper exposes private fields or returns incorrect progress",
+        )
+        require(
+            public_metrics(values, visible=[*visible, "reference_score", "margin"])
+            == expected,
+            "shared feedback helper returns a private metric",
+        )
         private = private_metrics(values)
-        require(private == {"beat_spec_progress": expected["beat_spec_progress"],
-                            "beats_reference": 0, "reference_score": 50.0, "margin": -1.0},
-                "shared feedback helper returns incorrect private metrics")
+        require(
+            private
+            == {
+                "beat_spec_progress": expected["beat_spec_progress"],
+                "beats_reference": 0,
+                "reference_score": 50.0,
+                "margin": -1.0,
+            },
+            "shared feedback helper returns incorrect private metrics",
+        )
         invalid = []
         for reason, change in (
             ("an invalid beats_reference", lambda v: v.update(beats_reference=2)),
-            ("a duplicate workload", lambda v: v["beat_spec_workload_passes"].append(
-                copy.deepcopy(v["beat_spec_workload_passes"][0]))),
-            ("a row with an extra metric", lambda v: v["beat_spec_workload_passes"][1][
-                "metrics"].update(undeclared_probe_metric=True)),
-            ("a row missing a metric", lambda v: v["beat_spec_workload_passes"][1][
-                "metrics"].pop(names[0])),
-            ("a non-boolean decision", lambda v: v["beat_spec_workload_passes"][0][
-                "metrics"].update({names[0]: 1})),
+            (
+                "a duplicate workload",
+                lambda v: v["beat_spec_workload_passes"].append(
+                    copy.deepcopy(v["beat_spec_workload_passes"][0])
+                ),
+            ),
+            (
+                "a row with an extra metric",
+                lambda v: v["beat_spec_workload_passes"][1]["metrics"].update(
+                    undeclared_probe_metric=True
+                ),
+            ),
+            (
+                "a row missing a metric",
+                lambda v: v["beat_spec_workload_passes"][1]["metrics"].pop(names[0]),
+            ),
+            (
+                "a non-boolean decision",
+                lambda v: v["beat_spec_workload_passes"][0]["metrics"].update(
+                    {names[0]: 1}
+                ),
+            ),
             ("no workload rows", lambda v: v.update(beat_spec_workload_passes=[])),
         ):
             payload = copy.deepcopy(values)
@@ -1098,7 +1319,9 @@ def check_shared_feedback(helper: Path, visible: list[str]) -> None:
         if visible:
             identity = copy.deepcopy(values)
             identity[visible[0]] = {"nested": [{"private-layout-probe-0": 1.0}]}
-            invalid.append((identity, "a private workload identity in a visible metric"))
+            invalid.append(
+                (identity, "a private workload identity in a visible metric")
+            )
         for payload, reason in invalid:
             try:
                 public_metrics(payload, visible=visible)
@@ -1108,7 +1331,9 @@ def check_shared_feedback(helper: Path, visible: list[str]) -> None:
     except LayoutFailure:
         raise
     except Exception as error:
-        raise LayoutFailure(f"shared feedback helper contract failed: {error}") from error
+        raise LayoutFailure(
+            f"shared feedback helper contract failed: {error}"
+        ) from error
 
 
 def check_native_contract(root: Path, evaluation: dict) -> None:
@@ -1116,9 +1341,13 @@ def check_native_contract(root: Path, evaluation: dict) -> None:
     native_contract.py at its root whose check_native_contract(root, evaluation) raises
     ValueError when the task breaks it."""
     contract = root / "native_contract.py"
-    require(contract.is_file() and not contract.is_symlink(),
-            "a policy.json task without judge/beat_spec.json needs native_contract.py")
-    spec = importlib.util.spec_from_file_location(f"native_contract_{root.name}", contract)
+    require(
+        contract.is_file() and not contract.is_symlink(),
+        "a policy.json task without judge/beat_spec.json needs native_contract.py",
+    )
+    spec = importlib.util.spec_from_file_location(
+        f"native_contract_{root.name}", contract
+    )
     module = importlib.util.module_from_spec(spec)
     dont_write = sys.dont_write_bytecode
     sys.dont_write_bytecode = True
@@ -1184,8 +1413,11 @@ def check_beat_spec(root: Path, evaluation: dict) -> None:
             f"evaluator does not emit private beat-spec field {name}",
         )
     paths = task_manifest.layout(root)
-    statement = (task_manifest.agent_readme(root) if paths.native
-                 else regular(paths.statement).read_text())
+    statement = (
+        task_manifest.agent_readme(root)
+        if paths.native
+        else regular(paths.statement).read_text()
+    )
     if (paths.repo / "README.md").is_file():
         statement += "\n" + regular(paths.repo / "README.md").read_text()
     check_feedback_statement(root, statement, visible)
@@ -1366,24 +1598,38 @@ def check_native_sidecar_recipes(root: Path) -> None:
     per-instance build arg ${TEST_SANDBOX_BASE}."""
     task = task_manifest.read_task(root)
     commands = task_manifest.command_sandboxes(task)
-    tables = {name: table for name, table in task.get("test_sandboxes", {}).items()
-              if name not in commands}
+    tables = {
+        name: table
+        for name, table in task.get("test_sandboxes", {}).items()
+        if name not in commands
+    }
     declared = {table["dockerfile"] for table in tables.values()}
-    present = {f"docker/{path.name}" for path in (root / "docker").glob("test-sandbox*.Dockerfile")}
-    require(present == declared,
-            f"test-sandbox recipes and task.toml disagree: {sorted(present ^ declared)}")
-    require(not any(path.is_dir() for path in root.glob("sidecar-*")),
-            "a task.toml task keeps its test-sandbox recipes in docker/, not sidecar-*/")
+    present = {
+        f"docker/{path.name}"
+        for path in (root / "docker").glob("test-sandbox*.Dockerfile")
+    }
+    require(
+        present == declared,
+        f"test-sandbox recipes and task.toml disagree: {sorted(present ^ declared)}",
+    )
+    require(
+        not any(path.is_dir() for path in root.glob("sidecar-*")),
+        "a task.toml task keeps its test-sandbox recipes in docker/, not sidecar-*/",
+    )
     for name, table in tables.items():
         if "instances" not in table:
             continue
         lines = regular(root / table["dockerfile"]).read_text().splitlines()
         froms = [line.split() for line in lines if line.startswith("FROM ")]
-        require(bool(froms) and "${TEST_SANDBOX_BASE}" in [f[1] for f in froms]
-                and "ARG TEST_SANDBOX_BASE" in lines and "ARG TEST_SANDBOX_INSTANCE" in lines,
-                f"{table['dockerfile']} ([test_sandboxes.{name}]) must declare ARG "
-                "TEST_SANDBOX_BASE and ARG TEST_SANDBOX_INSTANCE and build a stage FROM "
-                "${TEST_SANDBOX_BASE}")
+        require(
+            bool(froms)
+            and "${TEST_SANDBOX_BASE}" in [f[1] for f in froms]
+            and "ARG TEST_SANDBOX_BASE" in lines
+            and "ARG TEST_SANDBOX_INSTANCE" in lines,
+            f"{table['dockerfile']} ([test_sandboxes.{name}]) must declare ARG "
+            "TEST_SANDBOX_BASE and ARG TEST_SANDBOX_INSTANCE and build a stage FROM "
+            "${TEST_SANDBOX_BASE}",
+        )
     # An untrusted command sandbox runs candidate code on a runner of its image: that recipe
     # copies nothing from judge/ (the judge, the reference and the hidden suites stay on the
     # control image).
@@ -1391,11 +1637,17 @@ def check_native_sidecar_recipes(root: Path) -> None:
         if table.get("trust", "untrusted") == "trusted":
             continue
         recipe = root / table["dockerfile"]
-        copies = [line for line in regular(recipe).read_text().splitlines()
-                  if re.match(r"\s*(COPY|ADD)\b", line, re.IGNORECASE)
-                  and re.search(r"(^|[\s=,/])judge(/|\s|$)", line)]
-        require(not copies, f"{recipe.name} runs [test_sandboxes.{name}] candidate commands "
-                            f"and must copy nothing from judge/: {copies[:2]}")
+        copies = [
+            line
+            for line in regular(recipe).read_text().splitlines()
+            if re.match(r"\s*(COPY|ADD)\b", line, re.IGNORECASE)
+            and re.search(r"(^|[\s=,/])judge(/|\s|$)", line)
+        ]
+        require(
+            not copies,
+            f"{recipe.name} runs [test_sandboxes.{name}] candidate commands "
+            f"and must copy nothing from judge/: {copies[:2]}",
+        )
 
 
 def check_sidecars(root: Path, policy: dict) -> None:
@@ -1426,7 +1678,8 @@ def check_sidecars(root: Path, policy: dict) -> None:
         require(isinstance(profile, dict), f"sidecar {name} must be an object")
         require(
             {"args", "workdir", "phases"} <= set(profile)
-            and set(profile) <= {"args", "workdir", "phases", "attestation_key", "image"},
+            and set(profile)
+            <= {"args", "workdir", "phases", "attestation_key", "image"},
             f"sidecar {name} needs args, workdir, phases and optional attestation_key/image",
         )
         role = profile.get("image", name)
@@ -1440,7 +1693,9 @@ def check_sidecars(root: Path, policy: dict) -> None:
             isinstance(args, list)
             and 0 < len(args) <= 64
             and all(
-                isinstance(arg, str) and "\0" not in arg and len(arg) <= MAX_SIDECAR_ARG_BYTES
+                isinstance(arg, str)
+                and "\0" not in arg
+                and len(arg) <= MAX_SIDECAR_ARG_BYTES
                 for arg in args
             )
             and args[0],
@@ -1479,11 +1734,15 @@ def check_sidecars(root: Path, policy: dict) -> None:
     else:
         declared = {f"sidecar-{role}" for role in roles}
         present = {path.name for path in root.glob("sidecar-*") if path.is_dir()}
-        require(present == declared, f"sidecar image directories and declarations disagree: {sorted(present ^ declared)}")
+        require(
+            present == declared,
+            f"sidecar image directories and declarations disagree: {sorted(present ^ declared)}",
+        )
     resources = policy.get("gpu_parent_resources", {})
     require(isinstance(resources, dict), "gpu_parent_resources must be an object")
     require(
-        set(resources) <= {"agent", "verifier"} and ("gpu_parent_resources" not in policy or resources),
+        set(resources) <= {"agent", "verifier"}
+        and ("gpu_parent_resources" not in policy or resources),
         "gpu_parent_resources declares agent and/or verifier",
     )
     for parent, allocation in resources.items():
@@ -1513,8 +1772,11 @@ def check_sidecars(root: Path, policy: dict) -> None:
 def validate_task(root: Path) -> str:
     try:
         paths = task_manifest.layout(root)
-        policy = (task_manifest.load_policy(root) if paths.native
-                  else document(root / "policy.json"))
+        policy = (
+            task_manifest.load_policy(root)
+            if paths.native
+            else document(root / "policy.json")
+        )
     except task_manifest.ManifestError as error:
         raise LayoutFailure(str(error)) from error
     require(
@@ -1541,8 +1803,11 @@ def validate_task(root: Path) -> str:
     )
     entrypoint = relative_path(policy["submission"].get("entrypoint"))
     task = paths.public
-    readme = (task_manifest.agent_readme(root) if paths.native
-              else regular(paths.statement).read_text())
+    readme = (
+        task_manifest.agent_readme(root)
+        if paths.native
+        else regular(paths.statement).read_text()
+    )
     for text in (
         "frontier-submit train",
         "frontier-submit final",
@@ -1553,30 +1818,51 @@ def validate_task(root: Path) -> str:
         f"{calls} train call" in readme or f"最多{calls}次 train" in readme,
         f"Agent README does not name the {calls}-call train limit",
     )
-    legacy_paths = [root / "public", root / "agent-base/README.md", root / "agent-base/bin"]
+    legacy_paths = [
+        root / "public",
+        root / "agent-base/README.md",
+        root / "agent-base/bin",
+    ]
     if paths.native:  # a task.toml task keeps none of the legacy per-task copies
         check_no_platform_numbers(root)
         check_statement_structure(root)
-        legacy_paths += [root / "agent-base", root / "upstream.lock.json",
-                         root / "judge/config.yaml"]
+        legacy_paths += [
+            root / "agent-base",
+            root / "upstream.lock.json",
+            root / "judge/config.yaml",
+        ]
         # No forks of shared interfaces: the submission tools, the edit-scope check and the
         # verifier adapter exist once, in tasks/shared. A task differs only through task.toml
         # and its judge hooks (judge/evaluator.py: evaluate, optional check_tree).
         # The one exception is a standalone Verifier (verifier/verify.py) that a task.toml
         # selects with its own [verifier] command: a judge the shared verifier cannot express
         # (vllm's Driver-orchestrated GPU phases and signed test-sandbox evidence).
-        standalone = (task_manifest.read_task(root)["verifier"]["command"]
-                      != task_manifest.defaults()["verifier"]["command"])
-        require(not standalone or (root / "verifier/verify.py").is_file(),
-                "a task.toml [verifier] command other than the shared one needs the task's "
-                "standalone Verifier at verifier/verify.py")
-        for own in ("bin", "verifier", "starter", "judge/submission_patch.py",
-                    "judge/edit_scope.py", "judge/fcs2_verifier.py", "judge/harbor",
-                    "judge/isolate.py", "judge/candidate_sandbox.py"):
+        standalone = (
+            task_manifest.read_task(root)["verifier"]["command"]
+            != task_manifest.defaults()["verifier"]["command"]
+        )
+        require(
+            not standalone or (root / "verifier/verify.py").is_file(),
+            "a task.toml [verifier] command other than the shared one needs the task's "
+            "standalone Verifier at verifier/verify.py",
+        )
+        for own in (
+            "bin",
+            "verifier",
+            "starter",
+            "judge/submission_patch.py",
+            "judge/edit_scope.py",
+            "judge/fcs2_verifier.py",
+            "judge/harbor",
+            "judge/isolate.py",
+            "judge/candidate_sandbox.py",
+        ):
             if own == "verifier" and standalone:
                 continue
-            require(not (root / own).exists(),
-                    f"{own} forks shared code or layout; use tasks/shared and task.toml instead")
+            require(
+                not (root / own).exists(),
+                f"{own} forks shared code or layout; use tasks/shared and task.toml instead",
+            )
     for legacy in legacy_paths:
         require(not legacy.exists(), f"legacy public source path: {legacy}")
     submission_kind = policy["metadata"].get("runtime", {}).get("submission_kind")
@@ -1625,7 +1911,8 @@ def validate_task(root: Path) -> str:
             if extension == "json":
                 selector = document(path)
                 require(
-                    selector.get("problem_id") == root.name and selector.get("mode") == mode,
+                    selector.get("problem_id") == root.name
+                    and selector.get("mode") == mode,
                     f"dataset identity mismatch: {mode}",
                 )
             else:
@@ -1678,22 +1965,32 @@ def sandbox_relaxations(root: Path) -> list[str]:
     for path in sorted((root / "judge").glob("*.py")):
         for node in ast.walk(ast.parse(path.read_bytes(), str(path))):
             if not isinstance(node, ast.ClassDef) or not any(
-                    getattr(base, "id", getattr(base, "attr", None)) == "Layer"
-                    for base in node.bases):
+                getattr(base, "id", getattr(base, "attr", None)) == "Layer"
+                for base in node.bases
+            ):
                 continue
             for statement in node.body:
-                if not (isinstance(statement, ast.Assign)
-                        and any(getattr(t, "id", None) == "relaxes" for t in statement.targets)):
+                if not (
+                    isinstance(statement, ast.Assign)
+                    and any(
+                        getattr(t, "id", None) == "relaxes" for t in statement.targets
+                    )
+                ):
                     continue
                 try:
                     relaxes = ast.literal_eval(statement.value)
                 except ValueError:
                     relaxes = None
-                require(isinstance(relaxes, tuple) and all(isinstance(r, str) for r in relaxes),
-                        f"judge/{path.name}: {node.name}.relaxes must be a literal tuple of "
-                        "strings")
+                require(
+                    isinstance(relaxes, tuple)
+                    and all(isinstance(r, str) for r in relaxes),
+                    f"judge/{path.name}: {node.name}.relaxes must be a literal tuple of "
+                    "strings",
+                )
                 if relaxes:
-                    found.append(f"judge/{path.name}:{node.name} relaxes {', '.join(relaxes)}")
+                    found.append(
+                        f"judge/{path.name}:{node.name} relaxes {', '.join(relaxes)}"
+                    )
     return found
 
 
@@ -1701,23 +1998,36 @@ def check_shared_from(ref: str, root: Path = task_manifest.REPO) -> None:
     """tasks/shared must be exactly `ref`'s (task-format/landing against origin/main): shared
     infrastructure changes on main only, so a staging branch that edits or lags it builds bases
     no other branch has."""
-    listed = subprocess.run(["git", "-C", str(root), "diff", "--name-only", ref, "--",
-                             "tasks/shared"], capture_output=True, text=True)
-    require(listed.returncode == 0,
-            f"cannot compare tasks/shared with {ref}: {listed.stderr.strip()}")
+    listed = subprocess.run(
+        ["git", "-C", str(root), "diff", "--name-only", ref, "--", "tasks/shared"],
+        capture_output=True,
+        text=True,
+    )
+    require(
+        listed.returncode == 0,
+        f"cannot compare tasks/shared with {ref}: {listed.stderr.strip()}",
+    )
     differing = listed.stdout.split()
-    require(not differing, f"tasks/shared differs from {ref}: {', '.join(differing)}; "
-            f"merge {ref} (shared changes land on main first)")
+    require(
+        not differing,
+        f"tasks/shared differs from {ref}: {', '.join(differing)}; "
+        f"merge {ref} (shared changes land on main first)",
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--problems-root", type=Path, action="append",
+        "--problems-root",
+        type=Path,
+        action="append",
         help="a problems directory to check (default: every task layer's)",
     )
-    parser.add_argument("--shared-from", metavar="REF",
-                        help="also require tasks/shared to equal REF's (e.g. origin/main)")
+    parser.add_argument(
+        "--shared-from",
+        metavar="REF",
+        help="also require tasks/shared to equal REF's (e.g. origin/main)",
+    )
     options = parser.parse_args()
     failures = 0
     if options.shared_from:
@@ -1734,7 +2044,9 @@ def main() -> int:
         if not path.is_dir():
             continue
         if not task_manifest.is_task_dir(path) and any(
-            task_manifest.is_task_dir(child) for child in path.iterdir() if child.is_dir()
+            task_manifest.is_task_dir(child)
+            for child in path.iterdir()
+            if child.is_dir()
         ):
             tasks.extend(sorted(child for child in path.iterdir() if child.is_dir()))
         else:

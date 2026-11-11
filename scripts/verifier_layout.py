@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -89,7 +88,10 @@ def stage_work(work: Path, payload: bytes, dataset: bytes) -> None:
         directory.mkdir(exist_ok=True)
         # The emptyDir is 0777; the wrapper (uid 65532) owns input/ and output/.
         directory.chmod(0o777)
-    for path, body in ((work / "input/payload.tar", payload), (work / "input/dataset", dataset)):
+    for path, body in (
+        (work / "input/payload.tar", payload),
+        (work / "input/dataset", dataset),
+    ):
         path.write_bytes(body)
         path.chmod(0o644)
 
@@ -108,41 +110,63 @@ def pod_manifest(
     Pod environment is the production one, so the exec'd command sees what the wrapper's child
     sees. The wrapper itself, its Driver traffic and the Job wrapper are left out."""
     workspace = verifier.get("workspace_bytes") or DEFAULT_WORKSPACE_BYTES
-    security = {"allowPrivilegeEscalation": False, "capabilities": {"drop": ["ALL"]},
-                "readOnlyRootFilesystem": True}
+    security = {
+        "allowPrivilegeEscalation": False,
+        "capabilities": {"drop": ["ALL"]},
+        "readOnlyRootFilesystem": True,
+    }
     spec = {
         "restartPolicy": "Never",
         "automountServiceAccountToken": False,
         "hostUsers": False,
-        "securityContext": {"runAsNonRoot": True, "runAsUser": UID, "runAsGroup": GID,
-                            "fsGroup": GID, "seccompProfile": {"type": "RuntimeDefault"}},
-        "containers": [{
-            "name": "verifier",
-            "image": image,
-            "command": ["sleep", "86400"],
-            "env": [{"name": key, "value": value}
-                    for key, value in environment(verifier, mode).items()],
-            "resources": {
-                "requests": {"cpu": f"{verifier['cpu_millis']}m",
-                             "memory": str(verifier["memory_bytes"])},
-                "limits": {"cpu": f"{verifier['cpu_millis']}m",
-                           "memory": str(verifier["memory_bytes"])},
-            },
-            "securityContext": security,
-            "volumeMounts": [{"name": "work", "mountPath": WORK}],
-        }],
+        "securityContext": {
+            "runAsNonRoot": True,
+            "runAsUser": UID,
+            "runAsGroup": GID,
+            "fsGroup": GID,
+            "seccompProfile": {"type": "RuntimeDefault"},
+        },
+        "containers": [
+            {
+                "name": "verifier",
+                "image": image,
+                "command": ["sleep", "86400"],
+                "env": [
+                    {"name": key, "value": value}
+                    for key, value in environment(verifier, mode).items()
+                ],
+                "resources": {
+                    "requests": {
+                        "cpu": f"{verifier['cpu_millis']}m",
+                        "memory": str(verifier["memory_bytes"]),
+                    },
+                    "limits": {
+                        "cpu": f"{verifier['cpu_millis']}m",
+                        "memory": str(verifier["memory_bytes"]),
+                    },
+                },
+                "securityContext": security,
+                "volumeMounts": [{"name": "work", "mountPath": WORK}],
+            }
+        ],
         "volumes": [{"name": "work", "emptyDir": {"sizeLimit": str(workspace)}}],
     }
     if node_selector:
         spec["nodeSelector"] = node_selector
-    return {"apiVersion": "v1", "kind": "Pod",
-            "metadata": {"name": name, "labels": labels or {}}, "spec": spec}
+    return {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {"name": name, "labels": labels or {}},
+        "spec": spec,
+    }
 
 
 def main(arguments: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="action", required=True)
-    pod = sub.add_parser("pod", help="print a production-layout Verifier Pod manifest (JSON)")
+    pod = sub.add_parser(
+        "pod", help="print a production-layout Verifier Pod manifest (JSON)"
+    )
     pod.add_argument("--name", required=True)
     pod.add_argument("--image", required=True)
     pod.add_argument("--mode", choices=("train", "eval"), required=True)
@@ -150,24 +174,44 @@ def main(arguments: list[str] | None = None) -> int:
     pod.add_argument("--memory-bytes", type=int, required=True)
     pod.add_argument("--workspace-bytes", type=int)
     pod.add_argument("--max-evidence-bytes", type=int, default=64 << 20)
-    pod.add_argument("--command", default='["/opt/frontier/verifier"]',
-                     help="the task's verifier.command as JSON")
-    pod.add_argument("--node-selector", action="append", default=[], metavar="KEY=VALUE",
-                     help="default: the production Verifier nodes (NODE_SELECTOR)")
+    pod.add_argument(
+        "--command",
+        default='["/opt/frontier/verifier"]',
+        help="the task's verifier.command as JSON",
+    )
+    pod.add_argument(
+        "--node-selector",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="default: the production Verifier nodes (NODE_SELECTOR)",
+    )
     pod.add_argument("--label", action="append", default=[], metavar="KEY=VALUE")
     options = parser.parse_args(arguments)
-    verifier = {"command": json.loads(options.command), "cpu_millis": options.cpu_millis,
-                "memory_bytes": options.memory_bytes,
-                "max_evidence_bytes": options.max_evidence_bytes}
+    verifier = {
+        "command": json.loads(options.command),
+        "cpu_millis": options.cpu_millis,
+        "memory_bytes": options.memory_bytes,
+        "max_evidence_bytes": options.max_evidence_bytes,
+    }
     if options.workspace_bytes:
         verifier["workspace_bytes"] = options.workspace_bytes
 
     def pairs(values):
         return dict(value.split("=", 1) for value in values)
 
-    json.dump(pod_manifest(options.name, options.image, verifier, options.mode,
-                           node_selector=pairs(options.node_selector) or NODE_SELECTOR,
-                           labels=pairs(options.label)), sys.stdout, indent=1)
+    json.dump(
+        pod_manifest(
+            options.name,
+            options.image,
+            verifier,
+            options.mode,
+            node_selector=pairs(options.node_selector) or NODE_SELECTOR,
+            labels=pairs(options.label),
+        ),
+        sys.stdout,
+        indent=1,
+    )
     print()
     return 0
 

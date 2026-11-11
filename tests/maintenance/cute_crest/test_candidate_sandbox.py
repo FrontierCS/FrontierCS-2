@@ -5,6 +5,7 @@ __DATE__ ...): the build now runs in an isolate instance, so a probe of a judge 
 nothing and the PoC (which only compiles when it can see /opt/frontier/task) fails to build.
 Needs Linux x86_64 with Landlock ABI >= 6 and g++ with a static libstdc++.
 """
+
 import deployment_test_guard  # noqa: F401  # isort: skip
 
 import os
@@ -16,11 +17,13 @@ import pytest
 from tests.maintenance.cute_crest.runtime_imports import JUDGE, MODULES, REPO_TREE
 
 e = MODULES["evaluator"]
-pytestmark = pytest.mark.skipif(not e.isolate.available() or shutil.which("g++") is None,
-                                reason="needs Linux x86_64 with Landlock ABI >= 6 and g++")
+pytestmark = pytest.mark.skipif(
+    not e.isolate.available() or shutil.which("g++") is None,
+    reason="needs Linux x86_64 with Landlock ABI >= 6 and g++",
+)
 
 # Compiles only where the judge's files are visible to the compiler.
-POC = '''#if __has_include("/opt/frontier/task/programs.json") || __has_include("%s")
+POC = """#if __has_include("/opt/frontier/task/programs.json") || __has_include("%s")
 #define POC_JUDGE_VISIBLE 1
 #else
 #define POC_JUDGE_VISIBLE 0
@@ -29,7 +32,7 @@ namespace poc {
 static_assert(POC_JUDGE_VISIBLE, "judge files are not visible to the compile");
 const char* kBuilt = __DATE__ " " __TIME__ " " __FILE__;
 }
-'''
+"""
 
 
 @pytest.fixture()
@@ -43,15 +46,27 @@ def built(tmp_path, monkeypatch):
 
 def reference_solution(tmp_path):
     tree = tmp_path / "reference"
-    shutil.copytree(REPO_TREE, tree, ignore=shutil.ignore_patterns("cil", "frontier_assets"))
-    subprocess.run(["git", "apply", "--include=src/frontier_solution/*",
-                    str(JUDGE / "reference.patch")], cwd=tree, check=True,
-                   env={**os.environ, "GIT_CEILING_DIRECTORIES": str(tmp_path)})
+    shutil.copytree(
+        REPO_TREE, tree, ignore=shutil.ignore_patterns("cil", "frontier_assets")
+    )
+    subprocess.run(
+        [
+            "git",
+            "apply",
+            "--include=src/frontier_solution/*",
+            str(JUDGE / "reference.patch"),
+        ],
+        cwd=tree,
+        check=True,
+        env={**os.environ, "GIT_CEILING_DIRECTORIES": str(tmp_path)},
+    )
     return tree / e.SOLUTION
 
 
 def test_reference_builds_in_the_sandbox(built, tmp_path):
-    host = e.build_candidate(e.load_policy(), reference_solution(tmp_path), tmp_path / "out")
+    host = e.build_candidate(
+        e.load_policy(), reference_solution(tmp_path), tmp_path / "out"
+    )
     assert host.is_file() and os.access(host, os.X_OK)
     assert host.read_bytes()[:4] == b"\x7fELF"
 
@@ -62,9 +77,11 @@ def test_compile_cannot_see_the_judge(built, tmp_path):
     solution = reference_solution(tmp_path)
     (solution / "poc.cc").write_text(POC % secret)
     policy = e.load_policy()
-    assert policy.check_sources(solution)            # no source rule rejects the probe any more
+    assert policy.check_sources(solution)  # no source rule rejects the probe any more
     # Unconfined, the compiler sees the judge's file and the PoC builds.
-    subprocess.run(["g++", "-std=c++17", "-fsyntax-only", str(solution / "poc.cc")], check=True)
+    subprocess.run(
+        ["g++", "-std=c++17", "-fsyntax-only", str(solution / "poc.cc")], check=True
+    )
     # In the sandbox it does not: the probe finds nothing and the build fails (a scored zero).
     with pytest.raises(e.InvalidCandidate) as error:
         e.build_candidate(policy, solution, tmp_path / "out")

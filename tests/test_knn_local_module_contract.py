@@ -5,6 +5,7 @@ edit_scope module enforces it on both sides (the Agent's make_submission.sh and 
 verifier) and the judge's check_tree adds the content rules. A legacy task keeps its own
 make_submission.sh and evaluator.validate_patch. The same contract holds for both.
 """
+
 import deployment_test_guard  # noqa: F401 # isort: skip
 
 import importlib.util
@@ -42,26 +43,36 @@ class KernelModuleContract:
         self.root = Path(self.temp.name)
         self.task = TASK_ROOT / self.problem_id
         self.native = task_manifest.is_native(self.task)
-        judge = task_manifest.judge_bundle(self.task) if self.native else self.task / "judge"
+        judge = (
+            task_manifest.judge_bundle(self.task)
+            if self.native
+            else self.task / "judge"
+        )
         judge_path = str(judge)
         sys.path.insert(0, judge_path)
         self.addCleanup(sys.path.remove, judge_path)
-        shared = str(ROOT / "tasks/shared/lib")   # isolate, as the Verifier images ship it
+        shared = str(
+            ROOT / "tasks/shared/lib"
+        )  # isolate, as the Verifier images ship it
         sys.path.append(shared)
         self.addCleanup(sys.path.remove, shared)
         if self.problem_id == "dbscan_gpu_kernel_optimization":
             previous = sys.modules.pop("checker", None)
+
             def restore_checker():
                 sys.modules.pop("checker", None)
                 if previous is not None:
                     sys.modules["checker"] = previous
+
             self.addCleanup(restore_checker)
         self.evaluator = _load("kernel_contract_evaluator", judge / "evaluator.py")
         self.addCleanup(sys.modules.pop, "kernel_contract_evaluator", None)
         if self.native:
             self.edit_scope = task_manifest._edit_scope()
             definition = task_manifest.read_task(self.task)
-            self.rules = self.edit_scope.Rules.from_mapping(task_manifest.edit_scope_rules(definition))
+            self.rules = self.edit_scope.Rules.from_mapping(
+                task_manifest.edit_scope_rules(definition)
+            )
             self.policy = task_manifest.submission_policy(definition)
             self.starter = self.task / "repo"
 
@@ -77,12 +88,30 @@ class KernelModuleContract:
                 path.chmod(path.stat().st_mode | 0o200)
         else:
             (repo / self.library).mkdir(parents=True)
-            (repo / self.library / "kernel.py").write_text("def kernel():\n    return None\n")
+            (repo / self.library / "kernel.py").write_text(
+                "def kernel():\n    return None\n"
+            )
         subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
         subprocess.run(["git", "add", "."], cwd=repo, check=True)
-        subprocess.run(["git", "-c", "user.name=Contract test", "-c", "user.email=test@example.invalid",
-                        "commit", "-qm", "starter"], cwd=repo, check=True)
-        subprocess.run(["git", "update-ref", "refs/frontier/baseline", "HEAD"], cwd=repo, check=True)
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Contract test",
+                "-c",
+                "user.email=test@example.invalid",
+                "commit",
+                "-qm",
+                "starter",
+            ],
+            cwd=repo,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "update-ref", "refs/frontier/baseline", "HEAD"],
+            cwd=repo,
+            check=True,
+        )
         for name, body in files.items():
             path = repo / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -93,11 +122,15 @@ class KernelModuleContract:
             self.addCleanup(sys.path.remove, str(ROOT / "tasks/shared/lib"))
             tool = _load("kernel_contract_submission", bin_dir / "fcs2_submission.py")
             try:
-                tool.make_submission(repo, self.policy, starter=self.starter, workspace=workspace)
+                tool.make_submission(
+                    repo, self.policy, starter=self.starter, workspace=workspace
+                )
             except tool.Refused as error:
                 return 2, f"submission refused: {error}", workspace
             return 0, "", workspace
-        script = (self.task / "agent-base/frontier/task/bin/make_submission.sh").read_text()
+        script = (
+            self.task / "agent-base/frontier/task/bin/make_submission.sh"
+        ).read_text()
         path = self.root / "make_submission.sh"
         # Relocate only the absolute workspace mount for a real helper execution.
         path.write_text(script.replace("/workspace", str(workspace)))
@@ -113,8 +146,9 @@ class KernelModuleContract:
         try:
             if not result.ok:
                 return False, result.category
-            verdict = self.evaluator.check_tree(str(result.tree), str(self.starter),
-                                                list(result.changes))
+            verdict = self.evaluator.check_tree(
+                str(result.tree), str(self.starter), list(result.changes)
+            )
             return verdict is None, verdict[0] if verdict else ""
         finally:
             result.dispose()
@@ -122,13 +156,16 @@ class KernelModuleContract:
     def path_allowed(self, name: str) -> bool:
         if not self.native:
             return self.evaluator._validate_path(name)[0]
-        return (self.edit_scope.matches(name, self.rules.allowed_paths)
-                and not self.edit_scope.matches(name, self.rules.deny_paths))
+        return self.edit_scope.matches(
+            name, self.rules.allowed_paths
+        ) and not self.edit_scope.matches(name, self.rules.deny_paths)
 
     # ---------------------------------------------------------------- the contract
     def test_official_helper_packages_new_regression_module_and_judge_accepts_it(self):
         name = self.library + "/test_regress.py"
-        code, stderr, workspace = self.helper({name: "def test_local():\n    assert 1 + 1 == 2\n"})
+        code, stderr, workspace = self.helper(
+            {name: "def test_local():\n    assert 1 + 1 == 2\n"}
+        )
         self.assertEqual(code, 0, stderr)
         patch = workspace / "payload/solution.patch"
         self.assertIn("diff --git a/" + name, patch.read_text())
@@ -137,15 +174,24 @@ class KernelModuleContract:
         self.assertTrue(valid, message)
 
     def test_trusted_paths_and_reserved_filenames_remain_rejected(self):
-        for name in ("judge/evaluator.py", "judge/" + self.reference_name, "reference.patch",
-                     self.reference_name, self.library + "/" + self.reference_name,
-                     self.library + "/nested/" + self.reference_name, self.library + "/conftest.py",
-                     self.library + "/nested/conftest.py", self.library + "/kernel.so",
-                     "../" + self.library + "/test_regress.py"):
+        for name in (
+            "judge/evaluator.py",
+            "judge/" + self.reference_name,
+            "reference.patch",
+            self.reference_name,
+            self.library + "/" + self.reference_name,
+            self.library + "/nested/" + self.reference_name,
+            self.library + "/conftest.py",
+            self.library + "/nested/conftest.py",
+            self.library + "/kernel.so",
+            "../" + self.library + "/test_regress.py",
+        ):
             with self.subTest(path=name):
                 self.assertFalse(self.path_allowed(name))
 
-    def test_official_helper_rejects_reserved_filenames_without_silently_stripping_them(self):
+    def test_official_helper_rejects_reserved_filenames_without_silently_stripping_them(
+        self,
+    ):
         name = self.library + "/nested/conftest.py"
         code, stderr, workspace = self.helper({name: "pass\n"})
         self.assertNotEqual(code, 0)
@@ -161,9 +207,11 @@ class KernelModuleContract:
             with self.subTest(content=content):
                 patch = self.root / "bad.patch"
                 name = self.library + "/test_regress.py"
-                patch.write_text(f"diff --git a/{name} b/{name}\n"
-                                 f"new file mode 100644\n--- /dev/null\n+++ b/{name}\n"
-                                 "@@ -0,0 +1 @@\n+" + content)
+                patch.write_text(
+                    f"diff --git a/{name} b/{name}\n"
+                    f"new file mode 100644\n--- /dev/null\n+++ b/{name}\n"
+                    "@@ -0,0 +1 @@\n+" + content
+                )
                 valid, message = self.judge_accepts(patch)
                 self.assertEqual(valid, content in self.sandboxed_contents)
                 if self.native and not valid:
