@@ -129,11 +129,6 @@ def prepare() -> tuple[dict[str, str], dict[str, str], Path]:
                   json.dumps(settings(), indent=2) + '\n')
 
     child = os.environ.copy()
-    for name in tuple(child):
-        if (name.startswith(('GEMINI_', 'GOOGLE_', 'AGY_', 'ANTIGRAVITY_', 'OPENAI_',
-                             'ANTHROPIC_', 'KIMI_', 'DSH_', 'MODAL_PROXY_', 'CLOUDSDK_'))
-                or name.endswith('_API_KEY') or name == 'FRONTIER_MODEL_PROXY_TOKEN'):
-            child.pop(name)
     child.pop('LD_LIBRARY_PATH', None)
     child.update({
         'HOME': str(home), 'TMPDIR': str(temp), 'TMP': str(temp), 'TEMP': str(temp),

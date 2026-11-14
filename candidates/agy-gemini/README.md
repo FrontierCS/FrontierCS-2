@@ -32,9 +32,10 @@ port and points agy at it. The bridge:
   `FRONTIER_MODEL_API_BASE_URL` with the CandidateVersion alias
   (`FRONTIER_CODEX_MODEL`) for every call, including agy's title generator and
   built-in tool-safety monitors (they ask for flash/flash-lite slugs);
-- keeps `FRONTIER_MODEL_PROXY_TOKEN` to itself. agy authenticates to the
-  bridge with a random per-run nonce in `GEMINI_API_KEY`; the proxy token
-  is removed from agy's environment;
+- authenticates to the proxy with `FRONTIER_MODEL_PROXY_TOKEN`. agy authenticates
+  to the bridge with a random per-run nonce in `GEMINI_API_KEY`. agy and the
+  commands it runs get the platform's environment unchanged, so task tools that
+  call the proxy with `FRONTIER_MODEL_PROXY_TOKEN` work;
 - replays tool-call ids verbatim. LiteLLM's Gemini translator embeds thought
   signatures in tool-call ids (`call_…__thought__<b64>`), and agy echoes
   `functionCall.id` / `functionResponse.id` unchanged. The bridge also returns
