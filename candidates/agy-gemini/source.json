@@ -1,5 +1,5 @@
 {
-  "platform_source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8",
+  "platform_source_commit": "7f9f5988b3a1fe103e7d27cd9724f31e33ca6f64",
   "dockerfile": {
     "source": "candidate-overlays/agy-gemini/Dockerfile",
     "sha256": "sha256:93ec1ff89730acf21d2c63ed965869b7b02a8b9dc8899d3a9d25d9f4b178c5f7",
@@ -8,7 +8,7 @@
   "files": {
     "launcher.py": {
       "source": "candidate-overlays/agy-gemini/launcher.py",
-      "sha256": "sha256:5feb98430465f7815e62ca393d8c963ce997ea02aff2b2114de85153426390e1"
+      "sha256": "sha256:bd92e89b233ccd0f223283650382863cc869edf33a6a612842413eed24139177"
     },
     "gemini_chat_bridge.py": {
       "source": "candidate-overlays/agy-gemini/gemini_chat_bridge.py",

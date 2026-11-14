@@ -9,7 +9,7 @@
       "version": "1.4.7",
       "recipe": {
         "path": "candidates/agy-gemini",
-        "source_commit": "cebf7b2fcc905c96b54f24b57d9211ac54939de8"
+        "source_commit": "7f9f5988b3a1fe103e7d27cd9724f31e33ca6f64"
       },
       "upstream": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.7-5900205422411776/linux-x64/cli_linux_x64.tar.gz"
     },

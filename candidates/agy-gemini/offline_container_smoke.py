@@ -152,7 +152,7 @@ def main():
            'FRONTIER_DRIVER_TOKEN_FILE': '/var/run/frontier/token',
            'FRONTIER_MODEL_API_BASE_URL': 'http://127.0.0.1:8082/v1',
            'FRONTIER_MODEL_PROXY_TOKEN': PROXY_TOKEN, 'FRONTIER_CODEX_MODEL': ALIAS,
-           'GEMINI_API_KEY': 'ambient-must-not-leak', 'OPENAI_API_KEY': 'ambient-must-not-leak',
+           'GEMINI_API_KEY': 'ambient-must-not-leak',
            'TMPDIR': '/tmp'}
     completed = subprocess.run(['/opt/frontier/candidate/launch'], cwd='/workspace', env=env,
                                stdin=subprocess.DEVNULL, capture_output=True, timeout=300)
