@@ -325,20 +325,22 @@ licenses.
 ## Sponsors
 
 <p align="center">
-  <a href="https://modal.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/modal-dark.svg"><img src="docs/assets/sponsors/modal.svg" alt="Modal" height="36"></picture></a>
-&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://www.laude.org"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/laude-institute-dark.png"><img src="docs/assets/sponsors/laude-institute.png" alt="Laude Institute" height="40"></picture></a>
-&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://scale.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/scale-dark.svg"><img src="docs/assets/sponsors/scale.svg" alt="Scale AI" height="30"></picture></a>
-&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://www.kaggle.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/kaggle-dark.svg"><img src="docs/assets/sponsors/kaggle.svg" alt="Kaggle" height="32"></picture></a>
-&nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://snorkel.ai"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/snorkel-dark.svg"><img src="docs/assets/sponsors/snorkel.svg" alt="Snorkel AI" height="32"></picture></a>
+  <a href="https://modal.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/modal-dark.svg"><img src="docs/assets/sponsors/modal.svg" alt="Modal" height="30"></picture></a>
+&nbsp;&nbsp;
+  <a href="https://www.laude.org"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/laude-institute-dark.png"><img src="docs/assets/sponsors/laude-institute.png" alt="Laude Institute" height="34"></picture></a>
+&nbsp;&nbsp;
+  <a href="https://scale.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/scale-dark.svg"><img src="docs/assets/sponsors/scale.svg" alt="Scale AI" height="26"></picture></a>
+&nbsp;&nbsp;
+  <a href="https://www.kaggle.com"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/kaggle-dark.svg"><img src="docs/assets/sponsors/kaggle.svg" alt="Kaggle" height="28"></picture></a>
+&nbsp;&nbsp;
+  <a href="https://snorkel.ai"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsors/snorkel-dark.svg"><img src="docs/assets/sponsors/snorkel.svg" alt="Snorkel AI" height="28"></picture></a>
+&nbsp;&nbsp;
+  <a href="https://joinhandshake.com"><img src="docs/assets/sponsors/handshake.png" alt="Handshake AI" height="28"></a>
 </p>
 
 We give special thanks to [Modal](https://modal.com) for its strong support of
 this work, including the compute resources it sponsored. We also thank the
 [Laude Institute](https://www.laude.org)'s Slingshot program and
 [Scale AI](https://scale.com) for compute credits and community support, and
-[Kaggle](https://www.kaggle.com) and [Snorkel AI](https://snorkel.ai) for
-sponsoring FrontierCS.
+[Kaggle](https://www.kaggle.com), [Snorkel AI](https://snorkel.ai), and
+[Handshake AI](https://joinhandshake.com) for sponsoring FrontierCS.
