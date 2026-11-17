@@ -32,8 +32,8 @@ def _modulate_shift_fwd_fused(
 
     x = tl.load(x_ptr, mask=mask[None, :], other=0.0).to(tl.float32)
 
-    scale = tl.load(SCALE + cols)
-    shift = tl.load(SHIFT + cols)
+    scale = tl.load(SCALE + cols, mask=mask, other=0.0)
+    shift = tl.load(SHIFT + cols, mask=mask, other=0.0)
     
     y = x * (1 + scale) + shift
 
@@ -113,7 +113,7 @@ def _modulate_gate_residual_fwd_fused(
     r = tl.load(r_ptr, mask=mask[None, :], other=0.0).to(tl.float32)
     x = tl.load(x_ptr, mask=mask[None, :], other=0.0).to(tl.float32)
 
-    gate = tl.load(GATE + cols)
+    gate = tl.load(GATE + cols, mask=mask, other=0.0)
     
     y = r + x * gate
 
