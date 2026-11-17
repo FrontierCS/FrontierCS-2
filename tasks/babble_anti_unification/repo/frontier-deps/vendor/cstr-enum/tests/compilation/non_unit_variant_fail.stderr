@@ -1,0 +1,11 @@
+error: variant cannot have fields
+ --> $DIR/non_unit_variant_fail.rs:5:3
+  |
+5 |   A(u8),
+  |   ^^^^^
+
+error: variant cannot have fields
+  --> $DIR/non_unit_variant_fail.rs:13:3
+   |
+13 |   B{ foo: u8, bar: u16},
+   |   ^^^^^^^^^^^^^^^^^^^^^

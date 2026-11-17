@@ -1,0 +1,22 @@
+{
+  "kind": "disambiguation",
+  "bound": 2,
+  "timeout_seconds": 5,
+  "schema": [
+    {
+      "TableName": "employees",
+      "PKeys": [
+        {"Name": "emp_id", "Type": "int"}
+      ],
+      "FKeys": [],
+      "Others": [
+        {"Name": "name", "Type": "varchar"},
+        {"Name": "age", "Type": "int"}
+      ]
+    }
+  ],
+  "queries": [
+    "SELECT emp_id FROM employees WHERE age > 30",
+    "SELECT emp_id FROM employees WHERE age >= 30"
+  ]
+}

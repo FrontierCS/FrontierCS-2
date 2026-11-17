@@ -1,0 +1,13 @@
+diff --git a/executable/scope.cpp b/executable/scope.cpp
+index 9bcacd1..7cd8c05 100644
+--- a/executable/scope.cpp
++++ b/executable/scope.cpp
+@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
+     ui totalNumPatterns = 0, totalNodes = 0;
+     double averageNodeSize = 0.0;
+     int numVertexTable = 0, numEdgeTable = 0;
+-    if (true) {
++    if (!false) {
+         std::vector<HashTable> mathCalH(patternGraphs.size());
+         std::vector<int> orbitTypes(patternGraphs.size());
+ #ifdef DEBUG

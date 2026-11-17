@@ -1,0 +1,17 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "polar_express.py",
+      "frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 1048576
+  },
+  "member": "solution.patch"
+}

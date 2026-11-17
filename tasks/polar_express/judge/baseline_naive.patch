@@ -1,0 +1,43 @@
+diff --git a/polar_express.py b/polar_express.py
+index aa75bc1..82ade2d 100644
+--- a/polar_express.py
++++ b/polar_express.py
+@@ -20,13 +20,21 @@ def optimal_cubic(l, u):
+ 
+ def optimal_quintic(l, u):
+     """Return three finite odd-quintic coefficients for the interval ``[l, u]``."""
+-    raise NotImplementedError("optimal_quintic has been removed")
++    a, b = optimal_cubic(l, u)
++    return a, b, 0.0
+ 
+ degree_to_coefficients = {3: optimal_cubic, 5: optimal_quintic}
+ 
+ def optimal_composition(l, num_iters, degree=5, safety_factor_eps=0, cushion=0):
+     """Return ``num_iters`` odd-polynomial coefficient sequences."""
+-    raise NotImplementedError("optimal_composition has been removed")
++    result = []
++    u = 1.0
++    for _ in range(num_iters):
++        a, b = optimal_cubic(l, u)
++        result.append((a, b, 0.0))
++        l = a*l + b*l**3
++        u = 2.0 - l
++    return result
+ 
+ 
+ coeffs_list = optimal_composition(l=1e-3, num_iters=10, degree=5, safety_factor_eps=1e-2, cushion=0.02)
+@@ -36,4 +44,12 @@ coeffs_list = optimal_composition(l=1e-3, num_iters=10, degree=5, safety_factor_
+ @torch.compile
+ def PolarExpress(G: torch.Tensor, steps: int) -> torch.Tensor:
+     """Return a finite tensor with the same shape as ``G`` without mutating it."""
+-    raise NotImplementedError("PolarExpress has been removed")
++    X = G.float()
++    transposed = G.size(-2) > G.size(-1)
++    if transposed:
++        X = X.mT
++    X = X / (X.norm(dim=(-2, -1), keepdim=True) + 1e-7)
++    for _ in range(steps):
++        A = X @ X.mT
++        X = 1.5 * X - 0.5 * A @ X
++    return X.mT if transposed else X
+

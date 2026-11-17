@@ -1,0 +1,5 @@
+error: attribute must be placed on variants
+ --> $DIR/name_on_enum.rs:4:1
+  |
+4 | #[cstr(name="egg")]
+  | ^^^^^^^^^^^^^^^^^^^

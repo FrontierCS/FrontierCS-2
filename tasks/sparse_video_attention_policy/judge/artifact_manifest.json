@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "arxiv_2603_08982_svg_ear/code",
+  "authentic_execution": {
+    "entrypoint": "scripts/wan/wan_t2v_720p_ear.sh",
+    "retained_files": [
+      "scripts/wan/wan_t2v_720p_ear.sh",
+      "examples/1/prompt.txt",
+      "examples/2/prompt.txt",
+      "examples/3/prompt.txt",
+      "examples/4/prompt.txt",
+      "wan_t2v_inference.py",
+      "pyproject.toml",
+      "svg/kernels/setup.sh",
+      "svg/kernels/CMakeLists.txt",
+      "svg/kernels/3rdparty/pybind/CMakeLists.txt",
+      "svg/kernels/3rdparty/pybind/tools/pybind11Common.cmake",
+      "svg/kernels/3rdparty/pybind/tools/JoinPaths.cmake",
+      "svg/__init__.py",
+      "svg/flashinfer_patch.py",
+      "svg/models/wan/inference.py",
+      "svg/models/wan/custom_models.py",
+      "scripts/hyvideo/hyvideo_t2v_720p_ear.sh",
+      "examples/7/prompt.txt",
+      "hyvideo_t2v_inference.py",
+      "svg/models/hyvideo/__init__.py",
+      "svg/models/hyvideo/inference.py",
+      "svg/models/hyvideo/custom_models.py",
+      "svg/models/hyvideo/placement.py",
+      "svg/models/hyvideo/utils.py"
+    ],
+    "entrypoints": {
+      "wan": "scripts/wan/wan_t2v_720p_ear.sh",
+      "hunyuan": "scripts/hyvideo/hyvideo_t2v_720p_ear.sh"
+    }
+  },
+  "excision": [
+    {
+      "path": "svg/models/wan/attention.py",
+      "mode": "stubbed",
+      "symbols": [
+        "WanAttn_EARAttn_Processor"
+      ]
+    },
+    {
+      "path": "svg/models/hyvideo/attention.py",
+      "mode": "stubbed",
+      "symbols": [
+        "Hunyuan_EARAttn_Processor"
+      ]
+    },
+    {
+      "path": "svg/kmeans_utils.py",
+      "mode": "stubbed",
+      "symbols": [
+        "identify_dynamic_map_estimated",
+        "scatter_mean_fused",
+        "dynamic_block_sparse_prune_fwd_flashinfer"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "svg/models/wan/attention.py",
+      "svg/models/hyvideo/attention.py",
+      "svg/kmeans_utils.py"
+    ],
+    "add_under": [
+      "svg/solver_extensions/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Driver workspace adapter that syntax-checks the editable modules and compiles the retained upstream CUDA extension; it contains no attention policy."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Driver workspace adapter that supplies offline environment settings and delegates directly to the retained Wan (default) or HunyuanVideo shell entrypoint."
+    },
+    {
+      "path": ".frontier/python",
+      "reason": "Offline-model adapter that replaces only the checkpoint location (and fixes HunyuanVideo's frame count at the task's 81 frames) before delegating to the byte-identical upstream Python launcher."
+    },
+    {
+      "path": "flash_attn/__init__.py",
+      "reason": "Package marker for the task-owned FlashAttention-2 compatibility entry; the flash-attn wheel is not installed in the pinned image."
+    },
+    {
+      "path": "flash_attn/flash_attn_interface.py",
+      "reason": "Implements only flash_attn_varlen_func, imported by the retained HunyuanVideo attention module, as segment-isolated non-causal PyTorch SDPA; used by the dense HunyuanVideo target path and never by the EAR path."
+    }
+  ],
+  "retained_alternatives": [
+    {
+      "path": "wan_t2v_inference.py",
+      "reason": "The selected byte-identical shell entrypoint directly invokes this Python program; ARTIFACT_PLAN requires it as an integration dependency."
+    }
+  ],
+  "pruned_alternatives": [
+    "scripts/wan/wan_i2v_720p_ear.sh",
+    "wan_i2v_inference.py",
+    "cosmos_t2v_inference.py",
+    "cog_inference.py"
+  ],
+  "minimality_note": "The retained files are the smallest reproduced Wan and HunyuanVideo text-to-video paths that reach the excised hooks across the workload prompts. Other model families, experiment frontends, unrelated media, tests, and the vendored FlashInfer source are omitted; only the CUDA header subset required by the retained SM90a build remains. examples/7/prompt.txt is retained only because the byte-identical HunyuanVideo shell entrypoint reads it; the evaluator replaces that prompt with the workload record."
+}

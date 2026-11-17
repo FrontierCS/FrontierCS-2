@@ -1,0 +1,327 @@
+diff --git a/src/frontier_solution/strategy.cc b/src/frontier_solution/strategy.cc
+index b0790e8..5688384 100644
+--- a/src/frontier_solution/strategy.cc
++++ b/src/frontier_solution/strategy.cc
+@@ -1,9 +1,15 @@
+-// Your search strategy goes here.
++// Control-flow-directed search (Burnim & Sen, ASE 2008), as implemented by
++// CREST's CfgHeuristicSearch, expressed against the strategy interface.
+ //
+-// This starter only restarts the program on fresh random inputs until the
+-// budget is spent.  It compiles and runs, and it is a poor search: replace
+-// the body of Run().  You may add files to this directory and include them
+-// from here; see the task README for the rules on what this code may use.
++// Copyright (c) 2008, Jacob Burnim (jburnim@cs.berkeley.edu)
++// CREST is distributed under the revised BSD license; see LICENSE.
++
++#include <algorithm>
++#include <map>
++#include <queue>
++#include <set>
++#include <utility>
++#include <vector>
+ 
+ #include "strategy/strategy_api.h"
+ 
+@@ -11,18 +17,299 @@ namespace frontier {
+ 
+ namespace {
+ 
+-class RandomRestartSearch : public Strategy {
++typedef std::pair<size_t, int> ScoredBranch;
++
++struct ScoredBranchComp {
++  bool operator()(const ScoredBranch& a, const ScoredBranch& b) const {
++    return a.second < b.second;
++  }
++};
++
++class CfgDirectedSearch : public Strategy {
+  public:
++  CfgDirectedSearch() : host_(NULL), num_covered_(0), success_ex_(NULL) {}
++
+   virtual void Run(Host& host) {
++    host_ = &host;
++    const Program& p = host.program();
++    cfg_rev_.assign(p.num_branch_ids, std::vector<int>());
++    for (size_t i = 0; i < p.branches.size(); i++) {
++      int b = p.branches[i];
++      for (size_t j = 0; j < p.successors[b].size(); j++)
++        cfg_rev_[p.successors[b][j]].push_back(b);
++    }
++    dist_.assign(p.num_branch_ids, 0);
++
+     while (true) {
++      covered_.assign(p.num_branch_ids, false);
++      num_covered_ = 0;
++
++      // Execution on random inputs.
+       const Execution* ex = host.Restart();
++      if (UpdateCoverage(ex, NULL)) UpdateBranchDistances();
++
++      while (DoSearch(5, 30, 0, kInfiniteDistance, ex)) {
++        // As long as we keep finding new branches . . . .
++        UpdateBranchDistances();
++        host.Release(ex);
++        ex = success_ex_;
++        success_ex_ = NULL;
++      }
+       host.Release(ex);
+     }
+   }
++
++ private:
++  static const int kInfiniteDistance = 10000;
++
++  Host* host_;
++  std::vector<std::vector<int> > cfg_rev_;
++  std::vector<size_t> dist_;
++  // Coverage since the last restart (the search is restarted from scratch).
++  std::vector<bool> covered_;
++  unsigned num_covered_;
++  const Execution* success_ex_;
++
++  int Paired(int b) const { return host_->program().paired[b]; }
++
++  void Shuffle(std::vector<ScoredBranch>* v) {
++    for (size_t i = 1; i < v->size(); i++)
++      std::swap((*v)[i], (*v)[host_->Uniform(static_cast<uint32_t>(i + 1))]);
++  }
++
++  void Shuffle(std::vector<size_t>* v) {
++    for (size_t i = 1; i < v->size(); i++)
++      std::swap((*v)[i], (*v)[host_->Uniform(static_cast<uint32_t>(i + 1))]);
++  }
++
++  bool UpdateCoverage(const Execution* ex, std::set<int>* new_branches) {
++    const unsigned prev = num_covered_;
++    for (size_t i = 0; i < ex->path.size(); i++) {
++      int b = ex->path[i];
++      if (b > 0 && !covered_[b]) {
++        covered_[b] = true;
++        num_covered_++;
++        if (new_branches) new_branches->insert(b);
++      }
++    }
++    return num_covered_ > prev;
++  }
++
++  bool CheckPrediction(const Execution* old_ex, const Execution* new_ex, size_t branch_idx) {
++    if (old_ex->path.size() <= branch_idx || new_ex->path.size() <= branch_idx) return false;
++    for (size_t j = 0; j < branch_idx; j++)
++      if (new_ex->path[j] != old_ex->path[j]) return false;
++    return new_ex->path[branch_idx] == Paired(old_ex->path[branch_idx]);
++  }
++
++  void UpdateBranchDistances() {
++    // BFS backward, starting simultaneously at all uncovered vertices.
++    const Program& p = host_->program();
++    std::queue<int> q;
++    for (size_t i = 0; i < p.branches.size(); i++) {
++      int b = p.branches[i];
++      if (!covered_[b]) {
++        dist_[b] = 0;
++        q.push(b);
++      } else {
++        dist_[b] = kInfiniteDistance;
++      }
++    }
++    while (!q.empty()) {
++      int i = q.front();
++      size_t dist_i = dist_[i];
++      q.pop();
++      for (size_t j = 0; j < cfg_rev_[i].size(); j++) {
++        int k = cfg_rev_[i][j];
++        if (dist_i + 1 < dist_[k]) {
++          dist_[k] = dist_i + 1;
++          q.push(k);
++        }
++      }
++    }
++  }
++
++  void Succeed(const Execution* ex) {
++    if (success_ex_ && success_ex_ != ex) host_->Release(success_ex_);
++    success_ex_ = ex;
++  }
++
++  bool DoSearch(int depth, int iters, int pos, int max_dist, const Execution* prev_ex) {
++    if (pos >= static_cast<int>(prev_ex->constraint_pos.size())) return false;
++    if (depth == 0) return false;
++
++    // For each symbolic branch/constraint in the execution path, compute a
++    // heuristic score, and then attempt to force the branches in order of
++    // increasing score.
++    std::vector<ScoredBranch> scored(prev_ex->constraint_pos.size() - pos);
++    for (size_t i = 0; i < scored.size(); i++) scored[i].first = i + pos;
++
++    {
++      Shuffle(&scored);
++      std::map<int, int> seen;
++      for (size_t i = 0; i < scored.size(); i++) {
++        size_t idx = scored[i].first;
++        size_t branch_idx = prev_ex->constraint_pos[idx];
++        int bid = Paired(prev_ex->path[branch_idx]);
++        scored[i].second = static_cast<int>(dist_[bid]) + seen[bid];
++        seen[bid] += 1;
++      }
++    }
++    std::stable_sort(scored.begin(), scored.end(), ScoredBranchComp());
++
++    for (size_t i = 0; i < scored.size(); i++) {
++      if (iters <= 0 || scored[i].second > max_dist) return false;
++
++      const Execution* cur_ex = host_->Negate(prev_ex, scored[i].first);
++      if (!cur_ex) continue;
++      iters--;
++
++      size_t b_idx = prev_ex->constraint_pos[scored[i].first];
++      int bid = Paired(prev_ex->path[b_idx]);
++      std::set<int> new_branches;
++      bool found_new_branch = UpdateCoverage(cur_ex, &new_branches);
++      bool prediction_failed = !CheckPrediction(prev_ex, cur_ex, b_idx);
++
++      if (found_new_branch && prediction_failed) {
++        // Lucky: new coverage although the prediction failed.
++        Succeed(cur_ex);
++        return true;
++      }
++
++      if (found_new_branch && !prediction_failed) {
++        if (FindAlongCfg(b_idx, static_cast<unsigned>(dist_[bid]), cur_ex, new_branches)) {
++          // A legitimate find.
++          Succeed(cur_ex);
++          return true;
++        }
++        // Lucky, but with a correct prediction: finish the CFG search to see
++        // whether that works, too.
++      }
++
++      if (prediction_failed) {
++        if (!found_new_branch) {
++          host_->Release(cur_ex);
++          continue;
++        }
++      }
++
++      if (dist_[bid] > 0 &&
++          SolveAlongCfg(b_idx, static_cast<unsigned>(scored[i].second - 1), cur_ex)) {
++        if (success_ex_ != cur_ex) host_->Release(cur_ex);
++        return true;
++      }
++
++      if (found_new_branch) {
++        Succeed(cur_ex);
++        return true;
++      }
++      host_->Release(cur_ex);
++    }
++    return false;
++  }
++
++  bool FindAlongCfg(size_t i, unsigned dist, const Execution* ex, const std::set<int>& bs) {
++    const std::vector<int>& path = ex->path;
++    if (i >= path.size()) return false;
++    if (bs.find(path[i]) != bs.end()) return true;
++    if (dist == 0) return false;
++
++    std::vector<size_t> idxs;
++    {
++      size_t pos = i + 1;
++      CollectNextBranches(path, &pos, &idxs);
++    }
++    for (size_t j = 0; j < idxs.size(); j++)
++      if (FindAlongCfg(idxs[j], dist - 1, ex, bs)) return true;
++    return false;
++  }
++
++  bool SolveAlongCfg(size_t i, unsigned max_dist, const Execution* prev_ex) {
++    const std::vector<int>& path = prev_ex->path;
++
++    // The indices of all branches on the path that immediately follow the
++    // current branch in the CFG.  For the path
++    //     * ( ( ( 1 2 ) 4 ) ( 5 ( 6 7 ) ) 8 ) 9
++    // where '*' is the current branch, those are 1, 4, 5, 8 and 9.
++    bool found_path = false;
++    std::vector<size_t> idxs;
++    {
++      size_t pos = i + 1;
++      CollectNextBranches(path, &pos, &idxs);
++      for (size_t j = 0; j < idxs.size(); j++) {
++        if (dist_[path[idxs[j]]] <= max_dist || dist_[Paired(path[idxs[j]])] <= max_dist)
++          found_path = true;
++      }
++    }
++    if (!found_path) return false;
++
++    Shuffle(&idxs);
++    for (size_t jj = 0; jj < idxs.size(); jj++) {
++      size_t j = idxs[jj];
++      if (dist_[path[j]] > max_dist && dist_[Paired(path[j])] > max_dist) continue;
++
++      if (dist_[path[j]] <= max_dist) {
++        // No need to force, this branch is on a shortest path.
++        if (SolveAlongCfg(j, max_dist - 1, prev_ex)) return true;
++      }
++
++      // Find the constraint corresponding to path position j.
++      std::vector<uint32_t>::const_iterator idx = std::lower_bound(
++          prev_ex->constraint_pos.begin(), prev_ex->constraint_pos.end(),
++          static_cast<uint32_t>(j));
++      if (idx == prev_ex->constraint_pos.end() || *idx != j) continue;  // concrete
++      size_t c_idx = static_cast<size_t>(idx - prev_ex->constraint_pos.begin());
++
++      if (dist_[Paired(path[j])] <= max_dist) {
++        // The paired branch is along a shortest path, so force.
++        const Execution* cur_ex = host_->Negate(prev_ex, c_idx);
++        if (!cur_ex) continue;
++        if (UpdateCoverage(cur_ex, NULL)) {
++          Succeed(cur_ex);
++          return true;
++        }
++        if (!CheckPrediction(prev_ex, cur_ex, j)) {
++          host_->Release(cur_ex);
++          continue;
++        }
++        bool found = SolveAlongCfg(j, max_dist - 1, cur_ex);
++        if (success_ex_ != cur_ex) host_->Release(cur_ex);
++        if (found) return true;
++      }
++    }
++    return false;
++  }
++
++  void SkipUntilReturn(const std::vector<int>& path, size_t* pos) {
++    while (*pos < path.size() && path[*pos] != kReturnId) {
++      if (path[*pos] == kCallId) {
++        (*pos)++;
++        SkipUntilReturn(path, pos);
++        if (*pos >= path.size()) return;
++      }
++      (*pos)++;
++    }
++  }
++
++  void CollectNextBranches(const std::vector<int>& path, size_t* pos, std::vector<size_t>* idxs) {
++    // Eat an arbitrary sequence of call-returns, collecting inside each one.
++    while (*pos < path.size() && path[*pos] == kCallId) {
++      (*pos)++;
++      CollectNextBranches(path, pos, idxs);
++      SkipUntilReturn(path, pos);
++      if (*pos >= path.size()) return;
++      (*pos)++;
++    }
++    // If the sequence of calls is followed by a branch, add it.
++    if (*pos < path.size() && path[*pos] >= 0) {
++      idxs->push_back(*pos);
++      (*pos)++;
++    }
++  }
+ };
+ 
+ }  // namespace
+ 
+-Strategy* MakeStrategy() { return new RandomRestartSearch(); }
++Strategy* MakeStrategy() { return new CfgDirectedSearch(); }
+ 
+ }  // namespace frontier

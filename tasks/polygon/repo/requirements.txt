@@ -1,0 +1,16 @@
+typing-extensions
+mo-sql-parsing
+z3-solver
+lark
+pandas
+tqdm
+prettytable
+PySMT
+PyYAML
+mysql-connector-python
+ujson
+iteration-utilities
+psycopg2-binary
+multiprocess
+bidict
+matplotlib

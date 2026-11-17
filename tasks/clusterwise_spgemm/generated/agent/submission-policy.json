@@ -1,0 +1,23 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "CSR_FlengthCluster.h",
+      "BIN_FlengthCluster.h",
+      "hash_mult_flengthcluster.h",
+      "hash_mult.h",
+      "cluster_utility.h",
+      "CSR_VlengthCluster.h",
+      "BIN.h",
+      "frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 24,
+    "max_patch_bytes": 266240
+  },
+  "member": "solution.patch"
+}

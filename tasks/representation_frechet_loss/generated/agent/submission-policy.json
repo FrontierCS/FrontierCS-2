@@ -1,0 +1,17 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "frechet_distance/queue.py",
+      "frechet_distance/frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

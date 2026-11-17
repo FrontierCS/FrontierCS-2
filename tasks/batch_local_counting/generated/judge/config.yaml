@@ -1,0 +1,45 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": false,
+    "allowed_paths": [
+      "counting/forest.h",
+      "counting/forest.cpp",
+      "counting/execution.h",
+      "counting/execution.cpp",
+      "counting/aggregation.h",
+      "counting/aggregation.cpp",
+      "executable/scope.cpp",
+      "executable/command.cpp",
+      "plan/tree.h",
+      "plan/tree.cpp"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [
+      "web-spam",
+      "rec-movielens",
+      "bio-grid-yeast",
+      "4voc",
+      "5voc"
+    ],
+    "forbidden_content": [],
+    "ignore_case": true,
+    "max_changed_files": 12,
+    "max_patch_bytes": 524288
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 180000,
+    "solver_visible_metrics": [
+      "median_seconds"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 1800
+  }
+}

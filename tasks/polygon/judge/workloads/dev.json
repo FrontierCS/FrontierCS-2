@@ -1,0 +1,719 @@
+[
+  {
+    "id": "dev-01",
+    "problem_id": 595,
+    "qid": 3,
+    "bound": 2,
+    "query": "SELECT NAME, AREA, POPULATION FROM WORLD WHERE POPULATION > 25000000 OR AREA > 3000000"
+  },
+  {
+    "id": "dev-02",
+    "problem_id": 182,
+    "qid": 204,
+    "bound": 2,
+    "query": "WITH CTE AS (SELECT COUNT(*) AS EMAIL_NUM, EMAIL AS EMAIL FROM PERSON GROUP BY EMAIL) SELECT EMAIL FROM CTE WHERE EMAIL_NUM>1"
+  },
+  {
+    "id": "dev-03",
+    "problem_id": 1350,
+    "qid": 57,
+    "bound": 2,
+    "query": "SELECT ID, NAME FROM STUDENTS WHERE DEPARTMENT_ID NOT IN (SELECT S.DEPARTMENT_ID FROM STUDENTS S INNER JOIN DEPARTMENTS D ON S.DEPARTMENT_ID = D.ID )"
+  },
+  {
+    "id": "dev-04",
+    "problem_id": 1045,
+    "qid": 282,
+    "bound": 2,
+    "query": "SELECT DISTINCT CUSTOMER_ID FROM CUSTOMER WHERE PRODUCT_KEY IN (SELECT PRODUCT_KEY FROM PRODUCT) GROUP BY 1 HAVING COUNT(DISTINCT PRODUCT_KEY) = (SELECT COUNT(DISTINCT PRODUCT_KEY) FROM PRODUCT )"
+  },
+  {
+    "id": "dev-05",
+    "problem_id": 619,
+    "qid": 346,
+    "bound": 3,
+    "query": "SELECT IF(MAX(SUB.NUM)>=1, MAX(SUB.NUM), NULL) AS NUM FROM ( SELECT NUM FROM MYNUMBERS GROUP BY NUM HAVING COUNT(NUM)=1) SUB"
+  },
+  {
+    "id": "dev-06",
+    "problem_id": 1050,
+    "qid": 72,
+    "bound": 3,
+    "query": "SELECT ACTOR_ID, DIRECTOR_ID FROM ACTORDIRECTOR GROUP BY ACTOR_ID, DIRECTOR_ID HAVING COUNT(DIRECTOR_ID) > 2"
+  },
+  {
+    "id": "dev-07",
+    "problem_id": 1398,
+    "qid": 165,
+    "bound": 3,
+    "query": "SELECT C.CUSTOMER_ID,C.CUSTOMER_NAME FROM CUSTOMERS C JOIN ORDERS O ON C.CUSTOMER_ID=O.CUSTOMER_ID GROUP BY C.CUSTOMER_ID,C.CUSTOMER_NAME HAVING SUM(CASE WHEN O.PRODUCT_NAME ='A' THEN 1 ELSE 0 END) >0 AND SUM(CASE WHEN O.PRODUCT_NAME ='B' THEN 1 ELSE 0 END) >0 AND SUM(CASE WHEN O.PRODUCT_NAME ='C' THEN 1 ELSE 0 END) =0"
+  },
+  {
+    "id": "dev-08",
+    "problem_id": 1398,
+    "qid": 162,
+    "bound": 3,
+    "query": "SELECT C.CUSTOMER_ID, CUSTOMER_NAME FROM ORDERS O LEFT JOIN CUSTOMERS C ON O.CUSTOMER_ID = C.CUSTOMER_ID WHERE PRODUCT_NAME = 'A' AND C.CUSTOMER_ID IN ( SELECT DISTINCT CUSTOMER_ID FROM ORDERS WHERE PRODUCT_NAME = 'B' ) AND C.CUSTOMER_ID NOT IN ( SELECT DISTINCT CUSTOMER_ID FROM ORDERS WHERE PRODUCT_NAME = 'C' )"
+  },
+  {
+    "id": "dev-09",
+    "problem_id": 1661,
+    "qid": 3,
+    "bound": 4,
+    "query": "SELECT E.MACHINE_ID, ROUND(SUM(E.TIMESTAMP - S.TIMESTAMP) / COUNT(E.PROCESS_ID), 3) PROCESSING_TIME FROM ACTIVITY E, ACTIVITY S WHERE E.ACTIVITY_TYPE = 'end' AND S.ACTIVITY_TYPE = 'start' AND E.MACHINE_ID = S.MACHINE_ID GROUP BY E.MACHINE_ID"
+  },
+  {
+    "id": "dev-10",
+    "problem_id": 1661,
+    "qid": 285,
+    "bound": 4,
+    "query": "SELECT A1.MACHINE_ID, ROUND(SUM(A2.TIMESTAMP - A1.TIMESTAMP)/COUNT(A1.PROCESS_ID),3) AS PROCESSING_TIME FROM ACTIVITY A1, ACTIVITY A2 WHERE A1.MACHINE_ID = A2.MACHINE_ID AND A1.PROCESS_ID = A2.PROCESS_ID AND A2.TIMESTAMP > A1.TIMESTAMP GROUP BY 1"
+  },
+  {
+    "id": "dev-11",
+    "problem_id": 1661,
+    "qid": 197,
+    "bound": 4,
+    "query": "SELECT A.MACHINE_ID, ROUND(AVG(B.TIMESTAMP - A.TIMESTAMP),3) AS PROCESSING_TIME FROM ACTIVITY A, ACTIVITY B WHERE A.MACHINE_ID = B.MACHINE_ID AND B.ACTIVITY_TYPE = 'end' AND A.ACTIVITY_TYPE = 'start' GROUP BY 1"
+  },
+  {
+    "id": "dev-12",
+    "problem_id": 1661,
+    "qid": 217,
+    "bound": 4,
+    "query": "SELECT A1.MACHINE_ID, ROUND(SUM(A2.TIMESTAMP - A1.TIMESTAMP) / COUNT(*), 3) AS PROCESSING_TIME FROM ACTIVITY A1 INNER JOIN ACTIVITY A2 ON A1.MACHINE_ID = A2.MACHINE_ID AND A1.PROCESS_ID = A2.PROCESS_ID AND A1.ACTIVITY_TYPE = 'start' AND A2.ACTIVITY_TYPE = 'end' GROUP BY A1.MACHINE_ID"
+  },
+  {
+    "id": "dev-13",
+    "problem_id": 596,
+    "qid": 136,
+    "bound": 5,
+    "query": "SELECT DISTINCT CLASS FROM COURSES GROUP BY CLASS HAVING COUNT(CLASS)>=5"
+  },
+  {
+    "id": "dev-14",
+    "problem_id": 596,
+    "qid": 165,
+    "bound": 5,
+    "query": "SELECT CLASS FROM (SELECT CLASS,COUNT(CLASS) AS NUMBER FROM COURSES GROUP BY CLASS ) AS A WHERE NUMBER >= 5"
+  },
+  {
+    "id": "dev-15",
+    "problem_id": 1149,
+    "qid": 49,
+    "bound": 5,
+    "query": "SELECT DISTINCT(VIEWER_ID) AS ID FROM VIEWS WHERE (VIEWER_ID,VIEW_DATE) IN (SELECT VIEWER_ID,VIEW_DATE FROM VIEWS GROUP BY VIEWER_ID,VIEW_DATE HAVING COUNT(DISTINCT(ARTICLE_ID))>=2) ORDER BY ID"
+  },
+  {
+    "id": "dev-16",
+    "problem_id": 1149,
+    "qid": 272,
+    "bound": 5,
+    "query": "SELECT A.VIEWER_ID ID FROM VIEWS A JOIN VIEWS B WHERE A.VIEWER_ID = B.VIEWER_ID AND A.ARTICLE_ID != B.ARTICLE_ID AND A.VIEW_DATE = B.VIEW_DATE GROUP BY A.VIEWER_ID HAVING COUNT(A.VIEWER_ID) >1 ORDER BY 1"
+  },
+  {
+    "id": "dev-stress-d50-2604",
+    "kind": "disambiguation",
+    "corpus": "D-50",
+    "case_id": 2604,
+    "benchmark": "spider-game_injury-0013.txt",
+    "bound": 2,
+    "timeout_seconds": 6,
+    "schema": [
+      {
+        "TableName": "stadium",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "name",
+            "Type": "text"
+          },
+          {
+            "Name": "Home_Games",
+            "Type": "int"
+          },
+          {
+            "Name": "Average_Attendance",
+            "Type": "real"
+          },
+          {
+            "Name": "Total_Attendance",
+            "Type": "real"
+          },
+          {
+            "Name": "Capacity_Percentage",
+            "Type": "real"
+          }
+        ]
+      },
+      {
+        "TableName": "game",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [
+          {
+            "FName": "stadium_id",
+            "PName": "id",
+            "PTable": 0
+          }
+        ],
+        "Others": [
+          {
+            "Name": "stadium_id",
+            "Type": "int"
+          },
+          {
+            "Name": "Season",
+            "Type": "int"
+          },
+          {
+            "Name": "Date",
+            "Type": "text"
+          },
+          {
+            "Name": "Home_team",
+            "Type": "text"
+          },
+          {
+            "Name": "Away_team",
+            "Type": "text"
+          },
+          {
+            "Name": "Score",
+            "Type": "text"
+          },
+          {
+            "Name": "Competition",
+            "Type": "text"
+          }
+        ]
+      },
+      {
+        "TableName": "injury_accident",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [
+          {
+            "FName": "game_id",
+            "PName": "id",
+            "PTable": 1
+          }
+        ],
+        "Others": [
+          {
+            "Name": "game_id",
+            "Type": "int"
+          },
+          {
+            "Name": "Player",
+            "Type": "text"
+          },
+          {
+            "Name": "Injury",
+            "Type": "text"
+          },
+          {
+            "Name": "Number_of_matches",
+            "Type": "text"
+          },
+          {
+            "Name": "Source",
+            "Type": "text"
+          }
+        ]
+      }
+    ],
+    "queries": [
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` group by `t_cte_5`.`c_season1` having 2010 < `t_cte_5`.`c_season1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` where 2010 < `t_cte_5`.`c_season1` group by `t_cte_5`.`c_season1`",
+      "select count(distinct `t_cte_13`.`c_injury1`) as `tmp0` from (select `t1`.`game_id` as `c_game_id1`, `t1`.`injury` as `c_injury1` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season1` where `t_cte_13`.`c_game_id1` = `t_cte_0`.`c_id1` group by `t_cte_0`.`c_season1`",
+      "select count(`t_cte_38`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_38` group by `t_cte_38`.`c_season0`",
+      "select count(`t_cte_11`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id`) as `t_cte_11` group by `t_cte_11`.`c_season0` having 2010 < `t_cte_11`.`c_season0`",
+      "select count(`t_cte_11`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id`) as `t_cte_11` where 2010 < `t_cte_11`.`c_season0` group by `t_cte_11`.`c_season0`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id1` = `t2`.`id` group by `t2`.`season` having 2010 < `t2`.`season`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id1` = `t2`.`id` where 2010 < `t2`.`season` group by `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` group by `t2`.`season` having 2010 < `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season` group by `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_16` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_16`.`c_id1` group by `t_cte_16`.`c_season1`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id1` = `t_cte_0`.`c_id1` group by `t_cte_0`.`c_season1` having 2010 < `t_cte_0`.`c_season1`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id1` = `t_cte_0`.`c_id1` where 2010 < `t_cte_0`.`c_season1` group by `t_cte_0`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season1` where `t1`.`game_id` = `t_cte_0`.`c_id1` group by `t_cte_0`.`c_season1`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` on 2010 < `t_cte_0`.`c_season1` where `t_cte_43`.`c_game_id1` = `t_cte_0`.`c_id1` group by `t_cte_0`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_16` on `t1`.`game_id` = `t_cte_16`.`c_id1` group by `t_cte_16`.`c_season1`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season1` where `t_cte_43`.`c_game_id1` = `t_cte_0`.`c_id1` group by `t_cte_0`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id` group by `t2`.`season`",
+      "select count(distinct `t_cte_13`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` inner join (select `t1`.`game_id` as `c_game_id1`, `t1`.`injury` as `c_injury1` from `injury_accident` as `t1`) as `t_cte_13` on `t_cte_13`.`c_game_id1` = `t_cte_0`.`c_id1` group by `t_cte_0`.`c_season1` having 2010 < `t_cte_0`.`c_season1`",
+      "select count(distinct `t_cte_13`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_0` inner join (select `t1`.`game_id` as `c_game_id1`, `t1`.`injury` as `c_injury1` from `injury_accident` as `t1`) as `t_cte_13` on `t_cte_13`.`c_game_id1` = `t_cte_0`.`c_id1` where 2010 < `t_cte_0`.`c_season1` group by `t_cte_0`.`c_season1`",
+      "select count(distinct `t_cte_37`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_37` group by `t_cte_37`.`c_season1`",
+      "select count(`t_cte_2`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_2` group by `t_cte_2`.`c_season0`",
+      "select count(distinct `t_cte_13`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_16` inner join (select `t1`.`game_id` as `c_game_id1`, `t1`.`injury` as `c_injury1` from `injury_accident` as `t1`) as `t_cte_13` on `t_cte_13`.`c_game_id1` = `t_cte_16`.`c_id1` group by `t_cte_16`.`c_season1`",
+      "select count(distinct `t_cte_43`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_43` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_16` on `t_cte_43`.`c_game_id1` = `t_cte_16`.`c_id1` group by `t_cte_16`.`c_season1`",
+      "select count(distinct `t_cte_13`.`c_injury1`) as `tmp0` from (select `t1`.`game_id` as `c_game_id1`, `t1`.`injury` as `c_injury1` from `injury_accident` as `t1`) as `t_cte_13` inner join `game` as `t2` on `t_cte_13`.`c_game_id1` = `t2`.`id` group by `t2`.`season` having 2010 < `t2`.`season`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`season` as `c_season0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` group by `t_cte_5`.`c_game_id0`,`t_cte_5`.`c_season0` having 2010 < `t_cte_5`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` group by `t_cte_5`.`c_id0`,`t_cte_5`.`c_season0` having 2010 < `t_cte_5`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` where 2010 < `t_cte_5`.`c_season0` group by `t_cte_5`.`c_game_id0`,`t_cte_5`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`season` as `c_season0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` where 2010 < `t_cte_5`.`c_season0` group by `t_cte_5`.`c_game_id0`,`t_cte_5`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` where 2010 < `t_cte_5`.`c_season0` group by `t_cte_5`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` where 2010 < `t_cte_5`.`c_season0` group by `t_cte_5`.`c_id0`,`t_cte_5`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`season` as `c_season0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_5` where 2010 < `t_cte_5`.`c_season0` group by `t_cte_5`.`c_game_id0`",
+      "select count(`t_cte_43`.`c_injury0`) as `tmp0` from (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id0` = `t_cte_12`.`c_id0` group by `t_cte_43`.`c_game_id0`,`t_cte_12`.`c_id0`",
+      "select count(`t_cte_43`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id0` = `t_cte_12`.`c_id0` group by `t_cte_43`.`c_game_id0`,`t_cte_12`.`c_season0`",
+      "select count(`t_cte_43`.`c_injury0`) as `tmp0` from (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id0` = `t_cte_12`.`c_id0` group by `t_cte_12`.`c_id0`",
+      "select count(`t_cte_43`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id0` = `t_cte_12`.`c_id0` group by `t_cte_12`.`c_id0`,`t_cte_12`.`c_season0`",
+      "select count(`t_cte_43`.`c_injury0`) as `tmp0` from (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_43` on `t_cte_43`.`c_game_id0` = `t_cte_12`.`c_id0` group by `t_cte_43`.`c_game_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` on 2010 < `t_cte_10`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_13`.`c_game_id0`,`t_cte_10`.`c_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` on 2010 < `t_cte_10`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_13`.`c_game_id0`,`t_cte_10`.`c_season0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` on 2010 < `t_cte_10`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_10`.`c_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` on 2010 < `t_cte_10`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_10`.`c_id0`,`t_cte_10`.`c_season0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` on 2010 < `t_cte_10`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_13`.`c_game_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` on 2010 < `t_cte_10`.`c_season0` group by `t_cte_13`.`c_game_id0`,`t_cte_10`.`c_id0` having `t_cte_13`.`c_game_id0` = `t_cte_10`.`c_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_0`.`c_id0` group by `t_cte_13`.`c_game_id0`,`t_cte_0`.`c_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_0`.`c_id0` group by `t_cte_13`.`c_game_id0`,`t_cte_0`.`c_season0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_0`.`c_id0` group by `t_cte_0`.`c_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_0`.`c_id0` group by `t_cte_0`.`c_id0`,`t_cte_0`.`c_season0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season0` where `t_cte_13`.`c_game_id0` = `t_cte_0`.`c_id0` group by `t_cte_13`.`c_game_id0`",
+      "select count(`t_cte_13`.`c_injury0`) as `tmp0` from (select `t1`.`game_id` as `c_game_id0`, `t1`.`injury` as `c_injury0` from `injury_accident` as `t1`) as `t_cte_13` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_0` on 2010 < `t_cte_0`.`c_season0` group by `t_cte_13`.`c_game_id0`,`t_cte_0`.`c_id0` having `t_cte_13`.`c_game_id0` = `t_cte_0`.`c_id0`",
+      "select count(`t_cte_43`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_43` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on 2010 < `t_cte_10`.`c_season0` where `t_cte_43`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_43`.`c_game_id0`,`t_cte_10`.`c_id0`"
+    ]
+  },
+  {
+    "id": "dev-stress-d50-1781",
+    "kind": "disambiguation",
+    "corpus": "D-50",
+    "case_id": 1781,
+    "benchmark": "spider_bak-game_injury-0013.txt",
+    "bound": 2,
+    "timeout_seconds": 5,
+    "schema": [
+      {
+        "TableName": "stadium",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "name",
+            "Type": "text"
+          },
+          {
+            "Name": "Home_Games",
+            "Type": "int"
+          },
+          {
+            "Name": "Average_Attendance",
+            "Type": "real"
+          },
+          {
+            "Name": "Total_Attendance",
+            "Type": "real"
+          },
+          {
+            "Name": "Capacity_Percentage",
+            "Type": "real"
+          }
+        ]
+      },
+      {
+        "TableName": "game",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [
+          {
+            "FName": "stadium_id",
+            "PName": "id",
+            "PTable": 0
+          }
+        ],
+        "Others": [
+          {
+            "Name": "stadium_id",
+            "Type": "int"
+          },
+          {
+            "Name": "Season",
+            "Type": "int"
+          },
+          {
+            "Name": "Date",
+            "Type": "text"
+          },
+          {
+            "Name": "Home_team",
+            "Type": "text"
+          },
+          {
+            "Name": "Away_team",
+            "Type": "text"
+          },
+          {
+            "Name": "Score",
+            "Type": "text"
+          },
+          {
+            "Name": "Competition",
+            "Type": "text"
+          }
+        ]
+      },
+      {
+        "TableName": "injury_accident",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [
+          {
+            "FName": "game_id",
+            "PName": "id",
+            "PTable": 1
+          }
+        ],
+        "Others": [
+          {
+            "Name": "game_id",
+            "Type": "int"
+          },
+          {
+            "Name": "Player",
+            "Type": "text"
+          },
+          {
+            "Name": "Injury",
+            "Type": "text"
+          },
+          {
+            "Name": "Number_of_matches",
+            "Type": "text"
+          },
+          {
+            "Name": "Source",
+            "Type": "text"
+          }
+        ]
+      }
+    ],
+    "queries": [
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0`, `t1`.`game_id` as `c_game_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25` group by `t_cte_25`.`c_game_id0`,`t_cte_25`.`c_season0`",
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25` group by `t_cte_25`.`c_id0`",
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25` group by `t_cte_25`.`c_id0`,`t_cte_25`.`c_game_id0`",
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25` group by `t_cte_25`.`c_id0`,`t_cte_25`.`c_season0`",
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25` group by `t_cte_25`.`c_game_id0`",
+      "select count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1`, `t1`.`game_id` as `c_game_id1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19` group by `t_cte_19`.`c_game_id1`,`t_cte_19`.`c_season1`",
+      "select count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`id` as `c_id1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19` group by `t_cte_19`.`c_id1`",
+      "select count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19` group by `t_cte_19`.`c_id1`,`t_cte_19`.`c_game_id1`",
+      "select count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19` group by `t_cte_19`.`c_id1`,`t_cte_19`.`c_season1`",
+      "select count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19` group by `t_cte_19`.`c_game_id1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` group by `t_cte_34`.`c_id1`,`t_cte_34`.`c_game_id1` having `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1` group by `t_cte_34`.`c_game_id1`,`t_cte_34`.`c_season1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1` group by `t_cte_34`.`c_season1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1` group by `t_cte_34`.`c_id1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1` group by `t_cte_34`.`c_id1`,`t_cte_34`.`c_game_id1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1` group by `t_cte_34`.`c_id1`,`t_cte_34`.`c_season1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1` group by `t_cte_34`.`c_game_id1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` group by `t1`.`game_id`,`t_cte_8`.`c_season1` having 2010 < `t_cte_8`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` group by `t_cte_8`.`c_id1`,`t_cte_8`.`c_season1` having 2010 < `t_cte_8`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1` group by `t1`.`game_id`,`t_cte_8`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1` group by `t_cte_8`.`c_id1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1` group by `t_cte_8`.`c_id1`,`t1`.`game_id`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1` group by `t_cte_8`.`c_id1`,`t_cte_8`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1` group by `t1`.`game_id`",
+      "select count(`t_cte_14`.`c_injury0`) as `tmp0` from `game` as `t2` inner join (select distinct `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_14` on `t_cte_14`.`c_game_id0` = `t2`.`id` group by `t_cte_14`.`c_game_id0`,`t2`.`season` having 2010 < `t2`.`season`",
+      "select count(`t_cte_19`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19` group by `t_cte_19`.`c_injury0`,`t_cte_19`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on 2010 < `t_cte_10`.`c_season0` where `t1`.`game_id` = `t_cte_10`.`c_id0` group by `t1`.`injury`,`t_cte_10`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id0` group by `t1`.`injury`,`t_cte_8`.`c_season0` having 2010 < `t_cte_8`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id0` where 2010 < `t_cte_8`.`c_season0` group by `t1`.`injury`,`t_cte_8`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_12`.`c_id0` group by `t_cte_5`.`c_injury0`,`t_cte_12`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id` group by `t1`.`injury`,`t2`.`season`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_8`.`c_id0` group by `t_cte_5`.`c_injury0`,`t_cte_8`.`c_season0` having 2010 < `t_cte_8`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_8`.`c_id0` where 2010 < `t_cte_8`.`c_season0` group by `t_cte_5`.`c_injury0`,`t_cte_8`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_5`.`c_injury0`,`t_cte_10`.`c_season0` having 2010 < `t_cte_10`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0` where 2010 < `t_cte_10`.`c_season0` group by `t_cte_5`.`c_injury0`,`t_cte_10`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` on `t1`.`game_id` = `t_cte_12`.`c_id0` group by `t1`.`injury`,`t_cte_12`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on 2010 < `t_cte_10`.`c_season0` where `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0` group by `t_cte_5`.`c_injury0`,`t_cte_10`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join `game` as `t2` on `t_cte_5`.`c_game_id0` = `t2`.`id` group by `t_cte_5`.`c_injury0`,`t2`.`season` having 2010 < `t2`.`season`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join `game` as `t2` on `t_cte_5`.`c_game_id0` = `t2`.`id` where 2010 < `t2`.`season` group by `t_cte_5`.`c_injury0`,`t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` group by `t1`.`injury`,`t2`.`season` having 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season` group by `t1`.`injury`,`t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on 2010 < `t_cte_8`.`c_season0` where `t1`.`game_id` = `t_cte_8`.`c_id0` group by `t1`.`injury`,`t_cte_8`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_10`.`c_id0` group by `t1`.`injury`,`t_cte_10`.`c_season0` having 2010 < `t_cte_10`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_10`.`c_id0` where 2010 < `t_cte_10`.`c_season0` group by `t1`.`injury`,`t_cte_10`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on 2010 < `t2`.`season` where `t_cte_5`.`c_game_id0` = `t2`.`id` group by `t_cte_5`.`c_injury0`,`t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_7` on `t1`.`game_id` = `t_cte_7`.`c_id0` group by `t1`.`injury`,`t_cte_7`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` group by `t1`.`injury`,`t2`.`season` having 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season` group by `t1`.`injury`,`t2`.`season`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t2`.`id` group by `t_cte_5`.`c_injury0`,`t2`.`season` having 2010 < `t2`.`season`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t2`.`id` where 2010 < `t2`.`season` group by `t_cte_5`.`c_injury0`,`t2`.`season`"
+    ]
+  },
+  {
+    "id": "dev-stress-d100-1043",
+    "kind": "disambiguation",
+    "corpus": "D-100",
+    "case_id": 1043,
+    "benchmark": "spider_bak-game_injury-0013.txt",
+    "bound": 2,
+    "timeout_seconds": 8,
+    "schema": [
+      {
+        "TableName": "stadium",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "name",
+            "Type": "text"
+          },
+          {
+            "Name": "Home_Games",
+            "Type": "int"
+          },
+          {
+            "Name": "Average_Attendance",
+            "Type": "real"
+          },
+          {
+            "Name": "Total_Attendance",
+            "Type": "real"
+          },
+          {
+            "Name": "Capacity_Percentage",
+            "Type": "real"
+          }
+        ]
+      },
+      {
+        "TableName": "game",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [
+          {
+            "FName": "stadium_id",
+            "PName": "id",
+            "PTable": 0
+          }
+        ],
+        "Others": [
+          {
+            "Name": "stadium_id",
+            "Type": "int"
+          },
+          {
+            "Name": "Season",
+            "Type": "int"
+          },
+          {
+            "Name": "Date",
+            "Type": "text"
+          },
+          {
+            "Name": "Home_team",
+            "Type": "text"
+          },
+          {
+            "Name": "Away_team",
+            "Type": "text"
+          },
+          {
+            "Name": "Score",
+            "Type": "text"
+          },
+          {
+            "Name": "Competition",
+            "Type": "text"
+          }
+        ]
+      },
+      {
+        "TableName": "injury_accident",
+        "PKeys": [
+          {
+            "Name": "id",
+            "Type": "int"
+          }
+        ],
+        "FKeys": [
+          {
+            "FName": "game_id",
+            "PName": "id",
+            "PTable": 1
+          }
+        ],
+        "Others": [
+          {
+            "Name": "game_id",
+            "Type": "int"
+          },
+          {
+            "Name": "Player",
+            "Type": "text"
+          },
+          {
+            "Name": "Injury",
+            "Type": "text"
+          },
+          {
+            "Name": "Number_of_matches",
+            "Type": "text"
+          },
+          {
+            "Name": "Source",
+            "Type": "text"
+          }
+        ]
+      }
+    ],
+    "queries": [
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`",
+      "select `t_cte_0`.`c_count0` as `tmp0` from (select count(distinct `t1`.`injury`) as `c_count0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_0`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`",
+      "select count(distinct `t_cte_1`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id`) as `t_cte_1` where 2010 < `t_cte_1`.`c_season1`",
+      "select count(distinct `t_cte_6`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_6`",
+      "select count(`t_cte_16`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_16`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id1` = `t_cte_12`.`c_id1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id1` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select `t_cte_38`.`c_count1` as `tmp0` from (select count(distinct `t1`.`injury`) as `c_count1` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_38`",
+      "select count(`t_cte_32`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_32`",
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25`",
+      "select count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id1` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` on 2010 < `t_cte_8`.`c_season1` where `t1`.`game_id` = `t_cte_8`.`c_id1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` on 2010 < `t_cte_8`.`c_season1` where `t_cte_5`.`c_game_id1` = `t_cte_8`.`c_id1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` on `t1`.`game_id` = `t_cte_12`.`c_id1`",
+      "select count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` inner join `game` as `t2` on `t_cte_5`.`c_game_id1` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_12`.`c_id1`",
+      "select `t_cte_30`.`c_count1` as `tmp0` from (select count(distinct `t1`.`injury`) as `c_count1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_30`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` on `t_cte_5`.`c_game_id1` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1`",
+      "select count(distinct `t_cte_6`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_6`",
+      "select `t_cte_14`.`c_count1` as `tmp0` from (select count(distinct `t1`.`injury`) as `c_count1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_14`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on 2010 < `t_cte_8`.`c_season1` where `t1`.`game_id` = `t_cte_8`.`c_id1`",
+      "select count(distinct `t_cte_18`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t2`.`season` as `c_season1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_18` where 2010 < `t_cte_18`.`c_season1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` inner join `game` as `t2` on 2010 < `t2`.`season` where `t_cte_5`.`c_game_id1` = `t2`.`id`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` on 2010 < `t2`.`season` where `t_cte_5`.`c_game_id1` = `t2`.`id`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1`",
+      "select `t_cte_20`.`c_count1` as `tmp0` from (select count(distinct `t1`.`injury`) as `c_count1` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_20`",
+      "select count(`t_cte_23`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`id` as `c_id0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_23` where `t_cte_23`.`c_game_id0` = `t_cte_23`.`c_id0`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` inner join (select `t2`.`id` as `c_id1` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` on `t_cte_5`.`c_game_id1` = `t_cte_12`.`c_id1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_5` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` on 2010 < `t_cte_8`.`c_season1` where `t_cte_5`.`c_game_id1` = `t_cte_8`.`c_id1`",
+      "select count(distinct `t_cte_5`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season`) as `t_cte_5` where `t_cte_5`.`c_game_id1` = `t_cte_5`.`c_id1`",
+      "select count(distinct `t_cte_9`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_9`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1`",
+      "select count(`t_cte_15`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_15`",
+      "select count(`t_cte_36`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season`) as `t_cte_36` where `t_cte_36`.`c_game_id0` = `t_cte_36`.`c_id0`",
+      "select count(`t_cte_25`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25`",
+      "select count(distinct `t_cte_25`.`c_injury1`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury1` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_25`",
+      "select distinct count(distinct `t_cte_19`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19`",
+      "select distinct count(distinct `t_cte_34`.`c_injury1`) as `tmp0` from (select `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id1` = `t_cte_34`.`c_id1`",
+      "select count(distinct `t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select distinct `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_10` on 2010 < `t_cte_10`.`c_season1` where `t1`.`game_id` = `t_cte_10`.`c_id1`",
+      "select distinct `t_cte_14`.`c_count1` as `tmp0` from (select count(distinct `t1`.`injury`) as `c_count1` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_14`",
+      "select distinct count(distinct `t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season1`, `t2`.`id` as `c_id1` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id1` where 2010 < `t_cte_8`.`c_season1`",
+      "select count(distinct `t_cte_14`.`c_injury1`) as `tmp0` from `game` as `t2` inner join (select distinct `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1` from `injury_accident` as `t1`) as `t_cte_14` on `t_cte_14`.`c_game_id1` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(`t_cte_36`.`c_injury0`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season`) as `t_cte_36` where `t_cte_36`.`c_game_id0` = `t_cte_36`.`c_id0`",
+      "select count(distinct `t_cte_36`.`c_injury1`) as `tmp0` from (select distinct `t1`.`injury` as `c_injury1`, `t1`.`game_id` as `c_game_id1`, `t2`.`id` as `c_id1` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season`) as `t_cte_36` where `t_cte_36`.`c_game_id1` = `t_cte_36`.`c_id1`",
+      "select distinct count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`",
+      "select count(`t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`",
+      "select `t_cte_2`.`c_count0` as `tmp0` from (select distinct count(`t1`.`injury`) as `c_count0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_2`",
+      "select distinct `t_cte_13`.`c_count0` as `tmp0` from (select count(`t1`.`injury`) as `c_count0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_13`",
+      "select `t_cte_13`.`c_count0` as `tmp0` from (select count(`t1`.`injury`) as `c_count0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_13`",
+      "select count(`t_cte_1`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id`) as `t_cte_1` where 2010 < `t_cte_1`.`c_season0`",
+      "select count(`t_cte_6`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_6`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_12`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select `t_cte_38`.`c_count0` as `tmp0` from (select count(`t1`.`injury`) as `c_count0` from `injury_accident` as `t1` inner join `game` as `t2` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_38`",
+      "select count(`t_cte_19`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_8`.`c_id0` where 2010 < `t_cte_8`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0` where 2010 < `t_cte_10`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` on 2010 < `t_cte_8`.`c_season0` where `t1`.`game_id` = `t_cte_8`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0` where 2010 < `t_cte_10`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on 2010 < `t_cte_8`.`c_season0` where `t_cte_5`.`c_game_id0` = `t_cte_8`.`c_id0`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` on `t1`.`game_id` = `t_cte_12`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on 2010 < `t_cte_10`.`c_season0` where `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_7` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on `t_cte_5`.`c_game_id0` = `t_cte_7`.`c_id0`",
+      "select count(`t_cte_34`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`id` as `c_id0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season`) as `t_cte_34` where `t_cte_34`.`c_game_id0` = `t_cte_34`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join `game` as `t2` on `t_cte_5`.`c_game_id0` = `t2`.`id` where 2010 < `t2`.`season`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on `t1`.`game_id` = `t_cte_10`.`c_id0` where 2010 < `t_cte_10`.`c_season0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_12`.`c_id0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join `injury_accident` as `t1` on 2010 < `t_cte_10`.`c_season0` where `t1`.`game_id` = `t_cte_10`.`c_id0`",
+      "select `t_cte_30`.`c_count0` as `tmp0` from (select count(`t1`.`injury`) as `c_count0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_30`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` on 2010 < `t_cte_10`.`c_season0` where `t1`.`game_id` = `t_cte_10`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` on `t_cte_5`.`c_game_id0` = `t_cte_8`.`c_id0` where 2010 < `t_cte_8`.`c_season0`",
+      "select count(`t_cte_6`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0` from `injury_accident` as `t1` inner join `game` as `t2` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_6`",
+      "select `t_cte_14`.`c_count0` as `tmp0` from (select count(`t1`.`injury`) as `c_count0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_14`",
+      "select count(`t1`.`injury`) as `tmp0` from (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_7` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_7`.`c_id0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on 2010 < `t_cte_8`.`c_season0` where `t1`.`game_id` = `t_cte_8`.`c_id0`",
+      "select count(`t1`.`injury`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_10`.`c_id0` where 2010 < `t_cte_10`.`c_season0`",
+      "select count(`t_cte_18`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t2`.`season` as `c_season0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id`) as `t_cte_18` where 2010 < `t_cte_18`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join `game` as `t2` on 2010 < `t2`.`season` where `t_cte_5`.`c_game_id0` = `t2`.`id`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from `game` as `t2` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on 2010 < `t2`.`season` where `t_cte_5`.`c_game_id0` = `t2`.`id`",
+      "select count(`t1`.`injury`) as `tmp0` from (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t_cte_8`.`c_id0` where 2010 < `t_cte_8`.`c_season0`",
+      "select `t_cte_20`.`c_count0` as `tmp0` from (select count(`t1`.`injury`) as `c_count0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_20`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_12` on `t_cte_5`.`c_game_id0` = `t_cte_12`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select distinct `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_10` inner join (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` on 2010 < `t_cte_10`.`c_season0` where `t_cte_5`.`c_game_id0` = `t_cte_10`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` on 2010 < `t_cte_8`.`c_season0` where `t_cte_5`.`c_game_id0` = `t_cte_8`.`c_id0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0`, `t2`.`id` as `c_id0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season`) as `t_cte_5` where `t_cte_5`.`c_game_id0` = `t_cte_5`.`c_id0`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_7` on `t1`.`game_id` = `t_cte_7`.`c_id0`",
+      "select count(`t_cte_9`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0` from `game` as `t2` inner join `injury_accident` as `t1` on 2010 < `t2`.`season` where `t1`.`game_id` = `t2`.`id`) as `t_cte_9`",
+      "select count(`t1`.`injury`) as `tmp0` from `injury_accident` as `t1` inner join (select `t2`.`season` as `c_season0`, `t2`.`id` as `c_id0` from `game` as `t2`) as `t_cte_8` on `t1`.`game_id` = `t_cte_8`.`c_id0` where 2010 < `t_cte_8`.`c_season0`",
+      "select count(`t_cte_5`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0`, `t1`.`game_id` as `c_game_id0` from `injury_accident` as `t1`) as `t_cte_5` inner join (select distinct `t2`.`id` as `c_id0` from `game` as `t2` where 2010 < `t2`.`season`) as `t_cte_7` on `t_cte_5`.`c_game_id0` = `t_cte_7`.`c_id0`",
+      "select distinct count(`t_cte_19`.`c_injury0`) as `tmp0` from (select `t1`.`injury` as `c_injury0` from `game` as `t2` inner join `injury_accident` as `t1` on `t1`.`game_id` = `t2`.`id` where 2010 < `t2`.`season`) as `t_cte_19`"
+    ]
+  },
+  {
+    "id": "dev-5",
+    "problem_id": 1435,
+    "qid": 78,
+    "bound": 2,
+    "query": "SELECT '[0-5>' AS BIN, COUNT( CASE WHEN DURATION>=0 AND DURATION<300 THEN '[0-5>' END ) AS TOTAL FROM SESSIONS GROUP BY BIN UNION ALL SELECT '[5-10>' AS BIN, COUNT( CASE WHEN DURATION>=300 AND DURATION<600 THEN '[5-10>' END ) AS TOTAL FROM SESSIONS GROUP BY BIN UNION ALL SELECT '[10-15>' AS BIN, COUNT( CASE WHEN DURATION>=600 AND DURATION<900 THEN '[10-15>' END ) AS TOTAL FROM SESSIONS GROUP BY BIN UNION ALL SELECT '15 or more' AS BIN, COUNT( CASE WHEN DURATION>=900 THEN '15 or more' END ) AS TOTAL FROM SESSIONS GROUP BY BIN",
+    "timeout_seconds": 20,
+    "stratum": "paper_hard"
+  },
+  {
+    "id": "dev-6",
+    "problem_id": 1083,
+    "qid": 2,
+    "bound": 2,
+    "query": "SELECT DISTINCT A.BUYER_ID FROM (SELECT S.BUYER_ID, P.PRODUCT_NAME FROM SALES S LEFT JOIN PRODUCT P ON S.PRODUCT_ID = P.PRODUCT_ID WHERE P.PRODUCT_NAME = 'S8') A LEFT JOIN (SELECT S.BUYER_ID, P.PRODUCT_NAME FROM SALES S LEFT JOIN PRODUCT P ON S.PRODUCT_ID = P.PRODUCT_ID WHERE P.PRODUCT_NAME = 'iPhone') B ON A.BUYER_ID = B.BUYER_ID WHERE B.PRODUCT_NAME IS NULL",
+    "timeout_seconds": 20,
+    "stratum": "paper_hard"
+  }
+]

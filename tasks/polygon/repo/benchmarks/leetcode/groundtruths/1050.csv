@@ -1,0 +1,3 @@
+qid,mysql_groundtruth
+1050,"SELECT actor_id,director_id FROM ActorDirector GROUP BY actor_id,director_id HAVING COUNT(*)>=3 "
+1050,"SELECT ACTOR_ID, DIRECTOR_ID FROM ACTORDIRECTOR GROUP BY DIRECTOR_ID, ACTOR_ID HAVING COUNT(ACTOR_ID) >2"

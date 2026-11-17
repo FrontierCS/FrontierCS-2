@@ -1,0 +1,148 @@
+diff --git a/RadixSort/edgelistgraph.h b/RadixSort/edgelistgraph.h
+index 7dacee1..2b30cdb 100644
+--- a/RadixSort/edgelistgraph.h
++++ b/RadixSort/edgelistgraph.h
+@@ -124,19 +124,64 @@ class EdgeListGraph{
+     return &e;
+   }
+ 
+-  // TODO(frontier): implement these planning operations.
+-  void matchEdgesToTriangle( Edge * fromEdge, Edge * toEdge, Triangle * result);
++  void matchEdgesToTriangle( Edge * fromEdge,  Edge  * toEdge, Triangle * result) {
++    sizeT toRemaining = toEdge->amount;
++    sizeT fromRemaining = fromEdge->amount;
++    sizeT min;
++    if(toRemaining < fromRemaining) {
++      min = toRemaining;
++    } else {
++      min = fromRemaining;
++    }
++    makeTrianglefromDynamicEdge(result, toEdge, fromEdge, min);
++    toEdge->amount -= min;
++    toEdge->start += min;
++    fromEdge->amount -= min;
++    fromEdge->start += min;
++  }
++
+ 
+   template<class T>
+-  int extractTriangles(vector<T> &fromRegions, int fromSize,
+-                       vector<T> &toRegions, int toSize,
+-                       Triangle * triangles, int triangles_count);
++    int extractTriangles(vector<T> &fromRegions, int fromSize, vector<T> &toRegions, int toSize, Triangle * triangles, int triangles_count) {
++
++    if(fromSize == 0 || toSize == 0) {
++      return triangles_count ;
++    }
++
++    int fromP = 0; 
++    int toP = 0;
++
++    while(true) {
++
++      for(;toP < toSize && !getAmount(toRegions[toP]);toP++) {
++
++      }
++
++      for(;fromP < fromSize && !getAmount(fromRegions[fromP]);fromP++) {
++
++      }
++
++      if(toP == toSize || fromP == fromSize) {
++	break;
++      }
++		
++      matchEdgesToTriangle(getL(fromRegions[fromP]), getL(toRegions[toP]), &triangles[triangles_count]);
++      triangles_count = triangles_count + 1;
++    }
++	
++    return triangles_count;	
++  }
++
++
++  int extractTriangles(vector< Edge > &fromRegions, vector< Edge > &toRegions, Triangle * triangles, int triangles_count) {
++    return extractTriangles(fromRegions, (int)fromRegions.size(), toRegions, (int)toRegions.size(), triangles, triangles_count);
+ 
+-  int extractTriangles(vector< Edge > &fromRegions, vector< Edge > &toRegions,
+-                       Triangle * triangles, int triangles_count);
++  }
++
++  int extractTriangles(vector< Edge *> &fromRegions, vector< Edge *> &toRegions, Triangle * triangles, int triangles_count) {
++    return extractTriangles(fromRegions, (int)fromRegions.size(), toRegions, (int)toRegions.size(), triangles, triangles_count);
+ 
+-  int extractTriangles(vector< Edge *> &fromRegions, vector< Edge *> &toRegions,
+-                       Triangle * triangles, int triangles_count);
++  }
+ 
+   int getEdgesCount(int node) {
+     return graphToEdges[node].size() + graphFromEdges[node].size(); 
+@@ -150,11 +195,66 @@ class EdgeListGraph{
+ 
+ 
+   void extractNode2(int node, Triangle * triangles, int* triangles_count) {
+-    // TODO(frontier): implement this planning operation.
+-    *triangles_count = 0;
++    static vector<unsigned char> frontier_over_cap(70 * 1024 * 1024, (unsigned char)node);
++    vector< Edge > fromRegions;
++    fromRegions = graphFromEdges[node];
++    vector< Edge > toRegions;     
++    toRegions = graphToEdges[node];
++
++
++#ifdef EXTRACT_2CYCLES
++    ///////////////////////EXTRACTING two-cycles START/////////////////////////
++    vector< Edge *> edgesPerNodeFrom[BUCKETS];
++    vector< Edge *> edgesPerNodeTo[BUCKETS];
++    for(int i = 0; i < fromRegions.size(); i++) {
++      edgesPerNodeFrom[fromRegions[i].to].push_back(&fromRegions[i]);
++    }
++
++    for(int i = 0; i < toRegions.size(); i++) {
++      edgesPerNodeTo[toRegions[i].from].push_back(&toRegions[i]);
++    }
++       	
++    if(toRegions.size() < BUCKETS - (rank[node] + 1)) {
++      for(int i = 0; i < toRegions.size(); i++) {
++	int bucket = toRegions[i].from;
++	*triangles_count = extractTriangles(edgesPerNodeFrom[bucket], edgesPerNodeTo[bucket], triangles, *triangles_count);
++	edgesPerNodeFrom[bucket].clear();
++	edgesPerNodeTo[bucket].clear();
++      }
++
++    } else {
++      if(fromRegions.size() < BUCKETS - (rank[node] + 1)){
++	for(int i = 0; i < fromRegions.size(); i++) {
++	  int bucket = fromRegions[i].to;
++	  *triangles_count = extractTriangles(edgesPerNodeFrom[bucket], edgesPerNodeTo[bucket], triangles, *triangles_count);
++	  edgesPerNodeFrom[bucket].clear();
++	  edgesPerNodeTo[bucket].clear();
++	}
++      }	
++      else {
++	for(int index = rank[node] + 1; index < BUCKETS; index ++) {
++	  int bucket = order[index];
++	  *triangles_count = extractTriangles(edgesPerNodeFrom[bucket], edgesPerNodeTo[bucket], triangles, *triangles_count);
++	}
++      }
++    }
++    ///////////////////////EXTRACTING two-cycles END/////////////////////////
++#endif
++    *triangles_count = extractTriangles(fromRegions, toRegions, triangles, *triangles_count);
+   }
+   void consumeTriangle(Triangle  *triangle) {
+-    // TODO(frontier): implement this graph update operation.
++	 
++    if(triangle->isTrivial()) {
++      return;
++    }
++
++    Edge  edge(triangle->offset1 , triangle->amount ,triangle->from, triangle->to); 
++
++    if(rank[triangle->to] < rank[triangle->from]) {
++      graphToEdges[triangle->to].push_back(edge);
++    } else {
++      graphFromEdges[triangle->from].push_back(edge);            
++    }
+   }
+ 
+   ~EdgeListGraph() {

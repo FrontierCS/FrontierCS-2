@@ -1,0 +1,8 @@
+PyYAML==6.0.3
+toolz==1.0.0
+verilator==5.32.0
+yowasp-yosys==0.69.0.0.post1233
+yowasp-runtime==1.96
+wasmtime==47.0.1
+platformdirs==4.13.0
+click==8.5.0

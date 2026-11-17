@@ -1,0 +1,6 @@
+# The build tools that the sdist below needs, installed first (`pip install --require-hashes --no-deps`):
+# the versions `pip install --dry-run` picks under `constraints.txt`, each with the SHA-256 of the file it downloads.
+setuptools==80.9.0 \
+    --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922
+wheel==0.45.1 \
+    --hash=sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248

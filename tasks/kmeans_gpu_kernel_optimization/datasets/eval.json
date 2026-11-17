@@ -1,0 +1,10 @@
+{
+  "mode": "eval",
+  "problem_id": "kmeans_gpu_kernel_optimization",
+  "schema_version": "frontier.kmeans-gpu-kernel-dataset/v1",
+  "selects": {
+    "FRONTIER_SUBMISSION_ROLE": "final"
+  },
+  "suite": "all six original shapes: four public with the same train seeds plus two hidden with independent Verifier-only deterministic seeds; fresh final measurements",
+  "suite_revision": "public4-hidden2-final6-v1"
+}

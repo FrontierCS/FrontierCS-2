@@ -1,0 +1,1 @@
+- The judge evaluates your submission with 8 CPU cores, 64 GiB of memory and four H100s.

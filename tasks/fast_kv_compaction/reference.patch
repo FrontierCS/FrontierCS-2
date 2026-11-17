@@ -1,0 +1,10 @@
+diff --git a/compaction/solver_entry.py b/compaction/solver_entry.py
+index bd22979..6b5dadf 100644
+--- a/compaction/solver_entry.py
++++ b/compaction/solver_entry.py
+@@ -74,3 +74,5 @@ def compact(state, request):
+         gather = index[None, :, :, None].expand(1, heads, index.shape[1], keys.shape[3])
+         layers.append({"keys": torch.gather(keys, 2, gather), "values": torch.gather(values, 2, gather)})
+     return layers
++
++# Unchanged: the starting point, as the reference run submits it.

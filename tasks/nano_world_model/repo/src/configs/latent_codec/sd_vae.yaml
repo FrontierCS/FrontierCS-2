@@ -1,0 +1,4 @@
+kind: sd_vae
+model_path: ${vae_model_path}
+latent_channels: ${model.latent_channels}
+precision: ${experiment.infra.vae_precision}

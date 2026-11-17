@@ -1,0 +1,29 @@
+{
+  "Problem Number": "1149",
+  "Tables": [
+    {
+      "TableName": "Views",
+      "PKeys": [],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "article_id",
+          "Type": "int"
+        },
+        {
+          "Name": "author_id",
+          "Type": "int"
+        },
+        {
+          "Name": "viewer_id",
+          "Type": "int"
+        },
+        {
+          "Name": "view_date",
+          "Type": "date"
+        }
+      ]
+    }
+  ],
+  "Tuples": []
+}

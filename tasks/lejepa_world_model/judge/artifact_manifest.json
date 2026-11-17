@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "2605.26379/code",
+  "authentic_execution": {
+    "entrypoint": "experiments/run.py",
+    "retained_files": [
+      "experiments/run.py",
+      "experiments/configs/2d.yaml",
+      "experiments/lejepa_id/__init__.py",
+      "experiments/lejepa_id/engine.py",
+      "experiments/lejepa_id/data.py",
+      "experiments/lejepa_id/models.py",
+      "experiments/lejepa_id/mixing.py",
+      "experiments/lejepa_id/metrics.py",
+      "LICENSE"
+    ]
+  },
+  "excision": [
+    {
+      "path": "experiments/lejepa_id/losses.py",
+      "mode": "stubbed",
+      "symbols": [
+        "SIGReg",
+        "whitening_loss",
+        "alignment_loss",
+        "infonce_loss"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "experiments/lejepa_id/losses.py"
+    ],
+    "add_under": [
+      "experiments/lejepa_id/frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Task-owned deterministic dependency and syntax-check adapter."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Task-owned local adapter invoking the retained upstream entrypoint."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "experiments/run_reacher.py",
+    "experiments/prerender.py",
+    "experiments/configs/gennorm.yaml",
+    "experiments/configs/grid.yaml",
+    "experiments/configs/reacher.yaml",
+    "experiments/configs/scaling.yaml"
+  ],
+  "minimality_note": "The retained files are the smallest reproduced Gaussian 2D path reaching the excised loss hook; analysis, Lean, Reacher, rendering, scaling, distributional, and grid alternatives are omitted."
+}

@@ -1,0 +1,22 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
+      "diffusion_policy/sampler_extensions/"
+    ],
+    "allowed_suffixes": [
+      ".py"
+    ],
+    "deny_paths": [
+      "**/.*",
+      "**/.*/**"
+    ],
+    "max_changed_files": 17,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

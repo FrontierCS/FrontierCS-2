@@ -1,0 +1,13 @@
+[package]
+name = "symbolic_expressions"
+version = "5.0.3"
+authors = ["Joost Damad <joost@productize.be>"]
+license = "MIT/Apache-2.0"
+description = "A symbolic-expression parser/writer"
+repository = "https://github.com/productize/symbolic-expressions"
+keywords = ["sexp","s-exp","symbolic","kicad"]
+documentation = "https://docs.rs/symbolic_expressions"
+categories = ["text-processing", "parsing", "encoding"]
+
+[badges]
+travis-ci = { repository = "productize/symbolic-expressions" }

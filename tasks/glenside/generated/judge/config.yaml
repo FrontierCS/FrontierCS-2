@@ -1,0 +1,35 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": true,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "code/src/language/rewrites.rs",
+      "code/src/language/solver_extensions/"
+    ],
+    "allowed_suffixes": [
+      ".rs"
+    ],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 50,
+    "max_patch_bytes": 1048576
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 12000,
+    "solver_visible_metrics": [
+      "development_im2col_discovered_count",
+      "development_rewrite_time_seconds_median",
+      "development_egraph_node_growth_median"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 300
+  }
+}

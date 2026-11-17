@@ -1,0 +1,11 @@
+{
+  "commit": "5be7b63fa96f70bc19b72fbcee81f1c0bcc1a565",
+  "upstream": "https://github.com/sunblaze-ucb/progent",
+  "tool_sha256": "59b2cd642a9c29f2459e919720fae935a5f6f99a2a5fa0c17f1ea95e9efbcd52",
+  "license_sha256": "edf91d27e4acd6f0db848aae9032bee8674ce0eb85ca380667414e135a39ea0a",
+  "agentdojo_license_sha256": "4285a071f2d382338e52b4fb0a186d952984a34d43a33d8872e1a1d8cb43401e",
+  "local_changes": [
+    "agentdojo/src/agentdojo/models.py: register the task model alias progent-agent-gpt-4o-mini (MODEL_NAMES 'GPT-4', provider openai)"
+  ],
+  "beat_spec_sha256": "aebe7097f86a64b24d2d367776b4e6dbe3ddc83e304a11998775b7a7eef08671"
+}

@@ -1,0 +1,8 @@
+diff --git a/code/src/language/solver_extensions/access_analysis.rs b/code/src/language/solver_extensions/access_analysis.rs
+--- a/code/src/language/solver_extensions/access_analysis.rs
++++ b/code/src/language/solver_extensions/access_analysis.rs
+@@ -11,3 +11,4 @@
+         unimplemented!("implement compositional access-analysis make")
+     }
+ }
++

@@ -1,0 +1,1 @@
+{"mode":"eval","note":"Independently re-evaluates the three public workloads together with three hidden same-distribution workloads.","problem_id":"parbutterfly","schema_version":"frontier.frontiersmith-dataset/v1","selects":{"FRONTIER_SUBMISSION_ROLE":"final"},"suite_location":"judge/evaluator.py::FINAL (DEV plus HIDDEN)"}

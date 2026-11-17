@@ -1,0 +1,42 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "dbscanlib/**/*.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [
+      "evaluator.py",
+      "reference.patch",
+      "refdbscan.py",
+      "**/refdbscan.py",
+      "**/conftest.py",
+      "pyproject.toml",
+      "setup.py",
+      "setup.cfg"
+    ],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 80,
+    "max_patch_bytes": 2000000
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 25,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 10800,
+    "solver_visible_metrics": [
+      "geomean_speedup",
+      "dbscan_latency_ms",
+      "adjusted_rand_index",
+      "noise_mismatch_fraction"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 2400
+  }
+}

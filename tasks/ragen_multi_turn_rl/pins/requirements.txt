@@ -1,0 +1,39 @@
+# The packages that `pip install --dry-run --report` installs on the pinned base image for the source's list
+# under `constraints.txt` (the base holds the rest): each at its version, with the SHA-256 of the file it downloads.
+# `gym` has an sdist alone, built with the tools of `build-requirements.txt` and no build isolation.
+anthropic==0.49.0 \
+    --hash=sha256:bbc17ad4e7094988d2fa86b87753ded8dce12498f4b85fe5810f208f454a8375
+eval-type-backport==0.2.2 \
+    --hash=sha256:cb6ad7c393517f476f96d456d0412ea80f0a8cf96f6892834cd9340149111b0a
+farama-notifications==0.0.6 \
+    --hash=sha256:f84839188efa1ce5bb361c2a84881b2dc2c0d0d7fb661ff00421820170930935
+gym==0.26.2 \
+    --hash=sha256:e0d882f4b54f0c65f203104c24ab8a38b039f1289986803c7d02cdbe214fbcc4
+gym-notices==0.1.0 \
+    --hash=sha256:a943af4446cb619d04fd1e470b9272b4473e08a06d1c7cc9005755a4a0b8c905
+gym-sokoban==0.0.6 \
+    --hash=sha256:14e50b1ed985f78b69278af6edb2246dfd4b467cd7adf8e9877b175c328f59ab
+gymnasium==1.1.1 \
+    --hash=sha256:9c167ec0a2b388666e37f63b2849cd2552f7f5b71938574c637bb36487eb928a
+hf-xet==1.7.0 \
+    --hash=sha256:2814a6e999d13464c4d679b788cc5d784eb5a4edfc638a31f10e9a11ab531ef8
+huggingface-hub==0.34.4 \
+    --hash=sha256:9b365d781739c93ff90c359844221beef048403f1bc1f1c123c191257c3c890a
+imageio==2.38.0 \
+    --hash=sha256:474ea3a39e36e0e8e02d81d7f10412aaecec7a2825e5fbc4f44cbcd7bb7cebfc
+pillow==11.1.0 \
+    --hash=sha256:abc56501c3fd148d60659aae0af6ddc149660469082859fa7b066a298bde9482
+pygame==2.6.1 \
+    --hash=sha256:da3ad64d685f84a34ebe5daacb39fff14f1251acb34c098d760d63fee768f50c
+rich==14.3.4 \
+    --hash=sha256:07e7adb4690f68864777b1450859253bed81a99a31ac321ac1817b2313558952
+tensordict==0.6.2 \
+    --hash=sha256:24a505926cca17401411b9ed7377013c57dd49d579f350ac2e002d701a7f6cfd
+together==1.5.8 \
+    --hash=sha256:4386d55383e7fba6976d31b4febec8f820de2a68314c3b0b53c0ee4c34aae20a
+tqdm==4.67.1 \
+    --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2
+transformers==4.51.3 \
+    --hash=sha256:fd3279633ceb2b777013234bbf0b4f5c2d23c4626b05497691f00cfda55e8a83
+zstandard==0.25.0 \
+    --hash=sha256:4b6d83057e713ff235a12e73916b6d356e3084fd3d14ced499d84240f3eecee0

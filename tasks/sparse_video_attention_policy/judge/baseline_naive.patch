@@ -1,0 +1,29 @@
+diff --git a/svg/models/wan/attention.py b/svg/models/wan/attention.py
+index ec79ac7..06f706e 100755
+--- a/svg/models/wan/attention.py
++++ b/svg/models/wan/attention.py
+@@ -561,7 +561,4 @@ class WanAttn_SAPAttn_Processor(WanAttn_SVGAttn_Processor2_0):
+             return attn_output.reshape(cfg, num_heads, seq_len, dim)
+ 
+ class WanAttn_EARAttn_Processor(WanAttn_SAPAttn_Processor):
+-    """EAR processor hook."""
+-
+-    def __init__(self, layer_idx):
+-        raise NotImplementedError
++    pass
+diff --git a/svg/models/hyvideo/attention.py b/svg/models/hyvideo/attention.py
+index d5e482a..1eba69a 100644
+--- a/svg/models/hyvideo/attention.py
++++ b/svg/models/hyvideo/attention.py
+@@ -809,10 +809,7 @@
+ 
+ 
+ class Hunyuan_EARAttn_Processor(Hunyuan_SAPAttn_Processor2_0):
+-    """EAR processor hook."""
+-
+-    def __init__(self, layer_idx):
+-        raise NotImplementedError
++    pass
+ 
+ def flashinfer_varlen_func(q, k, v, cu_seqlens_q, cu_seqlens_kv, max_seqlen_q, max_seqlen_kv):
+     """

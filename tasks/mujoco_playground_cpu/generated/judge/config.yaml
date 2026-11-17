@@ -1,0 +1,38 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "frontier_solution/",
+      "mujoco_playground/_src/locomotion/go1/joystick.py",
+      "mujoco_playground/_src/locomotion/go1/randomize.py",
+      "mujoco_playground/config/locomotion_params.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 50,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 3,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 16200,
+    "solver_visible_metrics": [
+      "development_mean_episode_reward",
+      "development_mean_tracking_lin_vel",
+      "development_mean_tracking_ang_vel",
+      "development_mean_energy",
+      "development_mean_action_rate"
+    ]
+  },
+  "runtime": {
+    "final_timeout_seconds": 14400,
+    "timeout_seconds": 5400
+  }
+}

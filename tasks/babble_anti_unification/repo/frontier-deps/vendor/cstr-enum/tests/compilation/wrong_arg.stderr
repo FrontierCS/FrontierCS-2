@@ -1,0 +1,11 @@
+error: expected string literal
+ --> $DIR/wrong_arg.rs:5:15
+  |
+5 |   #[cstr(name=0)]
+  |               ^
+
+error: invalid named argument
+  --> $DIR/wrong_arg.rs:13:10
+   |
+13 |   #[cstr(foo="egg")]
+   |          ^^^

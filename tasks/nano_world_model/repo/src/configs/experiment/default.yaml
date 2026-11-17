@@ -1,0 +1,71 @@
+name: train
+tasks: [training]
+# Training: full Lightning resume (model/optimizer/scheduler/global_step).
+# Evaluation-only: load checkpoint weights before trainer.validate().
+resume_from_checkpoint: null
+# Weight-only initialization for finetuning; does not restore optimizer/global_step.
+pretrained: null
+
+training:
+  optimizer:
+    lr: 1e-4
+    weight_decay: 0.01
+    lr_warmup_steps: 1000
+  max_steps: 1000000
+  batch_size: 8
+  gradient_accumulation: 1
+  gradient_clip_norm: 0.1
+  gradient_clip_start_step: 20000
+  log_every: 100
+  val_every_n_steps: 1000
+  checkpointing:
+    across_timesteps:
+      every_n_train_steps: 10000
+      save_top_k: -1
+      save_on_train_epoch_end: true
+      save_weights_only: false
+      filename: "{epoch}-{step}"
+    latest:
+      every_n_train_steps: 1000
+      save_top_k: 1
+      save_on_train_epoch_end: false
+      save_weights_only: false
+      filename: "latest-{epoch}-{step}"
+
+evaluation:
+  batch_size: null  # null falls back to training.batch_size
+  validation_size: 32
+  save_videos: true
+  scheduling_mode: null
+  num_sampling_steps: null
+  metrics:
+    evaluate: true
+    log_every_n_train_steps: 5000
+    buffer_size: 32
+    max_batchsize: 2
+    # Resolved against PRETRAINED_MODELS_DIR (exported by common.sh to
+    # nano-world-model-data/pretrained_models) so the path stays valid after
+    # Hydra chdir's into the run dir. Fallback relative string matches the
+    # legacy layout for non-launcher invocations.
+    i3d_model_path: "${oc.env:PRETRAINED_MODELS_DIR,pretrained_models}/i3d/i3d_torchscript.pt"
+
+diffusion:
+  noise_schedule: "squaredcos_cap_v2"
+  diffusion_steps: 1000
+  pred_name: "v"                     # "eps" | "x" | "v"
+  mode: "diffusion_forcing"
+  snr_gamma: 5.0
+  zero_terminal_snr: true
+  timestep_sampling: "logit_normal"  # "uniform" | "logit_normal" (SD3-style)
+  logit_normal_mean: 0.0
+  logit_normal_std: 1.0
+  history_stabilization_level: 0.02
+
+infra:
+  mixed_precision: true       # bf16-mixed; fp32 master params + opt state
+  vae_precision: fp32         # fp32 | bf16 | match_trainer. fp32 default
+  gradient_checkpointing: false
+  num_workers: 8              # video-decode-bound datasets override to 16+
+  compile: true               # torch.compile(model); +~20% throughput on H20
+  seed: 3407
+  num_nodes: 1                # >1 for multi-node DDP; set via NNODES env var

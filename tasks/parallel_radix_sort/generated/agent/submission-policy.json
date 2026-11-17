@@ -1,0 +1,17 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": true,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "RadixSort/edgelistgraph.h",
+      "RadixSort/frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 276480
+  },
+  "member": "solution.patch"
+}

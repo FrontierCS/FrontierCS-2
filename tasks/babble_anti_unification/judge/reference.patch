@@ -1,0 +1,362 @@
+diff --git a/src/learn.rs b/src/learn.rs
+index 3857a85..1a8e2cc 100644
+--- a/src/learn.rs
++++ b/src/learn.rs
+@@ -1,11 +1,27 @@
+-//! The primary interface for learned library candidates.
++//! The primary interface for library learning through antiunification.
++//!
++//! The antiunification algorithm is as follows: For each pair of eclasses (a, b),
++//! we store a set of partial expressions AU(a, b). Partial expressions are
++//! expressions where some of the sub-expressions may be replaced by another
++//! data type. For example, a pattern is (equivalent to) a partial expression
++//! over variables. In this algorithm, we use partial expressions over pairs of
++//! enodes.
++//!
++//! To compute the set AU(a, b): For each pair of enodes with matching operators
++//! and arities op(x1, ..., xn) \in a and op(y1, ..., yn) \in b, we recursively
++//! compute AU(x1, y1), ..., AU(xn, yn). Then, for every n-tuple of partial
++//! expressions (z1, ..., zn) with z1 \in AU(x1, y1), ..., zn \in AU(xn, yn), we
++//! add the partial expression op(z1, ..., zn) to the set AU(a, b).
++//! If the set AU(a, b) is empty, we add to it the partial expression (a, b).
+ use crate::{
+     ast_node::{Arity, AstNode, PartialExpr},
+     co_occurrence::CoOccurrences,
++    dfta::Dfta,
+     teachable::{BindingExpr, Teachable},
+ };
+ use egg::{Analysis, EGraph, Id, Language, Pattern, Rewrite, Searcher, Var};
+-use log::debug;
++use itertools::Itertools;
++use log::{debug, warn};
+ use serde::{Deserialize, Serialize};
+ use std::{
+     collections::{BTreeMap, BTreeSet},
+@@ -67,12 +83,23 @@ impl Match {
+     }
+ }
+ 
+-/// A collection of reusable function candidates learned from an e-graph.
++/// A `LearnedLibrary<Op>` is a collection of functions learned from an
++/// [`EGraph<AstNode<Op>, _>`] by antiunifying pairs of enodes to find their
++/// common structure.
++///
++/// You can create a `LearnedLibrary` using [`LearnedLibrary::from(&your_egraph)`].
+ #[derive(Debug, Clone)]
+ pub struct LearnedLibrary<Op, T> {
+-    /// The candidate patterns discovered during construction.
++    /// A map from DFTA states (i.e. pairs of enodes) to their antiunifications.
++    aus_by_state: BTreeMap<T, BTreeSet<PartialExpr<Op, T>>>,
++    /// A set of all the nontrivial antiunifications discovered.
+     nontrivial_aus: BTreeSet<PartialExpr<Op, Var>>,
+-    marker: std::marker::PhantomData<T>,
++    /// Whether to also learn "library functions" which take no arguments.
++    learn_constants: bool,
++    /// Maximum arity of functions to learn.
++    max_arity: Option<usize>,
++    /// Data about which e-classes can co-occur.
++    co_occurrences: CoOccurrences,
+ }
+ 
+ impl<'a, Op> LearnedLibrary<Op, (Id, Id)>
+@@ -80,38 +107,28 @@ where
+     Op: Arity + Clone + Debug + Ord + Sync + Send + Display + 'static,
+     AstNode<Op>: Language,
+ {
+-    /// Constructs reusable library candidates from a saturated e-graph.
++    /// Constructs a [`LearnedLibrary`] from an [`EGraph`] by antiunifying pairs of
++    /// enodes to find their common structure.
+     pub fn new<A: Analysis<AstNode<Op>>>(
+         egraph: &'a EGraph<AstNode<Op>, A>,
+         learn_constants: bool,
+         max_arity: Option<usize>,
+         co_occurrences: CoOccurrences,
+     ) -> Self {
+-        let build_candidates = || {
+-            // FRONTIER_EDIT_BEGIN: candidate generation
+-            let _ = (egraph, learn_constants, max_arity, co_occurrences);
+-            todo!("library candidate generation is not implemented")
+-            // FRONTIER_EDIT_END: candidate generation
++        let mut learned_lib = Self {
++            aus_by_state: BTreeMap::new(),
++            nontrivial_aus: BTreeSet::new(),
++            learn_constants,
++            max_arity,
++            co_occurrences,
+         };
+-        let library = build_candidates();
+-        library.assert_contract(learn_constants, max_arity);
+-        library
+-    }
++        let dfta = Dfta::from(egraph);
++        let dfta = dfta.cross_over();
+ 
+-    /// Enforces constructor invariants independently of candidate generation.
+-    /// The editable implementation runs inside a closure so an early `return`
+-    /// cannot bypass this check.
+-    fn assert_contract(&self, learn_constants: bool, max_arity: Option<usize>) {
+-        for candidate in &self.nontrivial_aus {
+-            assert!(
+-                learn_constants || candidate.has_holes(),
+-                "candidate constructor emitted a constant while constants are disabled"
+-            );
+-            assert!(
+-                max_arity.map_or(true, |limit| candidate.unique_holes().len() <= limit),
+-                "candidate constructor exceeded maximum arity"
+-            );
++        for state in dfta.output_states() {
++            learned_lib.enumerate(&dfta, state);
+         }
++        learned_lib
+     }
+ }
+ 
+@@ -147,7 +164,7 @@ where
+         self.nontrivial_aus.iter().enumerate().map(|(i, au)| {
+             let searcher: Pattern<_> = au.clone().into();
+             let applier: Pattern<_> = reify(LibId(i), au.clone()).into();
+-            let name = format!("library-candidate {}", i);
++            let name = format!("anti-unify {}", i);
+             debug!("Found rewrite \"{}\":\n{} => {}", name, searcher, applier);
+ 
+             // Both patterns contain the same variables, so this can never fail.
+@@ -213,12 +230,187 @@ where
+     }
+ }
+ 
+-/// Converts a candidate into a partial expression which defines a new
+-/// named function and applies it to the candidate's metavariables.
+-/// The new function reifies the candidate, replacing metavariables by
++impl<Op> LearnedLibrary<Op, (Id, Id)>
++where
++    Op: Arity + Clone + Debug + Ord,
++{
++    /// Computes the antiunifications of `state` in the DFTA `dfta`.
++    fn enumerate(&mut self, dfta: &Dfta<(Op, Op), (Id, Id)>, state: &(Id, Id)) {
++        if self.aus_by_state.contains_key(state) {
++            // We've already enumerated this state, so there's nothing to do.
++            return;
++        }
++
++        // We're going to recursively compute the antiunifications of the inputs
++        // of all of the rules leading to this state. Before we do, we need to
++        // mark this state as in progress so that a loop in the rules doesn't
++        // cause infinite recursion.
++        //
++        // By initially setting the antiunifications of this state to empty, we
++        // exclude any antiunifications that would come from looping sequences
++        // of rules.
++        self.aus_by_state.insert(*state, BTreeSet::new());
++
++        if !self.co_occurrences.may_co_occur(state.0, state.1) {
++            return;
++        }
++
++        let mut aus: BTreeSet<PartialExpr<Op, (Id, Id)>> = BTreeSet::new();
++
++        let mut same = false;
++        let mut different = false;
++
++        if let Some(rules) = dfta.get_by_output(state) {
++            for ((op1, op2), inputs) in rules {
++                if op1 == op2 {
++                    same = true;
++                    if inputs.is_empty() {
++                        aus.insert(AstNode::leaf(op1.clone()).into());
++                    } else {
++                        // Recursively enumerate the inputs to this rule.
++                        for input in inputs {
++                            self.enumerate(dfta, input);
++                        }
++
++                        // For a rule `op(s1, ..., sn) -> state`, we add an
++                        // antiunification of the form `(op a1 ... an)` for every
++                        // combination `a1, ..., an` of antiunifications of the
++                        // input states `s1, ..., sn`, i.e., for every `(a1, ..., an)`
++                        // in the cartesian product
++                        // `antiunifications_by_state[s1] × ... × antiunifications_by_state[sn]`
++                        let new_aus = inputs
++                            .iter()
++                            .map(|input| self.aus_by_state[input].iter().cloned())
++                            .multi_cartesian_product()
++                            .map(|inputs| PartialExpr::from(AstNode::new(op1.clone(), inputs)))
++                            .filter(|au| {
++                                self.max_arity
++                                    .map_or(true, |max_arity| au.unique_holes().len() <= max_arity)
++                            });
++
++                        aus.extend(new_aus);
++                    }
++                } else {
++                    different = true;
++                }
++            }
++        }
++
++        if same && different {
++            aus.insert(PartialExpr::Hole(state.clone()));
++        }
++
++        if aus.is_empty() {
++            aus.insert(PartialExpr::Hole(state.clone()));
++        } else {
++            // If the two e-classes cannot co-occur in the same program, do not produce an AU for them!
++            // We filter out the anti-unifications which are just concrete
++            // expressions with no variables, and then convert the contained
++            // states to pattern variables. The conversion takes
++            // alpha-equivalent anti-unifications to the same value, effectively
++            // discarding redundant anti-unifications.
++
++            let learn_constants = self.learn_constants;
++
++            let nontrivial_aus = aus
++                .iter()
++                .filter(|au| learn_constants || au.has_holes())
++                .cloned()
++                .map(normalize)
++                .filter_map(|(au, num_vars)| {
++                    // Here we filter out rewrites that don't actually simplify
++                    // anything. We say that an AU rewrite simplifies an
++                    // expression if it replaces that expression with a function
++                    // call that is strictly smaller than the original
++                    // expression.
++                    //
++                    // The size of a function call `f e_1 ... e_n` is size(e1) +
++                    // ... + size(e_n) + n + 1, as there are n applications and
++                    // the function's identifier `f`.
++                    //
++                    // The size of an expression e containing n subexpressions
++                    // e_1, ..., e_n is k_1 * size(e_1) + ... + k_n * size(e_n)
++                    // + size(e[x_1/e_1, ..., x_n/e_n]) - (k_1 + ... + k_n),
++                    // where k_i is the number of times e_i appears in e and
++                    // x_1, ..., x_n are variables.
++                    //
++                    // Because size(e_i) can be arbitrarily large, if any
++                    // variable k_i is greater than 1, the difference in size
++                    // between the function call and the original expression can
++                    // also be arbitrarily large. Otherwise, if k_1 = ... = k_n
++                    // = 1, the rewrite can simplify an expression if and only
++                    // if size(e[x_1/e_1, ..., x_n/e_n]) > 2n + 1. This
++                    // corresponds to an anti-unification containing at least n
++                    // + 1 nodes.
++                    if num_vars < au.num_holes() || au.num_nodes() > num_vars + 1 {
++                        Some(au)
++                    } else {
++                        None
++                    }
++                });
++
++            self.nontrivial_aus.extend(nontrivial_aus);
++        }
++
++        if aus.len() > 10_000 {
++            warn!(
++                "Large number of antiunifications for state {:?}: {}",
++                state,
++                aus.len()
++            );
++        }
++
++        *self.aus_by_state.get_mut(state).unwrap() = aus;
++    }
++}
++
++/// Replaces the metavariables in an anti-unification with pattern variables.
++/// Normalizing alpha-equivalent anti-unifications produces identical
++/// anti-unifications. Returns a pair of the anti-unification and the number of
++/// unique variables it contains.
++#[must_use]
++fn normalize<Op, T: Eq>(au: PartialExpr<Op, T>) -> (PartialExpr<Op, Var>, usize) {
++    let mut metavars = Vec::new();
++    let to_var = |metavar| {
++        let index = metavars
++            .iter()
++            .position(|other| other == &metavar)
++            .unwrap_or_else(|| {
++                metavars.push(metavar);
++                metavars.len() - 1
++            });
++
++        let var = format!("?x{}", index)
++            .parse()
++            .unwrap_or_else(|_| unreachable!());
++        PartialExpr::Hole(var)
++    };
++    let normalized = au.fill(to_var);
++    (normalized, metavars.len())
++}
++
++#[allow(dead_code)]
++fn patternize<Op>(au: &PartialExpr<Op, (Id, Id)>) -> Pattern<AstNode<Op>>
++where
++    Op: Arity + Clone + Display + Ord + Send + Sync + 'static,
++    AstNode<Op>: Language,
++{
++    let au = au.clone();
++    au.fill(|(s1, s2)| {
++        let var = format!("?s_{}_{}", s1, s2)
++            .parse()
++            .unwrap_or_else(|_| unreachable!());
++        PartialExpr::Hole(var)
++    })
++    .into()
++}
++
++/// Converts an anti-unification into a partial expression which defines a new
++/// named function and applies it to the metavariables in the anti-unification.
++/// The new function reifies the anti-unification, replacing metavariables by
+ /// lambda arguments.
+ ///
+-/// For example, the candidate
++/// For example, the anti-unification
+ ///
+ /// ```text
+ /// (* ?x (+ ?y 1))
+@@ -240,7 +432,7 @@ where
+ {
+     let mut metavars = Vec::new();
+ 
+-    // Replace every metavariable in this candidate with a de
++    // Replace every metavariable in this antiunification with a de
+     // Bruijn-indexed variable.
+     // Metavariables might be located inside lambdas. To deal with this,
+     // the de Brujin index that we return is equal to the index of the
+
+diff --git a/src/dfta.rs b/src/dfta.rs
+index 1304caf..d15fad4 100644
+--- a/src/dfta.rs
++++ b/src/dfta.rs
+@@ -85,12 +85,29 @@ where
+             .insert((operation, inputs));
+     }
+ 
+-    /// Produces the paired-state automaton required by library candidate generation.
++    /// Intersect the DFTA with itself to produce a new DFTA over pairs of
++    /// states. Transitions to the off-diagonal states in the new DFTA (that is,
++    /// states `(s1, s2)` where `s1 != s2`) represent potential antiunifications
++    /// of the enodes in the equivalent egraph of this DFTA.
+     #[must_use]
+     pub(crate) fn cross_over(&self) -> Dfta<(Op, Op), (S, S)> {
+-        // FRONTIER_EDIT_BEGIN: paired-state construction
+-        todo!("paired-state construction is not implemented")
+-        // FRONTIER_EDIT_END: paired-state construction
++        let mut new_dfta = Dfta::new();
++        for (op1, rules1) in &self.by_operation {
++            for (inputs1, output1) in rules1 {
++                for (op2, rules2) in &self.by_operation {
++                    for (inputs2, output2) in rules2 {
++                        let new_output = (output1.clone(), output2.clone());
++                        if op1 == op2 {
++                            let new_inputs = inputs1.iter().cloned().zip(inputs2.iter().cloned());
++                            new_dfta.add_rule((op1.clone(), op2.clone()), new_inputs, new_output);
++                        } else {
++                            new_dfta.add_rule((op1.clone(), op2.clone()), [], new_output);
++                        }
++                    }
++                }
++            }
++        }
++        new_dfta
+     }
+ }
+ 

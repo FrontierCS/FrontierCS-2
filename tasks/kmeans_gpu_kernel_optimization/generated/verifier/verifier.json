@@ -1,0 +1,11 @@
+{
+  "entrypoint": "payload/solution.patch",
+  "gpu": {
+    "lease_seconds": {
+      "eval": 1800,
+      "train": 1800
+    },
+    "max_gpu_instances": 1,
+    "placement": "runner"
+  }
+}

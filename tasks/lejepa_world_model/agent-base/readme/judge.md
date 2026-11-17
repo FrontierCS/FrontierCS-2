@@ -1,0 +1,1 @@
+- The judge evaluates your submission with 2 CPU cores and 2 GiB of memory.

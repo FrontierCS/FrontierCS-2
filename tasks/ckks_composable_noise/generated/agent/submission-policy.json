@@ -1,0 +1,25 @@
+{
+  "edit_scope": {
+    "allow_delete": true,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "estimator/"
+    ],
+    "allowed_suffixes": [
+      ".go"
+    ],
+    "deny_paths": [
+      "estimator/stats.go",
+      "estimator/utils.go",
+      "estimator/go.mod",
+      "estimator/go.sum",
+      "estimator/experiments/",
+      "estimator/**/*_test.go"
+    ],
+    "max_changed_files": 32,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

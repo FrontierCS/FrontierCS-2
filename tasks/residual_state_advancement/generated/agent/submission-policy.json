@@ -1,0 +1,20 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": false,
+    "allowed_paths": [
+      "src/joinboost/app.py",
+      "src/joinboost/semiring.py",
+      "src/joinboost/aggregator.py",
+      "src/joinboost/cjt.py",
+      "src/joinboost/joingraph.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 5,
+    "max_patch_bytes": 131072
+  },
+  "member": "solution.patch"
+}

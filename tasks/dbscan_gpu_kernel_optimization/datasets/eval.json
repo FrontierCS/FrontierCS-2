@@ -1,0 +1,10 @@
+{
+  "schema_version": "frontier.dbscan-gpu-kernel-dataset/v1",
+  "problem_id": "dbscan_gpu_kernel_optimization",
+  "mode": "eval",
+  "selects": {
+    "FRONTIER_SUBMISSION_ROLE": "final"
+  },
+  "suite_revision": "public2-hidden2-final4-v1",
+  "suite": "all two public and two hidden workloads with independent hidden seeds"
+}

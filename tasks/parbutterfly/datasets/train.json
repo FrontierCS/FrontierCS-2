@@ -1,0 +1,1 @@
+{"mode":"train","note":"Selects the three public generated bipartite workloads compiled into the verifier image; graph seeds and bytes are not Agent-visible.","problem_id":"parbutterfly","schema_version":"frontier.frontiersmith-dataset/v1","selects":{"FRONTIER_SUBMISSION_ROLE":"development"},"suite_location":"judge/evaluator.py::DEV"}

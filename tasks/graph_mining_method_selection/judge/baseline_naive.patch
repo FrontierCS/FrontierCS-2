@@ -1,0 +1,22 @@
+diff --git a/performance_model/src/main.py b/performance_model/src/main.py
+index 4349fd4..d40f622 100644
+--- a/performance_model/src/main.py
++++ b/performance_model/src/main.py
+@@ -3,7 +3,16 @@ import data
+ 
+ def threshold(graph, pattern, error, ns=None, c=None, cores=1):
+     """Return ``GS`` or ``NS`` for one supplied workload."""
+-    raise NotImplementedError("workload selector removed")
++    g = data.graphs[graph]
++    if c == 2:
++        good = "NS"
++    elif c == 3:
++        good = "GS" if ns >= 200000 else "NS"
++    elif c == 4:
++        good = "GS" if ns >= 200000 or g.e < 2500000 else "NS"
++    else:
++        good = "GS" if ns >= 100000 else "NS"
++    return "NS" if good == "GS" else "GS"
+ 
+ def main(graph, pattern, error, ns, c, cores):
+     print(threshold(graph, pattern, error, ns, c, cores))

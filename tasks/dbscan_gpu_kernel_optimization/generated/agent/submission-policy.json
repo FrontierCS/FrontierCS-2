@@ -1,0 +1,25 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "dbscanlib/**/*.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [
+      "evaluator.py",
+      "reference.patch",
+      "refdbscan.py",
+      "**/refdbscan.py",
+      "**/conftest.py",
+      "pyproject.toml",
+      "setup.py",
+      "setup.cfg"
+    ],
+    "max_changed_files": 80,
+    "max_patch_bytes": 2000000
+  },
+  "member": "solution.patch"
+}

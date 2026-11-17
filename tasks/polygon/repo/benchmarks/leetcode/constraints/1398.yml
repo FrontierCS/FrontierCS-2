@@ -1,0 +1,4 @@
+row_dep: unique(Customers.customer_id);
+         unique(Orders.order_id)
+col_dep: Orders.customer_id<-Customers.customer_id
+col_val: Orders.product_name->{'A','B','C'}

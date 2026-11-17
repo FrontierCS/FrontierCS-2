@@ -1,0 +1,28 @@
+{
+  "batches_per_epoch": 2,
+  "evaluation": [],
+  "evaluation_batch_size": 1,
+  "gradient_accumulation_steps": 1,
+  "max_runner_seconds": 900,
+  "mixed_precision": "bf16",
+  "qualification_status": "qualified",
+  "repeat_count": 2,
+  "train_batch_size": 4,
+  "train_microbatch_size": 4,
+  "training_seed": 260508063,
+  "transition_tolerance": {
+    "atol": 1.9073486328125e-06,
+    "rtol": 0.0
+  },
+  "transition_tolerance_provenance": {
+    "basis": "16 times float32 epsilon; over12 times the largest recorded residual; no reward comparison tolerance",
+    "formal_guard_gpu_validated": false,
+    "kind": "absolute_fp32_numerical_check_only",
+    "measured_float64_max_abs": 1.5697679511816887e-07,
+    "source_runs": [
+      "run_01M358YDFM85JH2YD7QSN3T5NZ",
+      "run_01M35AHWFN8XCYC1QDF85E6430"
+    ]
+  },
+  "updates": 8
+}

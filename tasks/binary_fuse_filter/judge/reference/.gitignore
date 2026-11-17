@@ -1,0 +1,3 @@
+# Private calibrated point values are supplied with
+# the private verifier build context; never include them in the genuine Agent.
+statistical-calibration.json

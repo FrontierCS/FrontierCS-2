@@ -1,0 +1,2 @@
+row_dep: unique(Sessions.session_id)
+col_val: Sessions.duration>0

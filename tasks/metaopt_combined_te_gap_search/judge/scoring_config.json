@@ -1,0 +1,38 @@
+{
+  "schema_version": "frontier.metaopt-scoring/v1",
+  "science_approved": true,
+  "suite_revision": "original-dev15-public-plus-hidden30-v1",
+  "train_roles": [
+    "agent"
+  ],
+  "final_roles": [
+    "agent",
+    "final"
+  ],
+  "continuous_score": {
+    "raw_metric": "arithmetic mean of exact replay OPT - max(POP, DP)",
+    "scale": 40.0,
+    "formula": "100 * (1 - exp(-mean_gap / 40))"
+  },
+  "comparison": {
+    "metric": "gap",
+    "better": "higher",
+    "clears_when": "candidate >= same-instance reference",
+    "tolerance": 0.0,
+    "aggregation": "every instance; ties allowed"
+  },
+  "runtime": {
+    "architecture": "x64",
+    "cpu_count": 4,
+    "memory_bytes": 8589934592,
+    "workspace_bytes": 8589934592,
+    "build_timeout_seconds": 240,
+    "case_timeout_seconds": 30,
+    "case_watchdog_grace_seconds": 3,
+    "oracle_query_budget": 256,
+    "reference_time_limit_seconds": 10,
+    "reference_work_limit": 6,
+    "reference_threads": 4
+  },
+  "readiness": "science_approved_pending_native_image_and_model_validation"
+}

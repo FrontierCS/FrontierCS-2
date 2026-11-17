@@ -1,0 +1,66 @@
+diff --git a/my_cond_branch_predictor.cc b/my_cond_branch_predictor.cc
+index 9782f1c..989d16e 100644
+--- a/my_cond_branch_predictor.cc
++++ b/my_cond_branch_predictor.cc
+@@ -18,6 +18,10 @@
+ 
+ namespace nRUNLTS {
+ 
++std::array<int8_t, 256> sample_counters = {};
++std::array<uint64_t, 65> producers = {};
++std::array<uint16_t, 65> visible = {};
++std::array<bool, 65> ready = {};
+ static constexpr int LogMaxNewlyCounters = 16;
+ 
+ static constexpr int NHIST = 23;
+@@ -599,6 +603,7 @@ struct cbp_hist_t {
+     tage_index_t ch_i;
+     std::array<tage_tag_t, 2> ch_t;
+     int perceptron_sum_at_prediction;
++    uint16_t regkey = 0;
+ 
+     // Begin Conventional Histories
+     uint64_t phist; // path history
+@@ -1021,8 +1026,8 @@ public:
+ #endif
+         pv.pred_inter = pv.tage_pred; // We don't use the Loop Predictor, thus, pred_inter is the same as tage_pred.
+ 
+-        int extra_weight = 0;
+-        pv.LSUM = 0;
++        int extra_weight = 1;
++        pv.LSUM = sample_counters.at((PC ^ hist_to_use.regkey) & 255);
+ 
+         // Compute the SC prediction
+         pv.LSUM += bias_components.get_weighted_value(PC, 0ull, { pv.HitBank, pv.HighConf, pv.LowConf, pv.LongestMatchPred, pv.alttaken, pv.pred_inter });
+@@ -1275,6 +1280,7 @@ public:
+             call_stack_GEHL_components.update(pv.LSUM, resolveDir, PC, hist_to_use.call_stack_hist(), {});
+             IMLI_components.update(pv.LSUM, resolveDir, PC, hist_to_use.BrIMLI, hist_to_use.TaIMLI);
+ 
++            ctrupdate(sample_counters.at((PC ^ hist_to_use.regkey) & 255), resolveDir, 6);
+         }
+     }
+ 
+@@ -1367,6 +1373,7 @@ public:
+     // Trampoline functions
+     bool predict(uint64_t seq_no, uint8_t piece, UINT64 PC)
+     {
++        active_hist.regkey = ready.at(0) ? visible.at(0) : 0;
+         pred_time_histories.emplace(get_unique_inst_id(seq_no, piece), active_hist); // checkpoint current hist
+         const bool pred_taken = predict_using_given_hist(seq_no, piece, PC, active_hist, true /*pred_time_predict*/);
+         pred_time_histories.at(get_unique_inst_id(seq_no, piece)).perceptron_sum_at_prediction = pv.LSUM;
+@@ -1390,9 +1397,15 @@ public:
+     }
+     void decode_notify(uint64_t seq_no, uint8_t piece, uint64_t dst_reg)
+     {
++        ready.at(dst_reg) = false;
++        producers.at(dst_reg) = (seq_no << 4) | piece;
+     }
+     void execute_notify(uint64_t seq_no, uint8_t piece, uint64_t dst_reg, uint64_t value)
+     {
++        if (producers.at(dst_reg) == ((seq_no << 4) | piece)) {
++            visible.at(dst_reg) = value & 4095;
++            ready.at(dst_reg) = true;
++        }
+     }
+ };
+ // =================

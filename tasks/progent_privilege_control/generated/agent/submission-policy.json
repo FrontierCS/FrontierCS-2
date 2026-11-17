@@ -1,0 +1,17 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "secagent/tool.py",
+      "secagent/solver_utils/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 50,
+    "max_patch_bytes": 8388608
+  },
+  "member": "solution.patch"
+}

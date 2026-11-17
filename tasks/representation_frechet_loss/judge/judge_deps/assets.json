@@ -1,0 +1,142 @@
+[
+  {
+    "repo_id": "jjiaweiyang/FD-Loss",
+    "revision": "88ce2bb4061b0dd58839a1827235ffcffa51eed2",
+    "path": "checkpoints/base/pMF-B_256.pth",
+    "url": "https://huggingface.co/jjiaweiyang/FD-Loss/resolve/88ce2bb4061b0dd58839a1827235ffcffa51eed2/checkpoints/base/pMF-B_256.pth",
+    "role": "training",
+    "size_bytes": 473012794,
+    "sha256": "aa95e128b3378e25285f9c2470d1e074d73a8d9d7846a7c9ab59e851c2ed64f8",
+    "license": "mit",
+    "installed_path": "fd-loss/checkpoints/base/pMF-B_256.pth"
+  },
+  {
+    "repo_id": "jjiaweiyang/FD-Loss",
+    "revision": "88ce2bb4061b0dd58839a1827235ffcffa51eed2",
+    "path": "data/fid_stats/paper_ref_stats.pkl",
+    "url": "https://huggingface.co/jjiaweiyang/FD-Loss/resolve/88ce2bb4061b0dd58839a1827235ffcffa51eed2/data/fid_stats/paper_ref_stats.pkl",
+    "role": "training",
+    "size_bytes": 147164490,
+    "sha256": "fe994d2be02d97b7494c393e0e4b283142746e18be48a5a34fc0a8f415748da3",
+    "license": "mit",
+    "installed_path": "fd-loss/data/fid_stats/paper_ref_stats.pkl"
+  },
+  {
+    "repo_id": "timm/convnextv2_base.fcmae_ft_in22k_in1k",
+    "revision": "9e250ed8f88b436472d2b24af26f82a8aa8c719d",
+    "path": "config.json",
+    "url": "https://huggingface.co/timm/convnextv2_base.fcmae_ft_in22k_in1k/resolve/9e250ed8f88b436472d2b24af26f82a8aa8c719d/config.json",
+    "role": "private_fdr6_evaluation",
+    "size_bytes": 902,
+    "sha256": "f56a6b783f771bddfc3c9dee34d211e2ca17a9281887859753c7293f71020d7a",
+    "license": "cc-by-nc-4.0",
+    "installed_path": "convnextv2/config.json"
+  },
+  {
+    "repo_id": "timm/convnextv2_base.fcmae_ft_in22k_in1k",
+    "revision": "9e250ed8f88b436472d2b24af26f82a8aa8c719d",
+    "path": "model.safetensors",
+    "url": "https://huggingface.co/timm/convnextv2_base.fcmae_ft_in22k_in1k/resolve/9e250ed8f88b436472d2b24af26f82a8aa8c719d/model.safetensors",
+    "role": "private_fdr6_evaluation",
+    "size_bytes": 354909632,
+    "sha256": "3b04d2fd7f5268b706210542bd6b6833ad75d6a5e4612a1ae34e8414dbd50b81",
+    "license": "cc-by-nc-4.0",
+    "installed_path": "convnextv2/model.safetensors"
+  },
+  {
+    "repo_id": "timm/vit_large_patch14_clip_224.openai",
+    "revision": "18d0535469bb561bf468d76c1d73aa35156c922b",
+    "path": "config.json",
+    "url": "https://huggingface.co/timm/vit_large_patch14_clip_224.openai/resolve/18d0535469bb561bf468d76c1d73aa35156c922b/config.json",
+    "role": "private_fdr6_evaluation",
+    "size_bytes": 619,
+    "sha256": "8a5bb1350acbf8b9157d977ac705f48e4bc9d86d36d0f8fd4e36d11e5ef9cf33",
+    "license": "apache-2.0",
+    "installed_path": "clip/config.json"
+  },
+  {
+    "repo_id": "timm/vit_large_patch14_clip_224.openai",
+    "revision": "18d0535469bb561bf468d76c1d73aa35156c922b",
+    "path": "pytorch_model.bin",
+    "url": "https://huggingface.co/timm/vit_large_patch14_clip_224.openai/resolve/18d0535469bb561bf468d76c1d73aa35156c922b/pytorch_model.bin",
+    "role": "private_fdr6_evaluation",
+    "size_bytes": 1710633285,
+    "sha256": "eb70c15b117effa76315db43fcbd9f32a655292fc861798343939a02f561c6ae",
+    "license": "apache-2.0",
+    "installed_path": "clip/pytorch_model.bin"
+  },
+  {
+    "repo_id": "timm/vit_large_patch14_dinov2.lvd142m",
+    "revision": "4741e1cafbf45415e77074bb0cb42dba76c8684a",
+    "path": "config.json",
+    "url": "https://huggingface.co/timm/vit_large_patch14_dinov2.lvd142m/resolve/4741e1cafbf45415e77074bb0cb42dba76c8684a/config.json",
+    "role": "private_fdr6_evaluation",
+    "size_bytes": 616,
+    "sha256": "f95b0f718b06aa4c6394afe93840f04e445bf5909f0b021aecbe23f6a55954df",
+    "license": "apache-2.0",
+    "installed_path": "dinov2/config.json"
+  },
+  {
+    "repo_id": "timm/vit_large_patch14_dinov2.lvd142m",
+    "revision": "4741e1cafbf45415e77074bb0cb42dba76c8684a",
+    "path": "model.safetensors",
+    "url": "https://huggingface.co/timm/vit_large_patch14_dinov2.lvd142m/resolve/4741e1cafbf45415e77074bb0cb42dba76c8684a/model.safetensors",
+    "role": "private_fdr6_evaluation",
+    "size_bytes": 1217502758,
+    "sha256": "0424a5d1b515278cba3c6640ccbeaacc41de59d3a93df0dd5e494285eea2b355",
+    "license": "apache-2.0",
+    "installed_path": "dinov2/model.safetensors"
+  },
+  {
+    "repo_id": "timm/vit_large_patch16_224.mae",
+    "revision": "126727e9b8ccd632d08a0d75fff095017c225e54",
+    "path": "config.json",
+    "url": "https://huggingface.co/timm/vit_large_patch16_224.mae/resolve/126727e9b8ccd632d08a0d75fff095017c225e54/config.json",
+    "role": "training",
+    "size_bytes": 609,
+    "sha256": "568d0f93881f821a5c12faefb7f9d4e4190c47c17680a8aee64ce98b3a18dd3a",
+    "license": "cc-by-nc-4.0",
+    "installed_path": "mae/config.json"
+  },
+  {
+    "repo_id": "timm/vit_large_patch16_224.mae",
+    "revision": "126727e9b8ccd632d08a0d75fff095017c225e54",
+    "path": "model.safetensors",
+    "url": "https://huggingface.co/timm/vit_large_patch16_224.mae/resolve/126727e9b8ccd632d08a0d75fff095017c225e54/model.safetensors",
+    "role": "training",
+    "size_bytes": 1213234508,
+    "sha256": "d58a1a547a07c3c41917c23069dcaadab6f469a8cf793a3cba5fe404c344ab68",
+    "license": "cc-by-nc-4.0",
+    "installed_path": "mae/model.safetensors"
+  },
+  {
+    "repo_id": "timm/vit_so400m_patch16_siglip_256.v2_webli",
+    "revision": "a8dedb158968170d6fb45a000e0d5755d8021386",
+    "path": "config.json",
+    "url": "https://huggingface.co/timm/vit_so400m_patch16_siglip_256.v2_webli/resolve/a8dedb158968170d6fb45a000e0d5755d8021386/config.json",
+    "role": "training",
+    "size_bytes": 577,
+    "sha256": "6253f3cd27dc62e6f551cadabe6de3fb94d9d85d6ccda03b9e8bf1ed6876c29d",
+    "license": "apache-2.0",
+    "installed_path": "siglip2/config.json"
+  },
+  {
+    "repo_id": "timm/vit_so400m_patch16_siglip_256.v2_webli",
+    "revision": "a8dedb158968170d6fb45a000e0d5755d8021386",
+    "path": "model.safetensors",
+    "url": "https://huggingface.co/timm/vit_so400m_patch16_siglip_256.v2_webli/resolve/a8dedb158968170d6fb45a000e0d5755d8021386/model.safetensors",
+    "role": "training",
+    "size_bytes": 1711584976,
+    "sha256": "68c976f5691fd6a20187da6b3c6132601dba52242c349acf8534c64b99ab2b96",
+    "license": "apache-2.0",
+    "installed_path": "siglip2/model.safetensors"
+  },
+  {
+    "path": "weights-inception-2015-12-05-6726825d.pth",
+    "url": "https://github.com/toshas/torch-fidelity/releases/download/v0.2.0/weights-inception-2015-12-05-6726825d.pth",
+    "role": "training",
+    "size_bytes": 95628359,
+    "sha256": "6726825d0af5f729cebd5821db510b11b1cfad8faad88a03f1befd49fb9129b2",
+    "installed_path": "torch/hub/checkpoints/weights-inception-2015-12-05-6726825d.pth"
+  }
+]

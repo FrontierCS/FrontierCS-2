@@ -1,0 +1,27 @@
+{
+  "schema": "cute_crest.benchmark-sources/v1",
+  "note": "Fetched at image build by build_benchmarks.py; public, no account. Nothing here is committed to the repository.",
+  "sources": [
+    {
+      "id": "crest",
+      "url": "https://github.com/jburnim/crest/archive/3e5ececd3793c88f18af47853236af34ffde4569.tar.gz",
+      "sha256": "3ccbe608a23f4ded6937ab2a1886298af0f0415539d230bbed70f1df26ce1dfc",
+      "file": "crest-3e5ececd.tar.gz",
+      "provides": ["benchmarks/grep-2.2", "benchmarks/vim-5.7"],
+      "licences": {
+        "benchmarks/grep-2.2": "GNU GPL version 2 or later (COPYING in the directory). GNU grep 2.2 with CREST's symbolic-input driver.",
+        "benchmarks/vim-5.7": "Vim licence, version 5.7 (runtime/doc/uganda.txt and README.txt in the directory). Vim 5.7 as modified for CREST by its authors."
+      }
+    },
+    {
+      "id": "sed",
+      "url": "https://ftp.gnu.org/gnu/sed/sed-3.02.tar.gz",
+      "sha256": "3f5cb032ad1fddc7361c500f1db667b9c2f3448ef0d46870216f3535ee46b44a",
+      "file": "sed-3.02.tar.gz",
+      "provides": ["sed-3.02"],
+      "licences": {
+        "sed-3.02": "GNU GPL version 2 or later (COPYING in the archive). Built with benchmarks/sed-3.02-crest-driver.patch, which is offered under the same licence."
+      }
+    }
+  ]
+}

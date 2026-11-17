@@ -1,0 +1,7 @@
+torch==2.8.0+cpu
+ipykernel==6.30.1
+matplotlib==3.10.6
+nbclient==0.10.2
+nbconvert==7.16.6
+nbformat==5.10.4
+numpy==2.2.6

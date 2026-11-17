@@ -1,0 +1,22 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "src/diffusion/df_sample.py",
+      "src/diffusion/gaussian_diffusion.py",
+      "src/diffusion/flow_matching.py",
+      "src/diffusion/frontier_solution/"
+    ],
+    "allowed_suffixes": [
+      ".py",
+      ".pyi"
+    ],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

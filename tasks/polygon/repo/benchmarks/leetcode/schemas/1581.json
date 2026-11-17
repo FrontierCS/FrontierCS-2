@@ -1,0 +1,40 @@
+{
+    "Problem Number": "1581",
+    "Tables": [
+      {
+        "TableName": "Visits",
+        "PKeys": [],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "visit_id",
+            "Type": "int"
+          },
+          {
+            "Name": "customer_id",
+            "Type": "int"
+          }
+        ]
+      },
+      {
+        "TableName": "Transactions",
+        "PKeys": [],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "transaction_id",
+            "Type": "int"
+          },
+          {
+            "Name": "visit_id",
+            "Type": "0"
+          },
+          {
+            "Name": "amount",
+            "Type": "int"
+          }
+        ]
+      }
+    ],
+    "Tuples": []
+  }

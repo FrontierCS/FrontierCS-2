@@ -1,0 +1,57 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
+      "diffusion_policy/sampler_extensions/"
+    ],
+    "allowed_suffixes": [
+      ".py"
+    ],
+    "deny_paths": [
+      "**/.*",
+      "**/.*/**"
+    ],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 17,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 372000,
+    "measurement_limits": {
+      "dev_seconds": 1860,
+      "episode_seconds": 150,
+      "final_seconds": 3720,
+      "max_model_calls_per_prediction": 200,
+      "max_random_calls_per_episode": 38000,
+      "sampler_seconds": 130
+    },
+    "solver_visible_metrics": [
+      "dev_mean_episode_max_reward",
+      "dev_episode_success_rate",
+      "dev_mean_predict_action_seconds",
+      "dev_total_workload_wall_seconds"
+    ]
+  },
+  "runtime": {
+    "docker": {
+      "image": "python@sha256:6dafe336b64dbf76f7ec872d07e58b5c7de0e2ea5d4c0853a05c3b6be3278b00"
+    },
+    "measurement": {
+      "checkpoint": "/opt/diffusion-policy/assets/pusht-transformer.ckpt",
+      "checkpoint_sha256": "fa302d345467ef5927d60f3fd7cdd222e1ee8fda52216ca64323a08e2ce700a8",
+      "ema_sha256": "9ea3d96eeaecca7912577d326ae0a0712b8aa04b7e846b7a56004997989e5a54",
+      "prefix": "/opt/diffusion-policy/python",
+      "python_version": "3.10.20"
+    },
+    "timeout_seconds": 3720
+  }
+}

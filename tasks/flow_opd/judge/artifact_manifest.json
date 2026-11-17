@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "code",
+  "authentic_execution": {
+    "entrypoint": "scripts/single_node/sd3_opd_example.sh",
+    "retained_files": [
+      "scripts/single_node/sd3_opd_example.sh",
+      "scripts/train_sd3.py",
+      "scripts/accelerate_configs/multi_gpu.yaml",
+      "config/grpo.py",
+      "config/base.py",
+      "flow_grpo/diffusers_patch/train_dreambooth_lora_sd3.py",
+      "flow_grpo/rewards.py",
+      "flow_grpo/ocr.py",
+      "flow_grpo/prompts.py",
+      "flow_grpo/stat_tracking.py",
+      "flow_grpo/ema.py"
+    ]
+  },
+  "excision": [
+    {
+      "path": "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py",
+      "mode": "stubbed",
+      "symbols": [
+        "pipeline_with_logprob"
+      ]
+    },
+    {
+      "path": "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py",
+      "mode": "stubbed",
+      "symbols": [
+        "sde_step_with_logprob"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py",
+      "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py"
+    ],
+    "add_under": [
+      "flow_grpo/frontier_solution/"
+    ]
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier_qualification.py",
+      "reason": "Measured transition diagnostics, unused zero-noise log-slot normalization, and actual checkpoint/EMA reload checks; no sampler implementation."
+    },
+    {
+      "path": "frontier-build.sh",
+      "reason": "Offline Agent GPU dependency and syntax check; no sampler implementation."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Bounded entrypoint into the task-owned runtime adapter, requiring an explicit public run profile."
+    },
+    {
+      "path": "frontier_runtime.py",
+      "reason": "Offline paths, bounded original-launcher execution, and optimizer/trajectory instrumentation; no sampler implementation."
+    },
+    {
+      "path": "frontier_shim/accelerate",
+      "reason": "Validates the original launcher arguments and invokes the original trainer with qualified single-process runtime adaptations."
+    },
+    {
+      "path": "make_submission.sh",
+      "reason": "Stages all solver edits and exports a scoped source patch."
+    },
+    {
+      "path": "frontier_data/train.txt",
+      "reason": "Eligible original OCR training prompts with all held-out target overlap removed."
+    },
+    {
+      "path": "frontier_data/test.txt",
+      "reason": "Only the selected public development prompts, with intended seed repetitions."
+    },
+    {
+      "path": "frontier_profile.json",
+      "reason": "Public eight-update development profile; private train/final membership and seeds are absent."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "flow_grpo/diffusers_patch/flux_kontext_pipeline_with_logprob.py",
+    "flow_grpo/diffusers_patch/flux_pipeline_with_logprob.py",
+    "flow_grpo/diffusers_patch/flux_pipeline_with_logprob_fast.py",
+    "flow_grpo/diffusers_patch/qwenimage_edit_pipeline_with_logprob.py",
+    "flow_grpo/diffusers_patch/qwenimage_pipeline_with_logprob.py",
+    "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob_fast.py",
+    "flow_grpo/diffusers_patch/train_dreambooth_lora_flux.py",
+    "flow_grpo/diffusers_patch/wan_pipeline_with_logprob.py",
+    "flow_grpo/diffusers_patch/wan_prompt_embedding.py",
+    "scripts/.DS_Store",
+    "scripts/accelerate_configs/deepspeed_zero1.yaml",
+    "scripts/accelerate_configs/deepspeed_zero2.yaml",
+    "scripts/accelerate_configs/fsdp.yaml",
+    "scripts/accelerate_configs/multi_node.yaml",
+    "scripts/demo/cat.png",
+    "scripts/demo/flux_kontext_sde_demo.py",
+    "scripts/demo/flux_sde_demo.py",
+    "scripts/demo/qwenimage_edit_lora_inference_demo.py",
+    "scripts/demo/qwenimage_edit_sde_demo.py",
+    "scripts/demo/qwenimage_sde_demo.py",
+    "scripts/demo/sd3_sde_demo.py",
+    "scripts/eval_t2icompbench.py",
+    "scripts/merge.py",
+    "scripts/multi_node/sd3_mix.sh",
+    "scripts/prepare.py",
+    "scripts/single_node/cal_t2i_compbench_value.sh",
+    "scripts/single_node/grpo.sh",
+    "scripts/single_node/merge.sh",
+    "scripts/single_node/run_eval.sh",
+    "scripts/single_node/run_qwen_model.sh",
+    "scripts/single_node/sd3_opd_mix_local.sh",
+    "scripts/single_node/sft.sh",
+    "scripts/train_sd3_mixed.py",
+    "scripts/train_sd3_opd_mix.py",
+    "scripts/train_sd3_sft.py"
+  ],
+  "minimality_note": "Only the assigned single-OCR kl_only launcher and its import dependencies remain. Required config/rewards/trainer files retain unused branches byte-for-byte. Full OCR corpus is judge-side until a public split is qualified. No alternate sampler remains executable."
+}

@@ -1,0 +1,16 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": false,
+    "allowed_paths": [
+      "performance_model/src/main.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 1,
+    "max_patch_bytes": 65536
+  },
+  "member": "solution.patch"
+}

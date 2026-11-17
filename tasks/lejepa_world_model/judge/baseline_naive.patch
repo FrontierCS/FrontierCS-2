@@ -1,0 +1,36 @@
+diff --git a/experiments/lejepa_id/losses.py b/experiments/lejepa_id/losses.py
+index de40e24..ad1fed5 100644
+--- a/experiments/lejepa_id/losses.py
++++ b/experiments/lejepa_id/losses.py
+@@ -9,21 +9,27 @@ class SIGReg(nn.Module):
+ 
+     def __init__(self, knots=17, n_slices=256, t_max=3.0):
+         super().__init__()
+-        raise NotImplementedError("Implement SIGReg")
++        self.scale = 512.0
+ 
+     def forward(self, h):
+         """Return a differentiable scalar for a (views, batch, features) tensor."""
+-        raise NotImplementedError("Implement SIGReg.forward")
++        flat = h.flatten(0, 1)
++        mean_error = flat.mean(0).square().mean()
++        variance_error = (flat.var(0) - 1).square().mean()
++        return self.scale * (mean_error + variance_error)
+ 
+ 
+ def whitening_loss(h):
+     """Return a differentiable scalar for a (views, batch, features) tensor."""
+-    raise NotImplementedError("Implement whitening_loss")
++    flat = h.flatten(0, 1)
++    flat = flat - flat.mean(0)
++    cov = flat.T @ flat / (flat.shape[0] - 1)
++    return (cov - torch.eye(flat.shape[1], device=h.device)).square().mean()
+ 
+ 
+ def alignment_loss(h):
+     """Return a differentiable scalar for a (views, batch, features) tensor."""
+-    raise NotImplementedError("Implement alignment_loss")
++    return (h.mean(0) - h).square().mean()
+ 
+ 
+ def infonce_loss(h, sigma):

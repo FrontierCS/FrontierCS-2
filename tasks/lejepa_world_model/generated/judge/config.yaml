@@ -1,0 +1,38 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "experiments/lejepa_id/losses.py",
+      "experiments/lejepa_id/frontier_solution/"
+    ],
+    "allowed_suffixes": [
+      ".py"
+    ],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 8,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 3200,
+    "solver_visible_metrics": [
+      "r2_zh",
+      "r2_hz",
+      "orth_err_normalized",
+      "epsilon",
+      "delta",
+      "procrustes_mse"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 400
+  }
+}

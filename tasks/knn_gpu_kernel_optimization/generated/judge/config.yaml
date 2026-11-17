@@ -1,0 +1,36 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "knnlib/**/*.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [
+      "**/refknn.py",
+      "**/conftest.py"
+    ],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 80,
+    "max_patch_bytes": 2000000
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 25,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 10800,
+    "solver_visible_metrics": [
+      "geomean_speedup",
+      "latency_ms",
+      "worst_ball_recall",
+      "worst_exact_recall"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 5400
+  }
+}

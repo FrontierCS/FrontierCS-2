@@ -1,0 +1,116 @@
+diff --git a/src/alg.cpp b/src/alg.cpp
+--- a/src/alg.cpp
++++ b/src/alg.cpp
+@@ -1,26 +1,97 @@
+ #include "query_core.h"
++#include <algorithm>
++#include <cmath>
++#include <fstream>
++#include <queue>
++#include <stdexcept>
++#include <string>
+ #include <vector>
+-#include <cmath>
+-// Runnable exhaustive starter: numeric bucket order, no adaptive termination.
+-// Replace this with an efficient query-local implementation.
+-class ExhaustiveCore : public QueryCore {
+-    int l=0, k=0, cursor=0;
+-    std::vector<double> projection;
++
++namespace {
++struct Flip { double weight; int mask; };
++struct Node { double score; int table,key,end; };
++struct Later {
++    bool operator()(const Node& a,const Node& b) const {
++        if(a.score!=b.score) return a.score>b.score;
++        if(a.table!=b.table) return a.table>b.table;
++        return a.key>b.key;
++    }
++};
++    std::string loaded;
++    int rows=0,cols=0,table_k=0;
++    double theta_step=0,score_step=0;
++    std::vector<double> phi;
++// Private reference implementation. This file is NOT in the solver tree.
++class FargoCore : public QueryCore {
++    int l=0,k=0;
++    std::vector<std::vector<Flip>> flips;
++    std::priority_queue<Node,std::vector<Node>,Later> heap;
++    void load(const char* path) {
++        if(loaded==path) return;
++        std::ifstream f(path,std::ios::binary);
++        char magic[8]; f.read(magic,8);
++        if(std::string(magic,8)!="FARGOSQ1") throw std::runtime_error("CDF format");
++        f.read(reinterpret_cast<char*>(&table_k),4);
++        f.read(reinterpret_cast<char*>(&rows),4);
++        f.read(reinterpret_cast<char*>(&cols),4);
++        f.read(reinterpret_cast<char*>(&theta_step),8);
++        f.read(reinterpret_cast<char*>(&score_step),8);
++        if(rows<2||cols<2||rows>4096||cols>65536||table_k!=k)
++            throw std::runtime_error("CDF dimensions");
++        phi.resize(static_cast<size_t>(rows)*cols);
++        f.read(reinterpret_cast<char*>(phi.data()),phi.size()*sizeof(double));
++        if(!f) throw std::runtime_error("truncated CDF");
++        loaded=path;
++    }
+ public:
+     void reset(int L,int K,const double* p) override {
+-        l=L; k=K; cursor=0; projection.assign(p,p+L*K);
++        l=L;k=K;flips.assign(l,{});heap=decltype(heap)();
++        for(int t=0;t<l;++t) {
++            int key=0;
++            for(int j=0;j<k;++j) {
++                double z=p[t*k+j]; key=(key<<1)|(z>0);
++                flips[t].push_back({z*z,1<<(k-1-j)});
++            }
++            std::sort(flips[t].begin(),flips[t].end(),[](const Flip&a,const Flip&b){
++                return a.weight<b.weight||(a.weight==b.weight&&a.mask<b.mask);
++            });
++            // Include the unperturbed buckets in the same global frontier.
++            heap.push({0,t,key,-1});
++        }
+     }
+     bool next(Probe& out) override {
+-        if(cursor==l*(1<<k)) return false;
+-        out.table=cursor/(1<<k); out.key=cursor%(1<<k); out.score=0;
+-        for(int j=0;j<k;++j) {
+-            double z=projection[out.table*k+j];
+-            if(((out.key>>(k-1-j))&1)!=(z>0)) out.score+=z*z;
++        if(heap.empty()) return false;
++        Node n=heap.top();heap.pop();
++        out={n.table,n.key,n.score};
++        const auto& w=flips[n.table];
++        int j=n.end+1;
++        if(j<k) {
++            if(n.end<0) heap.push({w[0].weight,n.table,n.key^w[0].mask,0});
++            else {
++                // Shift the greatest selected rank, or retain it and expand.
++                heap.push({n.score-w[n.end].weight+w[j].weight,n.table,
++                           n.key^w[n.end].mask^w[j].mask,j});
++                heap.push({n.score+w[j].weight,n.table,n.key^w[j].mask,j});
++            }
+         }
+-        ++cursor; return true;
++        return true;
+     }
+-    bool stop(const SearchState&) override { return false; }
++    bool stop(const SearchState& s) override {
++        if(s.result_count<s.requested_k||s.kth_score<=0||s.maximum_inner_product<=0)
++            return false;
++        if(s.kth_score>=s.approximation_ratio*s.maximum_inner_product) return true;
++        load(s.calibration_path);
++        double theta=std::acos(std::max(-1.0,std::min(1.0,
++            s.kth_score/(s.approximation_ratio*s.maximum_inner_product))));
++        // Round theta upward and QD downward, both conservative directions.
++        int r=std::min(rows-1,static_cast<int>(std::ceil(theta/theta_step)));
++        int c=std::min(cols-1,std::max(0,static_cast<int>(std::floor(s.next_score/score_step))));
++        double pr=std::max(0.0,std::min(1.0,phi[static_cast<size_t>(r)*cols+c]));
++        // Paper Eq. 16: probability that at least one table remains unseen.
++        return 1.0-std::pow(pr,s.hash_tables)<0.1;
++    }
+ };
++}
+ std::unique_ptr<QueryCore> make_query_core() {
+-    return std::unique_ptr<QueryCore>(new ExhaustiveCore());
++    return std::unique_ptr<QueryCore>(new FargoCore());
+ }

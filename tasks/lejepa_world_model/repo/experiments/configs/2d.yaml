@@ -1,0 +1,30 @@
+# 2D illustration + Gaussian half of the regularizer ablation
+# python run.py --config configs/2d.yaml --run spiral_lejepa --seed 1337
+
+experiment: 2d
+out: results/2d
+
+# Data
+N: 2
+source_dist: gaussian
+num_eval: 10000
+
+# Training (shared)
+steps: 20000
+lr: 3.0e-3
+batch_size: 256
+rho: 0.95
+log_every: 500
+
+# Per-run specs: 4 mixings x 2 objectives
+runs:
+  spiral_lejepa:   {mixing: spiral,   encoder: mlp,     hidden: 256, mode: lejepa, lamb: 1.0e-3}
+  spiral_whiten:   {mixing: spiral,   encoder: mlp,     hidden: 256, mode: whiten, lamb: 0.5}
+  banana_lejepa:   {mixing: banana,   encoder: mlp,     hidden: 256, mode: lejepa, lamb: 1.0e-3}
+  banana_whiten:   {mixing: banana,   encoder: mlp,     hidden: 256, mode: whiten, lamb: 0.5}
+  sinusoid_lejepa: {mixing: sinusoid, encoder: mlp,     hidden: 256, mode: lejepa, lamb: 1.0e-3}
+  sinusoid_whiten: {mixing: sinusoid, encoder: mlp,     hidden: 256, mode: whiten, lamb: 0.5}
+  nvp_lejepa:      {mixing: nvp,      encoder: matched, n_layers: 8, mode: lejepa, lamb: 1.0e-3}
+  nvp_whiten:      {mixing: nvp,      encoder: matched, n_layers: 8, mode: whiten, lamb: 0.5}
+
+seeds: [1337, 1338, 1339]

@@ -1,0 +1,9 @@
+ethereum/evmc v11.0.1 d2de33f10fcef45a4ac18dc8c271a6d163a62f9c
+fmtlib/fmt 10.2.1 e69e5f977d458f2650bb346dadf2ad30c5320281
+chfast/ethash v1.0.1 8e18c3d715d3d759f44ac10f70f9c93b227e18c2
+chfast/intx v0.10.1 2ab1e8691e9d1eac3af34626556b6568ef961315
+gflags/gflags v2.2.2 e171aa2d15ed9eb17054558e0b3a6a413bb01067
+google/glog v0.7.0 34b8da6496aec6a98277808701cfa834fae9801f
+google/googletest v1.14.0 f8d7d77c06936315286eb55f8de22cd23c188571
+gperftools/gperftools gperftools-2.15 365060c4213a48adb27f63d5dfad41b3dfbdd62e
+jemalloc/jemalloc 5.3.0 54eaed1d8b56b1aa528be3bdd1877e59c56fa90c

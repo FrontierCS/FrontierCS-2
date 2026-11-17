@@ -1,0 +1,46 @@
+{
+  "edit_scope": {
+    "allow_delete": true,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "estimator/"
+    ],
+    "allowed_suffixes": [
+      ".go"
+    ],
+    "deny_paths": [
+      "estimator/stats.go",
+      "estimator/utils.go",
+      "estimator/go.mod",
+      "estimator/go.sum",
+      "estimator/experiments/",
+      "estimator/**/*_test.go"
+    ],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 32,
+    "max_patch_bytes": 262144
+  },
+  "environment": {
+    "cpus": 2,
+    "memory_mb": 4096
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 7200,
+    "solver_visible_metrics": [
+      "candidate_avg_log2_prec_l2_abs_discrepancy_mean_bits",
+      "candidate_std_log2_prec_l2_abs_discrepancy_mean_bits",
+      "candidate_estimator_seconds_mean"
+    ]
+  },
+  "runtime": {
+    "go_memory_limit": "3GiB",
+    "timeout_seconds": 600
+  }
+}

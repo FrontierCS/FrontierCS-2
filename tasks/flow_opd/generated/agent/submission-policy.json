@@ -1,0 +1,18 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "flow_grpo/diffusers_patch/sd3_pipeline_with_logprob.py",
+      "flow_grpo/diffusers_patch/sd3_sde_with_logprob.py",
+      "flow_grpo/frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 32,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

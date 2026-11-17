@@ -1,0 +1,4 @@
+row_dep: unique(World.name)
+col_val: World.area>0;
+         World.population>0;
+         World.gdp>0

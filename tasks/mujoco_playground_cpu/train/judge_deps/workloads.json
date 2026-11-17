@@ -1,0 +1,63 @@
+{
+  "status": "reference_vs_reference_development_and_final_suites_measured_on_h100",
+  "comment": "Every tunable number of the scientific protocol lives in this file. After changing it, run task_tests/mujoco_playground_cpu/regenerate_bindings.py.",
+  "train_budget_seconds": 720,
+  "train_startup_seconds": 300,
+  "train_import_seconds": 180,
+  "train_export_seconds": 300,
+  "eval_timeout_seconds": 600,
+  "eval_envs": 2048,
+  "eval_steps": 1000,
+  "observation_size": 48,
+  "action_size": 12,
+  "max_policy_artifact_bytes": 268435456,
+  "score_half_saturation_reward": 30.0,
+  "max_patch_encoded_run_characters": 16384,
+  "patch_encoded_run_minimum_length": 120,
+  "max_patch_numeric_literals": 20000,
+  "episode_metrics": [
+    "episode_reward",
+    "tracking_lin_vel",
+    "tracking_ang_vel"
+  ],
+  "step_metrics": [
+    "energy",
+    "action_rate"
+  ],
+  "guards": {
+    "require_gpu": true
+  },
+  "conditions": {
+    "flat": {
+      "env_name": "Go1JoystickFlatTerrain",
+      "overrides": {}
+    },
+    "push": {
+      "env_name": "Go1JoystickFlatTerrain",
+      "overrides": {
+        "pert_config.enable": true
+      }
+    },
+    "rough": {
+      "env_name": "Go1JoystickRoughTerrain",
+      "overrides": {}
+    }
+  },
+  "suites": {
+    "development": [
+      {
+        "id": "dev-0",
+        "train_seed": 19723,
+        "condition": "flat",
+        "eval_seed": 31277
+      },
+      {
+        "id": "dev-1",
+        "train_seed": 19723,
+        "condition": "push",
+        "eval_seed": 53591
+      }
+    ],
+    "final": []
+  }
+}

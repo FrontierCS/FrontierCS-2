@@ -1,0 +1,1 @@
+- The patch may change at most 1 file. It may not delete files. It may not add new files.

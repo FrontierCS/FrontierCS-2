@@ -1,0 +1,2 @@
+qid,mysql_groundtruth
+182,"select email as Email from Person group by email having count(email) >1 "

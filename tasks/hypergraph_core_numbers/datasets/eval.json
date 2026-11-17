@@ -1,0 +1,1 @@
+{"mode":"eval","note":"Selects the separate hidden graded workloads compiled only into the verifier image.","problem_id":"hypergraph_core_numbers","schema_version":"frontier.frontiersmith-dataset/v1","selects":{"FRONTIER_SUBMISSION_ROLE":"final"},"suite_location":"judge/workloads/graded-a.adj and graded-b.adj"}

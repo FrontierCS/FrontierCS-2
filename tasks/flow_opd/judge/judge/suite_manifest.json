@@ -1,0 +1,223 @@
+{
+  "formal_guard_gpu_validated": false,
+  "frozen_before_candidates": true,
+  "identity_sha256": "96001f811e3457262e1b264e9e96e5128b0e3e6f753e1a16e003136cae17a670",
+  "profile": {
+    "batches_per_epoch": 2,
+    "evaluation": [],
+    "evaluation_batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "max_runner_seconds": 900,
+    "mixed_precision": "bf16",
+    "qualification_status": "qualified",
+    "repeat_count": 2,
+    "train_batch_size": 4,
+    "train_microbatch_size": 4,
+    "training_seed": 260508063,
+    "transition_tolerance": {
+      "atol": 1.9073486328125e-06,
+      "rtol": 0.0
+    },
+    "transition_tolerance_provenance": {
+      "basis": "16 times float32 epsilon; over12 times the largest recorded residual; no reward comparison tolerance",
+      "formal_guard_gpu_validated": false,
+      "kind": "absolute_fp32_numerical_check_only",
+      "measured_float64_max_abs": 1.5697679511816887e-07,
+      "source_runs": [
+        "run_01M358YDFM85JH2YD7QSN3T5NZ",
+        "run_01M35AHWFN8XCYC1QDF85E6430"
+      ]
+    },
+    "updates": 8
+  },
+  "reference_scores_observed": true,
+  "runs": {
+    "ocr-u8": {
+      "profile": {
+        "path": "judge/profiles/ocr-u8.json",
+        "sha256": "9bafaa7be4feb3649e885177a0a4570aa5dc3dd1d52136e1c2a70f1983f8fa59"
+      },
+      "training_file": "judge/corpus/eligible-train.txt"
+    }
+  },
+  "schema": "flow-opd-workload-plan/v1",
+  "selection": "Whole-target-group stratified split, then four target-length quantile groups per split selected by seeded SHA256; first original prompt per group; two independently assigned seeds each.",
+  "selection_seed_sha256": "45f496465f8afb7444cfbd3974467edc784e21854b9ddedf334b4c1ad0d3e99f",
+  "source_corpus": {
+    "test.txt": "4dd8caf3ab6ade73bd376c7d14c6ca49b6eacfb1bd321e22c40714ae4a98d4dc",
+    "train.txt": "2eb32ce1c5fd1ffec94070be84252419ec848329d9adde9c2708867882fbce5f"
+  },
+  "source_selection_identity_sha256": "a733057458eae7f3021b82510a8c161245d3d2d0063b26a610de26c47963ba59",
+  "suite_runtime_qualified": true,
+  "training_sha256": "82c0c11c9507ac45bfb0abc7db67c13902538b514565b8485f4a5ae9744e4e62",
+  "workloads": [
+    {
+      "id": "development-00-0",
+      "prompt": "A photorealistic image of a dog wearing a collar with a silver tag engraved \"Best Boy Max\", standing in a sunlit park with a leash gently resting on the grass. The dog looks playful and content, with the tag clearly visible.",
+      "run": "ocr-u8",
+      "seed": 242815175,
+      "suite": "development"
+    },
+    {
+      "id": "development-00-1",
+      "prompt": "A photorealistic image of a dog wearing a collar with a silver tag engraved \"Best Boy Max\", standing in a sunlit park with a leash gently resting on the grass. The dog looks playful and content, with the tag clearly visible.",
+      "run": "ocr-u8",
+      "seed": 3898421461,
+      "suite": "development"
+    },
+    {
+      "id": "development-01-0",
+      "prompt": "A realistic urban street scene with a parking meter displaying \"Out of Service\" on its screen, surrounded by parked cars and pedestrians passing by. The setting is a sunny afternoon, with shadows cast on the ground, emphasizing the inoperative parking meter.",
+      "run": "ocr-u8",
+      "seed": 299303041,
+      "suite": "development"
+    },
+    {
+      "id": "development-01-1",
+      "prompt": "A realistic urban street scene with a parking meter displaying \"Out of Service\" on its screen, surrounded by parked cars and pedestrians passing by. The setting is a sunny afternoon, with shadows cast on the ground, emphasizing the inoperative parking meter.",
+      "run": "ocr-u8",
+      "seed": 2663376510,
+      "suite": "development"
+    },
+    {
+      "id": "development-02-0",
+      "prompt": "A close-up of a wine bottle with an intricate label titled \"Dragons Breath 2023\", featuring a fiery dragon exhaling smoke over a vineyard at sunset, with elegant cursive text and a gold border.",
+      "run": "ocr-u8",
+      "seed": 3902826236,
+      "suite": "development"
+    },
+    {
+      "id": "development-02-1",
+      "prompt": "A close-up of a wine bottle with an intricate label titled \"Dragons Breath 2023\", featuring a fiery dragon exhaling smoke over a vineyard at sunset, with elegant cursive text and a gold border.",
+      "run": "ocr-u8",
+      "seed": 210498482,
+      "suite": "development"
+    },
+    {
+      "id": "development-03-0",
+      "prompt": "A realistic photograph of a construction site with caution tape stretched across, prominently displaying the words \"Danger Midlife Crisis Zone\", surrounded by hard hats, tools, and half-finished structures.",
+      "run": "ocr-u8",
+      "seed": 921965697,
+      "suite": "development"
+    },
+    {
+      "id": "development-03-1",
+      "prompt": "A realistic photograph of a construction site with caution tape stretched across, prominently displaying the words \"Danger Midlife Crisis Zone\", surrounded by hard hats, tools, and half-finished structures.",
+      "run": "ocr-u8",
+      "seed": 1405587211,
+      "suite": "development"
+    },
+    {
+      "id": "train_grading-00-0",
+      "prompt": "A tiny snail, its shell glistening with dew, holds a miniature sign that says \"operate\" in a serene forest clearing, surrounded by lush green leaves and soft sunlight filtering through the trees.",
+      "run": "ocr-u8",
+      "seed": 3862996417,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-00-1",
+      "prompt": "A tiny snail, its shell glistening with dew, holds a miniature sign that says \"operate\" in a serene forest clearing, surrounded by lush green leaves and soft sunlight filtering through the trees.",
+      "run": "ocr-u8",
+      "seed": 4223077488,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-01-0",
+      "prompt": "A realistic photograph of a guitar case with a prominent sticker on it, clearly stating \"Handle With Care\", placed against a neutral background to highlight the detail of the sticker and the texture of the case.",
+      "run": "ocr-u8",
+      "seed": 3101518255,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-01-1",
+      "prompt": "A realistic photograph of a guitar case with a prominent sticker on it, clearly stating \"Handle With Care\", placed against a neutral background to highlight the detail of the sticker and the texture of the case.",
+      "run": "ocr-u8",
+      "seed": 3636411565,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-02-0",
+      "prompt": "A prehistoric cave painting vividly depicting the \"Hunt of the Mammoth\", showcasing ancient hunters armed with spears and stones, surrounded by a herd of mammoths in a rugged, natural setting.",
+      "run": "ocr-u8",
+      "seed": 1458414849,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-02-1",
+      "prompt": "A prehistoric cave painting vividly depicting the \"Hunt of the Mammoth\", showcasing ancient hunters armed with spears and stones, surrounded by a herd of mammoths in a rugged, natural setting.",
+      "run": "ocr-u8",
+      "seed": 1445726952,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-03-0",
+      "prompt": "A protestor holds a placard demanding \"Equal Rights for Robots\" amidst a bustling city crowd, with skyscrapers and futuristic elements in the background, emphasizing the blend of human and robotic presence.",
+      "run": "ocr-u8",
+      "seed": 1112433264,
+      "suite": "train_grading"
+    },
+    {
+      "id": "train_grading-03-1",
+      "prompt": "A protestor holds a placard demanding \"Equal Rights for Robots\" amidst a bustling city crowd, with skyscrapers and futuristic elements in the background, emphasizing the blend of human and robotic presence.",
+      "run": "ocr-u8",
+      "seed": 3815311040,
+      "suite": "train_grading"
+    },
+    {
+      "id": "final-00-0",
+      "prompt": "In the serene park, a misty morning surrounds a sign that reads \"nebel\", partially obscured by swirling fog, enhancing the mysterious atmosphere.",
+      "run": "ocr-u8",
+      "seed": 27424411,
+      "suite": "final"
+    },
+    {
+      "id": "final-00-1",
+      "prompt": "In the serene park, a misty morning surrounds a sign that reads \"nebel\", partially obscured by swirling fog, enhancing the mysterious atmosphere.",
+      "run": "ocr-u8",
+      "seed": 3264870916,
+      "suite": "final"
+    },
+    {
+      "id": "final-01-0",
+      "prompt": "A realistic supermarket scene with a floor sticker that reads \"Cleanup Aisle 5\", surrounded by grocery carts and shelves stocked with various products, capturing the busy yet organized atmosphere of a typical store.",
+      "run": "ocr-u8",
+      "seed": 2988973626,
+      "suite": "final"
+    },
+    {
+      "id": "final-01-1",
+      "prompt": "A realistic supermarket scene with a floor sticker that reads \"Cleanup Aisle 5\", surrounded by grocery carts and shelves stocked with various products, capturing the busy yet organized atmosphere of a typical store.",
+      "run": "ocr-u8",
+      "seed": 2659403355,
+      "suite": "final"
+    },
+    {
+      "id": "final-02-0",
+      "prompt": "A chef stands in a bustling kitchen, wearing an apron embroidered with \"Kiss the Cook or Else\", preparing a gourmet dish while surrounded by steaming pots and fresh ingredients.",
+      "run": "ocr-u8",
+      "seed": 2434463186,
+      "suite": "final"
+    },
+    {
+      "id": "final-02-1",
+      "prompt": "A chef stands in a bustling kitchen, wearing an apron embroidered with \"Kiss the Cook or Else\", preparing a gourmet dish while surrounded by steaming pots and fresh ingredients.",
+      "run": "ocr-u8",
+      "seed": 1243507234,
+      "suite": "final"
+    },
+    {
+      "id": "final-03-0",
+      "prompt": "A bustling airport terminal with a large digital display screen prominently showing \"Flight 404 Cancelled\" amidst other flight statuses, passengers looking disappointed and checking their phones, and airport staff assisting confused travelers.",
+      "run": "ocr-u8",
+      "seed": 384874693,
+      "suite": "final"
+    },
+    {
+      "id": "final-03-1",
+      "prompt": "A bustling airport terminal with a large digital display screen prominently showing \"Flight 404 Cancelled\" amidst other flight statuses, passengers looking disappointed and checking their phones, and airport staff assisting confused travelers.",
+      "run": "ocr-u8",
+      "seed": 820043207,
+      "suite": "final"
+    }
+  ]
+}

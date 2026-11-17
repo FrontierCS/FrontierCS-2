@@ -1,0 +1,22 @@
+{
+  "entrypoint": "payload/solution.patch",
+  "gpu": {
+    "max_gpu_instances": 2,
+    "placement": "control"
+  },
+  "sandboxes": {
+    "candidate": {
+      "image": "agent_gpu",
+      "lease_seconds": {
+        "eval": 1500,
+        "train": 1500
+      },
+      "max_concurrent": 2,
+      "resources": {
+        "gpu_type": "A100-80GB",
+        "gpus": 1
+      },
+      "workdir": "/workspace/sandbox"
+    }
+  }
+}

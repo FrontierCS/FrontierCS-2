@@ -1,0 +1,462 @@
+{
+  "schema_version": 1,
+  "archives": [
+    {
+      "category": "compress",
+      "file_id": "1YDfitnG4bRX2nOFh5X4o0QePAF8vZCg_",
+      "bytes": 1473340220
+    },
+    {
+      "category": "fp",
+      "file_id": "1TA1n-6U2aoBUoPpCEGyberAKYIYhi3I3",
+      "bytes": 1954872640
+    },
+    {
+      "category": "infra",
+      "file_id": "15lDyv-PH_bfnPXweIHwS97ZATX_T94hj",
+      "bytes": 1602330672
+    },
+    {
+      "category": "int",
+      "file_id": "1R9eJg5pUaE4FNq1k1Xv3DfnE93CzYROi",
+      "bytes": 5081355396
+    },
+    {
+      "category": "media",
+      "file_id": "1c0914RMqTpKwtKG2vU3fCgiaNXQ5xx6n",
+      "bytes": 409120560,
+      "sha256": "bc358cb58418418165f175ad6613e5626515c3f86c27a06fc7bda880ebf0664f"
+    },
+    {
+      "category": "web",
+      "file_id": "18P3ndXZKSwpxNVjoUB7TWUIq0PJfSljf",
+      "bytes": 2029818480
+    }
+  ],
+  "counts": {
+    "int/int_0_trace.gz": {
+      "full_instr": 40000041,
+      "measured_instr": 20000041
+    },
+    "int/int_1_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "int/int_2_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "int/int_3_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_4_trace.gz": {
+      "full_instr": 59999657,
+      "measured_instr": 30999657
+    },
+    "int/int_5_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "int/int_6_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "int/int_7_trace.gz": {
+      "full_instr": 40000048,
+      "measured_instr": 20000048
+    },
+    "int/int_8_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_9_trace.gz": {
+      "full_instr": 40000050,
+      "measured_instr": 20000050
+    },
+    "int/int_10_trace.gz": {
+      "full_instr": 60000052,
+      "measured_instr": 30000052
+    },
+    "int/int_11_trace.gz": {
+      "full_instr": 60000052,
+      "measured_instr": 30000052
+    },
+    "int/int_12_trace.gz": {
+      "full_instr": 59999603,
+      "measured_instr": 30999603
+    },
+    "int/int_13_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_14_trace.gz": {
+      "full_instr": 39999640,
+      "measured_instr": 20999640
+    },
+    "int/int_15_trace.gz": {
+      "full_instr": 70000157,
+      "measured_instr": 35000157
+    },
+    "int/int_16_trace.gz": {
+      "full_instr": 40000031,
+      "measured_instr": 20000031
+    },
+    "int/int_17_trace.gz": {
+      "full_instr": 39999987,
+      "measured_instr": 20999987
+    },
+    "int/int_18_trace.gz": {
+      "full_instr": 39999864,
+      "measured_instr": 20999864
+    },
+    "int/int_19_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_20_trace.gz": {
+      "full_instr": 60000051,
+      "measured_instr": 30000051
+    },
+    "int/int_21_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_22_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_23_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_24_trace.gz": {
+      "full_instr": 40000051,
+      "measured_instr": 20000051
+    },
+    "int/int_25_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_26_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_27_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_28_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_29_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_30_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_31_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_32_trace.gz": {
+      "full_instr": 110000052,
+      "measured_instr": 55000052
+    },
+    "int/int_33_trace.gz": {
+      "full_instr": 110000052,
+      "measured_instr": 55000052
+    },
+    "int/int_34_trace.gz": {
+      "full_instr": 40000052,
+      "measured_instr": 20000052
+    },
+    "int/int_35_trace.gz": {
+      "full_instr": 40000048,
+      "measured_instr": 20000048
+    },
+    "int/int_36_trace.gz": {
+      "full_instr": 53761949,
+      "measured_instr": 27761949
+    },
+    "fp/fp_0_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "fp/fp_1_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "fp/fp_2_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "fp/fp_3_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "fp/fp_4_trace.gz": {
+      "full_instr": 30000052,
+      "measured_instr": 15000052
+    },
+    "fp/fp_5_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_6_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_7_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_8_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_9_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_10_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_11_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_12_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "fp/fp_13_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "web/web_0_trace.gz": {
+      "full_instr": 39999493,
+      "measured_instr": 20999493
+    },
+    "web/web_1_trace.gz": {
+      "full_instr": 39999048,
+      "measured_instr": 20999048
+    },
+    "web/web_2_trace.gz": {
+      "full_instr": 39999746,
+      "measured_instr": 20999746
+    },
+    "web/web_3_trace.gz": {
+      "full_instr": 39999981,
+      "measured_instr": 20999981
+    },
+    "web/web_4_trace.gz": {
+      "full_instr": 39999718,
+      "measured_instr": 20999718
+    },
+    "web/web_5_trace.gz": {
+      "full_instr": 39999694,
+      "measured_instr": 20999694
+    },
+    "web/web_6_trace.gz": {
+      "full_instr": 40000022,
+      "measured_instr": 20000022
+    },
+    "web/web_7_trace.gz": {
+      "full_instr": 39999850,
+      "measured_instr": 20999850
+    },
+    "web/web_8_trace.gz": {
+      "full_instr": 39999955,
+      "measured_instr": 20999955
+    },
+    "web/web_9_trace.gz": {
+      "full_instr": 39999863,
+      "measured_instr": 20999863
+    },
+    "web/web_10_trace.gz": {
+      "full_instr": 19999796,
+      "measured_instr": 10999796
+    },
+    "web/web_11_trace.gz": {
+      "full_instr": 10001443,
+      "measured_instr": 5001443
+    },
+    "web/web_12_trace.gz": {
+      "full_instr": 15000009,
+      "measured_instr": 8000009
+    },
+    "web/web_13_trace.gz": {
+      "full_instr": 39999813,
+      "measured_instr": 20999813
+    },
+    "web/web_14_trace.gz": {
+      "full_instr": 70000043,
+      "measured_instr": 35000043
+    },
+    "web/web_15_trace.gz": {
+      "full_instr": 14999858,
+      "measured_instr": 7999858
+    },
+    "web/web_16_trace.gz": {
+      "full_instr": 20000052,
+      "measured_instr": 10000052
+    },
+    "web/web_17_trace.gz": {
+      "full_instr": 15000021,
+      "measured_instr": 8000021
+    },
+    "web/web_18_trace.gz": {
+      "full_instr": 15000059,
+      "measured_instr": 8000059
+    },
+    "web/web_19_trace.gz": {
+      "full_instr": 15000016,
+      "measured_instr": 8000016
+    },
+    "web/web_20_trace.gz": {
+      "full_instr": 20000004,
+      "measured_instr": 10000004
+    },
+    "web/web_21_trace.gz": {
+      "full_instr": 15000054,
+      "measured_instr": 8000054
+    },
+    "web/web_22_trace.gz": {
+      "full_instr": 20000051,
+      "measured_instr": 10000051
+    },
+    "web/web_23_trace.gz": {
+      "full_instr": 20000047,
+      "measured_instr": 10000047
+    },
+    "web/web_24_trace.gz": {
+      "full_instr": 14999923,
+      "measured_instr": 7999923
+    },
+    "web/web_25_trace.gz": {
+      "full_instr": 14999989,
+      "measured_instr": 7999989
+    },
+    "media/media_0_trace.gz": {
+      "full_instr": 20000044,
+      "measured_instr": 10000044
+    },
+    "media/media_1_trace.gz": {
+      "full_instr": 20000048,
+      "measured_instr": 10000048
+    },
+    "media/media_2_trace.gz": {
+      "full_instr": 20000038,
+      "measured_instr": 10000038
+    },
+    "media/media_3_trace.gz": {
+      "full_instr": 20000046,
+      "measured_instr": 10000046
+    },
+    "compress/compress_0_trace.gz": {
+      "full_instr": 120000052,
+      "measured_instr": 60000052
+    },
+    "compress/compress_1_trace.gz": {
+      "full_instr": 30778699,
+      "measured_instr": 15778699
+    },
+    "compress/compress_2_trace.gz": {
+      "full_instr": 32339109,
+      "measured_instr": 16339109
+    },
+    "compress/compress_3_trace.gz": {
+      "full_instr": 130000020,
+      "measured_instr": 65000020
+    },
+    "compress/compress_4_trace.gz": {
+      "full_instr": 31160801,
+      "measured_instr": 16160801
+    },
+    "compress/compress_5_trace.gz": {
+      "full_instr": 33811883,
+      "measured_instr": 17811883
+    },
+    "compress/compress_6_trace.gz": {
+      "full_instr": 33826271,
+      "measured_instr": 17826271
+    },
+    "compress/compress_7_trace.gz": {
+      "full_instr": 130000052,
+      "measured_instr": 65000052
+    },
+    "infra/infra_0_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "infra/infra_1_trace.gz": {
+      "full_instr": 37799521,
+      "measured_instr": 19799521
+    },
+    "infra/infra_2_trace.gz": {
+      "full_instr": 47546686,
+      "measured_instr": 24546686
+    },
+    "infra/infra_3_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "infra/infra_4_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "infra/infra_5_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "infra/infra_6_trace.gz": {
+      "full_instr": 64718349,
+      "measured_instr": 32718349
+    },
+    "infra/infra_7_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "infra/infra_8_trace.gz": {
+      "full_instr": 40000016,
+      "measured_instr": 20000016
+    },
+    "infra/infra_9_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    "infra/infra_10_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    "infra/infra_11_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    "infra/infra_12_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    "infra/infra_13_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    "infra/infra_14_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    },
+    "infra/infra_15_trace.gz": {
+      "full_instr": 50000052,
+      "measured_instr": 25000052
+    }
+  },
+  "counts_provenance": "Expected completion counters from pinned framework CSV, not current-source performance measurements. Must be checked against actual simulator output.",
+  "csv_sha256": "1b32c0b092ba1012fcedec75eec5d6a6407a9d33e0d1769ba5d081c7ae84d976",
+  "reference_core_sha256": "dd673059e19faa9d6902490e6a2d511aec51092ed1de9e0b7568080b2d0590d5",
+  "preparation_reference_sha256": "34b36f9c068f683fd13e4baa211b6d6971a8bd3a21267955daf4841fc6fc67f3"
+}

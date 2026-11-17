@@ -1,0 +1,204 @@
+diff --git a/sql_testing/environment.py b/sql_testing/environment.py
+index 66c60fd..10ec23d 100644
+--- a/sql_testing/environment.py
++++ b/sql_testing/environment.py
+@@ -183,9 +183,129 @@ class Environment:
+ 
+     def check(self, q1, q2, use_precise_encoding=False):
+         # FRONTIER_EDIT_BEGIN: counterexample discovery
+-        raise NotImplementedError(
+-            "implement the SQL-to-counterexample discovery pipeline"
+-        )
++        # parse
++        parser = SQLParser()
++
++        jsons = []
++        for query in [q1, q2]:
++            jsons.append(parser.parse(query))
++
++        asts = []
++        for j in jsons:
++            asts.append(parser.parse_query(j))
++
++        # initializer = Initializer(self)
++        #
++        # for ast in asts:
++        #     ast.accept(initializer)
++
++        def task(ret):
++            start = datetime.datetime.now()
++
++            checking_time = 0
++            unsat_core_time = 0
++            max_rounds = 9000
++            cur_rounds = 0
++            size_unsat_core = 0
++            raw_size_unsat_core = 0
++
++            while True:
++                try:
++                    outputs = []
++                    for query_id, ast in enumerate(asts):
++                        self.curr_query_id = query_id
++                        # print(repr(ast))
++                        encoder = QueryEncoder(self)
++                        output = ast.accept(encoder)
++                        outputs.append(output)
++                        # print(output.node.label)
++                    self.initialized = True
++
++                    self.formulas.append(Not(self.o1_eq_o2(outputs[0], outputs[1])), label='neq')
++                except Exception as e:
++                    logger.error(''.join(traceback.format_tb(e.__traceback__)) + str(e))
++                    ret['status'] = 'ERR'
++                    return
++
++                # self.formulas.append(And(self.underapproximator.underapproximation_constraints), label='op_under')
++
++                try:
++                    if not use_precise_encoding:
++                        succeed_prover = self.formulas.search(outputs, ret)
++                    else:
++                        succeed_prover = self.formulas.solve_precise(ret)
++
++                    total_time = (datetime.datetime.now() - start).total_seconds()
++                    ret['complete_time'] = datetime.datetime.now()
++                    ret['total_time'] = total_time
++                    if succeed_prover is None:
++                        ret['status'] = 'EQU'
++                        return
++                    checking_time += succeed_prover.checking_time
++                except Exception as e:
++                    logger.error(''.join(traceback.format_tb(e.__traceback__)) + str(e))
++                    ret['status'] = 'ERR'
++                    return
++
++                # debug: print final outputs
++                for output in outputs:
++                    logger.debug(succeed_prover.evaluate_table(output, self.db, self))
++
++                # debug: print all intermediate table outputs
++                # for table in self.db.schemas.values():
++                #     print(table.table_id, table.lineage)
++                #     print(succeed_prover.evaluate_choice_vector(table))
++                #     print(succeed_prover.evaluate_table(table, self.db, self))
++                #     print('=' * 30)
++
++                database = {}
++                try:
++                    for table_idx, _ in enumerate(self.schema):
++                        database[self.schema[table_idx]["TableName"].lower()] = succeed_prover.evaluate_table(
++                            self.db.schemas[table_idx],
++                            self.db,
++                            self
++                        )
++
++                    ret['status'] = 'NEQ'
++                    ret['cex'] = database
++
++                except Exception as e:
++                    logger.error(''.join(traceback.format_tb(e.__traceback__)) + str(e))
++                    ret['status'] = 'ERR'
++                    return
++
++                break
++
++        with multiprocess.Manager() as manager:
++            ret = manager.dict()
++
++            process = multiprocess.Process(target=task, args=(ret,))
++            process.start()
++
++            start = datetime.datetime.now()
++            process.join(self.time_budget)
++
++            if process.is_alive():
++                process.terminate()
++                ret['status'] = 'TMO'
++                ret['complete_time'] = datetime.datetime.now()
++
++            if ret['status'] == 'ERR':
++                return None, None, None, None, dict(ret)
++
++            total_time = (ret['complete_time'] - start).total_seconds()
++
++            self.clear()
++
++            # print(ret)
++
++            if ret['status'] == 'NEQ':
++                return False, ret['cex'], None, total_time, dict(ret)
++            elif ret['status'] == 'TMO':
++                return None, None, None, total_time, dict(ret)
++            else:
++                return True, None, None, total_time, dict(ret)
+         # FRONTIER_EDIT_END: counterexample discovery
+ 
+     def disambiguate(self, queries, group_range=0, use_precise_encoding=False):
+diff --git a/sql_testing/smt/formula.py b/sql_testing/smt/formula.py
+index 3541f90..6368b50 100644
+--- a/sql_testing/smt/formula.py
++++ b/sql_testing/smt/formula.py
+@@ -77,12 +77,60 @@ class FormulaManager:
+ 
+     def search_naive(self, outputs, ret):
+         # FRONTIER_EDIT_BEGIN: exhaustive baseline
+-        raise NotImplementedError("implement an exhaustive baseline if useful")
++        self.ret = ret
++        ret['iters'] = 0
++        ret['backtracks'] = 0
++        ret['type_2_backtracks'] = 0
++        ret['unsat_core_sizes'] = []
++        ret['M_sizes'] = []
++        ret['solving_time_per_iter'] = []
++        ret['num_nodes_changed'] = []
++        self.init_label_table_id_bidict()
++        ret['ast_size'] = len(self.label_to_table_id)
++
++        prover = SMTLIBv2(
++            executable_path='z3',
++            executable_options=['--in', f'-T:{self.timeout}'],
++        )
++
++        self.labels_considered = list(self.formulas.keys())
++
++        all_nodes = []
++        for label in self.formulas.keys():
++            if '$' in label:
++                all_nodes.append(label)
++
++        node_to_cover_ua = {}
++        for label in all_nodes:
++            if label in self.label_to_table_id:
++                # (1.1)
++                # node_to_cover_ua[self.label_to_table_id[label]] = self.cover_ua(label, left_tops=0)
++                # (1.2)
++                node_to_cover_ua[self.label_to_table_id[label]] = self.cover_ua(label, tops_ratio=0.25)
++                # (1.3)
++                # node_to_cover_ua[self.label_to_table_id[label]] = self.cover_ua(label)
++
++        labels, cover_ua = zip(*node_to_cover_ua.items())
++        for ua_comb in itertools.product(*cover_ua):
++            ret['iters'] += 1
++            self.current_under = dict(zip(labels, ua_comb))
++            # print(self.current_under)
++            self.encode_current_under()
++            if prover.check(self.dump()):
++                for node_label in all_nodes:
++                    if node_label not in self.label_to_table_id:
++                        continue
++                    table = self.env.db.schemas[self.label_to_table_id[node_label]]
++                    vec = prover.evaluate_choice_vector(table)
++                    self.current_under[table.table_id] = vec
++                return prover
++
++        return None
+         # FRONTIER_EDIT_END: exhaustive baseline
+ 
+     def search(self, outputs, ret):
+         # FRONTIER_EDIT_BEGIN: search policy
+-        raise NotImplementedError("implement the under-approximation search policy")
++        return self.search_naive(outputs, ret)
+         # FRONTIER_EDIT_END: search policy
+ 
+     def backtrack(self, unsat_core, ret):

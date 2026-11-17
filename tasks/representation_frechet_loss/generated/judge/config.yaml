@@ -1,0 +1,37 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "frechet_distance/queue.py",
+      "frechet_distance/frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 3,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 21600,
+    "solver_visible_metrics": [
+      "development_mean_inception_fdr",
+      "development_mean_convnext_fdr",
+      "development_mean_dinov2_fdr",
+      "development_mean_mae_fdr",
+      "development_mean_siglip_fdr",
+      "development_mean_clip_fdr"
+    ]
+  },
+  "runtime": {
+    "final_timeout_seconds": 10800,
+    "timeout_seconds": 7200
+  }
+}

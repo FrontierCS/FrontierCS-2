@@ -1,0 +1,75 @@
+package main
+
+import (
+	"math"
+
+	"github.com/tuneinsight/ckks-noise-estimator"
+	"github.com/tuneinsight/lattigo/v6/core/rlwe"
+	"github.com/tuneinsight/lattigo/v6/schemes/ckks"
+	"github.com/tuneinsight/lattigo/v6/utils/bignum"
+)
+
+// Small public-interface checks are validity guards, never scored workloads.
+// They use only what the fixed experiment programs use.
+func frontierContracts() {
+	p, err := ckks.NewParametersFromLiteral(ckks.ParametersLiteral{LogN: 10, LogQ: []int{55, 45}, LogP: []int{60}, LogDefaultScale: 45})
+	if err != nil {
+		panic(err)
+	}
+	e := estimator.NewEstimator(p)
+	scale := rlwe.NewScale(math.Exp2(45))
+	value := func(el *estimator.Element) (float64, float64) {
+		var out []*bignum.Complex = e.Decrypt(el)
+		if len(out) != p.MaxSlots() {
+			panic("decrypt dimensions")
+		}
+		re, _ := out[0][0].Float64()
+		im, _ := out[0][1].Float64()
+		return re, im
+	}
+	near := func(el *estimator.Element, re, im float64) {
+		a, b := value(el)
+		if math.IsNaN(a) || math.IsNaN(b) || math.Abs(a-re) > 1e-6 || math.Abs(b-im) > 1e-6 {
+			panic("algebra contract")
+		}
+	}
+	a := e.NewElement([]complex128{1 + 0i}, 1, 1, scale)
+	b := e.NewElement([]complex128{0.5 + 0.25i}, 1, 1, scale)
+	if a.Level != 1 || a.Scale.Cmp(scale) != 0 || e.MaxLevel() != 1 || e.DefaultScale().Cmp(scale) != 0 {
+		panic("element metadata")
+	}
+	near(a, 1, 0)
+	e.AddEncodingNoise(a)
+	e.AddEncryptionNoisePk(a)
+	e.AddEncryptionNoiseSk(b)
+	near(a, 1, 0)
+	if e.Add(a, b, a) != nil {
+		panic("add")
+	}
+	near(a, 1.5, 0.25)
+	if e.MulRelin(a, b, a) != nil || a.Level != 1 {
+		panic("multiply")
+	}
+	before := a.Scale.Float64()
+	if e.Rescale(a, a) != nil || a.Level != 0 || math.Abs(a.Scale.Float64()*float64(p.Q()[1])/before-1) > 1e-9 {
+		panic("rescale metadata")
+	}
+	near(a, 0.6875, 0.5)
+	if e.Rescale(a, a) == nil {
+		panic("level guard")
+	}
+	c := e.NewElement([]complex128{0.5 + 0i}, 1, 1, scale)
+	if e.Mul(c, 2, c) != nil {
+		panic("scalar")
+	}
+	near(c, 1, 0)
+	if e.ScaleUp(c, rlwe.NewScale(2)) != nil {
+		panic("scale up")
+	}
+	near(c, 1, 0)
+	pb := estimator.NewPowerBasis(c, bignum.Chebyshev)
+	if pb.GenPower(2, false, e) != nil || pb.Value[2] == nil {
+		panic("power basis")
+	}
+	near(pb.Value[2], 1, 0)
+}

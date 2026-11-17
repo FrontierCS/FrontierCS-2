@@ -1,0 +1,218 @@
+#!/usr/bin/env sh
+# Runs the Pumpkin that `.pumpkinversion` names, building it first if it isn't built: copy this
+# file into a repository as `./pumpkin`, and run `./pumpkin check task.star` from anywhere. It
+# fetches a pinned toolchain, verifies its SHA-256, and hands over to it; the rest is Rust, in
+# `cargo xtask install`.
+#
+# Everything lives in `.pumpkin/` beside this file, which ignores itself in git and is safe to
+# delete; nothing is written elsewhere. `.pumpkinversion` holds Pumpkin's tag, then the full
+# commit the tag must name. To build it, it needs Linux x86_64, git, curl, sha256sum, a C linker
+# (`cc`) and TLS certificates, which it checks for first.
+#
+# Everything after this script's own option goes to `pumpkin`. The option, only if it comes
+# first, fetches Pumpkin from URL instead of GitHub: to try a tag that isn't pushed yet, or a
+# consumer against a local Pumpkin.
+#
+#     ./pumpkin --pumpkin-repository=URL ARGUMENT...
+set -o errexit -o nounset
+
+PUMPKIN_REPOSITORY="https://github.com/FrontierCS/Pumpkin.git"
+
+# rustup-init, pinned: rustup's own `rustup-init.sha256` beside the file gives the same checksum.
+RUSTUP_VERSION="1.29.2"
+
+say() {
+    printf 'pumpkin: %s\n' "$*" >&2
+}
+
+fail() {
+    say "$@"
+    exit 1
+}
+
+[ "$(uname --kernel-name) $(uname --machine)" = "Linux x86_64" ] ||
+    fail "this is $(uname --kernel-name) $(uname --machine): run it on Linux x86_64"
+RUSTUP_URL="https://static.rust-lang.org/rustup/archive/${RUSTUP_VERSION}/x86_64-unknown-linux-gnu/rustup-init"
+RUSTUP_CHECKSUM="5be191e8c70a5007074254cb74d78dbfdd25cd5a61c27de7b8e5410122ec24f4"
+
+# Refuses, naming every package that is missing, unless this machine has what building needs: the
+# tools, and a bundle of TLS certificates where curl and git look on Debian and Ubuntu, Fedora and
+# openSUSE, or where `SSL_CERT_FILE` names.
+need() {
+    missing='' packages=''
+    for tool in git curl sha256sum cc; do
+        command -v "$tool" > /dev/null && continue
+        case "$tool" in
+            sha256sum) package=coreutils ;;
+            cc) package="gcc libc6-dev" tool="cc (a C linker)" ;;
+            *) package=$tool ;;
+        esac
+        missing="$missing, $tool" packages="$packages $package"
+    done
+    for bundle in "${SSL_CERT_FILE-}" /etc/ssl/certs/ca-certificates.crt \
+        /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/ca-bundle.pem; do
+        [ -n "$bundle" ] && [ -s "$bundle" ] && break
+        bundle=
+    done
+    [ -n "$bundle" ] || missing="$missing, TLS certificates" packages="$packages ca-certificates"
+    [ -z "$missing" ] ||
+        fail "building Pumpkin needs ${missing#, }, which this machine lacks; on Debian or Ubuntu, run
+    sudo apt-get install${packages}"
+}
+
+# Takes the lock on building, a directory, which `mkdir` makes, or finds there, at once. A holder
+# that ended without removing it, as one killed by SIGKILL, left its process ID in it, and is
+# waited for no longer.
+lock() {
+    until mkdir "$state/build.lock" 2> /dev/null; do
+        holder=$(cat "$state/build.lock/pid" 2> /dev/null) || holder=
+        if [ -n "$holder" ] && ! kill -0 "$holder" 2> /dev/null; then
+            rm --recursive --force "$state/build.lock"
+        else
+            sleep 1
+        fi
+    done
+    echo "$$" > "$state/build.lock/pid"
+}
+
+repository="$PUMPKIN_REPOSITORY"
+case "${1-}" in
+    --pumpkin-repository=*)
+        repository="${1#--pumpkin-repository=}"
+        shift
+        ;;
+esac
+
+root=$(cd "$(dirname "$0")" && pwd -P)
+state="$root/.pumpkin"
+
+[ -f "$root/.pumpkinversion" ] ||
+    fail "there is no .pumpkinversion beside this script: write Pumpkin's tag, then its commit"
+read -r tag commit < "$root/.pumpkinversion" || true
+[ -n "$tag" ] ||
+    fail ".pumpkinversion does not start with a tag: write Pumpkin's tag, then its commit"
+case "$commit" in
+    *[!0-9a-f]*) commit= ;;
+esac
+[ "${#commit}" -eq 40 ] ||
+    fail ".pumpkinversion does not name a commit after the tag: write the tag's full 40-digit hexadecimal commit"
+
+entry="$state/$commit"
+
+# Runs a command with only these variables of the environment: Rust's own, kept in `.pumpkin/`
+# and never in ~/.rustup and ~/.cargo, a temporary directory there too, for the compilers' files,
+# and what downloads need. The rest can't steer the build, as `RUSTFLAGS` would, nor make git work
+# in the caller's repository, as the `GIT_INDEX_FILE` that a hook is given would.
+clean() {
+    for name in SSL_CERT_FILE SSL_CERT_DIR CURL_CA_BUNDLE \
+        http_proxy https_proxy all_proxy no_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY; do
+        if eval "[ \"\${$name+set}\" = set ]"; then
+            eval "set -- \"$name=\$$name\" \"\$@\""
+        fi
+    done
+    env --ignore-environment "PATH=$state/cargo/bin:$PATH" "RUSTUP_HOME=$state/rustup" \
+        "CARGO_HOME=$state/cargo" "TMPDIR=$state/tmp" "$@"
+}
+
+# Runs git as `clean` does, with the caller's home too, for the credential helper that their own
+# `git` would ask, and never a prompt, which would stop the build to ask for a password.
+fetch() {
+    clean ${HOME+"HOME=$HOME"} GIT_TERMINAL_PROMPT=0 git "$@"
+}
+
+# Runs a step of the build with its output in the build's log, which a failure prints whole before
+# it exits as the step did, so that a build that succeeds says only that it began.
+step() {
+    "$@" >> "$log" 2>&1 || {
+        status=$?
+        cat "$log" >&2
+        exit "$status"
+    }
+}
+
+build() {
+    # Below this repository, as everything is: so Cargo reads each `.cargo/config.toml` above
+    # the repository too, such as `~/.cargo/config.toml` for one below the home, as nothing
+    # turns that off.
+    mkdir --parents "$state/tmp"
+    scratch=$(mktemp --directory "$state/tmp/build.XXXXXX")
+    stage="$state/stage"
+    rm --recursive --force "$stage"
+    log="$scratch/log"
+    trap 'rm --recursive --force "$scratch" "$stage"' EXIT
+    trap 'exit 1' HUP INT TERM
+    if [ ! -x "$state/cargo/bin/rustup" ]; then
+        say "this first run fetches a Rust toolchain and builds Pumpkin, about 250 MB and a few minutes;"
+        say "all of it, about 1.5 GB, goes to $state, safe to delete, and later runs start at once"
+    fi
+    say "building Pumpkin $tag ($commit) from $repository ..."
+    # The tag's whole history, a few MB, as a git bundle of a shallow clone lacks the parents that
+    # its commit names.
+    fetch -c advice.detachedHead=false clone --quiet --single-branch --branch "$tag" -- \
+        "$repository" "$scratch/source" >> "$log" 2>&1 || {
+        status=$?
+        cat "$log" >&2
+        if fetch ls-remote -- "$repository" > /dev/null 2>&1; then
+            say "$repository has no tag $tag: name one of its tags in .pumpkinversion; list them with
+    git ls-remote --tags $repository"
+        else
+            say "could not read the repository $repository: it needs the network, and access to it on GitHub; check both with
+    git ls-remote $repository"
+        fi
+        exit "$status"
+    }
+    cd "$scratch/source"
+    fetched=$(clean git rev-parse 'HEAD^{commit}')
+    [ "$fetched" = "$commit" ] ||
+        fail "tag $tag of $repository is commit $fetched, not $commit: fix .pumpkinversion, or the tag if it moved"
+    # Beside the build, so that a controller this sends runs to builds the same commit from it,
+    # with no credentials of its own: `--pumpkin-repository=<path of the bundle>`.
+    step clean git bundle create --quiet "$scratch/pumpkin.bundle" "$tag"
+
+    if [ ! -x "$state/cargo/bin/rustup" ]; then
+        printf 'pumpkin: downloading rustup-init %s ...\n' "$RUSTUP_VERSION" >&2
+        curl --location --silent --show-error --fail --proto '=https' --tlsv1.2 \
+            --output "$scratch/rustup-init" "$RUSTUP_URL" || {
+            status=$?
+            say "the first run downloads from static.rust-lang.org, index.crates.io, static.crates.io, github.com and release-assets.githubusercontent.com; check that this machine reaches them with
+    curl --head $RUSTUP_URL"
+            exit "$status"
+        }
+        [ "$(sha256sum "$scratch/rustup-init" | cut --delimiter=' ' --fields=1)" \
+            = "$RUSTUP_CHECKSUM" ] ||
+            fail "$RUSTUP_URL does not have the SHA-256 checksum $RUSTUP_CHECKSUM: the download is not rustup-init $RUSTUP_VERSION"
+        chmod +x "$scratch/rustup-init"
+        step clean "$scratch/rustup-init" --yes --quiet --no-modify-path --profile minimal \
+            --default-toolchain none
+    fi
+    # Run in the checkout, so that rustup installs what its `rust-toolchain.toml` names: the
+    # toolchain and the musl target.
+    step clean rustup toolchain install --no-self-update
+    # The root is renamed into place whole, so a run never sees a half-installed entry. The
+    # target directory, in `.pumpkin/`, keeps the next build incremental.
+    step clean "CARGO_TARGET_DIR=$state/target" cargo xtask install --root "$stage"
+    mv "$scratch/pumpkin.bundle" "$stage/pumpkin.bundle"
+    # What is there has no `pumpkin` to run, and `mv` would move the stage into it.
+    rm --recursive --force "$entry"
+    mv "$stage" "$entry"
+}
+
+if [ ! -x "$entry/bin/pumpkin" ]; then
+    need
+    mkdir --parents "$state"
+    echo '*' > "$state/.gitignore"
+    lock
+    trap 'rm --recursive --force "$state/build.lock"' EXIT
+    trap 'exit 1' HUP INT TERM
+    # Only the holder of the lock writes here, so what is here was left by a holder that is gone,
+    # as one killed by SIGKILL.
+    rm --recursive --force "$state/tmp"
+    # Another run may have built it while this one waited. A subshell, so that its cleanup runs
+    # before `exec` and its directory change doesn't reach `pumpkin`.
+    if [ ! -x "$entry/bin/pumpkin" ]; then
+        (build)
+    fi
+    rm --recursive --force "$state/build.lock"
+    trap - EXIT HUP INT TERM
+fi
+exec "$entry/bin/pumpkin" "$@"

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "task_type": "reference_improvement",
+  "upstream_root": "google-deepmind/mujoco_playground@254c38f9c240012518dbe61d1267bc375ff827e4",
+  "authentic_execution": {
+    "entrypoint": "frontier_solution/train.py::train",
+    "reference_procedure": "brax.training.agents.ppo.train on Go1JoystickFlatTerrain with mujoco_playground/config/locomotion_params.py::brax_ppo_config, registry.get_domain_randomizer and wrapper.wrap_for_brax_training unmodified (200M steps)",
+    "retained_files": "the complete upstream git tree (267 files), byte-identical except that README.md is published as UPSTREAM_README.md"
+  },
+  "excision": [],
+  "solution_surface": {
+    "modify": [
+      "mujoco_playground/_src/locomotion/go1/joystick.py",
+      "mujoco_playground/_src/locomotion/go1/randomize.py",
+      "mujoco_playground/config/locomotion_params.py",
+      "frontier_solution/train.py"
+    ],
+    "add_under": [
+      "frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "README.md",
+      "reason": "Task statement. The upstream README is retained as UPSTREAM_README.md."
+    },
+    {
+      "path": "frontier_solution/__init__.py",
+      "reason": "Package marker for the solver interface."
+    },
+    {
+      "path": "frontier_solution/train.py",
+      "reason": "Solver interface; the shipped body is the reference procedure."
+    },
+    {
+      "path": "frontier_check.py",
+      "reason": "Public self-check that trains, exports and measures a policy on the Agent GPU runner with public seeds."
+    },
+    {
+      "path": "mujoco_playground/external_deps/mujoco_menagerie/unitree_go1/",
+      "reason": "Unitree Go1 subset of google-deepmind/mujoco_menagerie at 14ceccf557cc47240202f2354d684eca58ff8de4, which upstream clones at first import; vendored so import works offline. Verified byte-identical to that commit's unitree_go1/ directory."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [],
+  "minimality_note": "Nothing is pruned: the tree is the whole upstream repository so that the reward, PPO configuration and training script the statement cites are all present.",
+  "private_upstream_files": []
+}

@@ -1,0 +1,91 @@
+diff --git a/polar_express.py b/polar_express.py
+index aa75bc1..d314031 100644
+--- a/polar_express.py
++++ b/polar_express.py
+@@ -19,14 +19,62 @@ def optimal_cubic(l, u):
+ 
+ 
+ def optimal_quintic(l, u):
+-    """Return three finite odd-quintic coefficients for the interval ``[l, u]``."""
+-    raise NotImplementedError("optimal_quintic has been removed")
++    """Use the simplified Remez algorithm to find an approximation to the constant function x -> 1
++    of the form p(x) = a*x + b*x^3 + c*x^5 that minimizes the maximum approximation error over the interval [l, u].
+ 
+-degree_to_coefficients = {3: optimal_cubic, 5: optimal_quintic}
++    Returns:
++        a, b, c: coefficients of the optimal odd quintic approximant.
++    """
++    assert 0 <= l <= u
++    if 1 - 5e-6 <= l / u:
++        # Above this threshold, the equioscillating polynomials 
++        # is numerically equal to...
++        return (15/8)/u, (-10/8)/(u**3), (3/8)/(u**5)
++    # This initialization becomes exact as l -> u
++    q = (3*l + u) / 4
++    r = (l + 3*u) / 4
++    E, old_E = inf, None
++    while not old_E or abs(old_E - E) > 1e-15:
++        old_E = E
++        LHS = np.array([
++            [l, l**3, l**5, 1],
++            [q, q**3, q**5, -1],
++            [r, r**3, r**5, 1],
++            [u, u**3, u**5, -1],
++        ])
++        a, b, c, E = np.linalg.solve(LHS, np.ones(4))
++        q, r = np.sqrt((-3*b + np.array([-1, 1]) * 
++                        sqrt(9*b**2 - 20*a*c)) / (10*c))
++    return float(a), float(b), float(c)
++
++degree_to_remez = {3: optimal_cubic, 5: optimal_quintic}
+ 
+ def optimal_composition(l, num_iters, degree=5, safety_factor_eps=0, cushion=0):
+-    """Return ``num_iters`` odd-polynomial coefficient sequences."""
+-    raise NotImplementedError("optimal_composition has been removed")
++    u = 1
++    assert 0 <= l <= u
++    if not degree in degree_to_remez:
++        raise ValueError(f"Degree {degree} not supported. Must be one of {list(degree_to_remez.keys())}.")
++    safety_factor = 1 + safety_factor_eps
++    coefficients = []
++    for iter in range(num_iters):
++        optimal_coeffs = degree_to_remez[degree](max(l, cushion*u), u)
++        # p(x) = x*h(x^2) where coefficients of h are given by optimal_coeffs
++        p = Polynomial.identity() * Polynomial(optimal_coeffs)(Polynomial.identity()**2)
++        if cushion*u > l:
++            # Due to cushioning, this may be centered around 1 with 
++            # respect to 0.024*u, u. Recenter it around 1 with respect 
++            # to l, u, meaning find c so that 1 - c*p(l) = c*p(u) - 1,
++            # and use c*p(x) instead of p(x) from now on
++            p *= 2/(p(l) + p(u))
++        # Optionally incorporate safety factor here:
++        # All singular values must at least lie in [0, u]
++        # safety_factor corrects for minor floating point errors to ensure this 
++        if iter < num_iters - 1:  # don't apply to last polynomial
++            p = p(Polynomial.identity() / safety_factor)
++        coefficients.append(p.coef[1::2])  # extract odd coefficients
++        l = p(l)
++        u = 2 - l
++    return coefficients
+ 
+ 
+ coeffs_list = optimal_composition(l=1e-3, num_iters=10, degree=5, safety_factor_eps=1e-2, cushion=0.02)
+@@ -35,5 +83,15 @@ coeffs_list = optimal_composition(l=1e-3, num_iters=10, degree=5, safety_factor_
+ 
+ @torch.compile
+ def PolarExpress(G: torch.Tensor, steps: int) -> torch.Tensor:
+-    """Return a finite tensor with the same shape as ``G`` without mutating it."""
+-    raise NotImplementedError("PolarExpress has been removed")
++    assert G.ndim >= 2
++    X = G.bfloat16()  # for speed
++    if G.size(-2) > G.size(-1): X = X.mT  # this reduces FLOPs
++    X = X / (X.norm(dim=(-2, -1), keepdim=True) * 1.01 + 1e-7)
++    hs = coeffs_list[:steps] + list( 
++        repeat(coeffs_list[-1], steps - len(coeffs_list)))
++    for a, b, c in hs:
++        A = X @ X.mT
++        B = b * A + c * A @ A
++        X = a * X + B @ X  # X <- aX + bX^3 + cX^5
++    if G.size(-2) > G.size(-1): X = X.mT
++    return X
+

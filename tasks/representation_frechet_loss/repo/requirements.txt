@@ -1,0 +1,14 @@
+einops
+gdown
+muon-optimizer
+torch
+torchvision
+rich
+diffusers
+opencv-python
+wandb
+matplotlib
+tabulate
+scipy
+timm
+pandas

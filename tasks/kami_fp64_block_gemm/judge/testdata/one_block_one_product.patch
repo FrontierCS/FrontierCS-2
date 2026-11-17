@@ -1,0 +1,18 @@
+--- a/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu
++++ b/src/block_gemm/KAMI/1d/fp64/block_gemm_1d_double_mma.cu
+@@ -41,6 +41,15 @@
+ 
+ __global__ void block_gemm_1d_double_mma(const double *A, const double *B, double *C, const double alpha, const double beta)
+ {
++    if (blockIdx.x != 0) return;
++    for (int idx = threadIdx.x; idx < M_BLOCK * N_BLOCK; idx += blockDim.x) {
++        int row = idx / N_BLOCK;
++        int col = idx % N_BLOCK;
++        double value = 0.0;
++        for (int k = 0; k < K_BLOCK; ++k)
++            value += A[row * K_BLOCK + k] * B[col * K_BLOCK + k];
++        C[idx] = alpha * (NUM_ITER * value) + beta * C[idx];
++    }
+ }
+ 
+ int main(int argc, char *argv[])

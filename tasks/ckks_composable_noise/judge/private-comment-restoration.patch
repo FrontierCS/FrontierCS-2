@@ -1,0 +1,264 @@
+--- a/estimator/estimator.go
++++ b/estimator/estimator.go
+@@ -206,6 +206,8 @@
+ 	}
+ }
+ 
++// AddAutomorphismNoise sets the noise to the key-switching noise, which is
++// (el[0], el[1]) = (el[0] + el[1] * sk + round(sum(e_i * qalphai)/P), round(1/2))
+ func (e Estimator) AddAutomorphismNoise(el *Element) {
+ 	e0, e1 := e.KeySwitchingNoise(el.Level, el.Value[1], e.Sk[0])
+ 	m0, m1 := el.Value[0], el.Value[1]
+@@ -219,6 +221,8 @@
+ 	el.Value[0], el.Value[1] = e.KeySwitchingNoise(el.Level, el.Value[1], e.Sk[0])
+ }
+ 
++// AddRelinearizationNoise adds the relinearization noise, which is
++// (el[0], el[1]) = (el[0] + el[2]*sk + round(sum(e_i qalphai)/P)), p[1] + round(1/2))
+ func (e Estimator) AddRelinearizationNoise(el *Element) {
+ 	e0, e1 := e.KeySwitchingNoise(el.Level, el.Value[2], e.Sk[1])
+ 	m0 := el.Value[0]
+--- a/estimator/experiments/power_basis/power_basis.go
++++ b/estimator/experiments/power_basis/power_basis.go
+@@ -102,3 +102,58 @@
+ 	f()
+ 	fmt.Println(time.Since(now))
+ }
++
++/*
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │  7.50 │  7.55 │  7.00 │
++│MAX Prec │ 45.00 │ 42.81 │ 45.00 │
++│AVG Prec │ 21.69 │ 21.69 │ 21.19 │
++│MED Prec │ 21.42 │ 21.42 │ 20.92 │
++│STD Prec │  2.47 │  2.47 │  2.47 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  2.19 │  0.00 │
++│MAX Err  │ 37.50 │ 37.45 │ 38.00 │
++│AVG Err  │ 23.31 │ 23.31 │ 23.81 │
++│MED Err  │ 23.58 │ 23.58 │ 24.08 │
++│STD Err  │  2.47 │  2.47 │  2.47 │
++└─────────┴───────┴───────┴───────┘
++
++
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │  7.69 │  7.48 │  7.19 │
++│MAX Prec │ 44.78 │ 45.00 │ 44.28 │
++│AVG Prec │ 21.69 │ 21.69 │ 21.19 │
++│MED Prec │ 21.43 │ 21.43 │ 20.93 │
++│STD Prec │  2.47 │  2.47 │  2.47 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.22 │  0.00 │  0.72 │
++│MAX Err  │ 37.31 │ 37.52 │ 37.81 │
++│AVG Err  │ 23.31 │ 23.31 │ 23.81 │
++│MED Err  │ 23.57 │ 23.57 │ 24.07 │
++│STD Err  │  2.47 │  2.47 │  2.47 │
++└─────────┴───────┴───────┴───────┘
++
++
++\begin{table}[]
++    \centering
++    \begin{tabular}{|c||c|c|c||c|c|c|}
++    \hline
++        & \multicolumn{3}{c||}{Predicted} & \multicolumn{3}{c|}{Actual}  \\
++        \hline
++        $\log_{2}$ & real & imag & l2 & real & imag & l2\\
++        \hline
++        Min &  7.50 &  7.55 &  7.00 &  7.69 &  7.48 &  7.19 \\
++        Max & 45.00 & 42.81 & 45.00 & 44.78 & 45.00 & 44.28 \\
++        AVG & 21.69 & 21.69 & 21.19 & 21.69 & 21.69 & 21.19 \\
++        MED & 21.42 & 21.42 & 20.92 & 21.43 & 21.43 & 20.93 \\
++        STD &  2.47 &  2.47 &  2.47 &  2.47 &  2.47 &  2.47 \\
++        \hline
++    \end{tabular}
++    \caption{$N=2^{16}$ and $\Delta = 2^{45}$}
++    \label{tab:my_label}
++\end{table}
++*/
+--- a/estimator/experiments/poly_eval/poly_eval.go
++++ b/estimator/experiments/poly_eval/poly_eval.go
+@@ -142,3 +142,58 @@
+ 	// Returns the polynomial.
+ 	return bignum.ChebyshevApproximation(FBig, interval)
+ }
++
++/*
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │ 25.71 │ 25.79 │ 25.21 │
++│MAX Prec │ 45.00 │ 45.00 │ 45.00 │
++│AVG Prec │ 30.67 │ 30.67 │ 30.17 │
++│MED Prec │ 30.37 │ 30.37 │ 29.87 │
++│STD Prec │  1.85 │  1.85 │  1.85 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  0.00 │  0.00 │
++│MAX Err  │ 19.29 │ 19.21 │ 19.79 │
++│AVG Err  │ 14.33 │ 14.33 │ 14.83 │
++│MED Err  │ 14.63 │ 14.63 │ 15.13 │
++│STD Err  │  1.85 │  1.85 │  1.85 │
++└─────────┴───────┴───────┴───────┘
++
++
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │ 25.76 │ 25.97 │ 25.26 │
++│MAX Prec │ 45.00 │ 45.00 │ 45.00 │
++│AVG Prec │ 30.67 │ 30.67 │ 30.17 │
++│MED Prec │ 30.37 │ 30.37 │ 29.87 │
++│STD Prec │  1.85 │  1.86 │  1.85 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  0.00 │  0.00 │
++│MAX Err  │ 19.24 │ 19.03 │ 19.74 │
++│AVG Err  │ 14.33 │ 14.33 │ 14.83 │
++│MED Err  │ 14.63 │ 14.63 │ 15.13 │
++│STD Err  │  1.85 │  1.86 │  1.85 │
++└─────────┴───────┴───────┴───────┘
++
++
++\begin{table}[]
++    \centering
++    \begin{tabular}{|c||c|c|c||c|c|c|}
++    \hline
++        & \multicolumn{3}{c||}{Predicted} & \multicolumn{3}{c|}{Actual}  \\
++        \hline
++        $\log_{2}$ & real & imag & l2 & real & imag & l2\\
++        \hline
++        Min & 25.71 & 25.79 & 25.21 & 25.76 & 25.97 & 25.26 \\
++        Max & 45.00 & 45.00 & 45.00 & 45.00 & 45.00 & 45.00 \\
++        AVG & 30.67 & 30.67 & 30.17 & 30.67 & 30.67 & 30.17 \\
++        MED & 30.37 & 30.37 & 29.87 & 30.37 & 30.37 & 29.87 \\
++        STD &  1.85 &  1.85 &  1.85 &  1.85 &  1.86 &  1.85 \\
++        \hline
++    \end{tabular}
++    \caption{$N=2^{16}$ and $\Delta = 2^{45}$}
++    \label{tab:my_label}
++\end{table}
++*/
+--- a/estimator/experiments/iterative_step/iterative_step.go
++++ b/estimator/experiments/iterative_step/iterative_step.go
+@@ -144,3 +144,58 @@
+ 
+ 	return
+ }
++
++/*
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │ 26.52 │ 26.55 │ 26.02 │
++│MAX Prec │ 45.00 │ 45.00 │ 45.00 │
++│AVG Prec │ 31.69 │ 31.69 │ 31.19 │
++│MED Prec │ 31.41 │ 31.41 │ 30.91 │
++│STD Prec │  1.90 │  1.90 │  1.90 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  0.00 │  0.00 │
++│MAX Err  │ 18.48 │ 18.45 │ 18.98 │
++│AVG Err  │ 13.31 │ 13.31 │ 13.81 │
++│MED Err  │ 13.59 │ 13.59 │ 14.09 │
++│STD Err  │  1.90 │  1.90 │  1.90 │
++└─────────┴───────┴───────┴───────┘
++
++
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │ 26.50 │ 26.37 │ 26.00 │
++│MAX Prec │ 45.00 │ 45.00 │ 45.00 │
++│AVG Prec │ 31.69 │ 31.69 │ 31.19 │
++│MED Prec │ 31.41 │ 31.41 │ 30.91 │
++│STD Prec │  1.90 │  1.90 │  1.90 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  0.00 │  0.00 │
++│MAX Err  │ 18.50 │ 18.63 │ 19.00 │
++│AVG Err  │ 13.31 │ 13.31 │ 13.81 │
++│MED Err  │ 13.59 │ 13.59 │ 14.09 │
++│STD Err  │  1.90 │  1.90 │  1.90 │
++└─────────┴───────┴───────┴───────┘
++
++
++\begin{table}[]
++    \centering
++    \begin{tabular}{|c||c|c|c||c|c|c|}
++    \hline
++        & \multicolumn{3}{c||}{Predicted} & \multicolumn{3}{c|}{Actual}  \\
++        \hline
++        $\log_{2}$ & real & imag & l2 & real & imag & l2\\
++        \hline
++        Min & 26.52 & 26.55 & 26.02 & 26.50 & 26.37 & 26.00 \\
++        Max & 45.00 & 45.00 & 45.00 & 45.00 & 45.00 & 45.00 \\
++        AVG & 31.69 & 31.69 & 31.19 & 31.69 & 31.69 & 31.19 \\
++        MED & 31.41 & 31.41 & 30.91 & 31.41 & 31.41 & 30.91 \\
++        STD &  1.90 &  1.90 &  1.90 &  1.90 &  1.90 &  1.90 \\
++        \hline
++    \end{tabular}
++    \caption{$N=2^{16}$ and $\Delta = 2^{45}$}
++    \label{tab:my_label}
++\end{table}
++*/
+--- a/estimator/experiments/mod1/mod1.go
++++ b/estimator/experiments/mod1/mod1.go
+@@ -183,3 +183,58 @@
+ 
+ 	return
+ }
++
++/*
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │ 30.28 │ 31.57 │ 29.78 │
++│MAX Prec │ 45.00 │ 45.00 │ 45.00 │
++│AVG Prec │ 36.59 │ 36.75 │ 36.09 │
++│MED Prec │ 36.40 │ 36.46 │ 35.90 │
++│STD Prec │  2.00 │  1.82 │  2.00 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  0.00 │  0.00 │
++│MAX Err  │ 14.72 │ 13.43 │ 15.22 │
++│AVG Err  │  8.41 │  8.25 │  8.91 │
++│MED Err  │  8.60 │  8.54 │  9.10 │
++│STD Err  │  2.00 │  1.82 │  2.00 │
++└─────────┴───────┴───────┴───────┘
++
++
++┌─────────┬───────┬───────┬───────┐
++│    Log2 │ REAL  │ IMAG  │ L2    │
++├─────────┼───────┼───────┼───────┤
++│MIN Prec │ 30.17 │ 31.69 │ 29.67 │
++│MAX Prec │ 45.00 │ 45.00 │ 45.00 │
++│AVG Prec │ 36.56 │ 36.75 │ 36.06 │
++│MED Prec │ 36.38 │ 36.46 │ 35.88 │
++│STD Prec │  1.99 │  1.82 │  1.99 │
++├─────────┼───────┼───────┼───────┤
++│MIN Err  │  0.00 │  0.00 │  0.00 │
++│MAX Err  │ 14.83 │ 13.31 │ 15.33 │
++│AVG Err  │  8.44 │  8.25 │  8.94 │
++│MED Err  │  8.62 │  8.54 │  9.12 │
++│STD Err  │  1.99 │  1.82 │  1.99 │
++└─────────┴───────┴───────┴───────┘
++
++
++\begin{table}[]
++    \centering
++    \begin{tabular}{|c||c|c|c||c|c|c|}
++    \hline
++        & \multicolumn{3}{c||}{Predicted} & \multicolumn{3}{c|}{Actual}  \\
++        \hline
++        $\log_{2}$ & real & imag & l2 & real & imag & l2\\
++        \hline
++        Min & 30.28 & 31.57 & 29.78 & 30.17 & 31.69 & 29.67 \\
++        Max & 45.00 & 45.00 & 45.00 & 45.00 & 45.00 & 45.00 \\
++        AVG & 36.59 & 36.75 & 36.09 & 36.56 & 36.75 & 36.06 \\
++        MED & 36.40 & 36.46 & 35.90 & 36.38 & 36.46 & 35.88 \\
++        STD &  2.00 &  1.82 &  2.00 &  1.99 &  1.82 &  1.99 \\
++        \hline
++    \end{tabular}
++    \caption{$N=2^{16}$ and $\Delta = 2^{45}$}
++    \label{tab:my_label}
++\end{table}
++*/

@@ -1,0 +1,665 @@
+diff --git a/src/diffusion/df_sample.py b/src/diffusion/df_sample.py
+index eec300b..43a298a 100644
+--- a/src/diffusion/df_sample.py
++++ b/src/diffusion/df_sample.py
+@@ -1,33 +1,144 @@
+-"""Public interfaces for latent-video sampling."""
++"""
++Diffusion Forcing Scheduling Utilities for NanoWM
++Adapted from: https://github.com/kwsong0113/diffusion-forcing-transformer
+ 
++This module provides scheduling matrix generation for Diffusion Forcing sampling,
++where each frame can have independent noise levels during the denoising process.
++"""
+ import numpy as np
+ import torch
+ from torch import Tensor
+ from typing import Optional, Tuple, Literal
+ 
+ 
++# =============================================================================
++# Scheduling Matrix Generation
++# =============================================================================
++
+ def generate_full_sequence_schedule(sampling_timesteps: int, horizon: int) -> np.ndarray:
+-    """Return a schedule for ``horizon`` generated frames."""
+-    raise NotImplementedError("Implement the sampling schedule")
++    """
++    Full sequence schedule: all tokens denoise together (traditional diffusion).
++    
++    Args:
++        sampling_timesteps: Number of DDIM sampling steps
++        horizon: Number of tokens (frames) to generate
++    
++    Returns:
++        schedule: [sampling_timesteps + 1, horizon] matrix of DDIM step indices
++    """
++    # Each row: all tokens have the same noise level
++    # Decreasing from sampling_timesteps to 0
++    return np.arange(sampling_timesteps, -1, -1)[:, None].repeat(horizon, axis=1)
+ 
+ 
+ def generate_pyramid_schedule(sampling_timesteps: int, horizon: int) -> np.ndarray:
+-    """Return a schedule for ``horizon`` generated frames."""
+-    raise NotImplementedError("Implement the sampling schedule")
++    """
++    Pyramid schedule: tokens denoise with staggered start times.
++    Earlier tokens start denoising first, later tokens are delayed.
++    
++    Args:
++        sampling_timesteps: Number of DDIM sampling steps
++        horizon: Number of tokens (frames) to generate
++    
++    Returns:
++        schedule: [total_steps, horizon] matrix of DDIM step indices (NOT actual timesteps)
++                  These indices will be converted to actual timesteps by ddim_idx_to_timestep()
++    
++    Example (sampling_timesteps=4, horizon=4, num_timesteps=1000):
++        DDIM indices returned by this function:
++            Step 0: [4, 4, 4, 4]  ->  After conversion: [999, 999, 999, 999]
++            Step 1: [3, 4, 4, 4]  ->  After conversion: [749, 999, 999, 999]
++            Step 2: [2, 3, 4, 4]  ->  After conversion: [499, 749, 999, 999]
++            Step 3: [1, 2, 3, 4]  ->  After conversion: [249, 499, 749, 999]
++            Step 4: [0, 1, 2, 3]  ->  After conversion: [ -1, 249, 499, 749]  # Frame 0 done
++            Step 5: [0, 0, 1, 2]  ->  After conversion: [ -1,  -1, 249, 499]
++            Step 6: [0, 0, 0, 1]  ->  After conversion: [ -1,  -1,  -1, 249]
++            Step 7: [0, 0, 0, 0]  ->  After conversion: [ -1,  -1,  -1,  -1]  # All done
++    """
++    # Total steps = sampling_timesteps + horizon - 1
++    # Each token's denoising is delayed by its index
++    total_steps = sampling_timesteps + horizon
++    schedule = np.zeros((total_steps, horizon), dtype=np.int64)
++    
++    for step in range(total_steps):
++        for token in range(horizon):
++            # Each token's denoising delay = token index
++            effective_step = step - token
++            if effective_step < 0:
++                schedule[step, token] = sampling_timesteps  # Not started yet, pure noise
++            elif effective_step >= sampling_timesteps:
++                schedule[step, token] = 0  # Completed
++            else:
++                schedule[step, token] = sampling_timesteps - effective_step
++    
++    return schedule
+ 
+ 
+ def generate_sequential_schedule(sampling_timesteps: int, horizon: int) -> np.ndarray:
+-    """Return a schedule for ``horizon`` generated frames."""
+-    raise NotImplementedError("Implement the sampling schedule")
++    """
++    Sequential schedule: fully denoise one frame before starting the next.
++    The self-forcing way to auto-regressively generate videos.
++    
++    Args:
++        sampling_timesteps: Number of DDIM sampling steps
++        horizon: Number of tokens (frames) to generate
++    
++    Returns:
++        schedule: [total_steps, horizon] matrix of DDIM step indices (NOT actual timesteps)
++                  These indices will be converted to actual timesteps by ddim_idx_to_timestep()
++    
++    Example (sampling_timesteps=4, horizon=3, num_timesteps=1000):
++        DDIM indices -> After conversion to actual timesteps:
++            Step 0:  [4, 4, 4]  ->  [999, 999, 999]  # All noise
++            Step 1:  [3, 4, 4]  ->  [749, 999, 999]  # Frame 0 denoising
++            Step 2:  [2, 4, 4]  ->  [499, 999, 999]
++            Step 3:  [1, 4, 4]  ->  [249, 999, 999]
++            Step 4:  [0, 4, 4]  ->  [ -1, 999, 999]  # Frame 0 done (-1 = clean)
++            Step 5:  [0, 3, 4]  ->  [ -1, 749, 999]  # Frame 1 starts
++            Step 6:  [0, 2, 4]  ->  [ -1, 499, 999]
++            Step 7:  [0, 1, 4]  ->  [ -1, 249, 999]
++            Step 8:  [0, 0, 4]  ->  [ -1,  -1, 999]  # Frame 1 done
++            Step 9:  [0, 0, 3]  ->  [ -1,  -1, 749]  # Frame 2 starts
++            Step 10: [0, 0, 2]  ->  [ -1,  -1, 499]
++            Step 11: [0, 0, 1]  ->  [ -1,  -1, 249]
++            Step 12: [0, 0, 0]  ->  [ -1,  -1,  -1]  # All done
++    
++    """
++    total_steps = sampling_timesteps * horizon + 1
++    schedule = np.full((total_steps, horizon), sampling_timesteps, dtype=np.int64)
++    
++    for token in range(horizon):
++        # Each token starts denoising after all previous tokens are done
++        start_step = token * sampling_timesteps
++        for s in range(sampling_timesteps + 1):
++            step_idx = start_step + s
++            if step_idx < total_steps:
++                # Set this token's noise level for all subsequent steps
++                schedule[step_idx:, token] = sampling_timesteps - s
++    
++    return schedule
+ 
+ 
+ def ddim_idx_to_timestep(
+-    indices: torch.Tensor,
+-    num_timesteps: int,
+-    sampling_timesteps: int,
++    indices: torch.Tensor, 
++    num_timesteps: int, 
++    sampling_timesteps: int
+ ) -> torch.Tensor:
+-    """Map schedule indices to diffusion timesteps."""
+-    raise NotImplementedError("Implement schedule conversion")
++    """
++    Convert DDIM step indices [0, sampling_timesteps] to actual timesteps [-1, num_timesteps-1].
++    -1 means fully clean (no noise).
++    
++    Args:
++        indices: DDIM step indices
++        num_timesteps: Total diffusion timesteps (e.g., 1000)
++        sampling_timesteps: Number of DDIM sampling steps (e.g., 50)
++    
++    Returns:
++        timesteps: Actual diffusion timesteps, -1 for clean frames
++    """
++    real_steps = torch.linspace(-1, num_timesteps - 1, sampling_timesteps + 1).long()
++    real_steps = real_steps.to(indices.device)
++    return real_steps[indices.clamp(0, sampling_timesteps)]
+ 
+ 
+ def generate_scheduling_matrix(
+@@ -37,9 +148,56 @@ def generate_scheduling_matrix(
+     mode: Literal["full_sequence", "pyramid", "sequential"] = "pyramid",
+     n_context_frames: int = 0,
+ ) -> torch.Tensor:
+-    """Return a timestep matrix for the requested latent-video shape."""
+-    raise NotImplementedError("Implement scheduling-matrix construction")
++    """
++    Generate the scheduling matrix for Diffusion Forcing sampling.
++    
++    Args:
++        num_frames: Number of frames to generate
++        num_timesteps: Total diffusion timesteps (e.g., 1000)
++        sampling_timesteps: Number of DDIM sampling steps (e.g., 50)
++        mode: Scheduling mode:
++            - "full_sequence": Traditional diffusion, all frames denoise together
++            - "pyramid": Pyramid schedule, frames overlap with 1-step delay (faster)
++            - "sequential": Fully serial, one frame completes before next starts (slowest)
++        n_context_frames: Number of context frames (will be set to -1 in schedule)
++    
++    Returns:
++        scheduling_matrix: [num_steps, num_frames] tensor of actual timesteps
++                          -1 indicates clean (no noise) frames
++    """
++    # Generate the schedule only for frames we actually need to denoise.
++    # Previously the schedule was generated for the full horizon and context frames were
++    # masked to -1 afterwards, which wasted n_context_frames * sampling_timesteps steps in
++    # sequential mode (context frames do not need denoising steps budgeted for them).
++    num_gen_frames = num_frames - n_context_frames
++    if num_gen_frames <= 0:
++        raise ValueError(
++            f"num_frames ({num_frames}) must be > n_context_frames ({n_context_frames})"
++        )
++
++    if mode == "full_sequence":
++        gen_matrix = generate_full_sequence_schedule(sampling_timesteps, num_gen_frames)
++    elif mode == "pyramid":
++        gen_matrix = generate_pyramid_schedule(sampling_timesteps, num_gen_frames)
++    elif mode == "sequential":
++        gen_matrix = generate_sequential_schedule(sampling_timesteps, num_gen_frames)
++    else:
++        raise ValueError(f"Unknown scheduling mode: {mode}")
++
++    # Prepend n_context_frames columns of DDIM idx 0 (→ actual timestep -1 = clean after conversion).
++    if n_context_frames > 0:
++        context_cols = np.zeros((gen_matrix.shape[0], n_context_frames), dtype=np.int64)
++        gen_matrix = np.concatenate([context_cols, gen_matrix], axis=1)
++
++    matrix = torch.from_numpy(gen_matrix).long()
++    matrix = ddim_idx_to_timestep(matrix, num_timesteps, sampling_timesteps)
++
++    return matrix
++
+ 
++# =============================================================================
++# Convenience Functions
++# =============================================================================
+ 
+ def dfot_sample(
+     diffusion,
+@@ -57,5 +215,96 @@ def dfot_sample(
+     n_generate_frames: Optional[int] = None,
+     history_stabilization_level: float = 0.0,
+ ) -> Tensor:
+-    """Return a sampled latent video with the requested ``shape``."""
+-    raise NotImplementedError("Implement the future-video sampler")
++    """
++    Convenience function for Diffusion Forcing sampling.
++
++    Args:
++        diffusion: NanoWM's GaussianDiffusion object
++        model: NanoWM model
++        shape: Output shape [B, F, C, H, W]
++        context: Optional context frames [B, F_ctx, C, H, W]
++        n_context_frames: Number of context frames
++        scheduling_mode: Scheduling mode:
++            - "full_sequence": Traditional diffusion, all frames denoise together
++            - "pyramid": Pyramid schedule with overlap (DFoT)
++            - "sequential": Fully serial, one frame at a time (Self-Forcing)
++        num_sampling_steps: Number of DDIM sampling steps
++        model_kwargs: Additional model arguments
++        device: Device to run on
++        progress: Whether to show progress bar
++        eta: DDIM eta parameter (0 = deterministic)
++        clip_denoised: Whether to clip denoised samples to [-1, 1]
++        n_generate_frames: If set, truncate the scheduling matrix once this many
++            frames (after context) are fully denoised. Useful in sliding-window
++            rollout where only the first generated frame is kept per step.
++        history_stabilization_level: DFoT stabilization level in [0, 1). 0 disables.
++
++    Returns:
++        samples: Generated video [B, F, C, H, W]
++
++    Example:
++        >>> from diffusion import create_diffusion
++        >>> from sample.utils.df_sample import dfot_sample
++        >>>
++        >>> diffusion = create_diffusion(timestep_respacing="50")
++        >>>
++        >>> # Unconditional generation with pyramid schedule
++        >>> samples = dfot_sample(
++        ...     diffusion, model,
++        ...     shape=(4, 16, 4, 32, 32),
++        ...     scheduling_mode="pyramid",
++        ... )
++        >>>
++        >>> # Video prediction with sequential (self-forcing)
++        >>> samples = dfot_sample(
++        ...     diffusion, model,
++        ...     shape=(4, 16, 4, 32, 32),
++        ...     context=first_4_frames,
++        ...     n_context_frames=4,
++        ...     scheduling_mode="sequential",  # One frame at a time
++        ... )
++    """
++    if device is None:
++        device = next(model.parameters()).device
++
++    batch_size, num_frames = shape[:2]
++
++    # Generate scheduling matrix
++    scheduling_matrix = generate_scheduling_matrix(
++        num_frames=num_frames,
++        num_timesteps=diffusion.num_timesteps,
++        sampling_timesteps=num_sampling_steps,
++        mode=scheduling_mode,
++        n_context_frames=n_context_frames,
++    )
++
++    # Early stopping: truncate schedule once target frames are fully denoised
++    if n_generate_frames is not None:
++        target_frame_idx = n_context_frames + n_generate_frames - 1
++        target_column = scheduling_matrix[:, target_frame_idx]
++        clean_rows = (target_column == -1).nonzero(as_tuple=True)[0]
++        if len(clean_rows) > 0:
++            truncate_at = clean_rows[0].item() + 1
++            scheduling_matrix = scheduling_matrix[:truncate_at]
++
++    if history_stabilization_level > 0.0 and n_context_frames > 0 and context is not None:
++        assert 0.0 < history_stabilization_level < 1.0
++        t_stab = int(round(history_stabilization_level * (diffusion.num_timesteps - 1)))
++        scheduling_matrix[:, :n_context_frames] = t_stab
++        t_stab_tensor = torch.full((batch_size, n_context_frames), t_stab, device=context.device, dtype=torch.long)
++        context = context.clone()
++        context[:, :n_context_frames] = diffusion.q_sample(context[:, :n_context_frames], t_stab_tensor)
++
++    # Call the diffusion's dfot_sample_loop
++    return diffusion.dfot_sample_loop(
++        model=model,
++        shape=shape,
++        scheduling_matrix=scheduling_matrix,
++        context=context,
++        n_context_frames=n_context_frames,
++        clip_denoised=clip_denoised,
++        model_kwargs=model_kwargs,
++        device=device,
++        progress=progress,
++        eta=eta,
++    )
+diff --git a/src/diffusion/flow_matching.py b/src/diffusion/flow_matching.py
+index dd82027..94df01c 100644
+--- a/src/diffusion/flow_matching.py
++++ b/src/diffusion/flow_matching.py
+@@ -180,8 +180,61 @@ class FlowMatching:
+         model_kwargs: Optional[dict] = None,
+         eta: float = 0.0,          # unused for FM (deterministic ODE)
+     ) -> dict:
+-        """Return ``sample`` and ``pred_xstart`` tensors matching ``x``."""
+-        raise NotImplementedError("Sampling transitions are outside this retained backend")
++        """
++        One Euler ODE step for flow matching with per-frame timesteps.
++
++        Replaces GaussianDiffusion.dfot_ddim_sample.  Arguments and return
++        value are identical so dfot_sample_loop works without changes.
++
++        curr_t, next_t : [B, F] integer timesteps, -1 = already clean.
++        """
++        if model_kwargs is None:
++            model_kwargs = {}
++        if denoised_fn is not None:
++            raise NotImplementedError("FlowMatching does not support denoised_fn.")
++        if clip_denoised:
++            raise NotImplementedError(
++                "FlowMatching does not support clip_denoised=True; pass "
++                "clip_denoised=False."
++            )
++
++        curr_t_clamped = curr_t.clamp(min=0)
++
++        # Predict vector field u_θ(x_t, t)
++        u = model(x, curr_t_clamped, **model_kwargs)
++
++        # Recover x_0 estimate (for logging / clip)
++        pred_xstart = self._predict_xstart(x, curr_t_clamped, u)
++
++        # Continuous time values
++        tau_curr = _t_to_tau(curr_t_clamped, self.num_timesteps)   # [B, F]
++
++        next_t_clamped = next_t.clamp(min=0)
++        tau_next = _t_to_tau(next_t_clamped, self.num_timesteps)   # [B, F]
++
++        # Where next_t == -1 (fully denoised), τ_next = 1.0 (fully clean in FM convention:
++        # τ=0 = pure noise, τ=1 = pure data, since τ = 1 - (t+1)/T).
++        # The old value of 0.0 was wrong — it made the last Euler step jump backward
++        # from τ≈0.98 to τ=0 (noise), undoing all the denoising progress.
++        clean_mask = (next_t < 0)                                   # [B, F]
++        tau_next = tau_next.masked_fill(clean_mask, 1.0)
++
++        # Broadcast to [B, F, C, H, W]
++        tau_curr_b = _broadcast_tau(tau_curr, x)
++        tau_next_b = _broadcast_tau(tau_next, x)
++
++        # Euler step: x_{t-1} = x_t + (τ_next - τ_curr) * u
++        sample = x + (tau_next_b - tau_curr_b) * u
++
++        # No update when curr_t == next_t (already at target noise level)
++        no_change = (curr_t == next_t)[..., None, None, None].expand_as(sample)
++        sample = torch.where(no_change, x, sample)
++
++        # No update when curr_t == -1 (already clean)
++        already_clean = (curr_t < 0)[..., None, None, None].expand_as(sample)
++        sample = torch.where(already_clean, x, sample)
++
++        return {"sample": sample, "pred_xstart": pred_xstart}
+ 
+     def dfot_sample_loop(
+         self,
+@@ -197,5 +250,61 @@ class FlowMatching:
+         progress: bool = False,
+         eta: float = 0.0,
+     ) -> torch.Tensor:
+-        """Return a latent-video tensor with ``shape``."""
+-        raise NotImplementedError("Sampling loops are outside this retained backend")
++        """
++        Generate video frames using Euler integration over the flow ODE.
++
++        Identical signature to GaussianDiffusion.dfot_sample_loop.
++        scheduling_matrix : [num_steps, F] integer timesteps (-1 = clean).
++        """
++        if device is None:
++            device = next(model.parameters()).device
++
++        batch_size, num_frames = shape[:2]
++
++        # Start from pure noise
++        img = torch.randn(*shape, device=device)
++
++        # Overwrite context frames with (possibly lightly-noised) observations
++        if context is not None and n_context_frames > 0:
++            img[:, :n_context_frames] = context[:, :n_context_frames]
++
++        # Context mask: 1 = keep as-is across steps
++        context_mask = torch.zeros(batch_size, num_frames, dtype=torch.long, device=device)
++        if n_context_frames > 0:
++            context_mask[:, :n_context_frames] = 1
++
++        scheduling_matrix = scheduling_matrix.to(device)
++        if scheduling_matrix.dim() == 2:
++            scheduling_matrix = scheduling_matrix.unsqueeze(1).expand(-1, batch_size, -1)
++
++        num_steps = scheduling_matrix.shape[0] - 1
++
++        iterator = range(num_steps)
++        if progress:
++            from tqdm.auto import tqdm
++            iterator = tqdm(iterator, desc="Flow Matching Sampling")
++
++        for step in iterator:
++            curr_t = scheduling_matrix[step]       # [B, F]
++            next_t = scheduling_matrix[step + 1]   # [B, F]
++
++            img_prev = img.clone()
++
++            with torch.no_grad():
++                out = self.dfot_ddim_sample(
++                    model,
++                    img,
++                    curr_t,
++                    next_t,
++                    clip_denoised=clip_denoised,
++                    denoised_fn=denoised_fn,
++                    model_kwargs=model_kwargs,
++                    eta=eta,
++                )
++                img = out["sample"]
++
++            # Restore context frames (they must not drift)
++            ctx_expanded = context_mask.view(batch_size, num_frames, *([1] * (len(shape) - 2)))
++            img = torch.where(ctx_expanded >= 1, img_prev, img)
++
++        return img
+diff --git a/src/diffusion/gaussian_diffusion.py b/src/diffusion/gaussian_diffusion.py
+index 49549d0..f0c799a 100644
+--- a/src/diffusion/gaussian_diffusion.py
++++ b/src/diffusion/gaussian_diffusion.py
+@@ -554,8 +554,43 @@ class GaussianDiffusion:
+         model_kwargs=None,
+         eta=0.0,
+     ):
+-        """Return ``sample`` and ``pred_xstart`` tensors matching ``x``."""
+-        raise NotImplementedError("Implement one denoising transition")
++        """
++        Sample x_{t-1} from the model using DDIM.
++        Same usage as p_sample().
++        """
++        out = self.p_mean_variance(
++            model,
++            x,
++            t,
++            clip_denoised=clip_denoised,
++            denoised_fn=denoised_fn,
++            model_kwargs=model_kwargs,
++        )
++        if cond_fn is not None:
++            out = self.condition_score(cond_fn, out, x, t, model_kwargs=model_kwargs)
++
++        # Usually our model outputs epsilon, but we re-derive it
++        # in case we used x_start or x_prev prediction.
++        eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"])
++
++        alpha_bar = _extract_into_tensor_2d(self.alphas_cumprod, t, x.shape)
++        alpha_bar_prev = _extract_into_tensor_2d(self.alphas_cumprod_prev, t, x.shape)
++        sigma = (
++            eta
++            * th.sqrt((1 - alpha_bar_prev) / (1 - alpha_bar))
++            * th.sqrt(1 - alpha_bar / alpha_bar_prev)
++        )
++        # Equation 12.
++        noise = th.randn_like(x)
++        mean_pred = (
++            out["pred_xstart"] * th.sqrt(alpha_bar_prev)
++            + th.sqrt(1 - alpha_bar_prev - sigma ** 2) * eps
++        )
++        nonzero_mask = (
++            (t != 0).float().view(-1, *([1] * (len(x.shape) - 1)))
++        )  # no noise when t == 0
++        sample = mean_pred + nonzero_mask * sigma * noise
++        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
+ 
+     def ddim_reverse_sample(
+         self,
+@@ -746,8 +781,81 @@ class GaussianDiffusion:
+         progress=False,
+         eta=0.0,
+     ):
+-        """Return a latent-video tensor with ``shape``."""
+-        raise NotImplementedError("Implement the sampling loop")
++        """
++        Generate samples using Diffusion Forcing with per-frame timesteps.
++        
++        :param model: the model module.
++        :param shape: the shape of the samples, (B, F, C, H, W).
++        :param scheduling_matrix: tensor of shape [num_steps, F] containing timesteps 
++                                  for each frame at each sampling step. Use -1 for clean frames.
++        :param context: optional context frames [B, n_context_frames, C, H, W].
++        :param n_context_frames: number of context frames (will be kept unchanged).
++        :param clip_denoised: if True, clip x_start predictions to [-1, 1].
++        :param denoised_fn: if not None, a function which applies to the x_start prediction.
++        :param cond_fn: if not None, a function which applies to the model output.
++        :param model_kwargs: if not None, a dict of extra keyword arguments to pass to the model.
++        :param device: if specified, the device to create the samples on.
++        :param progress: if True, show a tqdm progress bar.
++        :param eta: DDIM eta parameter (0 = deterministic).
++        :return: a non-differentiable batch of samples.
++        """
++        if device is None:
++            device = next(model.parameters()).device
++        
++        batch_size, num_frames = shape[:2]
++        
++        # Initialize with noise
++        img = th.randn(*shape, device=device)
++        
++        # Replace context frames with actual context
++        if context is not None and n_context_frames > 0:
++            img[:, :n_context_frames] = context[:, :n_context_frames]
++        
++        # Build context mask: 1 = context (clean), 0 = to generate
++        context_mask = th.zeros(batch_size, num_frames, dtype=th.long, device=device)
++        if n_context_frames > 0:
++            context_mask[:, :n_context_frames] = 1
++        
++        # Ensure scheduling_matrix is on the right device
++        scheduling_matrix = scheduling_matrix.to(device)
++        
++        # Expand scheduling matrix to batch dimension if needed: [num_steps, F] -> [num_steps, B, F]
++        if scheduling_matrix.dim() == 2:
++            scheduling_matrix = scheduling_matrix.unsqueeze(1).expand(-1, batch_size, -1)
++        
++        num_steps = scheduling_matrix.shape[0] - 1
++        
++        if progress:
++            from tqdm.auto import tqdm
++            iterator = tqdm(range(num_steps), desc="DFoT Sampling")
++        else:
++            iterator = range(num_steps)
++        
++        for step in iterator:
++            curr_t = scheduling_matrix[step]      # [B, F]
++            next_t = scheduling_matrix[step + 1]  # [B, F]
++            
++            # Backup for context restoration
++            img_prev = img.clone()
++            
++            with th.no_grad():
++                out = self.dfot_ddim_sample(
++                    model,
++                    img,
++                    curr_t,
++                    next_t,
++                    clip_denoised=clip_denoised,
++                    denoised_fn=denoised_fn,
++                    model_kwargs=model_kwargs,
++                    eta=eta,
++                )
++                img = out["sample"]
++            
++            # Restore context frames (they should not be updated)
++            context_mask_expanded = context_mask.view(batch_size, num_frames, *([1] * (len(shape) - 2)))
++            img = th.where(context_mask_expanded >= 1, img_prev, img)
++        
++        return img
+ 
+     def dfot_ddim_sample(
+         self,
+@@ -760,8 +868,77 @@ class GaussianDiffusion:
+         model_kwargs=None,
+         eta=0.0,
+     ):
+-        """Return ``sample`` and ``pred_xstart`` tensors matching ``x``."""
+-        raise NotImplementedError("Implement one denoising transition")
++        """
++        Sample x_{next_t} from x_{curr_t} using DDIM with per-frame timesteps.
++        
++        :param model: the model to sample from.
++        :param x: the current tensor at timestep curr_t, shape [B, F, C, H, W].
++        :param curr_t: current timesteps [B, F], -1 means clean.
++        :param next_t: target timesteps [B, F], -1 means clean.
++        :param clip_denoised: if True, clip the denoised signal into [-1, 1].
++        :param denoised_fn: if not None, a function which applies to the x_start prediction.
++        :param model_kwargs: if not None, a dict of extra keyword arguments to pass to the model.
++        :param eta: DDIM eta parameter.
++        :return: a dict containing 'sample' and 'pred_xstart'.
++        """
++        if model_kwargs is None:
++            model_kwargs = {}
++        
++        # Clamp timesteps to valid range for indexing
++        curr_t_clamped = curr_t.clamp(min=0)
++        
++        # Get model prediction using clamped timesteps
++        out = self.p_mean_variance(
++            model,
++            x,
++            curr_t_clamped,
++            clip_denoised=clip_denoised,
++            denoised_fn=denoised_fn,
++            model_kwargs=model_kwargs,
++        )
++
++        # Get epsilon from predicted x_start
++        eps = self._predict_eps_from_xstart(x, curr_t_clamped, out["pred_xstart"])
++        
++        # Get alpha values
++        alpha_bar = _extract_into_tensor_2d(self.alphas_cumprod, curr_t_clamped, x.shape)
++        
++        # For next_t, handle -1 (clean) case
++        next_t_clamped = next_t.clamp(min=0)
++        alpha_bar_next = _extract_into_tensor_2d(self.alphas_cumprod, next_t_clamped, x.shape)
++        # Where next_t == -1, set alpha_bar_next to 1 (fully clean)
++        # next_t shape: [B, F], need to expand to [B, F, 1, 1, 1] to match x: [B, F, C, H, W]
++        clean_mask = (next_t < 0).float()[..., None, None, None]  # [B, F, 1, 1, 1]
++        alpha_bar_next = th.where(clean_mask.bool().expand_as(alpha_bar_next), 
++                                   th.ones_like(alpha_bar_next), alpha_bar_next)
++        
++        # Compute sigma for DDIM
++        sigma = eta * th.sqrt((1 - alpha_bar_next) / (1 - alpha_bar)) * th.sqrt(1 - alpha_bar / alpha_bar_next)
++        # Where next_t == -1, sigma should be 0
++        sigma = th.where(clean_mask.bool().expand_as(sigma), th.zeros_like(sigma), sigma)
++        
++        # DDIM mean prediction (Equation 12)
++        mean_pred = (
++            out["pred_xstart"] * th.sqrt(alpha_bar_next)
++            + th.sqrt(1 - alpha_bar_next - sigma ** 2) * eps
++        )
++        
++        noise = th.randn_like(x)
++        # No noise when next_t == -1 (fully denoised)
++        # next_t shape: [B, F], expand to [B, F, 1, 1, 1]
++        nonzero_mask = (next_t >= 0).float()[..., None, None, None]
++        sample = mean_pred + nonzero_mask * sigma * noise
++        
++        # Only update frames where noise level actually changes
++        # If curr_t == next_t, keep original x
++        no_change_mask = (curr_t == next_t)[..., None, None, None]
++        sample = th.where(no_change_mask.expand_as(sample), x, sample)
++        
++        # If curr_t == -1 (already clean), keep original x
++        already_clean_mask = (curr_t < 0)[..., None, None, None]
++        sample = th.where(already_clean_mask.expand_as(sample), x, sample)
++        
++        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
+ 
+ 
+ def _extract_into_tensor(arr, timesteps, broadcast_shape):

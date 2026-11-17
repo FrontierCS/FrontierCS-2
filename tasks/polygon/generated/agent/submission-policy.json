@@ -1,0 +1,19 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "sql_testing/environment.py",
+      "sql_testing/smt/formula.py",
+      "sql_testing/smt/knowledgebase.py",
+      "sql_testing/smt/search_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

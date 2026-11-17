@@ -1,0 +1,45 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "src/learn.rs",
+      "src/dfta.rs",
+      "src/learn_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [
+      "std::time",
+      "option_env!",
+      "env!",
+      "unsafe",
+      "libc",
+      "asm!",
+      "frontier_",
+      "harbor_",
+      "process::exit",
+      "tcpstream",
+      "udpstream"
+    ],
+    "forbidden_content": [],
+    "ignore_case": true,
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 1800,
+    "solver_visible_metrics": [
+      "compression_ratio",
+      "runtime_seconds"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 600
+  }
+}

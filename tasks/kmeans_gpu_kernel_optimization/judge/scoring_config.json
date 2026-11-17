@@ -1,0 +1,113 @@
+{
+  "calibration_status": "reviewed_bands_pending_modal_validation",
+  "comparisons": {
+    "label_mismatch_fraction": {
+      "absolute_non_inferiority_band": 0.002,
+      "better": "lower"
+    },
+    "labeled_inertia": {
+      "better": "lower",
+      "relative_non_inferiority_band": 0.05
+    },
+    "lloyd_loop_latency_ms": {
+      "better": "lower",
+      "minimum_improvement_fraction": 0.0,
+      "strictly_better": true
+    }
+  },
+  "continuous_score": {
+    "bounded_range": [
+      0.0,
+      100.0
+    ],
+    "formula": "0 if geomean_speedup <= 1 else 100 * log(geomean_speedup) / (log(10) + log(geomean_speedup))",
+    "raw_metric": "geomean(naive_latency_ms / candidate_latency_ms)",
+    "reference_independent": true,
+    "speedup_midpoint": 10.0
+  },
+  "schema_version": "frontier.kmeans-gpu-kernel-scoring/v4",
+  "timed_iterations": 3,
+  "warmup_iterations": 2,
+  "workloads": [
+    {
+      "D": 64,
+      "K": 512,
+      "N": 200000,
+      "id": "w0",
+      "max_iters": 2
+    },
+    {
+      "D": 128,
+      "K": 1024,
+      "N": 300000,
+      "id": "w1",
+      "max_iters": 2
+    },
+    {
+      "D": 128,
+      "K": 1024,
+      "N": 500000,
+      "id": "w2",
+      "max_iters": 2
+    },
+    {
+      "D": 512,
+      "K": 512,
+      "N": 150000,
+      "id": "w3",
+      "max_iters": 2
+    },
+    {
+      "D": 64,
+      "K": 1024,
+      "N": 1000000,
+      "id": "w4",
+      "max_iters": 2
+    },
+    {
+      "D": 256,
+      "K": 2048,
+      "N": 300000,
+      "id": "w5",
+      "max_iters": 2
+    }
+  ],
+  "suites": {
+    "train": {
+      "workload_ids": [
+        "w0",
+        "w1",
+        "w2",
+        "w3"
+      ]
+    },
+    "eval": {
+      "workload_ids": [
+        "w0",
+        "w1",
+        "w2",
+        "w3",
+        "w4",
+        "w5"
+      ]
+    }
+  },
+  "seed_domains": {
+    "public": {
+      "base_seed": 20260701,
+      "workload_ids": [
+        "w0",
+        "w1",
+        "w2",
+        "w3"
+      ]
+    },
+    "hidden": {
+      "base_seed": 2026091301,
+      "workload_ids": [
+        "w4",
+        "w5"
+      ]
+    }
+  }
+}

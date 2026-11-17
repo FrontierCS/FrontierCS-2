@@ -1,0 +1,118 @@
+{
+  "dev": [
+    {
+      "cluster_size": 8,
+      "id": "dev-00",
+      "matrix": "matrices/Boeing__pwtk.mtx",
+      "matrix_bytes": 162185434,
+      "matrix_sha256": "b96f7a0d851ddd65d6a833dcd13f32bad39a273018e00163b890500316f48dfa",
+      "order": "orders/Boeing__pwtk__identity.txt",
+      "order_bytes": 1414316,
+      "order_sha256": "ee16b6397d565e534444d62aaf8ed8b28c30b27e6f862fa1693fe1bddc46037f"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-01",
+      "matrix": "matrices/Boeing__pwtk.mtx",
+      "matrix_bytes": 162185434,
+      "matrix_sha256": "b96f7a0d851ddd65d6a833dcd13f32bad39a273018e00163b890500316f48dfa",
+      "order": "orders/Boeing__pwtk__rcm_symmetric_structure.txt",
+      "order_bytes": 1414316,
+      "order_sha256": "a5402ba05d2ce903fa85f0d4157e70e89cec931e86fbd15f8ea9ff88cc47a5bc"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-02",
+      "matrix": "matrices/Bourchtein__atmosmodl.mtx",
+      "matrix_bytes": 219158210,
+      "matrix_sha256": "97c526810bffd9d4169bef06471a0c7c9c21cfc89e43eb4e4eea8afe46629d1d",
+      "order": "orders/Bourchtein__atmosmodl__identity.txt",
+      "order_bytes": 10806906,
+      "order_sha256": "38fbdc9ffcb2959e28f883c89c2924993802bb3a31dc33e64b3fc5840e3fbdf8"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-03",
+      "matrix": "matrices/Bourchtein__atmosmodl.mtx",
+      "matrix_bytes": 219158210,
+      "matrix_sha256": "97c526810bffd9d4169bef06471a0c7c9c21cfc89e43eb4e4eea8afe46629d1d",
+      "order": "orders/Bourchtein__atmosmodl__rcm_symmetric_structure.txt",
+      "order_bytes": 10806906,
+      "order_sha256": "77f55451516bd3f51cba1c76f8155cde98a37a7b80d6dd2663aec7830fc72943"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-04",
+      "matrix": "matrices/Williams__mac_econ_fwd500.mtx",
+      "matrix_bytes": 32904083,
+      "matrix_sha256": "af42fcc1e72ef6c470ed247358cd7dd19dcf4d3e05acd354087717b66abc1684",
+      "order": "orders/Williams__mac_econ_fwd500__identity.txt",
+      "order_bytes": 1334390,
+      "order_sha256": "b850048f70f1770e777a487f1d3458ad2689262c684b56c478c73e263fc47b02"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-05",
+      "matrix": "matrices/Williams__mac_econ_fwd500.mtx",
+      "matrix_bytes": 32904083,
+      "matrix_sha256": "af42fcc1e72ef6c470ed247358cd7dd19dcf4d3e05acd354087717b66abc1684",
+      "order": "orders/Williams__mac_econ_fwd500__rcm_symmetric_structure.txt",
+      "order_bytes": 1334390,
+      "order_sha256": "579226e2e89fa00ed92a3d1594432aace90e5f7cb99dc95f80b6fdfb048fc12c"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-06",
+      "matrix": "matrices/Williams__webbase-1M.mtx",
+      "matrix_bytes": 70667857,
+      "matrix_sha256": "2193ec714a68f5b8b036906001beaa77ec46adc7c39b19a626ad107d8989d264",
+      "order": "orders/Williams__webbase-1M__identity.txt",
+      "order_bytes": 6888930,
+      "order_sha256": "1dcfe660739f804aeb0ad72379968a421d8b9cbe82bf4939d88b99017eba2cfd"
+    },
+    {
+      "cluster_size": 8,
+      "id": "dev-07",
+      "matrix": "matrices/Williams__webbase-1M.mtx",
+      "matrix_bytes": 70667857,
+      "matrix_sha256": "2193ec714a68f5b8b036906001beaa77ec46adc7c39b19a626ad107d8989d264",
+      "order": "orders/Williams__webbase-1M__rcm_symmetric_structure.txt",
+      "order_bytes": 6888930,
+      "order_sha256": "6328f725912db6a84670d3b2f3a543e3c916787abee9a56b5b736b1050bc3b10"
+    }
+  ],
+  "final": [
+    {
+      "id": "final-00",
+      "matrix_sha256": "final-00"
+    },
+    {
+      "id": "final-01",
+      "matrix_sha256": "final-01"
+    },
+    {
+      "id": "final-02",
+      "matrix_sha256": "final-02"
+    },
+    {
+      "id": "final-03",
+      "matrix_sha256": "final-03"
+    },
+    {
+      "id": "final-04",
+      "matrix_sha256": "final-04"
+    },
+    {
+      "id": "final-05",
+      "matrix_sha256": "final-05"
+    },
+    {
+      "id": "final-06",
+      "matrix_sha256": "final-06"
+    },
+    {
+      "id": "final-07",
+      "matrix_sha256": "final-07"
+    }
+  ]
+}

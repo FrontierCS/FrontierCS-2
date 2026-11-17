@@ -1,0 +1,42 @@
+[package]
+name = "egg"
+version = "0.7.1"
+edition = "2018"
+license = "MIT"
+
+[features]
+reports = ["serde-1", "serde_json"]
+serde-1 = ["serde", "indexmap/serde-1", "hashbrown/serde", "vectorize"]
+test-explanations = []
+wasm-bindgen = ["instant/wasm-bindgen"]
+
+[dependencies]
+fxhash = "0.2"
+indexmap = "1"
+instant = "0.1"
+log = "0.4"
+once_cell = "1"
+symbolic_expressions = "5"
+thiserror = "1"
+
+[dependencies.hashbrown]
+version = "0.11"
+features = ["inline-more"]
+default-features = false
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
+optional = true
+
+[dependencies.serde_json]
+version = "1"
+optional = true
+
+[dependencies.smallvec]
+version = "1"
+features = ["union", "const_generics"]
+
+[dependencies.vectorize]
+version = "0.2"
+optional = true

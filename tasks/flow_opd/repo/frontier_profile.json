@@ -1,0 +1,48 @@
+{
+  "batches_per_epoch": 2,
+  "evaluation": [
+    {
+      "prompt": "A photorealistic image of a dog wearing a collar with a silver tag engraved \"Best Boy Max\", standing in a sunlit park with a leash gently resting on the grass. The dog looks playful and content, with the tag clearly visible.",
+      "seed": 242815175
+    },
+    {
+      "prompt": "A photorealistic image of a dog wearing a collar with a silver tag engraved \"Best Boy Max\", standing in a sunlit park with a leash gently resting on the grass. The dog looks playful and content, with the tag clearly visible.",
+      "seed": 3898421461
+    },
+    {
+      "prompt": "A realistic urban street scene with a parking meter displaying \"Out of Service\" on its screen, surrounded by parked cars and pedestrians passing by. The setting is a sunny afternoon, with shadows cast on the ground, emphasizing the inoperative parking meter.",
+      "seed": 299303041
+    },
+    {
+      "prompt": "A realistic urban street scene with a parking meter displaying \"Out of Service\" on its screen, surrounded by parked cars and pedestrians passing by. The setting is a sunny afternoon, with shadows cast on the ground, emphasizing the inoperative parking meter.",
+      "seed": 2663376510
+    },
+    {
+      "prompt": "A close-up of a wine bottle with an intricate label titled \"Dragons Breath 2023\", featuring a fiery dragon exhaling smoke over a vineyard at sunset, with elegant cursive text and a gold border.",
+      "seed": 3902826236
+    },
+    {
+      "prompt": "A close-up of a wine bottle with an intricate label titled \"Dragons Breath 2023\", featuring a fiery dragon exhaling smoke over a vineyard at sunset, with elegant cursive text and a gold border.",
+      "seed": 210498482
+    },
+    {
+      "prompt": "A realistic photograph of a construction site with caution tape stretched across, prominently displaying the words \"Danger Midlife Crisis Zone\", surrounded by hard hats, tools, and half-finished structures.",
+      "seed": 921965697
+    },
+    {
+      "prompt": "A realistic photograph of a construction site with caution tape stretched across, prominently displaying the words \"Danger Midlife Crisis Zone\", surrounded by hard hats, tools, and half-finished structures.",
+      "seed": 1405587211
+    }
+  ],
+  "evaluation_batch_size": 1,
+  "gradient_accumulation_steps": 1,
+  "max_runner_seconds": 900,
+  "mixed_precision": "bf16",
+  "qualification_status": "calibration",
+  "repeat_count": 2,
+  "train_batch_size": 4,
+  "train_microbatch_size": 4,
+  "training_seed": 260508063,
+  "updates": 8,
+  "dataset": "/workspace/repo/frontier_data"
+}

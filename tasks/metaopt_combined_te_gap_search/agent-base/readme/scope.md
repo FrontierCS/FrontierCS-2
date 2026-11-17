@@ -1,0 +1,1 @@
+- The patch may change at most 96 files. It may not delete files.

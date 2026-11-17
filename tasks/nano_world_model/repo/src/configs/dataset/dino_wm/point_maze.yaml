@@ -1,0 +1,10 @@
+defaults:
+  - dino_wm/base
+
+name: "point_maze"
+frame_interval: 5
+loader:
+  data_path: "${dataset_dir}/point_maze"
+  normalize_action: True
+spec:
+  action_dim: 2

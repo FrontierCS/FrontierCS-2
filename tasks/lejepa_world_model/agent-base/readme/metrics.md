@@ -1,0 +1,6 @@
+- `r2_zh`: Mean of r2_zh over the three development workloads.
+- `r2_hz`: Mean of r2_hz over the three development workloads.
+- `orth_err_normalized`: Mean of orth_err_normalized over the three development workloads.
+- `epsilon`: Mean of epsilon over the three development workloads.
+- `delta`: Mean of delta over the three development workloads.
+- `procrustes_mse`: Mean of procrustes_mse over the three development workloads.

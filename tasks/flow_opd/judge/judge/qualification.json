@@ -1,0 +1,51 @@
+{
+  "development_quota_qualified": true,
+  "formal_guard_gpu_validated": false,
+  "genuine_solver_trials": [],
+  "measured_naive_scores": null,
+  "measured_reference_scores": {
+    "development": 40.88341858482523,
+    "final": 61.77413273001508,
+    "train_grading": 70.625
+  },
+  "measured_runner_seconds": {
+    "final": 382.63469403299996,
+    "train": 403.91159359399995
+  },
+  "peak_control_memory_mb": null,
+  "peak_gpu_memory_mb": 52002.79541015625,
+  "profile": {
+    "path": "judge/profiles/ocr-u8.json",
+    "sha256": "9bafaa7be4feb3649e885177a0a4570aa5dc3dd1d52136e1c2a70f1983f8fa59"
+  },
+  "qualification_scope": "Full-suite runtime, frozen measured reference cache and resource arithmetic permit native reference preflight; formal guard, naive/difficulty and full delivery remain under validation.",
+  "reference_cache": {
+    "path": "judge/reference_cache.json",
+    "sha256": "e57f77b9adb6cc1048934b73a7430cd9516659de9938c14c658a555b9d2785ef"
+  },
+  "reference_repetitions": 1,
+  "release_ready": false,
+  "required_reviews": [
+    "Authorized Driver H100 80GB execution within the proposed 1800-second probe",
+    "Positive update budget, epoch/EMA boundary, group sizes and workload cardinality calibrated then frozen",
+    "Three genuine reference repetitions, OCR variability and attainable strict per-workload headroom",
+    "Naive versus reference reward measured; genuine platform-gateway solver trials",
+    "Original OCR filtering, broadcasting and KL normalization preserve source computation",
+    "Unused deterministic reference log probability compatibility exception qualified",
+    "Numerical transition validity, checkpoint reload, standard platform runtime and actual-trial behavior audited",
+    "Complete checkpoint state and reloaded EMA generation verified",
+    "CPU control and GPU peak memory measured including unoptimized reference",
+    "Offline image asset packaging, OCR archives and teacher redistribution reviewed",
+    "Positive judge quota and total GPU pools reconciled with actual runtime and cumulative budget",
+    "Provider-returned model and trial audit, reservation locks, owned cleanup"
+  ],
+  "schema_version": 1,
+  "status": "qualified",
+  "stop_before": null,
+  "strict_criterion_attainable": true,
+  "strict_criterion_limitation": "Reference ceiling rows (five train-grading, two final) require the candidate to also reach the scorer's maximum (C_w >= R_w, equality passes only there); every workload below the maximum still requires strictly higher reward (C_w > R_w). The per-workload criterion is therefore attainable while a reference copy still fails every non-ceiling row.",
+  "suite_manifest": {
+    "path": "judge/suite_manifest.json",
+    "sha256": "52f02e9634eef3c68a52cd3c7ac6b7c2f71636244e306a49a54a1485518268b6"
+  }
+}

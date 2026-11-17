@@ -1,0 +1,193 @@
+{
+  "mul_relin_rescale": {
+    "log_scale": 45,
+    "secret": "dense",
+    "log_q": [
+      55,
+      45
+    ],
+    "log_p": [
+      60
+    ],
+    "main_sha256": "86baa24a91bddaf9075ae47eb4291dfa1a8689768c7778556ffff24624641f11",
+    "paper_set": null
+  },
+  "power_basis": {
+    "log_scale": 55,
+    "secret": "dense",
+    "log_q": [
+      60,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55
+    ],
+    "log_p": [
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "c8492d8d3a1ed32c0a7bdcbfe3e33e00936a01edce8cc06e40127e6840545584",
+    "paper_set": "I"
+  },
+  "poly_eval": {
+    "log_scale": 55,
+    "secret": "dense",
+    "log_q": [
+      60,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55
+    ],
+    "log_p": [
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "4246f26414036ae5f6be71771f53aa16bcb4cd25e6d8fbe954d9767fb990f7a4",
+    "paper_set": "II"
+  },
+  "goldschmidt": {
+    "log_scale": 55,
+    "secret": "h192",
+    "log_q": [
+      60,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55
+    ],
+    "log_p": [
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "7bb3da99f41c4348be61e3811117e6ca5bbd086c4cfdbf81af0242a62419a570",
+    "paper_set": "III"
+  },
+  "coeffs_to_slots": {
+    "log_scale": 55,
+    "secret": "dense",
+    "log_q": [
+      55,
+      55,
+      55,
+      55,
+      55
+    ],
+    "log_p": [
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "47e1486d4ffd95969f61ed8105deaf0aae57d47ea058f02375cb7030a724371c",
+    "paper_set": "V"
+  },
+  "slots_to_coeffs": {
+    "log_scale": 45,
+    "secret": "dense",
+    "log_q": [
+      60,
+      45,
+      45,
+      45,
+      45
+    ],
+    "log_p": [
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "d2c50a8012120ab2e9671f1fa20965a9c95a00e7e365ba94992bf7d1613964ed",
+    "paper_set": "VI"
+  },
+  "iterative_step": {
+    "log_scale": 55,
+    "secret": "h192",
+    "log_q": [
+      60,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55,
+      55
+    ],
+    "log_p": [
+      61,
+      61,
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "5addde467ebe3e135f80d3b9d85bd0c70fb41c5ed65996a7a0a6ac52dedfb7f0",
+    "paper_set": "IV"
+  },
+  "mod1": {
+    "log_scale": 45,
+    "secret": "h192",
+    "log_q": [
+      55,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      60,
+      53
+    ],
+    "log_p": [
+      61,
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "42bca00003171c697d89a00fe8a668f8cb67811f1985c77f10227a613060888d",
+    "paper_set": "VII"
+  },
+  "bootstrapping": {
+    "log_scale": 45,
+    "secret": "dense",
+    "log_q": [
+      55,
+      45
+    ],
+    "log_p": [
+      61,
+      61,
+      61
+    ],
+    "main_sha256": "169149afd2259e2e27419e9a80ab2dcd4b74475fd79faa2e63743e17312441eb",
+    "paper_set": "VIII"
+  }
+}

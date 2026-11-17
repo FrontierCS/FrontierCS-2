@@ -1,0 +1,1 @@
+set(CONFIGURATION_SRC config.h)

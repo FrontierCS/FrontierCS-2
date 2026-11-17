@@ -1,0 +1,3 @@
+row_dep: unique(Visits.visit_id);
+         unique(Transactions.transaction_id)
+col_dep: Transactions.visit_id<-Visits.visit_id

@@ -1,0 +1,19 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": true,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "ivfpqlib/**/*.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [
+      "**/refivfpq.py",
+      "**/conftest.py"
+    ],
+    "max_changed_files": 80,
+    "max_patch_bytes": 2000000
+  },
+  "member": "solution.patch"
+}

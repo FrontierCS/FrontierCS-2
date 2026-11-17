@@ -1,0 +1,322 @@
+diff --git a/my_cond_branch_predictor.cc b/my_cond_branch_predictor.cc
+index 9782f1c..05fb259 100644
+--- a/my_cond_branch_predictor.cc
++++ b/my_cond_branch_predictor.cc
+@@ -18,6 +18,127 @@
+ 
+ namespace nRUNLTS {
+ 
++static constexpr int RBiasScale = 5;
++static constexpr size_t RBiasNBanks = 8;
++
++// Captures register correlation
++class RBias_ {
++    std::array<std::array<int8_t, 4096 / RBiasNBanks>, RBiasNBanks> array1; // 3KiB
++    std::array<std::array<int8_t, 2048 / RBiasNBanks>, RBiasNBanks> array2; // 1.5KiB
++    std::array<std::array<int8_t, 1024 / RBiasNBanks>, RBiasNBanks> array3; // 0.75KiB
++    size_t index1(uint64_t PR, int reg_number) const
++    {
++        return (PR + reg_number * 633) % array1[0].size();
++    }
++    size_t index2(uint64_t PR, int reg_number) const
++    {
++        return ((PR >> 2 ^ PR << 6) + reg_number) % array2[0].size();
++    }
++    size_t index3(uint64_t PR, int reg_number) const
++    {
++        return (PR ^ reg_number << 3) % array3[0].size();
++    }
++    void ctrupdate(int8_t& ctr, bool taken)
++    {
++        if (taken)
++            ctr < 31 && ++ctr;
++        if (not taken)
++            ctr > -32 && --ctr;
++    }
++
++public:
++    RBias_()
++        : array1 {}
++        , array2 {}
++        , array3 {}
++    {
++    }
++    int get(uint64_t PR, int reg_number) const
++    {
++        int sum = 0;
++        sum += array1.at(reg_number % RBiasNBanks).at(index1(PR, reg_number));
++        sum += array2.at(reg_number % RBiasNBanks).at(index2(PR, reg_number));
++        sum += array3.at(reg_number % RBiasNBanks).at(index3(PR, reg_number));
++        return sum;
++    }
++    void train(uint64_t PR, int reg_number, bool useful)
++    {
++        ctrupdate(array1.at(reg_number % RBiasNBanks).at(index1(PR, reg_number)), useful);
++        ctrupdate(array2.at(reg_number % RBiasNBanks).at(index2(PR, reg_number)), useful);
++        ctrupdate(array3.at(reg_number % RBiasNBanks).at(index3(PR, reg_number)), useful);
++    }
++    int storage_size() const
++    {
++        return (array1[0].size() + array2[0].size() + array3[0].size()) * 6 * RBiasNBanks;
++    }
++} RBias;
++
++// Usefulness of RBias, for each (PC, reg_number) pair
++class WR_ {
++    std::array<int8_t, 65 * 8> array1; // 0.381 KiB
++    std::array<int8_t, 65 * 8> array2; // 0.381 KiB
++    std::array<int8_t, 65 * 8> array3; // 0.381 KiB
++
++    // No bank interleave needed
++    size_t index1(uint64_t PC, int reg_number) const
++    {
++        return reg_number * 8 + (PC ^ PC >> 2) % 8;
++    }
++    size_t index2(uint64_t PC, int reg_number) const
++    {
++        return reg_number * 8 + (PC ^ PC >> 4) % 8;
++    }
++    size_t index3(uint64_t PC, int reg_number) const
++    {
++        return reg_number * 8 + (PC ^ PC >> 6) % 8;
++    }
++    void ctrupdate(int8_t& ctr, bool useful)
++    {
++        if (useful)
++            ctr < 31 && ++ctr;
++        if (not useful)
++            ctr > -32 && --ctr;
++    }
++
++public:
++    WR_()
++        : array1 {}
++        , array2 {}
++        , array3 {}
++    {
++        std::fill(array1.begin(), array1.end(), -8);
++        std::fill(array2.begin(), array2.end(), -8);
++        std::fill(array3.begin(), array3.end(), -8);
++    }
++    int get(uint64_t PC, int reg_number) const
++    {
++        int sum = 0;
++        sum += array1.at(index1(PC, reg_number));
++        sum += array2.at(index2(PC, reg_number));
++        sum += array3.at(index3(PC, reg_number));
++
++        return sum;
++    }
++    void train(uint64_t PC, int reg_number, bool useful)
++    {
++        ctrupdate(array1.at(index1(PC, reg_number)), useful);
++        ctrupdate(array2.at(index2(PC, reg_number)), useful);
++        ctrupdate(array3.at(index3(PC, reg_number)), useful);
++    }
++    int storage_size() const
++    {
++        return (array1.size() + array2.size() + array3.size()) * 6;
++    }
++} WR;
++
++struct RegFileStateEntry {
++    bool valid; // 1 bit
++    uint64_t payload; // union{last_write_instr_id, hashed_value} 14 bits
++    uint64_t ctr; // 8 bits
++};
++
++std::array<RegFileStateEntry, 65> RegFileState = {};
++
+ static constexpr int LogMaxNewlyCounters = 16;
+ 
+ static constexpr int NHIST = 23;
+@@ -599,6 +720,8 @@ struct cbp_hist_t {
+     tage_index_t ch_i;
+     std::array<tage_tag_t, 2> ch_t;
+     int perceptron_sum_at_prediction;
++    std::array<uint64_t, 65> register_values = {}; // Resister value, only best_reg is neeeded (max 8 registers)
++    int best_reg[RBiasNBanks];
+ 
+     // Begin Conventional Histories
+     uint64_t phist; // path history
+@@ -687,6 +810,10 @@ void print_predictorsize()
+ 
+     inter += 2 * CONFWIDTH; // the 2 counters in the choser
+ 
++    inter += RBias.storage_size();
++    inter += WR.storage_size();
++    inter += 65 * (1 + 14 + 8); // valid(1bit) + union{last_write_instr_id, hashed_value}(14bit), ctr(8bit)
++
+     printf("(TotalSC %d) ", inter);
+     STORAGESIZE += inter;
+ #endif
+@@ -844,6 +971,57 @@ public:
+         current_hist.phist = 0;
+     } // end init_histories
+ 
++    uint64_t make_reg_digest(size_t reg_num, uint64_t value)
++    {
++        constexpr size_t W = 12;
++        uint64_t hash = 0;
++        if (32 <= reg_num && reg_num < 64) { // FP
++            if (value >> 16 == 0) {
++                hash = value >> (16 - 3);
++            } else if (value >> 32 == 0) {
++                hash = value >> (32 - 6);
++            } else {
++                hash = value >> (64 - 9);
++            }
++        } else if (reg_num == 64) { // Flag
++            hash = value << 8 ^ value << 4 ^ value;
++        } else { // Int
++            int msb_one_pos = 0, msb_zero_pos = 0;
++            int lsb_one_pos = 0, lsb_zero_pos = 0;
++            for (int i = 0; i < 64; ++i) {
++                if (!((value >> i) & 1)) {
++                    lsb_one_pos = i;
++                    break;
++                }
++            }
++            for (int i = 0; i < 64; ++i) {
++                if ((value >> i) & 1) {
++                    lsb_zero_pos = i;
++                    break;
++                }
++            }
++            for (int i = 63; i >= 0; --i) {
++                if (!((value >> i) & 1)) {
++                    msb_one_pos = 63 - i;
++                    break;
++                }
++            }
++            for (int i = 63; i >= 0; --i) {
++                if ((value >> i) & 1) {
++                    msb_zero_pos = 63 - i;
++                    break;
++                }
++            }
++            hash = ((lsb_one_pos ^ lsb_zero_pos)) ^ ((msb_one_pos ^ msb_zero_pos) << 3) ^ (value << 6);
++        }
++        return hash % (1 << W);
++    }
++
++    uint64_t rbias_index(uint64_t PC, uint64_t reg_value) const
++    {
++        return (PC ^ PC >> 8 ^ reg_value) % 4096;
++    }
++
+     // the index functions for the tagged tables uses path history as in the OGEHL predictor
+     // F serves to mix path history: not very important impact
+     int F(uint64_t A, int size, int bank) const
+@@ -1021,9 +1199,34 @@ public:
+ #endif
+         pv.pred_inter = pv.tage_pred; // We don't use the Loop Predictor, thus, pred_inter is the same as tage_pred.
+ 
++        for (int bank = 0; bank < RBiasNBanks; ++bank) {
++            hist_to_use.best_reg[bank] = -1;
++        }
++
+         int extra_weight = 0;
+         pv.LSUM = 0;
+ 
++        for (int i = 0; i <= 64; ++i) {
++            if (hist_to_use.register_values[i] != -1 && WR.get(PC, i) >= 0) {
++                if (hist_to_use.best_reg[i % RBiasNBanks] == -1) {
++                    hist_to_use.best_reg[i % RBiasNBanks] = i;
++                } else if (WR.get(PC, hist_to_use.best_reg[i % RBiasNBanks]) < WR.get(PC, i)) {
++                    hist_to_use.best_reg[i % RBiasNBanks] = i;
++                }
++            }
++        }
++
++        for (int bank = 0; bank < RBiasNBanks; ++bank) {
++            int i = hist_to_use.best_reg[bank];
++            if (i == -1) {
++                continue;
++            }
++            assert(hist_to_use.register_values[i] != -1);
++            assert(WR.get(PC, i) >= 0);
++            pv.LSUM += RBias.get(rbias_index(PC, hist_to_use.register_values[i]), i) * RBiasScale;
++            extra_weight += RBiasScale;
++        }
++
+         // Compute the SC prediction
+         pv.LSUM += bias_components.get_weighted_value(PC, 0ull, { pv.HitBank, pv.HighConf, pv.LowConf, pv.LongestMatchPred, pv.alttaken, pv.pred_inter });
+         pv.LSUM += global_GEHL_components.get_weighted_value((PC << 1) + pv.pred_inter, hist_to_use.GHIST, {});
+@@ -1275,6 +1478,37 @@ public:
+             call_stack_GEHL_components.update(pv.LSUM, resolveDir, PC, hist_to_use.call_stack_hist(), {});
+             IMLI_components.update(pv.LSUM, resolveDir, PC, hist_to_use.BrIMLI, hist_to_use.TaIMLI);
+ 
++            bool bank_used[RBiasNBanks] = {};
++            // Train used bank
++            for (int bank = 0; bank < RBiasNBanks; ++bank) {
++                int i = hist_to_use.best_reg[bank];
++                if (i == -1) {
++                    continue;
++                }
++                assert(hist_to_use.register_values[i] != -1);
++                assert(WR.get(PC, i) >= 0);
++                int c = RBias.get(rbias_index(PC, hist_to_use.register_values[i]), i);
++                int XSUM = pv.LSUM - c * RBiasScale * (WR.get(PC, i) >= 0);
++                RBias.train(rbias_index(PC, hist_to_use.register_values[i]), i, resolveDir);
++                if ((XSUM + RBiasScale * c >= 0) != (XSUM >= 0)) {
++                    WR.train(PC, i, (c >= 0) == resolveDir);
++                }
++                bank_used[i % RBiasNBanks] = true;
++            }
++            // Explore
++            uint64_t start_pos = MYRANDOM() % 65;
++            for (int j = 0; j <= 64; ++j) {
++                uint64_t i = (j + start_pos) % 65;
++                if (hist_to_use.register_values[i] != -1 && not bank_used[i % RBiasNBanks]) {
++                    int c = RBias.get(rbias_index(PC, hist_to_use.register_values[i]), i);
++                    int XSUM = pv.LSUM - c * RBiasScale * (WR.get(PC, i) >= 0);
++                    RBias.train(rbias_index(PC, hist_to_use.register_values[i]), i, resolveDir);
++                    if ((XSUM + RBiasScale * c >= 0) != (XSUM >= 0)) {
++                        WR.train(PC, i, (c >= 0) == resolveDir);
++                    }
++                    bank_used[i % RBiasNBanks] = true;
++                }
++            }
+         }
+     }
+ 
+@@ -1367,6 +1601,10 @@ public:
+     // Trampoline functions
+     bool predict(uint64_t seq_no, uint8_t piece, UINT64 PC)
+     {
++        for (int i = 0; i <= 64; ++i) {
++            active_hist.register_values.at(i) = RegFileState.at(i).valid ? RegFileState.at(i).payload : -1; // hashed_value
++        }
++
+         pred_time_histories.emplace(get_unique_inst_id(seq_no, piece), active_hist); // checkpoint current hist
+         const bool pred_taken = predict_using_given_hist(seq_no, piece, PC, active_hist, true /*pred_time_predict*/);
+         pred_time_histories.at(get_unique_inst_id(seq_no, piece)).perceptron_sum_at_prediction = pv.LSUM;
+@@ -1390,9 +1628,27 @@ public:
+     }
+     void decode_notify(uint64_t seq_no, uint8_t piece, uint64_t dst_reg)
+     {
++        for (size_t i = 0; i < RegFileState.size(); ++i) {
++            if (not RegFileState.at(i).valid)
++                continue;
++            if (RegFileState.at(i).ctr == 255) {
++                RegFileState.at(i).valid = false; // too old. Invalidate.
++                RegFileState.at(i).ctr = 0;
++            } else {
++                ++RegFileState.at(i).ctr;
++            }
++        }
++
++        RegFileState.at(dst_reg).valid = false;
++        RegFileState.at(dst_reg).payload = (seq_no % 1024 << 4) | piece; // last_write_instr_id
++        RegFileState.at(dst_reg).ctr = 0;
+     }
+     void execute_notify(uint64_t seq_no, uint8_t piece, uint64_t dst_reg, uint64_t value)
+     {
++        if (RegFileState.at(dst_reg).valid == false && RegFileState.at(dst_reg).payload == ((seq_no % 1024 << 4) | piece)) {
++            RegFileState.at(dst_reg).valid = true;
++            RegFileState.at(dst_reg).payload = make_reg_digest(dst_reg, value); // hashed_value
++        }
+     }
+ };
+ // =================

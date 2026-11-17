@@ -1,0 +1,23 @@
+{
+  "edit_scope": {
+    "allow_delete": true,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "apps/hyper/butterfly_count_total.h",
+      "apps/hyper/butterfly_count.h",
+      "apps/hyper/butterfly_ecount.h",
+      "apps/hyper/butterfly_peel.h",
+      "apps/hyper/butterfly_epeel.h",
+      "apps/hyper/butterfly_putils.h",
+      "apps/hyper/butterfly_utils.h",
+      "apps/hyper/solver_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 1048576
+  },
+  "member": "solution.patch"
+}

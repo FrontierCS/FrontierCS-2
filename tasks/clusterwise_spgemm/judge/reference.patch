@@ -1,0 +1,3081 @@
+diff --git a/BIN.h b/BIN.h
+index 2f694a2..24b3b52 100644
+--- a/BIN.h
++++ b/BIN.h
+@@ -1,4 +1,270 @@
+ #ifndef BIN_H
+ #define BIN_H
+-// Unused row-wise binning alternative removed from the solver surface.
+-#endif
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <omp.h>
++#include <immintrin.h>
++#include <algorithm>
++
++#include "utility.h"
++
++/*
++ * Manage the group
++ * prepare hash table for each group
++ */
++template <class IT, class NT>
++class BIN
++{
++public:
++    BIN(): total_intprod(0), max_intprod(0), max_nz(0), thread_num(omp_get_max_threads())
++    {
++    }
++    BIN(IT rows): total_intprod(0), max_intprod(0), max_nz(0), thread_num(omp_get_max_threads()), min_ht_size(8)
++    {
++        assert(rows != 0);
++        row_nz = my_malloc<IT>(rows);
++        rows_offset = my_malloc<IT>(thread_num + 1);
++        bin_id = my_malloc<char>(rows);
++        local_hash_table_id = my_malloc<IT*>(thread_num);
++        for(IT i=0; i<thread_num; i+=1) local_hash_table_id[i] = nullptr;
++        local_hash_table_val = my_malloc<NT*>(thread_num);
++    }
++    BIN(IT rows, IT ht_size): total_intprod(0), max_intprod(0), max_nz(0), thread_num(omp_get_max_threads()), min_ht_size(ht_size)
++    {
++        assert(rows != 0);
++      num_rows = rows;
++        row_nz = my_malloc<IT>(rows);
++        rows_offset = my_malloc<IT>(thread_num + 1);
++        bin_id = my_malloc<char>(rows);
++        local_hash_table_id = my_malloc<IT*>(thread_num);
++        for(IT i=0; i<thread_num; i+=1) local_hash_table_id[i] = nullptr;
++        local_hash_table_val = my_malloc<NT*>(thread_num);
++    }
++    ~BIN() {
++        my_free<IT>(row_nz);
++        my_free<IT>(rows_offset);
++        my_free<char>(bin_id);
++        if(local_hash_table_id != nullptr) {
++#pragma omp parallel
++          {
++            int tid = omp_get_thread_num();
++            if(local_hash_table_id[tid] != nullptr) {
++              my_free<IT>(local_hash_table_id[tid]);
++              my_free<NT>(local_hash_table_val[tid]);
++            }
++          }
++          my_free<IT *>(local_hash_table_id);
++          my_free<NT *>(local_hash_table_val);
++        }
++    }
++
++    void set_max_bin(const IT *arpt, const IT *acol, const IT *brpt, const IT rows, const IT cols);
++    void set_min_bin(const IT rows, const IT cols);
++    void create_local_hash_table(const IT cols);
++    
++    void set_intprod_num(const IT *arpt, const IT *acol, const IT *brpt, const IT rows);
++    void set_rows_offset(const IT rows);
++    void set_bin_id(const IT rows, const IT cols, const IT min);
++
++    double calculate_size_in_gb();
++
++    long long int total_intprod;
++    IT max_intprod;
++    IT max_nz;
++    IT thread_num;
++    IT min_ht_size;
++  IT num_rows;
++
++    IT *row_nz; // the number of flop or non-zero elements of output matrix
++    IT *rows_offset; // offset for row_nz
++    char *bin_id;
++    IT **local_hash_table_id = nullptr;
++    NT **local_hash_table_val = nullptr;
++};
++
++// Function to calculate the size of the class instance in GB
++template <class IT, class NT>
++double BIN<IT, NT>::calculate_size_in_gb() {
++  // Sizes of primitive data types
++  double size = 0.0;
++
++  // 1. Total for the primitive types
++  size += sizeof(total_intprod);   // long long int
++  size += sizeof(max_intprod);     // IT (integer type)
++  size += sizeof(max_nz);          // IT (integer type)
++  size += sizeof(thread_num);      // IT (integer type)
++  size += sizeof(min_ht_size);     // IT (integer type)
++  size += sizeof(num_rows);        // IT (integer type)
++
++  // 2. Memory for the arrays
++  size += sizeof(IT) * num_rows;   // row_nz (IT array)
++  size += sizeof(IT) * (thread_num + 1); // rows_offset (IT array)
++  size += sizeof(char) * num_rows; // bin_id (char array)
++
++  // 3. Memory for the local hash tables
++  size += sizeof(IT*) * thread_num;  // local_hash_table_id (pointer array)
++  size += sizeof(NT*) * thread_num;  // local_hash_table_val (pointer array)
++
++  // todo: this is wrong
++  // 4. Memory for each thread's local hash table (pointers to IT arrays and NT arrays)
++  for (IT i = 0; i < thread_num; ++i) {
++    if (local_hash_table_id[i] != nullptr) {
++      size += sizeof(IT) * min_ht_size; // local_hash_table_id[i] (IT array)
++    }
++    if (local_hash_table_val[i] != nullptr) {
++      size += sizeof(NT) * min_ht_size; // local_hash_table_val[i] (NT array)
++    }
++  }
++
++  // Convert the size to GB (1 GB = 1024^3 bytes)
++//  size /= (1024.0 * 1024.0 * 1024.0);
++//  printf("Total size of BIN class instance: %.2f GB\n", size);
++  return size;
++}
++
++/* Count the number of intermediate products per row (= flop / 2) */
++template <class IT, class NT>
++inline void BIN<IT, NT>::set_intprod_num(const IT *arpt, const IT *acol, const IT *brpt, const IT rows)
++{
++#pragma omp parallel
++    {
++        IT each_int_prod = 0;
++#pragma omp for
++    // todo: need to loop over clusters
++        for (IT i = 0; i < rows; ++i) {
++            IT nz_per_row = 0;
++            // todo: union of col-ids of clusters
++            for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {    // col-ids of A
++                nz_per_row += brpt[acol[j] + 1] - brpt[acol[j]];    // summing up rows of B
++            }
++            row_nz[i] = nz_per_row;
++            each_int_prod += nz_per_row;
++        }
++#pragma omp atomic
++        total_intprod += each_int_prod;
++    }
++//    r1: 1, 2, 3
++//    size of row (1) in B
++//    size of row (2) in B
++//    size of row (3) in B
++//
++//    c1: r1, r2
++//    c1: 1, 2, 3, 4
++//    size of row (1) in B * 2
++//    size of row (2) in B * 2
++//    size of row (3) in B * 2
++//    size of row (4) in B * 2
++//    1: [a, b]
++//
++//    c1: r1, r2, r3
++//    c1: 1, 2, 3, 4
++//    size of row (1) in B * 3
++//    size of row (2) in B * 3
++//    size of row (3) in B * 3
++//    size of row (4) in B * 3
++}
++
++/* Get total number of floating operations and average
++ * then, use it for assigning rows to thread as the amount of work is equally distributed
++ */
++template <class IT, class NT>
++inline void BIN<IT, NT>::set_rows_offset(const IT rows)
++{
++    IT *ps_row_nz = my_malloc<IT>(rows + 1);
++
++    /* Prefix sum of #intermediate products */
++    scan(row_nz, ps_row_nz, rows + 1);
++
++    IT average_intprod = (total_intprod + thread_num - 1) / thread_num;
++    // long long int average_intprod = total_intprod / thread_num;
++
++    /* Search end point of each range */
++    rows_offset[0] = 0;
++#pragma omp parallel
++    {
++        int tid = omp_get_thread_num();
++        long long int end_itr = (lower_bound(ps_row_nz, ps_row_nz + rows + 1, average_intprod * (tid + 1))) - ps_row_nz;
++        rows_offset[tid + 1] = end_itr;
++        // if (tid == thread_num - 1) rows_offset[tid + 1] = rows;
++    }
++    rows_offset[thread_num] = rows;
++    my_free<IT>(ps_row_nz);
++}
++
++/*
++ * Prepare hash table for each thread_num
++ * once allocate memory space for hash table, the thread reuse it for each row
++ */
++template <class IT, class NT>
++inline void BIN<IT, NT>::create_local_hash_table(const IT cols)
++{
++//  long long int total_ht_size = 0;
++//#pragma omp parallel reduction(+ : total_ht_size)
++#pragma omp parallel
++    {
++        int tid = omp_get_thread_num();
++        IT ht_size = 0;
++        /* Get max size of hash table */
++        for (IT j = rows_offset[tid]; j < rows_offset[tid + 1]; ++j) {
++            if (ht_size < row_nz[j]) ht_size = row_nz[j];
++        }
++        /* the size of hash table is aligned as 2^n */
++        if (ht_size > 0) {
++            if (ht_size > cols) ht_size = cols;
++            int k = min_ht_size;
++            while (k < ht_size) {
++                k <<= 1;
++            }
++            ht_size = k;
++        }
++//        total_ht_size += ht_size;
++        local_hash_table_id[tid] = my_malloc<IT>(ht_size);
++        local_hash_table_val[tid] = my_malloc<NT>(ht_size);
++    }
++//    cout << "total ht size: " << total_ht_size << endl;
++}
++
++/*
++ * Precompute how many entries each row requires for the hash table
++ * the size is 2^bin_id
++ */
++template <class IT, class NT>
++inline void BIN<IT, NT>::set_bin_id(const IT rows, const IT cols, const IT min)
++{
++    IT i;
++#pragma omp parallel for
++    for (i = 0; i < rows; ++i) {
++        IT j;
++        IT nz_per_row = row_nz[i];
++        if (nz_per_row > cols) nz_per_row = cols;
++        if (nz_per_row == 0) {
++            bin_id[i] = 0;
++        }
++        else {
++            j = 0;
++            while (nz_per_row > (min << j)) {
++                j++;
++            }
++            bin_id[i] = j + 1;
++        }
++    }
++}
++
++/* grouping and preparing hash table based on the number of floating operations */
++template <class IT, class NT>
++inline void BIN<IT, NT>::set_max_bin(const IT *arpt, const IT *acol, const IT *brpt, const IT rows, const IT cols)
++{
++    set_intprod_num(arpt, acol, brpt, rows);
++    set_rows_offset(rows);
++    set_bin_id(rows, cols, min_ht_size);
++}
++
++/* Reset the size of hash table which each row requires */
++template <class IT, class NT>
++inline void BIN<IT, NT>::set_min_bin(const IT rows, const IT cols)
++{
++    set_bin_id(rows, cols, min_ht_size);
++}
++
++#endif
+\ No newline at end of file
+diff --git a/BIN_FlengthCluster.h b/BIN_FlengthCluster.h
+index 2927c82..06cae40 100644
+--- a/BIN_FlengthCluster.h
++++ b/BIN_FlengthCluster.h
+@@ -1,10 +1,250 @@
+ #ifndef BIN_FLENGTH_CLUSTER_H
+ #define BIN_FLENGTH_CLUSTER_H
+ 
+-// Public placeholder. Solvers may replace this file while preserving the
+-// entrypoint-facing contracts in CSR_FlengthCluster.h and
+-// hash_mult_flengthcluster.h.
++#include <stdio.h>
++#include <stdlib.h>
++#include <omp.h>
++#include <immintrin.h>
++#include <algorithm>
++
++#include "utility.h"
++
++/*
++ * Manage the group
++ * prepare hash table for each group
++ */
++template<class IT, class NT>
++class BIN_FlengthCluster {
++public:
++  BIN_FlengthCluster() : total_intprod(0), thread_num(omp_get_max_threads()) {
++  }
++
++  BIN_FlengthCluster(IT clusters, IT ht_size, IT cluster_size) : total_intprod(0), thread_num(omp_get_max_threads()),
++                                                          min_ht_size(ht_size), cluster_sz(cluster_size) {
++    num_clusters = clusters;
++    cluster_nz = my_malloc<IT>(num_clusters);
++    clusters_offset = my_malloc<IT>(thread_num + 1);
++    bin_id_cluster = my_malloc<char>(num_clusters);
++
++    local_hash_table_id = my_malloc<IT *>(thread_num);
++    for (IT i = 0; i < thread_num; i += 1) local_hash_table_id[i] = nullptr;
++
++    local_hash_table_val = my_malloc<NT *>(thread_num);
++
++    total_size = 0;
++    total_size += (num_clusters * sizeof(IT));             // cluster_nz
++    total_size += ((thread_num + 1) * sizeof(IT));         // clusters_offset
++    total_size += (num_clusters * sizeof(char));           // bin_id_cluster
++  }
++
++  ~BIN_FlengthCluster() {
++    my_free<IT>(cluster_nz);
++    my_free<IT>(clusters_offset);
++    my_free<char>(bin_id_cluster);
++    if (local_hash_table_id != nullptr) {
++#pragma omp parallel
++      {
++        int tid = omp_get_thread_num();
++        if (local_hash_table_id[tid] != nullptr) {
++          my_free<IT>(local_hash_table_id[tid]);
++          my_free<NT>(local_hash_table_val[tid]);
++        }
++      }
++      my_free<IT *>(local_hash_table_id);
++      my_free<NT *>(local_hash_table_val);
++    }
++  }
++
++  size_t calculate_size();
++  double calculate_size_in_gb();
++
++  void set_max_bin(const IT *arpt, const IT *acol, const IT *brpt, const IT cols);
++
++  void set_min_bin(const IT cols);
++
++  void create_local_hash_table(const IT cols);
++
++  void set_intprod_num(const IT *arpt, const IT *acol, const IT *brpt);
++
++  void set_clusters_offset();
++
++  void set_bin_id(const IT cols, const IT min);
++
++  int64_t total_intprod;
++  IT thread_num;
++  IT min_ht_size;
++  IT num_clusters;
++  IT cluster_sz;
++
++  IT *cluster_nz;                       // the number of flop or non-zero elements of output cluster-matrix
++  IT *clusters_offset;                  // offset for cluster_nz
++
++  char *bin_id_cluster;                 // hash table size for cluster[i] will be 2^bin_id_cluster[i]
++
++  IT **local_hash_table_id = nullptr;   // col-ids in the output matrix
++  NT **local_hash_table_val = nullptr;  // values in the output matrix
++
++  size_t total_size;
++};
++
++template<class IT, class NT>
++double BIN_FlengthCluster<IT, NT>::calculate_size_in_gb() {
++  size_t size_bytes = 0;
++
++  // cluster_nz
++  size_bytes += num_clusters * sizeof(IT);
++
++  // clusters_offset
++  size_bytes += (thread_num + 1) * sizeof(IT);
++
++  // bin_id_cluster
++  size_bytes += num_clusters * sizeof(char);
++
++  // local_hash_table_id pointers
++  size_bytes += thread_num * sizeof(IT *);
++
++  // local_hash_table_val pointers
++  size_bytes += thread_num * sizeof(NT *);
++
++  // Add per-thread allocations (if they exist)
++  for (IT i = 0; i < thread_num; ++i) {
++    if (local_hash_table_id && local_hash_table_id[i]) {
++      size_bytes += min_ht_size * sizeof(IT);  // assuming same size across threads
++    }
++    if (local_hash_table_val && local_hash_table_val[i]) {
++      size_bytes += min_ht_size * sizeof(NT);  // assuming same size across threads
++    }
++  }
++
++//  // Store total
++//  total_size = size_bytes;
++
++  // Convert to GB (1 GB = 2^30 bytes)
++//  return static_cast<double>(size_bytes) / (1024.0 * 1024.0 * 1024.0);
++  return static_cast<double>(size_bytes);
++}
++
++//! calculate size in Bytes
++template <class IT, class NT>
++size_t BIN_FlengthCluster<IT, NT>::calculate_size() {
++  return total_size;
++}
++
++/* Count the number of intermediate products per cluster (= flop / 2) */
++template<class IT, class NT>
++inline void BIN_FlengthCluster<IT, NT>::set_intprod_num(const IT *arpt, const IT *acol, const IT *brpt) {
++#pragma omp parallel
++  {
++    IT each_int_prod = 0;
++#pragma omp for
++    for (IT i = 0; i < num_clusters; ++i) {                       // loop over clusters
++      IT nz_per_cluster = 0;
++      for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {                // col-ids of i-th cluster
++        nz_per_cluster += (brpt[acol[j] + 1] - brpt[acol[j]]);    // summing up rows of B
++      }
++      cluster_nz[i] = nz_per_cluster;                             // cluster_nz is populated by flops
++      each_int_prod += (nz_per_cluster * cluster_sz);
++    }
++#pragma omp atomic
++    total_intprod += each_int_prod;
++  }
++}
++
++/* Get total number of floating operations and average
++ * then, use it for assigning clusters to thread as the amount of work is equally distributed
++ */
++template<class IT, class NT>
++inline void BIN_FlengthCluster<IT, NT>::set_clusters_offset() {
++  // cluster_nz only counts the sum of rows of B
++  // so, prefix sum of intermediate products performed on: (cluster_nz[i] * cluster_sz)
++  IT *ps_cluster_nz = my_malloc<IT>(num_clusters + 1);
++  scan(cluster_nz, ps_cluster_nz, cluster_sz, num_clusters + 1);
++
++  IT average_intprod = (total_intprod + thread_num - 1) / thread_num;
++
++  /* Search end point of each range */
++  clusters_offset[0] = 0;
++#pragma omp parallel
++  {
++    int tid = omp_get_thread_num();
++    long long int end_itr =
++        (lower_bound(ps_cluster_nz, ps_cluster_nz + num_clusters + 1, average_intprod * (tid + 1))) - ps_cluster_nz;
++    clusters_offset[tid + 1] = end_itr;
++  }
++  clusters_offset[thread_num] = num_clusters;
++  my_free<IT>(ps_cluster_nz);
++}
++
++/*
++ * Prepare hash table for each thread_num
++ * once allocate memory space for hash table, the thread reuse it for each cluster
++ * hash table size is determined by the cluster_nz values
++ */
++template<class IT, class NT>
++inline void BIN_FlengthCluster<IT, NT>::create_local_hash_table(const IT cols) {
++#pragma omp parallel
++  {
++    int tid = omp_get_thread_num();
++    IT ht_size = 0;
++
++    /* Get max size of hash table */
++    for (IT j = clusters_offset[tid]; j < clusters_offset[tid + 1]; ++j) {
++      if (ht_size < cluster_nz[j]) ht_size = cluster_nz[j];
++    }
++    /* the size of hash table is aligned as 2^n */
++    if (ht_size > 0) {
++      if (ht_size > cols) ht_size = cols;
++      int k = min_ht_size;
++      while (k < ht_size) {
++        k <<= 1;
++      }
++      ht_size = k;
++    }
++
++    local_hash_table_id[tid] = my_malloc<IT>(ht_size);
++    local_hash_table_val[tid] = my_malloc<NT>(ht_size * cluster_sz);
++
++    total_size += (ht_size * sizeof(IT));                   // local_hash_table_id
++    total_size += ((ht_size * cluster_sz) * sizeof(NT));    // local_hash_table_val
++  }
++}
++
++/*
++ * Precompute how many entries each row requires for the hash table
++ * the size is 2^bin_id_cluster
++ */
++template<class IT, class NT>
++inline void BIN_FlengthCluster<IT, NT>::set_bin_id(const IT cols, const IT min) {
++  IT i;
++#pragma omp parallel for
++  for (i = 0; i < num_clusters; ++i) {
++    IT j;
++    IT nz_per_cluster = cluster_nz[i];
++    if (nz_per_cluster > cols) nz_per_cluster = cols;
++    if (nz_per_cluster == 0) {
++      bin_id_cluster[i] = 0;
++    } else {
++      j = 0;
++      while (nz_per_cluster > (min << j)) {
++        j++;
++      }
++      bin_id_cluster[i] = j + 1;
++    }
++  }
++}
++
++/* grouping and preparing hash table based on the number of floating operations */
++template<class IT, class NT>
++inline void BIN_FlengthCluster<IT, NT>::set_max_bin(const IT *arpt, const IT *acol, const IT *brpt, const IT cols) {
++  set_intprod_num(arpt, acol, brpt);
++  set_clusters_offset();
++  set_bin_id(cols, min_ht_size);
++}
++
++/* Reset the size of hash table which each row requires */
+ template<class IT, class NT>
+-class BIN_FlengthCluster {};
++inline void BIN_FlengthCluster<IT, NT>::set_min_bin(const IT cols) {
++  set_bin_id(cols, min_ht_size);
++}
+ 
+-#endif
++#endif  //BIN_FLENGTH_CLUSTER_H
+\ No newline at end of file
+diff --git a/CSR_FlengthCluster.h b/CSR_FlengthCluster.h
+index 97f4427..da1deb8 100644
+--- a/CSR_FlengthCluster.h
++++ b/CSR_FlengthCluster.h
+@@ -1,29 +1,210 @@
+ #ifndef _CSR_FLENGTH_CLUSTER_H_
+ #define _CSR_FLENGTH_CLUSTER_H_
+ 
+-#include <stdexcept>
++#include <iostream>
++#include <vector>
++#include <map>
++#include <set>
++#include <cstdlib>
++#include <algorithm>
++#include <cassert>
+ #include "CSR.h"
+ 
++#include <tbb/scalable_allocator.h>
++
++#include <random>
++#include "utility.h"
++
++using namespace std;
++
++/*
++Class:  CSR_FlengthCluster
++Author: Raqib
++
++Simple container for sparse matrix in fixed-length clustered CSR format
++ - Construct from CSR
++*/
++
+ template<class IT, class NT>
+ class CSR_FlengthCluster {
+ public:
+-  CSR_FlengthCluster() : csr_rows(0), rows(0), cols(0), cluster_sz(0), nnzc(0), rowptr(nullptr), colids(nullptr), values(nullptr) {}
+-  CSR_FlengthCluster(const CSR<IT, NT> &, IT) : CSR_FlengthCluster() {
+-    throw std::logic_error("CSR_FlengthCluster is not implemented");
+-  }
++  CSR_FlengthCluster() : nnzc(0), rows(0), cols(0) {}
++
++  CSR_FlengthCluster(const CSR<IT, NT> &csr, IT cluster_size);
++
++  NT calculate_average_fullness(const NT eps = 0.000001f);      // calculate how many colids.vectors<> are fully occupied by value
++  NT calculate_average_fill_factor(const NT eps = 0.000001f);   // calculate ratio of count(not_empty(this.values)) / length(this.values)
++  NT calculate_fill_factor(const IT cluster_id, const NT eps = 0.000001f);  // calculate ratio of count(not_empty(this.values[cluster_id])) / length(this.values[cluster_id])
++  double calculate_size();    // calculate size in Bytes
++
++  void print_rows(IT start, IT end);  // Print CSR_FlengthCluster rows
++
+   void make_empty() {
+-    if (rowptr) my_free<IT>(rowptr);
+-    if (colids) my_free<IT>(colids);
+-    if (values) my_free<NT>(values);
+-    rowptr = nullptr; colids = nullptr; values = nullptr;
+-    csr_rows = rows = cols = cluster_sz = nnzc = 0;
+-  }
+-  ~CSR_FlengthCluster() { make_empty(); }
+-  bool isEmpty() { return nnzc == 0; }
+-
+-  IT csr_rows, rows, cols, cluster_sz, nnzc;
+-  IT *rowptr, *colids;
+-  NT *values;
++    if (nnzc > 0) {
++      my_free<IT>(colids);
++      my_free<NT>(values);
++      nnzc = 0;
++    }
++    if (rows > 0) {
++      my_free<IT>(rowptr);
++      rows = 0;
++    }
++    cols = 0;
++  }
++
++  ~CSR_FlengthCluster() {
++    make_empty();
++  }
++
++  bool isEmpty() {
++    return (nnzc == 0);
++  }
++
++  void Sorted();
++
++  IT csr_rows;    // number of rows in the original CSR format
++  IT rows;        // number of rows in the clustered CSR format (i.e., number of clusters)
++  IT cols;        // number of columns (max) in the original CSR format
++  IT cluster_sz;  // number of rows folded into a cluster
++  IT nnzc;        // sum of unique columns in each cluster (similar to nnz in CSR format, but should be larger or equal compared to CSR.nnz)
++
++  IT *rowptr;     // row pointer
++  IT *colids;     // unique column-ids in each cluster
++  NT *values;     // store values
++                  //  - for column-id at i-th cluster, values will be stored
++                  //  - from (i * cluster_sz) to {(i * cluster_sz) + cluster_sz} in this array.
+ };
+ 
+-#endif
++//! Construct a CSR_FlengthCluster object from a CSR
++template<class IT, class NT>
++CSR_FlengthCluster<IT, NT>::CSR_FlengthCluster(const CSR<IT, NT> &csr, IT cluster_size): cols(csr.cols), cluster_sz(cluster_size) {
++  csr_rows = csr.rows;
++  rows = csr.rows / cluster_size;
++  if (csr.rows % cluster_size) rows += 1;
++
++  rowptr = my_malloc<IT>(rows + 1);
++
++  nnzc = 0;
++  IT *work = my_malloc<IT>(rows);     // store number of columns per-cluster
++  std::fill(work, work + rows, (IT) 0);        // initilized to zero
++  vector < map < IT, vector < NT >, less < IT>> > col_map(rows);    // for each cluster map column-ids to values
++
++  for (IT r = 0; r < csr.rows; r += cluster_sz) {                           // loop over clusters
++    IT cluster_id = r / cluster_sz;
++    for (IT i = r; i < r + cluster_sz && i < csr.rows; i += 1) {            // loop over CSR.rows
++      for (IT j = csr.rowptr[i]; j < csr.rowptr[i + 1]; j += 1) {           // loop over columns of CSR.rows[i]
++        IT t_acol = csr.colids[j];    // col-id
++        NT t_aval = csr.values[j];    // value
++        if (col_map[cluster_id].find(t_acol) == col_map[cluster_id].end()) {
++          col_map[cluster_id][t_acol] = vector < NT > (cluster_size, 0.0);
++        }
++        col_map[cluster_id][t_acol][i - r] = t_aval;
++      }
++    }
++    nnzc += col_map[cluster_id].size();
++    work[cluster_id] = col_map[cluster_id].size();
++  }
++
++  colids = my_malloc<IT>(nnzc);
++  values = my_malloc<NT>(nnzc * cluster_sz);
++
++  rowptr[rows] = CumulativeSum(work, rows);    // cumulative sum of work
++  copy(work, work + rows, rowptr);
++
++  IT last;
++  for (IT i = 0; i < rows; i += 1) {                        // loop over cluster-ids
++    for (auto it: col_map[i]) {                             // loop over columns of cluster[i]
++      colids[last = work[i]++] = it.first;
++      for (IT j = 0; j < cluster_sz; j += 1) {                     // loop over values of col-id last
++        values[(last * cluster_sz) + j] = it.second[j];
++      }
++    }
++  }
++
++  my_free<IT>(work);      // free memory
++}
++
++//! calculate how many colids.vectors<> are fully occupied by value
++template <class IT, class NT>
++NT CSR_FlengthCluster<IT,NT>::calculate_average_fullness(const NT eps)
++{
++  NT up = 0.0;
++//  IT down = nnzc;
++//#pragma omp parallel for
++  for (IT i = 0; i < rows; ++i)
++  {
++    for (IT j = rowptr[i]; j < rowptr[i + 1]; ++j) {
++      IT k = 0;
++      while(k < cluster_sz) {
++        if(fabs(values[(j * cluster_sz) + k] - 0.0f) < eps) break;
++        k += 1;
++      }
++      if (k == cluster_sz) up += 1;
++//      down += 1;
++    }
++  }
++  if(nnzc > 0) up /= nnzc;
++  return up;
++}
++
++//! calculate ratio of count(not_empty(this.values)) / length(this.values)
++template <class IT, class NT>
++NT CSR_FlengthCluster<IT,NT>::calculate_average_fill_factor(const NT eps)
++{
++  NT non_empty = 0.0;
++//#pragma omp parallel for
++  for (IT i = 0; i < rows; ++i)
++  {
++    for (IT j = rowptr[i]; j < rowptr[i + 1]; ++j) {
++      for (IT k = 0; k < cluster_sz; ++k) {
++        if(fabs(values[(j * cluster_sz) + k] - 0.0f) >= eps) non_empty += 1;
++      }
++    }
++  }
++  if(nnzc > 0) non_empty /= (nnzc * cluster_sz);
++  return non_empty;
++}
++
++//! calculate ratio of count(not_empty(this.values[cluster_id])) / length(this.values[cluster_id])
++template <class IT, class NT>
++NT CSR_FlengthCluster<IT,NT>::calculate_fill_factor(const IT cluster_id, const NT eps)
++{
++  NT non_empty = 0.0;
++//#pragma omp parallel for
++  for (IT j = rowptr[cluster_id]; j < rowptr[cluster_id + 1]; ++j) {
++    for (IT k = 0; k < cluster_sz; ++k) {
++      if(fabs(values[(j * cluster_sz) + k] - 0.0f) >= eps) non_empty += 1;
++    }
++  }
++  IT num_cols = rowptr[cluster_id + 1] - rowptr[cluster_id];
++  if(num_cols > 0) non_empty /= (num_cols * cluster_sz);
++  return non_empty;
++}
++
++//! calculate size in Bytes
++template <class IT, class NT>
++double CSR_FlengthCluster<IT,NT>::calculate_size() {
++  size_t total = 0;
++  total += ((rows + 1) * sizeof(IT));             // rowptr
++  total += (nnzc * sizeof(IT));                   // colids
++  total += ((nnzc * cluster_sz) * sizeof(NT));    // values
++  return static_cast<double>(total);
++}
++
++//! Print rows of CSR_FlengthCluster
++template<class IT, class NT>
++void CSR_FlengthCluster<IT, NT>::print_rows(IT start, IT end) {
++  for (IT i = start; i < end; ++i) {
++    cout << i << ":";
++    for (IT j = rowptr[i]; j < rowptr[i + 1]; ++j) {
++      cout << " " << colids[j] << "(";
++      for (IT k = 0; k < cluster_sz; k += 1) {
++        cout << values[(j * cluster_sz) + k] << " ";
++      }
++      cout << ")";
++    }
++    cout << endl;
++  }
++}
++
++#endif  //_CSR_FLENGTH_CLUSTER_H_
+diff --git a/CSR_VlengthCluster.h b/CSR_VlengthCluster.h
+index 8eecde8..0196bec 100644
+--- a/CSR_VlengthCluster.h
++++ b/CSR_VlengthCluster.h
+@@ -1,13 +1,319 @@
+ #ifndef _CSR_VLENGTH_CLUSTER_H_
+ #define _CSR_VLENGTH_CLUSTER_H_
++
++#include <iostream>
++#include <vector>
++#include <map>
++#include <set>
++#include <cstdlib>
++#include <algorithm>
++#include <cassert>
+ #include "CSR.h"
+ 
+-// Compatibility scaffold only; the unused alternative implementation is absent.
++#include <tbb/scalable_allocator.h>
++
++#include <random>
++#include "utility.h"
++
++using namespace std;
++
++/*
++Class:  CSR_VlengthCluster
++Author: Raqib
++
++Simple container for sparse matrix in variable-length clustered CSR format
++ - Construct from CSR
++*/
++
+ template<class IT, class NT>
+ class CSR_VlengthCluster {
+ public:
+-  CSR_VlengthCluster() = default;
+-  CSR_VlengthCluster(const CSR<IT, NT> &, const std::map<IT, std::vector<IT>> &);
+-  CSR_VlengthCluster(const CSR<IT, NT> &, const std::vector<IT> &);
++  CSR_VlengthCluster() : nnzc(0), rows(0), cols(0) {}
++
++  CSR_VlengthCluster(const CSR<IT, NT> &csr, const map<IT, vector<IT>> &reordered_dict);
++  CSR_VlengthCluster(const CSR<IT, NT> &csr, const vector<IT> &offsets);
++
++  NT calculate_average_fullness(const NT eps = 0.000001f);                    // calculate how many colids.vectors<> are fully occupied by value
++  NT calculate_average_fill_factor(const NT eps = 0.000001f);                 // calculate ratio of count(not_empty(this.values)) / length(this.values)
++  NT calculate_fill_factor(const IT cluster_id, const NT eps = 0.000001f);    // calculate ratio of count(not_empty(this.values[cluster_id])) / length(this.values[cluster_id])
++  NT calculate_size();    // calculate size in Bytes
++  NT calculate_size_in_gb();    // calculate size in GB
++
++  void print_rows(IT start, IT end);  // Print CSR_VlengthCluster rows
++
++  void make_empty() {
++    if (nnzc > 0) {
++      my_free<IT>(colids);
++      my_free<NT>(values);
++      nnzc = 0;
++    }
++    if (rows > 0) {
++      my_free<IT>(rowptr);
++      my_free<IT>(rowptr_val);
++      my_free<IT>(cluster_sz);
++      rows = 0;
++    }
++    cols = 0;
++  }
++
++  ~CSR_VlengthCluster() {
++    make_empty();
++  }
++
++  bool isEmpty() {
++    return (nnzc == 0);
++  }
++
++  void Sorted();
++
++  IT csr_rows;          // number of rows in the original CSR format
++  IT rows;              // number of rows in the clustered CSR format (i.e., number of clusters)
++  IT cols;              // number of columns (max) in the original CSR format
++  IT nnzc;              // sum of unique columns in each cluster (similar to nnz in CSR format, but should be larger or equal compared to CSR.nnz)
++  IT nnzv;              // size of the values array; sum of {(rowptr[i+1] - rowptr[i]) * cluster_sz[i]} for all cluster[i]
++  IT max_cluster_sz;    // max(cluster_sz); useful in SPA
++
++  IT *cluster_sz;       // number of rows folded into cluster[i]
++  IT *rowptr;           // row pointer for colids array
++  IT *colids;           // unique column-ids in cluster[i]
++  IT *rowptr_val;       // row pointer for values array
++  NT *values;           // store values
++                        //  - for column-id at i-th cluster, values will be stored
++                        //  - from rowptr_val[i] to rowptr_val[i+1]
+ };
+-#endif
++
++//! Construct a CSR_VlengthCluster object from a CSR
++//! @offsets are the offset of the clusters to CSR rows
++template<class IT, class NT>
++CSR_VlengthCluster<IT, NT>::CSR_VlengthCluster(const CSR<IT, NT> &csr, const vector<IT> &offsets) : csr_rows(csr.rows), cols(csr.cols), nnzc(0), nnzv(0), max_cluster_sz(256) {
++  rows = offsets[offsets.size() - 1];
++
++  rowptr = my_malloc<IT>(rows + 1);
++  rowptr_val = my_malloc<IT>(rows + 1);
++  cluster_sz = my_malloc<IT>(rows);
++
++  IT *work = my_malloc<IT>(rows);                 // store number of columns per-cluster
++  IT *work_val = my_malloc<IT>(rows);             // store the number of values per-cluster (e.g., work[i] * cluster_sz[i])
++  std::fill(work, work + rows, (IT) 0);                    // initilized to zero
++  vector < map < IT, vector < NT >, less < IT>> > col_map(rows);    // for each cluster map the column-ids to values
++
++  IT cluster_id = 0;
++
++  for (size_t r=1; r<offsets.size(); r+=1) {                                        // loop over the clusters
++    cluster_sz[cluster_id] = offsets[r] - offsets[r - 1];
++    IT ii = 0;
++    for (IT i=offsets[r - 1]; i<offsets[r]; i+=1) {                                                             // loop over the row-ids of cluster r
++      for (IT j = csr.rowptr[i]; j < csr.rowptr[i + 1]; j += 1) {                       // loop over the columns of CSR.rows[i]
++        IT t_acol = csr.colids[j];
++        NT t_aval = csr.values[j];
++        if (col_map[cluster_id].find(t_acol) == col_map[cluster_id].end()) {
++          col_map[cluster_id][t_acol] = vector < NT > (cluster_sz[cluster_id], 0.0);
++        }
++        col_map[cluster_id][t_acol][ii] = t_aval;
++      }
++      ii += 1;
++    }
++    nnzc += col_map[cluster_id].size();
++    work[cluster_id] = col_map[cluster_id].size();
++
++    nnzv += (work[cluster_id] * cluster_sz[cluster_id]);
++    work_val[cluster_id] = work[cluster_id] * cluster_sz[cluster_id];
++
++    cluster_id += 1;
++  }
++
++  colids = my_malloc<IT>(nnzc);
++  values = my_malloc<NT>(nnzv);
++
++  rowptr[rows] = CumulativeSum(work, rows);    // cumulative sum of work
++  copy(work, work + rows, rowptr);
++
++  rowptr_val[rows] = CumulativeSum(work_val, rows);    // cumulative sum of work_val
++  copy(work_val, work_val + rows, rowptr_val);
++
++  for (IT i = 0; i < rows; i += 1) {                  // loop over cluster-ids
++    for (auto it: col_map[i]) {                       // loop over columns of cluster[i]
++      colids[work[i]++] = it.first;
++      for (IT j = 0; j < cluster_sz[i]; j += 1) {            // loop over values of col-id last
++        if (work_val[i] >= nnzv) {
++          cout << "rows: " << rows << ", i: " << i;
++          cout << ", rowptr_val[i]: " << rowptr_val[i] << ", nnzv: " << nnzv << endl;
++        }
++        assert(work_val[i] < nnzv && "trying to write beyond the value boundary");
++        values[work_val[i]++] = it.second[j];
++      }
++    }
++  }
++
++  my_free<IT>(work);        // free memory
++  my_free<IT>(work_val);    // free memory
++}
++
++//! Construct a CSR_VlengthCluster object from a CSR
++//! @reordered_dict maps cluster-id to CSR rows
++template<class IT, class NT>
++CSR_VlengthCluster<IT, NT>::CSR_VlengthCluster(const CSR<IT, NT> &csr, const map<IT, vector<IT>> &reordered_dict): csr_rows(
++    csr.rows), cols(csr.cols), nnzc(0), nnzv(0), max_cluster_sz(256) {
++  rows = reordered_dict.size();
++
++  rowptr = my_malloc<IT>(rows + 1);
++  rowptr_val = my_malloc<IT>(rows + 1);
++  cluster_sz = my_malloc<IT>(rows);
++
++  IT *work = my_malloc<IT>(rows);                 // store number of columns per-cluster
++  IT *work_val = my_malloc<IT>(rows);             // store the number of values per-cluster (e.g., work[i] * cluster_sz[i])
++  std::fill(work, work + rows, (IT) 0);                    // initilized to zero
++  vector < map < IT, vector < NT >, less < IT>> > col_map(rows);    // for each cluster map the column-ids to values
++
++  IT cluster_id = 0;
++  for (auto &r: reordered_dict) {                                        // loop over the clusters
++    cluster_sz[cluster_id] = r.second.size();
++    IT ii = 0;
++    for (IT i: r.second) {                                                             // loop over the row-ids of cluster r
++      for (IT j = csr.rowptr[i]; j < csr.rowptr[i + 1]; j += 1) {                       // loop over the columns of CSR.rows[i]
++        IT t_acol = csr.colids[j];
++        NT t_aval = csr.values[j];
++        if (col_map[cluster_id].find(t_acol) == col_map[cluster_id].end()) {
++          col_map[cluster_id][t_acol] = vector < NT > (cluster_sz[cluster_id], 0.0);
++        }
++        col_map[cluster_id][t_acol][ii] = t_aval;
++      }
++      ii += 1;
++    }
++    nnzc += col_map[cluster_id].size();
++    work[cluster_id] = col_map[cluster_id].size();
++
++    nnzv += (work[cluster_id] * cluster_sz[cluster_id]);
++    work_val[cluster_id] = work[cluster_id] * cluster_sz[cluster_id];
++
++    cluster_id += 1;
++  }
++
++  colids = my_malloc<IT>(nnzc);
++  values = my_malloc<NT>(nnzv);
++
++  rowptr[rows] = CumulativeSum(work, rows);    // cumulative sum of work
++  copy(work, work + rows, rowptr);
++
++  rowptr_val[rows] = CumulativeSum(work_val, rows);    // cumulative sum of work_val
++  copy(work_val, work_val + rows, rowptr_val);
++
++  for (IT i = 0; i < rows; i += 1) {                  // loop over cluster-ids
++    for (auto it: col_map[i]) {                       // loop over columns of cluster[i]
++      colids[work[i]++] = it.first;
++      for (IT j = 0; j < cluster_sz[i]; j += 1) {            // loop over values of col-id last
++        if (work_val[i] >= nnzv) {
++          cout << "rows: " << rows << ", i: " << i;
++          cout << ", rowptr_val[i]: " << rowptr_val[i] << ", nnzv: " << nnzv << endl;
++        }
++        assert(work_val[i] < nnzv && "trying to write beyond the value boundary");
++        values[work_val[i]++] = it.second[j];
++      }
++    }
++  }
++
++  my_free<IT>(work);        // free memory
++  my_free<IT>(work_val);    // free memory
++}
++
++//! calculate how many colids.vectors<> are fully occupied by value
++template <class IT, class NT>
++NT CSR_VlengthCluster<IT,NT>::calculate_average_fullness(const NT eps)
++{
++  NT up = 0.0;
++  IT down = 0;
++//#pragma omp parallel for
++  for (IT i = 0; i < rows; ++i)
++  {
++    for (IT j = rowptr[i]; j < rowptr[i + 1]; ++j) {
++      IT k = 0;
++      while(k < cluster_sz[i]) {
++        if(fabs(values[rowptr_val[i] + ((j - rowptr[i]) * cluster_sz[i]) + k] - 0.0f) < eps) break;
++        k += 1;
++      }
++      if (k == cluster_sz[i]) up += 1;
++      down += 1;
++    }
++  }
++  if(down > 0) up /= down;
++  return up;
++}
++
++//! calculate ratio of count(not_empty(this.values)) / length(this.values)
++template <class IT, class NT>
++NT CSR_VlengthCluster<IT,NT>::calculate_average_fill_factor(const NT eps)
++{
++  NT non_empty = 0.0;
++//#pragma omp parallel for
++  for (IT i = 0; i < rows; ++i)
++  {
++    for (IT j = rowptr[i]; j < rowptr[i + 1]; ++j) {
++      for (IT k = 0; k < cluster_sz[i]; ++k) {
++        if(fabs(values[rowptr_val[i] + ((j - rowptr[i]) * cluster_sz[i]) + k] - 0.0f) >= eps) non_empty += 1;
++      }
++    }
++  }
++  if(nnzv > 0) non_empty /= nnzv;
++  return non_empty;
++}
++
++//! calculate ratio of count(not_empty(this.values[cluster_id])) / length(this.values[cluster_id])
++template <class IT, class NT>
++NT CSR_VlengthCluster<IT,NT>::calculate_fill_factor(const IT cluster_id, const NT eps)
++{
++  NT non_empty = 0.0;
++//#pragma omp parallel for
++  for (IT j = rowptr[cluster_id]; j < rowptr[cluster_id + 1]; ++j) {
++    for (IT k = 0; k < cluster_sz[cluster_id]; ++k) {
++      if(fabs(values[rowptr_val[cluster_id] + ((j - rowptr[cluster_id]) * cluster_sz[cluster_id]) + k] - 0.0f) >= eps) non_empty += 1;
++    }
++  }
++  IT num_cols = rowptr[cluster_id + 1] - rowptr[cluster_id];
++  if(num_cols > 0) non_empty /= (num_cols * cluster_sz[cluster_id]);
++  return non_empty;
++}
++
++//! calculate size in Bytes
++template <class IT, class NT>
++NT CSR_VlengthCluster<IT,NT>::calculate_size() {
++  NT total = 0;
++  total += ((rows + 1) * sizeof(IT));             // rowptr
++  total += ((rows + 1) * sizeof(IT));             // rowptr_val
++  total += (rows * sizeof(IT));                   // cluster_sz
++  total += (nnzc * sizeof(IT));                   // colids
++  total += (nnzv * sizeof(NT));                   // values
++  return total;
++}
++
++template<class IT, class NT>
++NT CSR_VlengthCluster<IT, NT>::calculate_size_in_gb() {
++  NT size_bytes = 0;
++
++  if (cluster_sz)      size_bytes += rows * sizeof(IT);
++  if (rowptr)          size_bytes += (rows + 1) * sizeof(IT);
++  if (colids)          size_bytes += nnzc * sizeof(IT);
++  if (rowptr_val)      size_bytes += (rows + 1) * sizeof(IT);
++  if (values)          size_bytes += nnzv * sizeof(NT);
++
++  // Return size in GB
++//  return static_cast<NT>(size_bytes) / static_cast<NT>(1L << 30);
++  return static_cast<NT>(size_bytes);
++}
++
++//! Print rows of CSR_VlengthCluster
++template<class IT, class NT>
++void CSR_VlengthCluster<IT, NT>::print_rows(IT start, IT end) {
++  for (IT i = start; i < end; ++i) {
++    cout << i << ":";
++    for (IT j = rowptr[i]; j < rowptr[i + 1]; ++j) {
++      cout << " " << colids[j] << "(";
++      for (IT k = 0; k < cluster_sz[i]; k += 1) {
++        cout << values[rowptr_val[i] + ((j - rowptr[i]) * cluster_sz[i]) + k] << " ";
++      }
++      cout << ")";
++    }
++    cout << endl;
++  }
++}
++
++#endif  //_CSR_VLENGTH_CLUSTER_H_
+diff --git a/cluster_utility.h b/cluster_utility.h
+index abae30c..213287e 100644
+--- a/cluster_utility.h
++++ b/cluster_utility.h
+@@ -1,11 +1,149 @@
+-#ifndef CLUSTER_UTILITY_H
+-#define CLUSTER_UTILITY_H
++#ifndef _CLUSTER_UTILITY_H
++#define _CLUSTER_UTILITY_H
++
++#include <stdlib.h>
++#include <stdint.h>
++#include <climits>
++#include <iostream>
++#include <cmath>
++#include <vector>
++#include <map>
++#include <fstream>
++
+ #include "CSR.h"
+ #include "CSR_FlengthCluster.h"
++#include "CSR_VlengthCluster.h"
++
++#include <omp.h>
++
++using namespace std;
++
++//const double eps = 0.0000001f;
++const double eps = 0.000001f;
++
++//! Construct a CSR object from a CSR_VlengthCluster
++//! Convert @csr_flength_cluster to @csr
++template<class IT, class NT>
++void csr_vlength_cluster2csr(CSR<IT, NT> &csr, const CSR_VlengthCluster<IT, NT> &csr_flength_cluster) {
++  csr.nnz = 0;
++  csr.rows = csr_flength_cluster.csr_rows;
++  csr.cols = csr_flength_cluster.cols;
++  csr.zerobased = true;
++
++  IT *work = my_malloc<IT>(csr.rows);     // store number of columns per-row
++  std::fill(work, work + csr.rows, (IT) 0);        // initialized to zero
++
++  IT row_id = 0, val_idx;
++  NT val;
++  // count the nnz per CSR.row and use this count to allocate memory for CSR (similar to symbolic phase of SpGEMM)
++  for (IT i = 0; i < csr_flength_cluster.rows; i++) {                                     // loop over clusters
++    for (IT j = csr_flength_cluster.rowptr[i]; j < csr_flength_cluster.rowptr[i + 1]; j++) {      // loop over columns of cluster-i
++      // values of cluster[i] starts at rowptr_val[i]
++      // for every column j (0-based index), values will be stored on {(j - rowptr[i]) * cluster_sz[i]}
++      val_idx = csr_flength_cluster.rowptr_val[i] + ((j - csr_flength_cluster.rowptr[i]) * csr_flength_cluster.cluster_sz[i]);
++      for (IT l = 0; l < csr_flength_cluster.cluster_sz[i]; l += 1) {                     // loop over the values (e.g., CSR.rows) of cluster-i
++        val = csr_flength_cluster.values[val_idx + l];                                    // value of CSR.row[row_id]
++        if (fabs(val - 0.0f) >= eps) {
++          work[row_id + l]++;                                                     // row counts (i.e, work holds the "row difference array")
++          csr.nnz += 1;
++        }
++      }
++    }
++    row_id += csr_flength_cluster.cluster_sz[i];
++  }
++
++  csr.rowptr = my_malloc<IT>(csr.rows + 1);
++  csr.colids = my_malloc<IT>(csr.nnz);
++  csr.values = my_malloc<NT>(csr.nnz);
+ 
+-// Compatibility declaration only; the conversion implementation is absent.
++  if (csr.nnz > 0) {
++    csr.rowptr[csr.rows] = CumulativeSum(work, csr.rows);    // cumulative sum of work
++    copy(work, work + csr.rows, csr.rowptr);
++
++    IT col_id, last;
++    row_id = 0;
++    // actually saving data in CSR
++    for (IT i = 0; i < csr_flength_cluster.rows; i++) {                                           // loop over clusters
++      for (IT j = csr_flength_cluster.rowptr[i]; j < csr_flength_cluster.rowptr[i + 1]; j++) {            // loop over columns of cluster-i
++        col_id = csr_flength_cluster.colids[j];
++        // values of cluster[i] starts at rowptr_val[i]
++        // for every column j (0-based index), values will be stored on {(j - rowptr[i]) * cluster_sz[i]}
++        val_idx = csr_flength_cluster.rowptr_val[i] + ((j - csr_flength_cluster.rowptr[i]) * csr_flength_cluster.cluster_sz[i]);
++        for (IT l = 0; l < csr_flength_cluster.cluster_sz[i]; l += 1) {                           // loop over the values of col_id
++          val = csr_flength_cluster.values[val_idx + l];
++          if (fabs(val - 0.0f) >= eps) {
++            csr.colids[last = work[row_id + l]++] = col_id;
++            csr.values[last] = val;
++          }
++        }
++      }
++      row_id += csr_flength_cluster.cluster_sz[i];
++    }
++  } else {
++    cout << "nnz should not be 0" << endl;
++    exit(-1);
++  }
++  my_free<IT>(work);
++}
++
++//! Construct a CSR object from a CSR_FlengthCluster
++//! Convert @csr_flength_cluster to @csr
+ template<class IT, class NT>
+-void csr_flength_cluster2csr(
+-    CSR<IT, NT> &csr,
+-    const CSR_FlengthCluster<IT, NT> &csr_flength_cluster);
+-#endif
++void csr_flength_cluster2csr(CSR<IT, NT> &csr, const CSR_FlengthCluster<IT, NT> &csr_flength_cluster) {
++  csr.nnz = 0;
++  csr.rows = csr_flength_cluster.csr_rows;
++  csr.cols = csr_flength_cluster.cols;
++  csr.zerobased = true;
++
++  IT *work = my_malloc<IT>(csr.rows);     // store number of columns per-row
++  std::fill(work, work + csr.rows, (IT) 0);        // initialized to zero
++
++  IT row_id, col_id, last;
++  NT val;
++  // count the nnz per CSR.row and use this count to allocate memory for CSR (similar to symbolic phase of SpGEMM)
++  for (IT i = 0; i < csr_flength_cluster.rows; i++) {                                     // loop over clusters
++    for (IT j = csr_flength_cluster.rowptr[i]; j < csr_flength_cluster.rowptr[i + 1]; j++) {      // loop over columns of cluster-i
++      for (IT l = 0; l < csr_flength_cluster.cluster_sz; l += 1) {                        // loop over the values (e.g., CSR.rows) of cluster-i
++        row_id = (i * csr_flength_cluster.cluster_sz) + l;
++        val = csr_flength_cluster.values[(j * csr_flength_cluster.cluster_sz) + l];               // value of CSR.row[row_id]
++        if (fabs(val - 0.0f) >= eps) {
++          work[row_id]++;                                                         // row counts (i.e, work holds the "row difference array")
++          csr.nnz += 1;
++        }
++      }
++    }
++  }
++
++  csr.rowptr = my_malloc<IT>(csr.rows + 1);
++  csr.colids = my_malloc<IT>(csr.nnz);
++  csr.values = my_malloc<NT>(csr.nnz);
++
++  if (csr.nnz > 0) {
++    csr.rowptr[csr.rows] = CumulativeSum(work, csr.rows);    // cumulative sum of work
++    copy(work, work + csr.rows, csr.rowptr);
++
++    IT last;
++    // actually saving data in CSR
++    for (IT i = 0; i < csr_flength_cluster.rows; i++) {                                     // loop over clusters
++      for (IT j = csr_flength_cluster.rowptr[i]; j < csr_flength_cluster.rowptr[i + 1]; j++) {      // loop over columns of cluster-i
++        col_id = csr_flength_cluster.colids[j];
++        for (IT l = 0; l < csr_flength_cluster.cluster_sz; l += 1) {                        // loop over the values of col_id
++          row_id = (i * csr_flength_cluster.cluster_sz) + l;
++          val = csr_flength_cluster.values[(j * csr_flength_cluster.cluster_sz) + l];
++          if (fabs(val - 0.0f) >= eps) {
++            csr.colids[last = work[row_id]++] = col_id;
++            csr.values[last] = val;
++          }
++        }
++      }
++    }
++  } else {
++    cout << "nnz should not be 0" << endl;
++    exit(-1);
++  }
++
++  my_free<IT>(work);
++}
++
++#endif    //_CLUSTER_UTILITY_H
++
+diff --git a/hash_mult.h b/hash_mult.h
+index 02b132c..d2b733a 100644
+--- a/hash_mult.h
++++ b/hash_mult.h
+@@ -1,18 +1,1489 @@
+-#ifndef HASH_MULT_H
+-#define HASH_MULT_H
+-#include <functional>
+-#include <string>
++#include <stdio.h>
++#include <stdlib.h>
++#include <omp.h>
++#include <immintrin.h>
++#include <algorithm>
++#include <fstream>
++
++#include <x86intrin.h>
++
++#include "utility.h"
+ #include "CSR.h"
++#include "BIN.h"
++
++#define VECTORIZE
++
++/* SpGEMM Specific Parameters */
++#define HASH_SCAL 107 // Set disjoint number to hash table size (=2^n)
++#define SMALL_THRESHOLD 100
++
++#define MIN_HT_S 8 // minimum hash table size per row in symbolic phase
++#define MIN_HT_N 8 // minimum hash table size per row in numeric phase
++#define VEC_LENGTH 8
++#define VEC_LENGTH_BIT 3
++#define VEC_LENGTH_LONG 4
++#define VEC_LENGTH_LONG_BIT 2
++
++#ifdef PRINT_METADATA_TO_FILE
++/*
++ * Symbolic phase to Calculate NNZ Entries in per-row of SpGEMM output.
++ */
++template <class IT, class NT>
++inline void symbolic_maxnnz_kernel(const IT *arpt, const IT *acol, const IT *brpt, const IT *bcol, BIN<IT, NT> &bin)
++{
++  IT *row_nz_mx = my_malloc<IT>(bin.num_rows);
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.rows_offset[tid];
++    IT end_row = bin.rows_offset[tid + 1];
++
++    IT *check = bin.local_hash_table_id[tid];
++
++    // rows of A
++    for (IT i = start_row; i < end_row; ++i) {
++      IT nz = 0;
++
++      // columns of A
++      for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {
++        IT t_acol = acol[j];
++        // nnz columns in B for row t_acol
++        nz += (brpt[t_acol + 1] - brpt[t_acol]);
++      }
++
++      row_nz_mx[i] = nz;
++    }
++  }
++
++//  string filename = "/home/aislam6/passionlab/nnz_frequency_predict.txt";
++//  std::fstream file(filename, std::ios::out);
++//  for (IT i = 0; i < bin.num_rows; ++i) {
++//    file << i << " " << row_nz_mx[i] << endl;
++//  }
++//  file.close();
++
++  my_free<IT>(row_nz_mx);
++}
++#endif
++
++/*
++ * Symbolic phase for Hash SpGEMM.
++ */
++template <class IT, class NT>
++inline void hash_symbolic_kernel(const IT *arpt, const IT *acol, const IT *brpt, const IT *bcol,
++                                 BIN<IT, NT> &bin, const string& out_nnz_freq_outfile, bool print_to_file = false) {
++#pragma omp parallel
++    {
++        IT tid = omp_get_thread_num();
++        IT start_row = bin.rows_offset[tid];
++        IT end_row = bin.rows_offset[tid + 1];
++        
++        IT *check = bin.local_hash_table_id[tid];
++        
++        for (IT i = start_row; i < end_row; ++i) {
++            IT nz = 0;
++            IT bid = bin.bin_id[i];
++            
++            if (bid > 0) {
++                IT ht_size = MIN_HT_S << (bid - 1); // determine hash table size for i-th row
++                for (IT j = 0; j < ht_size; ++j) { // initialize hash table
++                    check[j] = -1;
++                }
++
++                for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {
++                    IT t_acol = acol[j];
++                    for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++                        IT key = bcol[k];
++                        IT hash = (key * HASH_SCAL) & (ht_size - 1);
++                        while (1) { // Loop for hash probing
++                            if (check[hash] == key) { // if the key is already inserted, it's ok
++                                break;
++                            }
++                            else if (check[hash] == -1) { // if the key has not been inserted yet, then it's added.
++                                check[hash] = key;
++                                nz++;
++                                break;
++                            }
++                            else { // linear probing: check next entry
++                                hash = (hash + 1) & (ht_size - 1); //hash = (hash + 1) % ht_size
++                            }
++                        }
++                    }
++                }
++            }
++            bin.row_nz[i] = nz;
++        }
++    }
++
++#ifdef PRINT_METADATA_TO_FILE
++  if(print_to_file) {
++    std::fstream file(out_nnz_freq_outfile, std::ios::out);
++    for (IT i = 0; i < bin.num_rows; ++i) {
++      file << i << " " << bin.row_nz[i] << endl;
++    }
++    file.close();
++  }
++#endif
++}
++
++/*
++ * Symbolic phase for Hash Vector SpGEMM
++ * This function is optimized for 32-bit integer with AVX2.
++ */
++template <class NT>
++inline void hash_symbolic_vec_kernel(const int *arpt, const int *acol, const int *brpt, const int *bcol, BIN<int, NT> &bin)
++{
++#ifdef VECTORIZE
++    const __m256i init_m = _mm256_set1_epi32(-1);
++    const __m256i true_m = _mm256_set1_epi32(0xffffffff);
++#endif
++    
++#pragma omp parallel
++    {
++        int tid = omp_get_thread_num();
++        int start_row = bin.rows_offset[tid];
++        int end_row = bin.rows_offset[tid + 1];
++        
++        int *check = bin.local_hash_table_id[tid];
++        
++        for (int i = start_row; i < end_row; ++i) {
++#ifdef VECTORIZE
++            __m256i key_m, check_m;
++            __m256i mask_m;
++            int mask;
++#endif        
++            int nz = 0;
++            int bid = bin.bin_id[i];
++            
++            if (bid > 0) {
++                int table_size = MIN_HT_S << (bid - 1); // the number of entries per table
++                int ht_size = table_size >> VEC_LENGTH_BIT; // the number of chunks (1 chunk = VEC_LENGTH elments)
++                for (int j = 0; j < table_size; ++j) {
++                    check[j] = -1; // initialize hash table
++                }
++
++                for (int j = arpt[i]; j < arpt[i + 1]; ++j) {
++                    int t_acol = acol[j];
++                    for (int k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++                        int key = bcol[k];
++                        int hash = (key * HASH_SCAL) & (ht_size - 1);
++#ifdef VECTORIZE
++                        key_m = _mm256_set1_epi32(key);
++#endif
++                        while (1) { // Loop for hash probing
++                            // check whether the key is in hash table.
++#ifdef VECTORIZE
++                            check_m = _mm256_maskload_epi32(check + (hash << VEC_LENGTH_BIT), true_m);
++                            mask_m = _mm256_cmpeq_epi32(key_m, check_m);
++                            mask = _mm256_movemask_epi8(mask_m);
++                            if (mask != 0) {
++                                break;
++                            }
++#else
++                            bool flag = false;
++#pragma simd
++                            for (int l = 0; l < VEC_LENGTH; ++l) {
++                                if (check[(hash << VEC_LENGTH_BIT) + l] == key) {
++                                    flag = true;
++                                }
++                            }
++                            if (flag) {
++                                break;
++                            }
++#endif
++                            else {
++                                // If the entry with same key cannot be found, check whether the chunk is filled or not
++                                int cur_nz;
++#ifdef VECTORIZE
++                                mask_m = _mm256_cmpeq_epi32(check_m, init_m);
++                                mask = _mm256_movemask_epi8(mask_m);
++                                cur_nz = (32 - _popcnt32(mask)) >> 2;
++#else
++                                cur_nz = VEC_LENGTH;
++#pragma simd
++                                for (int l = VEC_LENGTH - 1; l >= 0; --l) {
++                                    if (check[(hash << VEC_LENGTH_BIT) + l] == -1) {
++                                        cur_nz = l;
++                                    }
++                                }
++#endif
++                                if (cur_nz < VEC_LENGTH) { //if it is not filled, push the entry to the table
++                                    check[(hash << VEC_LENGTH_BIT) + cur_nz] = key;
++                                    nz++;
++                                    break;
++                                }
++                                else { // if is filled, check next chunk (linear probing)
++                                    hash = (hash + 1) & (ht_size - 1);
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++            bin.row_nz[i] = nz;
++        }
++    }
++}
++
++template <class NT>
++inline void hash_symbolic_vec_kernel(const long long int *arpt, const long long int *acol, const long long int *brpt, const long long int *bcol, BIN<long long int, NT> &bin)
++{
++#ifdef VECTORIZE
++    const __m256i init_m = _mm256_set1_epi64x(-1);
++    const __m256i true_m = _mm256_set1_epi64x(0xffffffffffffffff);
++#endif
++    
++#pragma omp parallel
++    {
++        long long int tid = omp_get_thread_num();
++        long long int start_row = bin.rows_offset[tid];
++        long long int end_row = bin.rows_offset[tid + 1];
++        
++        long long int *check = bin.local_hash_table_id[tid];
++        
++        for (long long int i = start_row; i < end_row; ++i) {
++#ifdef VECTORIZE
++            __m256i key_m, check_m;
++            __m256i mask_m;
++            int mask;
++#endif        
++            long long int nz = 0;
++            long long int bid = bin.bin_id[i];
++            
++            if (bid > 0) {
++                long long int table_size = MIN_HT_S << (bid - 1);
++                long long int ht_size = table_size >> VEC_LENGTH_LONG_BIT;
++                for (long long int j = 0; j < table_size; ++j) {
++                    check[j] = -1;
++                }
++                
++                for (long long int j = arpt[i]; j < arpt[i + 1]; ++j) {
++                    long long int t_acol = acol[j];
++                    for (long long int k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++                        long long int key = bcol[k];
++                        long long int hash = (key * HASH_SCAL) & (ht_size - 1);
++#ifdef VECTORIZE
++                        key_m = _mm256_set1_epi64x(key);
++#endif
++                        while (1) {
++#ifdef VECTORIZE
++                            check_m = _mm256_maskload_epi64(check + (hash << VEC_LENGTH_LONG_BIT), true_m);
++                            mask_m = _mm256_cmpeq_epi64(key_m, check_m);
++                            mask = _mm256_movemask_epi8(mask_m);
++                            if (mask != 0) {
++                                break;
++                            }
++#else
++                            bool flag = false;
++#pragma simd
++                            for (int l = 0; l < VEC_LENGTH_LONG; ++l) {
++                                if (check[(hash << VEC_LENGTH_LONG_BIT) + l] == key) {
++                                    flag = true;
++                                }
++                            }
++                            if (flag) {
++                                break;
++                            }
++#endif
++                            else {
++                                long long int cur_nz;
++#ifdef VECTORIZE
++                                mask_m = _mm256_cmpeq_epi64(check_m, init_m);
++                                mask = _mm256_movemask_epi8(mask_m);
++                                cur_nz = (32 - _popcnt32(mask)) >> 3;
++#else
++                                cur_nz = VEC_LENGTH_LONG;
++#pragma simd
++                                for (int l = VEC_LENGTH_LONG - 1; l >= 0; --l) {
++                                    if (check[(hash << VEC_LENGTH_LONG_BIT) + l] == -1) {
++                                        cur_nz = l;
++                                    }
++                                }
++#endif
++                                if (cur_nz < VEC_LENGTH_LONG) {
++                                    check[(hash << VEC_LENGTH_LONG_BIT) + cur_nz] = key;
++                                    nz++;
++                                    break;
++                                }
++                                else {
++                                    hash = (hash + 1) & (ht_size - 1);
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++            bin.row_nz[i] = nz;
++        }
++    }
++}
++
++// Reference function for Symbolic phase of Hash SpGEMM
++template <bool vectorProbing, class IT, class NT>
++inline void hash_symbolic(const IT *arpt, const IT *acol, const IT *brpt, const IT *bcol, IT *crpt, BIN<IT, NT> &bin, const IT nrow, IT *nnz, string out_nnz_freq_outfile, bool first_pass = false)
++{
++//    if (vectorProbing) {
++//        hash_symbolic_vec_kernel(arpt, acol, brpt, bcol, bin);
++//    }
++//    else {
++        hash_symbolic_kernel(arpt, acol, brpt, bcol, bin, out_nnz_freq_outfile, first_pass);
++#ifdef PRINT_METADATA_TO_FILE
++//        if(first_pass) symbolic_maxnnz_kernel(arpt, acol, brpt, bcol, bin);
++#endif
++//    }
++    
++    /* Set row pointer of matrix C */
++//    cout << "bin.row_nz[nrow-1]: " << bin.row_nz[nrow - 1] << ", bin.row_nz[nrow]: " << bin.row_nz[nrow] << endl;
++    scan(bin.row_nz, crpt, nrow + 1);
++//    cout << "crpt[nrow]: " << crpt[nrow] << endl;
++    *nnz = crpt[nrow];
++}
++
++// Reference function for Symbolic phase of Hash SpGEMM
++template <class IT, class NT>
++inline void hash_symbolic_topK(const IT *arpt, const IT *acol,
++                               const IT *brpt, const IT *bcol, IT *crpt,
++                               BIN<IT, NT> &bin, const IT nrow, IT *nnz, IT topK,
++                               string out_nnz_freq_outfile, bool first_pass = false)
++{
++  hash_symbolic_kernel(arpt, acol, brpt, bcol, bin, out_nnz_freq_outfile, first_pass);
++
++  /* Set row pointer of matrix C */
++//  scan(topK, crpt, nrow + 1);
++//  *nnz = nrow * topK;
++  scan(bin.row_nz, crpt, nrow + 1);
++  *nnz = crpt[nrow];
++}
++
++/*
++ * Used for sort function.
++ * Elements are sorted in ascending order.
++ */
++template <typename IT, typename NT>
++bool sort_less(const pair<IT, NT> &left,const pair<IT, NT> &right)
++{
++    return left.first < right.first;
++}
++
++/*
++ * Numeric phase in Hash SpGEMM.
++ */
++template <typename IT>
++inline void sanity_check(const IT *crpt, IT cnnz, IT num_rows) {
++//  for(IT i=1; i<num_rows+1; i+=1) {
++//    if(crpt[i] < 0) {
++//      cout << i << " " << crpt[i] << endl;
++//      break;
++//    }
++//  }
++//  cout << "cnnz: " << cnnz << endl;
++  assert(cnnz > 0 && "NNZ should be a positive number!");
++  for(IT i=1; i<num_rows; i+=1) {
++    assert(crpt[i] >= crpt[i - 1] && "C_ptr is wrongly calculated!");
++  }
++  assert(crpt[num_rows - 1] < cnnz && "C_ptr should not go beyond C_nnz");
++}
+ 
+-// Compatibility declarations only. The unused row-wise implementation is absent.
+-template <bool vectorProbing, bool sortOutput, typename IT, typename NT,
+-          typename MultiplyOperation, typename AddOperation>
+-void RowSpGEMM(const CSR<IT, NT> &a, const CSR<IT, NT> &b,
+-               CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop,
+-               std::string out_nnz_freq_outfile, bool first_pass = false);
++/*
++ * After calculating on each hash table, sort them in ascending order if necessary, and then store them as output matrix
++ * This function is used in hash_numeric* function.
++ * the actual indices of colids and values of output matrix are rpt[rowid];
++ */
++//sort_and_store_table2mat<sortOutput, IT, NT>(ht_check, ht_value, ccol + offset, cval + offset, crpt[i + 1] - offset, ht_size, cnnz - offset);
++template <bool sortOutput, typename IT, typename NT>
++inline void sort_and_store_table2mat(IT *ht_check, NT *ht_value, IT *colids, NT * values, IT nz, IT ht_size, IT offset, IT row_id = -1)
++{
++//    assert(nz > 0 && "NZ can not be negative!");
++    IT index = 0;
++    // Sort elements in ascending order if necessary, and store them as output matrix
++    if (sortOutput) {
++        vector<pair<IT, NT>> p_vec(nz);
++        for (IT j = 0; j < ht_size; ++j) { // accumulate non-zero entry from hash table
++            if (ht_check[j] != -1) {
++                p_vec[index++] = make_pair(ht_check[j], ht_value[j]);
++            }
++        }
++//      assert(index <= nz && "Index goes beyond p_vector limit");
++//      assert(index < offset && "Index goes beyond output limit");
++        sort(p_vec.begin(), p_vec.end(), sort_less<IT, NT>); // sort only non-zero elements
++        for (IT j = 0; j < index; ++j) { // store the results
++//          IT first = p_vec[j].first;
++//          NT second = p_vec[j].second;
++            colids[j] = p_vec[j].first;
++            values[j] = p_vec[j].second;
++        }
++    }
++    else {
++        for (IT j = 0; j < ht_size; ++j) {
++            if (ht_check[j] != -1) {
++//              if(row_id == 0) {
++//                cout << "j: " << j << ", index: " << index << endl;
++//              }
++                colids[index] = ht_check[j];
++                values[index] = ht_value[j];
++                index++;
++            }
++        }
++    }
+ 
+-template <bool sortOutput, typename IT, typename NT,
+-          typename MultiplyOperation, typename AddOperation>
+-void RowSpGEMM(const CSR<IT, NT> &a, const CSR<IT, NT> &b,
+-               CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop);
++}
++
++/*
++ * After calculating on each hash table, sort them in ascending order if necessary, and then store them as output matrix
++ * This function is used in hash_numeric* function.
++ * the actual indices of colids and values of output matrix are rpt[rowid];
++ */
++template<bool sortOutput, typename IT, typename NT>
++inline void
++sort_and_store_table2mat_topK(IT *ht_check, NT *ht_value, IT *colids, NT *values, IT nz, IT ht_size, IT topK) {
++//    assert(nz > 0 && "NZ can not be negative!");
++  IT index = 0;
++  if (sortOutput) {
++    // Sort elements in ascending order if necessary, and store them as output matrix
++    vector <pair<NT, IT>> p_vec(nz);
++    for (IT j = 0; j < ht_size; ++j) { // accumulate non-zero entry from hash table
++      if (ht_check[j] != -1) {
++        p_vec[index++] = make_pair(ht_value[j], ht_check[j]);
++      }
++    }
++//      assert(index <= nz && "Index goes beyond p_vector limit");
++//      assert(index < offset && "Index goes beyond output limit");
++    sort(p_vec.begin(), p_vec.end(), sort_large<IT, NT>); // sort only non-zero elements
++//  index = min(index, topK);
++    for (IT j = 0; j < index; ++j) { // store the results
++      colids[j] = p_vec[j].second;
++      values[j] = p_vec[j].first;
++    }
++  }
++  else {
++    for (IT j = 0; j < ht_size; ++j) {
++      if (ht_check[j] != -1) {
++        colids[index] = ht_check[j];
++        values[index] = ht_value[j];
++        index++;
++      }
++    }
++  }
++}
++
++/*
++ * After calculating on each hash table, sort them in ascending order if necessary, and then store them as output matrix
++ * This function is used in hash_numeric* function.
++ * the actual indices of colids and values of output matrix are rpt[rowid];
++ */
++template<bool sortOutput, typename IT, typename NT>
++inline void
++sort_and_store_table2mat_topK_jaccard(IT *ht_check, NT *ht_value, IT *colids, NT *values, IT nz, IT ht_size, IT topK,
++                                      const IT *arpt, IT a_row_id) {
++//    assert(nz > 0 && "NZ can not be negative!");
++  IT index = 0;
++  if (sortOutput) {
++    // Sort elements in ascending order if necessary, and store them as output matrix
++    vector <pair<NT, IT>> p_vec(nz);
++    for (IT j = 0; j < ht_size; ++j) { // accumulate non-zero entry from hash table
++      if (ht_check[j] != -1) {
++        IT u = (arpt[a_row_id + 1] - arpt[a_row_id]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]]) - ht_value[j];
++        NT jacc = (u == 0) ? 0.0 : 1.0 * ht_value[j] / u;
++        p_vec[index++] = make_pair(jacc, ht_check[j]);
++//      p_vec[index++] = make_pair(ht_value[j], ht_check[j]);
++      }
++    }
++//      assert(index <= nz && "Index goes beyond p_vector limit");
++//      assert(index < offset && "Index goes beyond output limit");
++    sort(p_vec.begin(), p_vec.end(), sort_large<IT, NT>); // sort only non-zero elements
++//    index = min(index, topK);
++    for (IT j = 0; j < index; ++j) { // store the results
++      colids[j] = p_vec[j].second;
++      values[j] = p_vec[j].first;
++    }
++  }
++  else {
++    IT u;
++    NT jacc;
++    for (IT j = 0; j < ht_size; ++j) {
++      if (ht_check[j] != -1) {
++        u = (arpt[a_row_id + 1] - arpt[a_row_id]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]]) - ht_value[j];
++        jacc = (u == 0) ? 0.0 : 1.0 * ht_value[j] / u;
++
++        colids[index] = ht_check[j];
++        values[index] = jacc;
++        index++;
++      }
++    }
++  }
++}
++
++/*
++ * After calculating on each hash table, sort them in ascending order if necessary, and then store them as output matrix
++ * This function is used in hash_numeric* function.
++ * the actual indices of colids and values of output matrix are rpt[rowid];
++ */
++template<bool sortOutput, typename IT, typename NT>
++inline void
++sort_and_store_table2mat_topK_cf(IT *ht_check, NT *ht_value, IT *colids, NT *values, IT nz, IT ht_size, IT topK,
++                                      const IT *arpt, IT a_row_id) {
++//    assert(nz > 0 && "NZ can not be negative!");
++  IT index = 0;
++  if (sortOutput) {
++    // Sort elements in ascending order if necessary, and store them as output matrix
++    vector <pair<NT, IT>> p_vec(nz);
++    for (IT j = 0; j < ht_size; ++j) { // accumulate non-zero entry from hash table
++      if (ht_check[j] != -1) {
++        IT u = (arpt[a_row_id + 1] - arpt[a_row_id]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]]) - ht_value[j];
++        NT jacc = (u == 0) ? 0.0 : 1.0 * ht_value[j] / u;
++        NT annz = ((arpt[a_row_id + 1] - arpt[a_row_id]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]])) / 2.0;
++        NT cf = u / annz / jacc;
++        p_vec[index++] = make_pair(cf, ht_check[j]);
++//      p_vec[index++] = make_pair(ht_value[j], ht_check[j]);
++      }
++    }
++//      assert(index <= nz && "Index goes beyond p_vector limit");
++//      assert(index < offset && "Index goes beyond output limit");
++    sort(p_vec.begin(), p_vec.end(), sort_large<IT, NT>); // sort only non-zero elements
++//  index = min(index, topK);
++    for (IT j = 0; j < index; ++j) { // store the results
++      colids[j] = p_vec[j].second;
++      values[j] = p_vec[j].first;
++    }
++  }
++  else {
++    IT u;
++    NT jacc, annz, cf;
++    for (IT j = 0; j < ht_size; ++j) {
++      if (ht_check[j] != -1) {
++        u = (arpt[a_row_id + 1] - arpt[a_row_id]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]]) - ht_value[j];
++        jacc = (u == 0) ? 0.0 : 1.0 * ht_value[j] / u;
++        annz = ((arpt[a_row_id + 1] - arpt[a_row_id]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]])) / 2.0;
++        cf = u / annz / jacc;
++
++        colids[index] = ht_check[j];
++        values[index] = cf;
++        index++;
++      }
++    }
++  }
++}
++
++/*
++ * Numeric phase in Hash SpGEMM.
++ */
++template <bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void hash_numeric(const IT *arpt, const IT *acol, const NT *aval, const IT *brpt, const IT *bcol, const NT *bval,
++                         const IT *crpt, IT *ccol, NT *cval, const BIN<IT, NT> &bin,
++                         const MultiplyOperation multop, const AddOperation addop, IT cnnz)
++{
++//  int numThreads;
++//#pragma omp parallel
++//  {
++//    numThreads = omp_get_num_threads();
++//  }
++//  long long int* flops_per_thread = my_malloc<long long int>(numThreads);
++#pragma omp parallel
++    {
++        IT tid = omp_get_thread_num();
++        IT start_row = bin.rows_offset[tid];
++        IT end_row = bin.rows_offset[tid + 1];
++
++        IT *ht_check = bin.local_hash_table_id[tid];
++        NT *ht_value = bin.local_hash_table_val[tid];
++//        long long int flops = 0;
++
++//        row-id: 1, 2
++//        [1]: 1, 2, 3
++//        [2]: 1, 2, 4
++//        union-of-col-ids: 1, 2, 3, 4
++
++//        cluster_size = 2
++//        // prepare this for every clusters
++//        vector < map< col-id, vector<NT>> > col_map
++//        for(int r=0; r<num_rows; r+=cluster_sz) {
++//          cluster_id = r / 2;
++//          for(i=r; i< r+cluster_sz; i += 1) {
++//            for(IT j = arpt[i]; j < arpt[i + 1]; ++j) {
++//              IT t_acol = acol[j];
++//              NT t_aval = aval[j];
++//              if (col_map[cluster_id].find(t_acol) == col_map[cluster_id].end()) {
++//                col_map[cluster_id][t_acol] = vector<NT>(cluster_size, 0.0);
++//              }
++//              col_map[cluster_id][t_acol][i-r] = t_aval;
++//            }
++//          }
++//        }
++//        col-map
++//        col 1: <1, val1>, <2, val2>
++//        col 2: <1, val1>, <2, val2>
++//        col 3: <1, val1>
++//        col 4: <2, val2>
++//
++//        col 1: [val1, val2]
++//        col 2: [val1, val2]
++//        col 3: [val1, 0]
++//        col 4: [0, val2]
++
++    // create a new BIN class that can process clusters instead of rows
++    // for each cluster, we will need to calculate flops, nnz for the union of col-ids
++    // allocate memory for values: nnz * cluster_size
++//        hash-table:
++//        col-ids: [1, 2, 3, 4]
++//        values:  [[val1, val2], [val1, val2], [val1, 0], [0, val2]]
++//
++//        A_val: vector< pair<row-id, value> >
++
++        // clusters
++//      for (IT c = start_cluster; c < end_cluster; ++c) {
++        for (IT i = start_row; i < end_row; ++i) {
++            // todo: prepare a new BIN class based on the cluster
++            IT bid = bin.bin_id[i];
++            if (bid > 0) {
++                IT offset = crpt[i];
++                IT ht_size = MIN_HT_N << (bid - 1);
++                for (IT j = 0; j < ht_size; ++j) {
++                    ht_check[j] = -1;
++                }
++                // union of col-ids of cluster
++                for (IT j = arpt[i]; j < arpt[i + 1]; ++j) { // A.cols
++                    IT t_acol = acol[j];
++                    NT t_aval = aval[j];
++                    // B[i]
++                    for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++                        NT t_val = multop(t_aval, bval[k]);
++//                        for(pair<IT, NT> t: col_map[i])
++//                        flops +=1;
++                        IT key = bcol[k];
++                        IT hash = (key * HASH_SCAL) & (ht_size - 1);
++                        while (1) { // Loop for hash probing
++                            if (ht_check[hash] == key) { // key is already inserted
++                                ht_value[hash] = addop(t_val, ht_value[hash]);
++//                                flops += 1;
++                                break;
++                            }
++                            else if (ht_check[hash] == -1) { // insert new entry
++                                ht_check[hash] = key;
++                                ht_value[hash] = t_val;
++                                break;
++                            }
++                            else {
++                                hash = (hash + 1) & (ht_size - 1); // (hash + 1) % ht_size
++                            }
++                        }
++                    }
++                }
++//                if(crpt[i + 1] - offset == 0) {
++//                  cout << "i: " << i << ", bid: " << bid << endl;
++//                }
++//                if(i == 0) {
++//                  cout << "i: " << i << ", bid: " << bid << ", offset: " << offset << ", next-offset: " << crpt[i + 1] << endl;
++//                }
++                sort_and_store_table2mat<sortOutput, IT, NT>(ht_check, ht_value,
++                                                             ccol + offset, cval + offset,
++                                                             crpt[i + 1] - offset, ht_size, cnnz - offset, i);
++            }
++        }
++//        flops_per_thread[tid] = flops;
++    }
++
++//    sort(flops_per_thread, flops_per_thread+numThreads);
++//    cout << "min-flops: " << flops_per_thread[0] << " max-flops: " << flops_per_thread[numThreads - 1] << endl;
++}
++
++/*
++ * Numeric phase in Hash SpGEMM.
++ */
++template<bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void
++hash_numeric_topk(const IT *arpt, const IT *acol, const NT *aval, const IT *brpt, const IT *bcol, const NT *bval,
++                  const IT *crpt, IT *ccol, NT *cval, const BIN<IT, NT> &bin,
++                  const MultiplyOperation multop, const AddOperation addop, IT topK) {
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.rows_offset[tid];
++    IT end_row = bin.rows_offset[tid + 1];
++
++    IT *ht_check = bin.local_hash_table_id[tid];
++    NT *ht_value = bin.local_hash_table_val[tid];
++
++    for (IT i = start_row; i < end_row; ++i) {
++      IT bid = bin.bin_id[i];
++      if (bid > 0) {
++        IT offset = crpt[i];
++        IT ht_size = MIN_HT_N << (bid - 1);
++        for (IT j = 0; j < ht_size; ++j) {
++          ht_check[j] = -1;
++        }
++        // union of col-ids of cluster
++        for (IT j = arpt[i]; j < arpt[i + 1]; ++j) { // A.cols
++          IT t_acol = acol[j];
++          NT t_aval = aval[j];
++          // B[i]
++          for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++            NT t_val = multop(t_aval, bval[k]);
++            IT key = bcol[k];
++            IT hash = (key * HASH_SCAL) & (ht_size - 1);
++            while (1) { // Loop for hash probing
++              if (ht_check[hash] == key) { // key is already inserted
++                ht_value[hash] = addop(t_val, ht_value[hash]);
++                break;
++              } else if (ht_check[hash] == -1) { // insert new entry
++                ht_check[hash] = key;
++                ht_value[hash] = t_val;
++                break;
++              } else {
++                hash = (hash + 1) & (ht_size - 1); // (hash + 1) % ht_size
++              }
++            }
++          }
++        }
++//        sort_and_store_table2mat_topK<sortOutput, IT, NT>(ht_check, ht_value,
++//                                              ccol + offset, cval + offset,
++//                                              crpt[i + 1] - offset, ht_size, topK);
++        sort_and_store_table2mat_topK_jaccard<sortOutput, IT, NT>(ht_check, ht_value,
++                                              ccol + offset, cval + offset,
++                                              crpt[i + 1] - offset, ht_size, topK,
++                                              arpt, i);
++
++//        assert(!sortOutput && "can't hande for sortOutput=True");
++//        IT u, index = 0;
++//        NT jacc;
++//        for (IT j = 0; j < ht_size; ++j) {
++//          if (ht_check[j] != -1) {
++//            u = (arpt[i + 1] - arpt[i]) + (arpt[ht_check[j] + 1] - arpt[ht_check[j]]) - ht_value[j];
++//            jacc = (u == 0) ? 0.0 : 1.0 * ht_value[j] / u;
++//
++//            ccol[offset+index] = ht_check[j];
++//            cval[offset+index] = jacc;
++//            index++;
++//          }
++//        }
++//        sort_and_store_table2mat_topK_cf<sortOutput, IT, NT>(ht_check, ht_value,
++//                                                      ccol + offset, cval + offset,
++//                                                      crpt[i + 1] - offset, ht_size, topK,
++//                                                      arpt, i);
++      }
++    }
++  }
++
++//    sort(flops_per_thread, flops_per_thread+numThreads);
++//    cout << "min-flops: " << flops_per_thread[0] << " max-flops: " << flops_per_thread[numThreads - 1] << endl;
++}
++
++template <bool sortOutput, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void hash_numeric_vec(const int *arpt, const int *acol, const NT *aval, const int *brpt, const int *bcol, const NT *bval, const int *crpt, int *ccol, NT *cval, const BIN<int, NT> &bin, MultiplyOperation multop, AddOperation addop)
++{
++#ifdef VECTORIZE
++    const __m256i init_m = _mm256_set1_epi32(-1);
++    const __m256i true_m = _mm256_set1_epi32(0xffffffff);
++#endif        
++
++#pragma omp parallel
++    {
++        int tid = omp_get_thread_num();
++        int start_row = bin.rows_offset[tid];
++        int end_row = bin.rows_offset[tid + 1];
++
++        int *ht_check = bin.local_hash_table_id[tid];
++        NT *ht_value = bin.local_hash_table_val[tid];
++
++        for (int i = start_row; i < end_row; ++i) {
++#ifdef VECTORIZE
++            __m256i key_m, check_m, mask_m;
++            int mask;
++#endif            
++            int bid = bin.bin_id[i];
++
++            if (bid > 0) {
++                int offset = crpt[i];
++                int table_size = MIN_HT_N << (bid - 1);
++                int ht_size = table_size >> VEC_LENGTH_BIT;
++
++                for (int j = 0; j < table_size; ++j) {
++                    ht_check[j] = -1;
++                }
++  
++                for (int j = arpt[i]; j < arpt[i + 1]; ++j) {
++                    int t_acol = acol[j];
++                    NT t_aval = aval[j];
++                    for (int k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++                        NT t_val = multop(t_aval, bval[k]);
++	
++                        int key = bcol[k];
++                        int hash = (key * HASH_SCAL) & (ht_size - 1);
++#ifdef VECTORIZE
++                        key_m = _mm256_set1_epi32(key);
++#endif
++                        while (1) {
++#ifdef VECTORIZE
++                            check_m = _mm256_maskload_epi32(ht_check + (hash << VEC_LENGTH_BIT), true_m);
++                            mask_m = _mm256_cmpeq_epi32(key_m, check_m);
++                            mask = _mm256_movemask_epi8(mask_m);
++                            if (mask != 0) {
++                                int target = __builtin_ctz(mask) >> 2;
++                                ht_value[(hash << VEC_LENGTH_BIT) + target] += t_val;
++                                break;
++                            }
++#else
++                            int flag = -1;
++                            for (int l = 0; l < VEC_LENGTH; ++l) {
++                                if (ht_check[(hash << VEC_LENGTH_BIT) + l] == key) {
++                                    flag = l;
++                                }
++                            }
++                            if (flag >= 0) {
++                                ht_value[(hash << VEC_LENGTH_BIT) + flag] += t_val;
++                                break;
++                            }
++#endif
++                            else {
++                                int cur_nz;
++#ifdef VECTORIZE
++                                mask_m = _mm256_cmpeq_epi32(check_m, init_m);
++                                mask = _mm256_movemask_epi8(mask_m);
++                                cur_nz = (32 - _popcnt32(mask)) >> 2;
++#else
++                                cur_nz = VEC_LENGTH;
++                                for (int l = 0; l < VEC_LENGTH; ++l) {
++                                    if (ht_check[(hash << VEC_LENGTH_BIT) + l] == -1) {
++                                        cur_nz = l;
++                                        break;
++                                    }
++                                }
++#endif
++                                if (cur_nz < VEC_LENGTH) {
++                                    ht_check[(hash << VEC_LENGTH_BIT) + cur_nz] = key;
++                                    ht_value[(hash << VEC_LENGTH_BIT) + cur_nz] = t_val;
++                                    break;
++                                }
++                                else {
++                                    hash = (hash + 1) & (ht_size - 1);
++                                }
++                            }
++                        }
++                    }
++                }
++                sort_and_store_table2mat<sortOutput, int, NT>(ht_check, ht_value,
++                                                              ccol + offset, cval + offset,
++                                                              crpt[i + 1] - offset, ht_size, crpt[i+1]);
++            }
++        }
++    }
++}
++
++template <bool sortOutput, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void hash_numeric_vec(const long long int *arpt, const long long int *acol, const NT *aval, const long long int *brpt, const long long int *bcol, const NT *bval, const long long int *crpt, long long int *ccol, NT *cval, const BIN<long long int, NT> &bin, MultiplyOperation multop, AddOperation addop)
++{
++#ifdef VECTORIZE
++    const __m256i init_m = _mm256_set1_epi64x(-1);
++    const __m256i true_m = _mm256_set1_epi64x(0xffffffffffffffff);
++#endif        
++
++#pragma omp parallel
++    {
++        long long int tid = omp_get_thread_num();
++        long long int start_row = bin.rows_offset[tid];
++        long long int end_row = bin.rows_offset[tid + 1];
++
++        long long int *ht_check = bin.local_hash_table_id[tid];
++        NT *ht_value = bin.local_hash_table_val[tid];
++
++        for (long long int i = start_row; i < end_row; ++i) {
++#ifdef VECTORIZE
++            __m256i key_m, check_m, mask_m;
++            int mask;
++#endif            
++            long long int bid = bin.bin_id[i];
++
++            if (bid > 0) {
++                long long int offset = crpt[i];
++                long long int table_size = MIN_HT_N << (bid - 1);
++                long long int ht_size = table_size >> VEC_LENGTH_LONG_BIT;
++
++                for (long long int j = 0; j < table_size; ++j) {
++                    ht_check[j] = -1;
++                }
++  
++                for (long long int j = arpt[i]; j < arpt[i + 1]; ++j) {
++                    long long int t_acol = acol[j];
++                    NT t_aval = aval[j];
++                    for (long long int k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++                        NT t_val = multop(t_aval, bval[k]);
++                        long long int key = bcol[k];
++                        long long int hash = (key * HASH_SCAL) & (ht_size - 1);
++#ifdef VECTORIZE
++                        key_m = _mm256_set1_epi64x(key);
++#endif
++                        while (1) {
++#ifdef VECTORIZE
++                            check_m = _mm256_maskload_epi64(ht_check + (hash << VEC_LENGTH_LONG_BIT), true_m);
++                            mask_m = _mm256_cmpeq_epi64(key_m, check_m);
++                            mask = _mm256_movemask_epi8(mask_m);
++                            if (mask != 0) {
++                                int target = __builtin_ctz(mask) >> 3;
++                                ht_value[(hash << VEC_LENGTH_LONG_BIT) + target] += t_val;
++                                break;
++                            }
++#else
++                            int flag = -1;
++                            for (int l = 0; l < VEC_LENGTH_LONG; ++l) {
++                                if (ht_check[(hash << VEC_LENGTH_LONG_BIT) + l] == key) {
++                                    flag = l;
++                                }
++                            }
++                            if (flag >= 0) {
++                                ht_value[(hash << VEC_LENGTH_LONG_BIT) + flag] += t_val;
++                                break;
++                            }
++#endif
++                            else {
++                                int cur_nz;
++#ifdef VECTORIZE
++                                mask_m = _mm256_cmpeq_epi64(check_m, init_m);
++                                mask = _mm256_movemask_epi8(mask_m);
++                                cur_nz = (32 - _popcnt32(mask)) >> 3;
++#else
++                                cur_nz = VEC_LENGTH_LONG;
++                                for (int l = 0; l < VEC_LENGTH_LONG; ++l) {
++                                    if (ht_check[(hash << VEC_LENGTH_LONG_BIT) + l] == -1) {
++                                        cur_nz = l;
++                                        break;
++                                    }
++                                }
+ #endif
++                                if (cur_nz < VEC_LENGTH_LONG) {
++                                    ht_check[(hash << VEC_LENGTH_LONG_BIT) + cur_nz] = key;
++                                    ht_value[(hash << VEC_LENGTH_LONG_BIT) + cur_nz] = t_val;
++                                    break;
++                                }
++                                else {
++                                    hash = (hash + 1) & (ht_size - 1);
++                                }
++                            }
++                        }
++                    }
++                }
++                sort_and_store_table2mat<sortOutput, long long int, NT>(ht_check, ht_value,
++                                                                        ccol + offset, cval + offset,
++                                                                        crpt[i + 1] - offset, ht_size, crpt[i+1]);
++            }
++        }
++    }
++}
++
++/*
++ * Numeric phase (with inplace update for SMALL NNZs) in Hash SpGEMM.
++ */
++template <bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void hash_numeric_with_inplace(const IT *arpt, const IT *acol, const NT *aval, const IT *brpt, const IT *bcol, const NT *bval, const IT *crpt, IT *ccol, NT *cval, const BIN<IT, NT> &bin, const MultiplyOperation multop, const AddOperation addop, IT cnnz, int inplace_cutoff)
++{
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.rows_offset[tid];
++    IT end_row = bin.rows_offset[tid + 1];
++
++    IT row_write_ptr;
++
++    IT *ht_check = bin.local_hash_table_id[tid];
++    NT *ht_value = bin.local_hash_table_val[tid];
++    for (IT i = start_row; i < end_row; ++i) {  //A.rows
++      // in-place update
++      if(bin.row_nz[i] > 0 && bin.row_nz[i] <= inplace_cutoff) {
++        row_write_ptr = crpt[i];
++        for (size_t j = arpt[i]; j < arpt[i + 1]; ++j) {
++          size_t rowofb = acol[j];
++          for (size_t k = brpt[rowofb]; k < brpt[rowofb + 1]; ++k) {
++            if(sortOutput) {
++              size_t l = crpt[i];
++              long pos = (lower_bound(ccol+l, ccol + row_write_ptr, bcol[k])) - ccol;
++              if(pos == row_write_ptr) {
++                ccol[row_write_ptr] = bcol[k];
++                cval[row_write_ptr] = multop(aval[j], bval[k]);
++                row_write_ptr += 1;
++              }
++              else if(ccol[pos] == bcol[k]) {
++                cval[pos] = addop(multop(aval[j], bval[k]), cval[pos]);
++              }
++              else {
++                // do right shift
++                l = row_write_ptr - 1;
++                while (l >= pos) {
++                  ccol[l + 1] = ccol[l];
++                  cval[l + 1] = cval[l];
++                  l -= 1;
++                }
++                ccol[pos] = bcol[k];
++                cval[pos] = multop(aval[j], bval[k]);
++                row_write_ptr += 1;
++              }
++            }
++            else {
++              size_t l = crpt[i];
++              while (l < row_write_ptr) {
++                if (ccol[l] == bcol[k]) {
++                  cval[l] = addop(multop(aval[j], bval[k]), cval[l]);
++                  break;
++                }
++                l += 1;
++              }
++              if (l == row_write_ptr) {
++                ccol[row_write_ptr] = bcol[k];
++                cval[row_write_ptr] = multop(aval[j], bval[k]);
++                row_write_ptr += 1;
++              }
++            }
++          }
++        }
++      }
++        // hashtable update
++      else {
++        IT bid = bin.bin_id[i];
++        if (bid > 0) {
++          IT offset = crpt[i];
++          IT ht_size = MIN_HT_N << (bid - 1);
++          for (IT j = 0; j < ht_size; ++j) {
++            ht_check[j] = -1;
++          }
++          for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {
++            IT t_acol = acol[j];
++            NT t_aval = aval[j];
++            for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++              NT t_val = multop(t_aval, bval[k]);
++              IT key = bcol[k];
++              IT hash = (key * HASH_SCAL) & (ht_size - 1);
++              while (1) { // Loop for hash probing
++                if (ht_check[hash] == key) { // key is already inserted
++                  ht_value[hash] = addop(t_val, ht_value[hash]);
++                  break;
++                } else if (ht_check[hash] == -1) { // insert new entry
++                  ht_check[hash] = key;
++                  ht_value[hash] = t_val;
++                  break;
++                } else {
++                  hash = (hash + 1) & (ht_size - 1); // (hash + 1) % ht_size
++                }
++              }
++            }
++          }
++          sort_and_store_table2mat<sortOutput, IT, NT>(ht_check, ht_value,
++                                                       ccol + offset, cval + offset,
++                                                       crpt[i + 1] - offset, ht_size, cnnz - offset);
++        }
++      }
++    }
++  }
++}
++
++/*
++ * Numeric phase (with inplace update for SMALL NNZs) in Hash SpGEMM.
++ * The ccol (col-ids) will be prefilled in the symbolic phase (in sorted order).
++ */
++template <bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void hash_numeric_with_inplace_V1(const IT *arpt, const IT *acol, const NT *aval,
++                                         const IT *brpt, const IT *bcol, const NT *bval,
++                                         const IT *crpt, IT *ccol, NT *cval, const BIN<IT, NT> &bin,
++                                         const MultiplyOperation multop, const AddOperation addop, IT cnnz,
++                                         int inplace_cutoff, vector<bool>& inplace_flags)
++{
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.rows_offset[tid];
++    IT end_row = bin.rows_offset[tid + 1];
++
++    IT inplace_pos_st;
++    IT *ht_check = bin.local_hash_table_id[tid];
++    NT *ht_value = bin.local_hash_table_val[tid];
++    for (IT i = start_row; i < end_row; ++i) {  //A.rows
++      // in-place update
++      if(bin.row_nz[i] > 0 && bin.row_nz[i] <= inplace_cutoff) {
++        inplace_pos_st = i * inplace_cutoff;
++        for (size_t j = arpt[i]; j < arpt[i + 1]; ++j) {
++          size_t rowofb = acol[j];
++          for (size_t k = brpt[rowofb]; k < brpt[rowofb + 1]; ++k) {
++            size_t l = crpt[i];
++            long pos = (lower_bound(ccol+l, ccol + crpt[i+1], bcol[k])) - ccol;
++            assert(pos < crpt[i+1] && "bcol[k] should be found in the output row i");
++            if(!inplace_flags[inplace_pos_st + (pos-l)]) {
++              cval[pos] = multop(aval[j], bval[k]);
++              inplace_flags[inplace_pos_st + (pos-l)] = 1;
++            }
++            else {
++              cval[pos] = addop(multop(aval[j], bval[k]), cval[pos]);
++            }
++          }
++        }
++      }
++      // hashtable update
++      else {
++        IT bid = bin.bin_id[i];
++        if (bid > 0) {
++          IT offset = crpt[i];
++          IT ht_size = MIN_HT_N << (bid - 1);
++          for (IT j = 0; j < ht_size; ++j) {
++            ht_check[j] = -1;
++          }
++          for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {
++            IT t_acol = acol[j];
++            NT t_aval = aval[j];
++            for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++              NT t_val = multop(t_aval, bval[k]);
++              IT key = bcol[k];
++              IT hash = (key * HASH_SCAL) & (ht_size - 1);
++              while (1) { // Loop for hash probing
++                if (ht_check[hash] == key) { // key is already inserted
++                  ht_value[hash] = addop(t_val, ht_value[hash]);
++                  break;
++                } else if (ht_check[hash] == -1) { // insert new entry
++                  ht_check[hash] = key;
++                  ht_value[hash] = t_val;
++                  break;
++                } else {
++                  hash = (hash + 1) & (ht_size - 1); // (hash + 1) % ht_size
++                }
++              }
++            }
++          }
++          sort_and_store_table2mat<sortOutput, IT, NT>(ht_check, ht_value,
++                                                       ccol + offset, cval + offset,
++                                                       crpt[i + 1] - offset, ht_size, cnnz - offset);
++        }
++      }
++    }
++  }
++}
++
++/*
++ * Symbolic phase for Hash SpGEMM (with inplace update for SMALL NNZs).
++ * The ccol (col-ids) will be prefilled in the symbolic phase (in sorted order).
++ */
++template <class IT, class NT>
++inline void hash_symbolic_kernel_with_inplace(const IT *arpt, const IT *acol, const IT *brpt, const IT *bcol,
++                                              BIN<IT, NT> &bin, IT *inplace_colids, int inplace_cutoff) {
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.rows_offset[tid];
++    IT end_row = bin.rows_offset[tid + 1];
++
++    IT inplace_pos_st;
++    IT *check = bin.local_hash_table_id[tid];
++
++    for (IT i = start_row; i < end_row; ++i) {
++      IT nz = 0;
++      IT bid = bin.bin_id[i];
++      inplace_pos_st = i * inplace_cutoff;
++
++      if (bid > 0) {
++        IT ht_size = MIN_HT_S << (bid - 1); // determine hash table size for i-th row
++        for (IT j = 0; j < ht_size; ++j) { // initialize hash table
++          check[j] = -1;
++        }
++
++        for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {
++          IT t_acol = acol[j];
++          for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {
++            IT key = bcol[k];
++            IT hash = (key * HASH_SCAL) & (ht_size - 1);
++            while (1) { // Loop for hash probing
++              if (check[hash] == key) { // if the key is already inserted, it's ok
++                break;
++              }
++              else if (check[hash] == -1) { // if the key has not been inserted yet, then it's added.
++                check[hash] = key;
++                if(nz < inplace_cutoff) inplace_colids[inplace_pos_st + nz] = key;
++                nz++;
++                break;
++              }
++              else { // linear probing: check next entry
++                hash = (hash + 1) & (ht_size - 1); //hash = (hash + 1) % ht_size
++              }
++            }
++          }
++        }
++      }
++      bin.row_nz[i] = nz;
++    }
++  }
++}
++
++template <class IT, class NT>
++inline void copy_symbolic_results(const IT *crpt, IT *ccol, BIN<IT, NT> &bin, IT *inplace_colids, int inplace_cutoff) {
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.rows_offset[tid];
++    IT end_row = bin.rows_offset[tid + 1];
++
++    IT inplace_pos_st;
++//    IT *check = bin.local_hash_table_id[tid];
++
++    for (IT i = start_row; i < end_row; ++i) {
++      if(bin.row_nz[i] > 0 && bin.row_nz[i] <= inplace_cutoff) {
++        sort(inplace_colids + (i * inplace_cutoff), inplace_colids + ((i * inplace_cutoff) + bin.row_nz[i]));
++        memcpy(ccol + crpt[i], inplace_colids + (i * inplace_cutoff), bin.row_nz[i] * sizeof(IT));
++      }
++    }
++  }
++}
++
++/*
++ * Executing Hash SpGEMM with inplace update.
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ * The col-ids within the inplace cutoff nnz will be stored in the output matrix during symbolic phase (in sorted order),
++ *  so that we can use binary search to update values during numeric phase.
++ */
++template <bool vectorProbing, bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void HashSpGEMMWithInplaceUpdateV1(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c,
++                                   MultiplyOperation multop, AddOperation addop, int inplace_cutoff)
++{
++  BIN<IT, NT> bin(a.rows, MIN_HT_S);
++
++  c.rows = a.rows;
++  c.cols = b.cols;
++  c.zerobased = true;
++
++  /* Set max bin */
++  bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.rows, c.cols);
++
++  /* Create hash table (thread local) */
++  bin.create_local_hash_table(c.cols);
++
++  /* Symbolic Phase */
++  c.rowptr = my_malloc<IT>(c.rows + 1);
++  IT* inplace_colids = my_malloc<IT>(a.rows * inplace_cutoff);
++  hash_symbolic_kernel_with_inplace(a.rowptr, a.colids, b.rowptr, b.colids, bin, inplace_colids, inplace_cutoff);
++//  cout << "symbolic done" << endl;
++
++  /* Set row pointer of matrix C */
++  scan(bin.row_nz, c.rowptr, a.rows + 1);
++  c.nnz = c.rowptr[c.rows];
++
++  c.colids = my_malloc<IT>(c.nnz);
++  c.values = my_malloc<NT>(c.nnz);
++
++  copy_symbolic_results(c.rowptr, c.colids, bin, inplace_colids, inplace_cutoff);
++  my_free<IT>(inplace_colids);
++//  cout << "data copy done" << endl;
++
++//  int tmp = 0;
++//  for(IT i = 0; i < a.rows; i+=1) {
++//    if(bin.row_nz[i] <= inplace_cutoff) tmp += 1;
++//  }
++//  cout << "total rows: " << a.rows << ", inplace: " << tmp << endl;
++
++  /* Numeric Phase */
++  vector<bool> inplace_flags(a.rows * inplace_cutoff, 0);
++  hash_numeric_with_inplace_V1<sortOutput>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values,
++                                           c.rowptr, c.colids, c.values, bin, multop, addop, c.nnz,
++                                           inplace_cutoff, inplace_flags);
++//  cout << "numeric done" << endl;
++}
++
++/*
++ * Executing Hash SpGEMM with inplace update
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ */
++template <bool vectorProbing, bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void HashSpGEMMWithInplaceUpdate(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop, int inplace_cutoff, string out_nnz_freq_outfile, bool first_pass = false)
++{
++  BIN<IT, NT> bin(a.rows, MIN_HT_S);
++
++  c.rows = a.rows;
++  c.cols = b.cols;
++  c.zerobased = true;
++
++  /* Set max bin */
++  bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.rows, c.cols);
++
++  /* Create hash table (thread local) */
++  bin.create_local_hash_table(c.cols);
++
++  /* Symbolic Phase */
++  c.rowptr = my_malloc<IT>(c.rows + 1);
++  hash_symbolic<vectorProbing>(a.rowptr, a.colids, b.rowptr, b.colids, c.rowptr,
++                               bin, c.rows, &(c.nnz), out_nnz_freq_outfile, first_pass);
++
++  c.colids = my_malloc<IT>(c.nnz);
++  c.values = my_malloc<NT>(c.nnz);
++
++//  int tmp = 0;
++//  for(IT i = 0; i < a.rows; i+=1) {
++//    if(bin.row_nz[i] <= inplace_cutoff) tmp += 1;
++//  }
++//  cout << "total rows: " << a.rows << ", inplace: " << tmp << endl;
++
++  /* Numeric Phase */
++  hash_numeric_with_inplace<sortOutput>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values, c.rowptr, c.colids, c.values, bin, multop, addop, c.nnz, inplace_cutoff);
++}
++
++/*
++ * Executing Hash SpGEMM
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ */
++template <bool vectorProbing, bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void RowSpGEMM(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop, string out_nnz_freq_outfile, bool first_pass = false)
++{
++//  double start, end, msec;
++//  start = omp_get_wtime();
++    BIN<IT, NT> bin(a.rows, MIN_HT_S);
++  
++    c.rows = a.rows;
++    c.cols = b.cols;
++    c.zerobased = true;
++
++    /* Set max bin */
++    bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.rows, c.cols);
++    
++    /* Create hash table (thread local) */
++    bin.create_local_hash_table(c.cols);
++
++    /* Symbolic Phase */
++    c.rowptr = my_malloc<IT>(c.rows + 1);
++//  end = omp_get_wtime();
++//  msec = (end - start) * 1000;
++//  cout << "BIN initialization time: " << msec << " milli seconds." << endl;
++
++//  start = omp_get_wtime();
++    hash_symbolic<vectorProbing>(a.rowptr, a.colids, b.rowptr, b.colids, c.rowptr,
++                                 bin, c.rows, &(c.nnz), out_nnz_freq_outfile, first_pass);
++
++    // todo: adding this to reduce hashtable size
++    bin.set_bin_id(c.rows, c.cols, bin.min_ht_size);
++
++    c.colids = nullptr;
++    c.values = nullptr;
++    c.colids = my_malloc<IT>(c.nnz);
++    c.values = my_malloc<NT>(c.nnz);
++
++//  cout << "[DONE] hash_symbolic " << c.nnz << endl;
++
++    assert(c.colids != nullptr && c.values != nullptr && "C.colids & C.values are not initialized poperly!");
++//  end = omp_get_wtime();
++//  msec = (end - start) * 1000;
++//  cout << "Symbolic time: " << msec << " milli seconds." << endl;
++
++//    sanity_check(c.rowptr, c.nnz, c.rows);
++
++    /* Numeric Phase */
++//    if (vectorProbing) {
++//        hash_numeric_vec<sortOutput>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values, c.rowptr, c.colids, c.values, bin, multop, addop);
++//    }
++//    else {
++//  start = omp_get_wtime();
++        hash_numeric<sortOutput>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values, c.rowptr, c.colids, c.values, bin, multop, addop, c.nnz);
++//  end = omp_get_wtime();
++//  msec = (end - start) * 1000;
++//  cout << "Numeric time: " << msec << " milli seconds." << endl;
++//    }
++}
++
++/*
++ * Executing Hash SpGEMM
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ */
++template <bool vectorProbing, bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void HashSpGEMMtoCheckMemoryRequirement(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop, string out_nnz_freq_outfile, bool first_pass = false)
++{
++  BIN<IT, NT> bin(a.rows, MIN_HT_S);
++
++  c.rows = a.rows;
++  c.cols = b.cols;
++  c.zerobased = true;
++
++  /* Set max bin */
++  bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.rows, c.cols);
++
++  /* Create hash table (thread local) */
++  bin.create_local_hash_table(c.cols);
++
++  /* Symbolic Phase */
++  c.rowptr = my_malloc<IT>(c.rows + 1);
++
++  hash_symbolic<vectorProbing>(a.rowptr, a.colids, b.rowptr, b.colids, c.rowptr,
++                               bin, c.rows, &(c.nnz), out_nnz_freq_outfile, first_pass);
++
++  bin.set_bin_id(c.rows, c.cols, bin.min_ht_size);
++
++  c.colids = nullptr;
++  c.values = nullptr;
++  c.colids = my_malloc<IT>(c.nnz);
++  c.values = my_malloc<NT>(c.nnz);
++
++  assert(c.colids != nullptr && c.values != nullptr && "C.colids & C.values are not initialized poperly!");
++
++  printf("BIN size: %.2f bytes\n", bin.calculate_size_in_gb());
++  printf("C size: %.2f bytes\n", c.calculate_size());
++}
++
++/*
++ * Executing Hash SpGEMM
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ */
++template <bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void HashSpGEMMTopK(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop, IT topK, string out_nnz_freq_outfile, bool first_pass = false)
++{
++  BIN<IT, NT> bin(a.rows, MIN_HT_S);
++
++  c.rows = a.rows;
++  c.cols = b.cols;
++  c.zerobased = true;
++
++  /* Set max bin */
++  bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.rows, c.cols);
++
++  /* Create hash table (thread local) */
++  bin.create_local_hash_table(c.cols);
++
++  /* Symbolic Phase */
++  c.rowptr = my_malloc<IT>(c.rows + 1);
++  hash_symbolic_topK(a.rowptr, a.colids, b.rowptr, b.colids, c.rowptr,
++                               bin, c.rows, &(c.nnz), topK, out_nnz_freq_outfile, first_pass);
++//  hash_symbolic<false>(a.rowptr, a.colids, b.rowptr, b.colids, c.rowptr,
++//                     bin, c.rows, &(c.nnz), out_nnz_freq_outfile, first_pass);
++
++  cout << "[DONE] hash_symbolic_topK " << c.nnz << endl;
++
++  // todo: adding this to reduce hashtable size
++  bin.set_bin_id(c.rows, c.cols, bin.min_ht_size);
++
++  c.colids = nullptr;
++  c.values = nullptr;
++  c.colids = my_malloc<IT>(c.nnz);
++  c.values = my_malloc<NT>(c.nnz);
++
++  c.calculate_size();
++
++//  c.colids = my_malloc<IT>(a.rows * topK);
++//  c.values = my_malloc<NT>(a.rows * topK);
++//  memset(c.colids, -1, sizeof(c.colids) * (a.rows * topK));
++//  memset(c.values, -1, sizeof(c.values));
++
++  bin.calculate_size_in_gb();
++  cout << "[DONE] memory allocation" << endl;
++
++//  for(int i=0; i<c.rows; i+=1) cout << c.rowptr[i] << " ";
++//  cout << endl;
++
++  assert(c.colids != nullptr && c.values != nullptr && "C.colids & C.values are not initialized poperly!");
++
++//  hash_numeric<sortOutput>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values, c.rowptr, c.colids, c.values, bin, multop, addop, c.nnz);
++  hash_numeric_topk<sortOutput>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values, c.rowptr, c.colids, c.values, bin, multop, addop, topK);
++//  bool sortedOutput = true;
++//  hash_numeric<true>(a.rowptr, a.colids, a.values, b.rowptr, b.colids, b.values, c.rowptr, c.colids, c.values, bin, multop, addop, c.nnz);
++
++  cout << "[DONE] hash_numeric_topk" << endl;
++}
++
++/*
++ * Hash SpGEMM functions called without full template values
++ */
++template <bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void RowSpGEMM(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop)
++{
++    RowSpGEMM<false, sortOutput, IT, NT, MultiplyOperation, AddOperation>(a, b, c, multop, addop);
++}
++
++template <typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void RowSpGEMM(const CSR<IT, NT> &a, const CSR<IT, NT> &b, CSR<IT, NT> &c, MultiplyOperation multop, AddOperation addop)
++{
++    RowSpGEMM<false, true, IT, NT, MultiplyOperation, AddOperation>(a, b, c, multop, addop);
++}
+diff --git a/hash_mult_flengthcluster.h b/hash_mult_flengthcluster.h
+index 429f094..6f28a9a 100644
+--- a/hash_mult_flengthcluster.h
++++ b/hash_mult_flengthcluster.h
+@@ -1,17 +1,294 @@
+-#ifndef HASH_MULT_FLENGTHCLUSTER_H
+-#define HASH_MULT_FLENGTHCLUSTER_H
++#include <stdio.h>
++#include <stdlib.h>
++#include <omp.h>
++#include <immintrin.h>
++#include <algorithm>
++#include <fstream>
++#include <x86intrin.h>
+ 
+-#include <stdexcept>
++#include "utility.h"
+ #include "CSR.h"
+ #include "CSR_FlengthCluster.h"
++#include "BIN_FlengthCluster.h"
+ 
+-template<bool sortOutput, typename IT, typename NT,
+-         typename MultiplyOperation, typename AddOperation>
+-void HashSpGEMMCluster(const CSR_FlengthCluster<IT, NT> &,
+-                       const CSR<IT, NT> &,
+-                       CSR_FlengthCluster<IT, NT> &,
+-                       MultiplyOperation, AddOperation) {
+-  throw std::logic_error("HashSpGEMMCluster is not implemented");
++/* SpGEMM Specific Parameters */
++#define HASH_SCAL 107 // Set disjoint number to hash table size (=2^n)
++#define SMALL_THRESHOLD 100
++
++#define MIN_HT_S 8 // minimum hash table size per row in symbolic phase
++#define MIN_HT_N 8 // minimum hash table size per row in numeric phase
++
++/*
++ * Symbolic phase for HashSpGEMMCluster.
++ */
++template<class IT, class NT>
++inline void hash_symbolic_kernel_cluster(const IT *arpt, const IT *acol,
++                                         const IT *brpt, const IT *bcol,
++                                         BIN_FlengthCluster<IT, NT> &bin) {
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.clusters_offset[tid];      // start cluster
++    IT end_row = bin.clusters_offset[tid + 1];    // end cluster
++
++    IT *check = bin.local_hash_table_id[tid];
++    IT t_acol, key, hash;
++
++    for (IT i = start_row; i < end_row; ++i) {                      // loop over clusters
++      IT nz = 0;
++      IT bid = bin.bin_id_cluster[i];
++
++      if (bid > 0) {
++        IT ht_size = MIN_HT_S << (bid - 1);                         // determine hash table size for i-th cluster
++        for (IT j = 0; j < ht_size; ++j) {                          // initialize hash table
++          check[j] = -1;
++        }
++
++        for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {                // loop over the columns of cluster[i]
++          t_acol = acol[j];
++          for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {    // loop over columns of B (B.row selected by columns of cluster[i])
++            key = bcol[k];
++            hash = (key * HASH_SCAL) & (ht_size - 1);
++            while (1) {                                             // loop for hash probing
++              if (check[hash] == key) {                             // if the key is already inserted, it's ok
++                break;
++              } else if (check[hash] == -1) {                       // if the key has not been inserted yet, then it's added.
++                check[hash] = key;
++                nz++;
++                break;
++              } else {                                              // linear probing: check next entry
++                hash = (hash + 1) & (ht_size - 1);                  // hash = (hash + 1) % ht_size
++              }
++            }
++          }
++        }
++      }
++      bin.cluster_nz[i] = nz;                                       // updating cluster_nz by row[i] nnz; previously it was set to flops of row[i]
++    }
++  }
++}
++
++// Reference function for Symbolic phase of HashSpGEMMCluster
++template<class IT, class NT>
++inline void hash_symbolic_cluster(const IT *arpt, const IT *acol, const IT *brpt, const IT *bcol,
++                                  IT *crpt, BIN_FlengthCluster<IT, NT> &bin, const IT nrow, IT *nnz) {
++  hash_symbolic_kernel_cluster(arpt, acol, brpt, bcol, bin);
++
++  /* Set row pointer of matrix C */
++  scan(bin.cluster_nz, crpt, nrow + 1);
++  *nnz = crpt[nrow];
++}
++
++/*
++ * Used for sort function.
++ * Elements are sorted in ascending order.
++ */
++template<typename IT, typename NT>
++bool sort_less_V1(const pair<IT, NT> &left, const pair<IT, NT> &right) {
++  return left.first < right.first;
++}
++
++/*
++ * After calculating on each hash table, sort them in ascending order if necessary, and then store them as output matrix
++ * This function is used in hash_numeric* function.
++ * the actual indices of colids and values of output matrix are rpt[rowid];
++ */
++template<bool sortOutput, typename IT, typename NT>
++inline void sort_and_store_table2mat_cluster(IT *ht_check, NT *ht_value,
++                                             IT *colids, NT *values,
++                                             IT nz, IT ht_size, IT offset, IT cluster_sz,
++                                             const IT cluster_id, const IT csr_rows) {
++  IT index = 0;
++  IT val_idx, ht_idx;
++  // Sort elements in ascending order if necessary, and store them as output matrix
++  if (sortOutput) {
++    vector <pair<IT, IT>> p_vec(nz);                              // <col-id, position-in-hashtable>
++    for (IT j = 0; j < ht_size; ++j) {                            // accumulate non-zero entry from hash table
++      if (ht_check[j] != -1) {
++        p_vec[index++] = make_pair(ht_check[j], j);
++      }
++    }
++
++//    assert(index <= nz && "Index goes beyond p_vector limit");
++//    assert(index < offset && "Index goes beyond output limit");
++
++    sort(p_vec.begin(), p_vec.end(), sort_less_V1<IT, IT>);       // sort only non-zero elements
++
++    // store the results
++    for (IT j = 0; j < index; ++j) {
++      colids[j] = p_vec[j].first;
++      val_idx = (j * cluster_sz);
++      ht_idx = (p_vec[j].second * cluster_sz);
++      for (IT l = 0; l < cluster_sz; l += 1) {
++        values[val_idx + l] = ht_value[ht_idx + l];
++      }
++    }
++  } else {
++    // store the results
++    for (IT j = 0; j < ht_size; ++j) {
++      if (ht_check[j] != -1) {
++        colids[index] = ht_check[j];
++        val_idx = (index * cluster_sz);
++        ht_idx = (j * cluster_sz);
++        for (IT l = 0; l < cluster_sz; l += 1) {
++          values[val_idx + l] = ht_value[ht_idx + l];
++        }
++        index++;
++      }
++    }
++  }
++}
++
++/*
++ * Numeric phase in HashSpGEMMCluster.
++ */
++template<bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++inline void hash_numeric_cluster(const IT *arpt, const IT *acol, const NT *aval,
++                                 const IT *brpt, const IT *bcol, const NT *bval,
++                                 const IT *crpt, IT *ccol, NT *cval, const BIN_FlengthCluster<IT, NT> &bin,
++                                 const MultiplyOperation multop, const AddOperation addop, IT cnnz,
++                                 const int csr_rows, const IT cluster_sz, const NT eps = 0.000001f) {
++#pragma omp parallel
++  {
++    IT tid = omp_get_thread_num();
++    IT start_row = bin.clusters_offset[tid];
++    IT end_row = bin.clusters_offset[tid + 1];
++
++    IT *ht_check = bin.local_hash_table_id[tid];
++    NT *ht_value = bin.local_hash_table_val[tid];
++
++    IT t_acol;
++    NT t_aval, t_val;
++    for (IT i = start_row; i < end_row; ++i) {                            // A.clusters
++      // note: BIN class is based on the cluster (not in row order of the original CSR)
++      IT bid = bin.bin_id_cluster[i];
++      if (bid > 0) {
++        IT offset = crpt[i];
++        IT ht_size = MIN_HT_N << (bid - 1);
++        for (IT j = 0; j < ht_size; ++j) {
++          ht_check[j] = -1;
++        }
++
++        for (IT j = arpt[i]; j < arpt[i + 1]; ++j) {                      // union of col-ids of cluster A.cluster[i]
++          t_acol = acol[j];
++          for (IT k = brpt[t_acol]; k < brpt[t_acol + 1]; ++k) {          // B.cols
++            IT key = bcol[k];
++            IT hash = (key * HASH_SCAL) & (ht_size - 1);
++            while (1) {                                                   // loop for hash probing
++              if (ht_check[hash] == key) {                                // key is already inserted
++                for (IT l = 0; l < cluster_sz; l += 1) {                  // loop over all the rows of A.cluster[i].col[j]
++                  t_aval = aval[(j * cluster_sz) + l];                    // value from A
++                  // note: maybe we can use a bitmap to find whether [(j * cluster_sz) + l]-pos is valid
++                  if (fabs(t_aval - 0.0f) >= eps) {                       // avoid flop when (A.value[] == 0.0)
++                    t_val = multop(t_aval, bval[k]);                        // value for C
++                    ht_value[(hash * cluster_sz) + l] = addop(t_val, ht_value[(hash * cluster_sz) + l]);
++                  }
++                }
++                break;
++              } else if (ht_check[hash] == -1) {                          // insert new entry
++                ht_check[hash] = key;
++                for (IT l = 0; l < cluster_sz; l += 1) {                  // loop over all the rows of A.cluster[i].col[j]
++                  t_aval = aval[(j * cluster_sz) + l];                    // value from A
++                  t_val = multop(t_aval, bval[k]);                        // value for C
++                  // ht_value will be automatically initialized by 0.0 if t_val is zero
++                  ht_value[(hash * cluster_sz) + l] = t_val;
++                }
++                break;
++              } else {
++                hash = (hash + 1) & (ht_size - 1);                        // (hash + 1) % ht_size
++              }
++            }
++          }
++        }
++        // copy results from ht to the C_csr
++        sort_and_store_table2mat_cluster<sortOutput, IT, NT>(ht_check, ht_value,
++                                                             ccol + offset, cval + (offset * cluster_sz),
++                                                             (crpt[i + 1] - offset), ht_size, cnnz - offset,
++                                                             cluster_sz, i, csr_rows);
++      }
++    }
++  }
+ }
+ 
+-#endif
++
++/*
++ * Executing HashSpGEMMCluster
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ * Hash table also stores data in clustered format
++ */
++template<bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void HashSpGEMMCluster(const CSR_FlengthCluster<IT, NT> &a, const CSR<IT, NT> &b, CSR_FlengthCluster<IT, NT> &c,
++                       MultiplyOperation multop, AddOperation addop) {
++  // initialize bin
++  BIN_FlengthCluster<IT, NT> bin(a.rows, MIN_HT_S, a.cluster_sz);
++
++  c.csr_rows = a.csr_rows;
++  c.rows = a.rows;
++  c.cols = b.cols;
++  c.cluster_sz = a.cluster_sz;
++
++  /* Set max bin */
++  bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.cols);
++
++  /* Create hash table (thread local) */
++  bin.create_local_hash_table(c.cols);
++
++  /* Symbolic Phase */
++  c.rowptr = my_malloc<IT>(c.rows + 1);
++  hash_symbolic_cluster(a.rowptr, a.colids, b.rowptr, b.colids,
++                        c.rowptr, bin, c.rows, &(c.nnzc));
++
++  // resetting (reduce) hash table size
++  // hash table size is initialized by flops count
++  // after the symbolic phase, we can reset it by nnz count
++  bin.set_bin_id(c.cols, bin.min_ht_size);
++
++  c.colids = my_malloc<IT>(c.nnzc);
++  c.values = my_malloc<NT>(c.nnzc * c.cluster_sz);
++
++  /* Numeric Phase */
++  hash_numeric_cluster<sortOutput>(a.rowptr, a.colids, a.values,
++                                   b.rowptr, b.colids, b.values,
++                                   c.rowptr, c.colids, c.values,
++                                   bin, multop, addop, c.nnzc,
++                                   c.csr_rows, c.cluster_sz);
++}
++
++/*
++ * Executing HashSpGEMMCluster
++ * The function starts with initialization of hash table followed by symbolic phase and numeric phase with hash table.
++ * Hash table also stores data in clustered format
++ */
++template<bool sortOutput, typename IT, typename NT, typename MultiplyOperation, typename AddOperation>
++void HashSpGEMMClustertoCheckMemoryRequirement(const CSR_FlengthCluster<IT, NT> &a, const CSR<IT, NT> &b, CSR_FlengthCluster<IT, NT> &c,
++                       MultiplyOperation multop, AddOperation addop) {
++  // initialize bin
++  BIN_FlengthCluster<IT, NT> bin(a.rows, MIN_HT_S, a.cluster_sz);
++
++  c.csr_rows = a.csr_rows;
++  c.rows = a.rows;
++  c.cols = b.cols;
++  c.cluster_sz = a.cluster_sz;
++
++  /* Set max bin */
++  bin.set_max_bin(a.rowptr, a.colids, b.rowptr, c.cols);
++
++  /* Create hash table (thread local) */
++  bin.create_local_hash_table(c.cols);
++
++  /* Symbolic Phase */
++  c.rowptr = my_malloc<IT>(c.rows + 1);
++  hash_symbolic_cluster(a.rowptr, a.colids, b.rowptr, b.colids,
++                        c.rowptr, bin, c.rows, &(c.nnzc));
++
++  // resetting (reduce) hash table size
++  // hash table size is initialized by flops count
++  // after the symbolic phase, we can reset it by nnz count
++  bin.set_bin_id(c.cols, bin.min_ht_size);
++
++  c.colids = my_malloc<IT>(c.nnzc);
++  c.values = my_malloc<NT>(c.nnzc * c.cluster_sz);
++
++  printf("BIN size: %.2f bytes\n", bin.calculate_size_in_gb());
++  printf("C size: %.2f bytes\n", c.calculate_size());
++}
+\ No newline at end of file

@@ -1,0 +1,86 @@
+{
+  "unit": "fingerprint width / cardinality / key family / seed / query mixture",
+  "metrics": [
+    {
+      "name": "resident_bytes",
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "tolerance": "none",
+      "source": "judge/bridge.c::bf_live_bytes; judge/harness.c::main resident; judge/evaluator.py::paired_measure max"
+    },
+    {
+      "name": "build_ns",
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "tolerance": "none",
+      "source": "judge/harness.c::main create timer; judge/evaluator.py::paired_measure median"
+    },
+    {
+      "name": "lookup_ns",
+      "better": "lower",
+      "clears_when": "candidate < reference",
+      "tolerance": "none",
+      "source": "judge/harness.c::main lookup[0..3]; judge/evaluator.py::paired_measure median"
+    },
+    {
+      "name": "effective_fpr",
+      "better": "lower",
+      "tolerance": "none; statistical uncertainty and nonnegative reference-repeat delta are required improvement margins, never relaxation",
+      "clears_when": "On this workload, both point estimates and bounds are finite/defined and candidate.upper + calibrated_delta[workload][effective_fpr] < reference.lower; missing calibration is an author error; unresolved domain cannot pass",
+      "source": "judge/harness.c::main effective_false_positives/effective_absent_queries and resident; judge/accuracy_metrics.py::accuracy_sample/summarize_accuracy/clears_interval; judge/evaluator.py::paired_measure/score_rows"
+    },
+    {
+      "name": "space_overhead_pct",
+      "better": "lower",
+      "tolerance": "none; statistical uncertainty and nonnegative reference-repeat delta are required improvement margins, never relaxation",
+      "clears_when": "On this workload, both point estimates and bounds are finite/defined and candidate.upper + calibrated_delta[workload][space_overhead_pct] < reference.lower; missing calibration is an author error; unresolved domain cannot pass",
+      "source": "judge/harness.c::main effective_false_positives/effective_absent_queries and resident; judge/accuracy_metrics.py::accuracy_sample/summarize_accuracy/clears_interval; judge/evaluator.py::paired_measure/score_rows"
+    }
+  ],
+  "beats_reference": "Every one of five metrics clears on every workload, including added shuffled25%-hit rows; all original and new correctness gates pass. No metric or workload may compensate for another.",
+  "beats_reference_aggregation": {
+    "kind": "conjunction"
+  },
+  "solver_feedback": [
+    {
+      "name": "mean_resident_bytes",
+      "source": "judge/evaluator.py::evaluate candidate-only aggregate",
+      "reveals_reference": "no; candidate absolute aggregate only, no reference values or row identities"
+    },
+    {
+      "name": "mean_build_ns",
+      "source": "judge/evaluator.py::evaluate candidate-only aggregate",
+      "reveals_reference": "no; candidate absolute aggregate only, no reference values or row identities"
+    },
+    {
+      "name": "mean_lookup_ns",
+      "source": "judge/evaluator.py::evaluate candidate-only aggregate",
+      "reveals_reference": "no; candidate absolute aggregate only, no reference values or row identities"
+    },
+    {
+      "name": "mean_effective_fpr",
+      "source": "judge/evaluator.py::evaluate candidate-only mean of per-row worst empirical FPR",
+      "reveals_reference": "no; candidate absolute aggregate only"
+    },
+    {
+      "name": "space_overhead_defined_workloads",
+      "source": "judge/evaluator.py::evaluate count of candidate interior-domain space points",
+      "reveals_reference": "no; candidate-only defined count, no reference values or identities"
+    }
+  ],
+  "withheld": [
+    "reference measurements",
+    "workload identities",
+    "per-workload decisions"
+  ],
+  "statistical_contract": {
+    "estimator": "Worst per-construction empirical k/m across five repetitions; no pooling repeated queries",
+    "interval": "Bernoulli KL Chernoff inversion: m*D(k/m || p) <= log(2/alpha); alpha=(1e-6)/360 per construction; worst-value interval takes maxima of lower/upper bounds",
+    "space_definition": "100*((8*resident_bytes/n)/log2(1/epsilon)-1)",
+    "boundary": "epsilon=0 or1: space point null, no pseudocount/floor, space predicate false; interval endpoint limits only; epsilon outside[0,1]/nonfinite is invalid",
+    "calibration": "judge/statistical_calibration.json must bind exact measurement sources and >=5 complete reference-only rounds; each nonnegative delta is max(point)-min(point); no successor solver results before freeze",
+    "status": "REFERENCE_CALIBRATED_EXACT_RUNTIME_PENDING; five retained rounds rederived under certified arithmetic; production runtime remains a separate gate",
+    "arithmetic": "Float root proposals are accepted only after directed Decimal interval certification of m*KL >= log(2/alpha); outward space transformation; unchanged point estimator and confidence level"
+  },
+  "score": "Original descriptive mean of 100*R/(C+R) over resident/build/lookup, including every row. New accuracy/space predicates join strict conjunction independently; numeric score cannot imply PASS."
+}

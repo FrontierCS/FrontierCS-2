@@ -1,0 +1,25 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - {os: ubuntu-latest, flags: "--all-features" }
+          - {os: ubuntu-22.04, flags: "" }
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare dependencies
+      run: sudo apt-get install coinor-libcbc-dev
+    - name: Build
+      run: cargo build --verbose --all ${{ matrix.flags }}
+    - name: Run tests
+      run: cargo test --verbose --all ${{ matrix.flags }}

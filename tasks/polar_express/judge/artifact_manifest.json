@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "2505.16932-fcs-yolo/code",
+  "authentic_execution": {
+    "entrypoint": "plotsforpolar.ipynb",
+    "retained_files": [
+      "plotsforpolar.ipynb"
+    ],
+    "redactions": [
+      {
+        "path": "plotsforpolar.ipynb",
+        "byte_identical": false,
+        "upstream_sha256": "1485894bd6471333129ce99ce48ab2f8a9782e767344897279a8a9d1c3aa9cc9",
+        "solver_view_sha256": "c71a8e53ea685ff640a611ecd66045a1a3a2bee79bcf959624df2b2e9eed2be5",
+        "retained_upstream_cell_indices": [
+          1,
+          11
+        ],
+        "reason": "Retains original import/helper and composition-arrow execution cells (zero-based indices 1 and 11). Only the algorithm-identifying import comment changes inside those cells. Removes other cells, stored outputs and execution metadata to omit paper identification, coefficient alternatives and the answer-revealing upper-interval recurrence. The original plot_composition_arrows implementation and its l1=0.001, n_steps=12 invocation remain unchanged."
+      }
+    ]
+  },
+  "excision": [
+    {
+      "path": "polar_express.py",
+      "mode": "stubbed",
+      "symbols": [
+        "optimal_quintic",
+        "optimal_composition",
+        "PolarExpress",
+        "degree_to_remez"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "polar_express.py"
+    ],
+    "add_under": [
+      "frontier_solution/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [
+    {
+      "path": "frontier-build.sh",
+      "reason": "Task-owned deterministic build adapter that checks the retained module without implementing the contribution."
+    },
+    {
+      "path": "frontier-bench.sh",
+      "reason": "Task-owned adapter invokes the retained original notebook execution cells from the substrate directory; the notebook redactions are declared separately."
+    }
+  ],
+  "retained_alternatives": [],
+  "pruned_alternatives": [],
+  "minimality_note": "The selected original notebook execution cells, selectively stubbed contribution module, and license preserve the authentic scalar-composition spine. Other notebook cells, saved outputs and README are removed to avoid answer disclosure; no replacement plotting implementation is introduced."
+}

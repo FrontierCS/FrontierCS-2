@@ -1,0 +1,3 @@
+ce4ea07421078c1528e21de4ebeab5caac645ba8624aafe0f1f4b37589171da0 https://github.com/cpp-pm/hunter/archive/v0.24.0.tar.gz _Base/Download/Hunter/0.24.0/a3d7f43/v0.24.0.tar.gz
+b4870bf121ff7795ba20d20bcdd8627b8e088f2d1dab299a031c1034eddc93d5 https://github.com/google/googletest/archive/release-1.11.0.tar.gz _Base/Download/GTest/1.11.0/7b100bb/release-1.11.0.tar.gz
+6132883bc8c9b0df5375b16ab520fac1a85dc9e4cf5be59480448ece74b278d4 https://github.com/google/benchmark/archive/v1.6.1.tar.gz _Base/Download/benchmark/1.6.1/1faaa54/v1.6.1.tar.gz

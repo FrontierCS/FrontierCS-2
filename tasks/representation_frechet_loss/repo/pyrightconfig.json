@@ -1,0 +1,9 @@
+{
+    "exclude": [
+        "**/__pycache__",
+        "**/.git",
+        "data",
+        "work_dirs"
+    ],
+    "typeCheckingMode": "off"
+}

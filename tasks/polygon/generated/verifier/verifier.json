@@ -1,0 +1,18 @@
+{
+  "entrypoint": "payload/solution.patch",
+  "sandboxes": {
+    "search": {
+      "image": "verifier_cpu",
+      "lease_seconds": {
+        "eval": 1500,
+        "train": 1500
+      },
+      "max_concurrent": 1,
+      "resources": {
+        "cpu_millis": 2000,
+        "memory_bytes": 8589934592
+      },
+      "workdir": "/workspace/polygon-search"
+    }
+  }
+}

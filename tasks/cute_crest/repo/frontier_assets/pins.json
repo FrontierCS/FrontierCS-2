@@ -1,0 +1,52 @@
+[
+  {
+    "file": "ocaml-base-nox_4.02.3-9_amd64.deb",
+    "sha256": "2ae76fea331b67e54870e32d915721a56e3fa292aacee1d2ead9d20ecc82751a",
+    "url": "https://archive.debian.org/debian/pool/main/o/ocaml/ocaml-base-nox_4.02.3-9_amd64.deb"
+  },
+  {
+    "file": "ocaml-nox_4.02.3-9_amd64.deb",
+    "sha256": "af14b21f77a9c3f1f6e45c1f8ab6d4e14ee64c4d028c5d0982c724bb697209bf",
+    "url": "https://archive.debian.org/debian/pool/main/o/ocaml/ocaml-nox_4.02.3-9_amd64.deb"
+  },
+  {
+    "file": "ocaml-compiler-libs_4.02.3-9_amd64.deb",
+    "sha256": "79fa8fc44cd399e6c6f8fa06a17fe6897ff032bd2c77f485a63f3c32539af089",
+    "url": "https://archive.debian.org/debian/pool/main/o/ocaml/ocaml-compiler-libs_4.02.3-9_amd64.deb"
+  },
+  {
+    "file": "ocaml-interp_4.02.3-9_amd64.deb",
+    "sha256": "d215d1388e729c6733cb90cc0ab6db3f3bbb6d2d289604717917d260068f9e0d",
+    "url": "https://archive.debian.org/debian/pool/main/o/ocaml/ocaml-interp_4.02.3-9_amd64.deb"
+  },
+  {
+    "file": "libfindlib-ocaml_1.6.2-1+b1_amd64.deb",
+    "sha256": "0d420d5e6a9d92f4add99f43980ee1dc42c8c5cf35b12330afbfff9ebb40c80a",
+    "url": "https://archive.debian.org/debian/pool/main/f/findlib/libfindlib-ocaml_1.6.2-1+b1_amd64.deb"
+  },
+  {
+    "file": "libfindlib-ocaml-dev_1.6.2-1+b1_amd64.deb",
+    "sha256": "de7330e49b4989ba6c3afaa211e09e37ed54f5b641d699be3ecad5da30fdf735",
+    "url": "https://archive.debian.org/debian/pool/main/f/findlib/libfindlib-ocaml-dev_1.6.2-1+b1_amd64.deb"
+  },
+  {
+    "file": "ocaml-findlib_1.6.2-1+b1_amd64.deb",
+    "sha256": "f556ddcd72878de5b76e0e9111702e5674feb7840272750d59a82c12d44af4e0",
+    "url": "https://archive.debian.org/debian/pool/main/f/findlib/ocaml-findlib_1.6.2-1+b1_amd64.deb"
+  },
+  {
+    "file": "libncurses5_6.0+20161126-1+deb9u2_amd64.deb",
+    "sha256": "68caef5e0d2eb5e199903866fd1631d8f342a80c53373631abbeeee125c0dc3d",
+    "url": "https://archive.debian.org/debian/pool/main/n/ncurses/libncurses5_6.0+20161126-1+deb9u2_amd64.deb"
+  },
+  {
+    "file": "libtinfo5_6.0+20161126-1+deb9u2_amd64.deb",
+    "sha256": "1d249a3193568b5ef785ad8993b9ba6d6fdca0eb359204c2355532b82d25e9f5",
+    "url": "https://archive.debian.org/debian/pool/main/n/ncurses/libtinfo5_6.0+20161126-1+deb9u2_amd64.deb"
+  },
+  {
+    "file": "z3.tar.gz",
+    "sha256": "ed8e3d719ab7d3ec9107ccbe9998cda6206e8ca6ed22a0697c807c44ad1077a6",
+    "source": "supplied MIT Z3 4.15.3.0"
+  }
+]

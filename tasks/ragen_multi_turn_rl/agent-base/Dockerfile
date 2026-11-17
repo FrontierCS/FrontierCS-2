@@ -1,0 +1,34 @@
+# The source's Agent GPU runner and its CPU image in one: the veRL / vLLM image with the source's
+# packages and the offline model, built once for this image and the verifier's
+# (`runtime/Dockerfile`): the toolchain that the starter's checks run with, in the agent's own box,
+# which has the GPU. It holds git, python3 and tar, which the submission tools need. The agent runs
+# as uid 1000, user `ubuntu` as in the shared agent base, which owns /workspace.
+FROM runtime
+
+USER root
+ARG DEBIAN_FRONTEND=noninteractive
+RUN useradd --uid 1000 --user-group --no-create-home --home-dir /workspace --shell /bin/bash ubuntu \
+    && install --directory --owner=1000 --group=1000 /workspace
+
+LABEL org.opencontainers.image.title="FrontierCS2 task ragen_multi_turn_rl" \
+      dev.frontier.problem-id="ragen_multi_turn_rl"
+
+# The wrapper that runs the statement's commands in the toolchain's environment, with the
+# environment it records now (`gpu/task_runtime.py`).
+COPY --chmod=0555 gpu/task_runtime.py /opt/frontier/task-runtime
+RUN /opt/frontier/runtime-python /opt/frontier/task-runtime --snapshot
+
+# The solver-visible tree, and nothing else: the evaluator, the reference and the final suite
+# are in the verifier's image only. The submission tools are the repository's `shared/` ones,
+# which the build puts in its context, linked from /frontier/task as the shared agent base links
+# them.
+COPY --chmod=0555 shared/agent/bin/make_submission.sh shared/agent/bin/prepare_workspace.sh /frontier/task/bin/
+COPY --chmod=0444 shared/agent/bin/fcs2_submission.py shared/lib/edit_scope.py generated/agent/submission-policy.json /frontier/task/bin/
+COPY --chmod=a+rX,a-w --from=readme /README.md /frontier/task/README.md
+COPY --chmod=a+rX,a-w repo /frontier/task/repo
+RUN ln --symbolic /frontier/task/bin/prepare_workspace.sh /frontier/task/prepare_workspace.sh \
+    && ln --symbolic /frontier/task/bin/make_submission.sh /frontier/task/make_submission.sh
+
+USER 1000:1000
+ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /workspace

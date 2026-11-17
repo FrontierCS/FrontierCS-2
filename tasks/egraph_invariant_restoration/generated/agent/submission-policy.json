@@ -1,0 +1,19 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "src/egraph.rs",
+      "src/tutorials/_01_background.rs",
+      "src/tutorials/mod.rs",
+      "src/solver_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 1048576
+  },
+  "member": "solution.patch"
+}

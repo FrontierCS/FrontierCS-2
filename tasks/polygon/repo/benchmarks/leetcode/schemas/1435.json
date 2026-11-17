@@ -1,0 +1,21 @@
+{
+    "Problem Number": "1435",
+    "Tables": [
+      {
+        "TableName": "Sessions",
+        "PKeys": [          {
+            "Name": "session_id",
+            "Type": "int"
+          }],
+        "FKeys": [],
+        "Others": [
+
+          {
+            "Name": "duration",
+            "Type": "int"
+          }
+        ]
+      }
+    ],
+    "Tuples": []
+  }

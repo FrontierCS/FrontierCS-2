@@ -1,0 +1,107 @@
+{
+  "formal_guard_replay_pending": true,
+  "manifest_sha256": "96001f811e3457262e1b264e9e96e5128b0e3e6f753e1a16e003136cae17a670",
+  "reference_patch_sha256": "cc3b38d89697d33183d071709523abedad03e54007bd285e1dd7aabb44d8ada4",
+  "source_archive_sha256": "sha256:fa21ba32a495d865f0f2209702a9e1416c27758ff07641c468aeb5c2bc444db1",
+  "source_run_id": "run_01M35AHWFN8XCYC1QDF85E6430",
+  "source_selection_identity_sha256": "a733057458eae7f3021b82510a8c161245d3d2d0063b26a610de26c47963ba59",
+  "valid": true,
+  "workloads": {
+    "development-00-0": {
+      "initial_latent_sha256": "4b416bc64c2207e1760b7e6dd2f02e49b62bc5588bfddfe6426d5e407ad510e1",
+      "ocr_reward": 0.6
+    },
+    "development-00-1": {
+      "initial_latent_sha256": "114f90b145d1bfacc83e6b1f9617980b6b22c3be339505a9d29b407e8b59ba46",
+      "ocr_reward": 0.4
+    },
+    "development-01-0": {
+      "initial_latent_sha256": "779d972c98a72151964cdff34e57eab19df807e9db542fb478771722ceb11cd9",
+      "ocr_reward": 0.41666666666666663
+    },
+    "development-01-1": {
+      "initial_latent_sha256": "cf49c38aefde730537e7c6ce4963f514258305a67a5c2ebbc829de704f77b6c5",
+      "ocr_reward": 0.41666666666666663
+    },
+    "development-02-0": {
+      "initial_latent_sha256": "8ee844c153cf45faa5f9f7d52e79b40963cbd4a30729a803c760fed3ec82b346",
+      "ocr_reward": 0.7647058823529411
+    },
+    "development-02-1": {
+      "initial_latent_sha256": "3c97b8757c8998d66a45fc9d9907559f6a19ff4034d3750b6735aab7a22cd940",
+      "ocr_reward": 0.4117647058823529
+    },
+    "development-03-0": {
+      "initial_latent_sha256": "a45d4059d60da52c2481546b9f1600c962d3e83f0ec8423688e1259383907aae",
+      "ocr_reward": 0.0
+    },
+    "development-03-1": {
+      "initial_latent_sha256": "831b13d50ef6341816c77f807d6e104eee6e604bb76219b724ab3bf105f7e532",
+      "ocr_reward": 0.26086956521739135
+    },
+    "final-00-0": {
+      "initial_latent_sha256": "225feefed915ac5241279674814d2bc2d00761c8ea45742ea179dfc8cb16a036",
+      "ocr_reward": 1.0
+    },
+    "final-00-1": {
+      "initial_latent_sha256": "e6b3c824200af6a9013440730665cd943f4c4c1889f4904452b4d024d2e397d7",
+      "ocr_reward": 1.0
+    },
+    "final-01-0": {
+      "initial_latent_sha256": "536e3015149dfc0c039f469834974d023d124e2063606b52371395d0a3e4e1f0",
+      "ocr_reward": 0.23076923076923073
+    },
+    "final-01-1": {
+      "initial_latent_sha256": "b1f16d892b2c6d0e76cbed5e0d1d957da415b232450c143d44e5f2c2978b0ffe",
+      "ocr_reward": 0.23076923076923073
+    },
+    "final-02-0": {
+      "initial_latent_sha256": "37b71c90c1920acb22b355712483faf1160bef32966cb30491d7866025936785",
+      "ocr_reward": 0.8235294117647058
+    },
+    "final-02-1": {
+      "initial_latent_sha256": "64001d28fc58d7baccb3f8b59365cc35c49830f6bbf61dee029bd6bb104ea837",
+      "ocr_reward": 0.8235294117647058
+    },
+    "final-03-0": {
+      "initial_latent_sha256": "451d15da16a49245c8e3a6a03f218fb770cc217a837d47556aa941222353ecd8",
+      "ocr_reward": 0.8333333333333334
+    },
+    "final-03-1": {
+      "initial_latent_sha256": "244b992e22233da804f5045e284107e114d4d347fb3e0854eccd84584a4ec436",
+      "ocr_reward": 0.0
+    },
+    "train_grading-00-0": {
+      "initial_latent_sha256": "31f624a35e38c85f5b08980fe7e4ea4d30f6f77ea59a9d7975c0608a287387d7",
+      "ocr_reward": 1.0
+    },
+    "train_grading-00-1": {
+      "initial_latent_sha256": "cc612085e5edec235c748279a86fd9617d981f683c3d174268aa21718827beb3",
+      "ocr_reward": 1.0
+    },
+    "train_grading-01-0": {
+      "initial_latent_sha256": "0eb9767078160c9e0f9e731bb63995a10d49fceb7144de5df07cad6328bc662d",
+      "ocr_reward": 1.0
+    },
+    "train_grading-01-1": {
+      "initial_latent_sha256": "1b6fd29086a8f92f4ae4c263a090fbb1897631419a1dc511483194efe19002a7",
+      "ocr_reward": 1.0
+    },
+    "train_grading-02-0": {
+      "initial_latent_sha256": "b3443aad00bb5e4efaa3645080a09eab694b30aa8aa2a8f92d28a078b76f687b",
+      "ocr_reward": 0.0
+    },
+    "train_grading-02-1": {
+      "initial_latent_sha256": "3c247d87fe9d34a0d0ea3d31a7fa5295d7d1cccd8afb7095c8ba8323d397bc60",
+      "ocr_reward": 0.0
+    },
+    "train_grading-03-0": {
+      "initial_latent_sha256": "32206afdd1bc28424598b3ee9d69ea3d6e6092b681d56873011a8ce87f5875b6",
+      "ocr_reward": 1.0
+    },
+    "train_grading-03-1": {
+      "initial_latent_sha256": "79d46f696bea0115871b367a27db4fd24a8b959ed6b9e2f141c5060a88f4cde5",
+      "ocr_reward": 0.65
+    }
+  }
+}

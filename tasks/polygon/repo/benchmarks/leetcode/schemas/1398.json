@@ -1,0 +1,39 @@
+  
+{
+    "Problem Number": "1398",
+    "Tables": [
+      {
+        "TableName": "Customers",
+        "PKeys": [{
+            "Name": "customer_id",
+            "Type": "int"
+          }],
+        "FKeys": [],
+        "Others": [
+          {
+            "Name": "customer_name",
+            "Type": "varchar"
+          }
+        ]
+      },
+      {
+        "TableName": "Orders",
+        "PKeys": [{
+            "Name": "order_id",
+            "Type": "int"
+          }],
+        "FKeys": [{
+            "FName": "customer_id",
+            "PName": "customer_id",
+            "PTable": "0"
+          }],
+        "Others": [
+          {
+            "Name": "product_name",
+            "Type": "varchar"
+          }
+        ]
+      }
+    ],
+    "Tuples": []
+  }

@@ -1,0 +1,25 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": false,
+    "allowed_paths": [
+      "counting/forest.h",
+      "counting/forest.cpp",
+      "counting/execution.h",
+      "counting/execution.cpp",
+      "counting/aggregation.h",
+      "counting/aggregation.cpp",
+      "executable/scope.cpp",
+      "executable/command.cpp",
+      "plan/tree.h",
+      "plan/tree.cpp"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 12,
+    "max_patch_bytes": 524288
+  },
+  "member": "solution.patch"
+}

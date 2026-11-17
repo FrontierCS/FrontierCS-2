@@ -1,0 +1,38 @@
+{
+  "edit_scope": {
+    "allow_delete": true,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "apps/hyper/butterfly_count_total.h",
+      "apps/hyper/butterfly_count.h",
+      "apps/hyper/butterfly_ecount.h",
+      "apps/hyper/butterfly_peel.h",
+      "apps/hyper/butterfly_epeel.h",
+      "apps/hyper/butterfly_putils.h",
+      "apps/hyper/butterfly_utils.h",
+      "apps/hyper/solver_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 20,
+    "max_patch_bytes": 1048576
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 40000,
+    "solver_visible_metrics": [
+      "dev_counting_seconds_median",
+      "dev_counting_seconds_p90"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 1800
+  }
+}

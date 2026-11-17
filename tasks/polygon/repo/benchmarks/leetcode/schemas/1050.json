@@ -1,0 +1,26 @@
+{
+  "Problem Number": "1050",
+  "Tables": [
+    {
+      "TableName": "ActorDirector",
+      "PKeys": [
+        {
+          "Name": "timestamp",
+          "Type": "int"
+        }
+      ],
+      "FKeys": [],
+      "Others": [
+        {
+          "Name": "actor_id",
+          "Type": "int"
+        },
+        {
+          "Name": "director_id",
+          "Type": "int"
+        }
+      ]
+    }
+  ],
+  "Tuples": []
+}

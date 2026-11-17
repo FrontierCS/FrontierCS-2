@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Run the preserved GCC 7/Cilk toolchain on a modern Python runtime image."""
+
+import fcntl
+import hashlib
+import os
+from pathlib import Path
+import shutil
+import sys
+import tarfile
+import tempfile
+
+
+ARCHIVE_SHA256 = "13f10181b8e4a26f9e452a02ddbbf77620929b69f9d3eac09f3b3a27adae73b3"
+archive = Path(__file__).resolve().with_name("frontier-gcc7.tar.xz")
+cache = Path(tempfile.gettempdir()) / ("frontier-gcc7-%s-%s" % (os.getuid(), ARCHIVE_SHA256[:16]))
+lock_path = cache.with_suffix(".lock")
+with lock_path.open("a") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    if not (cache / "gcc7/usr/bin/g++-7").exists():
+        if hashlib.sha256(archive.read_bytes()).hexdigest() != ARCHIVE_SHA256:
+            raise SystemExit("GCC 7 dependency archive checksum mismatch")
+        staging = Path(tempfile.mkdtemp(prefix="frontier-gcc7-unpack-", dir=cache.parent))
+        try:
+            # This hash-pinned author dependency includes GCC's relative symlinks.
+            with tarfile.open(archive, "r:xz") as bundle:
+                bundle.extractall(staging, filter="fully_trusted")
+            staging.rename(cache)
+        finally:
+            if staging.exists():
+                shutil.rmtree(staging)
+
+prefix = cache / "gcc7/usr"
+library = str(prefix / "lib/x86_64-linux-gnu")
+environment = os.environ.copy()
+environment["LD_LIBRARY_PATH"] = library + (
+    ":" + environment["LD_LIBRARY_PATH"] if environment.get("LD_LIBRARY_PATH") else ""
+)
+compiler = str(prefix / "bin/g++-7")
+os.execve(compiler, [compiler, "-Wl,-rpath," + library, *sys.argv[1:]], environment)

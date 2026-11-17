@@ -1,0 +1,15 @@
+diff --git a/src/learn.rs b/src/learn.rs
+index 3857a85..65fc6dc 100644
+--- a/src/learn.rs
++++ b/src/learn.rs
+@@ -90,6 +90,9 @@ where
+         let build_candidates = || {
+             // FRONTIER_EDIT_BEGIN: candidate generation
+             let _ = (egraph, learn_constants, max_arity, co_occurrences);
+-            todo!("library candidate generation is not implemented")
++            Self {
++                nontrivial_aus: BTreeSet::new(),
++                marker: std::marker::PhantomData,
++            }
+             // FRONTIER_EDIT_END: candidate generation
+         };

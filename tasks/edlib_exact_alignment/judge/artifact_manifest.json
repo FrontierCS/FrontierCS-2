@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "edlib/code",
+  "authentic_execution": {
+    "entrypoint": "apps/aligner/aligner.cpp",
+    "retained_files": [
+      "apps/aligner/aligner.cpp",
+      "CMakeLists.txt",
+      "edlib/include/edlib.h",
+      "edlib-config.cmake.in",
+      "edlib.pc.in",
+      "apps/hello-world/helloWorld.c",
+      "test/runTests.cpp",
+      "test/SimpleEditDistance.h",
+      "apps/aligner/test_data/query.fasta",
+      "apps/aligner/test_data/target.fasta"
+    ],
+    "measurement_adaptation": {
+      "path": "apps/aligner/aligner.cpp",
+      "timer_api": "clock_gettime(CLOCK_MONOTONIC)",
+      "format": "%.9f",
+      "interval": "unchanged upstream start/end positions",
+      "work_count": "unchanged -r 1",
+      "old_results_directly_comparable": false,
+      "metric_semantics": "elapsed seconds, including scheduling wait; previously process CPU seconds"
+    }
+  },
+  "excision": [
+    {
+      "path": "edlib/src/edlib.cpp",
+      "mode": "stubbed",
+      "symbols": [
+        "obtainAlignmentHirschberg"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "edlib/src/edlib.cpp"
+    ],
+    "add_under": [],
+    "no_new_files_reason": "Only the existing static function body is editable; local lambdas and structs can implement helpers without changing the frozen build or other source bytes."
+  },
+  "task_owned_files": [
+    {
+      "path": "challenge_data/generate.py",
+      "reason": "Public workload input adapter; no reference implementation or private seeds; original entrypoint remains unchanged."
+    },
+    {
+      "path": "challenge_data/public_workloads.json",
+      "reason": "Public workload input adapter; no reference implementation or private seeds; original entrypoint remains unchanged."
+    }
+  ],
+  "retained_alternatives": [
+    {
+      "path": "apps/hello-world/helloWorld.c",
+      "reason": "Original CMake default example target dependency closure."
+    },
+    {
+      "path": "test/runTests.cpp",
+      "reason": "Original CMake CTest target and retained API correctness smoke coverage."
+    },
+    {
+      "path": "test/SimpleEditDistance.h",
+      "reason": "Required by retained runTests.cpp; independent scalar correctness oracle, not reconstruction implementation."
+    }
+  ],
+  "pruned_alternatives": [
+    "bindings/python/edlib.pyx",
+    "meson.build",
+    "Makefile",
+    "test_data/perf_tests.sh"
+  ],
+  "minimality_note": "Only original CMake CLI dependency closure, MIT license and bundled CLI inputs. No bindings, alternate builds or precomputed performance data."
+}

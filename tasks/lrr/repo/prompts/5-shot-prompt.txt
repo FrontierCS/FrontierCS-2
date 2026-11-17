@@ -1,0 +1,2 @@
+five_shot_prompt_template
+$pattern

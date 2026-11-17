@@ -1,0 +1,34 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "src/egraph.rs",
+      "src/tutorials/_01_background.rs",
+      "src/tutorials/mod.rs",
+      "src/solver_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 20,
+    "max_patch_bytes": 1048576
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 120000,
+    "solver_visible_metrics": [
+      "candidate_dev_wall_clock_seconds_median",
+      "candidate_dev_congruence_seconds_median"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 1800
+  }
+}

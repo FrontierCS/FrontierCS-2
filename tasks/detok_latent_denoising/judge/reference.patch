@@ -1,0 +1,107 @@
+diff --git a/models/autoencoder.py b/models/autoencoder.py
+index 60fac83..370ebda 100644
+--- a/models/autoencoder.py
++++ b/models/autoencoder.py
+@@ -519,7 +519,12 @@ class AutoencoderKL(nn.Module):
+         posterior = self.encode(x)
+         z = posterior.sample()
+         if self.gamma > 0.0 and self.training:
+-            raise NotImplementedError("Contribution implementation required")
++            bsz, c, h, w = z.shape
++            device = z.device
++            time_input = torch.rand(bsz, 1, 1, 1, device=device)
++            time_input = time_input.expand(-1, c, h, w)
++            noises = torch.randn(bsz, c, h, w, device=device) * self.gamma
++            z = (1 - time_input) * z + time_input * noises
+         reconstructions = self.decode(z)
+         return reconstructions, posterior, z
+ 
+diff --git a/models/detok.py b/models/detok.py
+index 7d96e69..7121ca5 100644
+--- a/models/detok.py
++++ b/models/detok.py
+@@ -184,7 +184,30 @@ class Encoder(nn.Module):
+         return x
+ 
+     def mae_random_masking(self, x: Tensor, mask_ratio: float = -1):
+-        raise NotImplementedError("Contribution implementation required")
++        """apply masked autoencoding random masking."""
++        bsz, seq_len, chans = x.shape
++        # mask: 0 for visible, 1 for masked
++        if mask_ratio == 0:
++            # no masking
++            rope = self.rope_tensor.expand(bsz, -1, -1)
++            return x, torch.zeros(bsz, seq_len, device=x.device), None, rope
++
++        if mask_ratio < 0:
++            mask_ratio = max(0.0, random.uniform(-0.1, self.mask_ratio))
++
++        len_keep = int(np.ceil(seq_len * (1 - mask_ratio)))
++        noise = torch.rand(bsz, seq_len, device=x.device)
++        ids_shuffle = torch.argsort(noise, dim=1)
++        ids_restore = torch.argsort(ids_shuffle, dim=1)
++        ids_keep = ids_shuffle[:, :len_keep]
++        x_visible = torch.gather(x, 1, ids_keep[..., None].repeat(1, 1, chans))
++        rope = self.rope_tensor.expand(bsz, -1, -1)
++        rope_visible = torch.gather(rope, 1, ids_keep[..., None].repeat(1, 1, rope.shape[-1]))
++
++        mask = torch.ones(bsz, seq_len, device=x.device)
++        mask[:, :len_keep] = 0
++        mask = torch.gather(mask, dim=1, index=ids_restore)
++        return x_visible, mask, ids_restore, rope_visible
+ 
+     def forward(self, x: Tensor, mask_ratio: float = -1):
+         """forward pass through encoder."""
+@@ -202,7 +225,7 @@ class Encoder(nn.Module):
+ 
+ 
+ class Decoder(nn.Module):
+-    """Vision Transformer decoder for image reconstruction."""
++    """vision Transformer decoder with mask tokens for image reconstruction."""
+ 
+     def __init__(
+         self,
+@@ -258,7 +281,11 @@ class Decoder(nn.Module):
+         bsz, seq_len, _ = z.shape
+ 
+         if ids_restore is not None:
+-            raise NotImplementedError("Contribution implementation required")
++            num_mask_tokens = ids_restore.shape[1] + 1 - seq_len
++            mask_tokens = self.mask_token.repeat(bsz, num_mask_tokens, 1)
++            z_ = torch.cat([z, mask_tokens], dim=1)
++            expanded_ids_restore = ids_restore.unsqueeze(-1).expand(-1, -1, z_.shape[-1])
++            z = torch.gather(z_, dim=1, index=expanded_ids_restore)
+ 
+         z = z + self.positional_embedding
+ 
+@@ -280,7 +307,9 @@ class Decoder(nn.Module):
+ 
+ 
+ class DeTok(nn.Module):
+-    """Visual tokenizer with an encoder and reconstruction decoder."""
++    """
++    l-DeTok: latent denoising makes good visual tokenizers.
++    """
+ 
+     _logged = False
+ 
+@@ -402,7 +431,18 @@ class DeTok(nn.Module):
+         z_latents = posteriors.sample() if sampling else posteriors.mean
+ 
+         if self.training and self.gamma > 0.0:
+-            raise NotImplementedError("Contribution implementation required")
++            device = z_latents.device
++            bsz, n_tokens, chans = z_latents.shape
++            if noise_level > 0.0:
++                noise_level_tensor = torch.full((bsz, 1, 1), noise_level, device=device)
++            else:
++                noise_level_tensor = torch.rand(bsz, 1, 1, device=device)
++            noise_level_tensor = noise_level_tensor.expand(-1, n_tokens, chans)
++            noise = torch.randn(bsz, n_tokens, chans, device=device) * self.gamma
++            if self.use_additive_noise:
++                z_latents = z_latents + noise_level_tensor * noise
++            else:
++                z_latents = (1 - noise_level_tensor) * z_latents + noise_level_tensor * noise
+ 
+         return z_latents, posteriors, ids_restore
+ 

@@ -1,0 +1,390 @@
+diff --git a/knnlib/knn.py b/knnlib/knn.py
+index 29e741d..9b1b08b 100644
+--- a/knnlib/knn.py
++++ b/knnlib/knn.py
+@@ -1,13 +1,6 @@
+-"""Brute-force squared-L2 k-nearest-neighbours -- the reference you must optimise.
++"""Exact brute-force squared-L2 k-nearest-neighbours: filter, certify, refine.
+ 
+-This implementation is intentionally naive. It computes the full ``(Q, M)``
+-pairwise distance matrix with :func:`torch.cdist` and materialises it in HBM,
+-then runs :func:`torch.topk` over the whole matrix to pick the ``k`` nearest
+-database points for every query. It is correct and deterministic, but it moves
+-far more memory than necessary (the entire ``(Q, M)`` matrix) and cannot scale
+-to large ``M`` without exhausting device memory.
+-
+-Contract (do NOT change):
++Contract (unchanged):
+ 
+     knn(queries, database, k) -> (distances, indices)
+ 
+@@ -15,29 +8,352 @@ Contract (do NOT change):
+     database  : (M, D) bfloat16 CUDA tensor of database points to search.
+     k         : int, number of nearest neighbours to return per query.
+ 
+-    distances : (Q, k) float32 tensor of the SQUARED-L2 distances to the ``k``
+-                nearest database points, in ascending order (nearest first).
+-    indices   : (Q, k) int64 tensor of the corresponding database row indices.
++    distances : (Q, k) float32 squared-L2 distances, ascending.
++    indices   : (Q, k) int64 database row indices (``-1`` / ``+inf`` padding
++                only when ``k > M``).
++
++Method
++------
++The result is the exact k-NN set under FP64 squared distances of the bf16
++inputs. Reduced precision is only used to decide which rows are worth an exact
++evaluation, and every query carries a certificate that this decision was safe.
++
++1. *Filter.* One tensor-core pass computes, with FP32 accumulation and for every
++   (query, row) pair, ``low = (1 - c) (|q|^2 + |x|^2) - 2 q.x``. The shrink
++   ``c`` (``_shrink``) is a bound on the rounding error of this evaluation, so
++   ``low`` never exceeds the true squared distance ``d``. The pass stores ``low``
++   rounded to bf16 (``coarse``) and, for every block of ``_BM`` consecutive
++   rows, the block minimum of ``coarse``.
++2. *Threshold.* ``tau`` is the ``S``-th smallest block minimum of a query
++   (``S = k + slack``). At least ``S`` blocks hold a row with ``coarse <= tau``,
++   so at least ``S`` rows qualify, whatever the data.
++3. *Collect.* Only blocks whose minimum is ``<= tau`` are revisited; every row
++   with ``coarse <= tau`` is written to a per-query candidate list.
++4. *Refine.* Candidate distances are recomputed from the bf16 values as direct
++   differences accumulated in FP64, and the k smallest are returned.
++5. *Certify.* Let ``r`` be the k-th smallest refined distance. Rounding to bf16
++   is monotone and ``tau`` is itself a bf16 value, so a row that was not
++   collected has ``low > tau`` and therefore ``d > tau``. When ``tau >= r`` no
++   uncollected row can enter or tie the answer. A query that fails this test,
++   or whose candidate list overflowed, is repaired.
++6. *Repair.* Every row with ``d <= r`` has ``low <= r``; the stored ``coarse``
++   row is rescanned with that limit and all hits are refined. This is exact
++   for any input, including massive ties; it is merely slower.
+ 
+-You may add modules/kernels inside the ``knnlib`` package and rewrite the body
+-of :func:`knn` freely (fused/streamed running top-k, tiled distance kernels,
+-Triton), as long as the public contract above is preserved. In particular you
+-should avoid ever materialising the full ``(Q, M)`` distance matrix.
++Shapes too small for the block threshold (``M / _BM < 4 S``) and inputs that are
++not bf16 use a direct FP64 scan (``_exhaustive``).
++
++Nothing here depends on a workload identity: the tile sizes are fixed and the
++shortlist size is a function of ``k`` alone.
+ """
+ from __future__ import annotations
+ 
+ import torch
++import triton
++import triton.language as tl
+ 
++# Filter tile: _BQ queries x _BM rows, _BD dimensions per tensor-core step.
++# _BM is also the block size of the block-minimum map.
++_BQ, _BM, _BD = 128, 128, 64
++_FILTER_WARPS, _FILTER_STAGES = 4, 3
++# Collect: one program scans _W block minima of one query.
++_W = 32
++# Refine: _BK candidates x _RD dimensions per step, FP64.
++_BK, _RD = 32, 64
++# Row norms: _NR rows x _ND dimensions per step.
++_NR, _ND = 64, 128
++# Shortlist slack and candidate-list headroom (performance only; exactness is
++# carried by the certificate, not by these numbers). The shortlist is
++# k + max(_SLACK_MIN, k) rows.
++_SLACK_MIN, _HEADROOM_MIN = 64, 64
++# Element budgets of the non-kernel paths.
++_SCAN_ELEMENTS = 1 << 26
++_REPAIR_ROWS = 1 << 24
++
++# Reusable device workspaces (memory only; fully rewritten on every call).
++_POOL = {}
++# Cumulative counters for diagnostics.
++STATS = {"calls": 0, "filtered_calls": 0, "exhaustive_calls": 0, "repaired_queries": 0}
++
++
++@triton.jit
++def _sqnorm_kernel(x_ptr, out_ptr, ROWS, D: tl.constexpr, NR: tl.constexpr, ND: tl.constexpr):
++    """out[i] = sum_d x[i, d]^2, FP32."""
++    rows = tl.program_id(0) * NR + tl.arange(0, NR)
++    live = rows < ROWS
++    # Rows past the end re-read the last row (unmasked loads); their result is dropped.
++    base = x_ptr + tl.minimum(rows, ROWS - 1)[:, None].to(tl.int64) * D
++    acc = tl.zeros((NR,), dtype=tl.float32)
++    for d0 in range(0, D, ND):
++        dims = d0 + tl.arange(0, ND)
++        if D % ND == 0:
++            v = tl.load(base + dims[None, :]).to(tl.float32)
++        else:
++            v = tl.load(base + dims[None, :], mask=dims[None, :] < D, other=0.0).to(tl.float32)
++        acc += tl.sum(v * v, axis=1)
++    tl.store(out_ptr + rows, acc, mask=live)
++
++
++@triton.jit
++def _filter_kernel(q_ptr, x_ptr, qn_ptr, xn_ptr, coarse_ptr, bmin_ptr, Q, M, T, KEEP,
++                   D: tl.constexpr, BQ: tl.constexpr, BM: tl.constexpr, BD: tl.constexpr):
++    """coarse[q, m] = bf16(KEEP * (|q|^2 + |x|^2) - 2 q.x); bmin[q, block] = block minimum.
++
++    KEEP = 1 - c makes the stored value a lower bound of the true distance.
++
++    Program (i, j) owns queries [i*BQ, (i+1)*BQ) and rows [j*BM, (j+1)*BM). The
++    query tile index is the fast grid axis, so the programs that share a
++    database tile run together.
++    """
++    block = tl.program_id(1)
++    qi = tl.program_id(0) * BQ + tl.arange(0, BQ)
++    mi = block * BM + tl.arange(0, BM)
++    q_live = qi < Q
++    m_live = mi < M
++    # Tiles past the end re-read the last query / row so that the loads need no
++    # row mask; those entries are never stored.
++    q_base = q_ptr + tl.minimum(qi, Q - 1)[:, None].to(tl.int64) * D
++    x_base = x_ptr + tl.minimum(mi, M - 1)[None, :].to(tl.int64) * D
++    acc = tl.zeros((BQ, BM), dtype=tl.float32)
++    for d0 in range(0, D, BD):
++        dims = d0 + tl.arange(0, BD)
++        if D % BD == 0:
++            a = tl.load(q_base + dims[None, :])
++            b = tl.load(x_base + dims[:, None])
++        else:
++            a = tl.load(q_base + dims[None, :], mask=dims[None, :] < D, other=0.0)
++            b = tl.load(x_base + dims[:, None], mask=dims[:, None] < D, other=0.0)
++        acc = tl.dot(a, b, acc)
++    qn = tl.load(qn_ptr + qi, mask=q_live, other=0.0)
++    xn = tl.load(xn_ptr + mi, mask=m_live, other=0.0)
++    low = tl.maximum((qn[:, None] + xn[None, :]) * KEEP - 2.0 * acc, 0.0)
++    low = tl.where(m_live[None, :], low, float("inf"))
++    tl.store(coarse_ptr + qi[:, None].to(tl.int64) * M + mi[None, :], low.to(tl.bfloat16),
++             mask=q_live[:, None] & m_live[None, :])
++    # Rounding is monotone, so the minimum may be rounded after the reduction.
++    floor = tl.min(low, axis=1).to(tl.bfloat16).to(tl.float32)
++    tl.store(bmin_ptr + qi.to(tl.int64) * T + block, floor, mask=q_live)
++
++
++@triton.jit
++def _collect_kernel(coarse_ptr, bmin_ptr, tau_ptr, count_ptr, cand_ptr, M, T, CAP,
++                    BM: tl.constexpr, W: tl.constexpr):
++    """Append every row with coarse <= tau[q] to query q's candidate list.
++
++    Program (q, g) reads W block minima at once and revisits only the blocks
++    that can hold a hit. A block reserves a contiguous slot range with a single
++    atomic add of its hit count; ``count`` ends as the true number of hits, so
++    ``count > CAP`` flags a truncated list.
++    """
++    q = tl.program_id(0).to(tl.int64)
++    group = tl.program_id(1)
++    tau = tl.load(tau_ptr + q)
++    lanes = tl.arange(0, W)
++    blocks = group * W + lanes
++    lows = tl.load(bmin_ptr + q * T + blocks, mask=blocks < T, other=float("inf"))
++    pending = (lows <= tau) & (blocks < T)
++    todo = tl.sum(pending.to(tl.int32), axis=0)
++    for _ in range(todo):
++        lane = tl.min(tl.where(pending, lanes, W), axis=0)
++        pending = pending & (lanes != lane)
++        rows = (group * W + lane) * BM + tl.arange(0, BM)
++        inside = rows < M
++        values = tl.load(coarse_ptr + q * M + rows, mask=inside, other=float("inf")).to(tl.float32)
++        hit = (values <= tau) & inside
++        ones = hit.to(tl.int32)
++        first = tl.atomic_add(count_ptr + q, tl.sum(ones, axis=0))
++        slot = first + tl.cumsum(ones, axis=0) - 1
++        tl.store(cand_ptr + q * CAP + slot, rows, mask=hit & (slot < CAP))
++
++
++@triton.jit
++def _refine_kernel(q_ptr, x_ptr, cand_ptr, out_ptr, CAP,
++                   D: tl.constexpr, BK: tl.constexpr, RD: tl.constexpr):
++    """out[q, s] = sum_d (q[q, d] - x[cand[q, s], d])^2 in FP64; +inf for empty slots."""
++    q = tl.program_id(0).to(tl.int64)
++    slots = tl.program_id(1) * BK + tl.arange(0, BK)
++    in_range = slots < CAP
++    rows = tl.load(cand_ptr + q * CAP + slots, mask=in_range, other=-1)
++    live = rows >= 0
++    x_base = x_ptr + rows[:, None].to(tl.int64) * D
++    acc = tl.zeros((BK,), dtype=tl.float64)
++    for d0 in range(0, D, RD):
++        dims = d0 + tl.arange(0, RD)
++        d_live = dims < D
++        # bf16 -> FP32 -> FP64 is exact at both steps.
++        qv = tl.load(q_ptr + q * D + dims, mask=d_live, other=0.0).to(tl.float32).to(tl.float64)
++        xv = tl.load(x_base + dims[None, :], mask=live[:, None] & d_live[None, :],
++                     other=0.0).to(tl.float32).to(tl.float64)
++        diff = qv[None, :] - xv
++        acc += tl.sum(diff * diff, axis=1)
++    tl.store(out_ptr + q * CAP + slots, tl.where(live, acc, float("inf")), mask=in_range)
+ 
+-def knn(queries, database, k):
+-    """Return the (squared-L2) k nearest database points for each query.
+ 
+-    Naive: materialise the full (Q, M) distance matrix, then top-k.
++def _workspace(tag, count, dtype, device):
++    """A reusable flat buffer of at least ``count`` elements (contents undefined)."""
++    key = (tag, dtype, str(device))
++    buffer = _POOL.get(key)
++    if buffer is None or buffer.numel() < count:
++        _POOL.pop(key, None)
++        del buffer
++        # Ordinary (non-inference) storage, so it can be reused from any mode.
++        with torch.inference_mode(False):
++            buffer = torch.empty(count, dtype=dtype, device=device)
++        _POOL[key] = buffer
++    return buffer[:count]
++
++
++def _shrink(dimensions):
++    """Relative shrink ``c`` that makes the filter value a lower bound of ``d``.
++
++    The filter evaluates ``(1 - c) (qn + xn) - 2 acc`` in FP32, where ``qn`` and
++    ``xn`` are FP32 sums of D exact squares (a bf16 square is exact in FP32) and
++    ``acc`` is a dot product of D exact products accumulated on the tensor
++    cores. Error budget, in units of (|q|^2 + |x|^2):
++
++      * the two norms, any summation order, round to nearest: (D - 1) * 2^-24;
++      * ``2 acc``, allowing one full FP32 ulp (2^-23) per accumulated product so
++        that truncating accumulators are covered, with
++        ``sum |q_i x_i| <= (|q|^2 + |x|^2) / 2``:                 D * 2^-23;
++      * the three FP32 operations of the final expression, on magnitudes of at
++        most 2 (|q|^2 + |x|^2):                                    6 * 2^-24.
++
++    The sum is (3 D + 5) * 2^-24; the returned value adds 11 units for the
++    rounding of ``1 - c`` itself and second-order terms. The tensor-core term
++    is a model of the hardware, not a measured property.
+     """
+-    d2 = torch.cdist(queries, database) ** 2            # (Q, M), materialized -- naive
+-    dist, idx = torch.topk(d2, k, dim=1, largest=False)
+-    # Recompute only selected neighbors from the actual bf16 input values.
+-    selected = database[idx].float()
+-    dist = ((queries.float()[:, None, :] - selected) ** 2).sum(dim=2)
+-    dist, order = dist.sort(dim=1)
+-    return dist, idx.gather(1, order).to(torch.long)
++    return (3 * dimensions + 16) * 2.0 ** -24
++
++
++def _exhaustive(queries, database, count):
++    """Direct FP64 scan of every (query, row) pair; any float dtype, any shape."""
++    query_count, dimensions = queries.shape
++    rows = database.shape[0]
++    device = queries.device
++    distances = torch.empty((query_count, count), dtype=torch.float64, device=device)
++    indices = torch.empty((query_count, count), dtype=torch.int64, device=device)
++    q_step = max(1, min(query_count, _SCAN_ELEMENTS // rows))
++    m_step = max(1, _SCAN_ELEMENTS // (q_step * dimensions))
++    for q0 in range(0, query_count, q_step):
++        q64 = queries[q0:q0 + q_step].double()
++        full = torch.empty((q64.shape[0], rows), dtype=torch.float64, device=device)
++        for m0 in range(0, rows, m_step):
++            diff = q64[:, None, :] - database[m0:m0 + m_step].double()[None, :, :]
++            full[:, m0:m0 + m_step] = (diff * diff).sum(dim=2)
++        best, where = torch.topk(full, count, dim=1, largest=False, sorted=True)
++        distances[q0:q0 + q_step] = best
++        indices[q0:q0 + q_step] = where
++    return distances.float(), indices
++
++
++def _repair(queries, database, coarse, radius, count, doubt, distances, indices):
++    """Recompute the flagged queries from every row that can be within ``radius``."""
++    flagged = doubt.nonzero().flatten()
++    rows, dimensions = database.shape
++    device = queries.device
++    q_step = max(1, _REPAIR_ROWS // rows)
++    pair_step = max(1, _SCAN_ELEMENTS // dimensions)
++    for start in range(0, flagged.numel(), q_step):
++        ids = flagged[start:start + q_step]
++        # low <= radius for every row within radius; bf16 rounding moves a value
++        # by less than 2^-7 of itself, so 2^-6 covers the stored form.
++        limit = (radius[ids] * (1.0 + 2.0 ** -6)).float()
++        limit = torch.nan_to_num(limit, nan=float("inf"), posinf=float("inf"))
++        mask = coarse[ids].float() <= limit[:, None]
++        hits = mask.sum(dim=1)
++        pairs = mask.nonzero()
++        del mask
++        local, column = pairs[:, 0], pairs[:, 1]
++        exact = torch.empty(local.shape[0], dtype=torch.float64, device=device)
++        q64 = queries[ids].double()
++        for p0 in range(0, local.shape[0], pair_step):
++            diff = q64[local[p0:p0 + pair_step]] - database[column[p0:p0 + pair_step]].double()
++            exact[p0:p0 + pair_step] = (diff * diff).sum(dim=1)
++        width = int(hits.max().item())
++        position = torch.arange(local.shape[0], device=device) - (hits.cumsum(0) - hits)[local]
++        grid = torch.full((ids.shape[0], width), float("inf"), dtype=torch.float64, device=device)
++        column_grid = torch.full((ids.shape[0], width), -1, dtype=torch.int64, device=device)
++        grid[local, position] = exact
++        column_grid[local, position] = column
++        best, where = torch.topk(grid, count, dim=1, largest=False, sorted=True)
++        distances[ids] = best.float()
++        indices[ids] = column_grid.gather(1, where)
++    return int(flagged.numel())
++
++
++def _filtered(queries, database, count, shortlist):
++    query_count, dimensions = queries.shape
++    rows = database.shape[0]
++    device = queries.device
++    blocks = triton.cdiv(rows, _BM)
++    headroom = max(_HEADROOM_MIN, shortlist // 2)
++    capacity = triton.cdiv(shortlist + headroom, _BK) * _BK
++
++    qn = _workspace("qn", query_count, torch.float32, device)
++    xn = _workspace("xn", rows, torch.float32, device)
++    _sqnorm_kernel[(triton.cdiv(query_count, _NR),)](
++        queries, qn, query_count, D=dimensions, NR=_NR, ND=_ND, num_warps=4)
++    _sqnorm_kernel[(triton.cdiv(rows, _NR),)](
++        database, xn, rows, D=dimensions, NR=_NR, ND=_ND, num_warps=4)
++
++    coarse = _workspace("coarse", query_count * rows, torch.bfloat16, device)
++    lows = _workspace("lows", query_count * blocks, torch.float32, device)
++    _filter_kernel[(triton.cdiv(query_count, _BQ), blocks)](
++        queries, database, qn, xn, coarse, lows, query_count, rows, blocks, 1.0 - _shrink(dimensions),
++        D=dimensions, BQ=_BQ, BM=_BM, BD=_BD,
++        num_warps=_FILTER_WARPS, num_stages=_FILTER_STAGES)
++
++    tau = torch.topk(lows.view(query_count, blocks), shortlist, dim=1,
++                     largest=False, sorted=False).values.amax(dim=1).contiguous()
++    hits = _workspace("hits", query_count, torch.int32, device)
++    candidates = _workspace("candidates", query_count * capacity, torch.int32, device)
++    hits.zero_()
++    candidates.fill_(-1)
++    _collect_kernel[(query_count, triton.cdiv(blocks, _W))](
++        coarse, lows, tau, hits, candidates, rows, blocks, capacity,
++        BM=_BM, W=_W, num_warps=1)
++
++    exact = _workspace("exact", query_count * capacity, torch.float64, device)
++    _refine_kernel[(query_count, capacity // _BK)](
++        queries, database, candidates, exact, capacity,
++        D=dimensions, BK=_BK, RD=_RD, num_warps=4, enable_fp_fusion=False)
++
++    best, where = torch.topk(exact.view(query_count, capacity), count, dim=1,
++                             largest=False, sorted=True)
++    indices = candidates.view(query_count, capacity).gather(1, where).to(torch.int64)
++    distances = best.float()
++    radius = best[:, count - 1]
++    # Written as a negated ">=" so that a NaN or infinite term flags the query.
++    doubt = (hits > capacity) | ~(tau.double() >= radius)
++    if bool(doubt.any()):
++        STATS["repaired_queries"] += _repair(
++            queries, database, coarse.view(query_count, rows), radius, count,
++            doubt, distances, indices)
++    return distances, indices
++
++
++def knn(queries, database, k):
++    """Return the exact squared-L2 k nearest database rows for each query."""
++    query_count = queries.shape[0]
++    rows = database.shape[0]
++    k = int(k)
++    count = min(k, rows)
++    device = queries.device
++    STATS["calls"] += 1
++    if count <= 0 or query_count == 0:
++        return (torch.full((query_count, max(k, 0)), float("inf"), dtype=torch.float32, device=device),
++                torch.full((query_count, max(k, 0)), -1, dtype=torch.int64, device=device))
++    shortlist = count + max(_SLACK_MIN, count)
++    bf16 = queries.dtype == torch.bfloat16 and database.dtype == torch.bfloat16
++    if bf16 and triton.cdiv(rows, _BM) >= 4 * shortlist:
++        STATS["filtered_calls"] += 1
++        distances, indices = _filtered(queries.contiguous(), database.contiguous(), count, shortlist)
++    else:
++        STATS["exhaustive_calls"] += 1
++        distances, indices = _exhaustive(queries, database, count)
++    if k > count:
++        distances = torch.cat((distances, torch.full(
++            (query_count, k - count), float("inf"), dtype=torch.float32, device=device)), dim=1)
++        indices = torch.cat((indices, torch.full(
++            (query_count, k - count), -1, dtype=torch.int64, device=device)), dim=1)
++    return distances, indices

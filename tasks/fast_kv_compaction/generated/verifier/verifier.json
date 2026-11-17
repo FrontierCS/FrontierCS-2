@@ -1,0 +1,22 @@
+{
+  "entrypoint": "payload/solution.patch",
+  "gpu": {
+    "max_gpu_instances": 8,
+    "placement": "control"
+  },
+  "sandboxes": {
+    "shard": {
+      "image": "verifier_gpu",
+      "lease_seconds": {
+        "eval": 4500,
+        "train": 3600
+      },
+      "max_concurrent": 8,
+      "resources": {
+        "gpu_type": "H100",
+        "gpus": 1
+      },
+      "workdir": "/workspace/frontier-verifier"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "slices": [
+    {"traj_idx": 392, "start_frame": 34, "end_frame": 54},
+    {"traj_idx": 791, "start_frame": 76, "end_frame": 96},
+    {"traj_idx": 392, "start_frame": 4, "end_frame": 24, "strict_only": true},
+    {"traj_idx": 791, "start_frame": 40, "end_frame": 60, "strict_only": true}
+  ]
+}

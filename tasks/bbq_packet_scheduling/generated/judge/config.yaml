@@ -1,0 +1,36 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "hardware/bbq/generator/bbq_level_lx.py",
+      "hardware/bbq/generator/solver_extensions/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 50,
+    "max_patch_bytes": 8388608
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 60000,
+    "solver_visible_metrics": [
+      "dev_min_throughput_ops_per_second",
+      "dev_max_latency_picoseconds",
+      "dev_max_clock_period_picoseconds",
+      "dev_min_throughput_ops_per_cycle",
+      "dev_max_latency_cycles",
+      "dev_valid_fraction"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 1800
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "polar_express.py",
+      "frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 20,
+    "max_patch_bytes": 1048576
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 100,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 24000,
+    "solver_visible_metrics": [
+      "worst_case_scalar_error",
+      "relative_polar_factor_error",
+      "paper_regime_relative_polar_factor_error",
+      "spectral_polar_error",
+      "polar_cosine_similarity",
+      "top_subspace_polar_error"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 1800
+  }
+}

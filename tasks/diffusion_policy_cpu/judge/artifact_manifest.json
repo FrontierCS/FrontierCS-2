@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "task_type": "contribution_reconstruction",
+  "upstream_root": "diffusion_policy_cpu/code",
+  "authentic_execution": {
+    "entrypoint": "diffusion_policy/env_runner/pusht_keypoints_runner.py",
+    "retained_files": [
+      "diffusion_policy/env_runner/pusht_keypoints_runner.py",
+      "diffusion_policy/env_runner/base_lowdim_runner.py",
+      "diffusion_policy/policy/base_lowdim_policy.py",
+      "diffusion_policy/model/diffusion/transformer_for_diffusion.py",
+      "diffusion_policy/model/common/normalizer.py",
+      "diffusion_policy/gym_util/async_vector_env.py",
+      "diffusion_policy/gym_util/multistep_wrapper.py",
+      "diffusion_policy/gym_util/video_recording_wrapper.py",
+      "diffusion_policy/env/pusht/pusht_keypoints_env.py",
+      "diffusion_policy/env/pusht/pymunk_keypoint_manager.py",
+      "diffusion_policy/env/pusht/pusht_env.py"
+    ],
+    "callable": "PushTKeypointsRunner.run"
+  },
+  "excision": [
+    {
+      "path": "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py",
+      "mode": "stubbed",
+      "symbols": [
+        "conditional_sample"
+      ],
+      "qualified_symbols": [
+        "DiffusionTransformerLowdimPolicy.conditional_sample"
+      ]
+    }
+  ],
+  "solution_surface": {
+    "modify": [
+      "diffusion_policy/policy/diffusion_transformer_lowdim_policy.py"
+    ],
+    "add_under": [
+      "diffusion_policy/sampler_extensions/"
+    ],
+    "no_new_files_reason": ""
+  },
+  "task_owned_files": [],
+  "retained_alternatives": [],
+  "pruned_alternatives": [
+    "diffusion_policy/policy/base_image_policy.py",
+    "diffusion_policy/policy/bet_lowdim_policy.py",
+    "diffusion_policy/policy/diffusion_transformer_hybrid_image_policy.py",
+    "diffusion_policy/policy/diffusion_unet_hybrid_image_policy.py",
+    "diffusion_policy/policy/diffusion_unet_image_policy.py",
+    "diffusion_policy/policy/diffusion_unet_lowdim_policy.py",
+    "diffusion_policy/policy/diffusion_unet_video_policy.py",
+    "diffusion_policy/policy/ibc_dfo_hybrid_image_policy.py",
+    "diffusion_policy/policy/ibc_dfo_lowdim_policy.py",
+    "diffusion_policy/policy/robomimic_image_policy.py",
+    "diffusion_policy/policy/robomimic_lowdim_policy.py"
+  ],
+  "minimality_note": "Static local-import closure of the selected runner, frozen policy and required anchors, plus upstream setup.py and MIT LICENSE. No alternate policy, checkpoint, paper, provenance, history or inspection report is copied."
+}

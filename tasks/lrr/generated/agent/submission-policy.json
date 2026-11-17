@@ -1,0 +1,21 @@
+{
+  "edit_scope": {
+    "allow_delete": true,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "scripts/scalpel_to_thinking_steps.py",
+      "prompts/localization.txt",
+      "prompts/5-shot-localization-prompt.txt",
+      "prompts/1-shot-prompt.txt",
+      "prompts/5-shot-prompt.txt",
+      "frontier_solution/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

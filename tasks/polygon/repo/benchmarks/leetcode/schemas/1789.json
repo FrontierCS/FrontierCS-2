@@ -1,0 +1,28 @@
+{
+    "Problem Number": "1789",
+    "Tables": [
+      {
+        "TableName": "Employee",
+        "PKeys": [
+          {
+            "Name": "employee_id",
+            "Type": "int"
+          },
+          {
+            "Name":"department_id",
+            "Type":"int"
+          }
+        ],
+        "FKeys": [],
+        "Others": [
+            {
+                "Name":"primary_flag",
+                "Type":"enum,Y,N"
+            }
+        ]
+      }
+    ],
+    "Tuples": [
+    ]
+  
+  }

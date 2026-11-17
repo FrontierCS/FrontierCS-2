@@ -1,0 +1,19 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "frontier_solution/",
+      "mujoco_playground/_src/locomotion/go1/joystick.py",
+      "mujoco_playground/_src/locomotion/go1/randomize.py",
+      "mujoco_playground/config/locomotion_params.py"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 50,
+    "max_patch_bytes": 262144
+  },
+  "member": "solution.patch"
+}

@@ -1,0 +1,18 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": true,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "project/MetaOptimize/TrafficEngineering/BudgetedDemandSearch.cs",
+      "project/MetaOptimize/TrafficEngineering/Candidate/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 96,
+    "max_file_bytes": 2000000,
+    "max_patch_bytes": 4194304
+  },
+  "member": "solution.patch"
+}

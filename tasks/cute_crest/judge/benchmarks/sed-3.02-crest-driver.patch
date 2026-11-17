@@ -1,0 +1,40 @@
+diff -ru sed.orig/execute.c sed/execute.c
+--- sed.orig/execute.c	1998-07-06 04:01:01.000000000 +0000
++++ sed/execute.c	2026-10-13 20:40:06.809885913 +0000
+@@ -1,3 +1,6 @@
++/* Modified for FrontierCS on 2026-10-14: instrument input bytes
++   for the CREST concolic-testing benchmark. */
++#include <crest.h>
+ /*  GNU SED, a batch stream editor.
+     Copyright (C) 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1998
+     Free Software Foundation, Inc.
+@@ -375,6 +378,9 @@
+ 	  else
+ #endif
+ 	    buffer.length = ck_fread(buffer.text, 1, buffer.alloc, input->fp);
++	  { static int crest_done = 0; size_t crest_i;
++	    if (!crest_done) { crest_done = 1;
++	      for (crest_i = 0; crest_i < buffer.length && crest_i < 20; crest_i++) { char crest_c; CREST_char(crest_c); buffer.text[crest_i] = crest_c; } } }
+ 	}
+ 
+       if (buffer.length == 0)
+diff -ru sed.orig/sed.c sed/sed.c
+--- sed.orig/sed.c	1998-07-03 01:06:26.000000000 +0000
++++ sed/sed.c	2026-10-13 20:40:06.809701429 +0000
+@@ -1,3 +1,7 @@
++/* Modified for FrontierCS on 2026-10-14: instrument -e script bytes
++   for the CREST concolic-testing benchmark. */
++#include <crest.h>
++#include <string.h>
+ #define COPYRIGHT_NOTICE "Copyright (C) 1998 Free Software Foundation, Inc."
+ #define BUG_ADDRESS "bug-gnu-utils@gnu.org"
+ 
+@@ -147,6 +151,8 @@
+ 	  no_default_output = 1;
+ 	  break;
+ 	case 'e':
++	  { size_t crest_i, crest_n = strlen(optarg);
++	    for (crest_i = 0; crest_i < crest_n; crest_i++) { char crest_c; CREST_char(crest_c); optarg[crest_i] = crest_c; } }
+ 	  the_program = compile_string(the_program, optarg);
+ 	  break;
+ 	case 'f':

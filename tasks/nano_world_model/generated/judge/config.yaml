@@ -1,0 +1,38 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "src/diffusion/df_sample.py",
+      "src/diffusion/gaussian_diffusion.py",
+      "src/diffusion/flow_matching.py",
+      "src/diffusion/frontier_solution/"
+    ],
+    "allowed_suffixes": [
+      ".py",
+      ".pyi"
+    ],
+    "deny_paths": [],
+    "forbidden_added": [],
+    "forbidden_content": [],
+    "ignore_case": false,
+    "max_changed_files": 20,
+    "max_patch_bytes": 262144
+  },
+  "evaluation": {
+    "answering_timeout_seconds": 18000,
+    "max_dev_submissions": 3,
+    "max_metrics_bytes": 524288,
+    "max_train_wall_seconds": 10800,
+    "solver_visible_metrics": [
+      "psnr",
+      "ssim",
+      "lpips"
+    ]
+  },
+  "runtime": {
+    "timeout_seconds": 10200
+  }
+}

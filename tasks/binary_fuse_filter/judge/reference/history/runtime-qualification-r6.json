@@ -1,0 +1,54 @@
+{
+  "schema": "binary-fuse-runtime-qualification/v1",
+  "status": "QUALIFIED_EXACT_RUNTIME",
+  "measured_at": "2026-10-08T06:16:24.509956+00:00",
+  "measurement_sha256": "sha256:eb848eae352d9eaae2fdb70bcd8930ff5576cb49a9c2d4da8d21280943eaf971",
+  "full_entrypoint_train_final": true,
+  "answering_seconds": 18000,
+  "train_calls": 100,
+  "train_pool_fit_seconds": 4622.385166800814,
+  "final_wall_seconds": 68.45317684899783,
+  "peak_memory_bytes": 127746048,
+  "images": {
+    "agent_cpu": {
+      "reference": "registry.invalid/historical/agent:fs2-binary-fuse-filter-82p6sj8gqz-cpu",
+      "immutable_reference": "registry.invalid/historical/agent@sha256:393a653f5a0b5972188d56e6956108a30103947758edf6c861f07ca6b3d70e62",
+      "tag": "registry.invalid/historical/agent:fs2-binary-fuse-filter-82p6sj8gqz-cpu",
+      "digest": "sha256:393a653f5a0b5972188d56e6956108a30103947758edf6c861f07ca6b3d70e62"
+    },
+    "verifier_cpu": {
+      "reference": "registry.invalid/historical/verifier:fs2-binary-fuse-filter-82p6sj8gqz-verifier",
+      "immutable_reference": "registry.invalid/historical/verifier@sha256:3677a89f0cc55c50f0f1a2401309932e7bf658d57f767271d72bbda8053cc440",
+      "tag": "registry.invalid/historical/verifier:fs2-binary-fuse-filter-82p6sj8gqz-verifier",
+      "digest": "sha256:3677a89f0cc55c50f0f1a2401309932e7bf658d57f767271d72bbda8053cc440"
+    }
+  },
+  "measured_native_inputs": {
+    "schema_version": "frontier.frontiersmith-native-inputs/v1",
+    "tree_sha256": "sha256:978065a98d7abec6267cd536669020956e70a5c674a718c9b34bb10d4dea955e",
+    "trusted_gpu_base": "",
+    "source_reference": "frontiersmith://binary_fuse_filter/manual-native-reference-entrypoint-r5"
+  },
+  "source_head": "b26d30ce5a53a6592680c641042c86373c65960d",
+  "private_profile_sha256": "sha256:053dc7a2e1a59fc971c2a7f12135429ad0e557952397f7484aaaf6bdb2481fa7",
+  "qualification_receipt_sha256": "sha256:cc073f0d5167229bc15a6d30de38cf0ccd34b4707d40602e7c7ceeb3b0294adf",
+  "calibration_binding_receipt_sha256": "sha256:3a147fdfe84400a540dc01848d70d888250c25c2135679d49108911ba8148b3a",
+  "train_evidence_sha256": "sha256:5f664caff4adf98eb0810bbadf046aeff6be3094beca7029f551ea1a426baae2",
+  "final_evidence_sha256": "sha256:8c319cce4be40d4b04acfda9586d72ff1563167dcdb697e9c98f86ff5e69da22",
+  "reference_entrypoint": "python3 /opt/frontier/verify_reference.py; exact private patch required; unchanged common evaluator body",
+  "production_entrypoint_at_measurement": "/opt/frontier/verifier separately tested closed on RuntimeQualificationRequired",
+  "runtime": {
+    "python": "3.12.3",
+    "compiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "zstandard": "0.23.0",
+    "uid": 65532,
+    "cpu_limit": 2,
+    "memory_limit_bytes": 4294967296
+  },
+  "statistical_validation": "2160 exact reference point comparisons against all5retained rounds; zero new calibration rounds/delta changes",
+  "scientific_verdict": "valid reference; strict FAIL, expected for comparison against itself",
+  "train_pool_scope": "100 times observed complete train container wall; not100executedcalls or guarantee for slower candidate",
+  "staging_native_acceptance": false,
+  "genuine_solver_qualification": false,
+  "install_status": "NOT_INSTALLED; frozen r5gate remains closed; ordinary receipt-bearing successor required before candidate publication"
+}

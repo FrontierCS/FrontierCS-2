@@ -1,0 +1,18 @@
+{
+  "entrypoint": "payload/solution.patch",
+  "sandboxes": {
+    "search": {
+      "image": "verifier_cpu",
+      "lease_seconds": {
+        "eval": 10500,
+        "train": 3600
+      },
+      "max_concurrent": 1,
+      "resources": {
+        "cpu_millis": 8000,
+        "memory_bytes": 34359738368
+      },
+      "workdir": "/workspace/search"
+    }
+  }
+}

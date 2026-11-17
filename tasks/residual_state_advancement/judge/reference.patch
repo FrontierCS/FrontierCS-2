@@ -1,0 +1,31 @@
+diff --git a/src/joinboost/app.py b/src/joinboost/app.py
+index c351be8..2de7557 100644
+--- a/src/joinboost/app.py
++++ b/src/joinboost/app.py
+@@ -824,7 +824,25 @@ class GradientBoosting(DecisionTree):
+ 
+     def _update_error(self, leaf_nodes, learning_rate):
+         """Advance training state for the next boosting round."""
+-        raise NotImplementedError("between-round residual update is not implemented")
++        target_relation = self.cjt.target_relation
++        g_col, _ = self.semi_ring.get_columns_name()
++        clauses = []
++        for cur_cjt in leaf_nodes:
++            g, h = cur_cjt.get_semi_ring().get_value()
++            prediction = g / h * learning_rate
++            _, join_conds = cur_cjt._get_income_messages(
++                cur_cjt.target_relation, condition=2
++            )
++            conditions = join_conds + cur_cjt.get_annotations(target_relation)
++            predicate = " AND ".join(
++                selection_to_sql(condition, qualified=False)
++                for condition in conditions
++            )
++            clauses.append(f"WHEN {predicate} THEN {g_col}-({prediction})")
++
++        update = f"{g_col}=CASE {' '.join(clauses)} ELSE {g_col} END"
++        self.cjt.exe.update_query(update, target_relation, qualified=False)
++        return self.cjt
+ 
+ 
+ class RandomForest(DecisionTree):

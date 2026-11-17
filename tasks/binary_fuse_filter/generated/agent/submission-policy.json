@@ -1,0 +1,16 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": false,
+    "allow_executable": true,
+    "allow_new_files": true,
+    "allowed_paths": [
+      "include/"
+    ],
+    "allowed_suffixes": [],
+    "deny_paths": [],
+    "max_changed_files": 32,
+    "max_patch_bytes": 1048576
+  },
+  "member": "solution.patch"
+}

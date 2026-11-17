@@ -1,0 +1,166 @@
+{
+  "schema_version": "frontier.ivfpq-gpu-kernel-scoring/v1",
+  "calibration_status": "calibrated",
+  "warmup_iterations": 2,
+  "timed_iterations": 7,
+  "worker_timeout_seconds": 3600,
+  "recall_threshold": 0.99,
+  "data": {
+    "path": "/data/sift.hdf5",
+    "sha256": "sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984",
+    "provenance_status": "original_modal_volume_bytes_verified"
+  },
+  "comparisons": {
+    "search_latency_ms": {
+      "better": "lower",
+      "strictly_better": true
+    },
+    "iso_recall": {
+      "better": "higher",
+      "absolute_non_inferiority_band": 0.0
+    },
+    "nn_recall": {
+      "better": "higher",
+      "absolute_non_inferiority_band": 0.0
+    }
+  },
+  "continuous_score": {
+    "speedup_midpoint": 10.0,
+    "raw_metric": "geomean(median(naive_latency_ms_i/candidate_latency_ms_i) over seven paired timed calls per workload)",
+    "formula": "0 if S <= 1 else 100*log(S)/(log(10)+log(S))",
+    "reference_independent": true
+  },
+  "workloads": [
+    {
+      "id": "sift_q4k_np32",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 32,
+      "Q": 4096,
+      "k": 100,
+      "ordinal": 0
+    },
+    {
+      "id": "sift_q4k_np64",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 64,
+      "Q": 4096,
+      "k": 100,
+      "ordinal": 1
+    },
+    {
+      "id": "sift_q2k_np64",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 64,
+      "Q": 2048,
+      "k": 100,
+      "ordinal": 2
+    },
+    {
+      "id": "sift_q2k_np128",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 128,
+      "Q": 2048,
+      "k": 100,
+      "ordinal": 3
+    },
+    {
+      "id": "sift_q1k_np128",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 128,
+      "Q": 1024,
+      "k": 100,
+      "ordinal": 4
+    },
+    {
+      "id": "sift_q1k_np256",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 256,
+      "Q": 1024,
+      "k": 100,
+      "ordinal": 5
+    },
+    {
+      "id": "sift_q10k_np32",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 32,
+      "Q": 10000,
+      "k": 100,
+      "ordinal": 6,
+      "strict_only": true
+    },
+    {
+      "id": "sift_q1k_np128_k1024",
+      "dataset": "sift",
+      "nlist": 8192,
+      "m": 16,
+      "nprobe": 128,
+      "Q": 1024,
+      "k": 1024,
+      "ordinal": 7,
+      "strict_only": true
+    }
+  ],
+  "suites": {
+    "train": {
+      "workload_ids": [
+        "sift_q4k_np32",
+        "sift_q4k_np64",
+        "sift_q2k_np64",
+        "sift_q2k_np128"
+      ]
+    },
+    "eval": {
+      "workload_ids": [
+        "sift_q4k_np32",
+        "sift_q4k_np64",
+        "sift_q2k_np64",
+        "sift_q2k_np128",
+        "sift_q1k_np128",
+        "sift_q1k_np256",
+        "sift_q10k_np32",
+        "sift_q1k_np128_k1024"
+      ]
+    }
+  },
+  "seed_domains": {
+    "public": {
+      "base_seed": 20260702,
+      "workload_ids": [
+        "sift_q4k_np32",
+        "sift_q4k_np64",
+        "sift_q2k_np64",
+        "sift_q2k_np128"
+      ]
+    },
+    "hidden": {
+      "base_seed": 2026091302,
+      "workload_ids": [
+        "sift_q1k_np128",
+        "sift_q1k_np256",
+        "sift_q10k_np32",
+        "sift_q1k_np128_k1024"
+      ]
+    }
+  },
+  "distance_check": {
+    "mode": "enforce",
+    "atol": 0.0,
+    "rtol": 1e-06,
+    "status": "user_confirmed_after_six_workload_h100_reference_calibration",
+    "oracle": "Float32 residual ADC on the same bf16-rounded query/centroid/codebook inputs, with naive dsub-then-m reduction; compare valid returned IDs only."
+  }
+}
