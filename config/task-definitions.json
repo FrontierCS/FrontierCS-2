@@ -4325,7 +4325,7 @@
         "max_gpu_seconds": 1310400
       }
     },
-    "image_tag": "source-c8f959b11b48a4f09af1373170c6f0506f5a8ba000c568b421dcb20a3f7d4409",
+    "image_tag": "source-8d4483850d6c2469788177376fe7ca7e6d03d162115dba4eee901865986beb37",
     "metadata": {
       "accelerator": {
         "agent_gpu_interface": "frontier.gpu-helper/v3",
@@ -4393,7 +4393,7 @@
     },
     "source": {
       "identity_algorithm": "preview-source-identity/v1",
-      "source_set_sha256": "sha256:c8f959b11b48a4f09af1373170c6f0506f5a8ba000c568b421dcb20a3f7d4409"
+      "source_set_sha256": "sha256:8d4483850d6c2469788177376fe7ca7e6d03d162115dba4eee901865986beb37"
     },
     "submission": {
       "entrypoint": "payload/solution.patch",
