@@ -139,6 +139,8 @@ VERIFIER_RECIPE = "verifier/Dockerfile"
 # that it names.
 H100 = {"count": 1, "model": "NVIDIA H100 80GB HBM3"}
 A100_80 = {"count": 1, "model": "NVIDIA A100-SXM4-80GB"}
+X86_64_V2 = ["sse4_1", "ssse3"]
+X86_64_V3 = ["avx2", "bmi2", "fma", "abm", "movbe"]
 AVX512 = ["avx512f", "avx512dq", "avx512bw"]
 XEON_8375C = "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz"
 
