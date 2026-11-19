@@ -1,0 +1,40 @@
+# After each push to `pumpkin`, starts the sync in FrontierCS's private repository, which carries
+# the change there; the sync itself lives in that repository. A push that the sync made, whose head
+# commit names a private commit in a Synced-From trailer, needs no sync back.
+name: notify private sync
+
+on:
+  push:
+    branches: [pumpkin]
+
+permissions: {}
+
+jobs:
+  notify:
+    if: >-
+      github.repository == 'FrontierCS/FrontierCS-2' &&
+      !contains(github.event.head_commit.message, 'Synced-From: FrontierCS/private@')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # Gives only runs on `pumpkin` the key of the frontiercs-sync-notify App. The App may only
+    # start workflows, and is installed on the private repository alone. The environment also
+    # holds that repository's name, as a secret, because this repository's logs are public and a
+    # secret is masked in them where a variable is not.
+    environment: sync-notify
+    steps:
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.NOTIFY_APP_CLIENT_ID }}
+          private-key: ${{ secrets.NOTIFY_APP_PRIVATE_KEY }}
+          owner: FrontierCS
+
+      # The sync's workflow lives on `pumpkin`, not on the private repository's default branch.
+      # "Once a workflow has run at least once, you can dispatch it against any branch or tag via
+      # the GitHub API or GitHub CLI":
+      # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch
+      - name: start the sync
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PRIVATE_REPOSITORY: ${{ secrets.PRIVATE_REPOSITORY }}
+        run: gh workflow run sync.yml --repo "$PRIVATE_REPOSITORY" --ref pumpkin
