@@ -1,2 +1,3 @@
-# ./pumpkin builds Pumpkin here, and keeps each run's record in .pumpkin/runs/.
+# ./pumpkin builds Pumpkin here, and keeps each run's record in .pumpkin/runs/; deleting it is
+# safe, and the next ./pumpkin builds it again.
 /.pumpkin/
