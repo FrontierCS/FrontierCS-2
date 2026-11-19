@@ -1,1 +1,2 @@
+# ./pumpkin builds Pumpkin here, and keeps each run's record in .pumpkin/runs/.
 /.pumpkin/
