@@ -13,8 +13,14 @@ fcs_task(
         "transfer_bytes": 512 * MiB,
     },
     # The judge runs on four H100s at once (`[gpu.verifier]`, `judge/evaluator.py`'s
-    # `EXPECTED_VERIFIER_GPUS`), with a GPU runner's CPUs and memory, as FrontierCS starts it.
-    judge = GPU_RUNNER | {"gpu": {"count": 4, "model": H100["model"]}},
+    # `EXPECTED_VERIFIER_GPUS`), one workload worker on each, so it has four GPU runners' CPUs
+    # and memory: a sandbox's memory is its hard limit, and the four workers' models exceed one
+    # runner's 64 GiB.
+    judge = {
+        "cpu_millis": 4 * GPU_RUNNER["cpu_millis"],
+        "memory_bytes": 4 * GPU_RUNNER["memory_bytes"],
+        "gpu": {"count": 4, "model": H100["model"]},
+    },
     # The evaluator reads its GPU count from `FRONTIER_VERIFIER_GPU_COUNT` (`judge/evaluator.py`,
     # `_gpu_count`), which FrontierCS's Driver set.
     judge_env = ["FRONTIER_VERIFIER_GPU_COUNT=4"],
