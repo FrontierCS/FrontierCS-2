@@ -397,7 +397,7 @@ def load_evaluator(task_dir: Path):
 
 
 def _bounded(value: Any, depth: int = 0, *, max_string_chars: int = MAX_MESSAGE_CHARS) -> Any:
-    if depth > 6:
+    if depth > 64:
         raise VerifierFailure("invalid_evaluator_result", "metrics are nested too deeply")
     if value is None or isinstance(value, (bool, str)):
         return value[:max_string_chars] if isinstance(value, str) else value
