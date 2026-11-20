@@ -15,6 +15,9 @@ fcs_task(
     # The judge runs on four H100s at once (`[gpu.verifier]`, `judge/evaluator.py`'s
     # `EXPECTED_VERIFIER_GPUS`), with a GPU runner's CPUs and memory, as FrontierCS starts it.
     judge = GPU_RUNNER | {"gpu": {"count": 4, "model": H100["model"]}},
+    # The evaluator reads its GPU count from `FRONTIER_VERIFIER_GPU_COUNT` (`judge/evaluator.py`,
+    # `_gpu_count`), which FrontierCS's Driver set.
+    judge_env = ["FRONTIER_VERIFIER_GPU_COUNT=4"],
     train_calls = 25,
     train_cumulative_seconds = 225000,
     judge_timeout_seconds = 12600,
