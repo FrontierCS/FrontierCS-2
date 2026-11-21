@@ -17,6 +17,7 @@ fcs_task(
     train_cumulative_seconds = 12000,
     judge_timeout_seconds = 3000,
     submission_max_bytes = 256 * KiB,
+    contexts = {"runtime": "runtime/Dockerfile"},
     visible_metrics = [
         "dev_eval_reward_ocr",
         "dev_verified_optimizer_updates",

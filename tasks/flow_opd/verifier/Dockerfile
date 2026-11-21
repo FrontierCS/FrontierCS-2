@@ -1,7 +1,7 @@
-# The source's offline runtime, pinned by digest, as the agent's image has it, where the judge
+# The source's offline runtime (`runtime/Dockerfile`), as the agent's image has it, where the judge
 # runs each workload under `isolate` on the GPU. It already holds bash, git, tar and zstandard,
 # so the image installs no package.
-FROM docker.io/joyemang33/fcs2-task-flow_opd-gpu-runtime@sha256:47687f9d3935b55d321303ada053de92f435c70ac5f497952fcc8e3e6f914da5 AS common
+FROM runtime AS common
 
 USER root
 # The user 65532 with /frontier its home, as the shared verifier base has them; the shared

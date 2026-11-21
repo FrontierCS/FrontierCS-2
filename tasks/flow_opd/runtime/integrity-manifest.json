@@ -1,0 +1,211 @@
+{
+  "started_unix": 1790073943.432988,
+  "files": [
+    {
+      "path": "stable-diffusion-3.5-medium/LICENSE.md",
+      "bytes": 11726,
+      "sha256": "9b60b9d0411f54d4087484ad4acf28ca6fd9f6a84c30ddacb04de2c623254749",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/README.md",
+      "bytes": 12100,
+      "sha256": "076c5b3ce1cb9bd33751656cac2b094b6ab93212a82624dab5405f4596737f7a",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/model_index.json",
+      "bytes": 706,
+      "sha256": "b5e97ca0d3c0cd9a1e3ed91a71bbdd489de7941b23fe038b3aaa9acf36fd1543",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/scheduler/scheduler_config.json",
+      "bytes": 141,
+      "sha256": "677e1ed36ca0de4ac8cc766ca58869e8649673d5f1d47eb8f8aef511a18ae8f7",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder/config.json",
+      "bytes": 574,
+      "sha256": "3ae637e6409ed10c125e13b935461060d629ee069eea7cb8c3e9eee26b01ff1a",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder/model.safetensors",
+      "bytes": 247323896,
+      "sha256": "71e183d11db0c6b6282a4d9e0abb74125edc8692393e89ed8ee5571005f35cb1",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder_2/config.json",
+      "bytes": 570,
+      "sha256": "786ac791f8ae2168eca583978d89e97b704579e4873a2ca36e2d8b5af561f625",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder_2/model.safetensors",
+      "bytes": 1389382176,
+      "sha256": "ec310df2af79c318e24d20511b601a591ca8cd4f1fce1d8dff822a356bcdb1f4",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder_3/config.json",
+      "bytes": 740,
+      "sha256": "9035948b0904c536918a88b5d984a52cfca26a5c57efa9e90149790cf38c151e",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder_3/model-00001-of-00002.safetensors",
+      "bytes": 4994582104,
+      "sha256": "4f2751ceeb2a96edd693e539dc5d6bba0b8d3814f49a9b3798403a0cec4b2e3d",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder_3/model-00002-of-00002.safetensors",
+      "bytes": 4530066248,
+      "sha256": "f63154532130422309532ff56f11945fbea8266c958e3133e8e5aef85c6293c7",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/text_encoder_3/model.safetensors.index.json",
+      "bytes": 19885,
+      "sha256": "3bacec0f0cf392399d4a385908f67dd73df99c9e9cfee669f148858ba9fbdb0a",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer/special_tokens_map.json",
+      "bytes": 588,
+      "sha256": "2cdb3b8331a60c92fc1e55a13e9fd61fd2293c5a51275fdcccd62b780052530e",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer/tokenizer_config.json",
+      "bytes": 705,
+      "sha256": "6bdcee9ccce2a16ca2b4c0c5ed00b42c50ea225f4472a8c4c1e963a2902c2881",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_2/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_2/special_tokens_map.json",
+      "bytes": 576,
+      "sha256": "c4dbb96da703fb38f10ccf0490df2fd476811c5a3e71b7e0189cffeed3224e25",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_2/tokenizer_config.json",
+      "bytes": 856,
+      "sha256": "e70eb3e2b85a508e32bb81c32c13fc3f2b015548ca469b94627c2f32e445cba1",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_2/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_3/special_tokens_map.json",
+      "bytes": 2543,
+      "sha256": "7a1985a994c41886db38c719d2a3d2f40606663cc19d7c5d6a85d349320e06d2",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_3/spiece.model",
+      "bytes": 791656,
+      "sha256": "d60acb128cf7b7f2536e8f38a5b18a05535c9e14c7a355904270e15b0945ea86",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_3/tokenizer.json",
+      "bytes": 2424035,
+      "sha256": "652ffdfc379606bad8edfb653f92dcf28e2e5dbf1cdfe50d685d29b2cad12dd6",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/tokenizer_3/tokenizer_config.json",
+      "bytes": 20617,
+      "sha256": "83b3e7737eef754efca607d9f580798cc35457daa96052cc60179f095a375c14",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/transformer/config.json",
+      "bytes": 524,
+      "sha256": "b6ea8128277df286573ce1937c36ce42a5a84e976331091ffccb1d05893dc299",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/transformer/diffusion_pytorch_model.safetensors",
+      "bytes": 4939433672,
+      "sha256": "f81eb93a348be218af757dd095cbda45090380d9bbda91049442e0e40bb4cc95",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/vae/config.json",
+      "bytes": 809,
+      "sha256": "58557f2439dfa867450caef425b5d11160be8aa9c34d60dbf23a94a6a94cb060",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "stable-diffusion-3.5-medium/vae/diffusion_pytorch_model.safetensors",
+      "bytes": 167666902,
+      "sha256": "8f53304a79335b55e13ec50f63e5157fee4deb2f30d5fae0654e2b2653c109dc",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "SD3.5M-FlowGRPO-Text/README.md",
+      "bytes": 1410,
+      "sha256": "e57cc6e82babc575a586e5cb5a2c777f7199d61b908d3bb2425269f3ed303cf1",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "SD3.5M-FlowGRPO-Text/adapter_config.json",
+      "bytes": 882,
+      "sha256": "3498723f85aa83d755415ff899840ed12708835222e5bea3bc3f320f35ced3b3",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "SD3.5M-FlowGRPO-Text/adapter_model.safetensors",
+      "bytes": 75156544,
+      "sha256": "a82776def305a94d7caa3f7164852bab70c749a5a3ec6de3ab5ee7b5e2d9427e",
+      "pinned_hash_verified": true
+    },
+    {
+      "path": "ocr/en_PP-OCRv3_det_infer.tar",
+      "bytes": 4003840,
+      "sha256": "e740eb522521827cc83da3ba33e1c70ccfd9b3cf7d9a24a420ce4ca5ebb8794f",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "ocr/en_PP-OCRv4_rec_infer.tar",
+      "bytes": 10240000,
+      "sha256": "d5ae153a6fbdacd5776543d3194c4258154ed6f83467d55de1cc345f7dd20322",
+      "pinned_hash_verified": false
+    },
+    {
+      "path": "ocr/ch_ppocr_mobile_v2.0_cls_infer.tar",
+      "bytes": 2188800,
+      "sha256": "507352585040d035da3b1e6374694ad679a850acb0a36a8d0d47984176357717",
+      "pinned_hash_verified": false
+    }
+  ],
+  "complete": true,
+  "finished_unix": 1790074330.9254065
+}

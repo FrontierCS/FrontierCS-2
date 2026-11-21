@@ -92,14 +92,16 @@ FINALIZE_GRACE_SECONDS = 60
 # makes it the owner of /frontier, the verifier's home.
 VERIFIER_USER = {"uid": 65532, "gid": 65532}
 
-# FrontierCS's two shared base images, each pinned by digest here once. A recipe names its base
-# as the build argument `AGENT_BASE` or `VERIFIER_BASE` (`ARG` before its first `FROM`), which
-# every image of a task is built with.
-# FrontierCS's later verifier and gpu-tools bases add only an environment variable that sizes
-# SSH transfers, which these judges do not read, so the tasks stay on these.
-AGENT_BASE = "docker.io/joyemang33/frontier-agent-base:src-3d8d799e29ea@sha256:55317b36f668d3a36b87f82eb1b88623ac7b77c2a31eadc9be7c7f02b56d6704"
-VERIFIER_BASE = "docker.io/joyemang33/frontier-verifier-base:src-5746e17512a9@sha256:1af9407b7dfa53b5dec97da51ebe0e20d3cf5a26e8fe5be6f6a156cd91797d8b"
+# FrontierCS's two shared base images, each built from its recipe's directory here, with the
+# repository's `shared/` in its context. A recipe names its base as the build argument
+# `AGENT_BASE` or `VERIFIER_BASE` (`ARG` before its first `FROM`), whose value is the named
+# context that every image of a task is built with (`_bases`).
+# FrontierCS's later verifier base adds only an environment variable that sizes SSH transfers,
+# which these judges do not read, so the recipe here stays without it.
+AGENT_BASE = "frontier-agent-base"
+VERIFIER_BASE = "frontier-verifier-base"
 BASE_ARGS = {"AGENT_BASE": AGENT_BASE, "VERIFIER_BASE": VERIFIER_BASE}
+BASE_DIRS = {AGENT_BASE: "//lib/agent-base", VERIFIER_BASE: "//lib/verifier-base"}
 
 # The agent's user, the base image's `ubuntu`, which owns /workspace.
 AGENT_USER = {"uid": 1000, "gid": 1000}
@@ -736,7 +738,8 @@ def fcs_task(
         fail("`model_budgets` gives `{}` a budget, but its model routes are empty: give them, or remove the budget"
             .format(unrouted[0]))
     judge_leases = {name: _check_judge_lease(name, lease, judge_timeout_seconds) for name, lease in judge_leases.items()}
-    built = {name: image(recipe, mount = SHARED, args = BASE_ARGS) for name, recipe in contexts.items()}
+    bases = {name: image("Dockerfile", context = directory, mount = {"shared": "//shared"}) for name, directory in BASE_DIRS.items()}
+    built = bases | {name: image(recipe, mount = SHARED, args = BASE_ARGS, contexts = bases) for name, recipe in contexts.items()}
     images = {
         mode: image(VERIFIER_RECIPE, mount = SHARED, args = BASE_ARGS, target = mode if mode_stages else None, contexts = built)
         for mode in MODES
@@ -746,7 +749,7 @@ def fcs_task(
     untrusted = [name for name, lease in judge_leases.items() if not lease["trusted"]]
     base = None
     if AGENT in HARNESSES or untrusted:
-        readme = image("Dockerfile", context = AGENT_README, mount = {"task": AGENT_DIR}, args = BASE_ARGS)
+        readme = image("Dockerfile", context = AGENT_README, mount = {"task": AGENT_DIR}, args = BASE_ARGS, contexts = bases)
         base = image(AGENT_RECIPE, mount = SHARED, args = BASE_ARGS, contexts = built | {"readme": readme})
     if AGENT in HARNESSES:
         agent_image = base

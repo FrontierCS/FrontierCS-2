@@ -55,7 +55,7 @@ COPY train/trim.py /trim.py
 RUN /opt/frontier/runtime-python /trim.py /judge \
     && echo "c665b4ae70145064b5425add9dea8f8aa0292930cb2ae1c2088045a5b16fa022  /judge/evaluator.py" | sha256sum --check --strict - \
     && echo "6d61bf840f1ab1622ea8c29b03f5727c6a3408eac7ccbfdfbfc1bc6f0f5d111b  /judge/data/quality_subset.jsonl" | sha256sum --check --strict - \
-    && echo "545b31615d61879da95503af70ba3f356192cc6de1a281f9f6be2169bf4f4401  /judge/targets/manifest.json" | sha256sum --check --strict -
+    && echo "954175b05974dcda4540066cdb1c3c6017e09e3ae056633cee9a093fc710f4b6  /judge/targets/manifest.json" | sha256sum --check --strict -
 
 # The train judge's image: the judge with the final suite's articles left out.
 FROM common AS train

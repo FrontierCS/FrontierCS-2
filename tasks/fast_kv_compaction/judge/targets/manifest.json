@@ -251,8 +251,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "f76505aa2e22542f09764651a23e02aeba6486c5cfa4719855c5e8b353dd16c4",
    "shard": 0
@@ -268,8 +267,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "887cce00b153cf148541efe735025acf88aea6ef771478347f34f789ad4d2bcc",
    "shard": 1
@@ -285,8 +283,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "d3f940d463d5066b9f5af41a077edb01d0a7dde74afb12cc933617bdd04956e5",
    "shard": 2
@@ -302,8 +299,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "ed0c78d889f6ba0ed4ce623684d631ecf309dcd26f3f6bc5a38aac5d492076ae",
    "shard": 3
@@ -319,8 +315,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "f0f0f4d1136f5c2ab80c56d7cbc7c4b4b0ed4c843f68b5da2efdb5ecae7e113d",
    "shard": 4
@@ -336,8 +331,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "d6598d96a83410ba410aec6a7460cffad9a9b7fcd2dc11e8f3c1955c07b9305d",
    "shard": 5
@@ -353,8 +347,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "1130934a231937d6374f485efead4288e3198a365cedb261d965aa9031d190a3",
    "shard": 6
@@ -370,8 +363,7 @@
    "judge_sources_sha256": "abdb4342b0b942fa84e38f650fddedef6be8fbadeb7b279e69f4207e3dd75795",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:542f7c13961bee2f2e8addc06e8f653643591d93d9fad4065f5dc590d75fda71"
+    "source_commit": "c1310181eef23a8769b7f817caeb85f2380442d1"
    },
    "sealed_sha256": "f947c408059e5900d640a32a3968af7a6db674959b53b44710d0c0315a308716",
    "shard": 7
@@ -385,8 +377,7 @@
    "judge_sources_sha256": "4fd4421afd77116c715e17a2f8cd013da1aef4c2e2cfb39ad916d5558a1876a7",
    "provenance": {
     "smoke_article": "22462",
-    "source_commit": "c44d5bb7",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:6533265c20a2b02dd1f792585927977996df80ac6c6b91396a86705c0c620eb2"
+    "source_commit": "c44d5bb7"
    },
    "sealed_sha256": "c76d2498e8faab044591a349b5d8b2e2cdfd037369982260be114417de244001",
    "shard": 0
@@ -400,8 +391,7 @@
    "judge_sources_sha256": "4fd4421afd77116c715e17a2f8cd013da1aef4c2e2cfb39ad916d5558a1876a7",
    "provenance": {
     "smoke_article": "22462",
-    "source_commit": "c44d5bb7",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:6533265c20a2b02dd1f792585927977996df80ac6c6b91396a86705c0c620eb2"
+    "source_commit": "c44d5bb7"
    },
    "sealed_sha256": "d58aa28411de2cca64c51d70d15f2bf2f14ae62729b39edf212ab6f0c47ce4eb",
    "shard": 0
@@ -417,8 +407,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "06888e5ea25aa4b6ffd91099b6032c54121633b5bc6d934c8df5e9962bfb2f21",
    "shard": 0
@@ -433,8 +422,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "2deee234b4e8780bfa679ee925f0d69dfaa0a6b4b6a0fe9148d4047403f00ad9",
    "shard": 2
@@ -450,8 +438,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "4d1f4a5905fbfdf808f0f9028dbc4ac45063147ba468280088c5d8fb9cc93e47",
    "shard": 1
@@ -467,8 +454,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "f8e4c553536077ad425da69728f3b81d035b244049b934b1d5867da57a1324f5",
    "shard": 7
@@ -484,8 +470,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "6100305f9234baf991f5985e50c3c5cf1b06e2a452c96ed7640e331e82ceea5c",
    "shard": 3
@@ -501,8 +486,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "81c5658d71496563071a53c525a55afd5ba8132d87731a3adffd2c7e39b9e7b8",
    "shard": 5
@@ -518,8 +502,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "6c63966cbffb3a15868809171121a359cd8d55d13ac8ca44e79e45dfb205e214",
    "shard": 4
@@ -535,8 +518,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "397622b311a01dfbff56f4760638692e7621c89e4bf980d25da312644b3c9018",
    "shard": 6
@@ -552,8 +534,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "5d684b16cabbed2104e38ee8f1cfccf4e8097eabb0455d865eb7a8cf8b9c431b",
    "shard": 0
@@ -569,8 +550,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "9f06173419d0b87a27e40b17179adb97c37756ed07ad83fee907acbec7b05d03",
    "shard": 3
@@ -586,8 +566,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "c0a1fa2527ce30572f8786c2fbb1057e1bc66c5e95c73876c4db23975c5514bb",
    "shard": 1
@@ -603,8 +582,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "e948723f0f34fc349717df43463a1fd79f8c24adf6eda608bc3edb577b852a55",
    "shard": 3
@@ -619,8 +597,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "b23a8552e1f703973875872066b56f82404181b2db19366fa958df02b8381dc9",
    "shard": 2
@@ -636,8 +613,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "b94294f23ead5a5cbd98f5f342a55a11c624161c644f3cc99ece8d0c9df65214",
    "shard": 6
@@ -653,8 +629,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "8d2375318d132b8b1ffcfdba6814113cced0e12e985952ee377d79e23719e440",
    "shard": 4
@@ -670,8 +645,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "b80d8f42f87bce8501246e3b026344f589cd8268aa959c06a5f07350c9d94dd5",
    "shard": 7
@@ -687,8 +661,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "b7483dac03c1a514b39c3979ae7a53b6a13d4f053813817f9d8799aab5b01b72",
    "shard": 2
@@ -704,8 +677,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "6f0e985e9f40f2769f5a63872d363cd62cace1629d5627401a342ed54b1e3a26",
    "shard": 0
@@ -721,8 +693,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "4a3c7669d113a49c0be39c1c258a50d5c6afa0d2b36b80325cdd39d1f4849f8f",
    "shard": 5
@@ -738,8 +709,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "90285ef7540c7172d59bae5f5362a8385b024e78296b0cbb02736f446724de66",
    "shard": 1
@@ -755,8 +725,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "324007b42487ba55278c672dc388fb052062c51277e5ddf3c89195329b2c4ebe",
    "shard": 4
@@ -772,8 +741,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "7145067a1f049043b12ce05c10988705aa5d3ad061b9204e432e5dbe41a436b2",
    "shard": 5
@@ -789,8 +757,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "481013a76b9983a9f80cb738f71d1a0655b2838e2e185e06b918d3d57f6ceba9",
    "shard": 6
@@ -806,8 +773,7 @@
    "judge_sources_sha256": "511a97e8dcf7babcbbd88c3a62d34771054f020c20e5e0a351de2845586f3b35",
    "provenance": {
     "gpu": "H100",
-    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f",
-    "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:9fd6883448c7669e0d880f7beb9c9441ea2894913ec79811e53bc3e401e22068"
+    "source_commit": "41fb8542e5a5f472c0e0d85cc5caefcc1862254f"
    },
    "sealed_sha256": "d04b6c7dcfd79a4a4d859d562720623870cee8543407ffd70c385c619e094778",
    "shard": 7
@@ -950,8 +916,7 @@
  },
  "provenance": {
   "smoke_article": "22462",
-  "source_commit": "c44d5bb7",
-  "verifier_gpu_image": "docker.io/joyemang33/fcs2-task-verifier-fast_kv_compaction-gpu@sha256:6533265c20a2b02dd1f792585927977996df80ac6c6b91396a86705c0c620eb2"
+  "source_commit": "c44d5bb7"
  },
  "reference_target_size": 0.1,
  "review_flags": [],

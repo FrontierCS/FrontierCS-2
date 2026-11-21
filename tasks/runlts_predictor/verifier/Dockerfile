@@ -42,9 +42,26 @@ RUN chmod 0444 /opt/frontier/verifier.json /opt/frontier/*.py \
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /frontier
 
-# The private traces, about 15 GB, are the source's own image, pinned by digest: its
-# /opt/runlts-private-data (the 105 traces, byte for byte, a+rX, a-w).
-FROM docker.io/joyemang33/fcs2-task-verifier-runlts_predictor@sha256:74b8ba63764bae367ee21dd4d688ddc7b9dfac66e64a7735c920c03e2b825ff7 AS traces
+# The private traces, about 15 GB: the training set of CBP 2025, 105 traces in six archives, which
+# the source's recipe downloaded from the championship's Google Drive folder
+# (`judge/training_sources.json` names each file). They are fetched from FrontierCS's copy of the
+# archives, by that repository's commit and each archive's SHA-256 (`judge/training_pins.json`).
+FROM scratch AS archives
+ADD --checksum=sha256:2fa2c1c9ae8845d4c9e7aa542f544be9c5ec5465bf89e52097115239f2d920a5 https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/cbp2025/compress.tar.xz /compress.tar.xz
+ADD --checksum=sha256:3badfef108e8b926be9c54391e364a9fb47c630750b0eade71858976a7750b0a https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/cbp2025/fp.tar.xz /fp.tar.xz
+ADD --checksum=sha256:840e76665c805fb8bf1df0076b1be0d19e02299ebcd8413d44f6efd97021c62a https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/cbp2025/infra.tar.xz /infra.tar.xz
+ADD --checksum=sha256:bdb8855005449ce2194d3bd115477f9146f6b1ed9d8f8a883c64f9ec3909e135 https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/cbp2025/int.tar.xz /int.tar.xz
+ADD --checksum=sha256:bc358cb58418418165f175ad6613e5626515c3f86c27a06fc7bda880ebf0664f https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/cbp2025/media.tar.xz /media.tar.xz
+ADD --checksum=sha256:1e55bfe94913fa6ac1e64554a160cd1cc550bf23458bd3609866f8475f61772b https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/cbp2025/web.tar.xz /web.tar.xz
+
+# The archives' files at /opt/runlts-private-data/traces, as the source's recipe extracts them,
+# a+rX, a-w, each trace checked against `judge/workload_manifest.json` (`extract_traces.py`).
+FROM common AS traces
+RUN --mount=type=bind,from=archives,target=/archives \
+    --mount=type=bind,source=verifier/extract_traces.py,target=/context/extract_traces.py \
+    --mount=type=bind,source=judge/workload_manifest.json,target=/context/workload_manifest.json \
+    python3 -I /context/extract_traces.py /archives /context/workload_manifest.json /opt/runlts-private-data/traces \
+    && chmod --recursive a+rX,a-w /opt/runlts-private-data
 
 # The judge with this port's evaluator (`eval/evaluator.py`), which scores a replay of the
 # predictor's directions where the source scores the counters the candidate's own simulator prints,

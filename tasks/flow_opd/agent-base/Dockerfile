@@ -1,8 +1,7 @@
-# The source's offline runtime, pinned by digest, whose recipe the source does not hold: Debian
-# 12 with Python 3.10, PyTorch 2.6, Diffusers, PEFT and PaddleOCR, and SD3.5 Medium and the OCR
-# teacher at /opt/frontier/models. It already holds bash, git and tar, so the agent's image
-# installs no package.
-FROM docker.io/joyemang33/fcs2-task-flow_opd-gpu-runtime@sha256:47687f9d3935b55d321303ada053de92f435c70ac5f497952fcc8e3e6f914da5
+# The source's offline runtime (`runtime/Dockerfile`): Debian 12 with Python 3.10, PyTorch 2.6,
+# Diffusers, PEFT and PaddleOCR, and SD3.5 Medium and the OCR teacher at /opt/frontier/models. It
+# already holds bash, git and tar, so the agent's image installs no package.
+FROM runtime
 
 USER root
 # The submission tools run the shared agent base's own `/usr/bin/python3`, which this base lacks:

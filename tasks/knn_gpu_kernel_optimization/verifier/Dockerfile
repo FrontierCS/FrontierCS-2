@@ -1,5 +1,16 @@
 # The source's Verifier GPU runner base, PyTorch 2.6.0 with CUDA 12.4 and Triton, pinned by
 # digest, where the judge runs every implementation under `isolate` on the GPU.
+# SIFT-128 of ANN-Benchmarks (`sift-128-euclidean.hdf5`, originally
+# https://ann-benchmarks.com/sift-128-euclidean.hdf5), from FrontierCS's copy of it, by that
+# repository's commit and the file's SHA-256.
+FROM scratch AS sift
+ADD --checksum=sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984 https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/ann-benchmarks/sift-128-euclidean.hdf5 /sift.hdf5
+
+# GIST-960 of ANN-Benchmarks (`gist-960-euclidean.hdf5`, originally
+# https://ann-benchmarks.com/gist-960-euclidean.hdf5), from the same copy.
+FROM scratch AS gist
+ADD --checksum=sha256:8e95831936bfdbfa0a56086942e2cf98cd703517c67f985914183eb4cdbf026a https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/ann-benchmarks/gist-960-euclidean.hdf5 /gist.hdf5
+
 FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel@sha256:0cf3402e946b7c384ba943ee05c90b4c5a4a05227923921f2b0918c011cfaf56 AS common
 
 USER root
@@ -15,16 +26,16 @@ RUN --mount=type=bind,source=fetch/apt_snapshot.sh,target=/context/fetch/apt_sna
     && install --directory --owner=65532 --group=65532 /frontier \
     && useradd --uid 65532 --user-group --no-create-home --home-dir /frontier --shell /bin/sh frontier-verifier
 
-# The datasets are the frozen bytes of the source's previous published verifier image, pinned by
-# digest, and checked against `judge/data_manifest.json` below; h5py reads them, at the version
+# The datasets are the stages `sift`'s and `gist`'s, checked against `judge/data_manifest.json`
+# below; h5py reads them, at the version
 # the source pins, each of its files pinned by SHA-256 (`verifier/requirements.in` is the pin and
 # `verifier/requirements.txt` is `uv pip compile --no-deps --generate-hashes` of it: the base
 # holds the numpy it needs).
 COPY verifier/requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install --no-cache-dir --require-hashes --only-binary=:all: --no-deps --requirement /tmp/requirements.txt \
     && rm /tmp/requirements.txt
-COPY --link --chmod=a+rX,a-w --from=docker.io/joyemang33/fcs2-task-verifier-knn_gpu_kernel_optimization-gpu@sha256:05783810d16d9b853b137813340183761e3c61348aa2ed3560da1a372d2722a4 /data/sift.hdf5 /data/sift.hdf5
-COPY --link --chmod=a+rX,a-w --from=docker.io/joyemang33/fcs2-task-verifier-knn_gpu_kernel_optimization-gpu@sha256:05783810d16d9b853b137813340183761e3c61348aa2ed3560da1a372d2722a4 /data/gist.hdf5 /data/gist.hdf5
+COPY --link --chmod=a+rX,a-w --from=sift /sift.hdf5 /data/sift.hdf5
+COPY --link --chmod=a+rX,a-w --from=gist /gist.hdf5 /data/gist.hdf5
 
 LABEL org.opencontainers.image.title="FrontierCS2 verifier knn_gpu_kernel_optimization" \
       dev.frontier.problem-id="knn_gpu_kernel_optimization"

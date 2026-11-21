@@ -3,14 +3,39 @@
 # judge's Python closure, the pristine starter and this task's judge. Its base is the source's
 # CUDA 12.8.1 development image, by the same digest, whose libraries llama-server loads.
 #
-# llama.cpp and the JRE are copied byte for byte from the previous release's Verifier GPU image,
-# by the same digest as the source, which this stage names. The previous
-# release's recipe also took the model from that image; this one fetches it, below.
-FROM docker.io/joyemang33/fcs2-task-verifier-lrr-gpu@sha256:4fd4db49aebd09f65b253425d8327fbcdbd1df4b82e98f8e96af52ba6be109d5 AS previous-release
+# The JRE is that of Docker Hub's `eclipse-temurin` 25 image, by the digest the source's recipe
+# pinned before it copied the JRE from its own published image.
+FROM eclipse-temurin@sha256:dbb43d81099eec91e0800226ed2296d03146ee7857165b95112372ad0d67e87f AS java25
+
+# llama.cpp b10868, built from its commit as the source's recipe built it before it copied the
+# build from its own published image: on the same CUDA 12.8.1 development base, with upstream's
+# `.devops/cuda.Dockerfile` CMake configuration (dynamic CPU backend variants, the CUDA backend)
+# and the CUDA architecture limited to sm_80, the A100's. The build tools are from the dated
+# Ubuntu archive snapshot that the image's other packages are from.
+FROM scratch AS llama-source
+ADD https://github.com/ggml-org/llama.cpp.git#304665fe7ac957df95e3ff8c8c4ffdf92dd6ffa3 /llama.cpp
+
+FROM nvidia/cuda@sha256:4b9ed5fa8361736996499f64ecebf25d4ec37ff56e4d11323ccde10aa36e0c43 AS llama-build
+ARG DEBIAN_FRONTEND=noninteractive
+RUN --mount=type=bind,source=fetch/apt_snapshot.sh,target=/context/fetch/apt_snapshot.sh \
+    --mount=type=bind,source=fetch/apt_install.sh,target=/context/fetch/apt_install.sh \
+    sh /context/fetch/apt_snapshot.sh noble 20261103T000000Z \
+    && sh /context/fetch/apt_install.sh build-essential ca-certificates cmake git
+COPY --from=llama-source /llama.cpp /src/llama.cpp
+RUN cd /src/llama.cpp \
+    && cmake -B build -DCMAKE_BUILD_TYPE=Release \
+       -DGGML_NATIVE=OFF -DGGML_CUDA=ON -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON \
+       -DCMAKE_CUDA_ARCHITECTURES=80 -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF \
+       -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_OPENSSL=OFF \
+       -DCMAKE_EXE_LINKER_FLAGS=-Wl,--allow-shlib-undefined \
+    && cmake --build build --config Release --target llama-server -j"$(nproc)" \
+    && install -d /app \
+    && find build -name '*.so*' -exec cp -P {} /app \; \
+    && install -m 0555 build/bin/llama-server /app/llama-server
 
 # The fixed model, Qwen/Qwen3-8B-GGUF at `7c41481f57cb95916b40956ab2f0b139b296d974`
 # (Apache-2.0), fetched by the URL the previous release's recipe used and by the full SHA-256 of
-# its Git LFS object (the same bytes as the file in the previous release's image).
+# its Git LFS object.
 FROM scratch AS model
 ADD --checksum=sha256:d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785 --chmod=0444 https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/7c41481f57cb95916b40956ab2f0b139b296d974/Qwen3-8B-Q4_K_M.gguf /Qwen3-8B-Q4_K_M.gguf
 
@@ -49,9 +74,9 @@ RUN printf '%s\n' '#!/bin/sh' 'export PATH="/opt/frontier/python/bin:/opt/java/o
     && useradd --uid 65532 --user-group --no-create-home --home-dir /frontier --shell /bin/sh frontier-verifier
 
 # llama.cpp b10868 (commit 304665fe, built for sm_80) and the Temurin 25.0.4.1+1 JRE, each in a
-# layer of its own that depends on the previous release's bytes alone.
-COPY --link --chmod=a+rX,a-w --from=previous-release /opt/java/openjdk /opt/java/openjdk
-COPY --link --chmod=a+rX,a-w --from=previous-release /app/ /app/
+# layer of its own that depends on its stage's bytes alone.
+COPY --link --chmod=a+rX,a-w --from=java25 /opt/java/openjdk /opt/java/openjdk
+COPY --link --chmod=a+rX,a-w --from=llama-build /app/ /app/
 # The fixed model, from the stage `model` (below), in a layer of its own that depends on the
 # file's bytes alone. The copy creates /models with the default mode: an `ADD --chmod` straight
 # into /models would make the directory itself unreadable to the judge's user.

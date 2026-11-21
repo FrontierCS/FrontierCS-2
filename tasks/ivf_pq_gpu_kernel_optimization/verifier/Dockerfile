@@ -1,5 +1,11 @@
 # The source's Verifier GPU runner base, PyTorch 2.6.0 with CUDA 12.4 and Triton, pinned by
 # digest, where the judge runs every implementation under `isolate` on the GPU.
+# SIFT-128 of ANN-Benchmarks (`sift-128-euclidean.hdf5`, originally
+# https://ann-benchmarks.com/sift-128-euclidean.hdf5), from FrontierCS's copy of it, by that
+# repository's commit and the file's SHA-256.
+FROM scratch AS sift
+ADD --checksum=sha256:dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984 https://huggingface.co/datasets/FrontierCS2/FrontierCS-2-assets/resolve/ec31a694bcf459ab00dc075674df734d81fab56e/ann-benchmarks/sift-128-euclidean.hdf5 /sift.hdf5
+
 FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel@sha256:0cf3402e946b7c384ba943ee05c90b4c5a4a05227923921f2b0918c011cfaf56 AS common
 
 USER root
@@ -17,12 +23,11 @@ RUN --mount=type=bind,source=fetch/apt_snapshot.sh,target=/context/fetch/apt_sna
 
 # h5py reads the data, at the version the source pins, each of its files pinned by SHA-256
 # (`pins/requirements.in` is the pin and `pins/requirements.txt` is `uv pip compile --no-deps
-# --generate-hashes` of it: the base holds the numpy it needs). The SIFT-128 data are the frozen
-# bytes of the source's published verifier image, pinned by digest, and checked by SHA-256, which
-# `scoring_config.json` names too.
+# --generate-hashes` of it: the base holds the numpy it needs). The SIFT-128 data are the
+# stage `sift`'s, checked by SHA-256, which `scoring_config.json` names too.
 RUN --mount=type=bind,source=pins/requirements.txt,target=/context/pins/requirements.txt \
     python3 -m pip install --no-cache-dir --require-hashes --only-binary=:all: --no-deps --requirement /context/pins/requirements.txt
-COPY --link --chmod=a+rX,a-w --from=docker.io/joyemang33/fcs2-task-verifier-ivf_pq_gpu_kernel_optimization-gpu@sha256:879561b3b3a63030b51df9189a2513e90ab3e2f969d24e97403a9b71986eb9e7 /data/sift.hdf5 /data/sift.hdf5
+COPY --link --chmod=a+rX,a-w --from=sift /sift.hdf5 /data/sift.hdf5
 RUN echo "dd6f0a6ed6b7ebb8934680f861a33ed01ff33991eaee4fd60914d854a0ca5984  /data/sift.hdf5" | sha256sum --check --strict -
 
 LABEL org.opencontainers.image.title="FrontierCS2 verifier ivf_pq_gpu_kernel_optimization" \
