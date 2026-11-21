@@ -53,10 +53,17 @@ frontier-gpu pull gpurunner_... /tmp/gpu-work/output /workspace/gpu-output
 Local upload sources and download destinations stay below `/workspace`.
 `push SOURCE REMOTE_DIRECTORY` preserves SOURCE's basename: the example above
 creates `/tmp/gpu-work/test.py`. Likewise, the pull example creates
-`/workspace/gpu-output/output/`. `push` and `pull` copy directories, not
-single files. `push` replaces the copy of SOURCE on the runner whole, so a
-file that the last push or a command left there and SOURCE lacks is gone;
-`pull` copies over what DESTINATION already holds. Each file and directory
+`/workspace/gpu-output/output/`, merging the directory with any existing copy.
+Use `pull --into-new-directory` to fetch a single file by its basename. For example,
+`frontier-gpu pull --into-new-directory gpurunner_... /tmp/result.bin /workspace/download`
+creates `/workspace/download/result.bin` and requires `/workspace/download` to be new.
+For a remote directory, this form puts its contents directly into that new directory.
+Both forms use one transfer. An existing destination for `--into-new-directory` is
+refused before a transfer starts. A plain pull always places the transferred tree under
+the remote basename, which adds another directory level for a bare file.
+`push` replaces the copy of the source directory on the runner whole, so a
+file that the last push or a command left there and the source lacks is gone.
+Each file and directory
 keeps its permission bits, but not a set-ID or sticky bit, and a directory
 arrives with at least `rwx` for its owner. `push` rejects links and special
 files.
@@ -69,7 +76,7 @@ it, prints the last 21 KiB of its stdout and stderr, and exits with its exit
 status: 255 if the runner ended under it.
 The whole output of command N stays on the runner in
 `/pumpkin/log/N/command.stdout` and `command.stderr`; `exec` names them when
-it showed only their end, and `pull` copies them back. One command or transfer
+it showed only their end. Use `pull --into-new-directory` for a log file. One command or transfer
 runs at a time. If `exec` is interrupted, the command goes on to its end, and
 the next one waits for it; `delete` ends it. There is no interactive
 `frontier-gpu ssh`: use `exec`, which is reproducible and bounded.

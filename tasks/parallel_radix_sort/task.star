@@ -1,19 +1,30 @@
 """Supply Regions Sort's exchange planner so the in-place radix sorter beats std::sort, ported from FrontierCS."""
 
-load("//lib/fcs.star", "artifacts", "fcs_task", "paper")
+load("//lib/fcs.star", "artifacts", "fcs_task", "package_agent", "paper", "ubuntu_agent_base", "ubuntu_verifier_image")
 
 fcs_task(
+    verifier_image = ubuntu_verifier_image,
+    agent_recipe = package_agent(ubuntu_agent_base),
     agent = {"cpu_millis": 4000, "memory_bytes": 2 * GiB},
     judge = {"cpu_millis": 4000, "memory_bytes": 2 * GiB},
     train_calls = 100,
     train_cumulative_seconds = 18000,
     judge_timeout_seconds = 900,
     submission_max_bytes = 270 * KiB,
-    visible_metrics = [
-        "dev_candidate_median_sort_time_ns",
-        "dev_candidate_max_auxiliary_bytes",
-        "dev_candidate_median_region_graph_ns",
-    ],
+    visible_metrics = {
+        "dev_candidate_median_sort_time_ns": (
+            "Median over the six train cases of the candidate's median\n" +
+            "  sort-call time, in nanoseconds."
+        ),
+        "dev_candidate_max_auxiliary_bytes": (
+            "Largest peak live auxiliary allocation of the candidate\n" +
+            "  over the six train cases, in bytes."
+        ),
+        "dev_candidate_median_region_graph_ns": (
+            "Median over the six train cases of the candidate's\n" +
+            "  median region-graph time per sort call (timer build), in nanoseconds."
+        ),
+    },
     source = [
         paper(
             "https://people.csail.mit.edu/jshun/RegionsSort.pdf",

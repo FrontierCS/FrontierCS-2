@@ -7,13 +7,10 @@
 
 ## Submitting
 
-Every platform call is a `sandboxctl` command. Run it by the absolute path shown here: it is
-not on the image's `PATH`. Each command prints one line of JSON whose `kind` names the reply,
-and exits with 0, with 2 for the status of a job that gave no result, or with 1 when the call is
-refused (`{"kind":"refused","message":...}`) or `sandboxctl` itself fails.
-`/.pumpkin/bin/sandboxctl ops` lists your limits: the time you have left to work
-(`remaining_seconds`), your CPU and memory (`resources`), and the calls you may make, with
-their limits. This task's facts:
+Use `/.pumpkin/bin/sandboxctl ops --text` to read your grant guide. Its commands use
+`sandboxctl` as shorthand for `/.pumpkin/bin/sandboxctl`. The guide gives the current role's
+command forms, arguments and limits. Run `/.pumpkin/bin/sandboxctl ops` for the remaining
+time, resources and quota as JSON.
 
 - Make the patch with `/frontier/task/make_submission.sh` (writes
   `/workspace/payload/solution.patch`). It applies the same scope check as the judge and
@@ -26,13 +23,16 @@ their limits. This task's facts:
 ```sh
 tar --create --file=/workspace/train.tar --directory=/workspace --format=ustar \
   --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 payload/solution.patch
-/.pumpkin/bin/sandboxctl call train /workspace/train.tar
 ```
 
-`sandboxctl call train` returns as soon as the call is accepted, with the call's `job` number
-and what the `train` function has left, this call counted, in `remaining` (`calls` and
-`seconds`). Read the call's `state`, then its score and metrics, each a field of `returned`
-(see Feedback), later with `/.pumpkin/bin/sandboxctl status <job>`.
+Call the train grant with the archive. With `--wait SECONDS` it waits for admission and then
+for the result, retrying a busy refusal without consuming quota. A completed job's `returned`
+gives the score and public metrics described in Feedback. Exit 2 means the admitted job
+failed. Exit 124 means the local wait expired. An admitted job keeps running and can be
+followed by its job number. An unanswered admission
+request may already have started. Without `--wait`, the reply gives the job number at
+admission and `remaining` gives the calls and seconds left. Use the grant guide's status
+command to follow it.
 
 Save your first usable answer with `/.pumpkin/bin/sandboxctl call final /workspace/final.tar`
 (same layout), then save again when you select a better revision. This saves one replaceable
@@ -44,7 +44,7 @@ do not extend your time. A save receipt is not a final score. An accepted explic
 wins. Otherwise the saved answer is judged when you exit, run out of time or crash, but not
 when the run is cancelled or the platform fails. Save before your time runs out: a save without
 a `stored` reply is not a saved answer. A train submission is never chosen automatically as the
-final answer.
+final answer. If you leave without saving any answer, the run finishes without a score.
 
 When you are ready, build `/workspace/final.tar` with the same layout, run
 

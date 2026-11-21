@@ -17,14 +17,32 @@ fcs_task(
     train_cumulative_seconds = 21600,
     judge_timeout_seconds = 10800,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = [
-        "development_mean_inception_fdr",
-        "development_mean_convnext_fdr",
-        "development_mean_dinov2_fdr",
-        "development_mean_mae_fdr",
-        "development_mean_siglip_fdr",
-        "development_mean_clip_fdr",
-    ],
+    visible_metrics = {
+        "development_mean_inception_fdr": (
+            "Candidate held-out Frechet distance in Inception space\n" +
+            "  divided by the paper's validation-set normalizer, unitless; mean over workloads."
+        ),
+        "development_mean_convnext_fdr": (
+            "Candidate held-out Frechet distance in ConvNeXt space divided\n" +
+            "  by the paper's validation-set normalizer, unitless; mean over workloads."
+        ),
+        "development_mean_dinov2_fdr": (
+            "Candidate held-out Frechet distance in DINOv2 CLS space divided\n" +
+            "  by the paper's validation-set normalizer, unitless; mean over workloads."
+        ),
+        "development_mean_mae_fdr": (
+            "Candidate held-out Frechet distance in MAE CLS space divided by\n" +
+            "  the paper's validation-set normalizer, unitless; mean over workloads."
+        ),
+        "development_mean_siglip_fdr": (
+            "Candidate held-out Frechet distance in SigLIP CLS space divided\n" +
+            "  by the paper's validation-set normalizer, unitless; mean over workloads."
+        ),
+        "development_mean_clip_fdr": (
+            "Candidate held-out Frechet distance in CLIP CLS space divided by\n" +
+            "  the paper's validation-set normalizer, unitless; mean over workloads."
+        ),
+    },
     contexts = {"runtime": "runtime/Dockerfile"},
     source = [
         paper(

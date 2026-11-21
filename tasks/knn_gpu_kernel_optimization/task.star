@@ -1,8 +1,9 @@
 """Make exact brute-force k-nearest-neighbour search on one H100 faster than the naive search, ported from FrontierCS."""
 
-load("//lib/fcs.star", "GPU_RUNNER", "H100", "fcs_task", "paper")
+load("//lib/fcs.star", "GPU_RUNNER", "H100", "PYTORCH_KERNEL_AGENT", "fcs_task", "paper")
 
 fcs_task(
+    agent_recipe = PYTORCH_KERNEL_AGENT,
     agent = {"cpu_millis": 4000, "memory_bytes": 8 * GiB},
     agent_lease = {
         "machine": GPU_RUNNER | {"gpu": H100},
@@ -17,12 +18,24 @@ fcs_task(
     train_cumulative_seconds = 10800,
     judge_timeout_seconds = 5400,
     submission_max_bytes = 2 * MiB,
-    visible_metrics = [
-        "geomean_speedup",
-        "latency_ms",
-        "worst_ball_recall",
-        "worst_exact_recall",
-    ],
+    visible_metrics = {
+        "geomean_speedup": (
+            "Geometric mean over the train workloads of the median paired\n" +
+            "  naive/candidate time ratio (unitless)."
+        ),
+        "latency_ms": (
+            "Candidate median call latency per train workload, in milliseconds; sorted,\n" +
+            "  without workload labels."
+        ),
+        "worst_ball_recall": (
+            "Candidate worst timed ball-recall per train workload; sorted, without\n" +
+            "  workload labels."
+        ),
+        "worst_exact_recall": (
+            "Candidate worst timed exact recall per train workload; sorted, without\n" +
+            "  workload labels."
+        ),
+    },
     source = [
         paper(
             "https://flashml-org.github.io/",

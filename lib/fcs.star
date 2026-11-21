@@ -8,7 +8,7 @@ load("@pumpkin//harness/codex/codex.star", "codex")
 load("@pumpkin//harness/pi/pi.star", "pi")
 load("@pumpkin//harness/qwen_code/qwen_code.star", "qwen_code")
 load("@pumpkin//harness/zcode/zcode.star", "zcode")
-load("//lib/submit.star", "submit")
+load("//lib/submit.star", "FINAL_HELP", "submit")
 load("//lib/verify.star", "PAYLOAD", "final_call", "train_call")
 
 # The run's choices, each given as `--arg <name>=<value>`, or else its default; a task's
@@ -92,26 +92,19 @@ FINALIZE_GRACE_SECONDS = 60
 # makes it the owner of /frontier, the verifier's home.
 VERIFIER_USER = {"uid": 65532, "gid": 65532}
 
-# FrontierCS's two shared base images, each built from its recipe's directory here, with the
-# repository's `shared/` in its context. A recipe names its base as the build argument
-# `AGENT_BASE` or `VERIFIER_BASE` (`ARG` before its first `FROM`), whose value is the named
-# context that every image of a task is built with (`_bases`).
-# FrontierCS's later verifier base adds only an environment variable that sizes SSH transfers,
-# which these judges do not read, so the recipe here stays without it.
-AGENT_BASE = "frontier-agent-base"
-VERIFIER_BASE = "frontier-verifier-base"
-BASE_ARGS = {"AGENT_BASE": AGENT_BASE, "VERIFIER_BASE": VERIFIER_BASE}
-BASE_DIRS = {AGENT_BASE: "//lib/agent-base", VERIFIER_BASE: "//lib/verifier-base"}
-
 # The agent's user, the base image's `ubuntu`, which owns /workspace.
 AGENT_USER = {"uid": 1000, "gid": 1000}
+
+TRAIN_HELP = (
+    "Evaluate a submission tar on training workloads. " +
+    "See Feedback in /frontier/task/README.md for the returned public score and metrics."
+)
 
 # The metrics the shared verifier adds to every result's `metrics`, after the task's own.
 VERIFIER_METRICS = ["score_unbounded", "beat_spec_progress", "rejected"]
 
-# The repository's shared components, which every recipe copies as `shared/...`, and its helpers
-# for pinned fetches, which a recipe runs from `fetch/...`, each as its opening comment says.
-SHARED = {"shared": "//shared", "fetch": "//fetch"}
+# Pinned fetch helpers needed by individual recipes.
+FETCH = {"fetch": "//fetch"}
 
 # The modes the verifier judges in: train calls in `train`, the final submission in `eval`.
 MODES = ["train", "eval"]
@@ -126,8 +119,7 @@ SELECTORS = {
 # (`payload/solution.patch`, in the source's `tasks/shared/task-defaults.toml`).
 SUBMISSION_MEMBER = "payload/solution.patch"
 
-# The recipes of every task's images, in its package: the agent's in its directory, which holds
-# the agent's README too.
+# A package with its own agent recipe keeps it beside the agent README.
 AGENT_DIR = "agent-base"
 AGENT_RECIPE = AGENT_DIR + "/Dockerfile"
 
@@ -182,14 +174,14 @@ RUNNER_HOME = "/workspace"
 # machine through the train call it waits on.
 REFERENCE_NEEDS = {"cpu_millis": 1000, "memory_bytes": 512 * MiB}
 
-# The agent's prompt, `PROMPT_START` then `PROMPT_END`, with between them `GPU_PROMPT` for an agent
-# with GPU runners and then the harness's `SAVE_PROMPTS`.
-PROMPT_START = """Solve the evaluation task in /frontier/task/README.md.
+# Every harness starts from the same task statement and public grant guide.
+PROMPT_START = """Solve the evaluation task in /frontier/task/README.md. Use /.pumpkin/bin/sandboxctl for the
+grant guide's commands.
 
-Before doing any task work, read that file completely. It is authoritative for the exact train
-and final tar layouts, and for how to submit with `/.pumpkin/bin/sandboxctl`. Work only in
-/workspace. Submit a tar for train verification, inspect its score and remaining calls with
-`sandboxctl`, and iterate while useful. Do not write a replacement submission client.
+Before doing any task work, read that file completely. It gives the train and final archive
+layout, scoring rules and feedback. Work in /workspace. Use the train grant to evaluate your
+patch, inspect its score and remaining calls, and iterate while useful. Save your first usable
+archive with the final grant and replace it when you have a better answer.
 """
 
 # What the agent's prompt adds for its GPU runners, as FrontierCS's Codex candidate's prompt
@@ -202,39 +194,12 @@ within the task's GPU budget. Use `frontier-gpu quota` to check the GPU seconds 
 commands left before debugging.
 """
 
-# What the agent's prompt adds, after `GPU_PROMPT`, to tell a harness to save its answer and to
-# replace it, as that harness's FrontierCS launcher does.
-SAVE_PROMPTS = {
-    "claude-code": """
-Use `/.pumpkin/bin/sandboxctl call final <tar>` (without `--arg finalize=true`) to save the best
-usable archive as work progresses.
-""",
-    "zcode": """
-Use `/.pumpkin/bin/sandboxctl call final <tar>` (without `--arg finalize=true`) to save your
-selected usable answer, replacing it when you choose a better answer. A saved answer is not a final
-submission, and saving does not evaluate it.
-""",
-    "qwen-code": """
-Choose and save your current final answer with `/.pumpkin/bin/sandboxctl call final <tar>`
-(without `--arg finalize=true`), replacing it when useful. Saving does not evaluate it or end your
-session.
-""",
-    "pi": """
-Choose and save your current final answer with `/.pumpkin/bin/sandboxctl call final <tar>`
-(without `--arg finalize=true`), replacing it when useful. Saving does not evaluate it or end your
-session.
-""",
-}
-
 PROMPT_END = """
-When the answer is ready, create the final tar in the task-defined format, run
-`/.pumpkin/bin/sandboxctl call final <tar> --arg finalize=true` exactly once as your last
-platform action, then exit.
-Web search is disabled; use only local task files and tools.
+When the answer is ready, submit its archive with finalization enabled exactly once as your
+last platform action, then exit. Web search is disabled; use only local task files and tools.
 """
 
-# The reference agent's script, run in the train verifier's image, which holds the task's
-# `judge/` at /opt/frontier/task. It makes one train call, as FrontierCS's reference candidate does,
+# The reference agent's script uses files from /opt/frontier/task. It makes one train call,
 # waits for its end, and submits the same tar as the final one. The tar is the layout every
 # task's README gives. The patch it holds is the task's reference patch or, for a task that has
 # none, an empty one, which the starter's own code answers, or, where the judge refuses an empty
@@ -265,12 +230,10 @@ printf '\\n# Unchanged: the starting point, as the reference run submits it.\\n'
 """
 REFERENCE_TAIL = """tar --create --file=reference.tar --format=ustar --sort=name --mtime='UTC 1970-01-01' \\
     --owner=0 --group=0 "$member"
-reply=$("$ctl" call train reference.tar)
-echo "$reply"
-job=$(echo "$reply" | sed --quiet 's/.*"job":\\([0-9]*\\).*/\\1/p')
-test -n "$job"
-while "$ctl" status "$job" | grep --quiet '"state":"\\(queued\\|running\\)"'; do sleep 10; done
-"$ctl" status "$job" || true
+"$ctl" call train reference.tar --wait {seconds} || {{
+    code=$?
+    test "$code" -eq 2 || exit "$code"
+}}
 exec "$ctl" call final reference.tar --arg finalize=true
 """
 
@@ -454,8 +417,8 @@ def _route(role, entries, models, microusd):
             .format(role, ", ".join(["`" + entry["api"] + "`" for entry in split])))
     return [entry for entry in kept if entry["models"]] + split
 
-def _harness(base, needs, deadline_seconds, gpu_type, model_routes, model_budget, env):
-    """The agent role of `AGENT`, a harness, on `MODEL`, working until `deadline_seconds`.
+def _harness(base, needs, gpu_type, model_routes, model_budget, env):
+    """The agent role of `AGENT`, a harness, on `MODEL`.
 
     Its image is the harness's layer on `base`. Its programs reach `model_routes` besides the
     harness's own route, under `model_budget` where it is given, which counts only their models,
@@ -465,20 +428,23 @@ def _harness(base, needs, deadline_seconds, gpu_type, model_routes, model_budget
     if MODEL == None:
         fail("`--arg model` is not given, and the agent is `{}`: give the model it works on".format(AGENT))
     entry = HARNESSES[AGENT]
-    prompt = PROMPT_START + (GPU_PROMPT if gpu_type else "") + SAVE_PROMPTS.get(AGENT, "") + PROMPT_END
+    prompt = PROMPT_START + (GPU_PROMPT if gpu_type else "") + PROMPT_END
+    if AGENT not in ["codex", "claude-code"]:
+        prompt = "Read your grant guide with `/.pumpkin/bin/sandboxctl ops --text`.\n\n" + prompt
     harness = entry["function"](
         base,
         model = MODEL,
         effort = EFFORT or entry["effort"],
         workspace = "/workspace",
         prompt = prompt,
-        deadline_seconds = deadline_seconds,
         finalize_grace_seconds = FINALIZE_GRACE_SECONDS,
         **entry["keywords"]
     )
     if gpu_type:
         env = env + ["FRONTIER_GPU_GRANT=" + GPU_GRANT, "FRONTIER_GPU_TYPE=" + gpu_type]
     agent = harness["runtime"]["agent"]
+    if AGENT == "claude-code":
+        agent = agent | {"prepend_grant_help": True}
     command = agent["command"] | {"env": agent["command"]["env"] + env}
     models = [model for entry in model_routes for model in entry["models"]]
     route = _route("agent", _routes(agent["egress"]["model"], model_routes), models, model_budget)
@@ -508,10 +474,10 @@ def _routes(harness_routes, model_routes):
     ]
     return merged + [entry for entry in model_routes if entry["api"] not in apis]
 
-def _session(name, runner, lease):
-    """The session `name` on the runners of role `runner`, with `lease`'s session fields."""
+def _session(name, runner, lease, help):
+    """The session `name` on the runners of role `runner`, with `lease`'s session fields and public `help`."""
     fields = {key: value for key, value in lease.items() if key not in ["machine", "trusted"]}
-    return {"name": name, "session": {"runner": runner} | fields}
+    return {"name": name, "help": help, "session": {"runner": runner} | fields}
 
 def _runner(name, image, user, machine):
     """The role `name` of leased runners on `image`.
@@ -561,15 +527,14 @@ def _reference(image, reference_patch, noop_patch_file, deadline_seconds):
     """The agent role that submits the task's reference solution, with no route out.
 
     The patch is the judge's `reference.patch` if `reference_patch`, else one that appends a
-    comment to `noop_patch_file`, else an empty one; the role runs on the train verifier's
-    `image`, until `deadline_seconds`."""
+    comment to `noop_patch_file`, else an empty one. The role runs until `deadline_seconds`."""
     if reference_patch:
         patch = REFERENCE_PATCH
     elif noop_patch_file:
         patch = NOOP_PATCH.format(file = noop_patch_file)
     else:
         patch = EMPTY_PATCH
-    script = REFERENCE_HEAD + patch + REFERENCE_TAIL
+    script = REFERENCE_HEAD + patch + REFERENCE_TAIL.format(seconds = deadline_seconds)
     return {
         "name": "agent",
         "image": image,
@@ -580,7 +545,6 @@ def _reference(image, reference_patch, noop_patch_file, deadline_seconds):
                 "argv": ["/bin/sh", "-c", script],
                 "cwd": "/frontier",
             },
-            "deadline_seconds": deadline_seconds,
             "finalize_grace_seconds": FINALIZE_GRACE_SECONDS,
         }},
     }
@@ -612,6 +576,61 @@ def _seconds(name, given, default):
             .format(name, given))
     return given
 
+# PyTorch 2.6 with CUDA 12.4 and Triton, the kernel tasks' development environment.
+PYTORCH_KERNEL_AGENT = ("//lib/pytorch-kernel-agent", {})
+UBUNTU_AGENT_FAMILY = "//lib/ubuntu-agent"
+UBUNTU_VERIFIER_FAMILY = "//lib/ubuntu-verifier"
+UBUNTU_BASES = {UBUNTU_AGENT_FAMILY: "agent-base", UBUNTU_VERIFIER_FAMILY: "verifier-base"}
+
+def ubuntu_agent(packages, executable = ""):
+    """An Ubuntu agent with space-separated apt packages and a find -name pattern for starter executables."""
+    return (UBUNTU_AGENT_FAMILY, {"APT_PACKAGES": packages, "REPO_EXECUTABLE": executable})
+
+def ubuntu_verifier(packages):
+    """The shared Ubuntu verifier stage with space-separated apt packages."""
+    return (UBUNTU_VERIFIER_FAMILY, {"APT_PACKAGES": packages})
+
+def _task_tools():
+    return image("Dockerfile", context = "//lib/task-tools", mount = {"shared": "//shared"})
+
+def _ubuntu_base(name):
+    return image("Dockerfile", context = "//lib/" + name, mount = {"shared": "//shared"})
+
+def ubuntu_agent_base(_tools):
+    """The shared Ubuntu base with the repository's submission helpers."""
+    return _ubuntu_base("agent-base")
+
+def ubuntu_verifier_image(recipe, *, context = ".", mount = FETCH, target = None, contexts = {}):
+    """Build a package recipe that names the shared Ubuntu verifier image through VERIFIER_BASE."""
+    return image(
+        recipe,
+        context = context,
+        mount = mount,
+        target = target,
+        args = {"VERIFIER_BASE": "frontier-verifier-base"},
+        contexts = contexts | {"frontier-verifier-base": _ubuntu_base("verifier-base")},
+    )
+
+def package_agent(base):
+    """The package's own agent Dockerfile, with `base(tools)` as its `AGENT_BASE` image."""
+    return (AGENT_RECIPE, base)
+
+def _family_image(family, contexts, sources, package_context):
+    directory, args = family
+    name = UBUNTU_BASES.get(directory)
+    if name:
+        contexts = contexts | {"frontier-" + name: _ubuntu_base(name)}
+    if package_context:
+        # The package already holds the sources mounted at their own names.
+        sources = {at: src for at, src in sources.items() if at != src} | {"family": directory}
+    return image(
+        "family/Dockerfile" if package_context else "Dockerfile",
+        context = "." if package_context else directory,
+        mount = FETCH | sources,
+        args = args | {"TASK_ID": package_name().split("/")[-1]},
+        contexts = contexts,
+    )
+
 def fcs_task(
         *,
         agent,
@@ -620,9 +639,9 @@ def fcs_task(
         train_cumulative_seconds,
         judge_timeout_seconds,
         submission_max_bytes,
-        visible_metrics,
         source,
         display_name,
+        visible_metrics: dict[str, str] = {},
         category = None,
         agent_lease = None,
         agent_model_routes = [],
@@ -635,6 +654,13 @@ def fcs_task(
         datasets = SELECTORS,
         mode_stages = True,
         contexts = {},
+        context_images = {},
+        agent_recipe = None,
+        agent_runner_image = None,
+        reference_image = None,
+        verifier_image = image,
+        verifier_base = None,
+        package_context = False,
         reference_patch = True,
         noop_patch_file = None):
     """The workflow of the FrontierCS task in the entry file's package.
@@ -662,7 +688,9 @@ def fcs_task(
       judge_timeout_seconds: each judge call's timeout: `eval_timeout_seconds`, to which
         `_moved_seconds` is added.
       submission_max_bytes: the largest submission: `[submission]`'s `max_bytes`.
-      visible_metrics: the metrics a train call returns: the names of `[feedback]`, in order.
+      visible_metrics: the public train metrics in display order. Maps each name to its
+        description for the agent's Feedback section. A train call returns only the declared
+        task metrics and the shared verifier metrics.
       source: where the problem comes from, for readers, as are `display_name` and `category`:
         nothing in a run reads them. A list of `paper(…)`, from `[paper]` (`policy.json`'s
         `metadata.paper`) and the authoring records, and `artifacts(…)`, the code the paper
@@ -675,7 +703,7 @@ def fcs_task(
         (`max_instance_seconds`), `cumulative_seconds` (`max_gpu_seconds`), `commands`
         (`[network.audit]`'s `ssh_session_budgets.agent`) and `transfer_bytes`
         (`max_ssh_bytes_per_direction`). The runners are a role `gpu_runner`, on the agent's
-        image without the harness's layer, and the agent's session `gpu` on it, which
+        base image unless `agent_runner_image` is given, and the agent's session `gpu` on it, which
         `frontier-gpu` drives.
       agent_model_routes: the model routes that a harness agent's own programs call, besides the
         harness's own, in Pumpkin's form, as `[{"api": "chat", "models": [M]}]`: from
@@ -707,6 +735,15 @@ def fcs_task(
         otherwise both run its last stage.
       contexts: maps the name by which the recipes name an image to the recipe in the package
         that builds it, which every recipe is built with.
+      context_images: additional named image contexts built by the package.
+      agent_recipe: a shared agent recipe or a `package_agent` with its source base.
+        Without one, the package's Dockerfile names its own base.
+      agent_runner_image: constructs the leased GPU runner image from the solver-visible agent base.
+      reference_image: constructs a trusted image with /frontier writable by the reference agent
+        and its patch or starter file under /opt/frontier/task. Defaults to the train verifier image.
+      verifier_image: the image constructor for the package's verifier Dockerfile.
+      verifier_base: a shared verifier stage that the package recipe names `verifier-base`.
+      package_context: keep the package root for a verifier with additional source trees or package-wide .dockerignore rules.
       reference_patch: whether the judge holds the task's `reference.patch`, which the reference
         agent submits; a task without one has the reference agent submit an empty patch, or,
         where its judge refuses an empty patch, a patch that appends a comment to
@@ -738,10 +775,23 @@ def fcs_task(
         fail("`model_budgets` gives `{}` a budget, but its model routes are empty: give them, or remove the budget"
             .format(unrouted[0]))
     judge_leases = {name: _check_judge_lease(name, lease, judge_timeout_seconds) for name, lease in judge_leases.items()}
-    bases = {name: image("Dockerfile", context = directory, mount = {"shared": "//shared"}) for name, directory in BASE_DIRS.items()}
-    built = bases | {name: image(recipe, mount = SHARED, args = BASE_ARGS, contexts = bases) for name, recipe in contexts.items()}
+    built = {name: image(recipe, mount = FETCH) for name, recipe in contexts.items()} | context_images
+    tools = _task_tools()
+    built = built | {"task-tools": tools}
+    recipe, directory, sources = VERIFIER_RECIPE, ".", FETCH
+    verifier_contexts = built
+    if verifier_base != None:
+        common = _family_image(verifier_base, {"task-tools": tools}, {
+            "repo": "repo",
+            "datasets": "datasets",
+            "judge-config": "generated/judge",
+            "verifier-config": "generated/verifier",
+        }, package_context)
+        verifier_contexts = built | {"verifier-base": common}
+        if not package_context:
+            recipe, directory, sources = "Dockerfile", "verifier", {"judge": "judge"}
     images = {
-        mode: image(VERIFIER_RECIPE, mount = SHARED, args = BASE_ARGS, target = mode if mode_stages else None, contexts = built)
+        mode: verifier_image(recipe, context = directory, mount = sources, target = mode if mode_stages else None, contexts = verifier_contexts)
         for mode in MODES
     }
     deadline_seconds = _seconds("deadline_seconds", DEADLINE, WALL_TIME_SECONDS)
@@ -749,17 +799,36 @@ def fcs_task(
     untrusted = [name for name, lease in judge_leases.items() if not lease["trusted"]]
     base = None
     if AGENT in HARNESSES or untrusted:
-        readme = image("Dockerfile", context = AGENT_README, mount = {"task": AGENT_DIR}, args = BASE_ARGS, contexts = bases)
-        base = image(AGENT_RECIPE, mount = SHARED, args = BASE_ARGS, contexts = built | {"readme": readme})
+        readme = image(
+            "Dockerfile",
+            context = AGENT_README,
+            mount = {"task": AGENT_DIR},
+            args = {"PUBLIC_METRICS": json.encode(visible_metrics.items())},
+        )
+        agent_contexts = built | {"readme": readme}
+        if agent_recipe == None or agent_recipe[0] == AGENT_RECIPE:
+            args = {}
+            if agent_recipe != None:
+                build_base = agent_recipe[1]
+                agent_contexts = agent_contexts | {"frontier-agent-base": build_base(tools)}
+                args = {"AGENT_BASE": "frontier-agent-base"}
+            base = image(AGENT_RECIPE, mount = FETCH, args = args, contexts = agent_contexts)
+        else:
+            base = _family_image(agent_recipe, agent_contexts, {
+                "repo": "repo",
+                "policy": "generated/agent",
+            }, package_context)
     if AGENT in HARNESSES:
         agent_image = base
         if agent_lease:
             agent_image = image("Dockerfile", context = FRONTIER_GPU, contexts = {"agent-base": base})
-            gpu_roles = [_runner(GPU_RUNNER_ROLE, base, AGENT_USER, agent_lease["machine"])]
-            gpu_grants = [_session(GPU_GRANT, GPU_RUNNER_ROLE, agent_lease)]
-        agent_role = _harness(agent_image, agent, deadline_seconds, gpu_type, agent_model_routes, model_budgets.get("agent"), agent_env)
+            runner = agent_runner_image(base) if agent_runner_image else base
+            gpu_roles = [_runner(GPU_RUNNER_ROLE, runner, AGENT_USER, agent_lease["machine"])]
+            gpu_grants = [_session(GPU_GRANT, GPU_RUNNER_ROLE, agent_lease, "Use frontier-gpu to run your benchmarks on a leased GPU.")]
+        agent_role = _harness(agent_image, agent, gpu_type, agent_model_routes, model_budgets.get("agent"), agent_env)
     elif AGENT == "reference":
-        agent_role = _reference(images["train"], reference_patch, noop_patch_file, deadline_seconds)
+        driver = reference_image() if reference_image else images["train"]
+        agent_role = _reference(driver, reference_patch, noop_patch_file, deadline_seconds)
     else:
         fail("`--arg agent` is `{}`: give one of {}".format(AGENT, ", ".join(sorted(HARNESSES.keys()) + ["reference"])))
     judge_modes = [("train_judge", "train"), ("final_judge", "eval")]
@@ -782,7 +851,12 @@ def fcs_task(
             datasets[mode],
             judge,
             [
-                _session(name, role + "_" + name, lease | {"instance_seconds": lease["instance_seconds"][mode]})
+                _session(
+                    name,
+                    role + "_" + name,
+                    lease | {"instance_seconds": lease["instance_seconds"][mode]},
+                    "Run this verification step on its declared machine.",
+                )
                 for name, lease in judge_leases.items()
             ],
             judge_model_routes,
@@ -792,10 +866,10 @@ def fcs_task(
         for role, mode in judge_modes
     ]
     grants = [
-        {"name": "train", "job": {
+        {"name": "train", "help": TRAIN_HELP, "job": {
             "target": "train_judge",
             "body": train_call,
-            "keywords": {"metrics": visible_metrics + VERIFIER_METRICS},
+            "keywords": {"metrics": visible_metrics.keys() + VERIFIER_METRICS},
             "payload_max_bytes": submission_max_bytes,
             "calls": train_calls,
             "cumulative_seconds": train_cumulative_seconds,
@@ -806,10 +880,11 @@ def fcs_task(
             ),
         }},
     ] + gpu_grants + [
-        {"name": "final", "now": {"body": submit, "payload_max_bytes": submission_max_bytes}},
+        {"name": "final", "help": FINAL_HELP, "now": {"body": submit, "payload_max_bytes": submission_max_bytes}},
     ]
     agent_role = agent_role | {"runtime": {"agent": agent_role["runtime"]["agent"] | {"grants": grants}}}
     workflow(
+        deadline_seconds = deadline_seconds,
         name = "frontier-cs/" + package_name().split("/")[-1],
         roles = [agent_role] + judges + gpu_roles + runners,
         final = {

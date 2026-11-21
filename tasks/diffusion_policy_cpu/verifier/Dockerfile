@@ -1,6 +1,3 @@
-# FrontierCS's shared verifier base, pinned by digest: Ubuntu 24.04 with git, Python and
-# zstandard, apt set as in the agent's base, the user 65532 with /frontier its home, the shared
-# verifier's launcher, /opt/frontier/verifier, and /opt/frontier on Python's import path.
 ARG VERIFIER_BASE
 FROM ${VERIFIER_BASE} AS common
 
@@ -32,11 +29,8 @@ LABEL org.opencontainers.image.title="FrontierCS2 verifier diffusion_policy_cpu"
 # /pumpkin/out, and its scratch below /frontier, on the container's writable layer.
 RUN ln --symbolic /pumpkin/out /frontier/output
 
-# The shared verifier: the repository's `shared/` ones, which the build puts in its context, and
-# which replace the base's.
-COPY shared/verifier/verify.py shared/verifier/fcs2_verifier.py \
-     shared/verifier/beat_spec_feedback.py shared/lib/edit_scope.py shared/lib/isolate.py \
-     /opt/frontier/
+# The repository's verifier modules replace the base's.
+COPY --from=task-tools /verifier/*.py /lib/edit_scope.py /lib/isolate.py /opt/frontier/
 COPY --chmod=a+rX,a-w judge /opt/frontier/task
 # The starter that the shared verifier overlays the submission on, and the judge applies its
 # reference patch to; and the generated files. Each mode's selector is the image's own, below.

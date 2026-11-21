@@ -26,7 +26,16 @@ fcs_task(
     train_cumulative_seconds = 5400,
     judge_timeout_seconds = 1800,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = ["success_rate", "average_episodic_reward"],
+    visible_metrics = {
+        "success_rate": (
+            "Candidate fraction of trajectories ending with every box on a target, from 0\n" +
+            "  to 1; mean over rollout groups."
+        ),
+        "average_episodic_reward": (
+            "Candidate mean undiscounted sum of genuine environment rewards per\n" +
+            "  trajectory; mean over rollout groups."
+        ),
+    },
     contexts = {"runtime": "runtime/Dockerfile"},
     source = [
         paper(

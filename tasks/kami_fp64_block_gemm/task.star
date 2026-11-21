@@ -17,7 +17,12 @@ fcs_task(
     train_cumulative_seconds = 21600,
     judge_timeout_seconds = 1800,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = ["tflops"],
+    visible_metrics = {
+        "tflops": (
+            "Candidate crossover-adjusted validated batched throughput per train workload, in\n" +
+            "  TFLOPS; an array in suite order, without workload labels."
+        ),
+    },
     source = [
         paper(
             "https://www.ssslab.cn/assets/papers/2025-wang-KAMI.pdf",

@@ -1,3 +1,0 @@
-- `mean_gap`: Arithmetic mean over the train instances of the independently replayed gap OPT(d)
-  - COMBINED(d).
-- `instance_count`: Number of train instances evaluated.

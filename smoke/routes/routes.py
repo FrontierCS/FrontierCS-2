@@ -64,12 +64,7 @@ def agent(model, chat_model):
     say("chat with a provider-side tool:", status, body)
     with open("submission", "w") as file:
         file.write("hello")
-    job = ctl("call", "train", "submission").get("job")
-    for _ in range(300):
-        state = ctl("status", str(job)).get("state")
-        if state not in ("queued", "running"):
-            break
-        time.sleep(1)
+    ctl("call", "train", "submission", "--wait", "300")
     ctl("call", "final", "submission", "--arg", "finalize=true")
 
 

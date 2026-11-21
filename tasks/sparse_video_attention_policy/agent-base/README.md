@@ -16,22 +16,32 @@ The editable files are `svg/models/wan/attention.py`, `svg/models/hyvideo/attent
 files (see the statement for the rules on them). Keep generated outputs out of those paths.
 Keep everything you write under `/workspace`.
 
-On a GPU runner (see "Using a GPU" below), build and run the public benchmark with the task's
-entrypoints; `frontier-bench.sh` runs the Wan entrypoint by default and HunyuanVideo with the
-argument `hunyuan`:
+The GPU runner has the same read-only starter and the offline Wan 2.1 and HunyuanVideo
+checkpoints. After editing on the CPU, make your submission patch. Push the payload directory
+containing only `solution.patch` to a leased runner and apply it to a fresh copy of its starter.
+Choose a new directory for each changed patch and set `runner` to the ID printed by
+`frontier-gpu create` (see "Using a GPU" below).
 
 ```bash
 G=/opt/frontier/candidate/bin/frontier-gpu
-$G push gpurunner_... /workspace/repo /workspace
-$G exec gpurunner_... -- /opt/frontier/task-runtime bash /workspace/repo/frontier-build.sh
-$G exec gpurunner_... -- /opt/frontier/task-runtime bash /workspace/repo/frontier-bench.sh
-$G exec gpurunner_... -- /opt/frontier/task-runtime bash /workspace/repo/frontier-bench.sh hunyuan
+trial=/workspace/bench-1
+/frontier/task/make_submission.sh
+$G push "$runner" /workspace/payload /workspace
+$G exec "$runner" -- /frontier/task/prepare_workspace.sh "$trial"
+$G exec "$runner" -- git -C "$trial" apply /workspace/payload/solution.patch
+$G exec "$runner" -- /opt/frontier/task-runtime env FRONTIER_REPO_ROOT="$trial" bash "$trial/frontier-build.sh"
+$G exec "$runner" -- /opt/frontier/task-runtime env FRONTIER_REPO_ROOT="$trial" bash "$trial/frontier-bench.sh" wan
 ```
 
-The runner image is the pinned Wan 2.1 + HunyuanVideo / PyTorch 2.6 CUDA 12.4 image with the
-model weights offline. Public inputs and code are in `/workspace/repo`; the private
-development and final suites are not on the Agent runner. Pull outputs you need below
-`/workspace` with `frontier-gpu pull` before packaging a submission.
+Use `hunyuan` in place of `wan` for the HunyuanVideo benchmark. Both entrypoints write below
+`$trial/result`. Pull the outputs you want to inspect. For the Wan example:
+
+```bash
+$G pull --into-new-directory "$runner" "$trial/result/wan/t2v/ear" /workspace/wan-result-1
+find /workspace/wan-result-1 -type f
+```
+
+The private development and final suites run on the judges.
 
 Your train calls run on the judge's four H100s and report its metrics.
 

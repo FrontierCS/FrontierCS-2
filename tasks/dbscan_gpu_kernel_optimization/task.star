@@ -1,8 +1,9 @@
 """Make Euclidean DBSCAN on one H100 faster than the naive starter with identical clusterings, ported from FrontierCS."""
 
-load("//lib/fcs.star", "GPU_RUNNER", "H100", "fcs_task", "paper")
+load("//lib/fcs.star", "GPU_RUNNER", "H100", "PYTORCH_KERNEL_AGENT", "fcs_task", "paper")
 
 fcs_task(
+    agent_recipe = PYTORCH_KERNEL_AGENT,
     agent = {"cpu_millis": 4000, "memory_bytes": 8 * GiB},
     agent_lease = {
         "machine": GPU_RUNNER | {"gpu": H100},
@@ -17,12 +18,24 @@ fcs_task(
     train_cumulative_seconds = 10800,
     judge_timeout_seconds = 2400,
     submission_max_bytes = 2 * MiB,
-    visible_metrics = [
-        "geomean_speedup",
-        "dbscan_latency_ms",
-        "adjusted_rand_index",
-        "noise_mismatch_fraction",
-    ],
+    visible_metrics = {
+        "geomean_speedup": (
+            "Geometric mean over the train workloads of the median paired speedup over\n" +
+            "  the naive starter (unitless)."
+        ),
+        "dbscan_latency_ms": (
+            "Candidate median call latency per train workload, in milliseconds;\n" +
+            "  sorted, without workload labels."
+        ),
+        "adjusted_rand_index": (
+            "Candidate minimum timed ARI against the naive labels per train\n" +
+            "  workload; sorted, without workload labels."
+        ),
+        "noise_mismatch_fraction": (
+            "Candidate maximum timed noise-mask mismatch fraction per train\n" +
+            "  workload; sorted, without workload labels."
+        ),
+    },
     source = [
         paper(
             "https://flashml-org.github.io/",

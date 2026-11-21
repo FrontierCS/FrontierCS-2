@@ -38,12 +38,12 @@ COPY --link --chmod=a+rX,a-w --from=flower /opt/frontier/public/flower_photos /o
 LABEL org.opencontainers.image.title="FrontierCS2 task dynamic_tanh" \
       dev.frontier.problem-id="dynamic_tanh"
 
-# The solver-visible tree, and nothing else: the evaluator, the reference and the final photographs
-# are in the verifier's image only. The submission tools are the repository's `shared/` ones,
-# which the build puts in its context, linked from /frontier/task as the shared agent base links
-# them.
-COPY --chmod=0555 shared/agent/bin/make_submission.sh shared/agent/bin/prepare_workspace.sh /frontier/task/bin/
-COPY --chmod=0444 shared/agent/bin/fcs2_submission.py shared/lib/edit_scope.py generated/agent/submission-policy.json /frontier/task/bin/
+# The solver-visible tree, and nothing else: the evaluator, the reference and the final
+# photographs are in the verifier's image only. The submission tools are linked from
+# /frontier/task as in the shared agent base.
+COPY --from=task-tools --chmod=0555 /agent/bin/make_submission.sh /agent/bin/prepare_workspace.sh /frontier/task/bin/
+COPY --from=task-tools --chmod=0444 /agent/bin/fcs2_submission.py /lib/edit_scope.py /frontier/task/bin/
+COPY --chmod=0444 generated/agent/submission-policy.json /frontier/task/bin/
 COPY --chmod=a+rX,a-w --from=readme /README.md /frontier/task/README.md
 COPY --chmod=a+rX,a-w repo /frontier/task/repo
 # The starter's two scripts are executable, as the source's recipe makes them.

@@ -1,7 +1,5 @@
 # The Go toolchain and the estimator's module cache, built once for the agent's image and the
-# verifier's, which copy them in. It builds on FrontierCS's shared verifier base, pinned by
-# digest: Ubuntu 24.04 with apt set to one dated archive snapshot, and to try each file up to 10
-# times.
+# verifier's, which copy them in.
 ARG VERIFIER_BASE
 FROM ${VERIFIER_BASE}
 

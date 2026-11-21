@@ -159,21 +159,9 @@ def cpu():
 
 def judge():
     shutil.copy("/opt/smoke/probe.py", "/workspace/submission")
-    reply = ctl("call", "train", "/workspace/submission")
-    say("agent", "call train ->", short(reply))
-    job = reply.get("job")
-    if job is None:
-        return
-    seen = None
-    while True:
-        reply = ctl("status", str(job))
-        state = reply.get("state")
-        if state != seen:
-            say("agent", "job", job, "state", state, short(reply))
-            seen = state
-        if state not in ("queued", "running"):
-            break
-        time.sleep(1)
+    seconds = ctl("ops")["remaining_seconds"]
+    reply = ctl("call", "train", "/workspace/submission", "--wait", str(max(1, seconds)))
+    say("agent", "train ->", short(reply))
     lease = (reply.get("returned") or {}).get("lease")
     if lease is not None:
         # Through a session of the agent's own, which holds no lease of the judge's.

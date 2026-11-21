@@ -24,8 +24,10 @@ RUN printf 'Types: deb\nURIs: https://snapshot.ubuntu.com/ubuntu/%s\nSuites: nob
     && printf 'Acquire::Retries "10";\nAcquire::Retries::Delay::Maximum "60";\n' > /etc/apt/apt.conf.d/80-frontier-retries \
     && apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git python3 python3-pip \
-    && rm -rf /var/lib/apt/lists/* \
-    && PIP_BREAK_SYSTEM_PACKAGES=1 pip3 install --no-cache-dir zstandard==0.25.0
+    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=bind,source=requirements.txt,target=/tmp/requirements.txt \
+    PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --no-cache-dir --no-deps \
+        --only-binary=:all: --require-hashes --requirement /tmp/requirements.txt
 
 RUN install -d -o 65532 -g 65532 /frontier \
     && if ! getent passwd 65532 >/dev/null; then useradd --uid 65532 --user-group --no-create-home --home-dir /frontier --shell /bin/sh frontier-verifier; fi

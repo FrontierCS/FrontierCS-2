@@ -18,12 +18,12 @@ LABEL org.opencontainers.image.title="FrontierCS2 task representation_frechet_lo
 COPY --chmod=0555 gpu/task_runtime.py /opt/frontier/task-runtime
 RUN /opt/frontier/runtime-python /opt/frontier/task-runtime --snapshot
 
-# The solver-visible tree, and nothing else: the evaluator, the reference and the final workloads
-# are in the verifier's image only. The submission tools are the repository's `shared/` ones,
-# which the build puts in its context, linked from /frontier/task as the shared agent base links
-# them.
-COPY --chmod=0555 shared/agent/bin/make_submission.sh shared/agent/bin/prepare_workspace.sh /frontier/task/bin/
-COPY --chmod=0444 shared/agent/bin/fcs2_submission.py shared/lib/edit_scope.py generated/agent/submission-policy.json /frontier/task/bin/
+# The solver-visible tree, and nothing else: the evaluator, the reference and the final
+# workloads are in the verifier's image only. The submission tools are linked from
+# /frontier/task as in the shared agent base.
+COPY --from=task-tools --chmod=0555 /agent/bin/make_submission.sh /agent/bin/prepare_workspace.sh /frontier/task/bin/
+COPY --from=task-tools --chmod=0444 /agent/bin/fcs2_submission.py /lib/edit_scope.py /frontier/task/bin/
+COPY --chmod=0444 generated/agent/submission-policy.json /frontier/task/bin/
 COPY --chmod=a+rX,a-w --from=readme /README.md /frontier/task/README.md
 COPY --chmod=a+rX,a-w repo /frontier/task/repo
 RUN ln --symbolic /frontier/task/bin/prepare_workspace.sh /frontier/task/prepare_workspace.sh \

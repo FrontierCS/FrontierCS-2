@@ -7,7 +7,7 @@ import sys
 
 ENV_FILE = Path("/opt/frontier/task-runtime-env.json")
 KEYS = ("PATH", "LD_LIBRARY_PATH", "LIBRARY_PATH", "CPATH", "CUDA_HOME",
-        "CUDA_PATH", "CC", "CXX", "HF_HOME", "HF_HUB_CACHE", "TORCH_HOME",
+        "CUDA_PATH", "CC", "CXX", "FRONTIER_MODEL_ROOT", "HF_HOME", "HF_HUB_CACHE", "TORCH_HOME",
         "HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "PYTHONPATH")
 if sys.argv[1:] == ["--snapshot"]:
     ENV_FILE.write_text(json.dumps({k: os.environ[k] for k in KEYS if k in os.environ}))

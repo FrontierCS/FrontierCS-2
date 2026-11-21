@@ -17,13 +17,28 @@ fcs_task(
     train_cumulative_seconds = 32400,
     judge_timeout_seconds = 5400,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = [
-        "development_mean_ordinary_quantized_png_psnr_db",
-        "development_mean_ema_quantized_png_psnr_db",
-        "development_mean_ordinary_quantized_png_lpips",
-        "development_mean_ema_quantized_png_lpips",
-        "development_mean_method_process_wall_seconds",
-    ],
+    visible_metrics = {
+        "development_mean_ordinary_quantized_png_psnr_db": (
+            "Candidate ordinary-model PSNR after PNG\n" +
+            "  quantization, in dB; mean over workloads."
+        ),
+        "development_mean_ema_quantized_png_psnr_db": (
+            "Candidate EMA-model PSNR after PNG quantization,\n" +
+            "  in dB; mean over workloads."
+        ),
+        "development_mean_ordinary_quantized_png_lpips": (
+            "Candidate ordinary-model LPIPS (v0.1, VGG16)\n" +
+            "  after PNG quantization, unitless; mean over workloads."
+        ),
+        "development_mean_ema_quantized_png_lpips": (
+            "Candidate EMA-model LPIPS (v0.1, VGG16) after PNG\n" +
+            "  quantization, unitless; mean over workloads."
+        ),
+        "development_mean_method_process_wall_seconds": (
+            "Candidate complete method-process wall time,\n" +
+            "  in seconds; mean over workloads."
+        ),
+    },
     contexts = {"runtime": "runtime/Dockerfile"},
     source = [
         paper(

@@ -1,6 +1,3 @@
-# FrontierCS's shared agent base, pinned by digest: Ubuntu 24.04 with git and Python, and apt
-# set to one dated archive snapshot, so that a rebuild installs the same versions, and to try
-# each file up to 10 times.
 ARG AGENT_BASE
 FROM ${AGENT_BASE}
 
@@ -29,19 +26,16 @@ RUN --mount=type=bind,source=repo,target=/frontier-repo,readonly \
 LABEL org.opencontainers.image.title="FrontierCS2 task bounded_evm_path_prediction" \
       dev.frontier.problem-id="bounded_evm_path_prediction"
 
-# The solver-visible tree, and nothing else: the evaluator, the reference, the calibration, the snapshot and the vendored modules are in the verifier's image only. The submission tools are the repository's `shared/` ones, which the build puts in its context, and which replace the base's.
-COPY shared/agent/bin /frontier/task/bin
-COPY shared/lib/edit_scope.py /frontier/task/bin/edit_scope.py
+# The solver-visible tree, and nothing else: the evaluator, the reference, the calibration, the
+# snapshot and the vendored modules are in the verifier's image only. The repository's
+# submission tools replace the base's.
+COPY --from=task-tools /agent/bin/ /lib/edit_scope.py /frontier/task/bin/
 COPY generated/agent/submission-policy.json /frontier/task/bin/submission-policy.json
 COPY --from=readme /README.md /frontier/task/README.md
 COPY repo /frontier/task/repo
 
-RUN find /frontier/task -type d -exec chmod 0555 {} + \
-    && find /frontier/task/bin -type f -exec chmod 0444 {} + \
-    && chmod 0555 /frontier/task/bin/*.sh \
-    && find /frontier/task/repo -type f -exec chmod 0444 {} + \
-    && find /frontier/task/repo -type f -name '*.sh' -exec chmod 0555 {} + \
-    && chmod 0444 /frontier/task/README.md
+RUN --mount=type=bind,from=task-tools,source=/agent-permissions.sh,target=/agent-permissions.sh \
+    sh /agent-permissions.sh '*.sh'
 
 USER 1000:1000
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 GOMODCACHE=/opt/frontier/go-mod GOPROXY=file:///opt/frontier/go-mod/cache/download GOSUMDB=off GOTOOLCHAIN=local

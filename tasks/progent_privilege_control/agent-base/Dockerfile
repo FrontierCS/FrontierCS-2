@@ -1,6 +1,3 @@
-# FrontierCS's shared agent base, pinned by digest: Ubuntu 24.04 with git and Python, and apt
-# set to one dated archive snapshot, so that a rebuild installs the same versions, and to try
-# each file up to 10 times.
 ARG AGENT_BASE
 FROM ${AGENT_BASE}
 
@@ -28,9 +25,8 @@ LABEL org.opencontainers.image.title="FrontierCS2 task progent_privilege_control
 
 # The solver-visible tree: the split, the reference measurements, the full upstream tree and the
 # attacker-identity generator are in the verifier's image only. The submission tools are the
-# repository's `shared/` ones, which the build puts in its context.
-COPY shared/agent/bin /frontier/task/bin
-COPY shared/lib/edit_scope.py /frontier/task/bin/edit_scope.py
+# repository's `shared/` ones.
+COPY --from=task-tools /agent/bin/ /lib/edit_scope.py /frontier/task/bin/
 COPY generated/agent/submission-policy.json /frontier/task/bin/submission-policy.json
 COPY --from=readme /README.md /frontier/task/README.md
 COPY repo /frontier/task/repo

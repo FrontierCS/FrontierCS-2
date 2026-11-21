@@ -26,11 +26,20 @@ fcs_task(
     train_cumulative_seconds = 28800,
     judge_timeout_seconds = 5400,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = [
-        "dev_qa_accuracy",
-        "dev_compaction_seconds",
-        "dev_compact_cache_bytes",
-    ],
+    visible_metrics = {
+        "dev_qa_accuracy": (
+            "Candidate pooled fraction of correctly answered questions over the train\n" +
+            "  articles."
+        ),
+        "dev_compaction_seconds": (
+            "Candidate compaction time per train article, in seconds; sorted,\n" +
+            "  without article labels."
+        ),
+        "dev_compact_cache_bytes": (
+            "Candidate compacted-cache bytes per train article; sorted, without\n" +
+            "  article labels."
+        ),
+    },
     contexts = {"runtime": "runtime/Dockerfile"},
     source = [
         paper(

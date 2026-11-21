@@ -1,9 +1,15 @@
 """Design a sparse-attention policy for Sparse VideoGen text-to-video diffusion that keeps the video's quality while reducing GPU time, ported from FrontierCS."""
 
-load("//lib/fcs.star", "GPU_RUNNER", "H100", "fcs_task", "paper")
+load("//lib/fcs.star", "GPU_RUNNER", "H100", "fcs_task", "paper", "ubuntu_agent")
+load("//tasks/sparse_video_attention_policy/images.star", "gpu_runner_image", "gpu_verifier_image", "reference_image")
 
 fcs_task(
+    agent_recipe = ubuntu_agent("ca-certificates git python3 tar", executable = "*.sh"),
+    agent_runner_image = gpu_runner_image,
+    reference_image = reference_image,
+    verifier_image = gpu_verifier_image,
     agent = {"cpu_millis": 3000, "memory_bytes": 12 * GiB},
+    agent_env = ["FRONTIER_GPU_SECONDS=18000"],
     agent_lease = {
         "machine": GPU_RUNNER | {"gpu": H100},
         "instances": 1,
@@ -28,8 +34,18 @@ fcs_task(
     train_cumulative_seconds = 225000,
     judge_timeout_seconds = 12600,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = ["e2e_latency_seconds", "psnr_db", "ssim", "lpips"],
-    contexts = {"runtime": "runtime/Dockerfile"},
+    visible_metrics = {
+        "e2e_latency_seconds": (
+            "Candidate latency per train workload, in seconds. Each metric list is\n" +
+            "  sorted independently; positions match neither other metrics nor workloads."
+        ),
+        "psnr_db": (
+            "Candidate PSNR per train workload, in dB, sorted; an exact match is reported as\n" +
+            "  \"positive_infinity\"."
+        ),
+        "ssim": "Candidate SSIM per train workload, sorted.",
+        "lpips": "Candidate LPIPS per train workload, sorted.",
+    },
     source = [
         paper(
             "https://arxiv.org/abs/2603.08982",

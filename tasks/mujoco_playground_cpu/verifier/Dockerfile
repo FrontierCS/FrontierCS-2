@@ -18,12 +18,10 @@ LABEL org.opencontainers.image.title="FrontierCS2 verifier mujoco_playground_cpu
 # /pumpkin/out, and its scratch below /frontier, on the container's writable layer.
 RUN ln --symbolic /pumpkin/out /frontier/output
 
-# The shared verifier: the repository's `shared/` ones, which the build puts in its context.
 # /opt/frontier goes on the interpreter's import path (frontier.pth), so the judge and every
 # worker it starts import isolate by name; the launcher is the shared verifier base's.
-COPY shared/verifier/verify.py shared/verifier/fcs2_verifier.py \
-     shared/verifier/beat_spec_feedback.py shared/lib/edit_scope.py shared/lib/isolate.py \
-     shared/lib/install_frontier_pth.py /opt/frontier/
+COPY --from=task-tools /verifier/*.py /lib/edit_scope.py /lib/isolate.py \
+    /lib/install_frontier_pth.py /opt/frontier/
 # The starter that the shared verifier overlays the submission on, and that the judge admits against
 # its manifest and copies for the reference; the generated files; and each mode's selector.
 COPY --chmod=a+rX,a-w repo /opt/frontier/task/pristine

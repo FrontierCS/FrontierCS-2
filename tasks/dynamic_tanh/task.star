@@ -17,11 +17,20 @@ fcs_task(
     train_cumulative_seconds = 2700,
     judge_timeout_seconds = 1800,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = [
-        "top1_accuracy_pct",
-        "training_latency_ms",
-        "inference_latency_ms",
-    ],
+    visible_metrics = {
+        "top1_accuracy_pct": (
+            "Candidate top-1 validation accuracy after the workload's training run, in\n" +
+            "  percentage points; mean over workloads."
+        ),
+        "training_latency_ms": (
+            "Candidate median time of the 16-step fp16 training block, in\n" +
+            "  milliseconds; mean over workloads."
+        ),
+        "inference_latency_ms": (
+            "Candidate median time of the 16-batch forward-only inference block, in\n" +
+            "  milliseconds; mean over workloads."
+        ),
+    },
     source = [
         paper(
             "https://arxiv.org/abs/2503.10622",

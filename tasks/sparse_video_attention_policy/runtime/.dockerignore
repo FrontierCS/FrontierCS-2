@@ -1,0 +1,3 @@
+fetch/*
+!fetch/apt_snapshot.sh
+!fetch/apt_install.sh

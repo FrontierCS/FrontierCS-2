@@ -1,6 +1,3 @@
-# FrontierCS's shared verifier base, pinned by digest: Ubuntu 24.04 with git, Python and
-# zstandard, apt set as in the agent's base, the user 65532 with /frontier its home, the shared
-# verifier's launcher, /opt/frontier/verifier, and /opt/frontier on Python's import path.
 ARG VERIFIER_BASE
 FROM ${VERIFIER_BASE} AS common
 
@@ -27,22 +24,18 @@ RUN ln --symbolic /pumpkin/out /frontier/output \
     && install --directory --owner=65532 --group=65532 /workspace
 
 # The shared verifier, and the launcher through which a judge runs what it builds from a
-# submission: the repository's `shared/` ones, which the build puts in its context, and which
-# replace the base's; and the port's adapter through which the judge leases its search machine.
-COPY shared/verifier/verify.py shared/verifier/fcs2_verifier.py \
-     shared/verifier/beat_spec_feedback.py shared/lib/edit_scope.py shared/lib/isolate.py \
-     shared/verifier-lease/fcs2_verifier_gpu.py \
-     /opt/frontier/
+# submission: the repository's `shared/` ones, which replace the base's; and the port's adapter
+# through which the judge leases its search machine.
+COPY --from=task-tools /verifier/*.py /lib/edit_scope.py /lib/isolate.py \
+    /verifier-lease/fcs2_verifier_gpu.py /opt/frontier/
 # The starter that the shared verifier overlays the submission on, and the judge applies its
 # reference patch to; the generated files; and each mode's selector of its workloads.
 COPY --chmod=a+rX,a-w repo /opt/frontier/task/pristine
 COPY --chmod=a+rX,a-w generated/judge/config.yaml /opt/frontier/task/config.yaml
 COPY generated/verifier/verifier.json /opt/frontier/verifier.json
 COPY datasets/train.json datasets/eval.json /opt/frontier/datasets/
-RUN chmod 0444 /opt/frontier/verifier.json /opt/frontier/*.py \
-    && chmod 0555 /opt/frontier \
-    && chmod --recursive a+rX,a-w /opt/frontier/datasets \
-    && chmod a-w /opt/frontier/task /opt/frontier/task/pristine
+RUN --mount=type=bind,from=task-tools,source=/verifier-permissions.sh,target=/verifier-permissions.sh \
+    sh /verifier-permissions.sh
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /frontier

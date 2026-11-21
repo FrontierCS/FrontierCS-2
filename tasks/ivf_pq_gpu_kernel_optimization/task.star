@@ -17,12 +17,24 @@ fcs_task(
     train_cumulative_seconds = 10800,
     judge_timeout_seconds = 14400,
     submission_max_bytes = 2 * MiB,
-    visible_metrics = [
-        "geomean_speedup",
-        "search_latency_ms",
-        "iso_recall",
-        "nn_recall",
-    ],
+    visible_metrics = {
+        "geomean_speedup": (
+            "Geometric mean over the train workloads of the median paired speedup over\n" +
+            "  the naive search (unitless)."
+        ),
+        "search_latency_ms": (
+            "Candidate median search latency per train workload, in milliseconds;\n" +
+            "  sorted, without workload labels."
+        ),
+        "iso_recall": (
+            "Candidate worst timed iso-result recall per train workload; sorted, without\n" +
+            "  workload labels."
+        ),
+        "nn_recall": (
+            "Candidate worst timed nearest-neighbor recall@k per train workload; sorted,\n" +
+            "  without workload labels."
+        ),
+    },
     source = [
         paper(
             "https://flashml-org.github.io/",

@@ -1,11 +1,11 @@
 """A smoke workflow for leases of runners, with no model: a scripted agent leases a GPU runner and
 a CPU runner and drives each through every lease behaviour, then holds two CPU runners at once,
 calls its train function, and submits `agent/probe.py`, a program that tries what a hostile
-submission would. In both judges, the train function's target and the final call's, a body
-(`calls.star`) runs `judge/judge.py`, which leases a runner of its own, puts the submission there,
-has the runner count its bytes, and gets that back; then puts a private tree there, has the runner
-print its modes, and gets it back. The final judge also runs the program on an untrusted runner, of
-the agent's image and user, and checks each line it prints. It checks the deployment, not a task.
+submission would. The train judge leases its CPU runner and leaves it open at exit. The final body
+leases its GPU runner with `with_runner` and retrieves its binary byte count as a single file.
+Both judges check that a private tree retains its modes on the runner and after retrieval. The final
+judge also runs the program on an untrusted runner of the agent's image and user and checks
+each line it prints.
 
 Each judge scores the checks that came out as expected, which its result's `detail` lists. The
 train judge's two: its runner counted the payload's bytes, and the private tree's modes, `700`,
@@ -32,7 +32,7 @@ judge's 12, so the run scores 12 when everything behaves:
 - the judge doesn't see `/pumpkin/home/escape` in its own sandbox;
 - none of the program's lines holds the judge's secret or the variable's value."""
 
-load("//lib/submit.star", "submit")
+load("//lib/submit.star", "FINAL_HELP", "submit")
 load("//smoke/lease/calls.star", "final_call", "train_call")
 
 DEADLINE = arg("deadline_seconds", int, default = 900)
@@ -46,6 +46,7 @@ JUDGE_USER = {"uid": 65532, "gid": 65532}
 GPU = {"count": 1, "model": GPU_MODEL}
 
 workflow(
+    deadline_seconds = DEADLINE,
     name = "smoke/lease",
     roles = [
         {
@@ -55,13 +56,12 @@ workflow(
             "needs": {"cpu_millis": 500, "memory_bytes": 512 * MiB},
             "runtime": {"agent": {
                 "command": {"argv": ["python3", "-u", "/opt/smoke/agent.py"], "cwd": "/workspace"},
-                "deadline_seconds": DEADLINE,
                 "finalize_grace_seconds": 0,
                 "grants": [
                     {"name": "gpu", "session": {"runner": "gpu_runner", "instances": 1, "instance_seconds": 300, "cumulative_seconds": 900, "commands": 20, "transfer_bytes": 1 * MiB}},
                     {"name": "cpu", "session": {"runner": "cpu_runner", "instances": 2, "instance_seconds": 300, "cumulative_seconds": 900, "commands": 20, "transfer_bytes": 1 * MiB}},
                     {"name": "train", "job": {"target": "train_judge", "body": train_call, "payload_max_bytes": 8 * KiB, "calls": 2, "call_timeout_seconds": 300}},
-                    {"name": "final", "now": {"body": submit, "payload_max_bytes": 8 * KiB}},
+                    {"name": "final", "help": FINAL_HELP, "now": {"body": submit, "payload_max_bytes": 8 * KiB}},
                 ],
             }},
         },

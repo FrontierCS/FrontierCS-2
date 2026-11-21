@@ -2,6 +2,8 @@
 the verifier once, in a fresh sandbox of its target, on the payload, and returns what of its
 result the judge's caller sees."""
 
+load("//lib/submit.star", "submission")
+
 # Where the verifier reads the payload, which its target's environment names
 # `FRONTIER_PAYLOAD_PATH`.
 PAYLOAD = "/pumpkin/in/payload/raw"
@@ -38,7 +40,7 @@ def train_call(target: Target, payload: Payload, *, metrics: list[str]):
     failure = {"failure": result["failure"]} if "failure" in result else {}
     return raw | shown | failure
 
-def final_call(target: Target, payload: Payload):
+def final_call(target: Target, submissions):
     """The final call: the run's score, status and verdict against the reference, and the rest.
 
     No agent sees the final's result, so it is returned whole: its `private_metrics` hold the
@@ -46,14 +48,14 @@ def final_call(target: Target, payload: Payload):
 
     Args:
       target: the final judge's sandbox.
-      payload: the agent's selected submission.
+      submissions: the last saved payload by agent role name.
 
     Returns:
       The result's `raw_score` as `score`, its `status`, the `beats_reference` of its
       `private_metrics`, then its `summary`, `metrics`, `private_metrics` and `failure`, each that
       it holds, by its name.
     """
-    result = _verified(target, payload)
+    result = _verified(target, submission(submissions))
     private = result.get("private_metrics", {})
     shown = {"score": result["raw_score"]} if "raw_score" in result else {}
     status = {"status": result["status"]} if "status" in result else {}

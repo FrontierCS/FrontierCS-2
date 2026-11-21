@@ -15,12 +15,10 @@ LABEL org.opencontainers.image.title="FrontierCS2 task flow_opd" \
       dev.frontier.problem-id="flow_opd"
 
 # The solver-visible tree, and nothing else: the evaluator, the reference, the workloads and the
-# corpora are in the verifier's image only. The submission tools are the repository's `shared/`
-# ones, which the build puts in its context, linked from /frontier/task as the shared agent base
-# links them.
-COPY --chmod=a+rX,a-w shared/agent/bin/fcs2_submission.py /frontier/task/bin/fcs2_submission.py
-COPY --chmod=0555 shared/agent/bin/make_submission.sh shared/agent/bin/prepare_workspace.sh /frontier/task/bin/
-COPY --chmod=a+rX,a-w shared/lib/edit_scope.py /frontier/task/bin/edit_scope.py
+# corpora are in the verifier's image only. The submission tools are linked from /frontier/task
+# as in the shared agent base.
+COPY --from=task-tools --chmod=0555 /agent/bin/make_submission.sh /agent/bin/prepare_workspace.sh /frontier/task/bin/
+COPY --from=task-tools --chmod=0444 /agent/bin/fcs2_submission.py /lib/edit_scope.py /frontier/task/bin/
 COPY --chmod=a+rX,a-w generated/agent/submission-policy.json /frontier/task/bin/submission-policy.json
 COPY --chmod=a+rX,a-w --from=readme /README.md /frontier/task/README.md
 COPY --chmod=a+rX,a-w repo /frontier/task/repo

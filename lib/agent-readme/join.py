@@ -1,6 +1,8 @@
-"""Prints the agent's `/frontier/task/README.md` of a task: `python3 -I join.py <task> <platform>`.
+"""Prints the agent's README: `python3 -I join.py <task> <platform> '<JSON metric pairs>'`.
 
-It is the task's `<task>/README.md` with each line that is only `{<name>}` replaced by the file
+In `<task>/README.md`, a line containing only `{metrics}` expands to the task's ordered public
+metric names and Markdown descriptions. Adjacent names with the same description share a bullet.
+Each other line that is only `{<name>}` is replaced by the file
 `<name>.md`, joined the same way: the task's own, `<task>/readme/<name>.md`, if it has one, else
 the platform's, `<platform>/<name>.md`. So the platform's text holds what every task's README
 says, and a task gives its values, and the parts its source words otherwise, as files of its
@@ -12,8 +14,10 @@ it fails on a name that neither directory has a file for, and on a file of the t
 line names, so that a misspelt name stops the build.
 """
 
+import json
 import re
 import sys
+from itertools import groupby
 from pathlib import Path
 
 # A line that is a file's name in braces, and nothing else.
@@ -28,13 +32,26 @@ def lines(path):
     return re.findall(r"[^\n]*\n", text)
 
 
-def main(task, platform):
+def metric_bullets(metrics):
+    if not metrics:
+        return "- No task-specific metrics.\n"
+    bullets = []
+    for description, group in groupby(metrics, key=lambda pair: pair[1]):
+        names = ", ".join(f"`{name}`" for name, _ in group)
+        bullets.append(f"- {names}: {description}\n")
+    return "".join(bullets)
+
+
+def main(task, platform, metrics):
     own = task / "readme"
     used = set()
 
     def joined(path):
         out = []
         for line in lines(path):
+            if line == "{metrics}\n":
+                out.append(metric_bullets(metrics))
+                continue
             slot = SLOT.fullmatch(line)
             if not slot:
                 out.append(line)
@@ -57,4 +74,4 @@ def main(task, platform):
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]), Path(sys.argv[2]))
+    main(Path(sys.argv[1]), Path(sys.argv[2]), json.loads(sys.argv[3]))

@@ -20,11 +20,10 @@ LABEL org.opencontainers.image.title="FrontierCS2 verifier fast_kv_compaction" \
 RUN ln --symbolic /pumpkin/out /frontier/output \
     && install --directory --owner=65532 --group=65532 /workspace
 
-# The shared verifier: the repository's `shared/` ones, which the build puts in its context; and
-# the port's adapter through which the judge leases its shard machines.
-COPY shared/verifier/verify.py shared/verifier/fcs2_verifier.py \
-     shared/verifier/beat_spec_feedback.py shared/lib/edit_scope.py shared/lib/isolate.py \
-     shared/lib/install_frontier_pth.py shared/verifier-lease/fcs2_verifier_gpu.py /opt/frontier/
+# The shared verifier: the repository's `shared/` ones; and the port's adapter through which the
+# judge leases its shard machines.
+COPY --from=task-tools /verifier/*.py /lib/edit_scope.py /lib/isolate.py /lib/install_frontier_pth.py \
+    /verifier-lease/fcs2_verifier_gpu.py /opt/frontier/
 # The starter that the shared verifier overlays the submission on, and the patch that the reference
 # agent submits (the starter with a comment added: the judge refuses an empty patch); the
 # generated files; and each mode's selector.

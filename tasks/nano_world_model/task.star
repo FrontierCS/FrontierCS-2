@@ -33,7 +33,20 @@ fcs_task(
     train_cumulative_seconds = 10800,
     judge_timeout_seconds = 10200,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = ["psnr", "ssim", "lpips"],
+    visible_metrics = {
+        "psnr": (
+            "Candidate mean PSNR of the predicted future frames over the train clips, in dB; higher\n" +
+            "  is better."
+        ),
+        "ssim": (
+            "Candidate mean SSIM of the predicted future frames over the train clips; higher is\n" +
+            "  better."
+        ),
+        "lpips": (
+            "Candidate mean VGG-LPIPS of the predicted future frames over the train clips; lower\n" +
+            "  is better."
+        ),
+    },
     contexts = {"runtime": "runtime/Dockerfile"},
     source = [
         paper(

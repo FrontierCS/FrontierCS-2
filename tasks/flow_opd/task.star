@@ -18,10 +18,16 @@ fcs_task(
     judge_timeout_seconds = 3000,
     submission_max_bytes = 256 * KiB,
     contexts = {"runtime": "runtime/Dockerfile"},
-    visible_metrics = [
-        "dev_eval_reward_ocr",
-        "dev_verified_optimizer_updates",
-    ],
+    visible_metrics = {
+        "dev_eval_reward_ocr": (
+            "Candidate mean OCR reward, in [0, 1], over the public development\n" +
+            "  workloads after the train run; null if the run did not complete."
+        ),
+        "dev_verified_optimizer_updates": (
+            "Number of actual, non-skipped optimizer updates verified in\n" +
+            "  the train run, also reported on failure."
+        ),
+    },
     source = [
         paper(
             "https://arxiv.org/abs/2605.08063",

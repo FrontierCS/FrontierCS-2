@@ -1,15 +1,16 @@
 """Implement Edlib's Hirschberg path reconstruction so exact alignments are found as fast as possible, ported from FrontierCS."""
 
-load("//lib/fcs.star", "fcs_task", "paper")
+load("//lib/fcs.star", "fcs_task", "paper", "ubuntu_agent", "ubuntu_verifier_image")
 
 fcs_task(
+    verifier_image = ubuntu_verifier_image,
+    agent_recipe = ubuntu_agent("build-essential cmake git python3", executable = "*.sh"),
     agent = {"cpu_millis": 2000, "memory_bytes": 4 * GiB},
     judge = {"cpu_millis": 2000, "memory_bytes": 4 * GiB},
     train_calls = 20,
     train_cumulative_seconds = 12000,
     judge_timeout_seconds = 600,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = [],
     source = [
         paper(
             "https://doi.org/10.1093/bioinformatics/btw753",

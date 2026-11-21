@@ -1,8 +1,10 @@
 """Reconstruct Polygon's search for small databases on which two SQL queries differ, validated and fast, ported from FrontierCS."""
 
-load("//lib/fcs.star", "fcs_task", "paper")
+load("//lib/fcs.star", "fcs_task", "package_agent", "paper", "ubuntu_agent_base", "ubuntu_verifier_image")
 
 fcs_task(
+    verifier_image = ubuntu_verifier_image,
+    agent_recipe = package_agent(ubuntu_agent_base),
     agent = {"cpu_millis": 2000, "memory_bytes": 8 * GiB},
     judge = {"cpu_millis": 2000, "memory_bytes": 8 * GiB},
     judge_leases = {
@@ -18,7 +20,24 @@ fcs_task(
     train_cumulative_seconds = 12000,
     judge_timeout_seconds = 1800,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = ["refuted_pairs", "wall_time_seconds", "search_iterations", "backtracks"],
+    visible_metrics = {
+        "refuted_pairs": (
+            "Per development workload, in suite order: 1 if the case was validated as\n" +
+            "  refuted, else 0."
+        ),
+        "wall_time_seconds": (
+            "Per development workload, in suite order: the measured search time in\n" +
+            "  seconds; a failed case is charged its budget."
+        ),
+        "search_iterations": (
+            "Per development workload, in suite order: the search's own reported\n" +
+            "  iteration count."
+        ),
+        "backtracks": (
+            "Per development workload, in suite order: the search's own reported backtrack\n" +
+            "  count."
+        ),
+    },
     source = [
         paper(
             "https://arxiv.org/pdf/2504.06542v1",

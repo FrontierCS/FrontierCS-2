@@ -1,0 +1,5 @@
+# The verifier recipes copy these entry points together from the tools image.
+shared/verifier/*
+!shared/verifier/verify.py
+!shared/verifier/fcs2_verifier.py
+!shared/verifier/beat_spec_feedback.py

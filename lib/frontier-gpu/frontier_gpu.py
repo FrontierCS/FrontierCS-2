@@ -344,7 +344,7 @@ def execute(args):
     for name in ('stdout', 'stderr'):
         if len(done.get(name, '').encode()) >= TAIL_BYTES - 3:
             notes.append(f'{name} may be longer than its last 21 KiB shown: the whole is '
-                         f'{log}/command.{name} on the runner, which pull copies back')
+                         f'{log}/command.{name} on the runner; use pull --into-new-directory to retrieve it')
     if end is None:
         code = 255
         what = f"did not finish, as the runner ended under it"
@@ -393,6 +393,10 @@ def pull(args):
     lease = lease_of(args.runner_id)
     remote = remote_path(args.remote_path)
     destination = workspace_path(args.destination, existing=False)
+    if args.into_new_directory:
+        if os.path.lexists(args.destination):
+            raise GpuError(f'{args.destination} already exists: give a new destination directory')
+        return transfer(lease, 'get', remote, destination)
     destination.mkdir(mode=0o700, parents=True, exist_ok=True)
     # The tree arrives in a fresh directory, then is copied over DESTINATION, so that what it
     # holds and the tree lacks stays.
@@ -401,10 +405,6 @@ def pull(args):
     try:
         transfer(lease, 'get', remote, staging / remote.name)
         shutil.copytree(staging / remote.name, destination / remote.name, dirs_exist_ok=True)
-    except GpuError as error:
-        if 'Not a directory' in str(error):
-            raise GpuError(f'{error}. pull copies a directory: pull the one that holds the file') from None
-        raise
     finally:
         shutil.rmtree(staging, ignore_errors=True)
     return 0
@@ -469,6 +469,8 @@ def main(argv=None):
     command.add_argument('remote_directory')
     command.set_defaults(run=push)
     command = sub.add_parser('pull')
+    command.add_argument('--into-new-directory', action='store_true',
+                         help='copy a file by basename or directory contents into a new local directory')
     command.add_argument('runner_id')
     command.add_argument('remote_path')
     command.add_argument('destination')

@@ -17,24 +17,18 @@ RUN --mount=type=bind,source=fetch/apt_snapshot.sh,target=/context/fetch/apt_sna
 LABEL org.opencontainers.image.title="FrontierCS2 task kami_fp64_block_gemm" \
       dev.frontier.problem-id="kami_fp64_block_gemm"
 
-# The solver-visible tree, and nothing else: the evaluator, the reference and the hidden workloads
-# are in the verifier's image only. The submission tools are the repository's `shared/` ones,
-# which the build puts in its context, linked from /frontier/task as the shared agent base links
-# them.
-COPY shared/agent/bin /frontier/task/bin
-COPY shared/lib/edit_scope.py /frontier/task/bin/edit_scope.py
+# The solver-visible tree, and nothing else: the evaluator, the reference and the hidden
+# workloads are in the verifier's image only. The submission tools are linked from
+# /frontier/task as in the shared agent base.
+COPY --from=task-tools /agent/bin/ /lib/edit_scope.py /frontier/task/bin/
 COPY generated/agent/submission-policy.json /frontier/task/bin/submission-policy.json
 COPY --from=readme /README.md /frontier/task/README.md
 COPY repo /frontier/task/repo
 
-RUN ln --symbolic /frontier/task/bin/prepare_workspace.sh /frontier/task/prepare_workspace.sh \
+RUN --mount=type=bind,from=task-tools,source=/agent-permissions.sh,target=/agent-permissions.sh \
+    ln --symbolic /frontier/task/bin/prepare_workspace.sh /frontier/task/prepare_workspace.sh \
     && ln --symbolic /frontier/task/bin/make_submission.sh /frontier/task/make_submission.sh \
-    && find /frontier/task -type d -exec chmod 0555 {} + \
-    && find /frontier/task/bin -type f -exec chmod 0444 {} + \
-    && chmod 0555 /frontier/task/bin/*.sh \
-    && find /frontier/task/repo -type f -exec chmod 0444 {} + \
-    && find /frontier/task/repo -type f -name '*.sh' -exec chmod 0555 {} + \
-    && chmod 0444 /frontier/task/README.md
+    && sh /agent-permissions.sh '*.sh'
 
 USER 1000:1000
 ENV HOME=/workspace TMPDIR=/workspace PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1

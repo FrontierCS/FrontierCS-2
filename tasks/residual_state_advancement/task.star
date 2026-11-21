@@ -1,15 +1,16 @@
 """Advance JoinBoost's residual state each boosting round inside DuckDB and make the fit faster, ported from FrontierCS."""
 
-load("//lib/fcs.star", "artifacts", "fcs_task", "paper")
+load("//lib/fcs.star", "artifacts", "fcs_task", "package_agent", "paper", "ubuntu_agent_base", "ubuntu_verifier_image")
 
 fcs_task(
+    verifier_image = ubuntu_verifier_image,
+    agent_recipe = package_agent(ubuntu_agent_base),
     agent = {"cpu_millis": 2000, "memory_bytes": 16 * GiB},
     judge = {"cpu_millis": 2000, "memory_bytes": 16 * GiB},
     train_calls = 100,
     train_cumulative_seconds = 720000,
     judge_timeout_seconds = 7200,
     submission_max_bytes = 128 * KiB,
-    visible_metrics = [],
     source = [
         paper(
             "https://www.vldb.org/pvldb/vol16/p3071-huang.pdf",

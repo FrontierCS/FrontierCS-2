@@ -1,6 +1,3 @@
-# FrontierCS's shared verifier base, pinned by digest: Ubuntu 24.04 with git, Python and
-# zstandard, apt set as in the agent's base, the user 65532 with /frontier its home, the shared
-# verifier's launcher, /opt/frontier/verifier, and /opt/frontier on Python's import path.
 ARG VERIFIER_BASE
 FROM ${VERIFIER_BASE}
 
@@ -25,11 +22,8 @@ LABEL org.opencontainers.image.title="FrontierCS2 verifier quarter_pir" \
 RUN ln --symbolic /pumpkin/out /frontier/output
 
 # The shared verifier, and the launcher through which the judge runs every process it builds
-# from a submission: the repository's `shared/` ones, which the build puts in its context, and
-# which replace the base's.
-COPY shared/verifier/verify.py shared/verifier/fcs2_verifier.py \
-     shared/verifier/beat_spec_feedback.py shared/lib/edit_scope.py shared/lib/isolate.py \
-     /opt/frontier/
+# from a submission: the repository's `shared/` ones, which replace the base's.
+COPY --from=task-tools /verifier/*.py /lib/edit_scope.py /lib/isolate.py /opt/frontier/
 # The task's judge, with the starter repo it trusts at pristine/: the trusted tools and the
 # reference are built from there, never from the submission. And each mode's plan: the train
 # judge reads train.tar, and the final judge eval.tar.
@@ -39,15 +33,13 @@ COPY --chmod=a+rX,a-w generated/judge/config.yaml /opt/frontier/task/config.yaml
 COPY generated/verifier/verifier.json /opt/frontier/verifier.json
 COPY datasets/train.tar datasets/eval.tar /opt/frontier/datasets/
 # The modules go.sum pins, checked against go.sum alone, as in the agent's image.
-RUN cd /opt/frontier/task/pristine/quarter_pir/code \
+RUN --mount=type=bind,from=task-tools,source=/verifier-permissions.sh,target=/verifier-permissions.sh \
+    cd /opt/frontier/task/pristine/quarter_pir/code \
     && export GOMODCACHE=/opt/frontier/go-mod GOFLAGS=-mod=readonly GOSUMDB=off \
     && GOPROXY=https://proxy.golang.org /usr/local/go/bin/go mod download \
     && GOPROXY=off /usr/local/go/bin/go list -deps ./... > /dev/null \
     && chmod --recursive a+rX /opt/frontier/go-mod \
-    && chmod 0444 /opt/frontier/verifier.json /opt/frontier/*.py \
-    && chmod 0555 /opt/frontier \
-    && chmod --recursive a+rX,a-w /opt/frontier/datasets \
-    && chmod a-w /opt/frontier/task /opt/frontier/task/pristine
+    && sh /verifier-permissions.sh
 
 USER 65532:65532
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \

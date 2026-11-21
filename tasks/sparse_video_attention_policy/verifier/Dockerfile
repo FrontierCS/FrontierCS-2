@@ -25,12 +25,11 @@ LABEL org.opencontainers.image.title="FrontierCS2 verifier sparse_video_attentio
 # /pumpkin/out, and its scratch below /frontier, on the container's writable layer.
 RUN ln --symbolic /pumpkin/out /frontier/output
 
-# The shared verifier and the launcher each generation runs under: the repository's
-# `shared/` ones, which the build puts in its context. /opt/frontier goes on the interpreter's
-# import path (frontier.pth), so the judge and every worker it starts import isolate by name.
-COPY shared/verifier/verify.py shared/verifier/fcs2_verifier.py \
-     shared/verifier/beat_spec_feedback.py shared/lib/edit_scope.py shared/lib/isolate.py \
-     shared/lib/install_frontier_pth.py /opt/frontier/
+# The shared verifier and the launcher each generation runs under: the repository's `shared/`
+# ones. /opt/frontier goes on the interpreter's import path (frontier.pth), so the judge and
+# every worker it starts import isolate by name.
+COPY --from=task-tools /verifier/*.py /lib/edit_scope.py /lib/isolate.py \
+    /lib/install_frontier_pth.py /opt/frontier/
 # The starter that the shared verifier overlays the submission on; the generated files; and each
 # mode's selector.
 COPY --chmod=a+rX,a-w repo /opt/frontier/task/pristine

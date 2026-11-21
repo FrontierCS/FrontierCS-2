@@ -17,13 +17,28 @@ fcs_task(
     train_cumulative_seconds = 16200,
     judge_timeout_seconds = 14400,
     submission_max_bytes = 256 * KiB,
-    visible_metrics = [
-        "development_mean_episode_reward",
-        "development_mean_tracking_lin_vel",
-        "development_mean_tracking_ang_vel",
-        "development_mean_energy",
-        "development_mean_action_rate",
-    ],
+    visible_metrics = {
+        "development_mean_episode_reward": (
+            "Candidate policy's summed step reward until the first\n" +
+            "  termination, mean over environments; mean over workloads."
+        ),
+        "development_mean_tracking_lin_vel": (
+            "Candidate policy's summed linear-velocity tracking reward\n" +
+            "  term, mean over environments; mean over workloads."
+        ),
+        "development_mean_tracking_ang_vel": (
+            "Candidate policy's summed yaw-rate tracking reward term,\n" +
+            "  mean over environments; mean over workloads."
+        ),
+        "development_mean_energy": (
+            "Candidate policy's per-alive-step energy penalty term (negative;\n" +
+            "  closer to 0 is better); mean over workloads."
+        ),
+        "development_mean_action_rate": (
+            "Candidate policy's per-alive-step action-smoothness penalty\n" +
+            "  term (negative; closer to 0 is better); mean over workloads."
+        ),
+    },
     contexts = {"runtime": "runtime/Dockerfile"},
     reference_patch = False,
     noop_patch_file = "frontier_solution/train.py",
