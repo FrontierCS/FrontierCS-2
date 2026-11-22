@@ -1,8 +1,6 @@
 """Lease smoke judge calls. The train judge leaves its lease open for teardown. The final
 body uses a scoped runner for the measurement and keeps the isolation probe on a separate runner."""
 
-load("//lib/submit.star", "submission")
-
 JUDGE = ["python3", "-u", "/opt/smoke/judge.py"]
 PAYLOAD = "/pumpkin/in/payload/raw"
 RESULT = "/pumpkin/out/result.json"
@@ -43,9 +41,12 @@ def final_call(target: Target, submissions):
       submissions: the last saved payload by agent role name.
 
     Returns:
-      The result's `score`, if it holds one.
+      The result's `score`, if it holds one; a `score` of zero for an agent that saved nothing.
     """
-    target.put(PAYLOAD, submission(submissions))
+    payload = submissions["agent"]
+    if payload == None:
+        return {"score": 0.0}
+    target.put(PAYLOAD, payload)
     lease = target.capture(JUDGE + ["prepare-final"])
     host, modes = target.with_runner("slease", _measure)
     target.run(JUDGE + ["finish-final", lease, host, modes])

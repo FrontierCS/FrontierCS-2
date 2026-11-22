@@ -18,17 +18,3 @@ def submit(run: Run, payload: Payload, finalize: bool = False) -> dict[str, str]
         run.end_work()
         return {"state": "accepted"}
     return {"state": "stored"}
-
-def submission(submissions):
-    """The agent's last saved payload. A run without a submission ends without a result.
-
-    Args:
-      submissions: the final call's submissions by agent role name.
-
-    Returns:
-      The payload saved by the agent, including a submitted empty file.
-    """
-    payload = submissions["agent"]
-    if payload == None:
-        fail("the agent submitted nothing")
-    return payload

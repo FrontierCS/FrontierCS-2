@@ -2,8 +2,6 @@
 the verifier once, in a fresh sandbox of its target, on the payload, and returns what of its
 result the judge's caller sees."""
 
-load("//lib/submit.star", "submission")
-
 # Where the verifier reads the payload, which its target's environment names
 # `FRONTIER_PAYLOAD_PATH`.
 PAYLOAD = "/pumpkin/in/payload/raw"
@@ -51,12 +49,16 @@ def final_call(target: Target, submissions):
       submissions: the last saved payload by agent role name.
 
     Returns:
-      The result's `raw_score` as `score`, its `status` unless it is `passed`, which says only
-      that the verification ran and reads as a verdict beside a score, the `beats_reference` of its
-      `private_metrics`, then its `summary`, `metrics`, `private_metrics` and `failure`, each that
-      it holds, by its name.
+      For an agent that saved nothing, a `score` and a `beats_reference` of zero and a `summary`
+      that says so, without a run of the verifier. Otherwise the result's `raw_score` as `score`,
+      its `status` unless it is `passed`, which says only that the verification ran and reads as
+      a verdict beside a score, the `beats_reference` of its `private_metrics`, then its
+      `summary`, `metrics`, `private_metrics` and `failure`, each that it holds, by its name.
     """
-    result = _verified(target, submission(submissions))
+    payload = submissions["agent"]
+    if payload == None:
+        return {"score": 0.0, "beats_reference": 0, "summary": "the agent submitted nothing"}
+    result = _verified(target, payload)
     private = result.get("private_metrics", {})
     shown = {"score": result["raw_score"]} if "raw_score" in result else {}
     status = {"status": result["status"]} if result.get("status", "passed") != "passed" else {}

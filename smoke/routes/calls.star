@@ -1,8 +1,6 @@
 """The bodies of the routes smoke's judges: each runs `routes.py judge`, which asks the model for a
 digit through its target's route and writes it as its result's score."""
 
-load("//lib/submit.star", "submission")
-
 PAYLOAD = "/pumpkin/in/payload/raw"
 RESULT = "/pumpkin/out/result.json"
 
@@ -35,7 +33,10 @@ def final_call(target: Target, submissions, *, chat_model: str):
       chat_model: the model the judge asks, which its route allows.
 
     Returns:
-      The result's `score`, if it holds one.
+      The result's `score`, if it holds one; a `score` of zero for an agent that saved nothing.
     """
-    result = _judged(target, submission(submissions), chat_model)
+    payload = submissions["agent"]
+    if payload == None:
+        return {"score": 0.0}
+    result = _judged(target, payload, chat_model)
     return {"score": result["score"]} if "score" in result else {}

@@ -65,7 +65,7 @@ verifier's `summary` and metrics; a verification that failed adds `status`, `fai
 Each task has one agent and one work deadline. Its train calls use fresh judges. Saving a
 submission replaces the agent's previous archive. Explicit finalization locks that archive;
 otherwise the last saved archive is judged when the agent exits or its time ends. Leaving
-without saving an archive finishes without a result and `pumpkin wait` exits with status 3.
+without saving an archive scores zero.
 
 A harness works on a model that an upstream serves: an `[upstreams.<name>]` table of the same
 `pumpkin.toml` names the upstream's URL, the file that holds its key and the models it serves, by
