@@ -41,7 +41,7 @@ def train_call(target: Target, payload: Payload, *, metrics: list[str]):
     return raw | shown | failure
 
 def final_call(target: Target, submissions):
-    """The final call: the run's score, status and verdict against the reference, and the rest.
+    """The final call: the run's score and verdict against the reference, and the rest.
 
     No agent sees the final's result, so it is returned whole: its `private_metrics` hold the
     verdict against the reference, which its `metrics` leave out.
@@ -51,14 +51,15 @@ def final_call(target: Target, submissions):
       submissions: the last saved payload by agent role name.
 
     Returns:
-      The result's `raw_score` as `score`, its `status`, the `beats_reference` of its
+      The result's `raw_score` as `score`, its `status` unless it is `passed`, which says only
+      that the verification ran and reads as a verdict beside a score, the `beats_reference` of its
       `private_metrics`, then its `summary`, `metrics`, `private_metrics` and `failure`, each that
       it holds, by its name.
     """
     result = _verified(target, submission(submissions))
     private = result.get("private_metrics", {})
     shown = {"score": result["raw_score"]} if "raw_score" in result else {}
-    status = {"status": result["status"]} if "status" in result else {}
+    status = {"status": result["status"]} if result.get("status", "passed") != "passed" else {}
     beats = {"beats_reference": private["beats_reference"]} if "beats_reference" in private else {}
     names = ["summary", "metrics", "private_metrics", "failure"]
     rest = {name: result[name] for name in names if name in result}

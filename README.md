@@ -59,8 +59,8 @@ $ ./pumpkin ls               # the runs of the last day
 `run` builds the task's images, starts the run and returns; the run goes on without it. A run's
 record is `.pumpkin/runs/<id>/`, and `wait --outcome` prints its `outcome.json` once the run has
 ended: `state` is `finished` for a run that ended with a verdict, and `verdict.result.values` lists
-the final call's values, each a `name` and a `value`: `score`, `status` (`passed` or `failed`),
-`beats_reference`, then the verifier's `summary` and metrics.
+the final call's values, each a `name` and a `value`: `score`, `beats_reference`, then the
+verifier's `summary` and metrics; a verification that failed adds `status`, `failed`.
 
 Each task has one agent and one work deadline. Its train calls use fresh judges. Saving a
 submission replaces the agent's previous archive. Explicit finalization locks that archive;
