@@ -65,8 +65,9 @@ exactly once, and exit within its reply's `remaining_seconds`: every later call 
   take, summed over them. One train call may run for the function's `call_timeout_seconds`, but
   no longer than the remaining train time or the time you have left to work. The train time
   can run out before the calls do.
-- Only one train runs at a time: a train call made while another is queued or running is
-  refused, and consumes nothing.
+- Only one train runs at a time: a train call made while another is queued, running or releasing
+  its sandbox is refused, and consumes nothing. A train's result can arrive while its sandbox is
+  still being deleted, so a call made at once may be refused as busy.
 - These limits are ceilings, not a promised number of completed evaluations.
 - Your working time is the `remaining_seconds` that `sandboxctl ops` lists; agent work and
   train share it.

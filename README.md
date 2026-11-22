@@ -1,7 +1,7 @@
 # FrontierCS tasks for Pumpkin
 
 This branch holds tasks of [FrontierCS](https://github.com/FrontierCS/FrontierCS-2), each as a
-workflow that [Pumpkin](https://github.com/FrontierCS/Pumpkin/tree/96942725f939ac1a5de80fbe68ff77ec2738ee96)
+workflow that [Pumpkin](https://github.com/FrontierCS/Pumpkin/tree/38342947608f4766733a8192a6d95c1778fb1be3)
 runs. In a run, an agent works on the task's statement and starter, may submit to the task's
 verifier for scored train calls, and submits once for the final call, whose score is the run's.
 Each role, the agent and the two judges that run the verifier, states what its sandbox needs. The
@@ -48,11 +48,11 @@ $ ./pumpkin run tasks/<name>/task.star --arg agent=reference     # prints the ru
 20261117-040053-978f3ae9
 $ ./pumpkin wait 978f        # follows the run, named by a prefix of its last part, to its end
 ...
-pumpkin: run 20261117-040053-978f3ae9 finished with a result (score=<score> status="passed" beats_reference=<n> summary="<summary>" ...), after the work phase ended when the agent exited with status 0; its record is /home/alice/fcs-tasks/.pumpkin/runs/20261117-040053-978f3ae9
+pumpkin: run 20261117-040053-978f3ae9 finished with a result (score=<score> beats_reference=<n> summary="<summary>" ...); its record is /home/alice/fcs-tasks/.pumpkin/runs/20261117-040053-978f3ae9
 ...
 $ ./pumpkin wait --outcome 978f > outcome.json
 $ ./pumpkin ls               # the runs of the last day
-20261117-040053-978f3ae9 finished      1m56s  -               -  frontier-cs/<name>: score=<score> status="passed" beats_reference=<n> ...
+20261117-040053-978f3ae9 finished      1m56s  -               -  frontier-cs/<name>: score=<score> beats_reference=<n> ...
 ...
 ```
 
@@ -70,7 +70,7 @@ without saving an archive finishes without a result and `pumpkin wait` exits wit
 A harness works on a model that an upstream serves: an `[upstreams.<name>]` table of the same
 `pumpkin.toml` names the upstream's URL, the file that holds its key and the models it serves, by
 the `name` that `--arg model` gives; `./pumpkin help config` says every key, with an example
-([models](https://github.com/FrontierCS/Pumpkin/blob/96942725f939ac1a5de80fbe68ff77ec2738ee96/docs/models.md)):
+([models](https://github.com/FrontierCS/Pumpkin/blob/38342947608f4766733a8192a6d95c1778fb1be3/docs/models.md)):
 
 ```console
 $ ./pumpkin run tasks/<name>/task.star --arg agent=codex --arg model=gpt-6.1-terra
@@ -81,9 +81,9 @@ under Codex's default, `--arg tools=functions`, it refuses a model outside the c
 Pumpkin's Codex carries and names the models it does carry (`TOOLS` in `lib/fcs.star` says why
 `functions` is the default). The `arg()` calls at the top of `lib/fcs.star` declare what every
 task takes, such as `deadline_seconds`, the work phase, five hours by default.
-[Running](https://github.com/FrontierCS/Pumpkin/blob/96942725f939ac1a5de80fbe68ff77ec2738ee96/docs/running.md)
+[Running](https://github.com/FrontierCS/Pumpkin/blob/38342947608f4766733a8192a6d95c1778fb1be3/docs/running.md)
 goes through each command and `pumpkin view`, the runs' page;
-[records](https://github.com/FrontierCS/Pumpkin/blob/96942725f939ac1a5de80fbe68ff77ec2738ee96/docs/record.md)
+[records](https://github.com/FrontierCS/Pumpkin/blob/38342947608f4766733a8192a6d95c1778fb1be3/docs/record.md)
 says what a record holds.
 
 ## A task that needs a GPU or another provider
@@ -93,7 +93,7 @@ model, so the tasks that state either (`grep --files-with-matches --extended-reg
 '"(gpu|cpu_model)"' tasks/*/task.star`) run on EC2 or Modal, each of which needs the AWS envelope
 that Pumpkin's `deploy/aws` makes. `run` refuses a role that no class of the configured providers
 offers, saying what each class lacks, before anything is reserved.
-[Providers](https://github.com/FrontierCS/Pumpkin/blob/96942725f939ac1a5de80fbe68ff77ec2738ee96/docs/providers.md)
+[Providers](https://github.com/FrontierCS/Pumpkin/blob/38342947608f4766733a8192a6d95c1778fb1be3/docs/providers.md)
 says what EC2, Modal and a controller, which builds the images and drives the runs there, each
 need, and where each is set up.
 
