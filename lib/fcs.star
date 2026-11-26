@@ -3,6 +3,7 @@ workflow of the task in the entry file's package, `tasks/<problem id>/`, from th
 values. Each value is the published task's, but where the README's "How the ports differ" names
 another."""
 
+load("@pumpkin//harness/agy/agy.star", "agy")
 load("@pumpkin//harness/claude_code/claude_code.star", "claude_code")
 load("@pumpkin//harness/codex/codex.star", "codex")
 load("@pumpkin//harness/pi/pi.star", "pi")
@@ -67,6 +68,15 @@ HARNESSES = {
             "max_output_tokens": 131072,
             "extra_body": {"temperature": 1, "enable_thinking": True},
         },
+    },
+    "agy": {
+        "function": agy,
+        # Google's Antigravity CLI, which speaks the Gemini API itself, and so keeps the thought
+        # signatures of its function calls that Gemini asks back: an agent on Gemini through
+        # Google's own API, with no gateway in between. It takes no keyword of its own. Its route
+        # allows the agent's model alone, and refuses what agy asks of its helper models.
+        "effort": "high",
+        "keywords": {},
     },
     "pi": {
         "function": pi,
