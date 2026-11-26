@@ -506,11 +506,11 @@ def _gpu_type(agent, agent_lease):
             .format(", ".join(GPU_TYPES.keys())))
     return types[0]
 
-def _check_judge_lease(name, lease, timeout):
+def _check_judge_lease(name, lease, timeouts):
     """Judge lease `name`, `lease`, once checked.
 
     Refuses it if it does not say whether it is trusted, or does not last from 1 second to the
-    judge's `timeout` in each mode, as FrontierCS refuses one."""
+    judge's timeout in each mode, `timeouts` by mode, as FrontierCS refuses one."""
     if lease.get("trusted") not in [True, False]:
         fail("judge lease `{}` gives no `trusted` of True or False: say whether its machine may run the judge's image"
             .format(name))
@@ -518,10 +518,10 @@ def _check_judge_lease(name, lease, timeout):
     if sorted(seconds) != sorted(MODES):
         fail("judge lease `{}`'s `instance_seconds` gives {}: give one for each mode, {}"
             .format(name, ", ".join(sorted(seconds)), " and ".join(MODES)))
-    long = [mode for mode in MODES if seconds[mode] <= 0 or seconds[mode] > timeout]
+    long = [mode for mode in MODES if seconds[mode] <= 0 or seconds[mode] > timeouts[mode]]
     if long:
         fail("judge lease `{}`'s `instance_seconds` for {} is {}: give one from 1 to the judge's timeout, {}"
-            .format(name, long[0], seconds[long[0]], timeout))
+            .format(name, long[0], seconds[long[0]], timeouts[long[0]]))
     return lease
 
 def _reference(image, reference_patch, noop_patch_file, deadline_seconds):
@@ -775,7 +775,11 @@ def fcs_task(
     if unrouted:
         fail("`model_budgets` gives `{}` a budget, but its model routes are empty: give them, or remove the budget"
             .format(unrouted[0]))
-    judge_leases = {name: _check_judge_lease(name, lease, judge_timeout_seconds) for name, lease in judge_leases.items()}
+
+    # A lease lasts at most the call of its mode: a train call's `judge_timeout_seconds`, the final's
+    # `final_timeout_seconds` where it is given.
+    timeouts = {"train": judge_timeout_seconds, "eval": final_timeout_seconds or judge_timeout_seconds}
+    judge_leases = {name: _check_judge_lease(name, lease, timeouts) for name, lease in judge_leases.items()}
     built = {name: image(recipe, mount = FETCH) for name, recipe in contexts.items()} | context_images
     tools = _task_tools()
     built = built | {"task-tools": tools}
