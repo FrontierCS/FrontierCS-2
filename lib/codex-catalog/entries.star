@@ -22,6 +22,8 @@ def codex_entry(model):
     Returns:
       The entry, a dict; or `None` if there is none or `model` is `None`.
     """
+    if model == None:
+        return None
     text = _ENTRIES.get(model)
     if text == None:
         return None
