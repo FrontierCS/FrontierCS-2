@@ -8,6 +8,7 @@ load("@pumpkin//harness/codex/codex.star", "codex")
 load("@pumpkin//harness/pi/pi.star", "pi")
 load("@pumpkin//harness/qwen_code/qwen_code.star", "qwen_code")
 load("@pumpkin//harness/zcode/zcode.star", "zcode")
+load("//lib/codex-catalog/entries.star", "codex_entry")
 load("//lib/submit.star", "FINAL_HELP", "submit")
 load("//lib/verify.star", "PAYLOAD", "final_call", "train_call")
 
@@ -25,10 +26,10 @@ MODEL = arg("model", str, default = None)
 EFFORT = arg("effort", str, default = None)
 
 # How Codex's tools reach the model; Codex's alone. `functions` is the form every Responses API
-# upstream forwards, for a model whose catalog entry Pumpkin's Codex carries; `native` sends forms
-# that only some upstreams (OpenAI's own) forward, and through any other Codex has no shell or file
-# tools and exits at once. The task can't know the upstream, so the default is the one that works
-# everywhere.
+# upstream forwards, for a model whose catalog entry `lib/codex-catalog` carries; `native` sends
+# forms that only some upstreams (OpenAI's own) forward, and through any other Codex has no shell or
+# file tools and exits at once. The task can't know the upstream, so the default is the one that
+# works everywhere.
 TOOLS = arg("tools", str, default = "functions")
 
 # The harnesses, each with its `function`, one of Pumpkin's loaded above; its `effort`, the one
@@ -38,7 +39,7 @@ HARNESSES = {
     "codex": {
         "function": codex,
         "effort": "xhigh",
-        "keywords": {"tools": TOOLS},
+        "keywords": {"tools": TOOLS, "catalog_entry": codex_entry(MODEL)},
     },
     "claude-code": {
         "function": claude_code,

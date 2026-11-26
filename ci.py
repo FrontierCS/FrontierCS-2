@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PUMPKIN = ROOT / "pumpkin"
 
-# Codex's default tool mode needs a model in its catalog.
+# Codex's default tool mode needs a model whose entry `lib/codex-catalog` carries.
 CODEX_ARGS = ["agent=codex", "model=gpt-6.1-terra"]
 
 

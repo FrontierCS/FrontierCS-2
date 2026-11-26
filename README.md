@@ -1,7 +1,7 @@
 # FrontierCS tasks for Pumpkin
 
 This branch holds tasks of [FrontierCS](https://github.com/FrontierCS/FrontierCS-2), each as a
-workflow that [Pumpkin](https://github.com/FrontierCS/Pumpkin/tree/987517b9f5c2c8a8c4517f07879019f33d4c5e37)
+workflow that [Pumpkin](https://github.com/FrontierCS/Pumpkin/tree/643d32f45d7e9e9383c2aef8661db29c57947241)
 runs. In a run, an agent works on the task's statement and starter, may submit to the task's
 verifier for scored train calls, and submits once for the final call, whose score is the run's.
 Each role, the agent and the two judges that run the verifier, states what its sandbox needs. The
@@ -70,20 +70,20 @@ without saving an archive scores zero.
 A harness works on a model that an upstream serves: an `[upstreams.<name>]` table of the same
 `pumpkin.toml` names the upstream's URL, the file that holds its key and the models it serves, by
 the `name` that `--arg model` gives; `./pumpkin help config` says every key, with an example
-([models](https://github.com/FrontierCS/Pumpkin/blob/987517b9f5c2c8a8c4517f07879019f33d4c5e37/docs/models.md)):
+([models](https://github.com/FrontierCS/Pumpkin/blob/643d32f45d7e9e9383c2aef8661db29c57947241/docs/models.md)):
 
 ```console
 $ ./pumpkin run tasks/<name>/task.star --arg agent=codex --arg model=gpt-6.1-terra
 ```
 
 `--arg agent` names one of `HARNESSES` in `lib/fcs.star`; `check` says what a harness lacks:
-under Codex's default, `--arg tools=functions`, it refuses a model outside the catalog that
-Pumpkin's Codex carries and names the models it does carry (`TOOLS` in `lib/fcs.star` says why
-`functions` is the default). The `arg()` calls at the top of `lib/fcs.star` declare what every
-task takes, such as `deadline_seconds`, the work phase, five hours by default.
-[Running](https://github.com/FrontierCS/Pumpkin/blob/987517b9f5c2c8a8c4517f07879019f33d4c5e37/docs/running.md)
+under Codex's default, `--arg tools=functions`, it refuses a model without an entry in
+`lib/codex-catalog` (`TOOLS` in `lib/fcs.star` says why `functions` is the default). The `arg()`
+calls at the top of `lib/fcs.star` declare what every task takes, such as `deadline_seconds`, the
+work phase, five hours by default.
+[Running](https://github.com/FrontierCS/Pumpkin/blob/643d32f45d7e9e9383c2aef8661db29c57947241/docs/running.md)
 goes through each command and `pumpkin view`, the runs' page;
-[records](https://github.com/FrontierCS/Pumpkin/blob/987517b9f5c2c8a8c4517f07879019f33d4c5e37/docs/record.md)
+[records](https://github.com/FrontierCS/Pumpkin/blob/643d32f45d7e9e9383c2aef8661db29c57947241/docs/record.md)
 says what a record holds.
 
 ## A task that needs a GPU or another provider
@@ -93,7 +93,7 @@ model, so the tasks that state either (`grep --files-with-matches --extended-reg
 '"(gpu|cpu_model)"' tasks/*/task.star`) run on EC2 or Modal, each of which needs the AWS envelope
 that Pumpkin's `deploy/aws` makes. `run` refuses a role that no class of the configured providers
 offers, saying what each class lacks, before anything is reserved.
-[Providers](https://github.com/FrontierCS/Pumpkin/blob/987517b9f5c2c8a8c4517f07879019f33d4c5e37/docs/providers.md)
+[Providers](https://github.com/FrontierCS/Pumpkin/blob/643d32f45d7e9e9383c2aef8661db29c57947241/docs/providers.md)
 says what EC2, Modal and a controller, which builds the images and drives the runs there, each
 need, and where each is set up.
 
