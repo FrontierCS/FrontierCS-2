@@ -487,20 +487,21 @@ def _routes(harness_routes, model_routes):
 
 def _session(name, runner, lease, help):
     """The session `name` on the runners of role `runner`, with `lease`'s session fields and public `help`."""
-    fields = {key: value for key, value in lease.items() if key not in ["machine", "trusted"]}
+    fields = {key: value for key, value in lease.items() if key not in ["machine", "trusted", "assets"]}
     return {"name": name, "help": help, "session": {"runner": runner} | fields}
 
-def _runner(name, image, user, machine):
+def _runner(name, image, user, machine, assets = []):
     """The role `name` of leased runners on `image`.
 
-    They run their holder's commands as `user` in `RUNNER_HOME`."""
-    return {
+    They run their holder's commands as `user` in `RUNNER_HOME`, and hold `assets`, if any."""
+    role = {
         "name": name,
         "image": image,
         "user": user,
         "needs": machine,
         "runtime": {"runner": {"cwd": RUNNER_HOME}},
     }
+    return role | {"assets": assets} if assets else role
 
 def _gpu_type(agent, agent_lease):
     """The FrontierCS type of the GPU of the agent's runners, which `frontier-gpu` names, or none.
@@ -715,7 +716,8 @@ def fcs_task(
         (`[network.audit]`'s `ssh_session_budgets.agent`) and `transfer_bytes`
         (`max_ssh_bytes_per_direction`). The runners are a role `gpu_runner`, on the agent's
         base image unless `agent_runner_image` is given, and the agent's session `gpu` on it, which
-        `frontier-gpu` drives.
+        `frontier-gpu` drives. The lease may give `assets`, which each runner holds read-only,
+        as Pumpkin's role does.
       agent_model_routes: the model routes that a harness agent's own programs call, besides the
         harness's own, in Pumpkin's form, as `[{"api": "chat", "models": [M]}]`: from
         `[[additional_keys]]` whose `envs` hold `agent`, each key's `model_aliases`. The programs
@@ -729,7 +731,8 @@ def fcs_task(
         most `judge_timeout_seconds`) and `transfer_bytes`
         (`max_ssh_bytes_per_direction`). Each judge holds a session of that name, on a runner
         role of its own, `<judge>_<name>`: a trusted machine runs the judge's own image, an
-        untrusted one the agent's base image, which holds no judge file.
+        untrusted one the agent's base image, which holds no judge file. A lease may give
+        `assets`, which each runner holds read-only, as Pumpkin's role does.
       judge_model_routes: the model routes that both judges' programs call, as
         `agent_model_routes` gives the agent's: from `[[additional_keys]]` whose `envs` hold
         `verifier-train` and `verifier-eval`.
@@ -838,7 +841,7 @@ def fcs_task(
         if agent_lease:
             agent_image = image("Dockerfile", context = FRONTIER_GPU, contexts = {"agent-base": base})
             runner = agent_runner_image(base) if agent_runner_image else base
-            gpu_roles = [_runner(GPU_RUNNER_ROLE, runner, AGENT_USER, agent_lease["machine"])]
+            gpu_roles = [_runner(GPU_RUNNER_ROLE, runner, AGENT_USER, agent_lease["machine"], assets = agent_lease.get("assets", []))]
             gpu_grants = [_session(GPU_GRANT, GPU_RUNNER_ROLE, agent_lease, "Use frontier-gpu to run your benchmarks on a leased GPU.")]
         agent_role = _harness(agent_image, agent, gpu_type, agent_model_routes, model_budgets.get("agent"), agent_env)
     elif AGENT == "reference":
@@ -854,6 +857,7 @@ def fcs_task(
             images[mode] if lease["trusted"] else base,
             VERIFIER_USER if lease["trusted"] else AGENT_USER,
             lease["machine"],
+            lease.get("assets", []),
         )
         for role, mode in judge_modes
         for name, lease in judge_leases.items()
