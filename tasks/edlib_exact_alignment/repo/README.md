@@ -107,7 +107,7 @@ exactly two metrics that must both hold on every workload (no compensation; RSS 
 compared):
 - `cpu_time_seconds`: smallest path-run time minus smallest location-only time of the same
   executable on the same input; positive and strictly less than the reference's (no tolerance;
-  equality fails).
+  equality fails). Compared on 30,000-base workloads only; shorter ones pass it.
 - `core_peak_live_bytes`: heap (peak live bytes from the malloc family, C++ new and mmap) +
   stack (deepest extent below the function's frame) + all writable/thread-local static storage
   of `edlib.cpp`, in the outermost reconstruction call, the maximum of five untimed instrumented

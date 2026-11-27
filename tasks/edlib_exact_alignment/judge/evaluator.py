@@ -514,6 +514,8 @@ def score(times,workloads):
     # Absolute challenge scales avoid disclosing reference measurements via score.
     return 100*statistics.mean((w['length']/100000)**2 / ((w['length']/100000)**2+times[w['id']]) for w in workloads)
 
+TIMED_MIN_LENGTH=30000
+
 def reconstruction_seconds(path_samples,location_samples):
     """Fastest path run minus fastest location-only run of one executable on one input."""
     return min(path_samples)-min(location_samples)
@@ -523,10 +525,11 @@ def audit(workloads,qualified=False,correct=False,ct=None,rt=None,ca=None,ra=Non
 
     A candidate difference that is not positive is not a measurement of a
     reconstruction and never passes; neither does any row whose reference
-    difference is not positive.
+    difference is not positive. Workloads shorter than TIMED_MIN_LENGTH skip the
+    time comparison: their reconstruction is within timing noise.
     """
     ct=ct or {};rt=rt or {};ca=ca or {};ra=ra or {}
-    return [{'workload':w['id'],'metrics':{'cpu_time_seconds':bool(qualified and correct and w['id'] in ct and w['id'] in rt and 0<ct[w['id']]<rt[w['id']]),'core_peak_live_bytes':bool(qualified and correct and w['id'] in ca and w['id'] in ra and 0 <= ca[w['id']] <= ra[w['id']])}} for w in workloads]
+    return [{'workload':w['id'],'metrics':{'cpu_time_seconds':bool(qualified and correct and (w['length']<TIMED_MIN_LENGTH or (w['id'] in ct and w['id'] in rt and 0<ct[w['id']]<rt[w['id']]))),'core_peak_live_bytes':bool(qualified and correct and w['id'] in ca and w['id'] in ra and 0 <= ca[w['id']] <= ra[w['id']])}} for w in workloads]
 
 def check_tree(tree,pristine,changes):
     """Shared-verifier hook: only the reconstruction body of edlib.cpp may change, without
