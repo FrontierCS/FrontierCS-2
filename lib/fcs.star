@@ -487,11 +487,11 @@ def _routes(harness_routes, model_routes):
 
 def _session(name, runner, lease, help):
     """The session `name` on the runners of role `runner`, with `lease`'s session fields and public `help`."""
-    fields = {key: value for key, value in lease.items() if key not in ["machine", "trusted", "assets"]}
+    fields = {key: value for key, value in lease.items() if key not in ["machine", "trusted", "assets", "image", "pod"]}
     return {"name": name, "help": help, "session": {"runner": runner} | fields}
 
-def _runner(name, image, user, machine, assets = []):
-    """The role `name` of leased runners on `image`.
+def _runner(name, image, user, machine, assets = [], pod = {}):
+    """The role `name` of leased runners on `image`, each with the containers of `pod` beside it.
 
     They run their holder's commands as `user` in `RUNNER_HOME`, and hold `assets`, if any."""
     role = {
@@ -499,7 +499,7 @@ def _runner(name, image, user, machine, assets = []):
         "image": image,
         "user": user,
         "needs": machine,
-        "runtime": {"runner": {"cwd": RUNNER_HOME}},
+        "runtime": {"runner": {"cwd": RUNNER_HOME} | pod},
     }
     return role | {"assets": assets} if assets else role
 
@@ -732,7 +732,10 @@ def fcs_task(
         (`max_ssh_bytes_per_direction`). Each judge holds a session of that name, on a runner
         role of its own, `<judge>_<name>`: a trusted machine runs the judge's own image, an
         untrusted one the agent's base image, which holds no judge file. A lease may give
-        `assets`, which each runner holds read-only, as Pumpkin's role does.
+        `assets`, which each runner holds read-only, as Pumpkin's role does. It may also give
+        `image`, its runners' own image in place of either, and `pod`, which maps each mode to
+        the `companions` and `links` of Pumpkin's runner: the containers that each of its
+        runners holds beside its own, and the connections between them.
       judge_model_routes: the model routes that both judges' programs call, as
         `agent_model_routes` gives the agent's: from `[[additional_keys]]` whose `envs` hold
         `verifier-train` and `verifier-eval`.
@@ -814,7 +817,7 @@ def fcs_task(
     }
     deadline_seconds = _seconds("deadline_seconds", DEADLINE, WALL_TIME_SECONDS)
     gpu_roles, gpu_grants = [], []
-    untrusted = [name for name, lease in judge_leases.items() if not lease["trusted"]]
+    untrusted = [name for name, lease in judge_leases.items() if not lease["trusted"] and "image" not in lease]
     base = None
     if AGENT in HARNESSES or untrusted:
         readme = image(
@@ -854,10 +857,11 @@ def fcs_task(
     runners = [
         _runner(
             role + "_" + name,
-            images[mode] if lease["trusted"] else base,
+            lease.get("image") or (images[mode] if lease["trusted"] else base),
             VERIFIER_USER if lease["trusted"] else AGENT_USER,
             lease["machine"],
             lease.get("assets", []),
+            lease.get("pod", {}).get(mode, {}),
         )
         for role, mode in judge_modes
         for name, lease in judge_leases.items()
