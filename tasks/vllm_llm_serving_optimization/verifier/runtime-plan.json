@@ -1,0 +1,62 @@
+{
+  "correctness": {
+    "output_bytes": 67108864,
+    "request_bytes": 2097152
+  },
+  "max_payload_bytes": 2097152,
+  "phases": {
+    "eval": {
+      "capture_seconds": 600,
+      "cleanup_seconds": 900,
+      "groups": {
+        "bfcl/hidden": {
+          "gpu_seconds": 5700
+        },
+        "bfcl/public": {
+          "gpu_seconds": 5700
+        },
+        "swe/hidden": {
+          "gpu_seconds": 5700
+        },
+        "swe/public": {
+          "gpu_seconds": 5700
+        }
+      },
+      "max_stderr_bytes": 16777216,
+      "max_stdout_bytes": 67108864,
+      "startup_seconds": 1800,
+      "stop_seconds": 120
+    },
+    "train": {
+      "capture_seconds": 180,
+      "cleanup_seconds": 120,
+      "groups": {
+        "bfcl/public": {
+          "gpu_seconds": 5100
+        },
+        "swe/public": {
+          "gpu_seconds": 5100
+        }
+      },
+      "max_stderr_bytes": 16777216,
+      "max_stdout_bytes": 67108864,
+      "startup_seconds": 1800,
+      "stop_seconds": 120
+    }
+  },
+  "relay": {
+    "batch_timeout_seconds": {
+      "eval": 4800,
+      "train": 4500
+    },
+    "correctness_timeout_seconds": {
+      "eval": 2400,
+      "train": 2700
+    },
+    "job_bytes": 67108864,
+    "receipt_bytes": 67108864,
+    "receipt_timeout_seconds": 600,
+    "response_bytes": 67108864
+  },
+  "schema": "frontier.vllm-runtime-plan/v3"
+}

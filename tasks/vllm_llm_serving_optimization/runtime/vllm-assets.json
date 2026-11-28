@@ -1,0 +1,12 @@
+{
+  "schema_version": "frontier.vllm-runtime-assets/v1",
+  "source_commit": "b8b302cde434df8c9289a2b465406b47ebab1c2d",
+  "vllm_version": "0.11.0",
+  "wheel": {
+    "filename": "vllm-0.11.0-cp38-abi3-manylinux1_x86_64.whl",
+    "bytes": 438217982,
+    "sha256": "3861c75ff2b12e24f6d179ff5c084d791b42ded8675d76c8706697c79f68cd62",
+    "source_url": "https://files.pythonhosted.org/packages/47/33/d19e0763c34392ec956534536fa837c060495bfff31ed83452135ea7608d/vllm-0.11.0-cp38-abi3-manylinux1_x86_64.whl"
+  },
+  "scope": "Fixed locally downloaded and hash-verified assets for build preparation. No image or inference validation claimed."
+}

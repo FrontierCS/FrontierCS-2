@@ -1,0 +1,139 @@
+#!/opt/frontier/runtime-python
+"""Prepare offline editable vLLM variants and start the fixed local server."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+ASSETS = Path('/opt/frontier/vllm-assets.json')
+CLEAN_SOURCE = Path('/opt/vllm-clean')
+WHEEL_DIRECTORY = Path('/opt/frontier/wheels')
+MODEL_DIRECTORY = Path('/opt/frontier/model')
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open('rb') as handle:
+        for block in iter(lambda: handle.read(8 * 1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def verify_file(path: Path, entry: dict) -> None:
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f'asset is not a regular file: {path}')
+    if path.stat().st_size != entry['bytes'] or file_sha256(path) != entry['sha256']:
+        raise ValueError(f'asset identity mismatch: {path}')
+
+
+def verify_assets(lock: dict, source: Path, wheels: Path) -> None:
+    commit = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+    dirty = subprocess.check_output(['git', '-C', str(source), 'status', '--porcelain', '--untracked-files=all'])
+    if commit != lock['source_commit'] or dirty:
+        raise ValueError('vLLM source must be the exact clean pinned checkout')
+    verify_file(wheels / lock['wheel']['filename'], lock['wheel'])
+
+
+def offline_environment(wheel: Path, version: str) -> dict[str, str]:
+    env = dict(os.environ)
+    env.pop('PYTHONPATH', None)
+    env.pop('PYTHONHOME', None)
+    env.update({
+        'VLLM_USE_PRECOMPILED': '1',
+        'VLLM_TARGET_DEVICE': 'cuda',
+        'VLLM_PRECOMPILED_WHEEL_LOCATION': str(wheel.resolve()),
+        'SETUPTOOLS_SCM_PRETEND_VERSION': version,
+        'SETUPTOOLS_SCM_PRETEND_VERSION_FOR_VLLM': version,
+        'PIP_NO_INDEX': '1',
+        'PIP_NO_CACHE_DIR': '1',
+        'PYTHONNOUSERSITE': '1',
+        'PIP_DISABLE_PIP_VERSION_CHECK': '1',
+        'HF_HUB_OFFLINE': '1',
+        'TRANSFORMERS_OFFLINE': '1',
+        'DO_NOT_TRACK': '1',
+    })
+    return env
+
+
+def prepare_variant(lock: dict, source: Path, wheels: Path, output: Path,
+                    patch: Path | None, python: str = sys.executable) -> dict:
+    """Caller applies the task patch policy before invoking this build helper."""
+    verify_assets(lock, source, wheels)
+    output = output.resolve()
+    output.mkdir(parents=True, exist_ok=False)
+    checkout, environment = output / 'vllm', output / 'venv'
+    subprocess.run(['git', 'clone', '--local', '--no-hardlinks', str(source), str(checkout)], check=True)
+    patch_sha = None
+    if patch is not None:
+        patch = patch.resolve()
+        patch_sha = file_sha256(patch)
+        if patch.stat().st_size:
+            subprocess.run(['git', '-C', str(checkout), 'apply', '--check', str(patch)], check=True)
+            subprocess.run(['git', '-C', str(checkout), 'apply', str(patch)], check=True)
+    env = offline_environment(wheels / lock['wheel']['filename'], lock['vllm_version'])
+    # Dependencies live in the base interpreter, not a parent venv: Python venvs
+    # do not inherit a parent virtualenv's site-packages through this flag.
+    # Resolve the image alias so pyvenv.cfg points to the relocatable Python's real stdlib.
+    python = str(Path(python).resolve(strict=True))
+    subprocess.run([python, '-m', 'venv', '--system-site-packages', '--without-pip', str(environment)], check=True, env=env)
+    executable = environment / 'bin/python'
+    subprocess.run([str(executable), '-m', 'pip', 'install', '--no-index', '--no-deps',
+                    '--no-build-isolation', '--config-settings', 'editable_mode=compat',
+                    '--editable', str(checkout)], check=True, env=env)
+    origin = subprocess.check_output([
+        str(executable), '-c',
+        "import importlib.util; print(importlib.util.find_spec('vllm').origin)",
+    ], text=True, env=env, cwd=output).strip()
+    if Path(origin).resolve() != (checkout / 'vllm/__init__.py').resolve():
+        raise RuntimeError('editable import resolved to the baked wheel instead of this variant')
+    receipt = {'source_commit': lock['source_commit'], 'wheel_sha256': lock['wheel']['sha256'],
+               'patch_sha256': patch_sha, 'checkout': str(checkout), 'python': str(executable),
+               'editable_import_origin': origin,
+               'scope': 'Offline editable installation only; no GPU or serving measurement.'}
+    (output / 'prepared.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    return receipt
+
+
+def server_command(python: str, model: Path, port: int) -> list[str]:
+    if not 1 <= port <= 65535:
+        raise ValueError('port is outside 1..65535')
+    return [python, '-m', 'vllm.entrypoints.openai.api_server', '--model', str(model),
+            '--served-model-name', 'Qwen/Qwen3-Coder-30B-A3B-Instruct',
+            '--host', '0.0.0.0', '--port', str(port), '--max-model-len', '32768',
+            '--tensor-parallel-size', '1', '--disable-log-requests']
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('verify-assets')
+    prepare = commands.add_parser('prepare')
+    prepare.add_argument('--output', type=Path, required=True)
+    prepare.add_argument('--patch', type=Path)
+    serve = commands.add_parser('serve')
+    serve.add_argument('--prepared', type=Path, required=True)
+    serve.add_argument('--port', type=int, default=8000)
+    args = parser.parse_args()
+    lock = json.loads(ASSETS.read_text())
+    if args.command == 'verify-assets':
+        verify_assets(lock, CLEAN_SOURCE, WHEEL_DIRECTORY)
+    elif args.command == 'prepare':
+        print(json.dumps(prepare_variant(lock, CLEAN_SOURCE, WHEEL_DIRECTORY, args.output, args.patch), indent=2))
+    else:
+        prepared = args.prepared.resolve()
+        receipt = json.loads((prepared / 'prepared.json').read_text())
+        if receipt['source_commit'] != lock['source_commit'] or receipt['wheel_sha256'] != lock['wheel']['sha256']:
+            raise ValueError('prepared variant has different source or wheel identity')
+        env = offline_environment(WHEEL_DIRECTORY / lock['wheel']['filename'], lock['vllm_version'])
+        os.chdir(prepared)
+        command = server_command(str(prepared / 'venv/bin/python'), MODEL_DIRECTORY, args.port)
+        os.execvpe(command[0], command, env)
+
+
+if __name__ == '__main__':
+    main()

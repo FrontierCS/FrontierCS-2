@@ -1,0 +1,35 @@
+{
+  "edit_scope": {
+    "allow_delete": false,
+    "allow_empty": true,
+    "allow_executable": false,
+    "allow_new_files": true,
+    "allow_rename": true,
+    "allowed_paths": [
+      "vllm/v1/core/**",
+      "vllm/v1/core/sched/**",
+      "vllm/v1/core/kv_cache_utils.py",
+      "vllm/config/scheduler.py",
+      "vllm/config/cache.py",
+      "vllm/v1/worker/**",
+      "vllm/v1/engine/**",
+      "vllm/v1/executor/**",
+      "vllm/v1/request.py",
+      "vllm/v1/outputs.py",
+      "vllm/v1/serial_utils.py",
+      "vllm/entrypoints/openai/protocol.py",
+      "vllm/entrypoints/openai/serving_engine.py",
+      "vllm/entrypoints/openai/serving_chat.py",
+      "vllm/entrypoints/openai/serving_completion.py",
+      "vllm/sampling_params.py"
+    ],
+    "allowed_suffixes": [
+      ".py",
+      ".pyi"
+    ],
+    "deny_paths": [],
+    "max_changed_files": 80,
+    "max_patch_bytes": 1500000
+  },
+  "member": "solution.patch"
+}
